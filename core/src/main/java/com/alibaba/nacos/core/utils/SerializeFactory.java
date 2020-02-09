@@ -26,18 +26,18 @@ import java.util.Map;
  */
 public class SerializeFactory {
 
-    private static final Map<Integer, Serializer> SERIALIZER_MAP = new HashMap<>();
+    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<>();
 
-    public static final Integer JSON_INDEX = 1;
-    public static final Integer KRYO_INDEX = 2;
+    public static final String JSON_INDEX = "json";
+    public static final String KRYO_INDEX = "kryo";
 
     static {
         SERIALIZER_MAP.put(JSON_INDEX, new JsonSerializer());
         SERIALIZER_MAP.put(KRYO_INDEX, new KryoSerializer());
     }
 
-    public static Serializer getSerializer(Integer index) {
-        return SERIALIZER_MAP.get(index);
+    public static Serializer getSerializerDefaultJson(String name) {
+        return SERIALIZER_MAP.getOrDefault(name, SERIALIZER_MAP.get(JSON_INDEX));
     }
 
     private static class KryoSerializer implements Serializer {
@@ -79,38 +79,6 @@ public class SerializeFactory {
         public byte[] serialize(Object obj) {
             return JSON.toJSONBytes(obj);
         }
-    }
-
-    public static interface Serializer  {
-
-        /**
-         * 将数据反序列化
-         *
-         * @param data
-         * @param cls
-         * @param <T>
-         * @return
-         */
-        <T> T deSerialize(byte[] data, Class<T> cls);
-
-        /**
-         * 将数据反序列化
-         *
-         * @param data
-         * @param classFullName
-         * @param <T>
-         * @return
-         */
-        <T> T deSerialize(byte[] data, String classFullName);
-
-        /**
-         * 将数据序列化
-         *
-         * @param obj
-         * @return
-         */
-        byte[] serialize(Object obj);
-
     }
 
 }

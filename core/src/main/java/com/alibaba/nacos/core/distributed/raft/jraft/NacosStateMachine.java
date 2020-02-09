@@ -16,25 +16,29 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.Serializer;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosStateMachine extends AbstractStateMachine {
 
-    public NacosStateMachine(JRaftServer server, LogProcessor processor) {
+    private Serializer serializer;
+
+    public NacosStateMachine(Serializer serializer, JRaftServer server, LogProcessor processor) {
         super(server, processor);
+        this.serializer = serializer;
     }
 
     @Override
@@ -43,8 +47,9 @@ public class NacosStateMachine extends AbstractStateMachine {
         int applied = 0;
         try {
             while (iter.hasNext()) {
-                Log log = null;
+                JLog log = null;
                 NacosClosure closure = null;
+                Status status = Status.OK();
                 try {
                     if (iter.done() != null) {
                         closure = (NacosClosure) iter.done();
@@ -52,16 +57,28 @@ public class NacosStateMachine extends AbstractStateMachine {
                     }
                     else {
                         final ByteBuffer data = iter.getData();
-                        log = JSON.parseObject(data.array(), NLog.class);
+                        log = serializer.deSerialize(data.array(), JLog.class);
                     }
 
-                    Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(log));
-                    processor.onApply(log);
+                    Loggers.RAFT.info("receive datum : {}", log);
+
+                    // read request
+
+                    if (StringUtils.equals(JLog.SYS_OPERATION, log.getSysOperation())) {
+                        raftRead(closure, log);
+                    } else {
+                        processor.onApply(log);
+                    }
                 }
                 catch (Throwable e) {
                     index++;
                     throw e;
                 }
+
+                if (Objects.nonNull(closure)) {
+                    closure.run(status);
+                }
+
                 applied++;
                 index++;
                 iter.next();
@@ -72,6 +89,14 @@ public class NacosStateMachine extends AbstractStateMachine {
             Loggers.RAFT.error("StateMachine meet critical error: {}.", ExceptionUtil.getAllExceptionMsg(t));
             iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
                     "StateMachine meet critical error: %s.", t.getMessage()));
+        }
+    }
+
+    private void raftRead(NacosClosure closure, JLog log) {
+        final GetRequest request = serializer.deSerialize(log.getData(), GetRequest.class);
+        Object result = processor.getData(request);
+        if (Objects.nonNull(closure)) {
+            closure.setObject(request);
         }
     }
 

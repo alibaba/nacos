@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.consistency.Log;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
 
@@ -25,11 +24,12 @@ import com.alipay.sofa.jraft.Status;
  */
 public class NacosClosure implements Closure {
 
-    private final Log log;
+    private final JLog log;
     private final Closure closure;
     private Throwable throwable;
+    private Object object;
 
-    public NacosClosure(Log log, Closure closure) {
+    public NacosClosure(JLog log, Closure closure) {
         this.log = log;
         this.closure = closure;
     }
@@ -37,8 +37,18 @@ public class NacosClosure implements Closure {
     @Override
     public void run(Status status) {
         if (closure != null) {
-            closure.run(new NStatus(status, throwable));
+            NStatus status1 = new NStatus(status, throwable);
+            status1.setResult(object);
+            closure.run(status1);
         }
+    }
+
+    public Object getObject() {
+        return object;
+    }
+
+    public void setObject(Object object) {
+        this.object = object;
     }
 
     public void setThrowable(Throwable throwable) {
@@ -49,7 +59,7 @@ public class NacosClosure implements Closure {
         return closure;
     }
 
-    public Log getLog() {
+    public JLog getLog() {
         return log;
     }
 
@@ -58,6 +68,8 @@ public class NacosClosure implements Closure {
     public static class NStatus extends Status {
 
         private Status status;
+
+        private Object result;
 
         private Throwable throwable;
 
@@ -73,6 +85,14 @@ public class NacosClosure implements Closure {
 
         public void setStatus(Status status) {
             this.status = status;
+        }
+
+        public Object getResult() {
+            return result;
+        }
+
+        public void setResult(Object result) {
+            this.result = result;
         }
 
         public void setThrowable(Throwable throwable) {

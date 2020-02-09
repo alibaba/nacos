@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -104,7 +105,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (logger.isErrorEnabled()) {
                 logger.error(e.getMessage(), e);
             }
-            throw new RuntimeException("load schema.sql error." + e);
+            throw new RuntimeException("load schema.sql error." + ExceptionUtil.getAllExceptionMsg(e));
         }
     }
 

@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.APProtocol;
+import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.ArrayList;
@@ -77,7 +76,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
-                return processor.getData(key);
+                return processor.getData(new GetRequest(key));
             }
         }
         return null;
@@ -89,19 +88,18 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
-                processor.onApply(data);
-                return true;
+                return processor.onApply(data);
             }
         }
         return false;
     }
 
     @Override
-    public CompletableFuture<ResResult<Boolean>> submitAsync(Log data) {
-        final CompletableFuture<ResResult<Boolean>> future = new CompletableFuture<>();
+    public CompletableFuture<Boolean> submitAsync(Log data) {
+        final CompletableFuture<Boolean> future = new CompletableFuture<>();
         executor.execute(() -> {
             try {
-                future.complete(ResResultUtils.success(submit(data)));
+                future.complete(submit(data));
             } catch (Exception e) {
                 future.completeExceptionally(e);
             }

@@ -27,4 +27,8 @@ public final class RaftSysConstants {
 
     public static final String RAFT_SNAPSHOT_INTERVAL_SECS = "raft_snapshot_interval_secs";
 
+    // json、kryo
+
+    public static final String RAFT_SERIALIZER_TYPE = "raft_serializer_type";
+
 }

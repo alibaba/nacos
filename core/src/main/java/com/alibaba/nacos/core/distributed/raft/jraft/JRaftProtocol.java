@@ -115,26 +115,21 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (LogProcessor processor : allProcessor().values()) {
-            if (processor.interest(key)) {
-                return processor.getData(key);
-            }
-        }
-        return null;
+        return (D) raftServer.get(key).join();
     }
 
     @Override
     public boolean submit(Log data) throws Exception {
-        CompletableFuture<ResResult<Boolean>> future = submitAsync(data);
-        return future.join().getData();
+        CompletableFuture<Boolean> future = submitAsync(data);
+        return future.join();
     }
 
     @Override
-    public CompletableFuture<ResResult<Boolean>> submitAsync(Log data) {
+    public CompletableFuture<Boolean> submitAsync(Log data) {
         final Throwable[] throwable = new Throwable[] { null };
-        CompletableFuture<ResResult<Boolean>> future = new CompletableFuture<>();
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
-            future = raftServer.commit(data);
+            future = raftServer.commit(JLogUtils.toJLog(data, JLog.USER_OPERATION));
         } catch (Throwable e) {
             throwable[0] = e;
         }

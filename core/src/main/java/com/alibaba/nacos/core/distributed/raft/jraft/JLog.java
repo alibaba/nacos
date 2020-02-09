@@ -16,8 +16,26 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
+import com.alibaba.nacos.consistency.NLog;
+
 /**
+ * JRaft Adapt Log Object
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class JLog {
+@SuppressWarnings("all")
+class JLog extends NLog {
+
+    public static final String USER_OPERATION = "user_operation";
+    public static final String SYS_OPERATION = "sys_operation";
+
+    private String sysOperation;
+
+    public String getSysOperation() {
+        return sysOperation;
+    }
+
+    public void setSysOperation(String sysOperation) {
+        this.sysOperation = sysOperation;
+    }
 }

@@ -17,8 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
@@ -27,9 +25,9 @@ import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
+public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
 
-    private static final String INTEREST_NAME = NLog.class.getName();
+    private static final String INTEREST_NAME = JLog.class.getName();
 
     private final JRaftServer server;
 
@@ -38,12 +36,12 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
     }
 
     @Override
-    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
-        final JRaftServer.RaftGroupTuple tuple = server.findNodeByLog(log);
+    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, JLog log) {
+        final JRaftServer.RaftGroupTuple tuple = server.findNodeByLogKey(log.getKey());
         if (tuple.getNode().isLeader()) {
             server.commit(log).whenComplete((result, t) -> {
                 if (t == null) {
-                    asyncCtx.sendResponse(ResResultUtils.success());
+                    asyncCtx.sendResponse(result);
                 } else {
                     asyncCtx.sendResponse(
                             ResResult.builder()

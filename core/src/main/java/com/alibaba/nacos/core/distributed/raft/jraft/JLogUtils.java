@@ -16,8 +16,23 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
+import com.alibaba.nacos.consistency.Log;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class JLogUtils {
+
+    public static final JLog toJLog(Log log, final String operate) {
+        final JLog jLog = new JLog();
+        jLog.setSysOperation(operate);
+        jLog.setKey(log.getKey());
+        jLog.setData(log.getData());
+        jLog.setClassName(log.getClassName());
+        jLog.setOperation(log.getOperation());
+        jLog.setExtendInfo(log.listExtendInfo());
+        return jLog;
+    }
+
 }

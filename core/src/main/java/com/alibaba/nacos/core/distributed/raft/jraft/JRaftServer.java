@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
 import com.alibaba.nacos.core.cluster.NodeManager;
@@ -30,6 +29,8 @@ import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.SerializeFactory;
+import com.alibaba.nacos.core.utils.Serializer;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.remoting.rpc.RpcServer;
@@ -39,6 +40,7 @@ import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
@@ -48,8 +50,10 @@ import com.alipay.sofa.jraft.rpc.CliRequests;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcResponseClosure;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
+import com.alipay.sofa.jraft.util.BytesUtil;
 import com.google.protobuf.Message;
 import org.apache.commons.io.FileUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -57,12 +61,14 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -79,6 +85,8 @@ public class JRaftServer implements NodeChangeListener {
     private AsyncUserProcessor userProcessor;
     private NodeOptions nodeOptions;
     private ScheduledExecutorService executorService;
+
+    private Serializer serializer;
 
     private Map<String, RaftGroupTuple> multiRaftGroup = new HashMap<>();
 
@@ -101,6 +109,7 @@ public class JRaftServer implements NodeChangeListener {
 
     void init(RaftConfig config, Collection<LogProcessor> processors) {
         this.raftConfig = config;
+        this.serializer = SerializeFactory.getSerializerDefaultJson(config.getVal(RaftSysConstants.RAFT_SERIALIZER_TYPE));
 
         final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
         selfIp = self.ip();
@@ -113,13 +122,6 @@ public class JRaftServer implements NodeChangeListener {
                 String.valueOf(5000)));
 
         nodeOptions.setElectionTimeoutMs(electionTimeout);
-
-        // Set snapshot interval, default 600 seconds
-
-        int doSnapshotInterval = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
-                String.valueOf(600)));
-
-        nodeOptions.setSnapshotIntervalSecs(doSnapshotInterval);
 
         this.processors = processors;
     }
@@ -174,8 +176,8 @@ public class JRaftServer implements NodeChangeListener {
             final String _group = processor.bizInfo();
 
             final String logUri = Paths.get(parentPath, _group, "log").toString();
-            final String snapshotUri = Paths.get(parentPath, _group,"snapshot").toString();
-            final String metaDataUri = Paths.get(parentPath, _group,"meta-data").toString();
+            final String snapshotUri = Paths.get(parentPath, _group, "snapshot").toString();
+            final String metaDataUri = Paths.get(parentPath, _group, "meta-data").toString();
 
             try {
                 FileUtils.forceMkdir(new File(logUri));
@@ -190,7 +192,18 @@ public class JRaftServer implements NodeChangeListener {
             copy.setLogUri(logUri);
             copy.setRaftMetaUri(metaDataUri);
             copy.setSnapshotUri(snapshotUri);
-            copy.setFsm(new NacosStateMachine(this, processor));
+            copy.setFsm(new NacosStateMachine(serializer, this, processor));
+
+            // Set snapshot interval, default 600 seconds
+
+            int doSnapshotInterval = Integer.parseInt(raftConfig.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
+                    String.valueOf(600)));
+
+            // If the business module does not implement a snapshot processor, cancel the snapshot
+
+            doSnapshotInterval = CollectionUtils.isEmpty(processor.loadSnapshotOperate()) ? 0 : doSnapshotInterval;
+
+            copy.setSnapshotIntervalSecs(doSnapshotInterval);
 
             RaftGroupService raftGroupService = new RaftGroupService(_group, self, copy, rpcServer, true);
 
@@ -207,38 +220,71 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
+    CompletableFuture<Object> get(final String key) {
+        CompletableFuture<Object> future = new CompletableFuture<>();
+        final RaftGroupTuple tuple = findNodeByLogKey(key);
+        if (Objects.isNull(tuple)) {
+            future.completeExceptionally(new NoSuchElementException());
+        }
+        final Node node = tuple.node;
+        final GetRequest request = new GetRequest(key);
+        node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
+            @Override
+            public void run(Status status, long index, byte[] reqCtx) {
+                if (status.isOk()) {
+                    future.complete(tuple.processor.getData(request));
+                } else {
+                    // run raft read
+                    commit(JLogUtils.toJLog(NLog.builder()
+                            .key(key)
+                            .operation("JRAFT_READ_OPERATION")
+                            .build(), JLog.SYS_OPERATION))
+                            .whenComplete(new BiConsumer<Object, Throwable>() {
+                                @Override
+                                public void accept(Object result, Throwable throwable) {
+                                    if (Objects.nonNull(throwable)) {
+                                        future.completeExceptionally(throwable);
+                                    } else {
+                                        future.complete(result);
+                                    }
+                                }
+                            });
+                }
+            }
+        });
+        return future;
+    }
 
-    CompletableFuture<ResResult<Boolean>> commit(Log data) {
+    <T> CompletableFuture<T> commit(JLog data) {
         final String key = data.getKey();
-        final RaftGroupTuple tuple = findNodeByLog(data);
+        final RaftGroupTuple tuple = findNodeByLogKey(data.getKey());
         if (tuple == null) {
             throw new IllegalArgumentException();
         }
         final Node node = tuple.node;
-        final CompletableFuture<ResResult<Boolean>> future = new CompletableFuture<>();
+        final CompletableFuture<T> future = new CompletableFuture<>();
         if (node.isLeader()) {
             final Task task = new Task();
             task.setDone(new NacosClosure(data, status -> {
                 NacosClosure.NStatus nStatus = (NacosClosure.NStatus) status;
-                ResResult<Boolean> resResult = ResResult.<Boolean>builder()
-                        .withCode(status.getCode()).withData(status.isOk())
-                        .withErrMsg(status.getErrorMsg()).build();
                 if (Objects.nonNull(nStatus.getThrowable())) {
                     future.completeExceptionally(nStatus.getThrowable());
                 } else {
-                    future.complete(resResult);
+                    future.complete((T) nStatus.getResult());
                 }
             }));
-            task.setData(ByteBuffer.wrap(JSON.toJSONBytes(data)));
+            task.setData(ByteBuffer.wrap(serializer.serialize(data)));
             node.apply(task);
         } else {
             try {
+
+                // Forward to Leader for request processing
+
                 cliClientService.getRpcClient().invokeWithCallback(
                         leaderNode(node.getGroupId()).getEndpoint().toString(), data, new InvokeCallback() {
                             @Override
                             public void onResponse(Object o) {
-                                ResResult<Boolean> resResult = (ResResult) o;
-                                future.complete(resResult);
+                                future.complete((T) o);
                             }
 
                             @Override
@@ -318,8 +364,7 @@ public class JRaftServer implements NodeChangeListener {
                 CliRequests.GetLeaderResponse resp = (CliRequests.GetLeaderResponse) result;
                 return JRaftUtils.getPeerId(resp.getLeaderId());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Loggers.RAFT.error("Get leader node has error : {}", e.getMessage());
         }
         return PeerId.parsePeer(nodeManager.self().address());
@@ -358,14 +403,12 @@ public class JRaftServer implements NodeChangeListener {
                     .refreshLeader(cliClientService, group, timeoutMs).isOk()) {
                 Loggers.RAFT.warn("refresh raft node info failed");
             }
-        }
-        catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException | TimeoutException e) {
             Loggers.RAFT.error("refresh raft node info failed, error is : {}", e.getMessage());
         }
     }
 
-    RaftGroupTuple findNodeByLog(Log log) {
-        final String key = log.getKey();
+    RaftGroupTuple findNodeByLogKey(final String key) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
             final RaftGroupTuple tuple = entry.getValue();
             if (tuple.processor.interest(key)) {

@@ -24,13 +24,10 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import com.google.protobuf.ByteString;
 
 /**
- * Custom snapshot operation interface
- * Discovery via SPI
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface JSnapshotOperate {
+interface JSnapshotOperate {
 
     /**
      * do snapshot save operation

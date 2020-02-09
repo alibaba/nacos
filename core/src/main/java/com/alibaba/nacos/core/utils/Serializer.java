@@ -20,4 +20,33 @@ package com.alibaba.nacos.core.utils;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Serializer {
+
+    /**
+     * 将数据反序列化
+     *
+     * @param data
+     * @param cls
+     * @param <T>
+     * @return
+     */
+    <T> T deSerialize(byte[] data, Class<T> cls);
+
+    /**
+     * 将数据反序列化
+     *
+     * @param data
+     * @param classFullName
+     * @param <T>
+     * @return
+     */
+    <T> T deSerialize(byte[] data, String classFullName);
+
+    /**
+     * 将数据序列化
+     *
+     * @param obj
+     * @return
+     */
+    byte[] serialize(Object obj);
+
 }
