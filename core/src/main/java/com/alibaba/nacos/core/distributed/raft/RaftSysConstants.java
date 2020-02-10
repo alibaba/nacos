@@ -31,4 +31,10 @@ public final class RaftSysConstants {
 
     public static final String RAFT_SERIALIZER_TYPE = "raft_serializer_type";
 
+    public static final String REQUEST_FAILOVER_RETRIES = "raft_request_failoverRetries";
+
+    public static final String RAFT_CORE_THREAD_NUM = "raft_core_thread_num";
+
+    public static final String RAFT_CLI_SERVICE_THREAD_NUM = "raft_cli_service_thread_num";
+
 }

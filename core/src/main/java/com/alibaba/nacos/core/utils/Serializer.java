@@ -49,4 +49,16 @@ public interface Serializer {
      */
     byte[] serialize(Object obj);
 
+    /**
+     * The name of the serializer implementer
+     * <ul>
+     *     <li>If fastjson is used, fastjson is returned.</li>
+     *     <li>If hession is used, hession is returned.</li>
+     *     <li>If it is kryo, kryo is returned.</li>
+     * </ul>
+     *
+     * @return name
+     */
+    String name();
+
 }

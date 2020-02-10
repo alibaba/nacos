@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Writer {
 
-    private final List<String> files = new ArrayList<>();
+    private final Map<String, LocalFileMeta> files = new HashMap<>();
 
     /**
      * Adds a snapshot file without metadata.
@@ -34,7 +34,18 @@ public class Writer {
      * @return true on success
      */
     public boolean addFile(final String fileName) {
-        files.add(fileName);
+        files.put(fileName, new LocalFileMeta().append("file-name", fileName));
+        return true;
+    }
+
+    /**
+     * Adds a snapshot file with metadata.
+     *
+     * @param fileName file name
+     * @return true on success
+     */
+    public boolean addFile(final String fileName, final LocalFileMeta meta) {
+        files.put(fileName, meta);
         return true;
     }
 
@@ -49,8 +60,8 @@ public class Writer {
         return true;
     }
 
-    public List<String> listFiles() {
-        return Collections.unmodifiableList(files);
+    public Map<String, LocalFileMeta> listFiles() {
+        return Collections.unmodifiableMap(files);
     }
 
 }

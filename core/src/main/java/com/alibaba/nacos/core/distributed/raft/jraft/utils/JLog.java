@@ -14,25 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.jraft;
+package com.alibaba.nacos.core.distributed.raft.jraft.utils;
 
-import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.NLog;
 
 /**
+ * JRaft Adapt Log Object
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class JLogUtils {
+public class JLog extends NLog {
 
-    public static final JLog toJLog(Log log, final String operate) {
-        final JLog jLog = new JLog();
-        jLog.setSysOperation(operate);
-        jLog.setKey(log.getKey());
-        jLog.setData(log.getData());
-        jLog.setClassName(log.getClassName());
-        jLog.setOperation(log.getOperation());
-        jLog.setExtendInfo(log.listExtendInfo());
-        return jLog;
+    public static final String USER_OPERATION = "user_operation";
+    public static final String SYS_OPERATION = "sys_operation";
+
+    private String sysOperation;
+
+    JLog() {}
+
+    public String getSysOperation() {
+        return sysOperation;
     }
 
+    public void setSysOperation(String sysOperation) {
+        this.sysOperation = sysOperation;
+    }
 }

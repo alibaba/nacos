@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.snapshot;
-
-import java.util.Properties;
+package com.alibaba.nacos.core.distributed.raft.jraft.exception;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class LocalFileMeta {
+public class NoLeaderException extends Exception {
 
-    private final Properties fileMeta;
+    private static final long serialVersionUID = 1755681688785678765L;
 
-    public LocalFileMeta(Properties properties) {
-        this.fileMeta = properties;
+    public NoLeaderException() {
     }
 
-    public LocalFileMeta append(Object key, Object value) {
-        fileMeta.put(key, value);
-        return this;
+    public NoLeaderException(String group) {
+        super("The Raft Group [" + group +"] did not find the Leader node");
     }
 
-    public Properties getFileMeta() {
-        return fileMeta;
+    public NoLeaderException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public NoLeaderException(Throwable cause) {
+        super(cause);
+    }
+
+    public NoLeaderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

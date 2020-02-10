@@ -14,10 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.log;
+package com.alibaba.nacos.core.distributed.raft.jraft.utils;
+
+import com.alipay.sofa.jraft.Closure;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ConfigAggRequest {
+public interface FailoverClosure<T> extends Closure {
+
+    /**
+     * Set the return interface if needed
+     *
+     * @param data data
+     */
+    void setData(T data);
+
+    /**
+     * Catch exception
+     *
+     * @param throwable {@link Throwable}
+     */
+    void setThrowable(Throwable throwable);
+
 }

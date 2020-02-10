@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSON;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -28,12 +29,22 @@ public class SerializeFactory {
 
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<>();
 
-    public static final String JSON_INDEX = "json";
-    public static final String KRYO_INDEX = "kryo";
+    public static final String JSON_INDEX = "FastJson";
+    public static final String KRYO_INDEX = "Kryo";
 
     static {
-        SERIALIZER_MAP.put(JSON_INDEX, new JsonSerializer());
-        SERIALIZER_MAP.put(KRYO_INDEX, new KryoSerializer());
+        Serializer jsonSerializer = new JsonSerializer();
+        Serializer kryoSerializer = new KryoSerializer();
+
+        SERIALIZER_MAP.put(jsonSerializer.name(), jsonSerializer);
+        SERIALIZER_MAP.put(kryoSerializer.name(), kryoSerializer);
+
+        ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
+
+        for (Serializer serializer : loader) {
+            SERIALIZER_MAP.put(serializer.name(), serializer);
+        }
+
     }
 
     public static Serializer getSerializerDefaultJson(String name) {
@@ -55,6 +66,11 @@ public class SerializeFactory {
         @Override
         public byte[] serialize(Object obj) {
             return new byte[0];
+        }
+
+        @Override
+        public String name() {
+            return "Kryo";
         }
     }
 
@@ -78,6 +94,11 @@ public class SerializeFactory {
         @Override
         public byte[] serialize(Object obj) {
             return JSON.toJSONBytes(obj);
+        }
+
+        @Override
+        public String name() {
+            return "FastJson";
         }
     }
 

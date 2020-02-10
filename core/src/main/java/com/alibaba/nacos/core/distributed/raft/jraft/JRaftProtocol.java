@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
@@ -25,6 +24,9 @@ import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
+import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.core.distributed.raft.jraft.utils.JLog;
+import com.alibaba.nacos.core.distributed.raft.jraft.utils.JLogUtils;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -57,6 +59,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     private String selfAddress = InetUtils.getSelfIp();
 
+    private int failoverRetries;
+
     @Override
     public void init(RaftConfig config) {
 
@@ -65,6 +69,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         this.selfAddress = nodeManager.self().address();
 
         NotifyManager.registerPublisher(RaftEvent::new, RaftEvent.class);
+
+        this.failoverRetries = Integer.parseInt(config.getValOfDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, "3"));
 
         this.raftServer = new JRaftServer(this.nodeManager);
         this.raftServer.init(config, allLogDispacther().values());
@@ -115,7 +121,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     @Override
     public <D> D getData(String key) throws Exception {
-        return (D) raftServer.get(key).join();
+        return (D) raftServer.get(key, failoverRetries).join();
     }
 
     @Override
@@ -129,7 +135,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         final Throwable[] throwable = new Throwable[] { null };
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
-            future = raftServer.commit(JLogUtils.toJLog(data, JLog.USER_OPERATION));
+            raftServer.commit(JLogUtils.toJLog(data, JLog.USER_OPERATION), future, failoverRetries);
         } catch (Throwable e) {
             throwable[0] = e;
         }

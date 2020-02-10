@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
+import com.alibaba.nacos.core.distributed.raft.jraft.utils.JLog;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
 

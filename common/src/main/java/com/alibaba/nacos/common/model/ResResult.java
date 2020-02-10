@@ -55,6 +55,10 @@ public class ResResult<T> implements Serializable {
         this.data = data;
     }
 
+    public boolean ok() {
+        return this.code == 0 || this.code == 200;
+    }
+
     @Override
     public String toString() {
         return "ResResult{" +

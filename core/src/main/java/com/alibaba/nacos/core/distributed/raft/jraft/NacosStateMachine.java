@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.core.distributed.raft.jraft.utils.JLog;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.Serializer;

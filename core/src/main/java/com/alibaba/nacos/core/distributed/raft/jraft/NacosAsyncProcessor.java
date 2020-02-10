@@ -17,10 +17,13 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.core.distributed.raft.jraft.utils.JLog;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -39,9 +42,10 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, JLog log) {
         final JRaftServer.RaftGroupTuple tuple = server.findNodeByLogKey(log.getKey());
         if (tuple.getNode().isLeader()) {
-            server.commit(log).whenComplete((result, t) -> {
+            CompletableFuture<Object> future = new CompletableFuture<>();
+            server.commit(log, future, 3).whenComplete((result, t) -> {
                 if (t == null) {
-                    asyncCtx.sendResponse(result);
+                    asyncCtx.sendResponse(ResResultUtils.success(result));
                 } else {
                     asyncCtx.sendResponse(
                             ResResult.builder()

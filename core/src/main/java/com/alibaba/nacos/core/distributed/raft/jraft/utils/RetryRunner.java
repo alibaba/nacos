@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.snapshot;
-
-import java.util.Properties;
+package com.alibaba.nacos.core.distributed.raft.jraft.utils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class LocalFileMeta {
+@FunctionalInterface
+public interface RetryRunner {
 
-    private final Properties fileMeta;
+    /**
+     * Tasks that require retry
+     */
+    void run();
 
-    public LocalFileMeta(Properties properties) {
-        this.fileMeta = properties;
-    }
-
-    public LocalFileMeta append(Object key, Object value) {
-        fileMeta.put(key, value);
-        return this;
-    }
-
-    public Properties getFileMeta() {
-        return fileMeta;
-    }
 }

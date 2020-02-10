@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -26,18 +26,18 @@ public class Reader {
 
     private final String path;
 
-    private final Collection<String> allFiles;
+    private final Map<String, LocalFileMeta> allFiles;
 
-    public Reader(String path, Collection<String> allFiles) {
+    public Reader(String path, Map<String, LocalFileMeta> allFiles) {
         this.path = path;
-        this.allFiles = Collections.unmodifiableCollection(allFiles);
+        this.allFiles = Collections.unmodifiableMap(allFiles);
     }
 
     public String getPath() {
         return path;
     }
 
-    public Collection<String> listFiles() {
+    public Map<String, LocalFileMeta> listFiles() {
         return allFiles;
     }
 }

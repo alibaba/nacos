@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.core.distributed.raft.jraft.utils;
+
+import com.alibaba.nacos.consistency.Log;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class LogKeyUtils {
+@SuppressWarnings("all")
+public class JLogUtils {
 
-    private static final String LINK_STR = "$@$";
-
-    public static final String build(String biz, Object... params) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append(biz);
-        for (Object obj : params) {
-            sb.append(LINK_STR).append(obj);
-        }
-        return sb.toString();
+    public static final JLog toJLog(Log log, final String operate) {
+        final JLog jLog = new JLog();
+        jLog.setSysOperation(operate);
+        jLog.setKey(log.getKey());
+        jLog.setData(log.getData());
+        jLog.setClassName(log.getClassName());
+        jLog.setOperation(log.getOperation());
+        jLog.setExtendInfo(log.listExtendInfo());
+        return jLog;
     }
 
 }
