@@ -209,6 +209,9 @@ public class NacosConfigService implements ConfigService {
         }
 
         try {
+            /**
+             * 向服务端查询
+             */
             content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
 
             cr.setContent(content);
