@@ -20,6 +20,9 @@ import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +58,7 @@ public class NamespaceController {
      * @return namespace list
      */
     @GetMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response) {
         RestResult<List<Namespace>> rr = new RestResult<List<Namespace>>();
         rr.setCode(200);
@@ -82,6 +86,7 @@ public class NamespaceController {
      * @return namespace all info
      */
     @GetMapping(params = "show=all")
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public NamespaceAllInfo getNamespace(HttpServletRequest request, HttpServletResponse response,
                                          @RequestParam("namespaceId") String namespaceId) {
         // TODO 获取用kp
@@ -106,6 +111,7 @@ public class NamespaceController {
      * @return whether create ok
      */
     @PostMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean createNamespace(HttpServletRequest request, HttpServletResponse response,
                                    @RequestParam("customNamespaceId") String namespaceId,
                                    @RequestParam("namespaceName") String namespaceName,
@@ -138,6 +144,7 @@ public class NamespaceController {
      * @return java.lang.Boolean
      */
     @GetMapping(params = "checkNamespaceIdExist=true")
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
         if(StringUtils.isBlank(namespaceId)){
             return false;
@@ -154,6 +161,7 @@ public class NamespaceController {
      * @return whether edit ok
      */
     @PutMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean editNamespace(@RequestParam("namespace") String namespace,
                                  @RequestParam("namespaceShowName") String namespaceShowName,
                                  @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
@@ -171,6 +179,7 @@ public class NamespaceController {
      * @return whether del ok
      */
     @DeleteMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("namespaceId") String namespaceId) {
         persistService.removeTenantInfoAtomic("1", namespaceId);
