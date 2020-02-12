@@ -24,7 +24,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @since 1.1.4
  */
 @EnableScheduling
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.alibaba.nacos.istio",
+        "com.alibaba.nacos.naming",
+        "com.alibaba.nacos.core",
+})
 public class IstioApp {
 
     public static void main(String[] args) {

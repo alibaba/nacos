@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.ap.CPProtocol;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -34,12 +35,11 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -53,7 +53,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     private Node raftNode;
 
-    private Map<String, Properties> metaData = new ConcurrentHashMap<>();
+    private final ProtocolMetaData metaData = new ProtocolMetaData();
 
     private NodeManager nodeManager;
 
@@ -84,15 +84,16 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
             @Override
             public void onEvent(RaftEvent event) {
                 final String groupId = event.getGroupId();
-                metaData.computeIfAbsent(groupId, s -> new Properties());
-                final Properties subMetaData = metaData.get(groupId);
+                Map<String, Map<String, Object>> value = new HashMap<>();
+                Map<String, Object> properties = new HashMap<>();
                 final String leader = event.getLeader();
                 final long term = event.getTerm();
                 final List<String> raftClusterInfo = event.getRaftClusterInfo();
-                subMetaData.put("leader", leader);
-                subMetaData.put("term", term);
-                subMetaData.put("raftClusterInfo", raftClusterInfo);
-                metaData.put(groupId, subMetaData);
+                properties.put("leader", leader);
+                properties.put("term", term);
+                properties.put("raftClusterInfo", raftClusterInfo);
+                value.put(groupId, properties);
+                metaData.load(value);
             }
 
             @Override
@@ -106,17 +107,13 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     }
 
     @Override
-    public Map protocolMetaData() {
+    public ProtocolMetaData protocolMetaData() {
         return metaData;
     }
 
     @Override
     public <R> R metaData(String key, String... subKey) {
-        Object o = metaData.get(key);
-        if (subKey == null || subKey.length == 0) {
-            return (R) o;
-        }
-        return (R) getVIfMapByRecursive(o, 0, subKey);
+        return (R) metaData.get(key, subKey);
     }
 
     @Override

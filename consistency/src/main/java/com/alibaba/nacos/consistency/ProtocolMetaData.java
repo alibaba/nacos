@@ -16,8 +16,124 @@
 
 package com.alibaba.nacos.consistency;
 
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
+ * Consistent protocol metadata information, <Key, <Key, Value >> structure
+ * Listeners that can register to listen to changes in value
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ProtocolMetaData {
+public final class ProtocolMetaData {
+
+    private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>();
+
+    // Does not guarantee thread safety, there may be two updates of
+    // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
+
+    public void load(final Map<String, Map<String, Object>> mapMap) {
+        mapMap.forEach((s, map) -> {
+            metaDataMap.computeIfAbsent(s, group -> new MetaData());
+            final MetaData data = metaDataMap.get(s);
+            map.forEach(data::put);
+        });
+    }
+
+    public Object get(String group, String... subKey) {
+        if (subKey == null || subKey.length == 0) {
+            return metaDataMap.get(group);
+        } else {
+            final String key = subKey[0];
+            if (metaDataMap.containsKey(group)) {
+                return metaDataMap.get(group).get(key);
+            }
+            return null;
+        }
+    }
+
+    // If MetaData does not exist, actively create a MetaData
+
+    public void subscribe(final String group, final String key, final Observer observer) {
+        metaDataMap.computeIfAbsent(group, s -> new MetaData());
+        metaDataMap.get(group)
+                .subscribe(key, observer);
+    }
+
+    public static final class MetaData {
+
+        // Each biz does not affect each other
+
+        private final Executor executor = Executors.newSingleThreadExecutor();
+
+        private final Map<String, ValueItem> valueItemMap = new ConcurrentHashMap<>();
+
+        void put(String key, Object value) {
+            valueItemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            ValueItem item = valueItemMap.get(key);
+            item.setData(value);
+        }
+
+        public ValueItem get(String key) {
+            return valueItemMap.get(key);
+        }
+
+        // If ValueItem does not exist, actively create a ValueItem
+
+        void subscribe(final String key, final Observer observer) {
+            valueItemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            final ValueItem item = valueItemMap.get(key);
+            item.addObserver(observer);
+        }
+
+        void unSubscribe(final String key, final Observer observer) {
+            final ValueItem item = valueItemMap.get(key);
+            if (item == null) {
+                return;
+            }
+            item.deleteObserver(observer);
+        }
+
+    }
+
+    public static final class ValueItem extends Observable {
+
+        private volatile Object data;
+
+        private final MetaData holder;
+
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+        private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+        private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+
+        public ValueItem(MetaData holder) {
+            this.holder = holder;
+        }
+
+        public Object getData() {
+            readLock.lock();
+            try {
+                return data;
+            } finally {
+                readLock.unlock();
+            }
+        }
+
+        void setData(Object data) {
+            writeLock.lock();
+            try {
+                this.data = data;
+                holder.executor.execute(() -> {
+                    notifyObservers(data);
+                });
+            } finally {
+                writeLock.unlock();
+            }
+        }
+    }
 }

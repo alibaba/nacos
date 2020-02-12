@@ -22,12 +22,44 @@ package com.alibaba.nacos.consistency.request;
 public class GetRequest {
 
     private String key;
+    private String requestBody;
 
-    public GetRequest(String key) {
+    public GetRequest(String key, String requestBody) {
         this.key = key;
+        this.requestBody = requestBody;
     }
 
     public String getKey() {
         return key;
+    }
+
+    public String getRequestBody() {
+        return requestBody;
+    }
+
+    public static GetRequestBuilder builder() {
+        return new GetRequestBuilder();
+    }
+
+    public static final class GetRequestBuilder {
+        private String key;
+        private String requestBody;
+
+        private GetRequestBuilder() {
+        }
+
+        public GetRequestBuilder key(String key) {
+            this.key = key;
+            return this;
+        }
+
+        public GetRequestBuilder requestBody(String requestBody) {
+            this.requestBody = requestBody;
+            return this;
+        }
+
+        public GetRequest build() {
+            return new GetRequest(key, requestBody);
+        }
     }
 }

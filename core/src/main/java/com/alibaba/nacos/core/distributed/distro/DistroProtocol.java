@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.distro;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.APProtocol;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -26,11 +27,9 @@ import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -41,7 +40,7 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("all")
 public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
 
-    private final Map<String, Object> metaData = new ConcurrentHashMap<>();
+    private final ProtocolMetaData metaData = new ProtocolMetaData();
 
     private final Executor executor = ExecutorFactory.newFixExecutorService(DistroProtocol.class.getCanonicalName(), 4);
 
@@ -58,17 +57,13 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     }
 
     @Override
-    public Map<String, Object> protocolMetaData() {
-        return new HashMap<>(metaData);
+    public ProtocolMetaData protocolMetaData() {
+        return metaData;
     }
 
     @Override
     public <R> R metaData(String key, String... subKey) {
-        Object o = metaData.get(key);
-        if (subKey == null || subKey.length == 0) {
-            return (R) o;
-        }
-        return (R) getVIfMapByRecursive(o, 0, subKey);
+        return (R) metaData.get(key, subKey);
     }
 
     @Override
@@ -76,7 +71,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
-                return processor.getData(new GetRequest(key));
+                return processor.getData(new GetRequest(key, ""));
             }
         }
         return null;

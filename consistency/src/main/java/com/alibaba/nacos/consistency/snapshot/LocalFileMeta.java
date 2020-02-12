@@ -25,6 +25,10 @@ public class LocalFileMeta {
 
     private final Properties fileMeta;
 
+    public LocalFileMeta() {
+        this.fileMeta = new Properties();
+    }
+
     public LocalFileMeta(Properties properties) {
         this.fileMeta = properties;
     }

@@ -268,7 +268,7 @@ public class JRaftServer implements NodeChangeListener {
             future.completeExceptionally(new NoSuchElementException());
         }
         final Node node = tuple.node;
-        final GetRequest request = new GetRequest(key);
+        final GetRequest request = new GetRequest(key, "");
         node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
             @Override
             public void run(Status status, long index, byte[] reqCtx) {

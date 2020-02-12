@@ -295,25 +295,26 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private void initAPProtocol() {
         APProtocol protocol = SpringUtils.getBean(APProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
-        config.addLogProcessors(loadAllDispatcher(LogProcessor4AP.class).toArray(new LogProcessor[0]));
+        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
     }
 
     private void initCPProtocol() {
         CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
-        config.addLogProcessors(loadAllDispatcher(LogProcessor4CP.class).toArray(new LogProcessor[0]));
+        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
     }
 
+    @SuppressWarnings("all")
+    private List<LogProcessor> loadProcessorAndInjectProtocol(Class cls, ConsistencyProtocol protocol) {
+        Map<String, LogProcessor> beans = (Map<String, LogProcessor>) SpringUtils.getBeansOfType(cls);
 
-    private <T> List<T> loadAllDispatcher(Class<T> cls) {
-        Map<String, T> beans = SpringUtils.getBeansOfType(cls);
+        final List<LogProcessor> result = new ArrayList<>(beans.values());
 
-        final List<T> result = new ArrayList<>(beans.values());
-
-        ServiceLoader<T> loader = ServiceLoader.load(cls);
-        for (T t : loader) {
+        ServiceLoader<LogProcessor> loader = ServiceLoader.load(cls);
+        for (LogProcessor t : loader) {
+            t.injectProtocol(protocol);
             result.add(t);
         }
         return result;

@@ -58,7 +58,7 @@ public interface ConsistencyProtocol<T extends Config> {
      *
      * @return metaData copy
      */
-    Map protocolMetaData();
+    ProtocolMetaData protocolMetaData();
 
     /**
      * Get the value of the corresponding metadata information according to the key

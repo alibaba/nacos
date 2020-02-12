@@ -32,6 +32,13 @@ import java.util.List;
 public interface LogProcessor {
 
     /**
+     * Pass the consistency protocol implementer to LogProcessor
+     *
+     * @param protocol {@link ConsistencyProtocol<? extends Config>} Consistent protocol implementers
+     */
+    void injectProtocol(ConsistencyProtocol<? extends Config> protocol);
+
+    /**
      * get data by key
      *
      * @param request request {@link GetRequest}

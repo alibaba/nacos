@@ -97,7 +97,7 @@ public class NacosStateMachine extends AbstractStateMachine {
         final GetRequest request = serializer.deSerialize(log.getData(), GetRequest.class);
         Object result = processor.getData(request);
         if (Objects.nonNull(closure)) {
-            closure.setObject(request);
+            closure.setObject(result);
         }
     }
 
