@@ -451,14 +451,16 @@ public class ClientWorker {
         boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
         /**
          * 访问nacos集群configs/listener
+         * sb： dataId+group+md5+tenant
+         * isInitializingCacheList：是否有初始化的配置（第一次访问）
          */
         return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
     }
 
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
-     * @param probeUpdateString 待查询得配置信息
-     * @param isInitializingCacheList
+     * @param probeUpdateString 待查询得配置信息  dataId+group+md5+tenant
+     * @param isInitializingCacheList  是否有初始化的配置（第一次访问）
      * @return
      * @throws IOException
      */
@@ -475,7 +477,7 @@ public class ClientWorker {
 
         /**
          * told server do not hang me up if new initializing cacheData added in
-         * 通知诉服务器 如果有新的初始化缓存数据，不要挂断
+         * 通知诉服务器 如果有新的初始化缓存数据，不要挂断，直接返回
          */
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
@@ -498,7 +500,7 @@ public class ClientWorker {
 
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             /**
-             * 监听配置 长轮询
+             * 监听配置 长轮询     configs/listener
              * 监听配置 长轮询
              * 监听配置 长轮询
              */
