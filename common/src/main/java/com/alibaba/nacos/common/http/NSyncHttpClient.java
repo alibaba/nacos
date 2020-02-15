@@ -40,6 +40,20 @@ public interface NSyncHttpClient extends NHttpClient {
                          TypeReference<ResResult<T>> token) throws Exception;
 
     /**
+     * get request, may be pulling a lot of data
+     *
+     * @param url url
+     * @param header http header param
+     * @param query http query param
+     * @param body get with body
+     * @param token return type
+     * @return {@link ResResult <T>}
+     * @throws Exception
+     */
+    <T> ResResult<T> getLarge(String url, Header header, Query query, Body body,
+                              TypeReference<ResResult<T>> token) throws Exception;
+
+    /**
      * http delete
      *
      * @param url url

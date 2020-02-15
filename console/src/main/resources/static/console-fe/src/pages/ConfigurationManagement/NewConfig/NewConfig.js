@@ -16,6 +16,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
   Button,
@@ -192,9 +193,12 @@ class NewConfig extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || '';
     this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
+      generateUrl('/configurationManagement', {
+        serverId: this.serverId,
+        group: this.searchGroup,
+        dataId: this.searchDataId,
+        namespace: this.tenant,
+      })
     );
   }
 
@@ -331,15 +335,15 @@ class NewConfig extends React.Component {
         }
         self.successDialog.current.getInstance().openDialog(_payload);
       },
-      complete() {
-        self.closeLoading();
+      complete: () => {
+        this.closeLoading();
       },
-      error(res) {
+      error: res => {
+        this.closeLoading();
         Dialog.alert({
           language: aliwareIntl.currentLanguageCode || 'zh-cn',
           content: locale.publishFailed,
         });
-        self.closeLoading();
       },
     });
   };

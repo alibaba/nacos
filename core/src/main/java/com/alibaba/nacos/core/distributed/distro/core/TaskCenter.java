@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
+import com.alibaba.nacos.core.distributed.distro.utils.DistroUtils;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -31,48 +35,64 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class TaskScheduler {
-
-    private int index;
-
-    private int dataSize = 0;
-
-    private long lastDispatchTime = 0L;
-
-    private BlockingQueue<String> queue = new LinkedBlockingQueue<>(128 * 1024);
+public class TaskCenter {
 
     private NodeManager nodeManager;
 
     private DataSyncer dataSyncer;
 
-    public TaskScheduler(int index, NodeManager nodeManager, DataSyncer dataSyncer) {
-        this.index = index;
+    private List<Worker> workers = new ArrayList<>();
+
+    private final int cpuCoreCount;
+
+    public TaskCenter(NodeManager nodeManager, DataSyncer dataSyncer) {
         this.nodeManager = nodeManager;
         this.dataSyncer = dataSyncer;
-    }
-
-    public void addTask(String key) {
-        queue.offer(key);
-    }
-
-    public int getIndex() {
-        return index;
+        this.cpuCoreCount = Runtime.getRuntime().availableProcessors();
     }
 
     public void start() {
+        for (int i = 0; i < cpuCoreCount; i++) {
+            Worker worker = new Worker(i);
+            workers.add(worker);
+            DistroExecutor.executeWorker(worker);
+        }
+    }
 
+    public void addTask(String key) {
+        workers.get(DistroUtils.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 
     public void shutdown() {
 
     }
 
-    private class Worker implements Runnable {
+    class Worker implements Runnable {
+
+        private final int index;
+
+        private int dataSize = 0;
+
+        private long lastDispatchTime = 0L;
+
+        private BlockingQueue<String> queue = new LinkedBlockingQueue<>(128 * 1024);
+
+        private Worker(int index) {
+            this.index = index;
+        }
+
+        public void addTask(String key) {
+            queue.offer(key);
+        }
+
+        public int getIndex() {
+            return index;
+        }
 
         @Override
         public void run() {
             List<String> keys = new ArrayList<>();
-            while (true) {
+            for (; ; ) {
 
                 try {
 
@@ -112,6 +132,7 @@ public class TaskScheduler {
                     }
 
                 } catch (Exception e) {
+                    Loggers.DISTRO.error("worker [{}] execute has error : {}", index, ExceptionUtil.getAllExceptionMsg(e));
                 }
             }
         }

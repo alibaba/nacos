@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.ap.CPProtocol;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -52,8 +51,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     private JRaftServer raftServer;
 
     private Node raftNode;
-
-    private final ProtocolMetaData metaData = new ProtocolMetaData();
 
     private NodeManager nodeManager;
 
@@ -104,11 +101,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
         loadLogDispatcher(config.listLogProcessor());
 
-    }
-
-    @Override
-    public ProtocolMetaData protocolMetaData() {
-        return metaData;
     }
 
     @Override

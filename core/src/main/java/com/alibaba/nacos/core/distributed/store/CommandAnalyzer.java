@@ -29,8 +29,8 @@ public interface CommandAnalyzer {
      * analyze command get target consumer to deal record
      *
      * @param command command name
-     * @return {@link Function<? extends Record, Boolean>}
+     * @return {@link Function<byte[], Boolean>}
      */
-    Function<Record, Boolean> analyze(String command);
+    <T> Function<T, Boolean> analyze(String command);
 
 }

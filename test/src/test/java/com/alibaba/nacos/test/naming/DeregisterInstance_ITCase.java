@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class DeregisterInstance_ITCase {
 

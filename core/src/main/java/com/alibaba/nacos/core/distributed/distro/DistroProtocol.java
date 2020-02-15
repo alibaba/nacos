@@ -19,18 +19,17 @@ package com.alibaba.nacos.core.distributed.distro;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.APProtocol;
-import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
+import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 /**
  * // TODO 将 naming 模块的 AP 协议下沉到 core 模块
@@ -40,25 +39,25 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("all")
 public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
 
-    private final ProtocolMetaData metaData = new ProtocolMetaData();
-
-    private final Executor executor = ExecutorFactory.newFixExecutorService(DistroProtocol.class.getCanonicalName(), 4);
-
     private List<AbstractDistroKVStore> distroStores;
 
     private DistroServer distroServer;
 
+    private NodeManager nodeManager;
+
     @Override
     public void init(DistroConfig config) {
+        this.nodeManager = SpringUtils.getBean(NodeManager.class);
         this.distroStores = new ArrayList<>(SpringUtils.getBeansOfType(AbstractDistroKVStore.class).values());
-        this.distroServer = new DistroServer(distroStores);
+        this.distroServer = new DistroServer(nodeManager, distroStores, config);
+
+        List<LogProcessor> processors = new ArrayList<>();
+
+        distroStores.forEach(kvStore -> processors.add(kvStore.getKVLogProcessor()));
+
+        loadLogDispatcher(processors);
 
         loadLogDispatcher(config.listLogProcessor());
-    }
-
-    @Override
-    public ProtocolMetaData protocolMetaData() {
-        return metaData;
     }
 
     @Override
@@ -68,13 +67,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
-            final LogProcessor processor = entry.getValue();
-            if (processor.interest(key)) {
-                return processor.getData(new GetRequest(key, ""));
-            }
-        }
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -83,7 +76,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
-                return processor.onApply(data);
+                processor.onApply(data);
+                return distroServer.submit(data);
             }
         }
         return false;
@@ -92,7 +86,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     @Override
     public CompletableFuture<Boolean> submitAsync(Log data) {
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
-        executor.execute(() -> {
+        DistroExecutor.executeByGlobal(() -> {
             try {
                 future.complete(submit(data));
             } catch (Exception e) {
@@ -106,7 +100,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     public boolean batchSubmit(Map<String, List<Log>> datums) {
         for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
             final LogProcessor processor = allProcessor().get(entry.getKey());
-            executor.execute(() -> {
+            DistroExecutor.executeByGlobal(() -> {
                 for (Log log : entry.getValue()) {
                     try {
                         processor.onApply(log);

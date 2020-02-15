@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.core.distributed.store;
 
+import com.alibaba.nacos.core.utils.SerializeFactory;
+import com.alibaba.nacos.core.utils.Serializer;
+
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Key-value pair data storage structure abstraction
@@ -25,11 +29,68 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class KVStore extends BaseStore {
+public abstract class KVStore<T> extends BaseStore {
+
+    private volatile boolean canSubscribe = false;
+
+    protected Map<String, byte[]> dataStore;
 
     public KVStore(String name) {
-        super(name);
+        this(name, SerializeFactory.getDefault());
     }
+
+    public KVStore(String name, Serializer serializer) {
+        super(name, serializer);
+        this.dataStore = new ConcurrentSkipListMap<>();
+    }
+
+    public void openSubscribe() {
+        canSubscribe = true;
+    }
+
+    public void closeSubscribe() {
+        canSubscribe = false;
+    }
+
+    /**
+     * put data
+     *
+     * @param key
+     * @param data
+     * @return
+     */
+    public abstract boolean put(String key, T data);
+
+    /**
+     * remove data
+     *
+     * @param key
+     * @return
+     */
+    public abstract boolean remove(String key);
+
+    /**
+     * put data
+     *
+     * @param key
+     * @param data
+     * @return
+     */
+    public abstract boolean batchPut(Map<String, T> data);
+
+    /**
+     * remove data
+     *
+     * @param keys
+     * @return
+     */
+    public abstract boolean batchRemove(Collection<String> keys);
+
+    /**
+     *
+     * @param remoteData
+     */
+    public abstract void load(Map<String, byte[]> remoteData);
 
     /**
      * get batch data by key list
@@ -37,7 +98,7 @@ public abstract class KVStore extends BaseStore {
      * @param keys {@link Collection <String>}
      * @return {@link Map <String, ? extends Record>}
      */
-    public abstract Map<String, ? extends Record> batchGet(Collection<String> keys);
+    public abstract Map<String, byte[]> batchGet(Collection<String> keys);
 
     /**
      * get data by key
@@ -45,7 +106,7 @@ public abstract class KVStore extends BaseStore {
      * @param key data key
      * @return target data {@link <T extends Record>}
      */
-    public abstract <T extends Record> T getByKey(String key);
+    public abstract byte[] getByKey(String key);
 
     /**
      * all data keys
@@ -53,5 +114,11 @@ public abstract class KVStore extends BaseStore {
      * @return {@link Collection <String>}
      */
     public abstract Collection<String> allKeys();
+
+    private void isOpenSubscribe() {
+        if (!canSubscribe) {
+            throw new IllegalStateException();
+        }
+    }
 
 }

@@ -48,6 +48,12 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     }
 
     @Override
+    public <T> ResResult<T> getLarge(String url, Header header, Query query, Body body, TypeReference<ResResult<T>> token) throws Exception {
+        HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET);
+        return execute(client, token, requestBase);
+    }
+
+    @Override
     public <T> ResResult<T> delete(final String url,
                                    final Header header,
                                    final Query query,

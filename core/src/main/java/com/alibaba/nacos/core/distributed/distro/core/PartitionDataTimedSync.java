@@ -14,41 +14,36 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.store;
+package com.alibaba.nacos.core.distributed.distro.core;
 
-import java.io.Serializable;
+import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Record extends Serializable {
+public class PartitionDataTimedSync {
 
-    /**
-     * Uniquely identifies
-     *
-     * @return Uniquely identifies
-     */
-    String key();
+    private final Map<String, AbstractDistroKVStore> distroStores;
 
-    /**
-     * check out
-     *
-     * @return md5
-     */
-    String checkCode();
+    public PartitionDataTimedSync(Map<String, AbstractDistroKVStore> distroStores) {
+        this.distroStores = distroStores;
+    }
 
-    /**
-     * lastModifyTime
-     *
-     * @return this record last modify time
-     */
-    long lastModifyTime();
+    public void start() {
 
-    /**
-     * lastOperation
-     *
-     * @return this record last operation
-     */
-    String lastOperation();
+    }
 
+    public void shutdown() {
+
+    }
+
+    private class Worker implements Runnable {
+
+        @Override
+        public void run() {
+
+        }
+    }
 }

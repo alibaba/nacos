@@ -86,6 +86,8 @@ public interface LogProcessor {
      * @param key datum-key
      * @return interest result
      */
-    boolean interest(String key);
+    default boolean interest(String key) {
+        return key != null && key.startsWith(bizInfo());
+    }
 
 }

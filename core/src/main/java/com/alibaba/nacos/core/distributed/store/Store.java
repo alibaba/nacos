@@ -16,40 +16,10 @@
 
 package com.alibaba.nacos.core.distributed.store;
 
-import java.util.ArrayList;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 interface Store {
-
-    /**
-     * register command dispatcher
-     *
-     * @param analyzer {@link CommandAnalyzer}
-     */
-    void initCommandAnalyze(CommandAnalyzer analyzer);
-
-    /**
-     * data operate
-     * un support data query operation
-     *
-     * @param data which extend {@link Record}
-     * @param command data operate
-     * @return this operate is success
-     * @throws Exception
-     */
-    <T extends Record> boolean operate(T data, String command) throws Exception;
-
-    /**
-     * data batch operate
-     *
-     * @param data operate data, like <Operate, Collection<Record>>
-     * @return this operate is success
-     * @throws Exception
-     */
-    <T extends Record> boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception;
 
     /**
      * The storage belongs to that business

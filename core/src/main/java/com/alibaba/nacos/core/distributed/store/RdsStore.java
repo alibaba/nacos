@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.store;
 
+import com.alibaba.nacos.core.utils.SerializeFactory;
+import com.alibaba.nacos.core.utils.Serializer;
+
 import java.util.Collection;
 
 /**
@@ -23,10 +26,15 @@ import java.util.Collection;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public abstract class RdsStore extends BaseStore {
 
     public RdsStore(String name) {
-        super(name);
+        super(name, SerializeFactory.getDefault());
+    }
+
+    public RdsStore(String name, Serializer serializer) {
+        super(name, serializer);
     }
 
     /**
@@ -36,7 +44,7 @@ public abstract class RdsStore extends BaseStore {
      * @param <T> type
      * @return target data
      */
-    public abstract <T extends Record> T query(String command);
+    public abstract <T> T query(String command);
 
     /**
      * query by command
@@ -45,6 +53,6 @@ public abstract class RdsStore extends BaseStore {
      * @param <T> type
      * @return target datas
      */
-    public abstract <T extends Record> Collection<T> queryBatch(String command);
+    public abstract <T> Collection<T> queryBatch(String command);
 
 }

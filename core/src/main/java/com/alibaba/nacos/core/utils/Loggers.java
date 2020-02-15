@@ -33,4 +33,6 @@ public class Loggers {
     public static final Logger WATCH_FILE = LoggerFactory.getLogger("com.alibaba.nacos.core.file.watch");
 
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.raft");
+
+    public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.distro");
 }

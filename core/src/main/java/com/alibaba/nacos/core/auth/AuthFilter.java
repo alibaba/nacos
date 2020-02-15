@@ -66,20 +66,21 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        if (Loggers.AUTH.isDebugEnabled()) {
-            Loggers.AUTH.debug("auth filter start, request: {}", req.getRequestURI());
-        }
-
         try {
 
             String path = new URI(req.getRequestURI()).getPath();
             Method method = methodsCache.getMethod(req.getMethod(), path);
 
             if (method == null) {
-                throw new NoSuchMethodException();
+                chain.doFilter(request, response);
+                return;
             }
 
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
+
+                if (Loggers.AUTH.isDebugEnabled()) {
+                    Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
+                }
 
                 Secured secured = method.getAnnotation(Secured.class);
                 String action = secured.action().toString();
@@ -100,11 +101,10 @@ public class AuthFilter implements Filter {
             }
 
         } catch (AccessException e) {
+            if (Loggers.AUTH.isDebugEnabled()) {
+                Loggers.AUTH.debug("access denied, request: {} {}, reason: {}", req.getMethod(), req.getRequestURI(), e.getErrMsg());
+            }
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
-            return;
-        } catch (NoSuchMethodException e) {
-            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
-                "no such api:" + req.getMethod() + ":" + req.getRequestURI());
             return;
         } catch (IllegalArgumentException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));

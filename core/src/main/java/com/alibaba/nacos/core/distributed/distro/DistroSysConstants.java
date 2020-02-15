@@ -20,4 +20,15 @@ package com.alibaba.nacos.core.distributed.distro;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DistroSysConstants {
+
+    public static final String TASK_DISPATCH_PERIOD = "task_dispatch_period";
+
+    public static final String BATCH_SYNC_KEY_COUNT = "batch_sync_key_count";
+
+    public static final String SYNC_RETRY_DELAY = "sync_retry_delay";
+
+    public static final String DATA_WARM_UP = "data_warm_up";
+
+    public static final String DATA_SERIALIZER_TYPE = "data_serializer_type";
+
 }

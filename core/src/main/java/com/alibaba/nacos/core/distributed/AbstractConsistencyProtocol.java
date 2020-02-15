@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +31,8 @@ import java.util.Map;
  */
 public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
 
+    protected final ProtocolMetaData metaData = new ProtocolMetaData();
+
     protected Map<String, LogProcessor> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
 
     public void loadLogDispatcher(List<LogProcessor> logProcessors) {
@@ -38,6 +41,11 @@ public abstract class AbstractConsistencyProtocol<T extends Config> implements C
 
     protected Map<String, LogProcessor> allProcessor() {
         return dispatcherMap;
+    }
+
+    @Override
+    public ProtocolMetaData protocolMetaData() {
+        return this.metaData;
     }
 
     protected Object getVIfMapByRecursive(Object o, int index, String... keys) {

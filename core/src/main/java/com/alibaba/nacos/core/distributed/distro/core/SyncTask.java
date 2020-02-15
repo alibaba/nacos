@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.notify.Event;
 

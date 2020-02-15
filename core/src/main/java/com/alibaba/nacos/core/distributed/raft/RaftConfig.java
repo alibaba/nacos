@@ -70,7 +70,7 @@ public class RaftConfig implements Config {
     }
 
     @Override
-    public void addLogProcessors(LogProcessor... processors) {
+    public synchronized void addLogProcessors(LogProcessor... processors) {
         this.processors.addAll(Arrays.asList(processors));
     }
 

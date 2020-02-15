@@ -31,7 +31,18 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpTrace;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ContentType;
@@ -42,6 +53,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -140,6 +152,12 @@ public abstract class BaseHttpClient {
             initHeader(get, header);
             return get;
         }
+        if (HttpMethod.GET.equalsIgnoreCase(method) && body != null) {
+            HttpGetWithEntity get = new HttpGetWithEntity(url);
+            initHeader(get, header);
+            initEntity(get, body, header.getValue("Content-Type"));
+            return get;
+        }
         if (HttpMethod.DELETE.equalsIgnoreCase(method)) {
             HttpDelete delete = new HttpDelete(url);
             initHeader(delete, header);
@@ -213,6 +231,21 @@ public abstract class BaseHttpClient {
             nHeader.addParam(header.getName(), header.getValue());
         }
         return nHeader;
+    }
+
+    private static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+
+        public final static String METHOD_NAME = "GET";
+
+        public HttpGetWithEntity(String url) {
+            super();
+            setURI(URI.create(url));
+        }
+
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
+        }
     }
 
 }

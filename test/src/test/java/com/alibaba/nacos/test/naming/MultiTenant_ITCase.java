@@ -1,11 +1,6 @@
 package com.alibaba.nacos.test.naming;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
@@ -15,8 +10,6 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.naming.NamingApp;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,13 +18,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MultiTenant_ITCase {
 

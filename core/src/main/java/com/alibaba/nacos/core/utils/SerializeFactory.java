@@ -47,6 +47,10 @@ public class SerializeFactory {
 
     }
 
+    public static Serializer getDefault() {
+        return SERIALIZER_MAP.get(JSON_INDEX);
+    }
+
     public static Serializer getSerializerDefaultJson(String name) {
         return SERIALIZER_MAP.getOrDefault(name, SERIALIZER_MAP.get(JSON_INDEX));
     }

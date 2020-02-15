@@ -42,7 +42,7 @@ public class DerbyTest {
         Connection connection = DriverManager.getConnection("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true",
                 USER_NAME, PASSWORD);
 
-        connection.prepareStatement("select * from USER");
+            connection.prepareStatement("INSERT INTO users (username, password, enabled) VALUES ('qwasdasdqwq', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE)").executeUpdate();
 
     }
 

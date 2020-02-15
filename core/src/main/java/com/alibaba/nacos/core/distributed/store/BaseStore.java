@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.store;
 
 import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.utils.Serializer;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
@@ -37,37 +38,37 @@ import java.util.stream.Stream;
 @SuppressWarnings("all")
 abstract class BaseStore implements Store {
 
-    private CommandAnalyzer commandAnalyzer;
+    protected CommandAnalyzer commandAnalyzer;
 
     private final ForkJoinPool executor;
 
     private final int openParller = 50;
 
-    public BaseStore(String name) {
+    protected final Serializer serializer;
+
+    public BaseStore(String name, Serializer serializer) {
         executor = ExecutorFactory.newForkJoinPool(name);
+        this.serializer = serializer;
     }
 
-    @Override
-    public synchronized final void initCommandAnalyze(CommandAnalyzer analyzer) {
+    protected synchronized final void initCommandAnalyze(CommandAnalyzer analyzer) {
         if (Objects.isNull(commandAnalyzer)) {
             commandAnalyzer = analyzer;
         }
     }
 
-    @Override
-    public boolean operate(Record data, String command) throws Exception {
+    protected <T> boolean operate(T data, String command) throws Exception {
         checkAnalyzer();
         return commandAnalyzer.analyze(command).apply(data);
     }
 
-    @Override
-    public <T extends Record> boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception {
+    protected  <T > boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception {
         checkAnalyzer();
         CompletableFuture[] futures = new CompletableFuture[data.size()];
         List<Boolean> result = new CopyOnWriteArrayList<>();
         int index = 0;
         for (Map.Entry<String, ArrayList<T>> entry : data.entrySet()) {
-            final Function<Record, Boolean> function = commandAnalyzer.analyze(entry.getKey());
+            final Function<T, Boolean> function = commandAnalyzer.analyze(entry.getKey());
             final ArrayList<T> records = entry.getValue();
             final Stream<T> stream = records.size() > openParller ? records.parallelStream() : records.stream();
             futures[index ++] = CompletableFuture.supplyAsync(() -> {
