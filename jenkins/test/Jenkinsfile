@@ -6,10 +6,10 @@ pipeline {
   }
   environment {
     projectName = 'msmp-nacos'
-    jarName = 'nacos-server.tar.gz'
+    jarName = 'nacos-server'
     envName = 'test'
     version = '1.1.4'
-    jarNameWithVersion = 'nacos-server-${version}.tar.gz'
+    suffix = 'zip'
   }
   stages {
     stage('compile') {
@@ -21,7 +21,7 @@ pipeline {
     stage('copy resource to dir') {
       steps {
         sh 'pwd'
-        sh 'cp distribution/target/nacos-server-${version}/nacos/target/${jarNameWithVersion} jenkins/${envName}/${jarName}'
+        sh 'cp distribution/target/${jarName}-${version}.${suffix} jenkins/${envName}/${jarName}.${suffix}'
       }
     }
     stage('send to remote address') {
