@@ -14,7 +14,6 @@ pipeline {
     stage('compile') {
       steps {
       	sh 'pwd'
-      	git 'https://github.com/michaelmofa/nacos.git'
         sh 'mvn clean install -Dmaven.test.skip=true -Prelease-nacos'
       }
     }
