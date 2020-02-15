@@ -9,6 +9,7 @@ pipeline {
     jarName = 'nacos-server.tar.gz'
     envName = 'test'
     version = '1.1.4'
+    jarNameWithVersion = 'nacos-server-${version}.tar.gz'
   }
   stages {
     stage('compile') {
@@ -20,7 +21,7 @@ pipeline {
     stage('copy resource to dir') {
       steps {
         sh 'pwd'
-        sh 'cp distribution/target/nacos-server-${version}/nacos/target/${jarName} jenkins/${envName}/${jarName}'
+        sh 'cp distribution/target/nacos-server-${version}/nacos/target/${jarNameWithVersion} jenkins/${envName}/${jarName}'
       }
     }
     stage('send to remote address') {
