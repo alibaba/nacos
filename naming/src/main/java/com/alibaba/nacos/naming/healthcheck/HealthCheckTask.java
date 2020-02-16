@@ -16,9 +16,10 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.lang3.RandomUtils;
@@ -42,7 +43,7 @@ public class HealthCheckTask implements Runnable {
     private volatile boolean cancelled = false;
 
     @JSONField(serialize = false)
-    private DistroMapper distroMapper;
+    private Mapper mapper;
 
     @JSONField(serialize = false)
     private SwitchDomain switchDomain;
@@ -52,9 +53,9 @@ public class HealthCheckTask implements Runnable {
 
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
-        distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
-        switchDomain = SpringContext.getAppContext().getBean(SwitchDomain.class);
-        healthCheckProcessor = SpringContext.getAppContext().getBean(HealthCheckProcessorDelegate.class);
+        mapper = SpringUtils.getBean(APProtocol.class).mapper();
+        switchDomain = SpringUtils.getBean(SwitchDomain.class);
+        healthCheckProcessor = SpringUtils.getBean(HealthCheckProcessorDelegate.class);
         initCheckRT();
     }
 
@@ -69,7 +70,7 @@ public class HealthCheckTask implements Runnable {
     public void run() {
 
         try {
-            if (distroMapper.responsible(cluster.getService().getName()) &&
+            if (mapper.responsible(cluster.getService().getName()) &&
                 switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);
                 if (Loggers.EVT_LOG.isDebugEnabled()) {
@@ -86,7 +87,7 @@ public class HealthCheckTask implements Runnable {
                 // worst == 0 means never checked
                 if (this.getCheckRTWorst() > 0
                     && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
-                    && distroMapper.responsible(cluster.getService().getName())) {
+                    && mapper.responsible(cluster.getService().getName())) {
                     // TLog doesn't support float so we must convert it into long
                     long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
                         / this.getCheckRTLastLast();

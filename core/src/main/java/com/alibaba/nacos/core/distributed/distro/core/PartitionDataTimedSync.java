@@ -18,7 +18,8 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
+import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
+import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 
@@ -34,7 +35,7 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("all")
 public class PartitionDataTimedSync {
 
-    private final Map<String, AbstractDistroKVStore> distroStores;
+    private final KVManager kvManager;
     private final DistroMapper distroMapper;
     private final NodeManager nodeManager;
     private final DistroClient distroClient;
@@ -42,9 +43,9 @@ public class PartitionDataTimedSync {
     private Worker worker;
 
     public PartitionDataTimedSync(
-            Map<String, AbstractDistroKVStore> distroStores,
+            KVManager kvManager,
             DistroMapper distroMapper, NodeManager nodeManager, DistroClient distroClient) {
-        this.distroStores = distroStores;
+        this.kvManager = kvManager;
         this.distroMapper = distroMapper;
         this.nodeManager = nodeManager;
         this.distroClient = distroClient;
@@ -73,9 +74,9 @@ public class PartitionDataTimedSync {
 
                 final Map<String, Map<String, String>> keyChecksums = new HashMap<>(64);
 
-                distroStores.forEach(new BiConsumer<String, AbstractDistroKVStore>() {
+                kvManager.list().forEach(new BiConsumer<String, DistroKVStore>() {
                     @Override
-                    public void accept(String s, AbstractDistroKVStore dataStore) {
+                    public void accept(String s, DistroKVStore dataStore) {
 
                        Map<String, String> subKeyChecksums = new HashMap<>(64);
 

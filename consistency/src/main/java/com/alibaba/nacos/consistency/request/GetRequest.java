@@ -16,13 +16,18 @@
 
 package com.alibaba.nacos.consistency.request;
 
+import java.util.Collection;
+import java.util.Properties;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class GetRequest {
 
     private String key;
+    private Collection<String> keys;
     private String requestBody;
+    private Properties context = new Properties();
 
     public GetRequest(String key, String requestBody) {
         this.key = key;
@@ -33,8 +38,49 @@ public class GetRequest {
         return key;
     }
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public Collection<String> getKeys() {
+        return keys;
+    }
+
+    public void setKeys(Collection<String> keys) {
+        this.keys = keys;
+    }
+
     public String getRequestBody() {
         return requestBody;
+    }
+
+    public void setRequestBody(String requestBody) {
+        this.requestBody = requestBody;
+    }
+
+    public Properties getContext() {
+        return context;
+    }
+
+    public void setContext(Properties context) {
+        this.context = context;
+    }
+
+    public void addValue(String key, String value) {
+        this.context.put(key, value);
+    }
+
+    public String getValue(String key) {
+        return (String) this.context.get(key);
+    }
+
+    @Override
+    public String toString() {
+        return "GetRequest{" +
+                "key='" + key + '\'' +
+                ", requestBody='" + requestBody + '\'' +
+                ", context=" + context +
+                '}';
     }
 
     public static GetRequestBuilder builder() {
@@ -43,7 +89,9 @@ public class GetRequest {
 
     public static final class GetRequestBuilder {
         private String key;
+        private Collection<String> keys;
         private String requestBody;
+        private Properties context = new Properties();
 
         private GetRequestBuilder() {
         }
@@ -53,13 +101,31 @@ public class GetRequest {
             return this;
         }
 
+        public GetRequestBuilder keys(Collection<String> keys) {
+            this.keys = keys;
+            return this;
+        }
+
         public GetRequestBuilder requestBody(String requestBody) {
             this.requestBody = requestBody;
             return this;
         }
 
+        public GetRequestBuilder context(Properties context) {
+            this.context.putAll(context);
+            return this;
+        }
+
+        public GetRequestBuilder addValue(String key, String value) {
+            this.context.put(key, value);
+            return this;
+        }
+
         public GetRequest build() {
-            return new GetRequest(key, requestBody);
+            GetRequest getRequest = new GetRequest(key, requestBody);
+            getRequest.setContext(context);
+            getRequest.setKeys(keys);
+            return getRequest;
         }
     }
 }

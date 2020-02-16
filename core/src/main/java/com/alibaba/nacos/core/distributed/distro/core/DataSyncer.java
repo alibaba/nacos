@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
+import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
+import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +38,7 @@ public class DataSyncer {
 
     private final NodeManager nodeManager;
 
-    private final Map<String, AbstractDistroKVStore> distroStores;
+    private final KVManager kvManager;
 
     private final DistroClient distroClient;
 
@@ -45,10 +47,10 @@ public class DataSyncer {
     private ScheduledExecutorService dataSyncExecutor;
 
     public DataSyncer(NodeManager nodeManager,
-                      Map<String, AbstractDistroKVStore> distroStores,
+                      KVManager kvManager,
                       DistroClient distroClient) {
         this.nodeManager = nodeManager;
-        this.distroStores = distroStores;
+        this.kvManager = kvManager;
         this.distroClient = distroClient;
     }
 
@@ -73,7 +75,7 @@ public class DataSyncer {
             return;
         }
 
-        distroStores.forEach((s, distroStore) -> dataSyncExecutor.schedule(() -> {
+        kvManager.list().forEach((s, distroStore) -> dataSyncExecutor.schedule(() -> {
             // 1. check the server
             if (getServers() == null || getServers().isEmpty()) {
                 return;
@@ -81,9 +83,10 @@ public class DataSyncer {
 
             List<String> keys = task.getKeys();
 
+            Map<String, Map<String, KVStore.Item>> syncData = new HashMap<>();
 
             // 2. get the datums by keys and check the datum is empty or not
-            Map<String, byte[]> datumMap = distroStore.batchGet(keys);
+            Map<String, KVStore.Item> datumMap = distroStore.getItemByBatch(keys);
             if (datumMap.isEmpty()) {
                 // clear all flags of this task:
                 for (String key : keys) {
@@ -92,8 +95,10 @@ public class DataSyncer {
                 return;
             }
 
+            syncData.put(distroStore.storeName(), datumMap);
+
             long timestamp = System.currentTimeMillis();
-            boolean success = distroClient.syncData(datumMap, task.getTargetServer());
+            boolean success = distroClient.syncData(syncData, task.getTargetServer());
             if (success) {
                 // clear all flags of this task:
                 for (String key : task.getKeys()) {

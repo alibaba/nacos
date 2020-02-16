@@ -59,7 +59,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     @Override
-    public Datum get(String key) throws NacosException {
+    public <T> T get(String key) throws NacosException {
         return mapConsistencyService(key).get(key);
     }
 

@@ -18,6 +18,7 @@ package com.alibaba.nacos.consistency.ap;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import com.alibaba.nacos.consistency.store.KVStore;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -31,5 +32,13 @@ public interface APProtocol<C extends Config> extends ConsistencyProtocol<C> {
      * @return {@link Mapper}
      */
     Mapper mapper();
+
+    /**
+     * create kv-store
+     *
+     * @param storeName
+     * @return {@link KVStore}
+     */
+    <D> KVStore<D> createKVStore(String storeName);
 
 }

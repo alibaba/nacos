@@ -22,26 +22,26 @@ import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * // TODO 将 naming 模块的 AP 协议下沉到 core 模块
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
 
-    private List<AbstractDistroKVStore> distroStores;
+    private KVManager kvManager;
 
     private DistroServer distroServer;
 
@@ -50,14 +50,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     @Override
     public void init(DistroConfig config) {
         this.nodeManager = SpringUtils.getBean(NodeManager.class);
-        this.distroStores = new ArrayList<>(SpringUtils.getBeansOfType(AbstractDistroKVStore.class).values());
-        this.distroServer = new DistroServer(nodeManager, distroStores, config);
-
-        List<LogProcessor> processors = new ArrayList<>();
-
-        distroStores.forEach(kvStore -> processors.add(kvStore.getKVLogProcessor()));
-
-        loadLogDispatcher(processors);
+        this.kvManager = new KVManager();
+        this.distroServer = new DistroServer(nodeManager, kvManager, config);
 
         loadLogDispatcher(config.listLogProcessor());
 
@@ -138,5 +132,20 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     @Override
     public Mapper mapper() {
         return distroServer.getDistroMapper();
+    }
+
+    @Override
+    public <D> KVStore<D> createKVStore(String storeName) {
+        DistroKVStore<D> kvStore = new DistroKVStore<>(storeName);
+        this.kvManager.addKVStore(kvStore);
+
+        // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
+
+        loadLogDispatcher(Collections.singletonList(kvStore.getKVLogProcessor()));
+        return kvStore;
+    }
+
+    public DistroServer getDistroServer() {
+        return distroServer;
     }
 }

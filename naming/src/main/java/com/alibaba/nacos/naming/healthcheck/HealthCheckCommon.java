@@ -17,14 +17,13 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -55,10 +54,10 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Component
+@SuppressWarnings("all")
 public class HealthCheckCommon {
 
-    @Autowired
-    private DistroMapper distroMapper;
+    private Mapper mapper;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -69,7 +68,7 @@ public class HealthCheckCommon {
     @Autowired
     private PushService pushService;
 
-    private ConsistencyProtocol<? extends Config> protocol;
+    private APProtocol<? extends Config> protocol;
 
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
 
@@ -86,7 +85,9 @@ public class HealthCheckCommon {
     @PostConstruct
     public void init() {
 
-        this.protocol = SpringUtils.getBean("eventualAgreementProtocol", DistroProtocol.class);
+        this.protocol = SpringUtils.getBean(APProtocol.class);
+
+        this.mapper = protocol.mapper();
 
         executorService.schedule(() -> {
             List list = Arrays.asList(healthCheckResults.toArray());
@@ -153,7 +154,10 @@ public class HealthCheckCommon {
         try {
             if (!ip.isHealthy() || !ip.isMockValid()) {
                 if (ip.getOKCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                    if (distroMapper.responsible(cluster, ip)) {
+                    if (mapper.responsibleByCustomerRule(cluster.getServiceName(),
+                            () -> switchDomain.isHealthCheckEnabled(cluster.getServiceName()),
+                            () -> !cluster.getHealthCheckTask().isCancelled(),
+                            () -> cluster.contains(ip))) {
                         ip.setHealthy(true);
                         ip.setMockValid(true);
 
@@ -190,7 +194,10 @@ public class HealthCheckCommon {
         try {
             if (ip.isHealthy() || ip.isMockValid()) {
                 if (ip.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                    if (distroMapper.responsible(cluster, ip)) {
+                    if (mapper.responsibleByCustomerRule(cluster.getServiceName(),
+                            () -> switchDomain.isHealthCheckEnabled(cluster.getServiceName()),
+                            () -> !cluster.getHealthCheckTask().isCancelled(),
+                            () -> cluster.contains(ip))) {
                         ip.setHealthy(false);
                         ip.setMockValid(false);
 
@@ -225,7 +232,10 @@ public class HealthCheckCommon {
         Cluster cluster = task.getCluster();
         try {
             if (ip.isHealthy() || ip.isMockValid()) {
-                if (distroMapper.responsible(cluster, ip)) {
+                if (mapper.responsibleByCustomerRule(cluster.getServiceName(),
+                        () -> switchDomain.isHealthCheckEnabled(cluster.getServiceName()),
+                        () -> !cluster.getHealthCheckTask().isCancelled(),
+                        () -> cluster.contains(ip))) {
                     ip.setHealthy(false);
                     ip.setMockValid(false);
 

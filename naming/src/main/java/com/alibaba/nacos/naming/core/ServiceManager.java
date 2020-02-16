@@ -21,14 +21,14 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
@@ -88,10 +88,10 @@ public class ServiceManager implements RecordListener<Service> {
     private ConsistencyService consistencyService;
 
     @Autowired
-    private SwitchDomain switchDomain;
+    private APProtocol protocol;
 
     @Autowired
-    private DistroMapper distroMapper;
+    private SwitchDomain switchDomain;
 
     @Autowired
     private NodeManager nodeManager;
@@ -104,8 +104,12 @@ public class ServiceManager implements RecordListener<Service> {
 
     private final Object putServiceLock = new Object();
 
+    private Mapper mapper;
+
     @PostConstruct
     public void init() {
+
+        mapper = protocol.mapper();
 
         UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
@@ -383,7 +387,7 @@ public class ServiceManager implements RecordListener<Service> {
             result.put(namespaceId, new HashSet<>());
             for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
                 Service service = entry.getValue();
-                if (distroMapper.responsible(entry.getKey())) {
+                if (mapper.responsible(entry.getKey())) {
                     result.get(namespaceId).add(service);
                 }
             }
@@ -395,7 +399,7 @@ public class ServiceManager implements RecordListener<Service> {
         int serviceCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
             for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
-                if (distroMapper.responsible(entry.getKey())) {
+                if (mapper.responsible(entry.getKey())) {
                     serviceCount++;
                 }
             }
@@ -802,7 +806,7 @@ public class ServiceManager implements RecordListener<Service> {
                     ServiceChecksum checksum = new ServiceChecksum(namespaceId);
 
                     for (String serviceName : allServiceNames.get(namespaceId)) {
-                        if (!distroMapper.responsible(serviceName)) {
+                        if (!mapper.responsible(serviceName)) {
                             continue;
                         }
 

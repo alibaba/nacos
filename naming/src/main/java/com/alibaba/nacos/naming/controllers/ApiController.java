@@ -19,13 +19,14 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -34,8 +35,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Old API entry
@@ -48,10 +55,17 @@ import java.util.*;
 public class ApiController extends InstanceController {
 
     @Autowired
-    private DistroMapper distroMapper;
+    private APProtocol protocol;
 
     @Autowired
     private ServiceManager serviceManager;
+
+    private Mapper mapper;
+
+    @PostConstruct
+    protected void init() {
+        mapper = protocol.mapper();
+    }
 
     @RequestMapping("/allDomNames")
     public JSONObject allDomNames(HttpServletRequest request) throws Exception {
@@ -80,7 +94,7 @@ public class ApiController extends InstanceController {
             }
 
             for (String dom : domSet) {
-                if (distroMapper.responsible(dom) || !responsibleOnly) {
+                if (mapper.responsible(dom) || !responsibleOnly) {
                     doms.add(NamingUtils.getServiceName(dom));
                 }
             }
@@ -95,7 +109,7 @@ public class ApiController extends InstanceController {
         for (String namespaceId : domMap.keySet()) {
             doms.put(namespaceId, new HashSet<>());
             for (String dom : domMap.get(namespaceId)) {
-                if (distroMapper.responsible(dom) || !responsibleOnly) {
+                if (mapper.responsible(dom) || !responsibleOnly) {
                     doms.get(namespaceId).add(NamingUtils.getServiceName(dom));
                 }
             }

@@ -18,21 +18,22 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.SerializeFactory;
+import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
+import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SerializeFactory;
-import com.alibaba.nacos.core.utils.Serializer;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +52,7 @@ public class DistroServer {
 
     private boolean initialized = false;
 
-    private final Map<String, AbstractDistroKVStore> distroStores;
+    private final KVManager kvManager;
     private final DistroConfig config;
     private final NodeManager nodeManager;
     private final DistroMapper distroMapper;
@@ -62,7 +63,7 @@ public class DistroServer {
 
     public DistroServer(
             final NodeManager nodeManager,
-            final List<AbstractDistroKVStore> distroStores,
+            final KVManager kvManager,
             final DistroConfig config) {
         this.nodeManager = nodeManager;
         this.config = config;
@@ -70,11 +71,7 @@ public class DistroServer {
                 config.getValOfDefault(DistroSysConstants.DATA_SERIALIZER_TYPE, SerializeFactory.JSON_INDEX));
 
         this.distroMapper = new DistroMapper(nodeManager, config);
-
-        Map<String, AbstractDistroKVStore> tmp = new HashMap<>();
-        distroStores.forEach(store -> tmp.put(store.storeName(), store));
-
-        this.distroStores = new ConcurrentHashMap<>(tmp);
+        this.kvManager = kvManager;
     }
 
     public void start() {
@@ -95,14 +92,14 @@ public class DistroServer {
                 this.serializer);
 
         this.timedSync = new PartitionDataTimedSync(
-                this.distroStores,
+                this.kvManager,
                 this.distroMapper,
                 this.nodeManager,
                 this.distroClient);
 
         this.dataSyncer = new DataSyncer(
                 SpringUtils.getBean(NodeManager.class),
-                this.distroStores,
+                this.kvManager,
                 this.distroClient);
 
         this.taskCenter = new TaskCenter(this.nodeManager, this.dataSyncer);
@@ -157,7 +154,7 @@ public class DistroServer {
         }
     }
 
-    private void onReceiveChecksums(Map<String, Map<String, String>> checksumMap, String server) {
+    public void onReceiveChecksums(Map<String, Map<String, String>> checksumMap, String server) {
         if (syncChecksumTasks.containsKey(server)) {
             // Already in process of this server:
             Loggers.DISTRO.warn("sync checksum task already in process with {}", server);
@@ -171,7 +168,7 @@ public class DistroServer {
             List<String> toRemoveKeys = new ArrayList<>();
             for (Map.Entry<String, Map<String, String>> entry : checksumMap.entrySet()) {
                 final String storeName = entry.getKey();
-                final AbstractDistroKVStore dataStore = distroStores.get(storeName);
+                final DistroKVStore dataStore = kvManager.get(storeName);
                 Map<String, String> checkSumMap = entry.getValue();
                 for (Map.Entry<String, String> item : checkSumMap.entrySet()) {
                     final String key = item.getKey();
@@ -205,7 +202,7 @@ public class DistroServer {
                 }
 
                 for (String key : toRemoveKeys) {
-                    dataStore.operate(key, AbstractDistroKVStore.REMOVE_COMMAND);
+                    dataStore.operate(key, DistroKVStore.REMOVE_COMMAND);
                 }
 
                 if (toUpdateKeys.isEmpty()) {
@@ -213,7 +210,7 @@ public class DistroServer {
                 }
 
                 try {
-                    byte[] result = distroClient.getData(toUpdateKeys, server);
+                    byte[] result = distroClient.getData(storeName, toUpdateKeys, server);
                     processData(result);
                 } catch (Exception e) {
                     Loggers.DISTRO.error("get data from " + server + " failed!", e);
@@ -228,11 +225,11 @@ public class DistroServer {
 
     private void processData(byte[] data) throws Exception {
         if (data.length > 0) {
-            Map<String, Map<String, byte[]>> allDataMap = JSON.parseObject(data,
-                    new TypeReference<Map<String, Map<String, byte[]>>>() {
+            Map<String, Map<String, KVStore.Item>> allDataMap = JSON.parseObject(data,
+                    new TypeReference<Map<String, Map<String, KVStore.Item>>>() {
                     }.getType());
             allDataMap.forEach((bizInfo, map) -> DistroExecutor.executeByGlobal(() -> {
-                final AbstractDistroKVStore store = distroStores.get(bizInfo);
+                final DistroKVStore store = kvManager.get(bizInfo);
                 if (Objects.isNull(store)) {
                     return;
                 }
@@ -255,5 +252,9 @@ public class DistroServer {
 
     public DistroMapper getDistroMapper() {
         return distroMapper;
+    }
+
+    public KVManager getKvManager() {
+        return kvManager;
     }
 }

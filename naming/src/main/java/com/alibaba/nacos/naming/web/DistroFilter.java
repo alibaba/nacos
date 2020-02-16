@@ -19,10 +19,12 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
-import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -30,7 +32,13 @@ import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.servlet.*;
+import javax.annotation.PostConstruct;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -50,8 +58,7 @@ public class DistroFilter implements Filter {
     private static final int PROXY_CONNECT_TIMEOUT = 2000;
     private static final int PROXY_READ_TIMEOUT = 2000;
 
-    @Autowired
-    private DistroMapper distroMapper;
+    private Mapper mapper;
 
     @Autowired
     private ControllerMethodsCache controllerMethodsCache;
@@ -59,6 +66,11 @@ public class DistroFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
+    }
+
+    @PostConstruct
+    protected void init() {
+        mapper = SpringUtils.getBean(APProtocol.class).mapper();
     }
 
     @Override
@@ -101,7 +113,7 @@ public class DistroFilter implements Filter {
             }
 
             // proxy request to other server if necessary:
-            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
+            if (method.isAnnotationPresent(CanDistro.class) && !mapper.responsible(groupedServiceName)) {
 
                 String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
 
@@ -124,7 +136,7 @@ public class DistroFilter implements Filter {
                 String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
 
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
+                    HttpClient.request("http://" + mapper.mapSrv(groupedServiceName) + urlString, headerList,
                         StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
                         , body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
 
@@ -133,7 +145,7 @@ public class DistroFilter implements Filter {
                     resp.getWriter().write(result.content);
                     resp.setStatus(result.code);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName) + urlString);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + mapper.mapSrv(groupedServiceName) + urlString);
                 }
                 return;
             }

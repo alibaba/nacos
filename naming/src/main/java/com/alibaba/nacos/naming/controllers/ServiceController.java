@@ -24,12 +24,15 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -52,6 +55,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -75,13 +79,20 @@ public class ServiceController {
     protected ServiceManager serviceManager;
 
     @Autowired
-    private DistroMapper distroMapper;
-
-    @Autowired
     private NodeManager nodeManager;
 
     @Autowired
     private SubscribeManager subscribeManager;
+
+    private Mapper mapper;
+
+    private APProtocol<? extends Config> protocol;
+
+    @PostConstruct
+    protected void init() {
+        protocol = SpringUtils.getBean(APProtocol.class);
+        mapper = protocol.mapper();
+    }
 
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
@@ -281,7 +292,7 @@ public class ServiceController {
         for (String namespace : services.keySet()) {
             serviceNameMap.put(namespace, new HashSet<>());
             for (Service service : services.get(namespace)) {
-                if (distroMapper.responsible(service.getName()) || !responsibleOnly) {
+                if (mapper.responsible(service.getName()) || !responsibleOnly) {
                     serviceNameMap.get(namespace).add(NamingUtils.getServiceName(service.getName()));
                 }
             }

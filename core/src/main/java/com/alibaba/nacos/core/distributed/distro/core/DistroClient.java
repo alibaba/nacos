@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
@@ -26,11 +27,12 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpResResult;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
+import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.Serializer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -46,11 +48,11 @@ import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_HEADER;
  */
 class DistroClient {
 
-    private static final String DATA_ON_SYNC_URL = "/distro/datum";
+    private static final String DATA_ON_SYNC_URL = "/distro/items";
 
-    private static final String DATA_GET_URL = "/distro/datum";
+    private static final String DATA_GET_URL = "/distro/items";
 
-    private static final String ALL_DATA_GET_URL = "/distro/datums";
+    private static final String ALL_DATA_GET_URL = "/distro/all/items";
 
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
@@ -68,7 +70,7 @@ class DistroClient {
 
         try {
 
-            final String url = "http://" + server + TIMESTAMP_SYNC_URL + "?source=" + nodeManager.self().address();
+            final String url = buildUrl(TIMESTAMP_SYNC_URL, server);
 
             final Header header = Header.newInstance()
                     .addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION)
@@ -77,14 +79,17 @@ class DistroClient {
 
             final Body body = Body.objToBody(checksumMap);
 
+            final Query query = Query.newInstance()
+                    .addParam("source", nodeManager.self().address());
+
             DistroExecutor.executeByGlobal(() -> {
                 try {
-                    HttpResResult<String> result = (HttpResResult<String>) httpClient.put(url, header, Query.EMPTY, body, new TypeReference<ResResult<String>>() {
+                    HttpResResult<String> result = (HttpResResult<String>) httpClient.put(url, header, query, body, new TypeReference<ResResult<String>>() {
                     });
 
                     if (!result.ok()) {
                         Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
-                                url, result.getHttpCode() , result.getData());
+                                url, result.getHttpCode(), result.getData());
                     }
 
                 } catch (Throwable t) {
@@ -98,8 +103,7 @@ class DistroClient {
     }
 
     byte[] getAllData(final String serverAddr) throws Exception {
-        final String url = "http://" + serverAddr + nodeManager.getContextPath()
-                + ALL_DATA_GET_URL;
+        final String url = buildUrl(ALL_DATA_GET_URL, serverAddr);
 
         HttpResResult<String> result = (HttpResResult<String>) httpClient.get(url, Header.EMPTY, Query.EMPTY, new TypeReference<ResResult<String>>() {
         });
@@ -112,12 +116,13 @@ class DistroClient {
                 + result.getHttpCode() + " msg: " + result.getData());
     }
 
-    public byte[] getData(List<String> keys, String server) throws Exception {
+    public byte[] getData(String storeName, List<String> keys, String server) throws Exception {
 
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
+        params.put("storeName", StringUtils.join(keys, ","));
 
-        final String url = "http://" + server + DATA_GET_URL;
+        final String url = buildUrl(DATA_GET_URL, server);
 
         final Body body = Body.objToBody(params);
 
@@ -132,7 +137,7 @@ class DistroClient {
                 + result.getHttpCode() + " msg: " + result.getData());
     }
 
-    boolean syncData(Map<String, byte[]> data, String curServer) {
+    boolean syncData(Map<String, Map<String, KVStore.Item>> data, String curServer) {
         final Header header = Header.newInstance()
                 .addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION)
                 .addParam(HttpHeaderConsts.USER_AGENT_HEADER, NACOS_SERVER_HEADER + ":" + VersionUtils.VERSION)
@@ -141,7 +146,7 @@ class DistroClient {
                 .addParam("Content-Encoding", "gzip");
 
         try {
-            final String url = "http://" + curServer + nodeManager.getContextPath() + DATA_ON_SYNC_URL;
+            final String url = buildUrl(DATA_ON_SYNC_URL, curServer);
             HttpResResult<String> result = (HttpResResult<String>) httpClient.post(url, header, Query.EMPTY, Body.objToBody(data), new TypeReference<ResResult<String>>() {
             });
             if (HttpURLConnection.HTTP_OK == result.getHttpCode()) {
@@ -158,4 +163,7 @@ class DistroClient {
         return false;
     }
 
+    private String buildUrl(String path, String server) {
+        return "http://" + server + nodeManager.getContextPath() + Commons.NACOS_CORE_CONTEXT + path;
+    }
 }

@@ -15,15 +15,25 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.store.AfterHook;
+import com.alibaba.nacos.consistency.store.BeforeHook;
+import com.alibaba.nacos.consistency.store.KVStore;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.pojo.Record;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Store of data
@@ -32,57 +42,97 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Component
+@SuppressWarnings("all")
 public class DataStore {
 
-    private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
+    @Autowired
+    private DistroConsistencyServiceImpl consistencyService;
 
-    public void put(String key, Datum value) {
-        dataMap.put(key, value);
+    @Autowired
+    private ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private APProtocol protocol;
+
+    private KVStore<Record> kvStore;
+
+    private final Map<String, List<RecordListener>> listMap = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    protected void init() {
+        kvStore = protocol.createKVStore("Naming");
+        kvStore.registerHook(null, new NBeforeHook(), new NAfterHook());
+        kvStore.start();
     }
 
-    public Datum remove(String key) {
-        return dataMap.remove(key);
+    public Record get(String key) {
+        return kvStore.getByKeyAutoConvert(key);
     }
 
-    public Set<String> keys() {
-        return dataMap.keySet();
+    public void put(String key, Record record) throws Exception {
+        kvStore.put(key, record);
     }
 
-    public Datum get(String key) {
-        return dataMap.get(key);
+    public void remove(String key) throws Exception {
+        kvStore.remove(key);
     }
 
-    public boolean contains(String key) {
-        return dataMap.containsKey(key);
+    void listener(String key, RecordListener listener) {
+        listMap.computeIfAbsent(key, s -> new CopyOnWriteArrayList<>());
+        listMap.get(key).add(listener);
     }
 
-    public Map<String, Datum> batchGet(List<String> keys) {
-        Map<String, Datum> map = new HashMap<>(128);
-        for (String key : keys) {
-            Datum datum = dataMap.get(key);
-            if (datum == null) {
-                continue;
-            }
-            map.put(key, datum);
+    void unlisten(String key, RecordListener listener) {
+        if (listMap.containsKey(key)) {
+            listMap.get(key).remove(listener);
         }
-        return map;
     }
 
-    public int getInstanceCount() {
-        int count = 0;
-        for (Map.Entry<String, Datum> entry : dataMap.entrySet()) {
-            try {
-                Datum instancesDatum = entry.getValue();
-                if (instancesDatum.value instanceof Instances) {
-                    count += ((Instances) instancesDatum.value).getInstanceList().size();
+    class NBeforeHook implements BeforeHook {
+
+        @Override
+        public <T> void hook(String key, T data, boolean isPut) {
+            String namespaceId = KeyBuilder.getNamespace(key);
+            String serviceName = KeyBuilder.getServiceName(key);
+            if (!serviceManager.containService(namespaceId, serviceName)
+                    && switchDomain.isDefaultInstanceEphemeral()) {
+                try {
+                    serviceManager.createEmptyService(namespaceId, serviceName, true);
+                } catch (NacosException e) {
+                    Loggers.DISTRO.error("before data operation has error : {}, operation : {}, key : {}, data {}",
+                            e,
+                            isPut ? "put" : "remove",
+                            key,
+                            data);
                 }
-            } catch (Exception ignore) {
             }
         }
-        return count;
     }
 
-    public Map<String, Datum> getDataMap() {
-        return dataMap;
+    class NAfterHook implements AfterHook<Record> {
+
+        @Override
+        public void hook(String key, Record data, boolean isPut) {
+            List<RecordListener> listeners = listMap.get(key);
+            for (RecordListener listener : listeners) {
+
+                try {
+
+                    if (isPut) {
+                        listener.onChange(key, data);
+                    } else {
+                        listener.onDelete(key);
+                    }
+
+                } catch (Exception e) {
+                    Loggers.DISTRO.error("[NACOS-RAFT] error while notifying listener of key: {}, error : {}", key, e);
+                }
+
+            }
+        }
     }
+
 }
