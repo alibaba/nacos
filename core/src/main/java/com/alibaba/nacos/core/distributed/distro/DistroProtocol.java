@@ -21,6 +21,7 @@ import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
@@ -71,8 +72,15 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     }
 
     @Override
-    public <D> D getData(String key) throws Exception {
-        throw new UnsupportedOperationException();
+    public <D> D getData(GetRequest request) throws Exception {
+        final String key = request.getKey();
+        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
+            final LogProcessor processor = entry.getValue();
+            if (processor.interest(key)) {
+                return processor.getData(request);
+            }
+        }
+        return null;
     }
 
     @Override

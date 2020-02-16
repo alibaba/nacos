@@ -261,14 +261,14 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
-    CompletableFuture<Object> get(final String key, final int failoverRetries) {
+    CompletableFuture<Object> get(final GetRequest request, final int failoverRetries) {
+        final String key = request.getKey();
         CompletableFuture<Object> future = new CompletableFuture<>();
         final RaftGroupTuple tuple = findNodeByLogKey(key);
         if (Objects.isNull(tuple)) {
             future.completeExceptionally(new NoSuchElementException());
         }
         final Node node = tuple.node;
-        final GetRequest request = new GetRequest(key, "");
         node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
             @Override
             public void run(Status status, long index, byte[] reqCtx) {

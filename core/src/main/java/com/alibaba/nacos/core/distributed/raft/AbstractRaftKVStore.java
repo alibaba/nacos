@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.core.distributed.store.KVStore;
+import com.alibaba.nacos.core.utils.SerializeFactory;
+import com.alibaba.nacos.core.utils.Serializer;
 
 /**
  * Strong consistency key-value pair storage
@@ -28,6 +30,10 @@ import com.alibaba.nacos.core.distributed.store.KVStore;
 public abstract class AbstractRaftKVStore extends KVStore {
 
     public AbstractRaftKVStore(String name) {
-        super(name);
+        this(name, SerializeFactory.getDefault());
+    }
+
+    public AbstractRaftKVStore(String name, Serializer serializer) {
+        super(name, serializer);
     }
 }

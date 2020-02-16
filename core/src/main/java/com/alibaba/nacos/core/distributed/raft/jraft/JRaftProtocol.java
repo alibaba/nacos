@@ -19,8 +19,9 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
@@ -109,8 +110,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     }
 
     @Override
-    public <D> D getData(String key) throws Exception {
-        return (D) raftServer.get(key, failoverRetries).join();
+    public <D> D getData(GetRequest request) throws Exception {
+        final String key = request.getKey();
+        return (D) raftServer.get(request, failoverRetries).join();
     }
 
     @Override

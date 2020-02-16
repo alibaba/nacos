@@ -53,7 +53,7 @@ public abstract class KVStore<T> extends BaseStore {
      * @param data
      * @return
      */
-    public abstract boolean put(String key, T data);
+    public abstract boolean put(String key, T data) throws Exception;
 
     /**
      * remove data
@@ -61,7 +61,7 @@ public abstract class KVStore<T> extends BaseStore {
      * @param key
      * @return
      */
-    public abstract boolean remove(String key);
+    public abstract boolean remove(String key) throws Exception;
 
     /**
      * Hooks before data manipulation

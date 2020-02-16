@@ -86,7 +86,9 @@ public abstract class AbstractDistroKVStore<T> extends KVStore<T> {
     }
 
     @Override
-    public final boolean put(String key, T data) {
+    public final boolean put(String key, T data) throws Exception {
+
+        key = logProcessor.bizInfo() + key;
 
         final byte[] putData = serializer.serialize(data);
 
@@ -98,12 +100,14 @@ public abstract class AbstractDistroKVStore<T> extends KVStore<T> {
                 .addContextValue("source", data)
                 .build();
 
-        protocol.submitAsync(log);
+        protocol.submit(log);
         return true;
     }
 
     @Override
-    public final boolean remove(String key) {
+    public final boolean remove(String key) throws Exception {
+
+        key = logProcessor.bizInfo() + key;
 
         final NLog log = NLog.builder()
                 .key(key)
@@ -111,7 +115,7 @@ public abstract class AbstractDistroKVStore<T> extends KVStore<T> {
                 .className(genericClass.getCanonicalName())
                 .build();
 
-        protocol.submitAsync(log);
+        protocol.submit(log);
 
         return true;
     }
@@ -279,7 +283,7 @@ public abstract class AbstractDistroKVStore<T> extends KVStore<T> {
         @Override
         public boolean onApply(Log log) {
             final String operation = log.getOperation();
-            final String key = log.getKey();
+            final String originKey = getOriginKey(log.getKey());
             final NLog nLog = (NLog) log;
             if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
                 final byte[] data = log.getData();
@@ -287,18 +291,22 @@ public abstract class AbstractDistroKVStore<T> extends KVStore<T> {
                 // TODO 针对 AP 协议可以做一层优化，如果是本节点提交，本节点 Apply，可以做一层数据透传
 
                 final T source = (T) nLog.getContextValue("source");
-                operate(Triplet.with(key, source, data), PUT_COMMAND);
+                operate(Triplet.with(originKey, source, data), PUT_COMMAND);
                 return true;
             }
             if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
-                operate(key, REMOVE_COMMAND);
+                operate(originKey, REMOVE_COMMAND);
             }
             throw new UnsupportedOperationException();
         }
 
         @Override
         public String bizInfo() {
-            return BIZ + storeName();
+            return BIZ + storeName() + "@@";
+        }
+
+        String getOriginKey(String key) {
+            return key.replace(bizInfo(), "");
         }
 
     }
