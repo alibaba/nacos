@@ -22,11 +22,14 @@ import com.alibaba.nacos.core.executor.NameThreadFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DistroExecutor {
+
+    private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     private static final ExecutorService DISTRO_GLOBAL = ExecutorFactory.newFixExecutorService(
             DistroProtocol.class.getCanonicalName(),
@@ -44,5 +47,10 @@ public final class DistroExecutor {
 
     public static void executeWorker(Runnable runnable) {
         DISTRO_TASK_WORKER.submit(runnable);
+    }
+
+    public static void schedulePartitionDataTimedSync(Runnable runnable) {
+        DISTRO_TASK_WORKER.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
+                PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
     }
 }

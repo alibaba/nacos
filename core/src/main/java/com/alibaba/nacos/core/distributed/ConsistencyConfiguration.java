@@ -34,13 +34,13 @@ import java.util.function.Supplier;
 @Configuration
 public class ConsistencyConfiguration {
 
-    @Bean
+    @Bean(value = "strongAgreementProtocol")
     public CPProtocol strongAgreementProtocol() {
         final CPProtocol protocol = getProtocol(CPProtocol.class, () -> new JRaftProtocol());
         return protocol;
     }
 
-    @Bean
+    @Bean(value = "eventualAgreementProtocol")
     public APProtocol eventualAgreementProtocol() {
         final APProtocol protocol = getProtocol(APProtocol.class, () -> new DistroProtocol());
         return protocol;

@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.consistency;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class NLog implements Log {
 
     private static final long serialVersionUID = 2277124615731537462L;
@@ -32,6 +32,7 @@ public class NLog implements Log {
     private String className;
     private String operation;
     private Map<String, String> extendInfo = new HashMap<>(3);
+    private transient Map<String, Object> context = new HashMap<>(3);
 
     public void setKey(String key) {
         this.key = key;
@@ -93,16 +94,26 @@ public class NLog implements Log {
         return this.extendInfo;
     }
 
+    public void addContextValue(String key, Object value) {
+        this.context.put(key, value);
+    }
+
+    public <D> D getContextValue(String key) {
+        return (D) this.context.get(key);
+    }
+
     public static NLogBuilder builder() {
         return new NLogBuilder();
     }
+
 
     public static final class NLogBuilder {
         private String key;
         private byte[] data;
         private String className;
         private String operation;
-        private Map<String, String> extendInfo = Collections.emptyMap();
+        private Map<String, String> extendInfo = new HashMap<>(3);
+        private transient Map<String, Object> context = new HashMap<>(3);
 
         private NLogBuilder() {
         }
@@ -132,14 +143,20 @@ public class NLog implements Log {
             return this;
         }
 
+        public NLogBuilder addContextValue(String key, Object value) {
+            this.context.put(key, value);
+            return this;
+        }
+
         public NLog build() {
-            NLog nDatum = new NLog();
-            nDatum.extendInfo = this.extendInfo;
-            nDatum.className = this.className;
-            nDatum.key = this.key;
-            nDatum.data = this.data;
-            nDatum.operation = this.operation;
-            return nDatum;
+            NLog nLog = new NLog();
+            nLog.setKey(key);
+            nLog.setData(data);
+            nLog.setClassName(className);
+            nLog.setOperation(operation);
+            nLog.setExtendInfo(extendInfo);
+            nLog.context = this.context;
+            return nLog;
         }
     }
 }

@@ -101,7 +101,7 @@ public class DataSyncer {
                 }
             } else {
                 SyncTask syncTask = new SyncTask();
-                syncTask.setBizInfo(distroStore.biz());
+                syncTask.setBizInfo(distroStore.storeName());
                 syncTask.setKeys(task.getKeys());
                 syncTask.setRetryCount(task.getRetryCount() + 1);
                 syncTask.setLastExecuteTime(timestamp);

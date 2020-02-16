@@ -26,6 +26,6 @@ interface Store {
      *
      * @return business name
      */
-    String biz();
+    String storeName();
 
 }

@@ -16,8 +16,12 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -32,6 +36,7 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,6 +69,8 @@ public class HealthCheckCommon {
     @Autowired
     private PushService pushService;
 
+    private ConsistencyProtocol<? extends Config> protocol;
+
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
 
     private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -76,43 +83,43 @@ public class HealthCheckCommon {
         }
     });
 
-
+    @PostConstruct
     public void init() {
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                List list = Arrays.asList(healthCheckResults.toArray());
-                healthCheckResults.clear();
 
-                List<Node> sameSiteServers = nodeManager.allNodes();
+        this.protocol = SpringUtils.getBean("eventualAgreementProtocol", DistroProtocol.class);
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0) {
-                    return;
+        executorService.schedule(() -> {
+            List list = Arrays.asList(healthCheckResults.toArray());
+            healthCheckResults.clear();
+
+            List<Node> sameSiteServers = nodeManager.allNodes();
+
+            if (sameSiteServers == null || sameSiteServers.size() <= 0) {
+                return;
+            }
+
+            for (Node server : sameSiteServers) {
+                if (server.address().equals(NetUtils.localServer())) {
+                    continue;
+                }
+                Map<String, String> params = new HashMap<>(10);
+                params.put("result", JSON.toJSONString(list));
+                if (Loggers.SRV_LOG.isDebugEnabled()) {
+                    Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
+                        server, JSON.toJSONString(list));
                 }
 
-                for (Node server : sameSiteServers) {
-                    if (server.address().equals(NetUtils.localServer())) {
-                        continue;
-                    }
-                    Map<String, String> params = new HashMap<>(10);
-                    params.put("result", JSON.toJSONString(list));
-                    if (Loggers.SRV_LOG.isDebugEnabled()) {
-                        Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
-                            server, JSON.toJSONString(list));
-                    }
+                HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.address()
+                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                    + "/api/healthCheckResult", null, params);
 
-                    HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.address()
-                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                        + "/api/healthCheckResult", null, params);
-
-                    if (httpResult.code != HttpURLConnection.HTTP_OK) {
-                        Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}",
-                            server, JSON.toJSONString(list));
-                    }
-
+                if (httpResult.code != HttpURLConnection.HTTP_OK) {
+                    Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}",
+                        server, JSON.toJSONString(list));
                 }
 
             }
+
         }, 500, TimeUnit.MILLISECONDS);
     }
 

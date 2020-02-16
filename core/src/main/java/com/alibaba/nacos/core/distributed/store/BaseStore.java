@@ -18,19 +18,9 @@ package com.alibaba.nacos.core.distributed.store;
 
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.Serializer;
-import org.apache.commons.lang3.BooleanUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -46,9 +36,17 @@ abstract class BaseStore implements Store {
 
     protected final Serializer serializer;
 
+    protected final String name;
+
     public BaseStore(String name, Serializer serializer) {
-        executor = ExecutorFactory.newForkJoinPool(name);
+        this.name = name;
         this.serializer = serializer;
+        this.executor = ExecutorFactory.newForkJoinPool(name);
+    }
+
+    @Override
+    public final String storeName() {
+        return name;
     }
 
     protected synchronized final void initCommandAnalyze(CommandAnalyzer analyzer) {
@@ -57,43 +55,17 @@ abstract class BaseStore implements Store {
         }
     }
 
-    protected <T> boolean operate(T data, String command) throws Exception {
+    /**
+     * Abstract interface for data manipulation (except queries)
+     *
+     * @param data
+     * @param command
+     * @return boolean
+     * @throws Exception
+     */
+    public boolean operate(Object data, String command) {
         checkAnalyzer();
         return commandAnalyzer.analyze(command).apply(data);
-    }
-
-    protected  <T > boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception {
-        checkAnalyzer();
-        CompletableFuture[] futures = new CompletableFuture[data.size()];
-        List<Boolean> result = new CopyOnWriteArrayList<>();
-        int index = 0;
-        for (Map.Entry<String, ArrayList<T>> entry : data.entrySet()) {
-            final Function<T, Boolean> function = commandAnalyzer.analyze(entry.getKey());
-            final ArrayList<T> records = entry.getValue();
-            final Stream<T> stream = records.size() > openParller ? records.parallelStream() : records.stream();
-            futures[index ++] = CompletableFuture.supplyAsync(() -> {
-                return stream
-                        .map(record -> {
-                            try {
-                                return function.apply(record);
-                            } catch (Exception e) {
-                                return false;
-                            }
-                        })
-                        .collect(Collectors.toList());
-            }, executor).whenComplete(new BiConsumer<List<Boolean>, Throwable>() {
-                @Override
-                public void accept(List<Boolean> subResult, Throwable throwable) {
-                    if (Objects.nonNull(throwable)) {
-                        result.add(false);
-                    } else {
-                        result.add(BooleanUtils.and(subResult.toArray(new Boolean[0])));
-                    }
-                }
-            });
-        }
-        CompletableFuture.allOf(futures);
-        return BooleanUtils.and(result.toArray(new Boolean[0]));
     }
 
     private void checkAnalyzer() {

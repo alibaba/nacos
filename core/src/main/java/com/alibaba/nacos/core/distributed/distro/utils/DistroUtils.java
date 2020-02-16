@@ -16,10 +16,28 @@
 
 package com.alibaba.nacos.core.distributed.distro.utils;
 
+import com.alibaba.nacos.core.utils.Loggers;
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DistroUtils {
+
+    private static MessageDigest MESSAGE_DIGEST;
+
+    static {
+        try {
+            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            Loggers.DISTRO.error("error while calculating checksum(md5) for instances", e);
+            MESSAGE_DIGEST = null;
+        }
+    }
 
     /**
      * Provide a number between 0(inclusive) and {@code upperLimit}(exclusive) for the given {@code string},
@@ -50,6 +68,20 @@ public final class DistroUtils {
             return 0;
         }
         return (string.hashCode() & Integer.MAX_VALUE) % upperLimit;
+    }
+
+    public static String checkSum(byte[] bytes) {
+
+        String checksum;
+
+        if (MESSAGE_DIGEST != null) {
+            checksum =
+                    new BigInteger(1, MESSAGE_DIGEST.digest(bytes)).toString(16);
+        } else {
+            checksum = RandomStringUtils.randomAscii(32);
+        }
+        return checksum;
+
     }
 
 }

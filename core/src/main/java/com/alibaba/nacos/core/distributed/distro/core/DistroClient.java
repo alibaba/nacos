@@ -64,7 +64,7 @@ class DistroClient {
         this.httpClient = HttpClientManager.newHttpClient(DataSyncer.class.getCanonicalName());
     }
 
-    public void syncCheckSums(Map<String, String> checksumMap, String server) {
+    public void syncCheckSums(Map<String, Map<String, String>> checksumMap, String server) {
 
         try {
 

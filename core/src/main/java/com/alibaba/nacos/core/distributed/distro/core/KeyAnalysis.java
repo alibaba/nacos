@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro;
+package com.alibaba.nacos.core.distributed.distro.core;
 
 /**
+ * Double discovery using Java SPI mechanism or Spring IOC
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class DistroSysConstants {
+public interface KeyAnalysis {
 
-    // distro meta global data
+    /**
+     * The key may be complicated, and need to remove unnecessary
+     * information to avoid affecting the result of distro
+     *
+     * @param source origin key
+     * @return Key after operation
+     */
+    String analyze(String source);
 
-    public static final String DISTRO_META_PARENT = "DISTRO";
-
-    public static final String DISTRO_META_GLOBAL = "GLOBAL";
-
-    public static final String TASK_DISPATCH_PERIOD = "task_dispatch_period";
-
-    public static final String BATCH_SYNC_KEY_COUNT = "batch_sync_key_count";
-
-    public static final String SYNC_RETRY_DELAY = "sync_retry_delay";
-
-    public static final String DATA_WARM_UP = "data_warm_up";
-
-    public static final String DATA_SERIALIZER_TYPE = "data_serializer_type";
-
-    public static final String DISTRO_ENABLED = "distro_enabled";
+    /**
+     * Determine if you need to operate on the key
+     *
+     * @param source origin key
+     * @return Determine if you need to operate on the key
+     */
+    boolean interest(String source);
 
 }

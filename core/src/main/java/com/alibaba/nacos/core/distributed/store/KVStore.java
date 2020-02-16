@@ -21,7 +21,6 @@ import com.alibaba.nacos.core.utils.Serializer;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Key-value pair data storage structure abstraction
@@ -31,26 +30,21 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @SuppressWarnings("all")
 public abstract class KVStore<T> extends BaseStore {
 
-    private volatile boolean canSubscribe = false;
-
-    protected Map<String, byte[]> dataStore;
-
     public KVStore(String name) {
         this(name, SerializeFactory.getDefault());
     }
 
     public KVStore(String name, Serializer serializer) {
         super(name, serializer);
-        this.dataStore = new ConcurrentSkipListMap<>();
     }
 
-    public void openSubscribe() {
-        canSubscribe = true;
-    }
-
-    public void closeSubscribe() {
-        canSubscribe = false;
-    }
+    /**
+     * this store is contains key
+     *
+     * @param key
+     * @return is contains
+     */
+    public abstract boolean contains(String key);
 
     /**
      * put data
@@ -70,21 +64,22 @@ public abstract class KVStore<T> extends BaseStore {
     public abstract boolean remove(String key);
 
     /**
-     * put data
+     * Hooks before data manipulation
      *
      * @param key
-     * @param data
-     * @return
+     * @param data if operate == -1, the data is null
+     * @param operate 1 is put, -1 is remove
      */
-    public abstract boolean batchPut(Map<String, T> data);
+    protected abstract void before(String key, T data, byte operate);
 
     /**
-     * remove data
+     * Hooks after data manipulation
      *
-     * @param keys
-     * @return
+     * @param key
+     * @param data remove source data
+     * @param operate 1 is put, -1 is remove
      */
-    public abstract boolean batchRemove(Collection<String> keys);
+    protected abstract void after(String key, T data, byte operate);
 
     /**
      *
@@ -114,11 +109,5 @@ public abstract class KVStore<T> extends BaseStore {
      * @return {@link Collection <String>}
      */
     public abstract Collection<String> allKeys();
-
-    private void isOpenSubscribe() {
-        if (!canSubscribe) {
-            throw new IllegalStateException();
-        }
-    }
 
 }

@@ -27,6 +27,7 @@ import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -58,6 +59,19 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         loadLogDispatcher(processors);
 
         loadLogDispatcher(config.listLogProcessor());
+
+        // distro server start
+
+        distroServer.start();
+
+        // Inject DistroMapper object as Metadata into MetaData
+
+        Map<String, Map<String, Object>> meta = new HashMap<>();
+        Map<String, Object> global = new HashMap<>();
+        global.put(DistroSysConstants.DISTRO_META_GLOBAL, this.distroServer.getDistroMapper());
+        meta.put(DistroSysConstants.DISTRO_META_PARENT, global);
+
+        this.metaData.load(meta);
     }
 
     @Override
