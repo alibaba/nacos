@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;

@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;

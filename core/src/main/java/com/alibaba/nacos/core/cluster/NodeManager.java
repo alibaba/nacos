@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cluster;
+package com.alibaba.nacos.core.cluster;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.prefs.NodeChangeListener;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

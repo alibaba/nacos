@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.consistency.ap;
 
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
-
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
+ * Can listen to global.cluster and global.self data in ProtocolMetaData
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Mapper {
@@ -29,9 +29,9 @@ public interface Mapper {
     /**
      * Injecting cluster node management
      *
-     * @param nodeManager {@link NodeManager}
+     * @param servers all nodes, already sorted
      */
-    void injectNodeManager(NodeManager nodeManager);
+    void injectNodeManager(List<String> servers, String localServer);
 
     /**
      * Distro calling function provided to the business party, passing
@@ -57,5 +57,12 @@ public interface Mapper {
      * @param key origin key
      * @return target server
      */
-    Node mapSrv(String key);
+    String mapSrv(String key);
+
+    /**
+     * update server
+     *
+     * @param server all nodes, already sorted
+     */
+    void update(List<String> server);
 }

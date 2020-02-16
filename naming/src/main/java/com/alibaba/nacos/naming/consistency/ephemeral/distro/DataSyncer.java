@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;

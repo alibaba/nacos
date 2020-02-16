@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
-import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

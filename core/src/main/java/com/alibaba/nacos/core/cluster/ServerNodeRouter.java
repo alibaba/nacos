@@ -17,8 +17,6 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

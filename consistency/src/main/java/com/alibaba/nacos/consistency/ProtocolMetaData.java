@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,9 +29,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Consistent protocol metadata information, <Key, <Key, Value >> structure
  * Listeners that can register to listen to changes in value
  *
+ * <ul>
+ *     <li>
+ *         <global, <cluster, List <String >> metadata information that exists by default, that is, all node information of the entire cluster
+ *     </li>
+ *     <li>
+ *         <global, <self, String> The metadata information existing by default, that is, the IP: PORT information of the current node
+ *     </li>
+ * </ul>
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ProtocolMetaData {
+
+    public static final String GLOBAL = "global";
+
+    public static final String CLUSTER_INFO = "cluster";
+
+    public static final String SELF = "self";
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>();
 
@@ -39,6 +55,11 @@ public final class ProtocolMetaData {
 
     public void load(final Map<String, Map<String, Object>> mapMap) {
         mapMap.forEach((s, map) -> {
+
+            if (Objects.equals(GLOBAL, s)) {
+                throw new IllegalArgumentException("[global] is sys key, can't use");
+            }
+
             metaDataMap.computeIfAbsent(s, group -> new MetaData());
             final MetaData data = metaDataMap.get(s);
             map.forEach(data::put);
@@ -46,6 +67,11 @@ public final class ProtocolMetaData {
     }
 
     public Object get(String group, String... subKey) {
+
+        if (Objects.equals(GLOBAL, group)) {
+            throw new IllegalArgumentException("[global] is sys key, can't use");
+        }
+
         if (subKey == null || subKey.length == 0) {
             return metaDataMap.get(group);
         } else {

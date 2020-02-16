@@ -18,10 +18,10 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.consistency.ap.KeyAnalysis;
 import com.alibaba.nacos.consistency.ap.Mapper;
-import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -76,16 +76,18 @@ public class DistroMapper implements Mapper, NodeChangeListener {
         try {
             tmp.addAll(SpringUtils.getBeansOfType(KeyAnalysis.class).values());
         } catch (Exception ignore) {
-
         }
+
+        keyAnalyses = Collections.unmodifiableList(tmp);
 
         // end
 
-        keyAnalyses = Collections.unmodifiableList(tmp);
+        this.nodeManager.subscribe(this::onEvent);
+
     }
 
     @Override
-    public void injectNodeManager(NodeManager nodeManager) {
+    public void injectNodeManager(List<String> servers, String localAddress) {
 
     }
 
@@ -138,21 +140,26 @@ public class DistroMapper implements Mapper, NodeChangeListener {
     }
 
     @Override
-    public Node mapSrv(String key) {
+    public String mapSrv(String key) {
 
         final Node self = nodeManager.self();
 
         if (CollectionUtils.isEmpty(healthyList) || !isDistroEnabled) {
-            return self;
+            return self.address();
         }
 
         try {
-            return healthyList.get(distroHash(key) % healthyList.size());
+            return healthyList.get(distroHash(key) % healthyList.size()).address();
         } catch (Exception e) {
             Loggers.DISTRO.warn("distro mapper failed, return localhost: " + self, e);
 
-            return self;
+            return self.address();
         }
+    }
+
+    @Override
+    public void update(List<String> server) {
+
     }
 
     private int distroHash(String serviceName) {

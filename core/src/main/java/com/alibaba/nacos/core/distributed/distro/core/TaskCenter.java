@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroUtils;
 import com.alibaba.nacos.core.utils.ExceptionUtil;

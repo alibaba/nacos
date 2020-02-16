@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;

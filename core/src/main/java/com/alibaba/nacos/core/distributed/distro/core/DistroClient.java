@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpResResult;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;

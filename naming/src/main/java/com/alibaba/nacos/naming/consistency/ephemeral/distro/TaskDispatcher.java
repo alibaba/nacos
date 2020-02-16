@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;

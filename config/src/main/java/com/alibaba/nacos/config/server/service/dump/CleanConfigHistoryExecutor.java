@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

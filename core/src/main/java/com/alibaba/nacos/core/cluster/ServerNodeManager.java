@@ -19,10 +19,9 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
-import com.alibaba.nacos.consistency.cluster.Node;
-import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
@@ -46,6 +45,7 @@ import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,12 +53,14 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverNodeManager")
+@SuppressWarnings("all")
 public class ServerNodeManager implements ApplicationListener<WebServerInitializedEvent>, NodeManager {
 
     private final NodeTaskManager taskManager = new NodeTaskManager(this);
@@ -299,6 +301,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
+
+        injectClusterInfo(protocol.protocolMetaData());
+
+        subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
     }
 
     private void initCPProtocol() {
@@ -306,6 +312,24 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
+
+        injectClusterInfo(protocol.protocolMetaData());
+
+        subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
+    }
+
+    private void injectClusterInfo(ProtocolMetaData metaData) {
+
+        Map<String, Map<String, Object>> defaultMetaData = new HashMap<>();
+        Map<String, Object> sub = new HashMap<>(8);
+
+        defaultMetaData.put(ProtocolMetaData.GLOBAL, sub);
+
+        sub.put(ProtocolMetaData.CLUSTER_INFO, allNodes().stream().map(Node::address).collect(Collectors.toList()));
+        sub.put(ProtocolMetaData.SELF, self.address());
+
+        metaData.load(defaultMetaData);
+
     }
 
     @SuppressWarnings("all")

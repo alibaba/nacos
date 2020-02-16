@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cluster;
+package com.alibaba.nacos.core.cluster;
 
 import java.util.Map;
 
