@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.consistency.ap.KeyAnalysis;
+import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.consistency.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -40,9 +42,9 @@ import java.util.function.Supplier;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class DistroMapper implements NodeChangeListener {
+public class DistroMapper implements Mapper, NodeChangeListener {
 
-    private volatile List<String> healthyList = new ArrayList<>();
+    private volatile List<Node> healthyList = new ArrayList<>();
 
     private final NodeManager nodeManager;
 
@@ -82,14 +84,12 @@ public class DistroMapper implements NodeChangeListener {
         keyAnalyses = Collections.unmodifiableList(tmp);
     }
 
-    /**
-     * Distro calling function provided to the business party, passing
-     * in custom rule Supplier and key information
-     *
-     * @param key origin key
-     * @param suppliers customer distro rules
-     * @return can distro
-     */
+    @Override
+    public void injectNodeManager(NodeManager nodeManager) {
+
+    }
+
+    @Override
     public boolean responsibleByCustomerRule(String key, Supplier<Boolean>... suppliers) {
 
         boolean customerResult = true;
@@ -106,6 +106,7 @@ public class DistroMapper implements NodeChangeListener {
         return customerResult && responsible(key);
     }
 
+    @Override
     public boolean responsible(String key) {
 
         for (KeyAnalysis keyAnalysis : keyAnalyses) {
@@ -115,7 +116,7 @@ public class DistroMapper implements NodeChangeListener {
             }
         }
 
-        final String selfAddress = nodeManager.self().address();
+        final Node self = nodeManager.self();
 
         if (!isDistroEnabled || SystemUtils.STANDALONE_MODE) {
             return true;
@@ -126,8 +127,8 @@ public class DistroMapper implements NodeChangeListener {
             return false;
         }
 
-        int index = healthyList.indexOf(selfAddress);
-        int lastIndex = healthyList.lastIndexOf(selfAddress);
+        int index = healthyList.indexOf(self);
+        int lastIndex = healthyList.lastIndexOf(self);
         if (lastIndex < 0 || index < 0) {
             return true;
         }
@@ -136,16 +137,17 @@ public class DistroMapper implements NodeChangeListener {
         return target >= index && target <= lastIndex;
     }
 
-    public String mapSrv(String serviceName) {
+    @Override
+    public Node mapSrv(String key) {
 
-        final String self = nodeManager.self().address();
+        final Node self = nodeManager.self();
 
         if (CollectionUtils.isEmpty(healthyList) || !isDistroEnabled) {
             return self;
         }
 
         try {
-            return healthyList.get(distroHash(serviceName) % healthyList.size());
+            return healthyList.get(distroHash(key) % healthyList.size());
         } catch (Exception e) {
             Loggers.DISTRO.warn("distro mapper failed, return localhost: " + self, e);
 
@@ -153,16 +155,13 @@ public class DistroMapper implements NodeChangeListener {
         }
     }
 
-    public int distroHash(String serviceName) {
+    private int distroHash(String serviceName) {
         return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
 
     @Override
     public void onEvent(NodeChangeEvent event) {
-        List<String> newHealthyList = new ArrayList<>();
-        for (Node node : event.getAllNodes()) {
-            newHealthyList.add(node.address());
-        }
+        List<Node> newHealthyList = new ArrayList<>(event.getAllNodes());
         this.healthyList = newHealthyList;
     }
 }

@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.consistency.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;

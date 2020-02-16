@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cp;
+package com.alibaba.nacos.consistency.ap;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
@@ -24,4 +24,12 @@ import com.alibaba.nacos.consistency.ConsistencyProtocol;
  */
 @SuppressWarnings("all")
 public interface APProtocol<C extends Config> extends ConsistencyProtocol<C> {
+
+    /**
+     * get mapper
+     *
+     * @return {@link Mapper}
+     */
+    Mapper mapper();
+
 }

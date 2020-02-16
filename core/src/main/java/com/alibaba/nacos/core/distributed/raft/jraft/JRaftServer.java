@@ -22,7 +22,7 @@ import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.jraft.exception.DuplicateRaftGroupException;
@@ -139,7 +139,7 @@ public class JRaftServer implements NodeChangeListener {
                 raftCliServiceThreadNum,
                 new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
 
-        final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
+        final com.alibaba.nacos.consistency.cluster.Node self = nodeManager.self();
         selfIp = self.ip();
         selfPort = Integer.parseInt(self.extendVal(RaftSysConstants.RAFT_PORT));
         nodeOptions = new NodeOptions();
@@ -161,9 +161,9 @@ public class JRaftServer implements NodeChangeListener {
 
             com.alipay.sofa.jraft.NodeManager raftNodeManager = com.alipay.sofa.jraft.NodeManager.getInstance();
 
-            nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
+            nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.consistency.cluster.Node>() {
                 @Override
-                public void accept(com.alibaba.nacos.core.cluster.Node node) {
+                public void accept(com.alibaba.nacos.consistency.cluster.Node node) {
                     final String ip = node.ip();
                     final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
                     final String address = ip + ":" + raftPort;
@@ -324,7 +324,7 @@ public class JRaftServer implements NodeChangeListener {
         return future;
     }
 
-    void addNode(com.alibaba.nacos.core.cluster.Node node) {
+    void addNode(com.alibaba.nacos.consistency.cluster.Node node) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             RetryRunner work = () -> {
@@ -340,7 +340,7 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
-    void removeNode(com.alibaba.nacos.core.cluster.Node node) {
+    void removeNode(com.alibaba.nacos.consistency.cluster.Node node) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             RetryRunner work = () -> {
@@ -394,8 +394,8 @@ public class JRaftServer implements NodeChangeListener {
     @Override
     public void onEvent(NodeChangeEvent event) {
         final String kind = event.getKind();
-        final Collection<com.alibaba.nacos.core.cluster.Node> changeNodes = event.getChangeNodes();
-        for (com.alibaba.nacos.core.cluster.Node node : changeNodes) {
+        final Collection<com.alibaba.nacos.consistency.cluster.Node> changeNodes = event.getChangeNodes();
+        for (com.alibaba.nacos.consistency.cluster.Node node : changeNodes) {
             if (Objects.equals("join", kind)) {
                 addNode(node);
             } else {

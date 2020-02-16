@@ -19,15 +19,15 @@ package com.alibaba.nacos.core.distributed.distro;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.cp.APProtocol;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -63,15 +63,6 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         // distro server start
 
         distroServer.start();
-
-        // Inject DistroMapper object as Metadata into MetaData
-
-        Map<String, Map<String, Object>> meta = new HashMap<>();
-        Map<String, Object> global = new HashMap<>();
-        global.put(DistroSysConstants.DISTRO_META_GLOBAL, this.distroServer.getDistroMapper());
-        meta.put(DistroSysConstants.DISTRO_META_PARENT, global);
-
-        this.metaData.load(meta);
     }
 
     @Override
@@ -136,4 +127,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
         distroServer.shutdown();
     }
 
+    @Override
+    public Mapper mapper() {
+        return distroServer.getDistroMapper();
+    }
 }

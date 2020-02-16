@@ -19,9 +19,11 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.ap.CPProtocol;
+import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
-import com.alibaba.nacos.consistency.cp.APProtocol;
+import com.alibaba.nacos.consistency.cluster.Node;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
@@ -293,14 +295,14 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     private void initAPProtocol() {
-        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
+        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
     }
 
     private void initCPProtocol() {
-        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
+        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));

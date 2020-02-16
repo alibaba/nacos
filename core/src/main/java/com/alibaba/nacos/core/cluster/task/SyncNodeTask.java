@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.ClusterConfConstants;
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.consistency.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerNode;
 import com.alibaba.nacos.core.cluster.Task;

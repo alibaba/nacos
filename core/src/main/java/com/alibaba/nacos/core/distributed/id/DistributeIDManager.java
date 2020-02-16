@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.id;
 
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.consistency.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SnakeFlowerIdHelper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;

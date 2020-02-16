@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.consistency.cluster.Node;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

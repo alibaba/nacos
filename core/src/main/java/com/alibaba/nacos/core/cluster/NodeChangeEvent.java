@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.consistency.cluster.Node;
 import com.alibaba.nacos.core.notify.Event;
 
 import java.util.Collection;

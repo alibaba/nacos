@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.consistency.cluster.Node;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
