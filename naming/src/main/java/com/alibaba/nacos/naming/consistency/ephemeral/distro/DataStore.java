@@ -27,6 +27,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -42,12 +44,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 1.0.0
  */
 @Component
+@DependsOn("serverNodeManager")
 @SuppressWarnings("all")
 public class DataStore {
 
-    @Autowired
-    private DistroConsistencyServiceImpl consistencyService;
-
+    @Lazy
     @Autowired
     private ServiceManager serviceManager;
 
@@ -57,13 +58,15 @@ public class DataStore {
     @Autowired
     private APProtocol protocol;
 
+    public static final String STORE_NAME = "ephemeral_services";
+
     private KVStore<Record> kvStore;
 
     private final Map<String, List<RecordListener>> listMap = new ConcurrentHashMap<>();
 
     @PostConstruct
-    protected void init() {
-        kvStore = protocol.createKVStore("Naming");
+    protected void init() throws Exception {
+        kvStore = protocol.createKVStore(STORE_NAME);
         kvStore.registerHook(null, new NBeforeHook(), new NAfterHook());
         kvStore.start();
     }
@@ -91,10 +94,10 @@ public class DataStore {
         }
     }
 
-    class NBeforeHook implements BeforeHook {
+    class NBeforeHook implements BeforeHook<Record> {
 
         @Override
-        public <T> void hook(String key, T data, boolean isPut) {
+        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
             String namespaceId = KeyBuilder.getNamespace(key);
             String serviceName = KeyBuilder.getServiceName(key);
             if (!serviceManager.containService(namespaceId, serviceName)
@@ -115,7 +118,7 @@ public class DataStore {
     class NAfterHook implements AfterHook<Record> {
 
         @Override
-        public void hook(String key, Record data, boolean isPut) {
+        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
             List<RecordListener> listeners = listMap.get(key);
             for (RecordListener listener : listeners) {
 

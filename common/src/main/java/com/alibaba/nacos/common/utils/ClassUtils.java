@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
+package com.alibaba.nacos.common.utils;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
- * Retry function
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@FunctionalInterface
-public interface RetryRunner {
+public class ClassUtils {
 
-    /**
-     * Tasks that require retry
-     */
-    void run();
+    public static <T> Class<T> resolveGenericType(Class<?> declaredClass) {
+        ParameterizedType parameterizedType = (ParameterizedType) declaredClass.getGenericSuperclass();
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        return (Class<T>) actualTypeArguments[0];
+    }
 
 }

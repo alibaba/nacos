@@ -202,7 +202,7 @@ public class DistroServer {
                 }
 
                 for (String key : toRemoveKeys) {
-                    dataStore.operate(key, DistroKVStore.REMOVE_COMMAND);
+                    dataStore.operate(key, null, DistroKVStore.REMOVE_COMMAND);
                 }
 
                 if (toUpdateKeys.isEmpty()) {

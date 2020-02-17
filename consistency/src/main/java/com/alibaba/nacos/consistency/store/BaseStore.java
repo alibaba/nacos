@@ -58,9 +58,9 @@ abstract class BaseStore implements Store {
      * @return boolean
      * @throws Exception
      */
-    public boolean operate(Object data, String command) {
+    public boolean operate(String key, Object data, String command) {
         checkAnalyzer();
-        return commandAnalyzer.analyze(command).apply(data);
+        return commandAnalyzer.analyze(command).apply(key, data);
     }
 
     private void checkAnalyzer() {

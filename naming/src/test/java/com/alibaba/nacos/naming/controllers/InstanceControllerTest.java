@@ -55,9 +55,6 @@ public class InstanceControllerTest extends BaseTest {
     @InjectMocks
     private InstanceController instanceController;
 
-    @Mock
-    private RaftPeerSet peerSet;
-
     private MockMvc mockmvc;
 
     @Before

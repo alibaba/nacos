@@ -14,24 +14,43 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.core.cluster.route;
 
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.ServerNode;
+import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@RestController()
-public class ServerNodeRouter {
+@RestController
+@RequestMapping(Commons.NACOS_CORE_CONTEXT + "/cluster")
+public class NacosClusterRouter {
 
     @Autowired
     private NodeManager nodeManager;
+
+    @GetMapping(value = "/self")
+    public ResResult<Node> self() {
+        return ResResultUtils.success(nodeManager.self());
+    }
+
+    @GetMapping(value = "/nodes")
+    public ResResult<Collection<Node>> listAllNode() {
+        return ResResultUtils.success(nodeManager.allNodes());
+    }
 
     @GetMapping("/server/health")
     public ResResult<String> getHealth() {
@@ -39,10 +58,19 @@ public class ServerNodeRouter {
     }
 
     @PostMapping("/server/report")
-    public ResResult<Boolean> report(@RequestBody ServerNode serverNode) {
-        serverNode.setExtendVal(Node.LAST_REF_TIME, String.valueOf(System.currentTimeMillis()));
-        nodeManager.update(serverNode);
+    public ResResult<Boolean> report(@RequestBody ResResult<ServerNode> resResult) {
+
+        final ServerNode node = resResult.getData();
+
+        if (!node.check()) {
+            return ResResultUtils.failed("Node information is illegal");
+        }
+
+        Loggers.CORE.info("report : {}", node);
+        node.setExtendVal(Node.LAST_REF_TIME, String.valueOf(System.currentTimeMillis()));
+        nodeManager.update(node);
         return ResResultUtils.success(true);
     }
+
 
 }

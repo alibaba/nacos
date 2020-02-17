@@ -27,9 +27,9 @@ public class ResResult<T> implements Serializable {
 
     private int code;
 
-    private String errMsg;
-
     private T data;
+
+    private String errMsg;
 
     public int getCode() {
         return code;

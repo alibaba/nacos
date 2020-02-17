@@ -26,13 +26,10 @@ import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.store.KVStore;
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Triplet;
+import org.javatuples.Pair;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Eventual consistency key-value pair storage
@@ -51,8 +48,6 @@ import java.util.function.Consumer;
 @SuppressWarnings("all")
 public class DistroKVStore<T> extends KVStore<T> {
 
-    public static final String BIZ = "Distro@";
-
     private final KVLogProcessor logProcessor;
 
     private ConsistencyProtocol<? extends Config> protocol;
@@ -64,11 +59,6 @@ public class DistroKVStore<T> extends KVStore<T> {
     DistroKVStore(String name, Serializer serializer) {
         super(name, serializer);
         this.logProcessor = new KVLogProcessor();
-    }
-
-    @Override
-    public boolean contains(String key) {
-        return dataStore.containsKey(key);
     }
 
     @Override
@@ -114,89 +104,9 @@ public class DistroKVStore<T> extends KVStore<T> {
             public void accept(String s, Item item) {
                 final String key = s;
                 final T source = serializer.deSerialize(item.getBytes(), item.getClassName());
-                operate(Triplet.with(key, source, item.getBytes()), PUT_COMMAND);
+                operate(key, Pair.with(source, item.getBytes()), PUT_COMMAND);
             }
         });
-    }
-
-    @Override
-    public Map<String, byte[]> batchGet(Collection<String> keys) {
-        Map<String, byte[]> returnData = new HashMap<>(keys.size());
-        for (String key : keys) {
-            returnData.put(key, dataStore.get(key).getBytes());
-        }
-        return returnData;
-    }
-
-    @Override
-    public T getByKeyAutoConvert(String key) {
-        Item item = dataStore.get(key);
-        if (item == null) {
-            return null;
-        }
-
-        byte[] tmp = item.getBytes();
-
-        if (tmp == null || tmp.length == 0) {
-            return null;
-        }
-
-        return serializer.deSerialize(tmp, item.getClassName());
-    }
-
-    @Override
-    public Item getItemByKey(String key) {
-        return dataStore.get(key);
-    }
-
-    @Override
-    public Map<String, T> batchGetAutoConvert(Collection<String> keys) {
-        Map<String, T> result = new HashMap<>();
-
-        keys.forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                T data = getByKeyAutoConvert(s);
-                result.put(s, data);
-            }
-        });
-        return result;
-    }
-
-    @Override
-    public Map<String, Item> getItemByBatch(Collection<String> keys) {
-        Map<String, Item> result = new HashMap<>();
-
-        keys.forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                result.put(s, dataStore.get(s));
-            }
-        });
-        return result;
-    }
-
-    @Override
-    public String getCheckSum(String key) {
-        if (dataStore.containsKey(key)) {
-            return dataStore.get(key).getCheckSum();
-        }
-        return null;
-    }
-
-    @Override
-    public Collection<String> allKeys() {
-        return dataStore.keySet();
-    }
-
-    @Override
-    public Map<String, Item> getAll() {
-        return dataStore;
-    }
-
-    @Override
-    public byte[] getByKey(String key) {
-        return dataStore.get(key).getBytes();
     }
 
     // Provide AP consistency capability for KV storage
@@ -222,28 +132,32 @@ public class DistroKVStore<T> extends KVStore<T> {
             if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
                 final byte[] data = log.getData();
                 final T source = (T) nLog.getContextValue("source");
-                operate(Triplet.with(originKey, source, data), PUT_COMMAND);
+                operate(originKey, Pair.with(source, data), PUT_COMMAND);
                 return true;
             }
             if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
-                operate(originKey, REMOVE_COMMAND);
+                operate(originKey, null, REMOVE_COMMAND);
             }
             throw new UnsupportedOperationException();
         }
 
         @Override
         public String bizInfo() {
-            return BIZ + storeName() + "@@";
-        }
-
-        String getOriginKey(String key) {
-            return key.replace(bizInfo(), "");
+            return storeName();
         }
 
     }
 
     KVLogProcessor getKVLogProcessor() {
         return logProcessor;
+    }
+
+    String buildKey(String originKey) {
+        return logProcessor.bizInfo() + "-" + originKey;
+    }
+
+    String getOriginKey(String key) {
+        return key.replace(logProcessor.bizInfo() + "-", "");
     }
 
 }

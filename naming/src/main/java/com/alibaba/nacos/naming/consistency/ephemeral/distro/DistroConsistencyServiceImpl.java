@@ -56,7 +56,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         try {
             dataStore.put(key, value);
         } catch (Exception e) {
-            throw new NacosException();
+            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
         }
     }
 
@@ -65,13 +65,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         try {
             dataStore.remove(key);
         } catch (Exception e) {
-            throw new NacosException();
+            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
         }
     }
 
     @Override
-    public Record get(String key) throws NacosException {
-        return dataStore.get(key);
+    public <T extends Record> T get(String key) throws NacosException {
+        return (T) dataStore.get(key);
     }
 
     @Override

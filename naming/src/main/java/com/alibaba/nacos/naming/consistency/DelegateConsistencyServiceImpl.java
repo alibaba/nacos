@@ -16,15 +16,10 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Consistency delegate
@@ -35,17 +30,14 @@ import javax.annotation.PostConstruct;
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
-    @Autowired
-    private PersistentConsistencyService persistentConsistencyService;
+    private final PersistentConsistencyService persistentConsistencyService;
 
-    @Autowired
-    private EphemeralConsistencyService ephemeralConsistencyService;
+    private final EphemeralConsistencyService ephemeralConsistencyService;
 
-    private APProtocol raftProtocol;
-
-    @PostConstruct
-    protected void init() {
-        raftProtocol = SpringUtils.getBean(APProtocol.class);
+    public DelegateConsistencyServiceImpl(PersistentConsistencyService persistentConsistencyService,
+                                          EphemeralConsistencyService ephemeralConsistencyService) {
+        this.persistentConsistencyService = persistentConsistencyService;
+        this.ephemeralConsistencyService = ephemeralConsistencyService;
     }
 
     @Override
@@ -59,7 +51,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     @Override
-    public <T> T get(String key) throws NacosException {
+    public <T extends Record> T get(String key) throws NacosException {
         return mapConsistencyService(key).get(key);
     }
 

@@ -25,6 +25,16 @@ import java.util.Map;
  */
 public class Writer {
 
+    private String path;
+
+    public Writer(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
     private final Map<String, LocalFileMeta> files = new HashMap<>();
 
     /**

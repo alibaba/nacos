@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
+import com.alibaba.nacos.core.distributed.distro.core.TaskCenter;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,15 +26,15 @@ import org.springframework.test.util.ReflectionTestUtils;
  */
 public class TaskDispatcherTest {
 
-    private TaskDispatcher taskDispatcher;
+    private TaskCenter taskDispatcher;
 
     @Before
     public void init() {
-        taskDispatcher = new TaskDispatcher();
+        taskDispatcher = new TaskCenter(null, null);
         GlobalConfig conf = new GlobalConfig();
         ReflectionTestUtils.setField(conf, "taskDispatchThreadCount", 3);
         ReflectionTestUtils.setField(taskDispatcher, "partitionConfig", conf);
-        taskDispatcher.init();
+        taskDispatcher.start();
     }
 
     @Test

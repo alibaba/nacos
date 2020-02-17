@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SnakeFlowerIdHelper;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 
 import java.util.Map;
@@ -41,8 +40,8 @@ public class DistributeIDManager {
 
     private static final int MAX_WORKER_ID = 31;
 
-    public static void init() {
-        nodeManager = SpringUtils.getBean(NodeManager.class);
+    public static void init(NodeManager nodeManager) {
+        DistributeIDManager.nodeManager = nodeManager;
         DATA_CENTER_ID = nodeManager.indexOf(SystemUtils.LOCAL_IP);
     }
 

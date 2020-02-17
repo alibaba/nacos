@@ -17,8 +17,6 @@
 package com.alibaba.nacos.consistency.cp;
 
 import com.alibaba.nacos.common.Serializer;
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 import com.alibaba.nacos.consistency.store.KVStore;
 
@@ -26,16 +24,26 @@ import com.alibaba.nacos.consistency.store.KVStore;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface CPProtocol<C extends Config> extends ConsistencyProtocol<C> {
+public abstract class CPKvStore<T> extends KVStore<T> {
 
-    /**
-     * create kv-store
-     *
-     * @param storeName
-     * @param serializer
-     * @param snapshotOperate
-     * @return {@link KVStore}
-     */
-    <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperate snapshotOperate);
+    protected SnapshotOperate snapshotOperate;
+
+    public CPKvStore(String name) {
+        super(name);
+    }
+
+    public CPKvStore(String name, Serializer serializer) {
+        super(name, serializer);
+    }
+
+    public CPKvStore(String name, SnapshotOperate snapshotOperate) {
+        super(name);
+        this.snapshotOperate = snapshotOperate;
+    }
+
+    public CPKvStore(String name, Serializer serializer, SnapshotOperate snapshotOperate) {
+        super(name, serializer);
+        this.snapshotOperate = snapshotOperate;
+    }
 
 }

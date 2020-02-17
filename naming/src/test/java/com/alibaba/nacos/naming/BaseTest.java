@@ -19,14 +19,12 @@ import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.context.ApplicationContext;
@@ -41,25 +39,12 @@ public class BaseTest {
     @Mock
     public ServiceManager serviceManager;
 
-    @Mock
-    public RaftPeerSet peerSet;
-
-    @Mock
-    public RaftCore raftCore;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
-
-        RaftPeer peer = new RaftPeer();
-        peer.ip = NetUtils.localServer();
-        raftCore.setPeerSet(peerSet);
-        Mockito.when(peerSet.local()).thenReturn(peer);
-        Mockito.when(peerSet.getLeader()).thenReturn(peer);
-        Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
 
         new SpringContext().setApplicationContext(context);
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);

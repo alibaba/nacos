@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpResResult;
@@ -62,7 +61,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param token return type
      * @param callback {@link Callback#onReceive(HttpResResult)}
      */
-    <T> void put(String url, Header header, Query query, Body body,
+    <T> void put(String url, Header header, Query query, ResResult body,
                          TypeReference<ResResult<T>> token, Callback<T> callback);
 
     /**
@@ -75,7 +74,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param token return type
      * @param callback {@link Callback#onReceive(HttpResResult)}
      */
-    <T> void post(String url, Header header, Query query, Body body,
+    <T> void post(String url, Header header, Query query, ResResult body,
                           TypeReference<ResResult<T>> token, Callback<T> callback);
 
 }

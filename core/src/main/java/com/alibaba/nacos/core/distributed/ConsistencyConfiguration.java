@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.raft.JRaftProtocol;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 
 import java.util.Iterator;
 import java.util.ServiceLoader;
@@ -37,12 +38,14 @@ public class ConsistencyConfiguration {
     @Bean(value = "eventualAgreementProtocol")
     public APProtocol eventualAgreementProtocol() {
         final APProtocol protocol = getProtocol(APProtocol.class, () -> new DistroProtocol());
+        System.out.println(protocol);
         return protocol;
     }
 
     @Bean(value = "strongAgreementProtocol")
     public CPProtocol strongAgreementProtocol() {
         final CPProtocol protocol = getProtocol(CPProtocol.class, () -> new JRaftProtocol());
+        System.out.println(protocol);
         return protocol;
     }
 

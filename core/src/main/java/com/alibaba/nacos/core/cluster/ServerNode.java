@@ -29,13 +29,13 @@ public class ServerNode implements Node {
 
     private String ip;
 
-    private int port;
+    private int port = -1;
 
     private NodeState state;
 
-    private Map<String, String> extendInfo = new HashMap<>();
+    private Map<String, Object> extendInfo = new HashMap<>();
 
-    private String address;
+    private String address = "";
 
     public ServerNode() {
         extendInfo.put(SITE_KEY, "unknown");
@@ -43,6 +43,34 @@ public class ServerNode implements Node {
         extendInfo.put(LAST_REF_TIME, "0");
         extendInfo.put(WEIGHT, "1");
         extendInfo.put(DISTRO_BEATS, null);
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public NodeState getState() {
+        return state;
+    }
+
+    public Map<String, Object> getExtendInfo() {
+        return extendInfo;
+    }
+
+    public void setExtendInfo(Map<String, Object> extendInfo) {
+        this.extendInfo = extendInfo;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     @Override
@@ -84,18 +112,23 @@ public class ServerNode implements Node {
     }
 
     @Override
-    public Map<String, String> extendInfo() {
+    public Map<String, Object> extendInfo() {
         return extendInfo;
     }
 
     @Override
-    public String extendVal(String key) {
+    public Object extendVal(String key) {
         return extendInfo.get(key);
     }
 
     @Override
-    public void setExtendVal(String key, String value) {
+    public void setExtendVal(String key, Object value) {
         extendInfo.put(key, value);
+    }
+
+    @Override
+    public boolean check() {
+        return StringUtils.isNoneBlank(ip, address) && port != -1;
     }
 
     @Override

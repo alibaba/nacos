@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.common.SerializeFactory;
+import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
@@ -36,8 +38,6 @@ import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.remoting.rpc.RpcServer;
@@ -59,6 +59,9 @@ import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import com.alipay.sofa.jraft.util.BytesUtil;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.Slf4jReporter;
 import org.apache.commons.io.FileUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -96,7 +99,7 @@ public class JRaftServer implements NodeChangeListener {
     private CliService cliService;
     private AsyncUserProcessor userProcessor;
     private NodeOptions nodeOptions;
-    private ScheduledExecutorService executorService;
+    private Set<String> alreadyRegisterBiz = new HashSet<>();
 
     private Serializer serializer;
 
@@ -114,6 +117,8 @@ public class JRaftServer implements NodeChangeListener {
 
     private ExecutorService raftCoreExecutor;
     private ExecutorService raftCliServiceExecutor;
+
+    private final Object monitor = new Object();
 
     public JRaftServer(final NodeManager nodeManager) {
         this.nodeManager = nodeManager;
@@ -139,7 +144,7 @@ public class JRaftServer implements NodeChangeListener {
 
         final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
         selfIp = self.ip();
-        selfPort = Integer.parseInt(self.extendVal(RaftSysConstants.RAFT_PORT));
+        selfPort = Integer.parseInt(String.valueOf(self.extendVal(RaftSysConstants.RAFT_PORT)));
         nodeOptions = new NodeOptions();
 
         // Set the election timeout time. The default is 5 seconds.
@@ -163,7 +168,7 @@ public class JRaftServer implements NodeChangeListener {
                 @Override
                 public void accept(com.alibaba.nacos.core.cluster.Node node) {
                     final String ip = node.ip();
-                    final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
+                    final int raftPort = Integer.parseInt(String.valueOf(node.extendVal(RaftSysConstants.RAFT_PORT)));
                     final String address = ip + ":" + raftPort;
                     PeerId peerId = JRaftUtils.getPeerId(address);
                     conf.addPeer(peerId);
@@ -181,7 +186,7 @@ public class JRaftServer implements NodeChangeListener {
 
             // Initialize multi raft group service framework
 
-            initMultiRaftGroup(processors, JRaftUtils.getPeerId(selfIp + ":" + selfPort), nodeOptions, rpcServer);
+            createMultiRaftGroup(processors);
 
             this.cliClientService = new BoltCliClientService();
             cliClientService.init(new CliOptions());
@@ -193,69 +198,83 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
-    private void initMultiRaftGroup(Collection<LogProcessor> processors, PeerId self, NodeOptions options, RpcServer rpcServer) {
-        final String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
+    // Does not guarantee thread safety
 
-        this.executorService = ExecutorFactory.newScheduledExecutorService(JRaftServer.class.getCanonicalName(),
-                processors.size(),
-                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft.node-refresh"));
+    void createMultiRaftGroup(Collection<LogProcessor> processors) {
+        synchronized (monitor) {
 
-        Set<String> alreadyRegisterBiz = new HashSet<>();
+            final PeerId self = JRaftUtils.getPeerId(selfIp + ":" + selfPort);
 
-        for (LogProcessor processor : processors) {
+            final String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
 
-            final String _group = processor.bizInfo();
+            for (LogProcessor processor : processors) {
 
-            if (alreadyRegisterBiz.contains(_group)) {
-                throw new DuplicateRaftGroupException(_group);
+                final String _group = processor.bizInfo();
+
+                if (alreadyRegisterBiz.contains(_group)) {
+                    throw new DuplicateRaftGroupException(_group);
+                }
+                alreadyRegisterBiz.add(_group);
+
+                final String logUri = Paths.get(parentPath, _group, "log").toString();
+                final String snapshotUri = Paths.get(parentPath, _group, "snapshot").toString();
+                final String metaDataUri = Paths.get(parentPath, _group, "meta-data").toString();
+
+                // Initialize the raft file storage path for different services
+
+                try {
+                    FileUtils.forceMkdir(new File(logUri));
+                    FileUtils.forceMkdir(new File(snapshotUri));
+                    FileUtils.forceMkdir(new File(metaDataUri));
+                } catch (Exception e) {
+                    Loggers.RAFT.error("Init Raft-File dir have some error : {}", e.getMessage());
+                    throw new RuntimeException(e);
+                }
+
+                // Ensure that each Raft Group has its own configuration and NodeOptions
+
+                Configuration configuration = conf.copy();
+                NodeOptions copy = nodeOptions.copy();
+
+                NacosStateMachine machine = new NacosStateMachine(serializer, this, processor);
+
+                copy.setLogUri(logUri);
+                copy.setRaftMetaUri(metaDataUri);
+                copy.setSnapshotUri(snapshotUri);
+                copy.setFsm(machine);
+                copy.setInitialConf(configuration);
+
+                // Set snapshot interval, default 600 seconds
+
+                int doSnapshotInterval = Integer.parseInt(raftConfig.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
+                        String.valueOf(600)));
+
+                // If the business module does not implement a snapshot processor, cancel the snapshot
+
+                doSnapshotInterval = CollectionUtils.isEmpty(processor.loadSnapshotOperate()) ? 0 : doSnapshotInterval;
+
+                copy.setSnapshotIntervalSecs(doSnapshotInterval);
+
+                Loggers.RAFT.info("Raft Group : {}", _group);
+
+                RaftGroupService raftGroupService = new RaftGroupService(_group, self, copy, rpcServer, true);
+
+                Node node = raftGroupService.start();
+
+                machine.setNode(node);
+
+                RouteTable.getInstance().updateConfiguration(_group, configuration);
+
+                // Turn on the leader auto refresh for this group
+
+                ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService("JRaftServer",
+                        new NameThreadFactory("com.alibaba.nacos.core.protocol.raft." + _group + "-refresh"));
+
+                executorService.scheduleAtFixedRate(() -> refreshRouteTable(_group), 3, 3,
+                        TimeUnit.MINUTES);
+
+                multiRaftGroup.put(_group, new RaftGroupTuple(node, processor, raftGroupService, executorService));
             }
-
-            alreadyRegisterBiz.add(_group);
-
-            final String logUri = Paths.get(parentPath, _group, "log").toString();
-            final String snapshotUri = Paths.get(parentPath, _group, "snapshot").toString();
-            final String metaDataUri = Paths.get(parentPath, _group, "meta-data").toString();
-
-            // Initialize the raft file storage path for different services
-
-            try {
-                FileUtils.forceMkdir(new File(logUri));
-                FileUtils.forceMkdir(new File(snapshotUri));
-                FileUtils.forceMkdir(new File(metaDataUri));
-            } catch (Exception e) {
-                Loggers.RAFT.error("Init Raft-File dir have some error : {}", e.getMessage());
-                throw new RuntimeException(e);
-            }
-
-            NodeOptions copy = options.copy();
-            copy.setLogUri(logUri);
-            copy.setRaftMetaUri(metaDataUri);
-            copy.setSnapshotUri(snapshotUri);
-            copy.setFsm(new NacosStateMachine(serializer, this, processor));
-
-            // Set snapshot interval, default 600 seconds
-
-            int doSnapshotInterval = Integer.parseInt(raftConfig.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
-                    String.valueOf(600)));
-
-            // If the business module does not implement a snapshot processor, cancel the snapshot
-
-            doSnapshotInterval = CollectionUtils.isEmpty(processor.loadSnapshotOperate()) ? 0 : doSnapshotInterval;
-
-            copy.setSnapshotIntervalSecs(doSnapshotInterval);
-
-            RaftGroupService raftGroupService = new RaftGroupService(_group, self, copy, rpcServer, true);
-
-            Node node = raftGroupService.start();
-
-            RouteTable.getInstance().updateConfiguration(_group, conf);
-
-            // Turn on the leader auto refresh for this group
-
-            executorService.scheduleAtFixedRate(() -> refreshRouteTable(_group), 3, 3,
-                    TimeUnit.MINUTES);
-
-            multiRaftGroup.put(_group, new RaftGroupTuple(node, processor, raftGroupService));
         }
     }
 
@@ -492,11 +511,30 @@ public class JRaftServer implements NodeChangeListener {
         private final Node node;
         private final LogProcessor processor;
         private final RaftGroupService raftGroupService;
+        private final ScheduledExecutorService executorService;
+        private ScheduledReporter regionMetricsReporter;
 
-        public RaftGroupTuple(Node node, LogProcessor processor, RaftGroupService raftGroupService) {
+        public RaftGroupTuple(Node node, LogProcessor processor, RaftGroupService raftGroupService, ScheduledExecutorService executorService) {
             this.node = node;
             this.processor = processor;
             this.raftGroupService = raftGroupService;
+            this.executorService = executorService;
+
+            final MetricRegistry metricRegistry = this.node.getNodeMetrics().getMetricRegistry();
+            if (metricRegistry != null) {
+
+                // auto start raft node metrics reporter
+
+                regionMetricsReporter = Slf4jReporter.forRegistry(metricRegistry) //
+                        .prefixedWith("nacos_raft_[" + node.getGroupId() + "]")
+                        .withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
+                        .outputTo(Loggers.RAFT)
+                        .scheduleOn(executorService)
+                        .shutdownExecutorOnStop(executorService != null)
+                        .build();
+                regionMetricsReporter.start(30, TimeUnit.SECONDS);
+            }
+
         }
 
         public Node getNode() {

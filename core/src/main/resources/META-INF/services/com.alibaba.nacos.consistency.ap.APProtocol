@@ -1,1 +1,1 @@
-com.alibaba.nacos.core.distributed.raft.JRaftProtocol
+com.alibaba.nacos.core.distributed.distro.DistroProtocol

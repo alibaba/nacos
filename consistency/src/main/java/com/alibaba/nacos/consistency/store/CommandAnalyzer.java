@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency.store;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -31,6 +32,6 @@ public interface CommandAnalyzer {
      * @param command command name
      * @return {@link Function<Object, Boolean>}
      */
-    <D> Function<D, Boolean> analyze(String command);
+    <D> BiFunction<String, D, Boolean> analyze(String command);
 
 }

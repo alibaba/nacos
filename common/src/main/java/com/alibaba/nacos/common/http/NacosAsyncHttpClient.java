@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
@@ -62,7 +61,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void put(final String url,
                         final Header header,
                         final Query query,
-                        final Body body,
+                        final ResResult body,
                         final TypeReference<ResResult<T>> token,
                         final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
@@ -73,7 +72,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void post(final String url,
                          final Header header,
                          final Query query,
-                         final Body body,
+                         final ResResult body,
                          final TypeReference<ResResult<T>> token,
                          final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);

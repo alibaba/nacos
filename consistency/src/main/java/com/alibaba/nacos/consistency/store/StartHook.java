@@ -16,14 +16,19 @@
 
 package com.alibaba.nacos.consistency.store;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface StartHook {
+public interface StartHook<T> {
 
     /**
+     * Started callback function
      *
+     * @param dataStore {@link Map<String, KVStore.Item>}
+     * @param kvStore {@link KVStore}
      */
-    void hook();
+    void hook(Map<String, KVStore.Item> dataStore, KVStore<T> kvStore) throws Exception;
 
 }

@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 import com.alipay.sofa.jraft.Closure;
 
 /**
+ * Failure callback based on Closure
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface FailoverClosure<T> extends Closure {

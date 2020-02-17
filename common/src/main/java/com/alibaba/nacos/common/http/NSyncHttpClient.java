@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
@@ -50,7 +49,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @return {@link ResResult <T>}
      * @throws Exception
      */
-    <T> ResResult<T> getLarge(String url, Header header, Query query, Body body,
+    <T> ResResult<T> getLarge(String url, Header header, Query query, ResResult body,
                               TypeReference<ResResult<T>> token) throws Exception;
 
     /**
@@ -75,7 +74,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param token return type
      * @return {@link ResResult}
      */
-    <T> ResResult<T> put(String url, Header header, Query query, Body body,
+    <T> ResResult<T> put(String url, Header header, Query query, ResResult body,
                          TypeReference<ResResult<T>> token) throws Exception;
 
     /**
@@ -88,7 +87,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param token return type
      * @return {@link ResResult}
      */
-    <T> ResResult<T> post(String url, Header header, Query query, Body body,
+    <T> ResResult<T> post(String url, Header header, Query query, ResResult body,
                           TypeReference<ResResult<T>> token) throws Exception;
 
 }

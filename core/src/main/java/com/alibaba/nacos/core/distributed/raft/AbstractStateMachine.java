@@ -25,7 +25,8 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alipay.sofa.jraft.Closure;
-import com.alipay.sofa.jraft.NodeManager;
+import com.alipay.sofa.jraft.Node;
+import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
@@ -34,15 +35,16 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -50,8 +52,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class AbstractStateMachine extends StateMachineAdapter {
-
-    private final AtomicLong leaderTerm = new AtomicLong(-1L);
 
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
 
@@ -63,7 +63,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     private final String groupId;
 
-    private NodeManager nodeManager = NodeManager.getInstance();
+    private Node node;
 
     public AbstractStateMachine(JRaftServer server, LogProcessor processor) {
         this.server = server;
@@ -79,14 +79,16 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
                 @Override
                 public void onSnapshotSave(SnapshotWriter writer, Closure done) {
-                    final Writer _w = new Writer();
+                    final Writer _w = new Writer(writer.getPath());
 
                     // Do a layer of proxy operation to shield different Raft
                     // components from implementing snapshots
 
                     final BiConsumer<Boolean, Throwable> proxy = (result, t) -> {
-                        _w.listFiles().forEach((file, meta) -> writer.addFile(file, buildMetadata(meta)));
-                        final Status status = result ? Status.OK() : new Status(RaftError.EIO,
+                        boolean[] results = new  boolean[_w.listFiles().size()];
+                        int[] index = new int[]{ 0 };
+                        _w.listFiles().forEach((file, meta) -> results[index[0] ++] = writer.addFile(file, buildMetadata(meta)));
+                        final Status status = result && BooleanUtils.and(results) ? Status.OK() : new Status(RaftError.EIO,
                                 "Fail to compress snapshot at %s, error is %s", writer.getPath(),
                                 t.getMessage());
                         done.run(status);
@@ -110,6 +112,10 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         }
     }
 
+    public void setNode(Node node) {
+        this.node = node;
+    }
+
     @Override
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
         for (JSnapshotOperate operate : operates) {
@@ -130,19 +136,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     @Override
     public void onLeaderStart(final long term) {
         super.onLeaderStart(term);
-        this.leaderTerm.set(term);
         this.isLeader.set(true);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
-                .term(leaderTerm.get())
-
-                // Means that he is a leader
-
-                .leader(null)
-                .raftClusterInfo(nodeManager.getAllNodes()
-                        .stream()
-                        .map(node -> node.getNodeId().getPeerId().toString())
-                        .collect(Collectors.toList()))
+                .leader(node.getNodeId().getPeerId().getEndpoint().toString())
+                .term(term)
+                .raftClusterInfo(allPeers())
                 .build());
     }
 
@@ -154,29 +153,21 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onStopFollowing(LeaderChangeContext ctx) {
-        super.onStopFollowing(ctx);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
-                .term(leaderTerm.get())
-                .leader(ctx.getLeaderId().toString())
-                .raftClusterInfo(nodeManager.getAllNodes()
-                        .stream()
-                        .map(node -> node.getNodeId().getPeerId().toString())
-                        .collect(Collectors.toList()))
+                .leader(ctx.getLeaderId().getEndpoint().toString())
+                .term(ctx.getTerm())
+                .raftClusterInfo(allPeers())
                 .build());
     }
 
     @Override
     public void onStartFollowing(LeaderChangeContext ctx) {
-        super.onStartFollowing(ctx);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
-                .term(leaderTerm.get())
-                .leader(ctx.getLeaderId().toString())
-                .raftClusterInfo(nodeManager.getAllNodes()
-                        .stream()
-                        .map(node -> node.getNodeId().getPeerId().toString())
-                        .collect(Collectors.toList()))
+                .leader(ctx.getLeaderId().getEndpoint().toString())
+                .term(ctx.getTerm())
+                .raftClusterInfo(allPeers())
                 .build());
     }
 
@@ -187,6 +178,17 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     public boolean isLeader() {
         return isLeader.get();
+    }
+
+    private List<String> allPeers() {
+        if (node == null) {
+            return Collections.emptyList();
+        }
+        return RouteTable.getInstance()
+                .getConfiguration(node.getGroupId())
+                .getPeers()
+                .stream().map(peerId -> peerId.getEndpoint().toString())
+                .collect(Collectors.toList());
     }
 
 }

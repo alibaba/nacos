@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpResResult;
@@ -29,8 +27,6 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -49,15 +45,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -79,9 +71,9 @@ public abstract class BaseHttpClient {
                 if (data != null && data.getCode() == HttpStatus.SC_OK) {
                     resResult.setCode(200);
                     resResult.setData(data.getData());
-                    resResult.setErrMsg(body);
                     return resResult;
                 } else {
+                    resResult.setCode(response.getStatusLine().getStatusCode());
                     resResult.setErrMsg(data != null ? data.getErrMsg() : "");
                 }
             } else {
@@ -111,8 +103,8 @@ public abstract class BaseHttpClient {
                         if (data != null && data.getCode() == HttpStatus.SC_OK) {
                             resResult.setCode(200);
                             resResult.setData(data.getData());
-                            resResult.setErrMsg(body);
                         } else {
+                            resResult.setCode(response.getStatusLine().getStatusCode());
                             resResult.setErrMsg(data != null ? data.getErrMsg() : "");
                         }
                     } else {
@@ -142,10 +134,10 @@ public abstract class BaseHttpClient {
     }
 
     protected HttpRequestBase build(String url, Header header, String method) {
-        return build(url, header, Body.EMPTY, method);
+        return build(url, header, null, method);
     }
 
-    protected HttpRequestBase build(String url, Header header, Body body,
+    protected HttpRequestBase build(String url, Header header, ResResult body,
                                     String method) {
         if (HttpMethod.GET.equalsIgnoreCase(method)) {
             HttpGet get = new HttpGet(url);
@@ -177,20 +169,24 @@ public abstract class BaseHttpClient {
             HttpPatch patch = new HttpPatch(url);
             initHeader(patch, header);
             initEntity(patch, body, header.getValue("Content-Type"));
+            return patch;
         }
         if (HttpMethod.POST.equalsIgnoreCase(method)) {
             HttpPost post = new HttpPost(url);
             initHeader(post, header);
             initEntity(post, body, header.getValue("Content-Type"));
+            return post;
         }
         if (HttpMethod.PUT.equalsIgnoreCase(method)) {
             HttpPut put = new HttpPut(url);
             initHeader(put, header);
             initEntity(put, body, header.getValue("Content-Type"));
+            return put;
         }
         if (HttpMethod.TRACE.equalsIgnoreCase(method)) {
             HttpTrace trace = new HttpTrace(url);
             initHeader(trace, header);
+            return trace;
         }
         throw new IllegalArgumentException("illegal http request method : [" + method + "]");
     }
@@ -203,26 +199,10 @@ public abstract class BaseHttpClient {
         }
     }
 
-    private void initEntity(HttpEntityEnclosingRequest request, Body body, String mediaType) {
+    private void initEntity(HttpEntityEnclosingRequest request, ResResult body, String mediaType) {
         ContentType contentType = ContentType.create(mediaType);
-        if (ContentType.APPLICATION_FORM_URLENCODED.equals(contentType)) {
-            UrlEncodedFormEntity entity = new UrlEncodedFormEntity(toList(body), Charset.defaultCharset());
-            request.setEntity(entity);
-            return;
-        }
-        StringEntity entity = new StringEntity(RequestHandler.parse(body.getData()), contentType);
+        StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
         request.setEntity(entity);
-    }
-
-    private List<? extends NameValuePair> toList(Body body) {
-        List<NameValuePair> list = new ArrayList<NameValuePair>();
-        Iterator<Map.Entry<String, Object>> iterator = body.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Object> entry = iterator.next();
-            NameValuePair pair = new BasicNameValuePair(entry.getKey(), JSON.toJSONString(entry.getValue()));
-            list.add(pair);
-        }
-        return list;
     }
 
     private Header convertHeader(org.apache.http.Header[] headers) {

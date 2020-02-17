@@ -57,7 +57,7 @@ public interface ConsistencyService {
      * @return data related to the key
      * @throws NacosException
      */
-    Record get(String key) throws NacosException;
+    <T extends Record> T get(String key) throws NacosException;
 
     /**
      * Listen for changes of a data

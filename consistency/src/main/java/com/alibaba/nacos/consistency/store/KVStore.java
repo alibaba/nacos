@@ -20,14 +20,14 @@ import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.utils.Md5Utils;
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Triplet;
+import org.javatuples.Pair;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Key-value pair data storage structure abstraction
@@ -41,7 +41,7 @@ public abstract class KVStore<T> extends BaseStore {
 
     public static final String REMOVE_COMMAND = "REMOVE";
 
-    protected final Map<String, Item> dataStore;
+    protected final Map<String, Item> dataStore = new ConcurrentSkipListMap<>();
 
     private StartHook startHook;
     private BeforeHook beforeHook;
@@ -56,7 +56,6 @@ public abstract class KVStore<T> extends BaseStore {
 
     public KVStore(String name, Serializer serializer) {
         super(name, serializer);
-        this.dataStore = new ConcurrentSkipListMap<>();
         initCommandAnalyze(new KVCommandAnalyzer());
     }
 
@@ -65,20 +64,12 @@ public abstract class KVStore<T> extends BaseStore {
         this.afterHook = afterHook;
     }
 
-    public final void start() {
+    public final void start() throws Exception {
         if (startHook != null) {
-            startHook.hook();
+            startHook.hook(dataStore, this);
         }
         isStart = true;
     }
-
-    /**
-     * this store is contains key
-     *
-     * @param key
-     * @return is contains
-     */
-    public abstract boolean contains(String key);
 
     /**
      * put data
@@ -104,8 +95,8 @@ public abstract class KVStore<T> extends BaseStore {
      * @param data if operate == -1, the data is null
      * @param isPut is put operation
      */
-    protected void before(String key, T data, boolean isPut) {
-        beforeHook.hook(key, data, isPut);
+    protected void before(String key, T data, Item item, boolean isPut) {
+        beforeHook.hook(key, data, item, isPut);
     }
 
     /**
@@ -115,8 +106,8 @@ public abstract class KVStore<T> extends BaseStore {
      * @param data remove source data
      * @param isPut is put operation
      */
-    protected void after(String key, T data, boolean isPut) {
-        afterHook.hook(key, data, isPut);
+    protected void after(String key, T data, Item item, boolean isPut) {
+        afterHook.hook(key, data, item, isPut);
     }
 
     /**
@@ -125,6 +116,10 @@ public abstract class KVStore<T> extends BaseStore {
      * @param remoteData
      */
     public abstract void load(Map<String, Item> remoteData);
+
+    public boolean contains(String key) {
+        return dataStore.containsKey(key);
+    }
 
     public Map<String, byte[]> batchGet(Collection<String> keys) {
         Map<String, byte[]> returnData = new HashMap<>(keys.size());
@@ -234,12 +229,12 @@ public abstract class KVStore<T> extends BaseStore {
     class KVCommandAnalyzer implements CommandAnalyzer {
 
         @Override
-        public <D> Function<D, Boolean> analyze(String command) {
+        public <D> BiFunction<String, D, Boolean> analyze(String command) {
             if (StringUtils.equalsIgnoreCase(command, PUT_COMMAND)) {
-                return (Function<D, Boolean>) put;
+                return (BiFunction<String, D, Boolean>) put;
             }
             if (StringUtils.equalsIgnoreCase(command, REMOVE_COMMAND)) {
-                return (Function<D, Boolean>) remove;
+                return (BiFunction<String, D, Boolean>) remove;
             }
             throw new UnsupportedOperationException();
         }
@@ -247,18 +242,20 @@ public abstract class KVStore<T> extends BaseStore {
 
     // put operation
 
-    Function<Triplet<String, T, byte[]>, Boolean> put = new Function<Triplet<String, T, byte[]>, Boolean>() {
+    BiFunction<String, Pair<T, byte[]>, Boolean> put = new BiFunction<String, Pair<T, byte[]>, Boolean>() {
         @Override
-        public Boolean apply(Triplet<String, T, byte[]> triplet) {
-            final String key = triplet.getValue0();
-            final T value = triplet.getValue1();
-            final byte[] data = triplet.getValue2();
-            before(key, value, true);
+        public Boolean apply(String key, Pair<T, byte[]> pair) {
+            final T value = pair.getValue0();
+            final byte[] data = pair.getValue1();
             final boolean[] isCreate = new boolean[]{false};
             dataStore.computeIfAbsent(key, s -> {
                 isCreate[0] = true;
                 return new Item(data, value.getClass().getCanonicalName());
             });
+
+            Item item = dataStore.get(key);
+
+            before(key, value, item, true);
 
             if (!isCreate[0]) {
 
@@ -267,19 +264,20 @@ public abstract class KVStore<T> extends BaseStore {
                 dataStore.get(key).setBytes(data);
             }
 
-            after(key, value, true);
+            after(key, value, item, true);
             return true;
         }
     };
 
     // remove operation
 
-    Function<String, Boolean> remove = new Function<String, Boolean>() {
+    BiFunction<String, T, Boolean> remove = new BiFunction<String, T, Boolean>() {
         @Override
-        public Boolean apply(String key) {
-            before(key, null, false);
+        public Boolean apply(String key, T data) {
+            before(key, null, null, false);
             T source = getByKeyAutoConvert(key);
-            after(key, source, false);
+            Item item = dataStore.remove(key);
+            after(key, source, item, false);
             return true;
         }
     };

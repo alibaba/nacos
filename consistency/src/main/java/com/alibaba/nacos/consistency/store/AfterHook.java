@@ -28,10 +28,10 @@ public interface AfterHook<T> {
      * Hooks after data manipulation
      *
      * @param key key
-     * @param data data
+     * @param data data Transparently transmitting the data inserted by the user
+     * @param item Actually stored data {@link com.alibaba.nacos.consistency.store.KVStore.Item}
      * @param isPut is put operation
-     * @param <T> data type
      */
-    void hook(String key, T data, boolean isPut);
+    void hook(String key, T data, KVStore.Item item, boolean isPut);
 
 }

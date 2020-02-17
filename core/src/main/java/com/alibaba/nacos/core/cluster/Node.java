@@ -87,7 +87,7 @@ public interface Node {
      *
      * @return all extend info
      */
-    Map<String, String> extendInfo();
+    Map<String, Object> extendInfo();
 
     /**
      * get extend data by key
@@ -95,7 +95,7 @@ public interface Node {
      * @param key extend info key
      * @return get target extend info
      */
-    String extendVal(String key);
+    Object extendVal(String key);
 
     /**
      * set extend data by key
@@ -103,5 +103,12 @@ public interface Node {
      * @param key extend info key
      * @param value extend value
      */
-    void setExtendVal(String key, String value);
+    void setExtendVal(String key, Object value);
+
+    /**
+     * Verify node information
+     *
+     * @return Check result
+     */
+    boolean check();
 }

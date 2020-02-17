@@ -42,9 +42,6 @@ public class PerformanceLoggerThread {
     @Autowired
     private PushService pushService;
 
-    @Autowired
-    private RaftCore raftCore;
-
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -92,14 +89,6 @@ public class PerformanceLoggerThread {
 
         MetricsMonitor.getTotalPushMonitor().set(pushService.getTotalPush());
         MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
-
-        if (raftCore.isLeader()) {
-            MetricsMonitor.getLeaderStatusMonitor().set(1);
-        } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-            MetricsMonitor.getLeaderStatusMonitor().set(0);
-        } else {
-            MetricsMonitor.getLeaderStatusMonitor().set(2);
-        }
     }
 
     class PerformanceLogTask implements Runnable {

@@ -22,16 +22,16 @@ package com.alibaba.nacos.consistency.store;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @FunctionalInterface
-public interface BeforeHook {
+public interface BeforeHook<T> {
 
     /**
      * Hooks before data manipulation
      *
      * @param key key
      * @param data data maybe is null
+     * @param item Actually stored data
      * @param isPut is put operation
-     * @param <T> data type
      */
-    <T> void hook(String key, T data, boolean isPut);
+    void hook(String key, T data, KVStore.Item item, boolean isPut);
 
 }

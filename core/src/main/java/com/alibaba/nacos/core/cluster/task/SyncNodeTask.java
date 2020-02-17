@@ -71,8 +71,6 @@ public class SyncNodeTask extends Task {
     private volatile boolean alreadyLoadServer = false;
 
     public SyncNodeTask(final ServletContext context) {
-        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(), fileChangeEvent -> readServerConfFromDisk());
-
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
                 .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "200"))).build();
@@ -80,12 +78,15 @@ public class SyncNodeTask extends Task {
         this.maxFailCount = Integer.parseInt(SpringUtils.getProperty("maxHealthCheckFailCount", "12"));
 
         this.context = context;
-
     }
 
     @Override
     protected void init() {
         readServerConfFromDisk();
+
+        // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
+
+        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(), fileChangeEvent -> readServerConfFromDisk());
     }
 
     @Override
@@ -187,6 +188,8 @@ public class SyncNodeTask extends Task {
                     .build());
         }
 
+        Loggers.CORE.info("init node cluster : {}", nodes);
+
         nodeManager.nodeJoin(nodes);
     }
 
@@ -197,7 +200,7 @@ public class SyncNodeTask extends Task {
 
     @Override
     public TaskInfo scheduleInfo() {
-        return new TaskInfo(0L, 5L, TimeUnit.SECONDS);
+        return new TaskInfo(0L, 30L, TimeUnit.SECONDS);
     }
 
 }

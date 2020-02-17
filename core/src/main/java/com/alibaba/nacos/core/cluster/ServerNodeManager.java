@@ -45,6 +45,7 @@ import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private boolean isHealthCheck = true;
 
-    private String contextPath;
+    private String contextPath = "";
 
     @Value("${server.port:8848}")
     private int port;
@@ -108,7 +109,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @PostConstruct
     @Override
     public void init() {
-
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
         // register NodeChangeEvent publisher to NotifyManager
@@ -122,24 +122,25 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         SyncNodeTask task = new SyncNodeTask(servletContext);
         taskManager.execute(task);
 
-        // To initialize the distributed ID generator, need to wait
-        // for the cluster node information to be initialized.
-
-        DistributeIDManager.init();
-
         // Consistency protocol module initialization
 
         initAPProtocol();
         initCPProtocol();
 
+        // To initialize the distributed ID generator, need to wait
+        // for the cluster node information to be initialized.
+
+        DistributeIDManager.init(this);
     }
 
     @Override
     public void update(Node newNode) {
 
-        long lastRefTime = Long.parseLong(newNode.extendVal(Node.LAST_REF_TIME));
+        long lastRefTime = Long.parseLong(String.valueOf(newNode.extendVal(Node.LAST_REF_TIME)));
 
-        if (lastRefTime < System.currentTimeMillis()) {
+        // If this node updates itself, ignore the health judgment
+
+        if (lastRefTime < System.currentTimeMillis() && !isSelf(newNode)) {
             newNode.setState(NodeState.DOWN);
             serverListHealth.remove(newNode.address());
             serverListUnHealth.add(newNode);
@@ -190,7 +191,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public List<Node> allNodes() {
         if (CollectionUtils.isEmpty(nodeView)) {
-            nodeView = new ArrayList<>(serverListHealth.values());
+            synchronized (this) {
+                if (CollectionUtils.isEmpty(nodeView)) {
+                    nodeView = new ArrayList<>(serverListHealth.values());
+                }
+            }
         }
         return nodeView;
     }
@@ -202,7 +207,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
             serverListHealth.put(node.address(), node);
         }
 
-        // reset node view
+        // r eset node view
 
         nodeView = null;
 
@@ -245,6 +250,12 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     public String getContextPath() {
         if (StringUtils.isBlank(contextPath)) {
             String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
+
+            // If you can't find it, check it from Sping Environment
+
+            if (StringUtils.isBlank(contextPath)) {
+                contextPath = SpringUtils.getProperty(Constants.WEB_CONTEXT_PATH);
+            }
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
                 return StringUtils.EMPTY;
             } else {
@@ -270,6 +281,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         for (ConsistencyProtocol protocol : protocolMap.values()) {
             protocol.shutdown();
         }
+    }
+
+    public boolean isSelf(Node node) {
+        return Objects.equals(node.address(), self.address());
     }
 
     private void initSys() {
@@ -353,7 +368,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     public List<Node> getServerListHealth() {
-        return nodeView;
+        return nodeView == null ? Collections.emptyList() : nodeView;
     }
 
     public Set<Node> getServerListUnHealth() {

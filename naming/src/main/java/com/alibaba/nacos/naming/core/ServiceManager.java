@@ -26,30 +26,27 @@ import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,7 +67,7 @@ import java.util.stream.Collectors;
  * @author nkorange
  */
 @Component
-@DependsOn("nacosApplicationContext")
+@DependsOn("serverNodeManager")
 public class ServiceManager implements RecordListener<Service> {
 
     /**
@@ -84,7 +81,8 @@ public class ServiceManager implements RecordListener<Service> {
 
     private final Lock lock = new ReentrantLock();
 
-    @Resource(name = "consistencyDelegate")
+    @Autowired
+    @Qualifier("consistencyDelegate")
     private ConsistencyService consistencyService;
 
     @Autowired
@@ -98,9 +96,6 @@ public class ServiceManager implements RecordListener<Service> {
 
     @Autowired
     private PushService pushService;
-
-    @Autowired
-    private RaftPeerSet raftPeerSet;
 
     private final Object putServiceLock = new Object();
 
@@ -245,65 +240,6 @@ public class ServiceManager implements RecordListener<Service> {
                     serviceName, serverIP, e);
             }
         }
-    }
-
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
-
-        List<RaftPeer> matchList = new ArrayList<>();
-        RaftPeer localRaftPeer = raftPeerSet.local();
-        matchList.add(localRaftPeer);
-        Set<String> otherServerSet = raftPeerSet.allServersWithoutMySelf();
-        if (null != otherServerSet && otherServerSet.size() > 0) {
-            for (String server: otherServerSet) {
-                String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
-                Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
-                try {
-                    String content = NamingProxy.reqCommon(path, params, server, false);
-                    if (!StringUtils.EMPTY.equals(content)) {
-                        RaftPeer raftPeer = JSONObject.parseObject(content, RaftPeer.class);
-                        if (null != raftPeer) {
-                            matchList.add(raftPeer);
-                        }
-                    }
-                } catch (Exception e) {
-                    Loggers.SRV_LOG.warn("[QUERY-CLUSTER-STATE] Exception while query cluster state from {}, error: {}",
-                        server, e);
-                }
-            }
-        }
-        List<RaftPeer> tempList = new ArrayList<>();
-        if (StringUtils.isNotBlank(keyword)) {
-            for (RaftPeer raftPeer : matchList) {
-                String ip = raftPeer.ip.split(":")[0];
-                if (keyword.equals(ip)) {
-                    tempList.add(raftPeer);
-                }
-            }
-            matchList = tempList;
-        }
-
-        if (pageSize >= matchList.size()) {
-            raftPeerList.addAll(matchList);
-            return matchList.size();
-        }
-
-        for (int i = 0; i < matchList.size(); i++) {
-            if (i < startPage * pageSize) {
-                continue;
-            }
-
-            raftPeerList.add(matchList.get(i));
-
-            if (raftPeerList.size() >= pageSize) {
-                break;
-            }
-        }
-
-        return matchList.size();
-    }
-
-    public RaftPeer getMySelfClusterState() {
-        return raftPeerSet.local();
     }
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
@@ -563,7 +499,7 @@ public class ServiceManager implements RecordListener<Service> {
 
     public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
-        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
+        Instances record = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
@@ -575,8 +511,8 @@ public class ServiceManager implements RecordListener<Service> {
         }
 
         Map<String, Instance> instanceMap;
-        if (datum != null) {
-            instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
+        if (record != null) {
+            instanceMap = setValid(record.getInstanceList(), currentInstances);
         } else {
             instanceMap = new HashMap<>(ips.length);
         }

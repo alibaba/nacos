@@ -19,18 +19,19 @@ package com.alibaba.nacos.core.cluster.task;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.cluster.Task;
+import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
 import org.apache.http.client.config.RequestConfig;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,52 +39,81 @@ import java.util.concurrent.TimeUnit;
  */
 public class NodeStateReportTask extends Task {
 
+    private final TypeReference<ResResult<String>> reference
+            = new TypeReference<ResResult<String>>() {};
+
     private NSyncHttpClient httpClient;
 
     public NodeStateReportTask() {
         final RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
-                .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "200"))).build();
-        this.httpClient = HttpClientManager.newHttpClient(ServerNodeManager.class.getCanonicalName(), requestConfig);
+                // Time in milliseconds
+                .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "10000")))
+                .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "20000")))
+                .build();
+
+        this.httpClient = HttpClientManager
+                .newHttpClient(ServerNodeManager.class.getCanonicalName(), requestConfig);
     }
 
     @Override
     protected void executeBody() {
-        long startCheckTime = System.currentTimeMillis();
+        try {
+            long startCheckTime = System.currentTimeMillis();
 
-        final Node self = nodeManager.self();
 
-        int weight = Runtime.getRuntime().availableProcessors() / 2;
-        if (weight <= 0) {
-            weight = 1;
-        }
+            final Node self = nodeManager.self();
 
-        self.setExtendVal(Node.WEIGHT, String.valueOf(weight));
+            // Your information is not ready
 
-        nodeManager.update(self);
-
-        for (Node node : nodeManager.getServerListHealth()) {
-
-            if (node.address().contains(SystemUtils.LOCAL_IP)) {
-                continue;
+            if (!self.check()) {
+                return;
             }
 
-            // Compatible with old codes,use status.taobao
-
-            String url = "http://" + node.address() + nodeManager.getServletContext().getContextPath() + "/server/report";
-
-            // "/nacos/server/report";
-
-            try {
-                httpClient.post(url, Header.EMPTY, Query.EMPTY, Body.objToBody(self),
-                        new TypeReference<ResResult<String>>() {});
-            } catch (Exception e) {
-
+            int weight = Runtime.getRuntime().availableProcessors() / 2;
+            if (weight <= 0) {
+                weight = 1;
             }
+
+            self.setExtendVal(Node.WEIGHT, String.valueOf(weight));
+
+            nodeManager.update(self);
+
+            for (Node node : nodeManager.allNodes()) {
+
+                // local node or node check failed will not perform task processing
+
+                if (Objects.equals(self, node) || !node.check()) {
+                    continue;
+                }
+
+                // Compatible with old codes,use status.taobao
+
+                String url = "http://" + node.address() + nodeManager.getContextPath() +
+                        Commons.NACOS_CORE_CONTEXT + "/cluster/server/report";
+
+                // "/nacos/server/report";
+
+                try {
+                    ResResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY
+                            , ResResultUtils.success(self), reference);
+                    if (result.ok()) {
+                        Loggers.CORE.info("Successfully synchronizing information to node : {}," +
+                                " result : {}", node, result);
+                    } else {
+                        Loggers.CORE.error("An exception occurred while reporting their " +
+                                "information to the node : {}, error : {}", node.address(), result.getErrMsg());
+                    }
+                } catch (Exception e) {
+                    Loggers.CORE.error("An exception occurred while reporting their " +
+                            "information to the node : {}, error : {}", node.address(), e);
+                }
+            }
+            long endCheckTime = System.currentTimeMillis();
+            long cost = endCheckTime - startCheckTime;
+            Loggers.CORE.debug("task report job cost: {}", cost);
+        } catch (Exception e) {
+            Loggers.CORE.error("node state report task has error : {}", e);
         }
-        long endCheckTime = System.currentTimeMillis();
-        long cost = endCheckTime - startCheckTime;
-        Loggers.CORE.debug("task report job cost: {}", cost);
     }
 
 
@@ -94,6 +124,6 @@ public class NodeStateReportTask extends Task {
 
     @Override
     public TaskInfo scheduleInfo() {
-        return new TaskInfo(0L, 5L, TimeUnit.SECONDS);
+        return new TaskInfo(0L, 30L, TimeUnit.SECONDS);
     }
 }

@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Properties;
 
 /**
+ * // TODO 请求体中需要携带的信息需要在考虑清楚下
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class GetRequest {

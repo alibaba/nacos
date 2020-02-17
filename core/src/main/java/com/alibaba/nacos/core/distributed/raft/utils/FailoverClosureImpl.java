@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Closure with internal retry mechanism
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class FailoverClosureImpl<T> implements FailoverClosure<T> {

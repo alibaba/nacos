@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft.exception;
 
 /**
+ * This exception is thrown if the current Raft Group Cluster does not elect a leader
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NoLeaderException extends Exception {

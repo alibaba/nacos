@@ -15,17 +15,18 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -33,9 +34,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,8 +47,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -80,16 +77,19 @@ public class OperatorController {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private APProtocol protocol;
+    private APProtocol apProtocol;
 
     @Autowired
-    private RaftCore raftCore;
+    private CPProtocol cpProtocol;
+
+    @Autowired
+    private RaftConsistencyServiceImpl raftConsistencyService;
 
     private Mapper mapper;
 
     @PostConstruct
     protected void init() {
-        mapper = protocol.mapper();
+        mapper = apProtocol.mapper();
     }
 
     @RequestMapping("/push/state")
@@ -159,7 +159,7 @@ public class OperatorController {
         result.put("status", serverStatusManager.getServerStatus().name());
         result.put("serviceCount", serviceCount);
         result.put("instanceCount", ipCount);
-        result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
+        result.put("raftNotifyTaskCount", raftConsistencyService.getTaskSize());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIPCount);
         result.put("cpu", SystemUtils.getCPU());
@@ -234,41 +234,11 @@ public class OperatorController {
                              @RequestParam int pageNo,
                              @RequestParam int pageSize,
                              @RequestParam(defaultValue = StringUtils.EMPTY) String keyword) {
-
-        JSONObject result = new JSONObject();
-
-        List<RaftPeer> raftPeerLists = new ArrayList<>();
-
-        int total = serviceManager.getPagedClusterState(namespaceId, pageNo - 1, pageSize, keyword, raftPeerLists);
-
-        if (CollectionUtils.isEmpty(raftPeerLists)) {
-            result.put("clusterStateList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray clusterStateJsonArray = new JSONArray();
-        for (RaftPeer raftPeer : raftPeerLists) {
-            ClusterStateView clusterStateView = new ClusterStateView();
-            clusterStateView.setClusterTerm(raftPeer.term.intValue());
-            clusterStateView.setNodeIp(raftPeer.ip);
-            clusterStateView.setNodeState(raftPeer.state.name());
-            clusterStateView.setVoteFor(raftPeer.voteFor);
-            clusterStateView.setHeartbeatDueMs(raftPeer.heartbeatDueMs);
-            clusterStateView.setLeaderDueMs(raftPeer.leaderDueMs);
-            clusterStateJsonArray.add(clusterStateView);
-        }
-        result.put("clusterStateList", clusterStateJsonArray);
-        result.put("count", total);
-        return result;
+        return new Object();
     }
 
     @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
     public JSONObject getClusterStates() {
-
-        RaftPeer peer = serviceManager.getMySelfClusterState();
-
-        return JSON.parseObject(JSON.toJSONString(peer));
-
+        return new JSONObject();
     }
 }

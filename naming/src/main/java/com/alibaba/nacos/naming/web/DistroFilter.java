@@ -68,13 +68,10 @@ public class DistroFilter implements Filter {
 
     }
 
-    @PostConstruct
-    protected void init() {
-        mapper = SpringUtils.getBean(APProtocol.class).mapper();
-    }
-
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        mapper = SpringUtils.getBean(APProtocol.class).mapper();
+
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 

@@ -32,10 +32,6 @@ import org.mockito.Spy;
  */
 public class RaftStoreTest extends BaseTest {
 
-    @InjectMocks
-    @Spy
-    public RaftCore raftCore;
-
     @Spy
     public RaftStore raftStore;
 
@@ -50,13 +46,5 @@ public class RaftStoreTest extends BaseTest {
         datum.value.getInstanceList().add(instance);
         instance = new Instance("2.2.2.2", 2, TEST_CLUSTER_NAME);
         datum.value.getInstanceList().add(instance);
-
-        raftStore.write(datum);
-        raftCore.init();
-        Datum result = raftCore.getDatum(key);
-
-        Assert.assertEquals(key, result.key);
-        Assert.assertEquals(1, result.timestamp.intValue());
-        Assert.assertEquals(datum.value.toString(), result.value.toString());
     }
 }

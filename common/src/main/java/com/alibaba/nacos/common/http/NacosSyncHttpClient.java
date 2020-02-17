@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.http.param.Body;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
@@ -48,7 +47,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     }
 
     @Override
-    public <T> ResResult<T> getLarge(String url, Header header, Query query, Body body, TypeReference<ResResult<T>> token) throws Exception {
+    public <T> ResResult<T> getLarge(String url, Header header, Query query, ResResult body, TypeReference<ResResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET);
         return execute(client, token, requestBase);
     }
@@ -66,7 +65,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> ResResult<T> put(final String url,
                                 final Header header,
                                 final Query query,
-                                final Body body,
+                                final ResResult body,
                                 final TypeReference<ResResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         return execute(client, token, requestBase);
@@ -76,7 +75,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> ResResult<T> post(final String url,
                                  final Header header,
                                  final Query query,
-                                 final Body body,
+                                 final ResResult body,
                                  final TypeReference<ResResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         return execute(client, token, requestBase);

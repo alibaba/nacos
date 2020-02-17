@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
@@ -31,7 +34,9 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,9 +73,11 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         this.failoverRetries = Integer.parseInt(config.getValOfDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, "3"));
 
         this.raftServer = new JRaftServer(this.nodeManager);
-        this.raftServer.init(config, allLogDispacther().values());
+        this.raftServer.init(config, allProcessor().values());
         this.raftServer.start();
         isStart = true;
+
+        updateSelfNodeExtendInfo();
 
         // There is only one consumer to ensure that the internal consumption
         // is sequential and there is no concurrent competition
@@ -84,11 +91,21 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
                 final String leader = event.getLeader();
                 final long term = event.getTerm();
                 final List<String> raftClusterInfo = event.getRaftClusterInfo();
-                properties.put("leader", leader);
+
+                // Leader information needs to be selectively updated. If it is valid data,
+                // the information in the protocol metadata is updated.
+
+                if (StringUtils.isNotBlank(leader)) {
+                    properties.put("leader", leader);
+                }
                 properties.put("term", term);
                 properties.put("raftClusterInfo", raftClusterInfo);
                 value.put(groupId, properties);
                 metaData.load(value);
+
+                System.out.println(JSON.toJSONString(value));
+
+                updateSelfNodeExtendInfo();
             }
 
             @Override
@@ -145,7 +162,16 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         }
     }
 
-    Map<String, LogProcessor> allLogDispacther() {
-        return allProcessor();
+    @Override
+    public <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperate snapshotOperate) {
+        RaftKVStore<D> kvStore = new RaftKVStore<D>(storeName, serializer, snapshotOperate);
+        this.raftServer.createMultiRaftGroup(Collections.singletonList(kvStore.getLogProcessor()));
+        return kvStore;
+    }
+
+    void updateSelfNodeExtendInfo() {
+        com.alibaba.nacos.core.cluster.Node node = nodeManager.self();
+        node.setExtendVal("raft", metaData);
+        nodeManager.update(node);
     }
 }

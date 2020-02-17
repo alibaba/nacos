@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.consistency;
 
+import org.javatuples.Pair;
+
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,16 +52,22 @@ public final class ProtocolMetaData {
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>();
 
+    public Map<String, Map<Object, Object>> getMetaDataMap() {
+        return metaDataMap.entrySet()
+                .stream()
+                .map(entry -> {
+                    return Pair.with(entry.getKey(), entry.getValue().getItemMap()
+                            .entrySet().stream()
+                            .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), HashMap::putAll));
+                })
+                .collect(HashMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), HashMap::putAll);
+    }
+
     // Does not guarantee thread safety, there may be two updates of
     // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
 
     public void load(final Map<String, Map<String, Object>> mapMap) {
         mapMap.forEach((s, map) -> {
-
-            if (Objects.equals(GLOBAL, s)) {
-                throw new IllegalArgumentException("[global] is sys key, can't use");
-            }
-
             metaDataMap.computeIfAbsent(s, group -> new MetaData());
             final MetaData data = metaDataMap.get(s);
             map.forEach(data::put);
@@ -67,11 +75,6 @@ public final class ProtocolMetaData {
     }
 
     public Object get(String group, String... subKey) {
-
-        if (Objects.equals(GLOBAL, group)) {
-            throw new IllegalArgumentException("[global] is sys key, can't use");
-        }
-
         if (subKey == null || subKey.length == 0) {
             return metaDataMap.get(group);
         } else {
@@ -95,30 +98,34 @@ public final class ProtocolMetaData {
 
         // Each biz does not affect each other
 
-        private final Executor executor = Executors.newSingleThreadExecutor();
+        private transient final Executor executor = Executors.newSingleThreadExecutor();
 
-        private final Map<String, ValueItem> valueItemMap = new ConcurrentHashMap<>();
+        private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>();
+
+        public Map<String, ValueItem> getItemMap() {
+            return itemMap;
+        }
 
         void put(String key, Object value) {
-            valueItemMap.computeIfAbsent(key, s -> new ValueItem(this));
-            ValueItem item = valueItemMap.get(key);
+            itemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            ValueItem item = itemMap.get(key);
             item.setData(value);
         }
 
         public ValueItem get(String key) {
-            return valueItemMap.get(key);
+            return itemMap.get(key);
         }
 
         // If ValueItem does not exist, actively create a ValueItem
 
         void subscribe(final String key, final Observer observer) {
-            valueItemMap.computeIfAbsent(key, s -> new ValueItem(this));
-            final ValueItem item = valueItemMap.get(key);
+            itemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            final ValueItem item = itemMap.get(key);
             item.addObserver(observer);
         }
 
         void unSubscribe(final String key, final Observer observer) {
-            final ValueItem item = valueItemMap.get(key);
+            final ValueItem item = itemMap.get(key);
             if (item == null) {
                 return;
             }
@@ -131,7 +138,7 @@ public final class ProtocolMetaData {
 
         private volatile Object data;
 
-        private final MetaData holder;
+        private transient final MetaData holder;
 
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
