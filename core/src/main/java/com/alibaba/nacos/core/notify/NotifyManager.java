@@ -24,10 +24,12 @@ import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -39,22 +41,25 @@ public class NotifyManager {
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
 
     /**
+     * Register a Subscriber. If the Publisher concerned by the
+     * Subscriber does not exist, then PublihserMap will preempt
+     * a placeholder Publisher first. not call {@link Publisher#start()}
      *
-     * @param eventType
-     * @param consumer
-     * @param <T>
+     * @param eventType Types of events that Subscriber cares about
+     * @param consumer subscriber
+     * @param <T> event type
      */
     public static <T> void registerSubscribe(final Subscribe consumer) {
         final String topic = consumer.subscribeType().getCanonicalName();
-        if (PUBLISHER_MAP.containsKey(topic)) {
-            Publisher publisher = PUBLISHER_MAP.get(topic);
-            publisher.addSubscribe(consumer);
-        }
+        PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(consumer.subscribeType()));
+        Publisher publisher = PUBLISHER_MAP.get(topic);
+        publisher.addSubscribe(consumer);
     }
 
     /**
+     * deregister subscriber
      *
-     * @param consumer
+     * @param consumer subscriber
      * @param <T>
      */
     public static <T> void deregisterSubscribe(final Subscribe consumer) {
@@ -62,10 +67,13 @@ public class NotifyManager {
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
             publisher.unSubscribe(consumer);
+            return;
         }
+        throw new NoSuchElementException("The subcriber has no event publisher");
     }
 
     /**
+     * request publisher publish event
      *
      * @param eventType
      * @param event
@@ -76,10 +84,13 @@ public class NotifyManager {
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
             publisher.publish(event);
+            return;
         }
+        throw new NoSuchElementException("There are no event publishers for this event, please register");
     }
 
     /**
+     * register publisher
      *
      * @param supplier
      * @param eventType
@@ -89,30 +100,65 @@ public class NotifyManager {
                                               final Class<? extends Event> eventType) {
         final String topic = eventType.getCanonicalName();
         PUBLISHER_MAP.computeIfAbsent(topic, s -> {
-            Publisher publisher = new Publisher(supplier, eventType);
+            Publisher publisher = new Publisher(eventType);
             return publisher;
         });
-        return PUBLISHER_MAP.get(topic);
+        Publisher publisher = PUBLISHER_MAP.get(topic);
+        publisher.setSupplier(supplier);
+        publisher.start();
+        return publisher;
     }
 
     private static class Publisher {
 
-        private final Disruptor<EventHandle> disruptor;
+        private Disruptor<EventHandle> disruptor;
+
+        private Supplier<? extends Event> supplier;
 
         private final Class<? extends Event> eventType;
 
         private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
 
-        public Publisher(final Supplier<? extends Event> supplier,
-                         final Class<? extends Event> eventType) {
-            this.eventType = eventType;
+        private final AtomicBoolean initialized = new AtomicBoolean(false);
+        private volatile boolean canOpen = false;
 
-            this.disruptor = DisruptorFactory.build((EventFactory) () -> {
-                return new EventHandle(supplier.get());
-            }, eventType);
+        public Publisher(final Class<? extends Event> eventType) {
+            this.eventType = eventType;
+        }
+
+        void setSupplier(Supplier<? extends Event> supplier) {
+            this.supplier = supplier;
+        }
+
+        void start() {
+            if (initialized.compareAndSet(false, true)) {
+                this.disruptor = DisruptorFactory.build((EventFactory) () -> {
+                    return new EventHandle(supplier.get());
+                }, eventType);
+                openEventHandler();
+                this.disruptor.start();
+            }
+        }
+
+        void openEventHandler() {
             this.disruptor.handleEventsWith(new EventHandler<EventHandle>() {
                 @Override
                 public void onEvent(EventHandle handle, long sequence, boolean endOfBatch) throws Exception {
+
+                    // To ensure that messages are not lost, enable EentHandler when
+                    // waiting for the first Subscriber to register
+
+                    for ( ; ; ) {
+                        if (canOpen) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignore) {
+                            Thread.interrupted();
+                        }
+                    }
+
                     for (Subscribe subscribe : subscribes) {
                         final Runnable job = () -> subscribe.onEvent(handle.getEvent());
                         final Executor executor = subscribe.executor();
@@ -124,11 +170,11 @@ public class NotifyManager {
                     }
                 }
             });
-            this.disruptor.start();
         }
 
         void addSubscribe(Subscribe subscribe) {
             subscribes.add(subscribe);
+            canOpen = true;
         }
 
         void unSubscribe(Subscribe subscribe) {
@@ -136,12 +182,19 @@ public class NotifyManager {
         }
 
         void publish(Event event) {
+            checkIsStart();
             this.disruptor.publishEvent(new EventTranslator<EventHandle>() {
                 @Override
                 public void translateTo(EventHandle eventHandle, long sequence) {
                     eventHandle.setEvent(event);
                 }
             });
+        }
+
+        void checkIsStart() {
+            if (!initialized.get()) {
+                throw new IllegalStateException("Publisher does not start");
+            }
         }
 
     }

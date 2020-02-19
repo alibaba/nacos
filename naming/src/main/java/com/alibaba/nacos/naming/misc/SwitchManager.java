@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import org.apache.commons.lang3.BooleanUtils;
@@ -66,12 +65,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         lock.lock();
         try {
 
-            Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
-            SwitchDomain switchDomain;
-
-            if (datum != null && datum.value != null) {
-                switchDomain = (SwitchDomain) datum.value;
-            } else {
+            SwitchDomain switchDomain = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
+            if (switchDomain == null) {
                 switchDomain = this.switchDomain.clone();
             }
 
@@ -103,7 +98,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
-                Float threshold = Float.parseFloat(value);
+                float threshold = Float.parseFloat(value);
                 if (threshold <= 0) {
                     throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
                 }
@@ -138,7 +133,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.PUSH_CACHE_MILLIS)) {
-                Long cacheMillis = Long.parseLong(value);
+                long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
@@ -149,7 +144,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             // extremely careful while modifying this, cause it will affect all clients without pushing enabled
             if (entry.equals(SwitchEntry.DEFAULT_CACHE_MILLIS)) {
-                Long cacheMillis = Long.parseLong(value);
+                long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min default cache time  is too small(<1000)");
@@ -189,7 +184,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(value);
+                long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
@@ -199,7 +194,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
 
             if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
-                Integer times = Integer.parseInt(value);
+                int times = Integer.parseInt(value);
 
                 switchDomain.setCheckTimes(times);
             }

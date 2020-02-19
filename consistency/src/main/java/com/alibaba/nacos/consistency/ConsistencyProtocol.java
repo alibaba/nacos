@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -80,7 +81,7 @@ public interface ConsistencyProtocol<T extends Config> {
      * @return data {@link GetRequest}
      * @throws Exception
      */
-    <D> D getData(GetRequest request) throws Exception;
+    <D> GetResponse<D> getData(GetRequest request) throws Exception;
 
     /**
      * Data operation, returning submission results synchronously

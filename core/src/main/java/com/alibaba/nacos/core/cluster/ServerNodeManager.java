@@ -312,18 +312,21 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     private void initAPProtocol() {
-        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
+        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
 
         injectClusterInfo(protocol.protocolMetaData());
 
+        // If the node information managed by the NodeManager changes, re-inject
+        // the information into the protocol metadata information
+
         subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
     }
 
     private void initCPProtocol() {
-        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
+        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol).toArray(new LogProcessor[0]));
         protocol.init((config));
@@ -341,7 +344,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         defaultMetaData.put(ProtocolMetaData.GLOBAL, sub);
 
         sub.put(ProtocolMetaData.CLUSTER_INFO, allNodes().stream().map(Node::address).collect(Collectors.toList()));
-        sub.put(ProtocolMetaData.SELF, self.address());
+        sub.put(ProtocolMetaData.SELF, self().address());
 
         metaData.load(defaultMetaData);
 
@@ -355,9 +358,13 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         ServiceLoader<LogProcessor> loader = ServiceLoader.load(cls);
         for (LogProcessor t : loader) {
-            t.injectProtocol(protocol);
             result.add(t);
         }
+
+        for (LogProcessor processor : result) {
+            processor.injectProtocol(protocol);
+        }
+
         return result;
     }
 

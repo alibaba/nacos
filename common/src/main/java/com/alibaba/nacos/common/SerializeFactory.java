@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,26 +28,19 @@ import java.util.ServiceLoader;
  */
 public class SerializeFactory {
 
+    public static final String JSON_INDEX = "FastJson";
+
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
 
-    public static final String JSON_INDEX = "FastJson";
-    public static final String KRYO_INDEX = "Kryo";
-
     public static String DEFAULT_SERIALIZER = JSON_INDEX;
-
-    private static final Map<String, Class> CLASS_CACHE = new HashMap<String, Class>();
-
-    private static final Object monitor = new Object();
 
     static {
 
         DEFAULT_SERIALIZER = System.getProperty("com.alibaba.nacos.serializer-type", JSON_INDEX);
 
         Serializer jsonSerializer = new JsonSerializer();
-        Serializer kryoSerializer = new KryoSerializer();
 
         SERIALIZER_MAP.put(jsonSerializer.name(), jsonSerializer);
-        SERIALIZER_MAP.put(kryoSerializer.name(), kryoSerializer);
 
         ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
 
@@ -68,34 +62,16 @@ public class SerializeFactory {
         return serializer;
     }
 
-    private static class KryoSerializer implements Serializer {
-
-        @Override
-        public <T> T deSerialize(byte[] data, Class<T> cls) {
-            return null;
-        }
-
-        @Override
-        public <T> T deSerialize(byte[] data, String classFullName) {
-            return null;
-        }
-
-        @Override
-        public byte[] serialize(Object obj) {
-            return new byte[0];
-        }
-
-        @Override
-        public String name() {
-            return "Kryo";
-        }
-    }
-
     private static class JsonSerializer implements Serializer {
 
         @Override
         public <T> T deSerialize(byte[] data, Class<T> cls) {
             return JSON.parseObject(data, cls);
+        }
+
+        @Override
+        public <T> T deSerialize(byte[] data, TypeReference<T> reference) {
+            return JSON.parseObject(new String(data), reference);
         }
 
         @Override

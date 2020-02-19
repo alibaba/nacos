@@ -17,10 +17,12 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Can be discovered through SPI or Spring,
@@ -39,12 +41,19 @@ public interface LogProcessor {
     void injectProtocol(ConsistencyProtocol<? extends Config> protocol);
 
     /**
+     * Returns the Protocol implementation held by this LogProcessor
+     *
+     * @return {@link ConsistencyProtocol<? extends Config>}
+     */
+    ConsistencyProtocol<? extends Config> getProtocol();
+
+    /**
      * get data by key
      *
      * @param request request {@link GetRequest}
      * @return target type data
      */
-    <T> T getData(GetRequest request);
+    <D> GetResponse<D> getData(GetRequest request);
 
     /**
      * Discovery snapshot handler
@@ -54,6 +63,29 @@ public interface LogProcessor {
      */
     default List<SnapshotOperate> loadSnapshotOperate() {
         return Collections.emptyList();
+    }
+
+    /**
+     * Commit transaction
+     *
+     * @param log {@link Log}
+     * @return is success
+     * @throws Exception
+     */
+    default boolean commitAutoSetBiz(Log log) throws Exception {
+        log.setBiz(bizInfo());
+        return getProtocol().submit(log);
+    }
+
+    /**
+     * Commit transaction, asynchronous
+     *
+     * @param log {@link Log}
+     * @return {@link CompletableFuture<Boolean>}
+     */
+    default CompletableFuture<Boolean> commitAsyncAutoSetBiz(Log log) {
+        log.setBiz(bizInfo());
+        return getProtocol().submitAsync(log);
     }
 
     /**

@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -62,7 +63,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     @Autowired
     private CPProtocol protocol;
 
-    private volatile boolean isOk = false;
+    // If it is in stand-alone mode, it succeeds directly
+
+    private volatile boolean isOk = SystemUtils.STANDALONE_MODE;
 
     @PostConstruct
     protected void init() {
@@ -73,7 +76,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         executor.execute(notifier);
 
         protocol.protocolMetaData()
-                .subscribe(RaftStore.STORE_NAME , "leader", (o, arg) -> isOk = true);
+                .subscribe(RaftStore.STORE_NAME , "leader", (o, arg) -> {
+                    isOk = true;
+                });
 
     }
 
@@ -116,6 +121,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     @Override
     public boolean isAvailable() {
+        Loggers.RAFT.info("raft consistency service is ok : {}, raft store is ok : {}", isOk, raftStore.isInitialized());
         return isOk && (raftStore.isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus()));
     }
 

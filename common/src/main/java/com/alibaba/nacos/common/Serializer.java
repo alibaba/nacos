@@ -16,10 +16,19 @@
 
 package com.alibaba.nacos.common;
 
+import com.alibaba.fastjson.TypeReference;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Serializer {
+
+    Object monitor = new Object();
+
+    Map<String, Class> CLASS_CACHE = new HashMap<String, Class>();
 
     /**
      * 将数据反序列化
@@ -30,6 +39,16 @@ public interface Serializer {
      * @return
      */
     <T> T deSerialize(byte[] data, Class<T> cls);
+
+    /**
+     * only use to json
+     *
+     * @param data
+     * @param reference
+     * @param <T>
+     * @return
+     */
+    <T> T deSerialize(byte[] data, TypeReference<T> reference);
 
     /**
      * 将数据反序列化

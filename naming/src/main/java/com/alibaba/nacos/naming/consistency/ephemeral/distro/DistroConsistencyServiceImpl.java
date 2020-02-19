@@ -18,11 +18,25 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.naming.cluster.ServerStatus;
+import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -46,10 +60,24 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Autowired
     private DataStore dataStore;
 
+    @Autowired
+    private GlobalConfig globalConfig;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private Notifier notifier;
+
     private ScheduledExecutorService executor = ExecutorFactory.newSingleScheduledExecutorService(
             "distroConsistencyService",
             new NameThreadFactory("com.alibaba.nacos.naming.distro.notifier")
     );
+
+    @PostConstruct
+    protected void init() {
+        executor.submit(notifier);
+    }
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -86,7 +114,84 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public boolean isAvailable() {
-        return false;
+        return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+
+    public boolean isInitialized() {
+        return dataStore.isStart() || !globalConfig.isDataWarmup();
+    }
+
+    @Component
+    public class Notifier implements Runnable {
+
+        private Map<String, String> services = new ConcurrentHashMap<>(10 * 1024);
+
+        private BlockingQueue<Pair<String, ApplyAction>> tasks = new LinkedBlockingQueue<Pair<String, ApplyAction>>(1024 * 1024);
+
+        public void addTask(String datumKey, ApplyAction action) {
+
+            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
+                return;
+            }
+            if (action == ApplyAction.CHANGE) {
+                services.put(datumKey, StringUtils.EMPTY);
+            }
+            tasks.add(Pair.with(datumKey, action));
+        }
+
+        public int getTaskSize() {
+            return tasks.size();
+        }
+
+        @Override
+        public void run() {
+            Loggers.DISTRO.info("distro notifier started");
+
+            for ( ; ; ) {
+                try {
+
+                    Pair<String, ApplyAction> pair = tasks.take();
+
+                    String datumKey = pair.getValue0();
+                    ApplyAction action = pair.getValue1();
+
+                    services.remove(datumKey);
+
+                    int count = 0;
+
+                    Map<String, List<RecordListener<?>>> listeners = dataStore.getListMap();
+
+                    if (!listeners.containsKey(datumKey)) {
+                        continue;
+                    }
+
+                    for (RecordListener listener : listeners.get(datumKey)) {
+
+                        count++;
+
+                        try {
+                            if (action == ApplyAction.CHANGE) {
+                                listener.onChange(datumKey, dataStore.get(datumKey));
+                                continue;
+                            }
+
+                            if (action == ApplyAction.DELETE) {
+                                listener.onDelete(datumKey);
+                            }
+                        } catch (Throwable e) {
+                            Loggers.DISTRO.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
+                        }
+                    }
+
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
+                                datumKey, count, action.name());
+                    }
+                } catch (Throwable e) {
+                    Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
+                }
+            }
+        }
     }
 
 }

@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
@@ -63,9 +64,6 @@ public class DistroKVStore<T> extends KVStore<T> {
 
     @Override
     public final boolean put(String key, T data) throws Exception {
-
-        key = logProcessor.bizInfo() + key;
-
         final byte[] putData = serializer.serialize(data);
 
         final NLog log = NLog.builder()
@@ -76,22 +74,18 @@ public class DistroKVStore<T> extends KVStore<T> {
                 .addContextValue("source", data)
                 .build();
 
-        protocol.submit(log);
+        logProcessor.commitAutoSetBiz(log);
         return true;
     }
 
     @Override
     public final boolean remove(String key) throws Exception {
-
-        key = logProcessor.bizInfo() + key;
-
         final NLog log = NLog.builder()
                 .key(key)
                 .operation(REMOVE_COMMAND)
                 .build();
 
-        protocol.submit(log);
-
+        logProcessor.commitAutoSetBiz(log);
         return true;
     }
 
@@ -119,23 +113,39 @@ public class DistroKVStore<T> extends KVStore<T> {
         }
 
         @Override
-        public T getData(GetRequest request) {
-            final String key = request.getKey();
-            return getByKeyAutoConvert(key);
+        public ConsistencyProtocol<? extends Config> getProtocol() {
+            return DistroKVStore.this.protocol;
+        }
+
+        @Override
+        public <D> GetResponse<D> getData(GetRequest request) {
+            try {
+                final String key = new String(request.getCtx());
+                return GetResponse.<D>builder()
+                        .data((D) getByKeyAutoConvert(key))
+                        .build();
+            } catch (Exception e) {
+                return GetResponse.<D>builder()
+                        .exceptionName(e.getClass().getName())
+                        .errMsg(e.getMessage())
+                        .build();
+            }
         }
 
         @Override
         public boolean onApply(Log log) {
             final String operation = log.getOperation();
-            final String originKey = getOriginKey(log.getKey());
+            final String originKey = log.getKey();
             final NLog nLog = (NLog) log;
             if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
                 final byte[] data = log.getData();
                 final T source = (T) nLog.getContextValue("source");
+                System.out.println(this + " origin key : " + originKey);
                 operate(originKey, Pair.with(source, data), PUT_COMMAND);
                 return true;
             }
             if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
+                System.out.println(this + " origin key : " + originKey);
                 operate(originKey, null, REMOVE_COMMAND);
             }
             throw new UnsupportedOperationException();
@@ -150,14 +160,6 @@ public class DistroKVStore<T> extends KVStore<T> {
 
     KVLogProcessor getKVLogProcessor() {
         return logProcessor;
-    }
-
-    String buildKey(String originKey) {
-        return logProcessor.bizInfo() + "-" + originKey;
-    }
-
-    String getOriginKey(String key) {
-        return key.replace(logProcessor.bizInfo() + "-", "");
     }
 
 }

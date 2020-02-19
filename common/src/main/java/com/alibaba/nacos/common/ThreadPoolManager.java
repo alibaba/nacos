@@ -129,7 +129,7 @@ public final class ThreadPoolManager {
 	                while (retry > 0) {
 	                    retry --;
 	                    try {
-	                        if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+	                        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
 	                            executor.shutdownNow();
                             }
                         } catch (Exception e) {

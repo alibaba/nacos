@@ -108,6 +108,8 @@ class DistroClient {
 
         HttpResResult<String> result = (HttpResResult<String>) httpClient.get(url, Header.EMPTY, Query.EMPTY, reference);
 
+        Loggers.DISTRO.info("get all data from server-addr : {} is : {}", serverAddr, result);
+
         if (result.ok()) {
             return result.getData().getBytes();
         }
@@ -120,7 +122,7 @@ class DistroClient {
 
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
-        params.put("storeName", StringUtils.join(keys, ","));
+        params.put("storeName", storeName);
 
         final String url = buildUrl(DATA_GET_URL, server);
 
@@ -146,7 +148,7 @@ class DistroClient {
 
         try {
             final String url = buildUrl(DATA_ON_SYNC_URL, curServer);
-            HttpResResult<String> result = (HttpResResult<String>) httpClient.post(url, header, Query.EMPTY,
+            HttpResResult<String> result = (HttpResResult<String>) httpClient.put(url, header, Query.EMPTY,
                     ResResultUtils.success(data), reference);
             if (HttpURLConnection.HTTP_OK == result.getHttpCode()) {
                 return true;

@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
@@ -76,16 +77,7 @@ public class DistroServer {
 
     public void start() {
 
-        DistroExecutor.executeByGlobal(() -> {
-            try {
-
-                // sync data from remote node
-
-                load();
-            } catch (Exception e) {
-                Loggers.DISTRO.error("load data failed.", e);
-            }
-        });
+        // === start:Initialize related members of the distro protocol
 
         this.distroClient = new DistroClient(
                 this.nodeManager,
@@ -103,6 +95,21 @@ public class DistroServer {
                 this.distroClient);
 
         this.taskCenter = new TaskCenter(this.nodeManager, this.dataSyncer);
+
+        // === end
+
+        // === start:Start relevant members of the distro protocol
+
+        DistroExecutor.executeByGlobal(() -> {
+            try {
+
+                // sync data from remote node
+
+                load();
+            } catch (Exception e) {
+                Loggers.DISTRO.error("load data failed.", e);
+            }
+        });
 
         this.dataSyncer.start();
         this.timedSync.start();
@@ -149,7 +156,7 @@ public class DistroServer {
             processData(data);
             return true;
         } catch (Exception e) {
-            Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
+            Loggers.DISTRO.error("sync full data from " + server.address() + " failed!", ExceptionUtil.getAllExceptionMsg(e));
             return false;
         }
     }

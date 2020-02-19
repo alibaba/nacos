@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.PersistService;
@@ -44,9 +45,9 @@ public class DumpAllTagProcessor implements TaskProcessor {
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<PersistService.ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
-                for (PersistService.ConfigInfoTagWrapper cf : page.getPageItems()) {
+                for (ConfigInfoTagWrapper cf : page.getPageItems()) {
                     boolean result = ConfigService.dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
                             cf.getContent(), cf.getLastModified());
                     LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,

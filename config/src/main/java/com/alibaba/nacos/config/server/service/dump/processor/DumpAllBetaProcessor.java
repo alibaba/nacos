@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.PersistService;
@@ -44,9 +45,9 @@ public class DumpAllBetaProcessor implements TaskProcessor {
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<PersistService.ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
-                for (PersistService.ConfigInfoBetaWrapper cf : page.getPageItems()) {
+                for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
                     boolean result = ConfigService.dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                             cf.getContent(), cf.getLastModified(), cf.getBetaIps());
                     LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,

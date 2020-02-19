@@ -30,6 +30,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class DisruptorFactory {
 
+    // Internal disruptor buffer size. For applications with high write throughput,
+    // this value needs to be increased appropriately. default value is 16384
+
+    private static int ringBufferSize = 16384;
+
+    static {
+        String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+        String val = System.getProperty(ringBufferSizeProperty, "16384");
+        ringBufferSize = Integer.parseInt(val);
+    }
+
     public static <T> Disruptor<T> build(EventFactory<T> factory, Class<T> name) {
         return build(factory, name, ProducerType.MULTI, new BlockingWaitStrategy());
     }
@@ -41,7 +52,6 @@ public final class DisruptorFactory {
 
     public static <T> Disruptor<T> build(EventFactory<T> factory, Class<T> name,
                                          ProducerType type, WaitStrategy waitStrategy) {
-        int ringBufferSize = 1024;
         return build(ringBufferSize, factory, name, type, waitStrategy);
     }
 

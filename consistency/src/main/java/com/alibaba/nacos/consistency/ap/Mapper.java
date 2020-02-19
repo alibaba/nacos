@@ -30,6 +30,7 @@ public interface Mapper {
      * Injecting cluster node management
      *
      * @param servers all nodes, already sorted
+     * @param localServer local node address
      */
     void injectNodeManager(List<String> servers, String localServer);
 

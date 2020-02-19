@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.service.transaction.ConditionOnDefaultStoreType;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
@@ -23,6 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -39,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -48,6 +50,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
+@Conditional(ConditionOnUseMySql.class)
+@DependsOn(value = "serverNodeManager")
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
@@ -344,7 +348,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             for (int i = 0; i < testJTList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJTList.get(i);
                 try {
-                    jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
+                    jdbcTemplate.query(sql, RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER);
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {

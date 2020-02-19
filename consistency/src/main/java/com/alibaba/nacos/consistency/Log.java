@@ -27,6 +27,23 @@ import java.util.Map;
 public interface Log extends Serializable {
 
     /**
+     * Returns the business to which this Log belongs
+     * This is an important distinction. How Protocol
+     * distributes different logs to different logs
+     * depends on this information.
+     *
+     * @return business-info
+     */
+    String getBiz();
+
+    /**
+     * setting biz info
+     *
+     * @param biz biz info
+     */
+    void setBiz(String biz);
+
+    /**
      * datum key
      *
      * @return key

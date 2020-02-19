@@ -16,23 +16,23 @@
 
 package com.alibaba.nacos.core.distributed.distro.route;
 
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.consistency.ap.APProtocol;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
+import java.util.ServiceLoader;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class DistroCondition implements Condition {
 
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        try {
-            context.getBeanFactory().getBean(DistroProtocol.class);
-            return true;
-        } catch (Exception ignore) {
-            return false;
-        }
+        ServiceLoader<APProtocol> loader = ServiceLoader.load(APProtocol.class);
+        boolean result = !loader.iterator().hasNext();
+        return result;
     }
 }

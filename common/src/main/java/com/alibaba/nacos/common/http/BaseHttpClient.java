@@ -69,7 +69,7 @@ public abstract class BaseHttpClient {
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 ResResult<T> data = ResponseHandler.convert(body, reference);
                 if (data != null && data.getCode() == HttpStatus.SC_OK) {
-                    resResult.setCode(200);
+                    resResult.setCode(data.getCode());
                     resResult.setData(data.getData());
                     return resResult;
                 } else {

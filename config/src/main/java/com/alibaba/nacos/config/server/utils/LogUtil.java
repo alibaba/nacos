@@ -51,6 +51,9 @@ public class LogUtil {
     public static final Logger dumpLog = LoggerFactory
         .getLogger("com.alibaba.nacos.config.dumpLog");
 
+    public static final Logger mergeLog = LoggerFactory
+            .getLogger("com.alibaba.nacos.config.merge");
+
     public static final Logger memoryLog = LoggerFactory
         .getLogger("com.alibaba.nacos.config.monitorLog");
 
@@ -92,6 +95,9 @@ public class LogUtil {
                 break;
             case "config-notify":
                 ((ch.qos.logback.classic.Logger) notifyLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-merge":
+                ((ch.qos.logback.classic.Logger) mergeLog).setLevel(Level.valueOf(level));
                 break;
             default:
                 break;

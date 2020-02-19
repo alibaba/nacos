@@ -45,9 +45,16 @@ public class DistributeIDManager {
         DATA_CENTER_ID = nodeManager.indexOf(SystemUtils.LOCAL_IP);
     }
 
-    public static void register(String resources) {
+    public static void register(String resource) {
         int workerId = WORKER_ID.get();
-        SNAKE_FLOWER_ID_HELPER_MAP.computeIfAbsent(resources, s -> new SnakeFlowerIdHelper(DATA_CENTER_ID, workerId));
+        SNAKE_FLOWER_ID_HELPER_MAP.computeIfAbsent(resource, s -> new SnakeFlowerIdHelper(DATA_CENTER_ID, workerId));
+    }
+
+    public static void register(String... resources) {
+        int workerId = WORKER_ID.get();
+        for (String resource : resources) {
+            SNAKE_FLOWER_ID_HELPER_MAP.computeIfAbsent(resource, s -> new SnakeFlowerIdHelper(DATA_CENTER_ID, workerId));
+        }
     }
 
     public static long nextId(String resource) {

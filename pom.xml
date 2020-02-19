@@ -665,6 +665,15 @@
                 <version>2.11.2</version>
             </dependency>
 
+            <!-- kryo -->
+
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>4.0.2</version>
+            </dependency>
+
+
             <!-- HTTP client libs -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

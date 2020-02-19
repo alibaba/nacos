@@ -40,7 +40,7 @@ public class ServerStatusManager {
     @Autowired
     private SwitchDomain switchDomain;
 
-    private ServerStatus serverStatus = ServerStatus.STARTING;
+    private volatile ServerStatus serverStatus = ServerStatus.STARTING;
 
     @PostConstruct
     public void init() {

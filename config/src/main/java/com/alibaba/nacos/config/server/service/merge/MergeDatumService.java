@@ -18,6 +18,9 @@ package com.alibaba.nacos.config.server.service.merge;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +40,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @Service
 public class MergeDatumService {
 
+    private NodeManager nodeManager;
     private PersistService persistService;
     static final int INIT_THREAD_COUNT = 40;
     static final AtomicInteger FINISHED = new AtomicInteger();
@@ -47,9 +51,7 @@ public class MergeDatumService {
     @Autowired
     public MergeDatumService(PersistService persistService) {
         this.persistService = persistService;
-
-        // This task requires resource lock contention
-
+        this.nodeManager = SpringUtils.getBean(NodeManager.class);
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
         mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
     }
@@ -70,6 +72,10 @@ public class MergeDatumService {
      * 数据变更后调用，添加聚合任务
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String tag, String clientIp) {
+        if (!nodeManager.isFirstIp()) {
+            LogUtil.mergeLog.debug("The current node is not the first node in the cluster and does not process any tasks");
+            return;
+        }
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, tag, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
@@ -78,11 +84,19 @@ public class MergeDatumService {
      * 数据变更后调用，添加聚合任务
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String clientIp) {
+        if (!nodeManager.isFirstIp()) {
+            LogUtil.mergeLog.debug("The current node is not the first node in the cluster and does not process any tasks");
+            return;
+        }
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
 
     public void mergeAll() {
+        if (!nodeManager.isFirstIp()) {
+            LogUtil.mergeLog.debug("The current node is not the first node in the cluster and does not process any tasks");
+            return;
+        }
         for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
             addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), LOCAL_IP);
         }

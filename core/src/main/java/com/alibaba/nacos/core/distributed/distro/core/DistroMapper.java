@@ -82,7 +82,7 @@ public class DistroMapper implements Mapper, NodeChangeListener {
 
         // end
 
-        this.nodeManager.subscribe(this::onEvent);
+        this.nodeManager.subscribe(this);
 
     }
 

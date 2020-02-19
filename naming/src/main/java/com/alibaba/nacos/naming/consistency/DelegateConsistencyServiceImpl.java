@@ -75,7 +75,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Override
     public boolean isAvailable() {
-        return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
+        boolean ephemeral = ephemeralConsistencyService.isAvailable();
+        boolean persistent = persistentConsistencyService.isAvailable();
+        return ephemeral && persistent;
     }
 
     private ConsistencyService mapConsistencyService(String key) {

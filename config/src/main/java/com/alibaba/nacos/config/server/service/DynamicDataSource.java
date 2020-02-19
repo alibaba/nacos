@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -26,6 +27,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  *
  * @author Nacos
  */
+@DependsOn(value = "serverNodeManager")
 @Component
 public class DynamicDataSource {
 
@@ -41,8 +43,19 @@ public class DynamicDataSource {
         return dataSourceService;
     }
 
+    /**
+     * 判断顺序：
+     *      1、单机模式：mysql
+     *      2、单机模式：derby
+     *      3、集群模式：mysql
+     *      4、集群模式：derby-cluster
+     *
+     * @return Whether to use derby storage
+     */
     private boolean useMemoryDB() {
-        return STANDALONE_MODE && !PropertyUtil.isUseMysql();
+        return (STANDALONE_MODE && !PropertyUtil.isUseMysql())
+                || PropertyUtil.isUseMysql()
+                || PropertyUtil.isEmbeddedDistributedStorage();
     }
 
 }

@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -103,8 +104,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
                 value.put(groupId, properties);
                 metaData.load(value);
 
-                System.out.println(JSON.toJSONString(value));
-
                 updateSelfNodeExtendInfo();
             }
 
@@ -124,9 +123,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     }
 
     @Override
-    public <D> D getData(GetRequest request) throws Exception {
-        final String key = request.getKey();
-        return (D) raftServer.get(request, failoverRetries).join();
+    public <D> GetResponse<D> getData(GetRequest request) throws Exception {
+        return (GetResponse<D>) raftServer.get(request, failoverRetries).join();
     }
 
     @Override
@@ -165,7 +163,14 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     @Override
     public <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperate snapshotOperate) {
         RaftKVStore<D> kvStore = new RaftKVStore<D>(storeName, serializer, snapshotOperate);
-        this.raftServer.createMultiRaftGroup(Collections.singletonList(kvStore.getLogProcessor()));
+
+        // Because Raft uses RaftProtocol internally, so LogProcessor is implemented, need to add
+
+        LogProcessor processor = kvStore.getLogProcessor();
+
+        processor.injectProtocol(this);
+
+        this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
         return kvStore;
     }
 

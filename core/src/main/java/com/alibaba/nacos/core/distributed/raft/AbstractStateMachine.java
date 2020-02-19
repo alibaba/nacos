@@ -152,16 +152,6 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     }
 
     @Override
-    public void onStopFollowing(LeaderChangeContext ctx) {
-        NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
-                .groupId(groupId)
-                .leader(ctx.getLeaderId().getEndpoint().toString())
-                .term(ctx.getTerm())
-                .raftClusterInfo(allPeers())
-                .build());
-    }
-
-    @Override
     public void onStartFollowing(LeaderChangeContext ctx) {
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)

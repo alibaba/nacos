@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
 import com.alibaba.nacos.core.cluster.NodeManager;
@@ -58,7 +59,6 @@ import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
-import com.alipay.sofa.jraft.util.BytesUtil;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
@@ -278,15 +278,15 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
-    CompletableFuture<Object> get(final GetRequest request, final int failoverRetries) {
-        final String key = request.getKey();
-        CompletableFuture<Object> future = new CompletableFuture<>();
-        final RaftGroupTuple tuple = findNodeByLogKey(key);
+    CompletableFuture<GetResponse<Object>> get(final GetRequest request, final int failoverRetries) {
+        final String biz = request.getBiz();
+        CompletableFuture<GetResponse<Object>> future = new CompletableFuture<>();
+        final RaftGroupTuple tuple = findNodeByBiz(biz);
         if (Objects.isNull(tuple)) {
             future.completeExceptionally(new NoSuchElementException());
         }
         final Node node = tuple.node;
-        node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
+        node.readIndex(request.getCtx(), new ReadIndexClosure() {
             @Override
             public void run(Status status, long index, byte[] reqCtx) {
                 if (status.isOk()) {
@@ -294,7 +294,8 @@ public class JRaftServer implements NodeChangeListener {
                 } else {
                     // run raft read
                     commit(JLogUtils.toJLog(NLog.builder()
-                            .key(key)
+                            .biz(biz)
+                            .data(reqCtx)
                             .operation("JRAFT_READ_OPERATION")
                             .build(), JLog.SYS_OPERATION), future, failoverRetries)
                             .whenComplete(new BiConsumer<Object, Throwable>() {
@@ -303,7 +304,7 @@ public class JRaftServer implements NodeChangeListener {
                                     if (Objects.nonNull(throwable)) {
                                         future.completeExceptionally(throwable);
                                     } else {
-                                        future.complete(result);
+                                        future.complete((GetResponse<Object>) result);
                                     }
                                 }
                             });
@@ -315,7 +316,7 @@ public class JRaftServer implements NodeChangeListener {
 
     <T> CompletableFuture<T> commit(JLog data, final CompletableFuture<T> future, final int retryLeft) {
         final String key = data.getKey();
-        final RaftGroupTuple tuple = findNodeByLogKey(data.getKey());
+        final RaftGroupTuple tuple = findNodeByBiz(data.getBiz());
         if (tuple == null) {
             throw new IllegalArgumentException();
         }
@@ -488,14 +489,9 @@ public class JRaftServer implements NodeChangeListener {
         }
     }
 
-    RaftGroupTuple findNodeByLogKey(final String key) {
-        for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
-            final RaftGroupTuple tuple = entry.getValue();
-            if (tuple.processor.interest(key)) {
-                return tuple;
-            }
-        }
-        return null;
+    RaftGroupTuple findNodeByBiz(final String biz) {
+        RaftGroupTuple tuple = multiRaftGroup.get(biz);
+        return tuple;
     }
 
     private Node findNodeByGroup(String group) {

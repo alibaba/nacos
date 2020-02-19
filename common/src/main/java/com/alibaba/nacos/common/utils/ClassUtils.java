@@ -30,4 +30,12 @@ public class ClassUtils {
         return (Class<T>) actualTypeArguments[0];
     }
 
+    public static Class findClassByName(String className) {
+        try {
+            return Class.forName(className);
+        } catch (Exception e) {
+            throw new RuntimeException("this class name not found");
+        }
+    }
+
 }

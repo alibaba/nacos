@@ -23,6 +23,8 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Component;
@@ -48,6 +50,8 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
  *
  * @author Nacos
  */
+@Conditional(ConditionOnUseDerby.class)
+@DependsOn(value = "serverNodeManager")
 @Component("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
 

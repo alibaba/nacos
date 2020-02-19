@@ -40,7 +40,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
 
     @Override
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, JLog log) {
-        final JRaftServer.RaftGroupTuple tuple = server.findNodeByLogKey(log.getKey());
+        final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getKey());
         if (tuple.getNode().isLeader()) {
             CompletableFuture<Object> future = new CompletableFuture<>();
             server.commit(log, future, 3).whenComplete((result, t) -> {

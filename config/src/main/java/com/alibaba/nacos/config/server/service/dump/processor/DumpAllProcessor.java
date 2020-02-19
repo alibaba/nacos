@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
@@ -46,10 +47,10 @@ public class DumpAllProcessor implements TaskProcessor {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
-            Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
+            Page<ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                     PAGE_SIZE);
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
-                for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
+                for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {

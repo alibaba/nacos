@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -94,8 +95,11 @@ public class NacosStateMachine extends AbstractStateMachine {
     }
 
     private void raftRead(NacosClosure closure, JLog log) {
-        final GetRequest request = serializer.deSerialize(log.getData(), GetRequest.class);
-        Object result = processor.getData(request);
+        final GetRequest request = GetRequest.builder()
+                .biz(log.getBiz())
+                .ctx(log.getData())
+                .build();
+        GetResponse<Object> result = processor.getData(request);
         if (Objects.nonNull(closure)) {
             closure.setObject(result);
         }

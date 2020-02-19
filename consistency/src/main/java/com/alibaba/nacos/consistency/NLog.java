@@ -27,6 +27,7 @@ public class NLog implements Log {
 
     private static final long serialVersionUID = 2277124615731537462L;
 
+    private String biz;
     private String key;
     private byte[] data;
     private String className;
@@ -52,6 +53,16 @@ public class NLog implements Log {
 
     public void setExtendInfo(Map<String, String> extendInfo) {
         this.extendInfo = extendInfo;
+    }
+
+    @Override
+    public String getBiz() {
+        return biz;
+    }
+
+    @Override
+    public void setBiz(String biz) {
+        this.biz = biz;
     }
 
     @Override
@@ -108,6 +119,7 @@ public class NLog implements Log {
 
 
     public static final class NLogBuilder {
+        private String biz;
         private String key;
         private byte[] data;
         private String className;
@@ -116,6 +128,11 @@ public class NLog implements Log {
         private transient Map<String, Object> context = new HashMap<>(3);
 
         private NLogBuilder() {
+        }
+
+        public NLogBuilder biz(String biz) {
+            this.biz = biz;
+            return this;
         }
 
         public NLogBuilder key(String key) {
@@ -150,6 +167,7 @@ public class NLog implements Log {
 
         public NLog build() {
             NLog nLog = new NLog();
+            nLog.setBiz(biz);
             nLog.setKey(key);
             nLog.setData(data);
             nLog.setClassName(className);

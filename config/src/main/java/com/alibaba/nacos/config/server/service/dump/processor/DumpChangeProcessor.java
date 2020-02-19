@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.dump.processor;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
@@ -48,10 +49,10 @@ public class DumpChangeProcessor implements TaskProcessor {
                 startTime, endTime);
         LogUtil.defaultLog.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();
-        List<PersistService.ConfigInfoWrapper> updateMd5List = persistService
+        List<ConfigInfoWrapper> updateMd5List = persistService
                 .listAllGroupKeyMd5();
         LogUtil.defaultLog.warn("updateMd5 count:{}", updateMd5List.size());
-        for (PersistService.ConfigInfoWrapper config : updateMd5List) {
+        for (ConfigInfoWrapper config : updateMd5List) {
             final String groupKey = GroupKey2.getKey(config.getDataId(),
                     config.getGroup());
             ConfigService.updateMd5(groupKey, config.getMd5(),
@@ -78,10 +79,10 @@ public class DumpChangeProcessor implements TaskProcessor {
 
         LogUtil.defaultLog.warn("changeConfig start");
         long startChangeConfigTime = System.currentTimeMillis();
-        List<PersistService.ConfigInfoWrapper> changeConfigs = persistService
+        List<ConfigInfoWrapper> changeConfigs = persistService
                 .findChangeConfig(startTime, endTime);
         LogUtil.defaultLog.warn("changeConfig count:{}", changeConfigs.size());
-        for (PersistService.ConfigInfoWrapper cf : changeConfigs) {
+        for (ConfigInfoWrapper cf : changeConfigs) {
             boolean result = ConfigService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                     cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();

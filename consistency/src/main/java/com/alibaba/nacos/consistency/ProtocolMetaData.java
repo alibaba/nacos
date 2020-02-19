@@ -22,9 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -58,9 +60,11 @@ public final class ProtocolMetaData {
                 .map(entry -> {
                     return Pair.with(entry.getKey(), entry.getValue().getItemMap()
                             .entrySet().stream()
-                            .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), HashMap::putAll));
+                            .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()),
+                                    HashMap::putAll));
                 })
-                .collect(HashMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), HashMap::putAll);
+                .collect(HashMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()),
+                        HashMap::putAll);
     }
 
     // Does not guarantee thread safety, there may be two updates of
@@ -68,7 +72,7 @@ public final class ProtocolMetaData {
 
     public void load(final Map<String, Map<String, Object>> mapMap) {
         mapMap.forEach((s, map) -> {
-            metaDataMap.computeIfAbsent(s, group -> new MetaData());
+            metaDataMap.computeIfAbsent(s, MetaData::new);
             final MetaData data = metaDataMap.get(s);
             map.forEach(data::put);
         });
@@ -89,7 +93,7 @@ public final class ProtocolMetaData {
     // If MetaData does not exist, actively create a MetaData
 
     public void subscribe(final String group, final String key, final Observer observer) {
-        metaDataMap.computeIfAbsent(group, s -> new MetaData());
+        metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
         metaDataMap.get(group)
                 .subscribe(key, observer);
     }
@@ -98,16 +102,26 @@ public final class ProtocolMetaData {
 
         // Each biz does not affect each other
 
-        private transient final Executor executor = Executors.newSingleThreadExecutor();
+        private transient final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>();
+
+        private transient final String group;
+
+        public MetaData(String group) {
+            this.group = group;
+        }
 
         public Map<String, ValueItem> getItemMap() {
             return itemMap;
         }
 
         void put(String key, Object value) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            itemMap.computeIfAbsent(key, s -> {
+                ValueItem item = new ValueItem(this, group + "/" + key);
+                System.out.println("create valueItem for " + item.path);
+                return item;
+            });
             ValueItem item = itemMap.get(key);
             item.setData(value);
         }
@@ -119,7 +133,11 @@ public final class ProtocolMetaData {
         // If ValueItem does not exist, actively create a ValueItem
 
         void subscribe(final String key, final Observer observer) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(this));
+            itemMap.computeIfAbsent(key, s -> {
+                ValueItem item = new ValueItem(this, group + "/" + key);
+                System.out.println("subscribe valueItem for " + item.path);
+                return item;
+            });
             final ValueItem item = itemMap.get(key);
             item.addObserver(observer);
         }
@@ -139,13 +157,18 @@ public final class ProtocolMetaData {
         private volatile Object data;
 
         private transient final MetaData holder;
+        private transient final String path;
 
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
         private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-        public ValueItem(MetaData holder) {
+        private BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
+
+        public ValueItem(MetaData holder, String path) {
             this.holder = holder;
+            this.path = path;
+            notifySubscriber();
         }
 
         public Object getData() {
@@ -161,12 +184,27 @@ public final class ProtocolMetaData {
             writeLock.lock();
             try {
                 this.data = data;
-                holder.executor.execute(() -> {
-                    notifyObservers(data);
-                });
+                setChanged();
+                deferObject.offer(data);
             } finally {
                 writeLock.unlock();
             }
+        }
+
+        private void notifySubscriber() {
+            holder.executor.submit(() -> {
+                if (countObservers() == 0) {
+                    holder.executor.submit(this::notifySubscriber);
+                    return;
+                }
+                try {
+                    Object data = deferObject.take();
+                    notifyObservers(data);
+                } catch (InterruptedException ignore) {
+
+                }
+                holder.executor.submit(this::notifySubscriber);
+            });
         }
     }
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -66,26 +67,22 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     }
 
     @Override
-    public <D> D getData(GetRequest request) throws Exception {
-        final String key = request.getKey();
-        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
-            final LogProcessor processor = entry.getValue();
-            if (processor.interest(key)) {
-                return processor.getData(request);
-            }
+    public <D> GetResponse<D> getData(GetRequest request) throws Exception {
+        final String biz = request.getBiz();
+        LogProcessor processor = allProcessor().get(biz);
+        if (processor != null) {
+            return processor.getData(request);
         }
         return null;
     }
 
     @Override
     public boolean submit(Log data) throws Exception {
-        final String key = data.getKey();
-        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
-            final LogProcessor processor = entry.getValue();
-            if (processor.interest(key)) {
-                processor.onApply(data);
-                return distroServer.submit(data);
-            }
+        final String biz = data.getBiz();
+        LogProcessor processor = allProcessor().get(biz);
+        if (processor != null) {
+            processor.onApply(data);
+            return distroServer.submit(data);
         }
         return false;
     }
@@ -141,7 +138,11 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
 
         // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
 
-        loadLogDispatcher(Collections.singletonList(kvStore.getKVLogProcessor()));
+        LogProcessor processor = kvStore.getKVLogProcessor();
+
+        processor.injectProtocol(this);
+
+        loadLogDispatcher(Collections.singletonList(processor));
         return kvStore;
     }
 

@@ -16,7 +16,8 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.model.Page;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class PaginationHelper<E> {
     /**
      * 取分页
      *
-     * @param jt           jdbcTemplate
+     * @param services           jdbcTemplate
      * @param sqlCountRows 查询总数的SQL
      * @param sqlFetchRows 查询数据的sql
      * @param args         查询参数
@@ -45,12 +46,12 @@ public class PaginationHelper<E> {
      * @param rowMapper
      * @return
      */
-    public Page<E> fetchPage(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
+    public Page<E> fetchPage(final DatabaseOperate services, final String sqlCountRows, final String sqlFetchRows,
                              final Object[] args, final int pageNo, final int pageSize, final RowMapper<E> rowMapper) {
-        return fetchPage(jt, sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
+        return fetchPage(services, sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
 
-    public Page<E> fetchPage(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
+    public Page<E> fetchPage(final DatabaseOperate services, final String sqlCountRows, final String sqlFetchRows,
                              final Object[] args, final int pageNo, final int pageSize, final Long lastMaxId,
                              final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -58,7 +59,7 @@ public class PaginationHelper<E> {
         }
 
         // 查询当前记录总数
-        Integer rowCountInt = jt.queryForObject(sqlCountRows, Integer.class, args);
+        Integer rowCountInt = services.queryOne(sqlCountRows, args, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
@@ -89,21 +90,21 @@ public class PaginationHelper<E> {
             selectSQL = sqlFetchRows + " limit " + startRow + "," + pageSize;
         }
 
-        List<E> result = jt.query(selectSQL, args, rowMapper);
+        List<E> result = services.queryMany(selectSQL, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
         return page;
     }
 
-    public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
+    public Page<E> fetchPageLimit(final DatabaseOperate services, final String sqlCountRows, final String sqlFetchRows,
                                   final Object[] args, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         // 查询当前记录总数
-        Integer rowCountInt = jt.queryForObject(sqlCountRows, Integer.class);
+        Integer rowCountInt = services.queryOne(sqlCountRows, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
@@ -129,14 +130,14 @@ public class PaginationHelper<E> {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
-        List<E> result = jt.query(selectSQL, args, rowMapper);
+        List<E> result = services.queryMany(selectSQL, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
         return page;
     }
 
-    public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlCountRows, final Object[] args1,
+    public Page<E> fetchPageLimit(final DatabaseOperate services, final String sqlCountRows, final Object[] args1,
                                   final String sqlFetchRows,
                                   final Object[] args2, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
@@ -144,7 +145,7 @@ public class PaginationHelper<E> {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         // 查询当前记录总数
-        Integer rowCountInt = jt.queryForObject(sqlCountRows, Integer.class, args1);
+        Integer rowCountInt = services.queryOne(sqlCountRows, args1, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
@@ -170,14 +171,14 @@ public class PaginationHelper<E> {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
-        List<E> result = jt.query(selectSQL, args2, rowMapper);
+        List<E> result = services.queryMany(selectSQL, args2, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
         return page;
     }
 
-    public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlFetchRows,
+    public Page<E> fetchPageLimit(final DatabaseOperate services, final String sqlFetchRows,
                                   final Object[] args, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
@@ -191,20 +192,21 @@ public class PaginationHelper<E> {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
-        List<E> result = jt.query(selectSQL, args, rowMapper);
+        List<E> result = services.queryMany(selectSQL, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
         return page;
     }
 
-    public void updateLimit(final JdbcTemplate jt, final String sql, final Object[] args) {
+    public void updateLimit(final DatabaseOperate services, final String sql, final Object[] args) {
         String sqlUpdate = sql;
 
         if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
             sqlUpdate = sqlUpdate.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         }
 
-        jt.update(sqlUpdate, args);
+        SqlContextUtils.addSqlContext(sqlUpdate, args);
+        services.update(SqlContextUtils.getCurrentSqlContext());
     }
 }

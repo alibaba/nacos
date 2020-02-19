@@ -19,10 +19,9 @@ import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -43,6 +43,7 @@ import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -65,6 +66,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  *
  * @author Nacos
  */
+@DependsOn("serverNodeManager")
 @Service
 public class DumpService {
 

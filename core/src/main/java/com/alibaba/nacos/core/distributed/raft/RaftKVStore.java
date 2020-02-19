@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
@@ -25,11 +26,14 @@ import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
+import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.core.distributed.raft.exception.RaftKVStoreException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +48,8 @@ import java.util.function.BiConsumer;
  */
 @SuppressWarnings("all")
 class RaftKVStore<T> extends CPKvStore<T> {
+
+    private static final TypeReference<Collection<String>> reference = new TypeReference<Collection<String>>(){};
 
     private KVLogProcessor logProcessor;
 
@@ -71,8 +77,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public boolean put(String key, Object data) throws Exception {
-        key = buildKey(key);
-
         final byte[] putData = serializer.serialize(data);
 
         final NLog log = NLog.builder()
@@ -82,151 +86,182 @@ class RaftKVStore<T> extends CPKvStore<T> {
                 .className(data.getClass().getCanonicalName())
                 .build();
 
-        protocol.submit(log);
+        logProcessor.commitAutoSetBiz(log);
         return true;
     }
 
     @Override
     public boolean remove(String key) throws Exception {
-        key = buildKey(key);
-
         final NLog log = NLog.builder()
                 .key(key)
                 .operation(REMOVE_COMMAND)
                 .build();
 
-        protocol.submit(log);
+        logProcessor.commitAutoSetBiz(log);
 
         return true;
     }
 
     @Override
     public boolean contains(String key) {
+        GetResponse<Boolean> response;
         try {
-            key = buildKey(key);
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "contains")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(Collections.singletonList(key)))
+                    .addInfo("type", "contains")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "contains", e);
-            return false;
+            throw new RuntimeException(e);
         }
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public byte[] getByKey(String key) {
+        GetResponse<byte[]> response;
         try {
-            key = buildKey(key);
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "getByKey")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(Collections.singletonList(key)))
+                    .addInfo("type", "getByKey")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKey", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public T getByKeyAutoConvert(String key) {
+        GetResponse<T> response;
         try {
-            key = buildKey(key);
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "getByKeyAutoConvert")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(Collections.singletonList(key)))
+                    .addInfo("type", "getByKeyAutoConvert")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKeyAutoConvert", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public Item getItemByKey(String key) {
+        GetResponse<Item> response;
         try {
-            key = buildKey(key);
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "getItemByKey")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(Collections.singletonList(key)))
+                    .addInfo("type", "getItemByKey")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByKey", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public Map<String, T> batchGetAutoConvert(Collection<String> keys) {
+        GetResponse<Map<String, T>> response;
         try {
 
             // Just as data routing analysis
 
-            String key = buildKey("");
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .keys(keys)
-                    .addValue("type", "batchGetAutoConvert")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(keys))
+                    .addInfo("type", "batchGetAutoConvert")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "batchGetAutoConvert", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public Map<String, Item> getItemByBatch(Collection<String> keys) {
+        GetResponse<Map<String, Item>> response;
         try {
-            // Just as data routing analysis
-
-            String key = buildKey("");
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .keys(keys)
-                    .addValue("type", "getItemByBatch")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(keys))
+                    .addInfo("type", "getItemByBatch")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByBatch", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public String getCheckSum(String key) {
+        GetResponse<String> response;
         try {
-            key = buildKey(key);
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "getCheckSum")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(Collections.singletonList(key)))
+                    .addInfo("type", "getCheckSum")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getCheckSum", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
     public Collection<String> allKeys() {
+        GetResponse<Collection<String>> response;
         try {
-            // Just as data routing analysis
-
-            String key = buildKey("");
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .addValue("type", "allKeys")
+                    .biz(logProcessor.bizInfo())
+                    .addInfo("type", "allKeys")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "allKeys", e);
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     // This operation does not guarantee read consistency, and is only used for Raft snapshots
@@ -238,20 +273,21 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Map<String, byte[]> batchGet(Collection keys) {
+        GetResponse<Map<String, byte[]>> response;
         try {
-            // Just as data routing analysis
-
-            String key = buildKey("");
             final GetRequest request = GetRequest.builder()
-                    .key(key)
-                    .keys(keys)
-                    .addValue("type", "batchGet")
+                    .biz(logProcessor.bizInfo())
+                    .ctx(serializer.serialize(keys))
+                    .addInfo("type", "batchGet")
                     .build();
-            return protocol.getData(request);
+            response = protocol.getData(request);
         } catch (Exception e) {
-
+            throw new RuntimeException(e);
         }
-        return null;
+        if (response.getData() != null) {
+            return response.getData();
+        }
+        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
     @Override
@@ -274,17 +310,30 @@ class RaftKVStore<T> extends CPKvStore<T> {
         }
 
         @Override
-        public <D> D getData(GetRequest request) {
-            final String key = request.getKey();
-            final Collection<String> keys = request.getKeys();
+        public ConsistencyProtocol<? extends Config> getProtocol() {
+            return RaftKVStore.this.protocol;
+        }
+
+        @Override
+        public <D> GetResponse<D> getData(GetRequest request) {
+            final Collection<String> keys = serializer.deSerialize(request.getCtx(), reference);
             final String type = request.getValue("type");
-            return (D) funcCaller.execute(type, key, keys);
+            try {
+                return GetResponse.<D>builder()
+                        .data((D) funcCaller.execute(type, new ArrayList<>(keys)))
+                        .build();
+            } catch (Exception e) {
+                return GetResponse.<D>builder()
+                        .exceptionName(e.getClass().getName())
+                        .errMsg(e.getMessage())
+                        .build();
+            }
         }
 
         @Override
         public boolean onApply(Log log) {
             final String operation = log.getOperation();
-            final String originKey = getOriginKey(log.getKey());
+            final String originKey = log.getKey();
             final NLog nLog = (NLog) log;
             if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
                 final byte[] data = log.getData();
@@ -309,14 +358,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
         public String bizInfo() {
             return storeName();
         }
-    }
-
-    String buildKey(String originKey) {
-        return logProcessor.bizInfo() + "-" + originKey;
-    }
-
-    String getOriginKey(String key) {
-        return key.replace(logProcessor.bizInfo() + "-", "");
     }
 
     public KVLogProcessor getLogProcessor() {
@@ -348,23 +389,23 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
         // Leave it to the KvStore implementation method to handle
 
-        Object execute(String type, String key, Collection<String> keys) {
+        Object execute(String type, List<String> keys) {
 
             switch (type) {
                 case contains:
-                    return RaftKVStore.super.contains(key);
+                    return RaftKVStore.super.contains(keys.get(0));
                 case getByKey:
-                    return RaftKVStore.super.getByKey(key);
+                    return RaftKVStore.super.getByKey(keys.get(0));
                 case getByKeyAutoConvert:
-                    return RaftKVStore.super.getByKeyAutoConvert(key);
+                    return RaftKVStore.super.getByKeyAutoConvert(keys.get(0));
                 case getItemByKey:
-                    return RaftKVStore.super.getItemByKey(key);
+                    return RaftKVStore.super.getItemByKey(keys.get(0));
                 case batchGetAutoConvert:
                     return RaftKVStore.super.batchGetAutoConvert(keys);
                 case getItemByBatch:
                     return RaftKVStore.super.getItemByBatch(keys);
                 case getCheckSum:
-                    return RaftKVStore.super.getCheckSum(key);
+                    return RaftKVStore.super.getCheckSum(keys.get(0));
                 case allKeys:
                     return RaftKVStore.super.allKeys();
                 case getAll:

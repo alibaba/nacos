@@ -196,11 +196,18 @@ public abstract class KVStore<T> extends BaseStore {
 
         byte[] bytes;
         String checkSum;
-        final String className;
+        String className;
+
+        public Item() {
+        }
 
         public Item(byte[] bytes, String className) {
             this.bytes = bytes;
             this.checkSum = Md5Utils.getMD5(bytes);
+            this.className = className;
+        }
+
+        public void setClassName(String className) {
             this.className = className;
         }
 
@@ -245,6 +252,7 @@ public abstract class KVStore<T> extends BaseStore {
     BiFunction<String, Pair<T, byte[]>, Boolean> put = new BiFunction<String, Pair<T, byte[]>, Boolean>() {
         @Override
         public Boolean apply(String key, Pair<T, byte[]> pair) {
+            System.out.println(this + " origin key : " + key);
             final T value = pair.getValue0();
             final byte[] data = pair.getValue1();
             final boolean[] isCreate = new boolean[]{false};
@@ -274,6 +282,7 @@ public abstract class KVStore<T> extends BaseStore {
     BiFunction<String, T, Boolean> remove = new BiFunction<String, T, Boolean>() {
         @Override
         public Boolean apply(String key, T data) {
+            System.out.println(this + " origin key : " + key);
             before(key, null, null, false);
             T source = getByKeyAutoConvert(key);
             Item item = dataStore.remove(key);

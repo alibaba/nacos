@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.consistency.request;
 
-import java.util.Collection;
-import java.util.Properties;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * // TODO 请求体中需要携带的信息需要在考虑清楚下
@@ -26,63 +27,60 @@ import java.util.Properties;
  */
 public class GetRequest {
 
-    private String key;
-    private Collection<String> keys;
-    private String requestBody;
-    private Properties context = new Properties();
+    private String biz;
 
-    public GetRequest(String key, String requestBody) {
-        this.key = key;
-        this.requestBody = requestBody;
-    }
+    private byte[] ctx;
 
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public Collection<String> getKeys() {
-        return keys;
-    }
-
-    public void setKeys(Collection<String> keys) {
-        this.keys = keys;
-    }
-
-    public String getRequestBody() {
-        return requestBody;
-    }
-
-    public void setRequestBody(String requestBody) {
-        this.requestBody = requestBody;
-    }
-
-    public Properties getContext() {
-        return context;
-    }
-
-    public void setContext(Properties context) {
-        this.context = context;
-    }
-
-    public void addValue(String key, String value) {
-        this.context.put(key, value);
-    }
-
-    public String getValue(String key) {
-        return (String) this.context.get(key);
-    }
+    private Map<String, String> info;
 
     @Override
     public String toString() {
         return "GetRequest{" +
-                "key='" + key + '\'' +
-                ", requestBody='" + requestBody + '\'' +
-                ", context=" + context +
+                "biz='" + biz + '\'' +
+                ", ctx=" + Arrays.toString(ctx) +
                 '}';
+    }
+
+    public String getBiz() {
+        return biz;
+    }
+
+    public void setBiz(String biz) {
+        this.biz = biz;
+    }
+
+    public byte[] getCtx() {
+        return ctx;
+    }
+
+    public void setCtx(byte[] ctx) {
+        this.ctx = ctx;
+    }
+
+    public Map<String, String> getInfo() {
+        return info;
+    }
+
+    public void setInfo(Map<String, String> info) {
+        if (this.info == null) {
+            this.info = info;
+        } else {
+            this.info.putAll(info);
+        }
+    }
+
+    public void addValue(String key, String value) {
+        if (info == null) {
+            info = new HashMap<>();
+        }
+        info.put(key, value);
+    }
+
+    public String getValue(String key) {
+        if (info == null) {
+            return null;
+        }
+        return info.get(key);
     }
 
     public static GetRequestBuilder builder() {
@@ -90,44 +88,46 @@ public class GetRequest {
     }
 
     public static final class GetRequestBuilder {
-        private String key;
-        private Collection<String> keys;
-        private String requestBody;
-        private Properties context = new Properties();
+        private String biz;
+        private byte[] ctx;
+        private Map<String, String> info;
 
         private GetRequestBuilder() {
         }
 
-        public GetRequestBuilder key(String key) {
-            this.key = key;
+        public GetRequestBuilder biz(String biz) {
+            this.biz = biz;
             return this;
         }
 
-        public GetRequestBuilder keys(Collection<String> keys) {
-            this.keys = keys;
+        public GetRequestBuilder ctx(byte[] ctx) {
+            this.ctx = ctx;
             return this;
         }
 
-        public GetRequestBuilder requestBody(String requestBody) {
-            this.requestBody = requestBody;
+        public GetRequestBuilder info(Map<String, String> info) {
+            if (this.info == null) {
+                this.info = info;
+            } else {
+                this.info.putAll(info);
+            }
             return this;
         }
 
-        public GetRequestBuilder context(Properties context) {
-            this.context.putAll(context);
-            return this;
-        }
-
-        public GetRequestBuilder addValue(String key, String value) {
-            this.context.put(key, value);
+        public GetRequestBuilder addInfo(String key, String value) {
+            if (this.info == null) {
+                info = new HashMap<>();
+            }
+            info.put(key, value);
             return this;
         }
 
         public GetRequest build() {
-            GetRequest getRequest = new GetRequest(key, requestBody);
-            getRequest.setContext(context);
-            getRequest.setKeys(keys);
+            GetRequest getRequest = new GetRequest();
+            getRequest.setBiz(biz);
+            getRequest.setCtx(ctx);
             return getRequest;
         }
     }
+
 }

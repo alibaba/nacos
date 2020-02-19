@@ -81,6 +81,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      * 单机模式使用db
      */
     private static boolean useMysql = false;
+    /**
+     * 内嵌分布式存储
+     */
+    private static boolean embeddedDistributedStorage = false;
 
     private Environment env;
 
@@ -108,6 +112,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
             setUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
+            setEmbeddedDistributedStorage(getBoolean("embeddedDistributedStorage", embeddedDistributedStorage));
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
         }
@@ -206,6 +211,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return useMysql;
     }
 
+    public static boolean isEmbeddedDistributedStorage() {
+        return embeddedDistributedStorage;
+    }
+
     public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
         PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
     }
@@ -267,6 +276,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     public static void setUseMysql(boolean useMysql) {
         PropertyUtil.useMysql = useMysql;
+    }
+
+    public static void setEmbeddedDistributedStorage(boolean embeddedDistributedStorage) {
+        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage;
     }
 
     @Override

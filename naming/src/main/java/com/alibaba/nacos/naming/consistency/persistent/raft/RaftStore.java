@@ -74,6 +74,8 @@ import java.util.zip.ZipOutputStream;
 @SuppressWarnings("all")
 public class RaftStore {
 
+    private static final TypeReference<Map<String, KVStore.Item>> reference = new TypeReference<Map<String, KVStore.Item>>(){};
+
     private final String SNAPSHOT_DIR = "nacos-naming";
     private final String SNAPSHOT_ARCHIVE = "nacos-naming.zip";
     private final String SNAPSHOT_FILE = "naming-snapshot.dat";
@@ -201,9 +203,7 @@ public class RaftStore {
 
                 byte[] bytes = FileUtils.readFileToByteArray(new File(file));
 
-                Class<Map<String, KVStore.Item>> cls = ClassUtils.resolveGenericType(new TypeReference<Map<String, KVStore.Item>>(){}.getClass());
-
-                kvStore.load(serializer.deSerialize(bytes, cls));
+                kvStore.load(serializer.deSerialize(bytes, reference));
 
                 return true;
             }

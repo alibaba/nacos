@@ -20,6 +20,7 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
+import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -58,17 +59,23 @@ public class DataStore {
     @Autowired
     private APProtocol protocol;
 
+    @Autowired
+    private DistroConsistencyServiceImpl.Notifier notifier;
+
     public static final String STORE_NAME = "ephemeral_services";
 
     private KVStore<Record> kvStore;
 
-    private final Map<String, List<RecordListener>> listMap = new ConcurrentHashMap<>();
+    private final Map<String, List<RecordListener<?>>> listMap = new ConcurrentHashMap<>();
+
+    private boolean isStart = false;
 
     @PostConstruct
     protected void init() throws Exception {
         kvStore = protocol.createKVStore(STORE_NAME);
         kvStore.registerHook(null, new NBeforeHook(), new NAfterHook());
         kvStore.start();
+        isStart = true;
     }
 
     public Record get(String key) {
@@ -119,23 +126,19 @@ public class DataStore {
 
         @Override
         public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
-            List<RecordListener> listeners = listMap.get(key);
-            for (RecordListener listener : listeners) {
-
-                try {
-
-                    if (isPut) {
-                        listener.onChange(key, data);
-                    } else {
-                        listener.onDelete(key);
-                    }
-
-                } catch (Exception e) {
-                    Loggers.DISTRO.error("[NACOS-RAFT] error while notifying listener of key: {}, error : {}", key, e);
-                }
-
+            if (isPut) {
+                notifier.addTask(key, ApplyAction.CHANGE);
+            } else {
+                notifier.addTask(key, ApplyAction.DELETE);
             }
         }
     }
 
+    public boolean isStart() {
+        return isStart;
+    }
+
+    public Map<String, List<RecordListener<?>>> getListMap() {
+        return listMap;
+    }
 }
