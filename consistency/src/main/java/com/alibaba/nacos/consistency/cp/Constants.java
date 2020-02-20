@@ -14,36 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+package com.alibaba.nacos.consistency.cp;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class Constants {
 
-    public static final String USER_OPERATION = "user_operation";
-    public static final String SYS_OPERATION = "sys_operation";
+    public static final String LEADER_META_DATA = "leader";
 
-    private String sysOperation;
+    public static final String TERM_META_DATA = "term";
 
-    JLog() {}
+    public static final String RAFT_GROUP_MEMBER = "raftGroupMember";
 
-    public String getSysOperation() {
-        return sysOperation;
-    }
-
-    public void setSysOperation(String sysOperation) {
-        this.sysOperation = sysOperation;
-    }
-
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
 }

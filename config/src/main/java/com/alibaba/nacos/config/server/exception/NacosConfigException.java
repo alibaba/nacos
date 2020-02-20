@@ -14,36 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+package com.alibaba.nacos.config.server.exception;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class NacosConfigException extends RuntimeException {
 
-    public static final String USER_OPERATION = "user_operation";
-    public static final String SYS_OPERATION = "sys_operation";
-
-    private String sysOperation;
-
-    JLog() {}
-
-    public String getSysOperation() {
-        return sysOperation;
+    public NacosConfigException() {
     }
 
-    public void setSysOperation(String sysOperation) {
-        this.sysOperation = sysOperation;
+    public NacosConfigException(String message) {
+        super(message);
     }
 
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
+    public NacosConfigException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public NacosConfigException(Throwable cause) {
+        super(cause);
+    }
+
+    public NacosConfigException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

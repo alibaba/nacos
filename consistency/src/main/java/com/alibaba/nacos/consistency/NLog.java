@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,13 +28,16 @@ public class NLog implements Log {
 
     private static final long serialVersionUID = 2277124615731537462L;
 
-    private String biz;
-    private String key;
-    private byte[] data;
-    private String className;
-    private String operation;
-    private Map<String, String> extendInfo = new HashMap<>(3);
-    private transient Map<String, Object> context = new HashMap<>(3);
+    protected String biz;
+    protected String key;
+    protected byte[] data;
+    protected String className;
+    protected String operation;
+    protected Map<String, String> extendInfo = new HashMap<>(3);
+
+    // Only this node knows that it is used to transparently transmit information at this node
+
+    protected transient Map<String, Object> localContext = new HashMap<>(3);
 
     public void setKey(String key) {
         this.key = key;
@@ -106,17 +110,39 @@ public class NLog implements Log {
     }
 
     public void addContextValue(String key, Object value) {
-        this.context.put(key, value);
+        this.localContext.put(key, value);
     }
 
     public <D> D getContextValue(String key) {
-        return (D) this.context.get(key);
+        return (D) this.localContext.get(key);
+    }
+
+    @Override
+    public Map<String, Object> getLocalContext() {
+        return localContext;
+    }
+
+    @Override
+    public void setLocalContext(Map<String, Object> localContext) {
+        this.localContext = localContext;
+    }
+
+    @Override
+    public String toString() {
+        return "NLog{" +
+                "biz='" + biz + '\'' +
+                ", key='" + key + '\'' +
+                ", data=" + Arrays.toString(data) +
+                ", className='" + className + '\'' +
+                ", operation='" + operation + '\'' +
+                ", extendInfo=" + extendInfo +
+                ", localContext=" + localContext +
+                '}';
     }
 
     public static NLogBuilder builder() {
         return new NLogBuilder();
     }
-
 
     public static final class NLogBuilder {
         private String biz;
@@ -125,7 +151,7 @@ public class NLog implements Log {
         private String className;
         private String operation;
         private Map<String, String> extendInfo = new HashMap<>(3);
-        private transient Map<String, Object> context = new HashMap<>(3);
+        private transient Map<String, Object> localContext = new HashMap<>(3);
 
         private NLogBuilder() {
         }
@@ -161,7 +187,7 @@ public class NLog implements Log {
         }
 
         public NLogBuilder addContextValue(String key, Object value) {
-            this.context.put(key, value);
+            this.localContext.put(key, value);
             return this;
         }
 
@@ -173,7 +199,7 @@ public class NLog implements Log {
             nLog.setClassName(className);
             nLog.setOperation(operation);
             nLog.setExtendInfo(extendInfo);
-            nLog.context = this.context;
+            nLog.localContext = this.localContext;
             return nLog;
         }
     }

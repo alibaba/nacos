@@ -436,7 +436,7 @@ public class ConfigController {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
             rr.setCode(200);
             rr.setData(ci);
-            rr.setMessage("stop beta ok");
+            rr.setMessage("find beta ok");
             return rr;
         } catch (Exception e) {
             log.error("remove beta data error", e);

@@ -316,7 +316,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
         @Override
         public <D> GetResponse<D> getData(GetRequest request) {
-            final Collection<String> keys = serializer.deSerialize(request.getCtx(), reference);
+            final Collection<String> keys = serializer.deSerialize(request.getCtx(), Collection.class);
             final String type = request.getValue("type");
             try {
                 return GetResponse.<D>builder()

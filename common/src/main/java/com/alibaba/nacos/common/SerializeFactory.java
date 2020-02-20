@@ -28,7 +28,7 @@ import java.util.ServiceLoader;
  */
 public class SerializeFactory {
 
-    public static final String JSON_INDEX = "FastJson";
+    public static final String JSON_INDEX = "FastJson".toLowerCase();
 
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
 
@@ -36,16 +36,16 @@ public class SerializeFactory {
 
     static {
 
-        DEFAULT_SERIALIZER = System.getProperty("com.alibaba.nacos.serializer-type", JSON_INDEX);
+        DEFAULT_SERIALIZER = System.getProperty("com.alibaba.nacos.serializer-type", JSON_INDEX).toLowerCase();
 
         Serializer jsonSerializer = new JsonSerializer();
 
-        SERIALIZER_MAP.put(jsonSerializer.name(), jsonSerializer);
+        SERIALIZER_MAP.put(JSON_INDEX, jsonSerializer);
 
         ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
 
         for (Serializer serializer : loader) {
-            SERIALIZER_MAP.put(serializer.name(), serializer);
+            SERIALIZER_MAP.put(serializer.name().toLowerCase(), serializer);
         }
 
     }
@@ -55,7 +55,7 @@ public class SerializeFactory {
     }
 
     public static Serializer getSerializerDefaultJson(String name) {
-        Serializer serializer = SERIALIZER_MAP.get(name);
+        Serializer serializer = SERIALIZER_MAP.get(name.toLowerCase());
         if (serializer == null) {
             return SERIALIZER_MAP.get(JSON_INDEX);
         }
@@ -98,13 +98,13 @@ public class SerializeFactory {
         }
 
         @Override
-        public byte[] serialize(Object obj) {
+        public <T> byte[] serialize(T obj) {
             return JSON.toJSONBytes(obj);
         }
 
         @Override
         public String name() {
-            return "FastJson";
+            return JSON_INDEX;
         }
     }
 

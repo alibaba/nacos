@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
-import org.javatuples.Pair;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
@@ -93,10 +92,10 @@ public interface DatabaseOperate {
     /**
      * data modify transaction
      *
-     * @param sqlContext {@link List<Pair<String, Object[]>>}
+     * @param sqlContext {@link List<SQL>}
      * @return is success
      */
-    Boolean update(List<Pair<String, Object[]>> sqlContext);
+    Boolean update(List<SQL> sqlContext);
 
     /**
      * data modify transaction

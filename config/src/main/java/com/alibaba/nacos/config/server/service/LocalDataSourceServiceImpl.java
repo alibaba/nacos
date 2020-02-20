@@ -19,7 +19,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
-import org.apache.commons.dbcp.BasicDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,6 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
@@ -71,19 +70,13 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
             logger.info("use local db service");
 
-            BasicDataSource ds = new BasicDataSource();
+            HikariDataSource ds = new HikariDataSource();
             ds.setDriverClassName(JDBC_DRIVER_NAME);
-            ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
+            ds.setJdbcUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
             ds.setUsername(USER_NAME);
             ds.setPassword(PASSWORD);
-            ds.setInitialSize(20);
-            ds.setMaxActive(30);
-            ds.setMaxIdle(50);
-            ds.setMaxWait(10000L);
-            ds.setPoolPreparedStatements(true);
-            ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                    .toMillis(10L));
-            ds.setTestWhileIdle(true);
+            ds.setMaximumPoolSize(80);
+            ds.setConnectionTimeout(10000L);
 
             jt = new JdbcTemplate();
             jt.setMaxRows(50000);

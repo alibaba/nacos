@@ -69,7 +69,22 @@ public class NacosStateMachine extends AbstractStateMachine {
                     if (StringUtils.equals(JLog.SYS_OPERATION, log.getSysOperation())) {
                         raftRead(closure, log);
                     } else {
-                        processor.onApply(log);
+                        try {
+
+                            boolean result = processor.onApply(log);
+
+                            if (Objects.nonNull(closure)) {
+                                closure.setObject(result);
+                            }
+
+                        } catch (Throwable t) {
+
+                            // TODO 这里的处理需要考虑下，如果业务层能够处理错误避免一致性问题，则处理，
+                            //  否则还是需要抛出交给状态机
+
+                            processor.onError(t);
+                            status = new Status(RaftError.UNKNOWN, t.getMessage());
+                        }
                     }
                 }
                 catch (Throwable e) {

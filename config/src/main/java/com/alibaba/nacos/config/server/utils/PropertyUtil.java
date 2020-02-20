@@ -279,7 +279,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     public static void setEmbeddedDistributedStorage(boolean embeddedDistributedStorage) {
-        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage;
+        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage && !isUseMysql();
     }
 
     @Override

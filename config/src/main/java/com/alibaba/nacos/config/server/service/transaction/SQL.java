@@ -14,36 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
+package com.alibaba.nacos.config.server.service.transaction;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+import java.io.Serializable;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class SQL implements Serializable {
 
-    public static final String USER_OPERATION = "user_operation";
-    public static final String SYS_OPERATION = "sys_operation";
+    private static final long serialVersionUID = 4548851816596520564L;
 
-    private String sysOperation;
+    private String sql;
+    private Object[] args;
 
-    JLog() {}
-
-    public String getSysOperation() {
-        return sysOperation;
+    public SQL() {
     }
 
-    public void setSysOperation(String sysOperation) {
-        this.sysOperation = sysOperation;
+    public String getSql() {
+        return sql;
     }
 
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
+    public void setSql(String sql) {
+        this.sql = sql;
     }
+
+    public Object[] getArgs() {
+        return args;
+    }
+
+    public void setArgs(Object[] args) {
+        this.args = args;
+    }
+
 }

@@ -18,10 +18,8 @@ package com.alibaba.nacos.config.server.service.transaction;
 
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -40,7 +38,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 @Primary
 @Conditional(ConditionOnDefaultStoreType.class)
 @Component
-@DependsOn(value = "serverNodeManager")
 public class LocalDatabaseOperateImpl extends BaseDatabaseOperate implements DatabaseOperate {
 
     @Autowired
@@ -90,7 +87,7 @@ public class LocalDatabaseOperateImpl extends BaseDatabaseOperate implements Dat
     }
 
     @Override
-    public Boolean update(List<Pair<String, Object[]>> sqlContext) {
+    public Boolean update(List<SQL> sqlContext) {
         return update(transactionTemplate, jdbcTemplate, sqlContext);
     }
 }

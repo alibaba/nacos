@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
-import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
@@ -68,8 +67,7 @@ public class DistroServer {
             final DistroConfig config) {
         this.nodeManager = nodeManager;
         this.config = config;
-        this.serializer = SerializeFactory.getSerializerDefaultJson(
-                config.getValOfDefault(DistroSysConstants.DATA_SERIALIZER_TYPE, SerializeFactory.JSON_INDEX));
+        this.serializer = SerializeFactory.getDefault();
 
         this.distroMapper = new DistroMapper(nodeManager, config);
         this.kvManager = kvManager;

@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -27,7 +26,6 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  *
  * @author Nacos
  */
-@DependsOn(value = "serverNodeManager")
 @Component
 public class DynamicDataSource {
 
@@ -54,7 +52,6 @@ public class DynamicDataSource {
      */
     private boolean useMemoryDB() {
         return (STANDALONE_MODE && !PropertyUtil.isUseMysql())
-                || PropertyUtil.isUseMysql()
                 || PropertyUtil.isEmbeddedDistributedStorage();
     }
 

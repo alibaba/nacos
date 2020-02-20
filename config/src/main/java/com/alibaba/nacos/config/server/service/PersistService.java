@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
+import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -46,9 +47,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -83,7 +82,6 @@ import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_D
 import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.RowMapperManager.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
@@ -92,9 +90,10 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  * @author leiwen.zh
  * @since 1.0
  */
-@DependsOn(value = "serverNodeManager")
 @Repository
 public class PersistService {
+
+    private static final Object[] EMPTY_ARRAY = new Object[]{};
 
     @Autowired
     private DatabaseOperate databaseOperate;
@@ -196,7 +195,11 @@ public class PersistService {
                     configInfo.getTenant());
             insertConfigHistoryAtomic(configHistoryId, configInfo, srcIp, srcUser, time, "I");
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("配置发布失败");
+            }
 
             if (notify) {
                 EventDispatcher.fireEvent(
@@ -228,7 +231,11 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("【灰度】配置发布失败");
+            }
 
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
@@ -259,7 +266,11 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("【标签】配置添加失败");
+            }
 
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
@@ -293,6 +304,13 @@ public class PersistService {
                         configInfo.getGroup(), configInfo.getTenant());
             }
             insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
+
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("配置修改失败");
+            }
+
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
@@ -320,7 +338,11 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("【灰度】配置修改失败");
+            }
 
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
@@ -350,7 +372,11 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("【标签】配置修改失败");
+            }
 
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
@@ -363,7 +389,7 @@ public class PersistService {
 
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
                                    final String srcUser, final Timestamp time, final boolean notify) {
-        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) != null) {
+        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
             addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
         } else {
             updateConfigInfo4Beta(configInfo, srcIp, null, time, notify);
@@ -372,7 +398,7 @@ public class PersistService {
 
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
                                   final String srcUser, final Timestamp time, final boolean notify) {
-        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) != null) {
+        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         } else {
             updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
@@ -393,7 +419,10 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("配置 MD5 修改失败");
+            }
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -441,6 +470,12 @@ public class PersistService {
                 removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                 removeTagByIdAtomic(configInfo.getId());
                 insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+
+                boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+                if (!result) {
+                    throw new NacosConfigException("配置删除失败");
+                }
+
             } finally {
                 SqlContextUtils.cleanCurrentSqlContext();
             }
@@ -471,7 +506,10 @@ public class PersistService {
                 }
             }
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("配置批量删除失败");
+            }
 
             return configInfoList;
         } finally {
@@ -493,7 +531,10 @@ public class PersistService {
                 };
                 SqlContextUtils.addSqlContext(sql, args);
 
-                databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+                boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+                if (!result) {
+                    throw new NacosConfigException("【标签】配置删除失败");
+                }
             } finally {
                 SqlContextUtils.cleanCurrentSqlContext();
             }
@@ -536,6 +577,15 @@ public class PersistService {
             };
             SqlContextUtils.addSqlContext(update, args);
         }
+
+        try {
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("【聚合】配置发布失败");
+            }
+        } finally {
+            SqlContextUtils.cleanCurrentSqlContext();
+        }
     }
 
     /**
@@ -554,7 +604,10 @@ public class PersistService {
 
             SqlContextUtils.addSqlContext(sql, args);
 
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("【聚合单】配置删除失败");
+            }
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -572,7 +625,10 @@ public class PersistService {
                     dataId, group, tenantTmp
             };
             SqlContextUtils.addSqlContext(sql, args);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("【聚合全】配置删除失败");
+            }
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -602,11 +658,14 @@ public class PersistService {
                     dataId, group, tenantTmp
             };
             SqlContextUtils.addSqlContext(sql, args);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("【聚合】配置批量删除失败");
+            }
+            return true;
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
-        return true;
     }
 
     /**
@@ -615,12 +674,7 @@ public class PersistService {
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         String sql = "delete from his_config_info where gmt_modified < ? limit ?";
         PaginationHelper<ConfigInfo> helper = new PaginationHelper<ConfigInfo>();
-        try {
-            helper.updateLimit(databaseOperate, sql, new Object[]{startTime, limitSize});
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        helper.updateLimit(databaseOperate, sql, new Object[]{startTime, limitSize});
     }
 
     /**
@@ -713,7 +767,7 @@ public class PersistService {
     @Deprecated
     public List<ConfigInfo> findAllDataIdAndGroup() {
         String sql = "SELECT DISTINCT data_id, group_id FROM config_info";
-        return databaseOperate.queryMany(sql, new Object[]{}, CONFIG_INFO_ROW_MAPPER);
+        return databaseOperate.queryMany(sql, EMPTY_ARRAY, CONFIG_INFO_ROW_MAPPER);
     }
 
     /**
@@ -1205,7 +1259,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1217,7 +1271,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1229,7 +1283,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1241,7 +1295,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     public List<String> getTenantIdList(int page, int pageSize) {
@@ -1409,9 +1463,7 @@ public class PersistService {
                 + " WHERE g.id = t.id                    ";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
 
-        List<String> params = new ArrayList<String>();
-
-        return helper.fetchPageLimit(databaseOperate, sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
+        return helper.fetchPageLimit(databaseOperate, sqlCountRows, sqlFetchRows, EMPTY_ARRAY, pageNo, pageSize,
                 CONFIG_INFO_WRAPPER_ROW_MAPPER);
 
     }
@@ -1483,9 +1535,8 @@ public class PersistService {
 
         for (int i = 0; i < dataIds.size(); i += subQueryLimit) {
             // dataids
-            List<String> params = new ArrayList<String>(dataIds.subList(i, i
-                    + subQueryLimit < dataIds.size() ? i + subQueryLimit
-                    : dataIds.size()));
+            List<String> params = new ArrayList<String>(dataIds.subList(i, Math.min(i
+                    + subQueryLimit, dataIds.size())));
 
             for (int j = 0; j < params.size(); j++) {
                 subQuerySql.append("?");
@@ -1656,7 +1707,7 @@ public class PersistService {
         String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
         String where = " 1=1 ";
         // 白名单，请同步条件为空，则没有符合条件的配置
-        if (configKeys.length == 0 && blacklist == false) {
+        if (configKeys.length == 0 && !blacklist) {
             Page<ConfigInfo> page = new Page<ConfigInfo>();
             page.setTotalCount(0);
             return page;
@@ -1952,7 +2003,7 @@ public class PersistService {
     public List<ConfigInfoChanged> findAllAggrGroup() {
         String sql = "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
 
-        return databaseOperate.queryMany(sql, new Object[]{},
+        return databaseOperate.queryMany(sql, EMPTY_ARRAY,
                 CONFIG_INFO_CHANGED_ROW_MAPPER);
 
     }
@@ -2082,19 +2133,25 @@ public class PersistService {
         final Object[] args;
 
         if (Objects.isNull(id)) {
-            sql = "INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
-                    + "gmt_modified,c_desc,c_use,effect,type,c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            sql = "INSERT INTO config_info(data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
+                    + "gmt_modified, c_desc, c_use, effect, type, c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
             args = new Object[]{
-                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, desc, use, effect, type, schema,
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                    configInfo.getContent(), md5Tmp, srcIp, srcUser,
+                    time, time, desc, use,
+                    effect, type, schema,
             };
 
         } else {
-            sql = "INSERT INTO config_info(id, data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
-                    + "gmt_modified,c_desc,c_use,effect,type,c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            sql = "INSERT INTO config_info(id, data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
+                    + "gmt_modified, c_desc, c_use, effect, type, c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
             args = new Object[]{
-                    id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, desc, use, effect, type, schema,
+                    id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                    appNameTmp, configInfo.getContent(), md5Tmp, srcIp,
+                    srcUser, time, time, desc,
+                    use, effect, type, schema,
             };
         }
 
@@ -2502,7 +2559,12 @@ public class PersistService {
             SqlContextUtils.addSqlContext(
                     "INSERT INTO tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?)",
                     kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+
+            if (!result) {
+                throw new NacosConfigException("命名空间创建失败");
+            }
+
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -2521,7 +2583,10 @@ public class PersistService {
             SqlContextUtils.addSqlContext(
                     "UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?",
                     tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            if (!result) {
+                throw new NacosConfigException("命名空间更新失败");
+            }
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -2663,11 +2728,10 @@ public class PersistService {
                         } catch (Exception e) {
                             LogUtil.defaultLog
                                     .error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-                                            new Object[]{
-                                                    cf.getDataId(),
-                                                    cf.getGroup(),
-                                                    new Timestamp(cf
-                                                            .getLastModified())});
+                                            cf.getDataId(),
+                                            cf.getGroup(),
+                                            new Timestamp(cf
+                                                    .getLastModified()));
                         }
                     } else {
                         if (!md5InDb.equals(md5)) {
@@ -2676,8 +2740,8 @@ public class PersistService {
                                         new Timestamp(cf.getLastModified()));
                             } catch (Exception e) {
                                 LogUtil.defaultLog.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-                                        new Object[]{cf.getDataId(), cf.getGroup(),
-                                                new Timestamp(cf.getLastModified())});
+                                        cf.getDataId(), cf.getGroup(),
+                                        new Timestamp(cf.getLastModified()));
                             }
                         }
                     }
@@ -2832,7 +2896,7 @@ public class PersistService {
         if (result == null) {
             return 0;
         }
-        return result.intValue();
+        return result;
     }
 
     private static String PATTERN_STR = "*";

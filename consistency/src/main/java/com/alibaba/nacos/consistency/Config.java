@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -63,6 +64,6 @@ public interface Config extends Serializable {
      *
      * @param processors {@link LogProcessor} array
      */
-    void addLogProcessors(LogProcessor... processors);
+    void addLogProcessors(Collection<LogProcessor> processors);
 
 }

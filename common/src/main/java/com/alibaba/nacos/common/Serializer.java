@@ -66,7 +66,7 @@ public interface Serializer {
      * @param obj
      * @return
      */
-    byte[] serialize(Object obj);
+    <T> byte[] serialize(T obj);
 
     /**
      * The name of the serializer implementer

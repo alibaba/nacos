@@ -20,6 +20,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
@@ -53,11 +54,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 @Conditional(ConditionOnEmbedStoreType.class)
 @Component
 public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implements LogProcessor4CP, DatabaseOperate {
 
-    private static final TypeReference<List<Pair<String, Object[]>>> reference = new TypeReference<List<Pair<String, Object[]>>>(){};
+    private static final TypeReference<List<Pair<String, Object[]>>> reference = new TypeReference<List<Pair<String, Object[]>>>() {
+    };
 
     @Autowired
     private DynamicDataSource dynamicDataSource;
@@ -96,7 +99,8 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                             .queryOne(true)
                             .useMapper(false)
                             .sql(sql)
-                            .className(cls.getCanonicalName())))
+                            .className(cls.getCanonicalName())
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -119,7 +123,8 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                             .useMapper(false)
                             .sql(sql)
                             .args(args)
-                            .className(cls.getCanonicalName())))
+                            .className(cls.getCanonicalName())
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -139,9 +144,11 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                     .ctx(serializer.serialize(SelectRequest
                             .builder()
                             .queryOne(true)
+                            .useMapper(true)
                             .sql(sql)
                             .args(args)
-                            .className(mapper.getClass().getCanonicalName())))
+                            .className(mapper.getClass().getCanonicalName())
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -161,9 +168,11 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                     .ctx(serializer.serialize(SelectRequest
                             .builder()
                             .queryOne(false)
+                            .useMapper(true)
                             .sql(sql)
-                    .args(args)
-                    .className(mapper.getClass().getCanonicalName())))
+                            .args(args)
+                            .className(mapper.getClass().getCanonicalName())
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -186,7 +195,8 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                             .useMapper(false)
                             .sql(sql)
                             .args(args)
-                            .className(rClass.getCanonicalName())))
+                            .className(rClass.getCanonicalName())
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -209,7 +219,8 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
                             .useMapper(false)
                             .sql(sql)
                             .args(args)
-                            .className(null)))
+                            .className(null)
+                            .build()))
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -221,17 +232,18 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     }
 
     @Override
-    public Boolean update(List<Pair<String, Object[]>> sqlContext) {
+    public Boolean update(List<SQL> sqlContext) {
         try {
 
             byte[] data = serializer.serialize(sqlContext);
 
-            final String key = bizInfo() + "-" +  selfIp + "-" + MD5.getInstance().getMD5String(data);
+            final String key = bizInfo() + "-" + selfIp + "-" + MD5.getInstance().getMD5String(data);
 
             return protocol.submit(NLog.builder()
                     .biz(bizInfo())
                     .key(key)
                     .data(data)
+                    .className(List.class.getCanonicalName())
                     .build());
         } catch (Exception e) {
             throw new NJdbcException(e);
@@ -290,16 +302,16 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
 
     @Override
     public boolean onApply(Log log) {
-        List<Pair<String, Object[]>> sqlContext = serializer.deSerialize(log.getData(), reference);
+        List<SQL> sqlContext = serializer.deSerialize(log.getData(), List.class);
         return onUpdate(sqlContext);
     }
 
     @Override
     public String bizInfo() {
-        return "NACOS_CONFIG";
+        return Constants.CONFIG_MODEL_RAFT_GROUP;
     }
 
-    private Boolean onUpdate(List<Pair<String, Object[]>> sqlContext) {
+    private Boolean onUpdate(List<SQL> sqlContext) {
         return update(transactionTemplate, jdbcTemplate, sqlContext);
     }
 

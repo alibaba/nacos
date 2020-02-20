@@ -19,8 +19,10 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.error.RetryAgainException;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -71,11 +73,18 @@ public class FailoverClosureImpl<T> implements FailoverClosure<T> {
                         status, throwable,
                         this.retriesLeft);
             }
-            future.completeExceptionally(throwable);
+            if (Objects.nonNull(throwable)) {
+                future.completeExceptionally(throwable);
+            } else {
+                future.completeExceptionally(new RetryAgainException("Maximum number of retries has been reached"));
+            }
         }
     }
 
     private boolean canRetryException(Throwable throwable) {
+        if (throwable == null) {
+            return false;
+        }
         if (throwable instanceof NoLeaderException) {
             return true;
         }

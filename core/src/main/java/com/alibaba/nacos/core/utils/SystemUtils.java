@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
@@ -55,6 +56,11 @@ public class SystemUtils {
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
         .getOperatingSystemMXBean();
+
+    /**
+     * Node self-discovery
+     */
+    public static final boolean NODE_SELF_DISCOVERY = Objects.equals("true", System.getProperty("nacos.node.self-discovery", "false"));
 
     /**
      * nacos local ip

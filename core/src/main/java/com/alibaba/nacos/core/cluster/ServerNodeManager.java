@@ -38,14 +38,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,8 +67,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private Map<String, Node> serverListHealth = new ConcurrentSkipListMap<>();
 
     private Set<Node> serverListUnHealth = new CopyOnWriteArraySet<>();
-
-    private volatile List<Node> nodeView = new ArrayList<>();
 
     private volatile boolean isInIpList = true;
 
@@ -148,10 +144,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
             serverListHealth.put(newNode.address(), newNode);
         }
 
-        // reset node view to lazy update
-
-        nodeView = null;
-
     }
 
     @Override
@@ -190,26 +182,26 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public List<Node> allNodes() {
-        if (CollectionUtils.isEmpty(nodeView)) {
-            synchronized (this) {
-                if (CollectionUtils.isEmpty(nodeView)) {
-                    nodeView = new ArrayList<>(serverListHealth.values());
-                }
-            }
-        }
-        return nodeView;
+         return new ArrayList<>(serverListHealth.values());
     }
 
     @Override
     public synchronized void nodeJoin(Collection<Node> nodes) {
 
-        for (Node node : nodes) {
-            serverListHealth.put(node.address(), node);
+        if (nodes.isEmpty()) {
+            return;
         }
 
-        // r eset node view
+        for (Node node : nodes) {
 
-        nodeView = null;
+            // 本节点不参与 nodeJoin
+
+            if (Objects.equals(node, self)) {
+                continue;
+            }
+
+            serverListHealth.put(node.address(), node);
+        }
 
         NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
@@ -221,13 +213,21 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public synchronized void nodeLeave(Collection<Node> nodes) {
-        for (Node node : nodes) {
-            serverListHealth.remove(node.address());
+
+        if (nodes.isEmpty()) {
+            return;
         }
 
-        // reset node view
+        for (Node node : nodes) {
 
-        nodeView = null;
+            // 本节点不参与 nodeLeave
+
+            if (Objects.equals(node, self)) {
+                continue;
+            }
+
+            serverListHealth.remove(node.address());
+        }
 
         NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("leave")
@@ -314,7 +314,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private void initAPProtocol() {
         APProtocol protocol = SpringUtils.getBean(APProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
-        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol).toArray(new LogProcessor[0]));
+        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol));
         protocol.init((config));
 
         injectClusterInfo(protocol.protocolMetaData());
@@ -328,7 +328,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private void initCPProtocol() {
         CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
         Config config = (Config) SpringUtils.getBean(protocol.configType());
-        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol).toArray(new LogProcessor[0]));
+        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol));
         protocol.init((config));
 
         injectClusterInfo(protocol.protocolMetaData());
@@ -375,7 +375,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     public List<Node> getServerListHealth() {
-        return nodeView == null ? Collections.emptyList() : nodeView;
+        return allNodes();
     }
 
     public Set<Node> getServerListUnHealth() {

@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -50,6 +52,14 @@ public class NacosClusterRouter {
     @GetMapping(value = "/nodes")
     public ResResult<Collection<Node>> listAllNode() {
         return ResResultUtils.success(nodeManager.allNodes());
+    }
+
+    @GetMapping(value = "/simple/nodes")
+    public ResResult<Collection<String>> listSimpleNodes() {
+        List<String> ips = nodeManager.allNodes().stream()
+                .map(Node::address)
+                .collect(Collectors.toList());
+        return ResResultUtils.success(ips);
     }
 
     @GetMapping("/server/health")

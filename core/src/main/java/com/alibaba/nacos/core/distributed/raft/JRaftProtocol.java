@@ -22,6 +22,7 @@ import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
@@ -65,6 +66,10 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     @Override
     public void init(RaftConfig config) {
 
+        // Load all LogProcessor information in advance
+
+        loadLogDispatcher(config.listLogProcessor());
+
         this.nodeManager = SpringUtils.getBean(NodeManager.class);
 
         this.selfAddress = nodeManager.self().address();
@@ -74,7 +79,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         this.failoverRetries = Integer.parseInt(config.getValOfDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, "3"));
 
         this.raftServer = new JRaftServer(this.nodeManager);
-        this.raftServer.init(config, allProcessor().values());
+        this.raftServer.init(config, config.listLogProcessor());
         this.raftServer.start();
         isStart = true;
 
@@ -97,10 +102,10 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
                 // the information in the protocol metadata is updated.
 
                 if (StringUtils.isNotBlank(leader)) {
-                    properties.put("leader", leader);
+                    properties.put(Constants.LEADER_META_DATA, leader);
                 }
-                properties.put("term", term);
-                properties.put("raftClusterInfo", raftClusterInfo);
+                properties.put(Constants.TERM_META_DATA, term);
+                properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
                 value.put(groupId, properties);
                 metaData.load(value);
 
@@ -113,8 +118,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
             }
         });
 
-        loadLogDispatcher(config.listLogProcessor());
-
     }
 
     @Override
@@ -124,17 +127,27 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     @Override
     public <D> GetResponse<D> getData(GetRequest request) throws Exception {
-        return (GetResponse<D>) raftServer.get(request, failoverRetries).join();
+        String val = request.getValue(RaftSysConstants.REQUEST_FAILOVER_RETRIES);
+        val = StringUtils.isBlank(val) ? failoverRetries + "" : val;
+        int failoverRetries = Integer.parseInt(val);
+        return (GetResponse<D>) raftServer.get(request, failoverRetries).get();
     }
 
     @Override
     public boolean submit(Log data) throws Exception {
         CompletableFuture<Boolean> future = submitAsync(data);
-        return future.join();
+        Boolean result = future.join();
+        if (result == null) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public CompletableFuture<Boolean> submitAsync(Log data) {
+        String val = data.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES);
+        val = StringUtils.isBlank(val) ? failoverRetries + "" : val;
+        int failoverRetries = Integer.parseInt(val);
         final Throwable[] throwable = new Throwable[] { null };
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {

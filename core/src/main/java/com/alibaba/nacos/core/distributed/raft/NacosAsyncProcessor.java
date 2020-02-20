@@ -23,6 +23,7 @@ import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -40,7 +41,13 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
 
     @Override
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, JLog log) {
-        final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getKey());
+        final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getBiz());
+
+        if (Objects.isNull(tuple)) {
+            asyncCtx.sendResponse(ResResultUtils.failed("Could not find the corresponding Raft Group : " + log.getBiz()));
+            return;
+        }
+
         if (tuple.getNode().isLeader()) {
             CompletableFuture<Object> future = new CompletableFuture<>();
             server.commit(log, future, 3).whenComplete((result, t) -> {

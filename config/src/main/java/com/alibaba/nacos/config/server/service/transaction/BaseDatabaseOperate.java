@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
-import org.javatuples.Pair;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -134,16 +134,19 @@ public class BaseDatabaseOperate {
         }
     }
 
-    public Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<Pair<String, Object[]>> sqlContext) {
+    public Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<SQL> sqlContext) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[]{ null };
             Object[][] args = new Object[][]{ null };
             try {
                 sqlContext.forEach(pair -> {
-                    errSql[0] = pair.getValue0();
-                    args[0] = pair.getValue1();
-                    jdbcTemplate.update(pair.getValue0(), pair.getValue1());
+                    errSql[0] = pair.getSql();
+                    args[0] = pair.getArgs();
+                    LogUtil.defaultLog.debug("current sql : {}", errSql[0]);
+                    LogUtil.defaultLog.debug("current args : {}", args[0]);
+                    jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
+                return Boolean.TRUE;
             } catch (TransactionException e) {
                 fatalLog.error("[db-error] " + e.toString(), e);
                 return false;
@@ -157,7 +160,6 @@ public class BaseDatabaseOperate {
                         ExceptionUtil.getAllExceptionMsg(e));
                 throw e;
             }
-            return Boolean.TRUE;
         });
     }
 }

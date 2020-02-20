@@ -18,33 +18,35 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.Serializer;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.pool.KryoPool;
+import io.protostuff.ByteArrayInput;
+import io.protostuff.Input;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.Output;
+import io.protostuff.ProtostuffOutput;
+import io.protostuff.Schema;
+import io.protostuff.WriteSession;
+import io.protostuff.runtime.RuntimeSchema;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public final class KryoSerializer implements Serializer {
-
-    private final KryoPool kryoPool;
-
-    public KryoSerializer() {
-        kryoPool = new KryoPool.Builder(new KryoFactory()).softReferences().build();
-    }
+public final class ProtoBufSerializer implements Serializer {
 
     @Override
     public <T> T deSerialize(byte[] data, Class<T> cls) {
-        return kryoPool.run(kryo -> {
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
-            Input input = new Input(byteArrayInputStream);
-            return (T) kryo.readClassAndObject(input);
-        });
+        Schema<T> schema = RuntimeSchema.getSchema(cls);
+        T msg = schema.newMessage();
+
+        Input input = new ByteArrayInput(data, 0, data.length, true);
+        try {
+            schema.mergeFrom(input, msg);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return msg;
     }
 
     @Override
@@ -77,30 +79,19 @@ public final class KryoSerializer implements Serializer {
 
     @Override
     public <T> byte[] serialize(T obj) {
-        return kryoPool.run(kryo -> {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            Output output = new Output(byteArrayOutputStream);
-            kryo.writeClassAndObject(output, obj);
-            output.close();
-            return byteArrayOutputStream.toByteArray();
-        });
+        Schema<T> schema = RuntimeSchema.getSchema((Class<T>) obj.getClass());
+
+        Output output = new ProtostuffOutput(LinkedBuffer.allocate());
+        try {
+            schema.writeTo(output, obj);
+            return ((WriteSession) output).toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public String name() {
-        return "Kryo";
-    }
-
-    private class KryoFactory implements com.esotericsoftware.kryo.pool.KryoFactory {
-
-        @Override
-        public Kryo create() {
-            Kryo kryo = new Kryo();
-            kryo.setRegistrationRequired(false);
-            kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(
-                    new org.objenesis.strategy.StdInstantiatorStrategy()));
-            return kryo;
-        }
-
+        return "protostuff";
     }
 }

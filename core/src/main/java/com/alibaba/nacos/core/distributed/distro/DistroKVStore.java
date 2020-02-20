@@ -147,6 +147,7 @@ public class DistroKVStore<T> extends KVStore<T> {
             if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
                 System.out.println(this + " origin key : " + originKey);
                 operate(originKey, null, REMOVE_COMMAND);
+                return true;
             }
             throw new UnsupportedOperationException();
         }

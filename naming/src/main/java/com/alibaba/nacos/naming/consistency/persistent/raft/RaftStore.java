@@ -20,7 +20,6 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
-import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.Reader;
@@ -203,7 +202,7 @@ public class RaftStore {
 
                 byte[] bytes = FileUtils.readFileToByteArray(new File(file));
 
-                kvStore.load(serializer.deSerialize(bytes, reference));
+                kvStore.load(serializer.deSerialize(bytes, Map.class));
 
                 return true;
             }

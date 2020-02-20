@@ -18,10 +18,14 @@ package com.alibaba.nacos.consistency.request;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class GetResponse<T> {
+public class GetResponse<T> implements Serializable {
+
+    private static final long serialVersionUID = 3558534873792008265L;
 
     private T data;
     private String exceptionName;

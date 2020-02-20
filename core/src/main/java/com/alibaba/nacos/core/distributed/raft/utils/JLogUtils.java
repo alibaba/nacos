@@ -26,12 +26,14 @@ public class JLogUtils {
 
     public static final JLog toJLog(Log log, final String operate) {
         final JLog jLog = new JLog();
+        jLog.setBiz(log.getBiz());
         jLog.setSysOperation(operate);
         jLog.setKey(log.getKey());
         jLog.setData(log.getData());
         jLog.setClassName(log.getClassName());
         jLog.setOperation(log.getOperation());
         jLog.setExtendInfo(log.listExtendInfo());
+        jLog.setLocalContext(log.getLocalContext());
         return jLog;
     }
 

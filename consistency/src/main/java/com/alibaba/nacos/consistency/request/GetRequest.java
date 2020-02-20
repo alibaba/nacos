@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency.request;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,9 @@ import java.util.Map;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class GetRequest {
+public class GetRequest implements Serializable {
+
+    private static final long serialVersionUID = -3588214197362245921L;
 
     private String biz;
 

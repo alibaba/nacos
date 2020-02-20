@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerNode;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.file.WatchFileManager;
+import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
@@ -42,10 +43,11 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -91,6 +93,40 @@ public class SyncNodeTask extends Task {
 
     @Override
     protected void executeBody() {
+        if (SystemUtils.NODE_SELF_DISCOVERY) {
+            syncBySelfDiscovery();
+        } else {
+            syncFromAddressUrl();
+        }
+    }
+
+    private void syncBySelfDiscovery() {
+        List<Node> nodes = nodeManager.allNodes();
+        for (Node node : nodes) {
+            final String url = "http://" + node.address() + "/" + context.getContextPath() + Commons.NACOS_CORE_CONTEXT + "/cluster/nodes";
+
+            try {
+                ResResult<Collection<Node>> result = httpclient.get(url, Header.EMPTY,
+                        Query.EMPTY, new TypeReference<ResResult<Collection<Node>>>() {
+                        });
+
+                if (result.ok()) {
+
+                    Collection<Node> remoteNodes = result.getData();
+                    nodeManager.nodeJoin(remoteNodes);
+
+                } else {
+                    Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", node.address(), result);
+                }
+
+            } catch (Exception e) {
+                Loggers.CORE.error("[serverlist] exception, " + e.toString(), e);
+            }
+
+        }
+    }
+
+    private void syncFromAddressUrl() {
         if (!alreadyLoadServer && nodeManager.getUseAddressServer()) {
             try {
                 ResResult<String> resResult = httpclient.get(nodeManager.getAddressServerUrl(), Header.EMPTY,
@@ -113,7 +149,6 @@ public class SyncNodeTask extends Task {
                         nodeManager.setAddressServerHealth(false);
                     }
                     Loggers.CORE.error("[serverlist] failed to get serverlist, error code {}", resResult.getCode());
-                    nodeManager.nodeJoin(Collections.emptyList());
                 }
             } catch (Exception e) {
                 addressServerFailCount++;
@@ -121,7 +156,6 @@ public class SyncNodeTask extends Task {
                     nodeManager.setAddressServerHealth(false);
                 }
                 Loggers.CORE.error("[serverlist] exception, " + e.toString(), e);
-                nodeManager.nodeJoin(Collections.emptyList());
             }
         }
     }

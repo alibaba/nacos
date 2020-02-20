@@ -213,4 +213,6 @@ public class Constants {
     public static final String ACL_RESPONSE = "ACL-Response";
 
     public static final int ATOMIC_MAX_SIZE = 1000;
+
+    public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
 }

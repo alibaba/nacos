@@ -37,8 +37,11 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,16 +77,41 @@ public class DumpService {
     private PersistService persistService;
 
     @Autowired
-    private ServerNodeManager serverNodeManager;
+    private NodeManager nodeManager;
+
+    @Autowired
+    private CPProtocol protocol;
 
     @PostConstruct
     public void init() {
+
+        // If using embedded distributed storage, you need to wait for the
+        // underlying master to complete the selection
+
+        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+
+            LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for " +
+                    "the underlying master to complete before you can perform the dump operation.");
+
+            // watch path => /nacos_config/leader/ has value ?
+
+            protocol.protocolMetaData()
+                    .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+                            com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
+                            (o, arg) -> dumpOperate());
+        } else {
+            dumpOperate();
+        }
+
+    }
+
+    private void dumpOperate() {
         LogUtil.defaultLog.warn("DumpService start");
         DumpProcessor processor = new DumpProcessor(this);
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-        CleanConfigHistoryExecutor cleanHistoryProcessor = new CleanConfigHistoryExecutor(this, serverNodeManager);
+        CleanConfigHistoryExecutor cleanHistoryProcessor = new CleanConfigHistoryExecutor(this, nodeManager);
 
         dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
@@ -111,7 +139,7 @@ public class DumpService {
                 dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             }
 
-            if (serverNodeManager.isFirstIp()) {
+            if (nodeManager.isFirstIp()) {
 
                 // add to dump aggr
 
@@ -127,10 +155,10 @@ public class DumpService {
             }
         } catch (Exception e) {
             LogUtil.fatalLog.error(
-                    "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
+                    "Nacos Server did not start because dumpservice bean construction failure :\n" + ExceptionUtil.getAllExceptionMsg(e),
                     e.getCause());
             throw new RuntimeException(
-                    "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
+                    "Nacos Server did not start because dumpservice bean construction failure :\n" + ExceptionUtil.getAllExceptionMsg(e));
         }
         if (!STANDALONE_MODE) {
             Runnable heartbeat = () -> {

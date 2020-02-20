@@ -101,4 +101,20 @@ public interface Log extends Serializable {
      */
     Map<String, String> listExtendInfo();
 
+    /**
+     * Obtain the information data transparently transmitted by this node
+     * Does not participate in serialization ！！！
+     *
+     * @return {@link Map<String, Object>}
+     */
+    Map<String, Object> getLocalContext();
+
+    /**
+     * Setting the information data transparently transmitted by this node
+     * Does not participate in serialization ！！！
+     *
+     * @param context {@link Map<String, Object>}
+     */
+    void setLocalContext(Map<String, Object> context);
+
 }

@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -70,8 +70,8 @@ public class DistroConfig implements Config {
     }
 
     @Override
-    public synchronized void addLogProcessors(LogProcessor... processors) {
-        this.processors.addAll(Arrays.asList(processors));
+    public synchronized void addLogProcessors(Collection<LogProcessor> processors) {
+        this.processors.addAll(processors);
     }
 
 }
