@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.core.cluster.task.ClearInvalidNodeTask;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
@@ -65,6 +67,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private final NodeTaskManager taskManager = new NodeTaskManager(this);
 
     private Map<String, Node> serverListHealth = new ConcurrentSkipListMap<>();
+
+    private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
 
     private Set<Node> serverListUnHealth = new CopyOnWriteArraySet<>();
 
@@ -132,16 +136,16 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public void update(Node newNode) {
 
-        long lastRefTime = Long.parseLong(String.valueOf(newNode.extendVal(Node.LAST_REF_TIME)));
+        String address = newNode.address();
+
+        long nowTime = System.currentTimeMillis();
 
         // If this node updates itself, ignore the health judgment
 
-        if (lastRefTime < System.currentTimeMillis() && !isSelf(newNode)) {
-            newNode.setState(NodeState.DOWN);
-            serverListHealth.remove(newNode.address());
-            serverListUnHealth.add(newNode);
-        } else {
-            serverListHealth.put(newNode.address(), newNode);
+        if (!isSelf(newNode)) {
+            lastRefreshTimeRecord.put(address, nowTime);
+            serverListUnHealth.remove(newNode);
+            serverListHealth.put(address, newNode);
         }
 
     }
@@ -180,6 +184,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         return self;
     }
 
+    // TODO 能不能优化下
+
     @Override
     public List<Node> allNodes() {
          return new ArrayList<>(serverListHealth.values());
@@ -188,9 +194,13 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public synchronized void nodeJoin(Collection<Node> nodes) {
 
+        long lastRefreshTime = System.currentTimeMillis();
+
         if (nodes.isEmpty()) {
             return;
         }
+
+        String address = null;
 
         for (Node node : nodes) {
 
@@ -200,7 +210,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
                 continue;
             }
 
-            serverListHealth.put(node.address(), node);
+            address = node.address();
+
+            serverListHealth.put(address, node);
+            lastRefreshTimeRecord.put(address, lastRefreshTime);
         }
 
         NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
@@ -218,6 +231,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
             return;
         }
 
+        String address = null;
+
         for (Node node : nodes) {
 
             // 本节点不参与 nodeLeave
@@ -225,8 +240,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
             if (Objects.equals(node, self)) {
                 continue;
             }
+            address = node.address();
 
-            serverListHealth.remove(node.address());
+            serverListHealth.remove(address);
+            lastRefreshTimeRecord.remove(address);
         }
 
         NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
@@ -372,10 +389,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
         taskManager.execute(new NodeStateReportTask());
+        taskManager.execute(new ClearInvalidNodeTask());
     }
 
-    public List<Node> getServerListHealth() {
-        return allNodes();
+    public Map<String, Node> getServerListHealth() {
+        return serverListHealth;
     }
 
     public Set<Node> getServerListUnHealth() {
@@ -437,4 +455,9 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     public void setAddressServerHealth(boolean addressServerHealth) {
         isAddressServerHealth = addressServerHealth;
     }
+
+    public Map<String, Long> getLastRefreshTimeRecord() {
+        return lastRefreshTimeRecord;
+    }
+
 }

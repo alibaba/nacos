@@ -54,6 +54,9 @@ public class NacosClusterRouter {
         return ResResultUtils.success(nodeManager.allNodes());
     }
 
+    // The client can get all the nacos node information in the current
+    // cluster according to this interface
+
     @GetMapping(value = "/simple/nodes")
     public ResResult<Collection<String>> listSimpleNodes() {
         List<String> ips = nodeManager.allNodes().stream()
@@ -76,8 +79,7 @@ public class NacosClusterRouter {
             return ResResultUtils.failed("Node information is illegal");
         }
 
-        Loggers.CORE.info("report : {}", node);
-        node.setExtendVal(Node.LAST_REF_TIME, String.valueOf(System.currentTimeMillis()));
+        Loggers.CORE.debug("node state report, receive info : {}", node);
         nodeManager.update(node);
         return ResResultUtils.success(true);
     }

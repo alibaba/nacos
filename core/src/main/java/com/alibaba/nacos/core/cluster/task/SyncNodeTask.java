@@ -88,11 +88,15 @@ public class SyncNodeTask extends Task {
 
         // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
 
-        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(), fileChangeEvent -> readServerConfFromDisk());
+        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(),
+                fileChangeEvent -> readServerConfFromDisk());
     }
 
     @Override
     protected void executeBody() {
+
+        // Whether to enable the node self-discovery function that comes with nacos
+
         if (SystemUtils.NODE_SELF_DISCOVERY) {
             syncBySelfDiscovery();
         } else {
@@ -122,7 +126,6 @@ public class SyncNodeTask extends Task {
             } catch (Exception e) {
                 Loggers.CORE.error("[serverlist] exception, " + e.toString(), e);
             }
-
         }
     }
 

@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -60,10 +61,9 @@ public class NodeStateReportTask extends Task {
         try {
             long startCheckTime = System.currentTimeMillis();
 
-
             final Node self = nodeManager.self();
 
-            // Your information is not ready
+            // self node information is not ready
 
             if (!self.check()) {
                 return;
@@ -97,10 +97,10 @@ public class NodeStateReportTask extends Task {
                     ResResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY
                             , ResResultUtils.success(self), reference);
                     if (result.ok()) {
-                        Loggers.CORE.info("Successfully synchronizing information to node : {}," +
+                        Loggers.CORE.debug("Successfully synchronizing information to node : {}," +
                                 " result : {}", node, result);
                     } else {
-                        Loggers.CORE.error("An exception occurred while reporting their " +
+                        Loggers.CORE.warn("An exception occurred while reporting their " +
                                 "information to the node : {}, error : {}", node.address(), result.getErrMsg());
                     }
                 } catch (Exception e) {
@@ -112,7 +112,7 @@ public class NodeStateReportTask extends Task {
             long cost = endCheckTime - startCheckTime;
             Loggers.CORE.debug("task report job cost: {}", cost);
         } catch (Exception e) {
-            Loggers.CORE.error("node state report task has error : {}", e);
+            Loggers.CORE.error("node state report task has error : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
     }
 
@@ -124,6 +124,6 @@ public class NodeStateReportTask extends Task {
 
     @Override
     public TaskInfo scheduleInfo() {
-        return new TaskInfo(0L, 30L, TimeUnit.SECONDS);
+        return new TaskInfo(10, 30L, TimeUnit.SECONDS);
     }
 }
