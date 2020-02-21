@@ -123,7 +123,7 @@ public class WatchFileCenter {
         }
 
         void start() {
-            WATCH_FILE_EXECUTOR.execute(this);
+
             NotifyCenter.registerSubscribe(new Subscribe<FileChangeEvent>() {
                 @Override
                 public void onEvent(FileChangeEvent event) {
@@ -147,6 +147,8 @@ public class WatchFileCenter {
                     return FileChangeEvent.class;
                 }
             });
+
+            WATCH_FILE_EXECUTOR.execute(this);
         }
 
         void shutdown() {

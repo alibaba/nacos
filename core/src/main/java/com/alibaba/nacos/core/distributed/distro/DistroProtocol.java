@@ -20,6 +20,7 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
@@ -40,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
+public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, LogProcessor4AP> implements APProtocol<DistroConfig> {
 
     private KVManager kvManager;
 
@@ -138,7 +139,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
 
         // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
 
-        LogProcessor processor = kvStore.getKVLogProcessor();
+        LogProcessor4AP processor = kvStore.getKVLogProcessor();
 
         processor.injectProtocol(this);
 

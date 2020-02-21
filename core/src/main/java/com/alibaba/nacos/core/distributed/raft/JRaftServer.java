@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
@@ -105,7 +106,7 @@ public class JRaftServer implements NodeChangeListener {
 
     private Map<String, RaftGroupTuple> multiRaftGroup = new HashMap<>();
 
-    private Collection<LogProcessor> processors;
+    private Collection<LogProcessor4CP> processors;
 
     private String selfIp;
 
@@ -126,7 +127,7 @@ public class JRaftServer implements NodeChangeListener {
         NotifyCenter.registerSubscribe(this);
     }
 
-    void init(RaftConfig config, Collection<LogProcessor> processors) {
+    void init(RaftConfig config, Collection<LogProcessor4CP> processors) {
         this.raftConfig = config;
         this.serializer = SerializeFactory.getDefault();
 
@@ -199,14 +200,14 @@ public class JRaftServer implements NodeChangeListener {
 
     // Does not guarantee thread safety
 
-    void createMultiRaftGroup(Collection<LogProcessor> processors) {
+    void createMultiRaftGroup(Collection<LogProcessor4CP> processors) {
         synchronized (monitor) {
 
             final PeerId self = JRaftUtils.getPeerId(selfIp + ":" + selfPort);
 
             final String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
 
-            for (LogProcessor processor : processors) {
+            for (LogProcessor4CP processor : processors) {
 
                 final String _group = processor.bizInfo();
 

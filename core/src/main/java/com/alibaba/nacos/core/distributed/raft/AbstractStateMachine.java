@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
@@ -65,7 +66,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     private Node node;
 
-    public AbstractStateMachine(JRaftServer server, LogProcessor processor) {
+    public AbstractStateMachine(JRaftServer server, LogProcessor4CP processor) {
         this.server = server;
         this.processor = processor;
         this.groupId = processor.bizInfo();

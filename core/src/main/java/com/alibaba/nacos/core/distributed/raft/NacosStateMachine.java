@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.Serializer;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
@@ -38,7 +38,7 @@ public class NacosStateMachine extends AbstractStateMachine {
 
     private Serializer serializer;
 
-    public NacosStateMachine(Serializer serializer, JRaftServer server, LogProcessor processor) {
+    public NacosStateMachine(Serializer serializer, JRaftServer server, LogProcessor4CP processor) {
         super(server, processor);
         this.serializer = serializer;
     }

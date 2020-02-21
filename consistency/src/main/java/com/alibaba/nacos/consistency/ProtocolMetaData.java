@@ -119,7 +119,6 @@ public final class ProtocolMetaData {
         void put(String key, Object value) {
             itemMap.computeIfAbsent(key, s -> {
                 ValueItem item = new ValueItem(this, group + "/" + key);
-                System.out.println("create valueItem for " + item.path);
                 return item;
             });
             ValueItem item = itemMap.get(key);
@@ -135,7 +134,6 @@ public final class ProtocolMetaData {
         void subscribe(final String key, final Observer observer) {
             itemMap.computeIfAbsent(key, s -> {
                 ValueItem item = new ValueItem(this, group + "/" + key);
-                System.out.println("subscribe valueItem for " + item.path);
                 return item;
             });
             final ValueItem item = itemMap.get(key);

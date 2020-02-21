@@ -159,13 +159,8 @@ public class RaftStore {
                     FileUtils.forceMkdir(file);
 
                     byte[] data = serializer.serialize(kvStore.getAll());
-
-                    System.out.println("snapshot save data : \n" + new String(data));
-
                     final String fileName = Paths.get(parentPath, "naming-snapshot.dat").toString();
-
                     FileUtils.writeByteArrayToFile(new File(fileName), data, false);
-
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
 
                     try (final FileOutputStream fOut = new FileOutputStream(outputFile);

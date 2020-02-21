@@ -63,7 +63,6 @@ public class DistroController extends BaseController {
         protocol = (DistroProtocol) SpringUtils.getBean(APProtocol.class);
         distroServer = protocol.getDistroServer();
         kvManager = distroServer.getKvManager();
-        System.out.println(this + " already init");
     }
 
     @PutMapping("/items")
@@ -124,8 +123,6 @@ public class DistroController extends BaseController {
         kvManager.list().forEach((s, store) -> itemMap.putAll(store.getAll()));
 
         String content = new String(serializer.serialize(itemMap), StandardCharsets.UTF_8);
-
-        System.out.println("send all data is : " + content);
 
         return ResponseEntity.ok(content);
     }

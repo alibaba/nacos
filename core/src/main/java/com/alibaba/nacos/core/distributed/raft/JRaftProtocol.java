@@ -19,10 +19,10 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
@@ -49,7 +49,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> implements CPProtocol<RaftConfig> {
+public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP> implements CPProtocol<RaftConfig> {
 
     private volatile boolean isStart = false;
 
@@ -179,7 +179,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
         // Because Raft uses RaftProtocol internally, so LogProcessor is implemented, need to add
 
-        LogProcessor processor = kvStore.getLogProcessor();
+        LogProcessor4CP processor = kvStore.getLogProcessor();
 
         processor.injectProtocol(this);
 

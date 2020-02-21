@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Config extends Serializable {
+public interface Config<L extends LogProcessor> extends Serializable {
 
     /**
      * Add configuration content
@@ -57,13 +57,13 @@ public interface Config extends Serializable {
      *
      * @return {@link List<LogProcessor>}
      */
-    List<LogProcessor> listLogProcessor();
+    List<L> listLogProcessor();
 
     /**
      * add {@link LogProcessor} processor
      *
      * @param processors {@link LogProcessor} array
      */
-    void addLogProcessors(Collection<LogProcessor> processors);
+    void addLogProcessors(Collection<L> processors);
 
 }

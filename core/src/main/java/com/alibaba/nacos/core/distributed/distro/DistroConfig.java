@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro;
 
 import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -33,13 +33,13 @@ import java.util.Map;
  */
 @Component
 @ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.distro")
-public class DistroConfig implements Config {
+public class DistroConfig implements Config<LogProcessor4AP> {
 
     private static final long serialVersionUID = -3073040842709279788L;
 
     private Map<String, String> data = new HashMap<>();
 
-    private List<LogProcessor> processors = new ArrayList<>();
+    private List<LogProcessor4AP> processors = Collections.synchronizedList(new ArrayList<>());
 
     public Map<String, String> getData() {
         return data;
@@ -65,12 +65,12 @@ public class DistroConfig implements Config {
     }
 
     @Override
-    public List<LogProcessor> listLogProcessor() {
+    public List<LogProcessor4AP> listLogProcessor() {
         return Collections.unmodifiableList(processors);
     }
 
     @Override
-    public synchronized void addLogProcessors(Collection<LogProcessor> processors) {
+    public void addLogProcessors(Collection<LogProcessor4AP> processors) {
         this.processors.addAll(processors);
     }
 

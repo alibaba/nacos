@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -33,13 +33,13 @@ import java.util.Map;
  */
 @Component
 @ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.raft")
-public class RaftConfig implements Config {
+public class RaftConfig implements Config<LogProcessor4CP> {
 
     private static final long serialVersionUID = 9174789390266064002L;
 
     private Map<String, String> data = new HashMap<>();
 
-    private List<LogProcessor> processors = new ArrayList<>();
+    private List<LogProcessor4CP> processors = Collections.synchronizedList(new ArrayList<>());
 
     public Map<String, String> getData() {
         return data;
@@ -65,12 +65,12 @@ public class RaftConfig implements Config {
     }
 
     @Override
-    public List<LogProcessor> listLogProcessor() {
+    public List<LogProcessor4CP> listLogProcessor() {
         return Collections.unmodifiableList(processors);
     }
 
     @Override
-    public synchronized void addLogProcessors(Collection<LogProcessor> processors) {
+    public void addLogProcessors(Collection<LogProcessor4CP> processors) {
         this.processors.addAll(processors);
     }
 

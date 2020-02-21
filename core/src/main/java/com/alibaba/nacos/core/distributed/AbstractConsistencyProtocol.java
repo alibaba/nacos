@@ -29,17 +29,17 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
+public abstract class AbstractConsistencyProtocol<T extends Config, L extends LogProcessor> implements ConsistencyProtocol<T> {
 
     protected final ProtocolMetaData metaData = new ProtocolMetaData();
 
-    protected Map<String, LogProcessor> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
+    protected Map<String, L> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
 
-    public void loadLogDispatcher(List<LogProcessor> logProcessors) {
+    public void loadLogDispatcher(List<L> logProcessors) {
         logProcessors.forEach(logDispatcher -> dispatcherMap.put(logDispatcher.bizInfo(), logDispatcher));
     }
 
-    protected Map<String, LogProcessor> allProcessor() {
+    protected Map<String, L> allProcessor() {
         return dispatcherMap;
     }
 

@@ -140,12 +140,10 @@ public class DistroKVStore<T> extends KVStore<T> {
             if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
                 final byte[] data = log.getData();
                 final T source = (T) nLog.getContextValue("source");
-                System.out.println(this + " origin key : " + originKey);
                 operate(originKey, Pair.with(source, data), PUT_COMMAND);
                 return true;
             }
             if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
-                System.out.println(this + " origin key : " + originKey);
                 operate(originKey, null, REMOVE_COMMAND);
                 return true;
             }
