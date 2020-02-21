@@ -20,15 +20,13 @@ import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,8 +42,6 @@ public class DataSyncer {
 
     private final Map<String, String> taskMap = new ConcurrentHashMap<>();
 
-    private ScheduledExecutorService dataSyncExecutor;
-
     public DataSyncer(NodeManager nodeManager,
                       KVManager kvManager,
                       DistroClient distroClient) {
@@ -55,11 +51,6 @@ public class DataSyncer {
     }
 
     public void start() {
-        this.dataSyncExecutor = ExecutorFactory.newScheduledExecutorService(
-                DataSyncer.class.getCanonicalName(),
-                Runtime.getRuntime().availableProcessors(),
-                new NameThreadFactory("com.alibaba.nacos.naming.distro.data.syncer"));
-
     }
 
     public void submit(SyncTask task, long delay) {
@@ -75,7 +66,7 @@ public class DataSyncer {
             return;
         }
 
-        kvManager.list().forEach((s, distroStore) -> dataSyncExecutor.schedule(() -> {
+        kvManager.list().forEach((s, distroStore) -> DistroExecutor.scheduleDataSync(() -> {
             // 1. check the server
             if (getServers() == null || getServers().isEmpty()) {
                 return;

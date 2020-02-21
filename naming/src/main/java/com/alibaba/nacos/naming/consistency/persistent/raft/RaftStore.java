@@ -29,12 +29,11 @@ import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.consistency.store.StartHook;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ZipUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -93,16 +91,10 @@ public class RaftStore {
 
     private Serializer serializer;
 
-    private Executor executor;
-
     private boolean initialized = false;
 
     @PostConstruct
     protected void init() throws Exception {
-
-        executor = ExecutorFactory.newSingleExecutorService(
-                getClass().getCanonicalName(),
-                new NameThreadFactory("com.alibaba.nacos.naming.raft.service-snapshot"));
 
         serializer = SerializeFactory.getDefault();
 
@@ -146,7 +138,7 @@ public class RaftStore {
 
         @Override
         public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-            executor.execute(() -> {
+            GlobalExecutor.execute(() -> {
 
                 boolean result = false;
                 Throwable throwable = null;

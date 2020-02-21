@@ -17,40 +17,25 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpResResult;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.common.utils.HttpMethod;
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -139,70 +124,12 @@ public abstract class BaseHttpClient {
 
     protected HttpRequestBase build(String url, Header header, ResResult body,
                                     String method) {
-        if (HttpMethod.GET.equalsIgnoreCase(method)) {
-            HttpGet get = new HttpGet(url);
-            initHeader(get, header);
-            return get;
-        }
-        if (HttpMethod.GET.equalsIgnoreCase(method) && body != null) {
-            HttpGetWithEntity get = new HttpGetWithEntity(url);
-            initHeader(get, header);
-            initEntity(get, body, header.getValue("Content-Type"));
-            return get;
-        }
-        if (HttpMethod.DELETE.equalsIgnoreCase(method)) {
-            HttpDelete delete = new HttpDelete(url);
-            initHeader(delete, header);
-            return delete;
-        }
-        if (HttpMethod.HEAD.equalsIgnoreCase(method)) {
-            HttpHead head = new HttpHead(url);
-            initHeader(head, header);
-            return head;
-        }
-        if (HttpMethod.OPTIONS.equalsIgnoreCase(method)) {
-            HttpOptions options = new HttpOptions(url);
-            initHeader(options, header);
-            return options;
-        }
-        if (HttpMethod.PATCH.equalsIgnoreCase(method)) {
-            HttpPatch patch = new HttpPatch(url);
-            initHeader(patch, header);
-            initEntity(patch, body, header.getValue("Content-Type"));
-            return patch;
-        }
-        if (HttpMethod.POST.equalsIgnoreCase(method)) {
-            HttpPost post = new HttpPost(url);
-            initHeader(post, header);
-            initEntity(post, body, header.getValue("Content-Type"));
-            return post;
-        }
-        if (HttpMethod.PUT.equalsIgnoreCase(method)) {
-            HttpPut put = new HttpPut(url);
-            initHeader(put, header);
-            initEntity(put, body, header.getValue("Content-Type"));
-            return put;
-        }
-        if (HttpMethod.TRACE.equalsIgnoreCase(method)) {
-            HttpTrace trace = new HttpTrace(url);
-            initHeader(trace, header);
-            return trace;
-        }
-        throw new IllegalArgumentException("illegal http request method : [" + method + "]");
-    }
 
-    private void initHeader(HttpRequestBase requestBase, Header header) {
-        Iterator<Map.Entry<String, String>> iterator = header.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> entry = iterator.next();
-            requestBase.setHeader(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void initEntity(HttpEntityEnclosingRequest request, ResResult body, String mediaType) {
-        ContentType contentType = ContentType.create(mediaType);
-        StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
-        request.setEntity(entity);
+        BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
+        httpMethod.init(url);
+        httpMethod.initHeader(header);
+        httpMethod.initEntity(body, header.getValue("Content-Type"));
+        return httpMethod.getRequestBase();
     }
 
     private Header convertHeader(org.apache.http.Header[] headers) {
@@ -213,7 +140,7 @@ public abstract class BaseHttpClient {
         return nHeader;
     }
 
-    private static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+    public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
 
         public final static String METHOD_NAME = "GET";
 

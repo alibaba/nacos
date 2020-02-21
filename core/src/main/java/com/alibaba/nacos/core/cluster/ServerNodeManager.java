@@ -44,7 +44,9 @@ import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +55,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -70,7 +71,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
 
-    private Set<Node> serverListUnHealth = new CopyOnWriteArraySet<>();
+    private Set<Node> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
 
     private volatile boolean isInIpList = true;
 

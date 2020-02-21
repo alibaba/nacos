@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.utils;
 
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.core.DataSyncer;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 
@@ -41,12 +42,21 @@ public final class DistroExecutor {
             Runtime.getRuntime().availableProcessors(),
             new NameThreadFactory("com.alibaba.nacos.core.protocol.distro.task.worker"));
 
+    private static final ScheduledExecutorService DATA_SYNC_EXECUTOR = ExecutorFactory.newScheduledExecutorService(
+            DataSyncer.class.getCanonicalName(),
+            Runtime.getRuntime().availableProcessors(),
+            new NameThreadFactory("com.alibaba.nacos.naming.distro.data.syncer"));
+
     public static void executeByGlobal(Runnable runnable) {
         DISTRO_GLOBAL.execute(runnable);
     }
 
     public static void executeWorker(Runnable runnable) {
         DISTRO_TASK_WORKER.submit(runnable);
+    }
+
+    public static void scheduleDataSync(Runnable runnable, long delay, TimeUnit unit) {
+        DATA_SYNC_EXECUTOR.schedule(runnable, delay, unit);
     }
 
     public static void schedulePartitionDataTimedSync(Runnable runnable) {
