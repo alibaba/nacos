@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.file;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.slf4j.Logger;
@@ -33,18 +33,20 @@ import java.nio.file.WatchService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Unified file change monitoring management center, which uses {@link WatchService} internally.
  * One file directory corresponds to one {@link WatchService}. It can only monitor up to 32 file
  * directories. When a file change occurs, a {@link FileChangeEvent} will be issued, which will
- * be released by {@link NotifyManager}.
+ * be released by {@link NotifyCenter}.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class WatchFileManager {
+public class WatchFileCenter {
 
     private static final Logger logger = Loggers.WATCH_FILE;
 
@@ -56,17 +58,17 @@ public class WatchFileManager {
 
     private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
 
-    private static final Executor WATCH_FILE_EXECUTOR = ExecutorFactory.newFixExecutorService(
-            WatchFileManager.class.getCanonicalName(),
+    private static final ExecutorService WATCH_FILE_EXECUTOR = ExecutorFactory.newFixExecutorService(
+            WatchFileCenter.class.getCanonicalName(),
             MAX_WATCH_FILE_JOB,
             new NameThreadFactory("com.alibaba.nacos.core.file.watch")
     );
 
     static {
-        NotifyManager.registerPublisher(FileChangeEvent::new, FileChangeEvent.class);
+        NotifyCenter.registerPublisher(FileChangeEvent::new, FileChangeEvent.class);
     }
 
-    public synchronized static boolean registerWatcher(final String paths, Consumer<FileChangeEvent> consumer) {
+    public synchronized static boolean registerWatcher(final String paths, FileWatcher watcher) {
         NOW_WATCH_JOB_CNT ++;
         if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
             return false;
@@ -77,14 +79,14 @@ public class WatchFileManager {
                 WatchService service = FILE_SYSTEM.newWatchService();
                 FILE_SYSTEM.getPath(paths).register(service,
                         StandardWatchEventKinds.OVERFLOW,
-                        StandardWatchEventKinds.ENTRY_CREATE,
                         StandardWatchEventKinds.ENTRY_MODIFY,
+                        StandardWatchEventKinds.ENTRY_CREATE,
                         StandardWatchEventKinds.ENTRY_DELETE
                 );
                 job = new WatchJob(paths, service);
                 job.start();
             }
-            job.addSubscribe(consumer);
+            job.addSubscribe(watcher);
             return true;
         } catch (Exception e) {
             return false;
@@ -109,16 +111,35 @@ public class WatchFileManager {
 
         private volatile boolean watch = true;
 
+        private Set<FileWatcher> watchers = new CopyOnWriteArraySet<>();
+
         public WatchJob(String paths, WatchService watchService) {
             this.paths = paths;
             this.watchService = watchService;
         }
 
-        void addSubscribe(final Consumer<FileChangeEvent> consumer) {
-            NotifyManager.registerSubscribe(new Subscribe<FileChangeEvent>() {
+        void addSubscribe(final FileWatcher watcher) {
+            watchers.add(watcher);
+        }
+
+        void start() {
+            WATCH_FILE_EXECUTOR.execute(this);
+            NotifyCenter.registerSubscribe(new Subscribe<FileChangeEvent>() {
                 @Override
                 public void onEvent(FileChangeEvent event) {
-                    consumer.accept(event);
+                    String context = String.valueOf(event.getEvent().context());
+                    for (FileWatcher watcher : watchers) {
+                        if (watcher.interest(context)) {
+                            Runnable job = () -> watcher.onChange(event);
+                            Executor executor = watcher.executor();
+                            if (executor == null) {
+                                job.run();
+                            } else {
+                                executor.execute(job);
+                            }
+
+                        }
+                    }
                 }
 
                 @Override
@@ -128,17 +149,14 @@ public class WatchFileManager {
             });
         }
 
-        void start() {
-            WATCH_FILE_EXECUTOR.execute(this);
-        }
-
         void shutdown() {
             watch = false;
         }
 
         @Override
         public void run() {
-            while (watch) {
+            while (watch && !WATCH_FILE_EXECUTOR.isShutdown()) {
+
                 try {
                     WatchKey watchKey = watchService.take();
 
@@ -147,7 +165,7 @@ public class WatchFileManager {
                                 .paths(paths)
                                 .event(event)
                                 .build();
-                        NotifyManager.publishEvent(FileChangeEvent.class, fileChangeEvent);
+                        NotifyCenter.publishEvent(FileChangeEvent.class, fileChangeEvent);
                     }
 
                     if (!watchKey.reset()) {

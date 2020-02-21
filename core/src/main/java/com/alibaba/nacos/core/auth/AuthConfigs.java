@@ -15,10 +15,9 @@
  */
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.core.env.ReloadableConfigs;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -34,9 +33,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Configuration
 public class AuthConfigs {
-
-    @Autowired
-    private ReloadableConfigs reloadableConfigs;
 
     /**
      * secret key
@@ -74,13 +70,11 @@ public class AuthConfigs {
         if (StringUtils.isNotBlank(enabled)) {
             return BooleanUtils.toBoolean(enabled);
         }
-        return BooleanUtils.toBoolean(reloadableConfigs.getProperties()
-            .getProperty("nacos.core.auth.enabled", "false"));
+        return BooleanUtils.toBoolean(SpringUtils.getProperty("nacos.core.auth.enabled", "false"));
     }
 
     public boolean isCachingEnabled() {
-        return BooleanUtils.toBoolean(reloadableConfigs.getProperties()
-            .getProperty("nacos.core.auth.caching.enabled", "true"));
+        return BooleanUtils.toBoolean(SpringUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
 
     @Bean

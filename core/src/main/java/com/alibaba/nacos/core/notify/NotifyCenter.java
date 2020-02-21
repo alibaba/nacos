@@ -36,7 +36,7 @@ import java.util.function.Supplier;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class NotifyManager {
+public class NotifyCenter {
 
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
 

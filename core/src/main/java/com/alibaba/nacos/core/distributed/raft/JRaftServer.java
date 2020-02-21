@@ -33,10 +33,9 @@ import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.distributed.raft.utils.JLogUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
-import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SystemUtils;
@@ -68,6 +67,7 @@ import org.springframework.util.CollectionUtils;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,11 +75,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -116,9 +115,6 @@ public class JRaftServer implements NodeChangeListener {
 
     private RaftConfig raftConfig;
 
-    private ExecutorService raftCoreExecutor;
-    private ExecutorService raftCliServiceExecutor;
-
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     private final Object monitor = new Object();
@@ -127,23 +123,14 @@ public class JRaftServer implements NodeChangeListener {
         this.nodeManager = nodeManager;
         this.conf = new Configuration();
 
-        NotifyManager.registerSubscribe(this);
+        NotifyCenter.registerSubscribe(this);
     }
 
     void init(RaftConfig config, Collection<LogProcessor> processors) {
         this.raftConfig = config;
         this.serializer = SerializeFactory.getDefault();
 
-        int raftCoreThreadNum = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CORE_THREAD_NUM, "8"));
-        int raftCliServiceThreadNum = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
-
-        this.raftCoreExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
-                raftCoreThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
-
-        this.raftCliServiceExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
-                raftCliServiceThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
+        RaftExecutor.init(config);
 
         final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
         selfIp = self.ip();
@@ -187,7 +174,8 @@ public class JRaftServer implements NodeChangeListener {
 
                 rpcServer.registerUserProcessor(new NacosAsyncProcessor(this));
 
-                RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, raftCoreExecutor, raftCliServiceExecutor);
+                RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
+                        RaftExecutor.getRaftCliServiceExecutor());
 
                 if (!this.rpcServer.start()) {
                     Loggers.RAFT.error("Fail to init [RpcServer].");
@@ -280,13 +268,15 @@ public class JRaftServer implements NodeChangeListener {
 
                 // Turn on the leader auto refresh for this group
 
-                ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService("JRaftServer",
-                        new NameThreadFactory("com.alibaba.nacos.core.protocol.raft." + _group + "-refresh"));
+                Random random = new Random();
 
-                executorService.scheduleAtFixedRate(() -> refreshRouteTable(_group), 3, 3,
-                        TimeUnit.MINUTES);
+                long initialDelay = Duration.ofMinutes(3).toMillis() + random.nextInt(60 * 1000);
+                long period = Duration.ofMinutes(3).toMillis() + random.nextInt(60 * 1000);
 
-                multiRaftGroup.put(_group, new RaftGroupTuple(node, processor, raftGroupService, executorService));
+                RaftExecutor.scheduleRaftMemberRefreshJob(() -> refreshRouteTable(_group), initialDelay, period,
+                        TimeUnit.MILLISECONDS);
+
+                multiRaftGroup.put(_group, new RaftGroupTuple(node, processor, raftGroupService));
             }
         }
     }
@@ -360,32 +350,26 @@ public class JRaftServer implements NodeChangeListener {
     void addNode(com.alibaba.nacos.core.cluster.Node node) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
-            RetryRunner work = () -> {
+            final String groupId = entry.getKey();
+            Status status = cliService.addPeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
+                    PeerId.parsePeer(node.address()));
 
-                final String groupId = entry.getKey();
-                Status status = cliService.addPeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                        PeerId.parsePeer(node.address()));
-
-                if (status.isOk()) {
-                    refreshRouteTable(groupId);
-                }
-            };
+            if (status.isOk()) {
+                refreshRouteTable(groupId);
+            }
         }
     }
 
     void removeNode(com.alibaba.nacos.core.cluster.Node node) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
-            RetryRunner work = () -> {
-                final String groupId = entry.getKey();
+            final String groupId = entry.getKey();
+            Status status = cliService.removePeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
+                    PeerId.parsePeer(node.address()));
 
-                Status status = cliService.removePeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                        PeerId.parsePeer(node.address()));
-
-                if (status.isOk()) {
-                    refreshRouteTable(groupId);
-                }
-            };
+            if (status.isOk()) {
+                refreshRouteTable(groupId);
+            }
         }
     }
 
@@ -416,7 +400,8 @@ public class JRaftServer implements NodeChangeListener {
                 } catch (final InterruptedException e) {
                 }
             } else {
-                Loggers.RAFT.error("get Leader has error : {}", lastCause != null ? new RouteTableException(error.toString(), lastCause)
+                Loggers.RAFT.error("get Leader has error : {}", lastCause != null ?
+                        new RouteTableException(error.toString(), lastCause)
                         : new RouteTableException(error.toString()));
                 return null;
             }
@@ -439,7 +424,7 @@ public class JRaftServer implements NodeChangeListener {
 
     void shutdown() {
 
-        NotifyManager.deregisterSubscribe(this);
+        NotifyCenter.deregisterSubscribe(this);
 
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
             final RaftGroupTuple tuple = entry.getValue();
@@ -486,7 +471,7 @@ public class JRaftServer implements NodeChangeListener {
 
                 @Override
                 public Executor getExecutor() {
-                    return raftCliServiceExecutor;
+                    return RaftExecutor.getRaftCliServiceExecutor();
                 }
             }, timeoutMillis);
         } catch (Exception e) {
@@ -522,29 +507,26 @@ public class JRaftServer implements NodeChangeListener {
         private final Node node;
         private final LogProcessor processor;
         private final RaftGroupService raftGroupService;
-        private final ScheduledExecutorService executorService;
         private ScheduledReporter regionMetricsReporter;
 
         public RaftGroupTuple(Node node,
                               LogProcessor processor,
-                              RaftGroupService raftGroupService,
-                              ScheduledExecutorService executorService) {
+                              RaftGroupService raftGroupService) {
             this.node = node;
             this.processor = processor;
             this.raftGroupService = raftGroupService;
-            this.executorService = executorService;
 
             final MetricRegistry metricRegistry = this.node.getNodeMetrics().getMetricRegistry();
             if (metricRegistry != null) {
 
                 // auto start raft node metrics reporter
 
-                regionMetricsReporter = Slf4jReporter.forRegistry(metricRegistry) //
+                regionMetricsReporter = Slf4jReporter.forRegistry(metricRegistry)
                         .prefixedWith("nacos_raft_[" + node.getGroupId() + "]")
                         .withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
                         .outputTo(Loggers.RAFT)
-                        .scheduleOn(executorService)
-                        .shutdownExecutorOnStop(executorService != null)
+                        .scheduleOn(RaftExecutor.getRaftMemberRefreshExecutor())
+                        .shutdownExecutorOnStop(RaftExecutor.getRaftMemberRefreshExecutor().isShutdown())
                         .build();
                 regionMetricsReporter.start(30, TimeUnit.SECONDS);
             }

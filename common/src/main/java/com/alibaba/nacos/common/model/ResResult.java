@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.common.model;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+
 import java.io.Serializable;
 
 /**
@@ -29,6 +32,7 @@ public class ResResult<T> implements Serializable {
 
     private T data;
 
+    @JSONField(serialzeFeatures = SerializerFeature.IgnoreNonFieldGetter)
     private String errMsg;
 
     public int getCode() {

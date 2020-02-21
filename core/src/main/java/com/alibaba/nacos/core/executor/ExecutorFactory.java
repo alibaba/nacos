@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -37,23 +38,11 @@ public class ExecutorFactory {
     private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
     
     private static final String DEFAULT_BIZ = "nacos";
-    
+
     static {
         ShutdownUtils.addShutdownHook(() -> {
             THREAD_POOL_MANAGER.destroy(DEFAULT_BIZ);
         });
-    }
-
-    public static ExecutorService newCacheExecutorService(String owner) {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
-        return executorService;
-    }
-
-    public static ExecutorService newCacheExecutorService(String owner, ThreadFactory threadFactory) {
-        ExecutorService executorService = Executors.newCachedThreadPool(threadFactory);
-        THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
-        return executorService;
     }
 
     public static ForkJoinPool newForkJoinPool(final String owner) {
@@ -97,22 +86,9 @@ public class ExecutorFactory {
         return executorService;
     }
 
-    public static ScheduledExecutorService newSingleScheduledExecutorService(final String owner) {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
-        return executorService;
-    }
-
     public static ScheduledExecutorService newSingleScheduledExecutorService(final String owner,
                                                                              final ThreadFactory threadFactory) {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
-        return executorService;
-    }
-
-    public static ScheduledExecutorService newScheduledExecutorService(final String owner,
-                                                                       final int nThreads) {
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(nThreads);
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, threadFactory);
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
         return executorService;
     }
@@ -120,10 +96,9 @@ public class ExecutorFactory {
     public static ScheduledExecutorService newScheduledExecutorService(final String owner,
                                                                        final int nThreads,
                                                                        final ThreadFactory threadFactory) {
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(nThreads, threadFactory);
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(nThreads, threadFactory);
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
         return executorService;
     }
-
 
 }

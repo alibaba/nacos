@@ -287,4 +287,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         env = configurableApplicationContext.getEnvironment();
         loadSetting();
     }
+
+    public static boolean isEnableDistributedID() {
+        return !STANDALONE_MODE && isEmbeddedDistributedStorage();
+    }
 }

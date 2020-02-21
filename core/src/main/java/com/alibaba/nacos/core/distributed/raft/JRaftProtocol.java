@@ -31,7 +31,7 @@ import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.distributed.raft.utils.JLogUtils;
 import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -74,7 +74,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
         this.selfAddress = nodeManager.self().address();
 
-        NotifyManager.registerPublisher(RaftEvent::new, RaftEvent.class);
+        NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
 
         this.failoverRetries = Integer.parseInt(config.getValOfDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, "3"));
 
@@ -88,7 +88,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         // There is only one consumer to ensure that the internal consumption
         // is sequential and there is no concurrent competition
 
-        NotifyManager.registerSubscribe(new Subscribe<RaftEvent>() {
+        NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
             @Override
             public void onEvent(RaftEvent event) {
                 final String groupId = event.getGroupId();

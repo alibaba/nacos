@@ -114,7 +114,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "contains", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -134,7 +134,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKey", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -154,7 +154,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKeyAutoConvert", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -174,7 +174,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByKey", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -197,7 +197,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "batchGetAutoConvert", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -217,7 +217,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByBatch", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -237,7 +237,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getCheckSum", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -256,7 +256,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
             response = protocol.getData(request);
         } catch (Exception e) {
             Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "allKeys", e);
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -282,7 +282,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
                     .build();
             response = protocol.getData(request);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
         }
         if (response.getData() != null) {
             return response.getData();
@@ -324,7 +324,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
                         .build();
             } catch (Exception e) {
                 return GetResponse.<D>builder()
-                        .exceptionName(e.getClass().getName())
+                        .exceptionName(e.getClass().getCanonicalName())
                         .errMsg(e.getMessage())
                         .build();
             }
@@ -414,7 +414,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
                     return RaftKVStore.super.batchGet(keys);
                 default:
                     throw new UnsupportedOperationException();
-
             }
 
         }

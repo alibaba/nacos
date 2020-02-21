@@ -41,8 +41,9 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
+import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -133,7 +134,7 @@ public class PersistService {
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();
 
-        DistributeIDManager.register(
+        IdGeneratorManager.register(
                 CONFIG_INFO_ID,
                 CONFIG_HISTORY_ID,
                 CONFIG_TAG_RELATION_ID,
@@ -187,11 +188,20 @@ public class PersistService {
                               final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
 
         try {
-            long configId = DistributeIDManager.nextId(CONFIG_INFO_ID);
-            long configHistoryId = DistributeIDManager.nextId(CONFIG_HISTORY_ID);
+            Long configId = null;
+            Long configHistoryId = null;
+
+            boolean enableDistributedID = PropertyUtil.isEnableDistributedID();
+
+            if (enableDistributedID) {
+                configId = IdGeneratorManager.nextId(CONFIG_INFO_ID);
+                configHistoryId = IdGeneratorManager.nextId(CONFIG_HISTORY_ID);
+            }
+
             addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, time, configAdvanceInfo);
             String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-            addConfigTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
+
+            addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
             insertConfigHistoryAtomic(configHistoryId, configInfo, srcIp, srcUser, time, "I");
 
@@ -300,7 +310,7 @@ public class PersistService {
             if (configTags != null) {
                 // 删除所有tag，然后再重新创建
                 removeTagByIdAtomic(oldConfigInfo.getId());
-                addConfigTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
+                addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                         configInfo.getGroup(), configInfo.getTenant());
             }
             insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
@@ -2170,14 +2180,15 @@ public class PersistService {
      * @param group    group
      * @param tenant   tenant
      */
-    public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
-        final String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)";
-        final Object[] args = new Object[]{configId, tagName, null, dataId, group, tenant};
+    public void addConfigTagRelationAtomic(Long configId, String tagName, String dataId, String group, String tenant) {
+        final String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) " +
+                "VALUES(((select id from config_info where data_id=?' and group_id =? and tenant_id=?),?,?,?,?,?),?,?,?,?,?)";
+        final Object[] args = new Object[]{dataId, group, tenant, tagName, null, dataId, group, tenant};
         SqlContextUtils.addSqlContext(sql, args);
     }
 
     /**
-     * 增加配置；数据库原子操作，最小sql动作，无业务封装
+     * 增加配置；数据库原子操作
      *
      * @param configId   config id
      * @param configTags tags
@@ -2185,26 +2196,13 @@ public class PersistService {
      * @param group      group
      * @param tenant     tenant
      */
-    public void addConfigTagsRelationAtomic(long configId, String configTags, String dataId, String group,
-                                            String tenant) {
+    public void addConfigTagsRelation(Long configId, String configTags, String dataId, String group,
+                                      String tenant) {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
-            String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES";
-            String valuesPlaceHolder = "(?,?,?,?,?,?)";
-            List<Object> argsList = new ArrayList<>(5 * tagArr.length);
             for (int i = 0; i < tagArr.length; i++) {
-                sql += valuesPlaceHolder;
-                if (i != tagArr.length - 1) {
-                    sql += ",";
-                }
-                argsList.add(configId);
-                argsList.add(tagArr[i]);
-                argsList.add(null);
-                argsList.add(dataId);
-                argsList.add(group);
-                argsList.add(tenant);
+                addConfigTagRelationAtomic(configId, tagArr[i], dataId, group, tenant);
             }
-            SqlContextUtils.addSqlContext(sql, argsList.toArray());
         }
     }
 
@@ -2447,18 +2445,31 @@ public class PersistService {
      * @param time       time
      * @param ops        ops type
      */
-    public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
+    public void insertConfigHistoryAtomic(Long id, ConfigInfo configInfo, String srcIp, String srcUser,
                                           final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
 
-        final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5," +
-                "src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
-        final Object[] args = new Object[]{
-                id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
-                md5Tmp, srcIp, srcUser, time, ops
-        };
+        final String sql;
+        final Object[] args;
+
+        if (id == null) {
+            sql = "INSERT INTO his_config_info (data_id,group_id,tenant_id,app_name,content,md5," +
+                    "src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?)";
+            args = new Object[]{
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
+                    md5Tmp, srcIp, srcUser, time, ops
+            };
+        } else {
+            sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5," +
+                    "src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+            args = new Object[]{
+                    id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
+                    md5Tmp, srcIp, srcUser, time, ops
+            };
+        }
+
         SqlContextUtils.addSqlContext(sql, args);
     }
 

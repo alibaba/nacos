@@ -23,7 +23,7 @@ import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 import com.alibaba.nacos.consistency.snapshot.Writer;
-import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
@@ -137,7 +137,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public void onLeaderStart(final long term) {
         super.onLeaderStart(term);
         this.isLeader.set(true);
-        NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
                 .leader(node.getNodeId().getPeerId().getEndpoint().toString())
                 .term(term)
@@ -153,7 +153,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onStartFollowing(LeaderChangeContext ctx) {
-        NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
                 .leader(ctx.getLeaderId().getEndpoint().toString())
                 .term(ctx.getTerm())

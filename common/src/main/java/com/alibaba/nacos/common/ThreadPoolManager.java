@@ -23,9 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * // TODO Access Metric
+ *
  * For unified management of thread pool resources, the consumer can simply call
  * the register method to {@link ThreadPoolManager#register(String, String, ExecutorService)}
  * the thread pool that needs to be included in the life cycle management of the resource
@@ -60,7 +63,29 @@ public final class ThreadPoolManager {
         resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
     }
 
-	/**
+    public Map<String, Map<String, Map<String, Object>>> getThreadPoolsInfo() {
+        Map<String, Map<String, Map<String, Object>>> info = new HashMap<String, Map<String, Map<String, Object>>>(4);
+        for (Map.Entry<String, Map<String, Set<ExecutorService>>> entry : resourcesManager.entrySet()) {
+            Map<String, Map<String, Object>> subInfo = new HashMap<String, Map<String, Object>>(8);
+            info.put(entry.getKey(), subInfo);
+            for (Map.Entry<String, Set<ExecutorService>> mapEntry : entry.getValue().entrySet()) {
+                Map<String, Object> details = new HashMap<String, Object>();
+                subInfo.put(mapEntry.getKey(), details);
+                for (ExecutorService service : mapEntry.getValue()) {
+                    if (service instanceof ThreadPoolExecutor) {
+                        ThreadPoolExecutor executor = (ThreadPoolExecutor) service;
+                        details.put("activeCount", executor.getActiveCount());
+                        details.put("corePoolSize", executor.getCorePoolSize());
+                        details.put("maximumPoolSiz", executor.getMaximumPoolSize());
+                        details.put("workCount", executor.getQueue().size());
+                    }
+                }
+            }
+        }
+        return info;
+    }
+
+    /**
 	 * Register the thread pool resources with the resource manager
 	 *
      * @param biz business name
@@ -129,7 +154,7 @@ public final class ThreadPoolManager {
 	                while (retry > 0) {
 	                    retry --;
 	                    try {
-	                        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+	                        if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
 	                            executor.shutdownNow();
                             }
                         } catch (Exception e) {
@@ -138,6 +163,9 @@ public final class ThreadPoolManager {
                     }
                 }
             }
+
+            resourcesManager.get(biz).clear();
+
         }
     }
 

@@ -18,10 +18,7 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -54,16 +51,6 @@ public interface LogProcessor {
      * @return target type data
      */
     <D> GetResponse<D> getData(GetRequest request);
-
-    /**
-     * Discovery snapshot handler
-     * It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by itself
-     *
-     * @return {@link List<SnapshotOperate>}
-     */
-    default List<SnapshotOperate> loadSnapshotOperate() {
-        return Collections.emptyList();
-    }
 
     /**
      * Commit transaction

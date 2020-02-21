@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cp;
-
-import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
-
-import java.util.Collections;
-import java.util.List;
+package com.alibaba.nacos.consistency;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public interface LogProcessor4CP extends LogProcessor {
-
+public interface IdGenerator {
 
     /**
-     * Discovery snapshot handler
-     * It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by itself
-     *
-     * @return {@link List <SnapshotOperate>}
+     * Perform the corresponding initialization operation
      */
-    default List<SnapshotOperate> loadSnapshotOperate() {
-        return Collections.emptyList();
-    }
+    void init();
+
+    /**
+     * Get next id
+     *
+     * @return next id
+     */
+    long nextId();
 
 }

@@ -27,8 +27,7 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.task.ClearInvalidNodeTask;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
-import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
-import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -46,6 +45,7 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -113,7 +113,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         // register NodeChangeEvent publisher to NotifyManager
 
-        NotifyManager.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
+        NotifyCenter.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
 
         // init nacos core sys
 
@@ -126,11 +126,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         initAPProtocol();
         initCPProtocol();
-
-        // To initialize the distributed ID generator, need to wait
-        // for the cluster node information to be initialized.
-
-        DistributeIDManager.init(this);
     }
 
     @Override
@@ -143,8 +138,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         // If this node updates itself, ignore the health judgment
 
         if (!isSelf(newNode)) {
-            lastRefreshTimeRecord.put(address, nowTime);
             serverListUnHealth.remove(newNode);
+            lastRefreshTimeRecord.put(address, nowTime);
             serverListHealth.put(address, newNode);
         }
 
@@ -202,21 +197,23 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         String address = null;
 
-        for (Node node : nodes) {
+        for (Iterator<Node> iterator = nodes.iterator(); iterator.hasNext();) {
+
+            Node node = iterator.next();
+            address = node.address();
 
             // 本节点不参与 nodeJoin
 
-            if (Objects.equals(node, self)) {
+            if (Objects.equals(node, self) || serverListHealth.containsKey(address)) {
+                iterator.remove();
                 continue;
             }
-
-            address = node.address();
 
             serverListHealth.put(address, node);
             lastRefreshTimeRecord.put(address, lastRefreshTime);
         }
 
-        NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
+        NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
                 .changeNodes(nodes)
                 .allNodes(allNodes())
@@ -233,20 +230,23 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         String address = null;
 
-        for (Node node : nodes) {
+        for (Iterator<Node> iterator = nodes.iterator(); iterator.hasNext();) {
 
-            // 本节点不参与 nodeLeave
+            Node node = iterator.next();
+            address = node.address();
 
-            if (Objects.equals(node, self)) {
+            // 本节点不参与 nodeJoin
+
+            if (Objects.equals(node, self) || serverListHealth.containsKey(address)) {
+                iterator.remove();
                 continue;
             }
-            address = node.address();
 
             serverListHealth.remove(address);
             lastRefreshTimeRecord.remove(address);
         }
 
-        NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
+        NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("leave")
                 .changeNodes(nodes)
                 .allNodes(allNodes())
@@ -255,12 +255,12 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public void subscribe(NodeChangeListener listener) {
-        NotifyManager.registerSubscribe(listener);
+        NotifyCenter.registerSubscribe(listener);
     }
 
     @Override
     public void unSubscribe(NodeChangeListener listener) {
-        NotifyManager.deregisterSubscribe(listener);
+        NotifyCenter.deregisterSubscribe(listener);
     }
 
     @Override
@@ -359,6 +359,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         Map<String, Object> sub = new HashMap<>(8);
 
         defaultMetaData.put(ProtocolMetaData.GLOBAL, sub);
+
+        // Globally unique information
+
+        // /global/cluster => [ip:port, ip:port, ...]
+        // /global/self => ip:port
 
         sub.put(ProtocolMetaData.CLUSTER_INFO, allNodes().stream().map(Node::address).collect(Collectors.toList()));
         sub.put(ProtocolMetaData.SELF, self().address());

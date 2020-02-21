@@ -40,6 +40,20 @@ public interface NAsyncHttpClient extends NHttpClient {
                          TypeReference<ResResult<T>> token, Callback<T> callback);
 
     /**
+     * get request, may be pulling a lot of data
+     *
+     * @param url url
+     * @param header http header param
+     * @param query http query param
+     * @param body get with body
+     * @param token return type
+     * @param callback {@link Callback#onReceive(HttpResResult)}
+     */
+    <T> void getLarge(String url, Header header, Query query, ResResult body,
+                              TypeReference<ResResult<T>> token,
+                              Callback<T> callback);
+
+    /**
      * http delete
      *
      * @param url url

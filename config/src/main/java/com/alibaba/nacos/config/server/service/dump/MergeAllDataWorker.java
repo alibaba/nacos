@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -46,7 +47,11 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 class MergeAllDataWorker implements Runnable {
 
-    private static final Executor executor = ExecutorFactory.newCacheExecutorService(MergeAllDataWorker.class.getCanonicalName());
+    private static final Executor executor = ExecutorFactory.newFixExecutorService(
+            MergeAllDataWorker.class.getCanonicalName(),
+            8,
+            new NameThreadFactory("com.alibaba.nacos.config.config-merge")
+            );
 
     private static final AtomicInteger FINISHED = new AtomicInteger();
 

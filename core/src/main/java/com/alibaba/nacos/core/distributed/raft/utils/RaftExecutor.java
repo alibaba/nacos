@@ -16,8 +16,66 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
+import com.alibaba.nacos.core.distributed.raft.JRaftServer;
+import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.executor.NameThreadFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RaftExecutor {
+
+    private static ExecutorService raftCoreExecutor;
+    private static ExecutorService raftCliServiceExecutor;
+    private static ScheduledExecutorService raftMemberRefreshExecutor;
+
+    public static void init(RaftConfig config) {
+
+        int raftCoreThreadNum = Integer.parseInt(config.getValOfDefault(
+                RaftSysConstants.RAFT_CORE_THREAD_NUM, "8"));
+        int raftCliServiceThreadNum = Integer.parseInt(config.getValOfDefault(
+                RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
+
+        raftCoreExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
+                raftCoreThreadNum,
+                new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
+
+        raftCliServiceExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
+                raftCliServiceThreadNum,
+                new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
+
+        raftMemberRefreshExecutor = ExecutorFactory.newScheduledExecutorService(
+                RaftExecutor.class.getCanonicalName(),
+                8,
+                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-member-refresh")
+        );
+
+    }
+
+    private RaftExecutor() {
+    }
+
+    public static void scheduleRaftMemberRefreshJob(Runnable runnable,long initialDelay,
+                                                    long period,
+                                                    TimeUnit unit) {
+        raftMemberRefreshExecutor.scheduleAtFixedRate(runnable, initialDelay, period, unit);
+    }
+
+    public static ExecutorService getRaftCoreExecutor() {
+        return raftCoreExecutor;
+    }
+
+    public static ExecutorService getRaftCliServiceExecutor() {
+        return raftCliServiceExecutor;
+    }
+
+    public static ScheduledExecutorService getRaftMemberRefreshExecutor() {
+        return raftMemberRefreshExecutor;
+    }
 }

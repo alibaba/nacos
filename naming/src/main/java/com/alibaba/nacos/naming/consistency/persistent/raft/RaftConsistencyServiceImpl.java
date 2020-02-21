@@ -70,7 +70,8 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     @PostConstruct
     protected void init() {
 
-        Executor executor = ExecutorFactory.newSingleExecutorService("RaftConsistencyServiceImpl",
+        Executor executor = ExecutorFactory.newSingleExecutorService(
+                getClass().getCanonicalName(),
                 new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
 
         executor.execute(notifier);

@@ -27,7 +27,9 @@ import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerNode;
 import com.alibaba.nacos.core.cluster.Task;
-import com.alibaba.nacos.core.file.WatchFileManager;
+import com.alibaba.nacos.core.file.FileChangeEvent;
+import com.alibaba.nacos.core.file.FileWatcher;
+import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -88,8 +90,18 @@ public class SyncNodeTask extends Task {
 
         // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
 
-        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(),
-                fileChangeEvent -> readServerConfFromDisk());
+        WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(),
+                new FileWatcher() {
+                    @Override
+                    public void onChange(FileChangeEvent event) {
+                        readServerConfFromDisk();
+                    }
+
+                    @Override
+                    public boolean interest(String context) {
+                        return StringUtils.contains(context, "cluster.conf");
+                    }
+                });
     }
 
     @Override

@@ -47,6 +47,15 @@ public class FileChangeEvent implements Event {
     }
 
     @Override
+    public String toString() {
+        return "FileChangeEvent{" +
+                "paths='" + paths + '\'' +
+                ", event-kind=" + event.kind() + '\'' +
+                ", even-context=" + event.context() + '\'' +
+                '}';
+    }
+
+    @Override
     public Class<? extends Event> eventType() {
         return FileChangeEvent.class;
     }

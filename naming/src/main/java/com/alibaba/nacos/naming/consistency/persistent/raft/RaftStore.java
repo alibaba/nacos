@@ -101,7 +101,7 @@ public class RaftStore {
     protected void init() throws Exception {
 
         executor = ExecutorFactory.newSingleExecutorService(
-                "RaftStore",
+                getClass().getCanonicalName(),
                 new NameThreadFactory("com.alibaba.nacos.naming.raft.service-snapshot"));
 
         serializer = SerializeFactory.getDefault();

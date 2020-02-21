@@ -1,0 +1,3 @@
+nacos.core.auth.system.type=nacos
+nacos.core.auth.enabled=false
+nacos.core.auth.default.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789

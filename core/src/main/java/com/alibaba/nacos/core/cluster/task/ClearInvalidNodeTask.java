@@ -36,6 +36,10 @@ public class ClearInvalidNodeTask extends Task {
 
     private static final long REMOVAL_TIME = EXPIRE_TIME << 1;
 
+    private int cleanCnt = 0;
+
+    private static final int MAX_CLEAN_CNT = 15;
+
     @Override
     protected void executeBody() {
         Map<String, Long> lastRefreshRecord = nodeManager.getLastRefreshTimeRecord();
@@ -61,6 +65,14 @@ public class ClearInvalidNodeTask extends Task {
                 }
             }
         });
+
+        cleanCnt ++;
+
+        if (cleanCnt > MAX_CLEAN_CNT) {
+            nodeManager.nodeLeave(unHealthNodes);
+            unHealthNodes.clear();
+            cleanCnt = 0;
+        }
 
     }
 

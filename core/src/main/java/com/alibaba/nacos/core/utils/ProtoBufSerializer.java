@@ -28,11 +28,23 @@ import io.protostuff.WriteSession;
 import io.protostuff.runtime.RuntimeSchema;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ProtoBufSerializer implements Serializer {
+
+    // Need to control the amount of LinkedBuffer held by ThreadLocal
+
+    private static final AtomicInteger NOW_HOLD = new AtomicInteger(0);
+
+    private static final ThreadLocal<LinkedBuffer> CACHE = ThreadLocal.withInitial(() -> {
+        NOW_HOLD.incrementAndGet();
+        return LinkedBuffer.allocate();
+    });
+
+    private static final int MAX_HOLD = 256;
 
     @Override
     public <T> T deSerialize(byte[] data, Class<T> cls) {
@@ -81,12 +93,20 @@ public final class ProtoBufSerializer implements Serializer {
     public <T> byte[] serialize(T obj) {
         Schema<T> schema = RuntimeSchema.getSchema((Class<T>) obj.getClass());
 
-        Output output = new ProtostuffOutput(LinkedBuffer.allocate());
+        LinkedBuffer buffer = CACHE.get();
+
         try {
+            Output output = new ProtostuffOutput(buffer);
             schema.writeTo(output, obj);
             return ((WriteSession) output).toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (NOW_HOLD.get() > MAX_HOLD) {
+                CACHE.remove();
+            } else {
+                buffer.clear();
+            }
         }
     }
 

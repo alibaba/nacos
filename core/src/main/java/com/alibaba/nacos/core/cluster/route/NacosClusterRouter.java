@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.route;
 
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -84,5 +86,10 @@ public class NacosClusterRouter {
         return ResResultUtils.success(true);
     }
 
+    @GetMapping("/sys/threadPool")
+    public ResResult<Map<String, Map<String, Map<String, Object>>>> currentSysThreadPoolInfo() {
+        ThreadPoolManager manager = ThreadPoolManager.getInstance();
+        return ResResultUtils.success(manager.getThreadPoolsInfo());
+    }
 
 }

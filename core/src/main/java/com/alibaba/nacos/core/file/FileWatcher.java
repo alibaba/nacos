@@ -14,29 +14,39 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cp;
+package com.alibaba.nacos.core.file;
 
-import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
-
-import java.util.Collections;
-import java.util.List;
+import java.nio.file.WatchEvent;
+import java.util.concurrent.Executor;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public interface LogProcessor4CP extends LogProcessor {
-
+public interface FileWatcher {
 
     /**
-     * Discovery snapshot handler
-     * It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by itself
+     * Triggered when a file change occurs
      *
-     * @return {@link List <SnapshotOperate>}
+     * @param event {@link FileChangeEvent}
      */
-    default List<SnapshotOperate> loadSnapshotOperate() {
-        return Collections.emptyList();
+    void onChange(FileChangeEvent event);
+
+    /**
+     * WatchEvent context information
+     *
+     * @param context {@link WatchEvent#context()}
+     * @return is this watcher interest context
+     */
+    boolean interest(String context);
+
+    /**
+     * If the FileWatcher has its own thread pool, use this thread
+     * pool to execute, otherwise use the WatchFileManager thread
+     *
+     * @return {@link Executor}
+     */
+    default Executor executor() {
+        return null;
     }
 
 }

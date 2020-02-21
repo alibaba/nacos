@@ -48,6 +48,17 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     }
 
     @Override
+    public <T> void getLarge(final String url,
+                             final Header header,
+                             final Query query,
+                             final ResResult body,
+                             final TypeReference<ResResult<T>> token,
+                             final Callback<T> callback) {
+        HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET);
+        execute(asyncClient, token, callback, requestBase);
+    }
+
+    @Override
     public <T> void delete(final String url,
                            final Header header,
                            final Query query,
