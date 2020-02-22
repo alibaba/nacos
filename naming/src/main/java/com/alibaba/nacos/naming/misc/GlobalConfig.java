@@ -27,8 +27,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class GlobalConfig {
 
-    @Value("${nacos.naming.distro.taskDispatchPeriod:200}")
-    private int taskDispatchPeriod = 200;
+    @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
+    private int taskDispatchPeriod = 2000;
 
     @Value("${nacos.naming.distro.batchSyncKeyCount:1000}")
     private int batchSyncKeyCount = 1000;
