@@ -32,10 +32,9 @@ public final class DistroExecutor {
 
     private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
-    private static final ExecutorService DISTRO_GLOBAL = ExecutorFactory.newFixExecutorService(
+    private static final ExecutorService DISTRO_GLOBAL = ExecutorFactory.newForkJoinPool(
             DistroProtocol.class.getCanonicalName(),
-            8,
-            new NameThreadFactory("com.alibaba.nacos.core.protocol.distro.common"));
+            8);
 
     private static final ScheduledExecutorService DISTRO_TASK_WORKER = ExecutorFactory.newScheduledExecutorService(
             DistroProtocol.class.getCanonicalName(),

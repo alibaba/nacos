@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.distributed.distro.core;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +28,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -42,9 +46,16 @@ public class DataSyncer {
 
     private final Map<String, String> taskMap = new ConcurrentHashMap<>();
 
-    public DataSyncer(NodeManager nodeManager,
-                      KVManager kvManager,
-                      DistroClient distroClient) {
+    private final DistroConfig config;
+
+    private RetryPolicy policy;
+
+    public DataSyncer(
+            DistroConfig config,
+            NodeManager nodeManager,
+            KVManager kvManager,
+            DistroClient distroClient) {
+        this.config = config;
         this.nodeManager = nodeManager;
         this.kvManager = kvManager;
         this.distroClient = distroClient;
@@ -120,8 +131,8 @@ public class DataSyncer {
             return;
         }
 
-        // TODO may choose other retry policy.
-        submit(syncTask, 2000);
+        // TODO support auto-refresh policy impl
+        getRetryPolicy().retryTask(syncTask);
     }
 
     public List<Node> getServers() {
@@ -130,6 +141,28 @@ public class DataSyncer {
 
     public void shutdown() {
 
+    }
+
+    private RetryPolicy getRetryPolicy() {
+        if (policy == null) {
+            synchronized (this) {
+                if (policy == null) {
+                    final String name = config.getValOfDefault(DistroSysConstants.RETRY_SYNC_POLICY,
+                            DistroSysConstants.DEFAULT_RETRY_SYNC_POLICY);
+                    ServiceLoader<RetryPolicy> loader = ServiceLoader.load(RetryPolicy.class);
+                    for (RetryPolicy retryPolicy : loader) {
+                        if (Objects.equals(retryPolicy.name(), name)) {
+                            policy = retryPolicy;
+                        }
+                    }
+                    if (policy == null) {
+                        policy = new SimpleDelayRetryPolicy();
+                    }
+                    policy.injectDataSyncer(this);
+                }
+            }
+        }
+        return policy;
     }
 
     private String buildKey(String key, String targetServer) {

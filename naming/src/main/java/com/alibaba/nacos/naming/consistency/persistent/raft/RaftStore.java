@@ -30,7 +30,8 @@ import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.consistency.store.StartHook;
 import com.alibaba.nacos.core.utils.ConcurrentHashSet;
-import com.alibaba.nacos.core.utils.ZipUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -47,12 +48,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
@@ -75,7 +73,9 @@ public class RaftStore {
 
     private final String SNAPSHOT_DIR = "nacos-naming";
     private final String SNAPSHOT_ARCHIVE = "nacos-naming.zip";
-    private final String SNAPSHOT_FILE = "naming-snapshot.dat";
+
+    // example : ../naming/data/ or ../namimh/data/{namespace_id}/
+
     private final String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
     public static final String STORE_NAME = "persistent_service";
 
@@ -95,15 +95,10 @@ public class RaftStore {
 
     @PostConstruct
     protected void init() throws Exception {
-
         serializer = SerializeFactory.getDefault();
-
         kvStore = protocol.createKVStore(STORE_NAME, serializer, new NSnapshotOperation());
-
         kvStore.registerHook(new NStartHook(), new NBeforeHook(), new NAfterHook());
-
         kvStore.start();
-
         initialized = true;
     }
 
@@ -150,15 +145,14 @@ public class RaftStore {
                     FileUtils.deleteDirectory(file);
                     FileUtils.forceMkdir(file);
 
-                    byte[] data = serializer.serialize(kvStore.getAll());
-                    final String fileName = Paths.get(parentPath, "naming-snapshot.dat").toString();
-                    FileUtils.writeByteArrayToFile(new File(fileName), data, false);
+                    FileUtils.copyDirectory(new File(cacheDir), new File(parentPath));
+
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
 
                     try (final FileOutputStream fOut = new FileOutputStream(outputFile);
                          final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
                         WritableByteChannel channel = Channels.newChannel(zOut);
-                        ZipUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
+                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
                                 channel);
                         FileUtils.deleteDirectory(file);
                     }
@@ -179,24 +173,22 @@ public class RaftStore {
         public boolean onSnapshotLoad(Reader reader) {
             final String readerPath = reader.getPath();
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
+            TimerContext.start("[Naming] RaftStore snapshot load job");
             try {
-                ZipUtils.unzipFile(sourceFile, readerPath);
+                DiskUtils.unzipFile(sourceFile, readerPath);
                 final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
                         + File.separator;
                 Loggers.RAFT.info("snapshot load from : {}", loadPath);
-
-                String file = Paths.get(loadPath, SNAPSHOT_FILE).toString();
-
-                byte[] bytes = FileUtils.readFileToByteArray(new File(file));
-
-                kvStore.load(serializer.deSerialize(bytes, Map.class));
-
+                File sourceDir = new File(sourceFile);
+                loadFromFile(sourceDir);
                 return true;
             }
             catch (final Throwable t) {
                 Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                         reader.listFiles(), t);
                 return false;
+            } finally {
+                TimerContext.end(Loggers.RAFT);
             }
         }
     }
@@ -206,25 +198,9 @@ public class RaftStore {
         @Override
         public void hook(Map<String, KVStore.Item> dataStore, KVStore<Record> kvStore) throws Exception {
             long start = System.currentTimeMillis();
-
-            KVStore.Item item;
-
-            Map<String, KVStore.Item> tmp = new HashMap<>();
-
-            for (File cache : RaftStore.this.listCaches()) {
-                if (cache.isDirectory() && cache.listFiles() != null) {
-                    for (File itemFile : cache.listFiles()) {
-                        item = readItem(itemFile, cache.getName());
-                        if (item != null) {
-                            tmp.put(decodeFileName(itemFile.getName()), item);
-                        }
-                    }
-                }
-            }
-
-            kvStore.load(tmp);
-
-            Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", dataStore.size(), (System.currentTimeMillis() - start));
+            loadFromFile(new File(cacheDir));
+            Loggers.RAFT.info("finish loading all data, size: {} cost {} ms.",
+                    dataStore.size(), (System.currentTimeMillis() - start));
         }
     }
 
@@ -236,6 +212,7 @@ public class RaftStore {
                 try {
                     write(key, item);
                 } catch (Exception e) {
+                    Loggers.RAFT.error("Data persistence error : {}", e);
                 }
             }
         }
@@ -253,25 +230,12 @@ public class RaftStore {
     }
 
     KVStore.Item readItem(File file, String namespaceId) throws IOException {
-
-        ByteBuffer buffer;
-        FileChannel fc = null;
         try {
-            fc = new FileInputStream(file).getChannel();
-            buffer = ByteBuffer.allocate((int) file.length());
-            fc.read(buffer);
-
-            byte[] bytes = buffer.array();
-
+            byte[] bytes = DiskUtils.readFileBytes(file);
             return serializer.deSerialize(bytes, KVStore.Item.class);
-
         } catch (Exception e) {
             Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;
-        } finally {
-            if (fc != null) {
-                fc.close();
-            }
         }
     }
 
@@ -291,7 +255,8 @@ public class RaftStore {
 
         if (StringUtils.isNotBlank(namespaceId)) {
 
-            File cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(key));
+            File cacheFile = new File(cacheDir + File.separator + namespaceId +
+                    File.separator + encodeFileName(key));
             if (cacheFile.exists() && !cacheFile.delete()) {
                 Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", key, item);
                 throw new IllegalStateException("failed to delete datum: " + key);
@@ -306,7 +271,8 @@ public class RaftStore {
         File cacheFile;
 
         if (StringUtils.isNotBlank(namespaceId)) {
-            cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(key));
+            cacheFile = new File(cacheDir + File.separator +
+                    namespaceId + File.separator + encodeFileName(key));
         } else {
             cacheFile = new File(cacheDir + File.separator + encodeFileName(key));
         }
@@ -317,22 +283,13 @@ public class RaftStore {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
-        FileChannel fc = null;
-        ByteBuffer data;
-
-        data = ByteBuffer.wrap(JSON.toJSONString(item).getBytes(StandardCharsets.UTF_8));
+        byte[] data = JSON.toJSONString(item).getBytes(StandardCharsets.UTF_8);
 
         try {
-            fc = new FileOutputStream(cacheFile, false).getChannel();
-            fc.write(data, data.position());
-            fc.force(true);
+            DiskUtils.writeFile(cacheFile, data, false);
         } catch (Exception e) {
             MetricsMonitor.getDiskException().increment();
             throw e;
-        } finally {
-            if (fc != null) {
-                fc.close();
-            }
         }
 
         // remove old format file:
@@ -361,6 +318,35 @@ public class RaftStore {
 
     private static String decodeFileName(String fileName) {
         return fileName.replace("#", ":");
+    }
+
+    private void loadFromFile(File parent) throws IOException {
+
+        if (!parent.exists() && !parent.mkdirs()) {
+            throw new IllegalStateException("cloud not make out directory: " + parent.getName());
+        }
+
+        KVStore.Item item;
+
+        Map<String, KVStore.Item> tmp = new HashMap<>();
+
+        for (File cache : parent.listFiles()) {
+            if (cache.isDirectory() && cache.listFiles() != null) {
+                for (File itemFile : cache.listFiles()) {
+                    item = readItem(itemFile, itemFile.getName());
+                    if (item != null) {
+                        tmp.put(decodeFileName(itemFile.getName()), item);
+                    }
+                }
+            } else {
+                item = readItem(cache, cache.getName());
+                if (item != null) {
+                    tmp.put(decodeFileName(cache.getName()), item);
+                }
+            }
+        }
+
+        kvStore.load(tmp);
     }
 
 }

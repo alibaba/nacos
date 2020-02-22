@@ -82,7 +82,7 @@ public class DistroController extends BaseController {
 
     @PutMapping("/checksum")
     public ResponseEntity<String> syncChecksum(@RequestParam String source,
-                                       @RequestBody Map<String, Map<String, String>> dataMap) {
+                                               @RequestBody Map<String, Map<String, String>> dataMap) {
         distroServer.onReceiveChecksums(dataMap, source);
         return ResponseEntity.ok("ok");
     }

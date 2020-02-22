@@ -49,6 +49,7 @@ public class TaskCenter {
     private final int cpuCoreCount;
 
     private final DistroConfig config;
+    private volatile boolean shutdown = false;
 
     public TaskCenter(DistroConfig config, NodeManager nodeManager, DataSyncer dataSyncer) {
         this.config = config;
@@ -70,7 +71,7 @@ public class TaskCenter {
     }
 
     public void shutdown() {
-
+        shutdown = true;
     }
 
     class Worker implements Runnable {
@@ -102,10 +103,12 @@ public class TaskCenter {
             List<String> keys = new ArrayList<>();
             for (; ; ) {
 
-                try {
+                if (shutdown) {
+                    return;
+                }
 
-                    String key = queue.poll(1000,
-                            TimeUnit.MILLISECONDS);
+                try {
+                    String key = queue.poll(1000, TimeUnit.MILLISECONDS);
 
                     if (CollectionUtils.isEmpty(nodeManager.allNodes())) {
                         continue;
@@ -142,7 +145,6 @@ public class TaskCenter {
 
                         batchSyncKeyCount = getBatchSyncKeyCount();
                         taskDispatchPeriod = getTaskDispatchPeriod();
-
                     }
 
                 } catch (Exception e) {

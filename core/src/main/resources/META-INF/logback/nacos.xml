@@ -9,6 +9,7 @@
     <include resource="META-INF/logback/nacos-included.xml"/>
     <include optional="true" resource="META-INF/logback/config-included.xml"/>
     <include optional="true" resource="META-INF/logback/naming-included.xml"/>
+    <include optional="true" resource="META-INF/logback/.xml"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -117,9 +118,13 @@
         <appender-ref ref="file-watch"/>
     </logger>
 
-
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
         <level value="INFO"/>
+        <appender-ref ref="protocol-raft"/>
+    </logger>
+
+    <logger name="com.alipay.sofa.jraft" additivity="false">
+        <level value="DEBUG"/>
         <appender-ref ref="protocol-raft"/>
     </logger>
 

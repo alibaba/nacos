@@ -70,13 +70,15 @@ public class PartitionDataTimedSync {
 
                 Loggers.DISTRO.debug("server list is: {}", nodes);
 
-                final Map<String, Map<String, String>> keyChecksums = new HashMap<>(64);
+                final Map<String, DistroKVStore> kvStoreMap = kvManager.list();
 
-                kvManager.list().forEach(new BiConsumer<String, DistroKVStore>() {
+                kvStoreMap.forEach(new BiConsumer<String, DistroKVStore>() {
                     @Override
-                    public void accept(String s, DistroKVStore dataStore) {
+                    public void accept(String biz, DistroKVStore dataStore) {
 
-                       Map<String, String> subKeyChecksums = new HashMap<>(64);
+                        final Map<String, Map<String, String>> keyChecksums = new HashMap<>(kvStoreMap.size());
+
+                        Map<String, String> subKeyChecksums = new HashMap<>(64);
 
                         // send local timestamps to other servers:
 
@@ -98,19 +100,20 @@ public class PartitionDataTimedSync {
 
                         Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
 
-                        keyChecksums.put(s, subKeyChecksums);
+                        // The information of different biz should be independent of each other,
+                        // as is the data synchronization. The different biz does not affect each
+                        // other, to avoid affecting the data synchronization of other normal
+                        // biz because of an error.
 
+                        keyChecksums.put(biz, subKeyChecksums);
+                        for (Node member : nodes) {
+                            if (Objects.equals(nodeManager.self(), member)) {
+                                continue;
+                            }
+                            distroClient.syncCheckSums(keyChecksums, member.address());
+                        }
                     }
                 });
-
-                // TODO 是否可以每一个 store 单独去同步，而不是收集完全部的数据后在进行 sync checkSums
-
-                for (Node member : nodes) {
-                    if (Objects.equals(nodeManager.self(), member)) {
-                        continue;
-                    }
-                    distroClient.syncCheckSums(keyChecksums, member.address());
-                }
 
             } catch (Exception e) {
                 Loggers.DISTRO.error("timed sync task failed.", e);

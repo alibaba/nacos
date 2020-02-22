@@ -43,6 +43,11 @@ public final class DistroSysConstants {
      */
     public static final boolean DEFAULT_DISTRO_ENABLED = true;
 
+    /**
+     * {@link DistroSysConstants#RETRY_SYNC_POLICY}
+     */
+    public static final String DEFAULT_RETRY_SYNC_POLICY = "simple";
+
     // ======= setting key ======= //
 
     /**
@@ -64,5 +69,10 @@ public final class DistroSysConstants {
      * Whether to enable the authoritative server mechanism
      */
     public static final String DISTRO_ENABLED = "distro_enabled";
+
+    /**
+     * Data synchronization retry strategy
+     */
+    public static final String RETRY_SYNC_POLICY = "retry_policy";
 
 }

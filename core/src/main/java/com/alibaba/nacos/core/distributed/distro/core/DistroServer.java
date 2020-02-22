@@ -93,6 +93,7 @@ public class DistroServer {
                     this.distroClient);
 
             this.dataSyncer = new DataSyncer(
+                    config,
                     SpringUtils.getBean(NodeManager.class),
                     this.kvManager,
                     this.distroClient);

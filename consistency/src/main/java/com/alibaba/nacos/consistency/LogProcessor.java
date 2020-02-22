@@ -53,7 +53,7 @@ public interface LogProcessor {
     <D> GetResponse<D> getData(GetRequest request);
 
     /**
-     * Commit transaction
+     * Commit transaction and auto inject biz info
      *
      * @param log {@link Log}
      * @return is success
@@ -65,7 +65,7 @@ public interface LogProcessor {
     }
 
     /**
-     * Commit transaction, asynchronous
+     * Commit transaction, asynchronous and auto inject biz info
      *
      * @param log {@link Log}
      * @return {@link CompletableFuture<Boolean>}
