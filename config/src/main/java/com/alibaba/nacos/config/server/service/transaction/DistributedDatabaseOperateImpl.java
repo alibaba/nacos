@@ -33,6 +33,7 @@ import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
@@ -44,6 +45,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +69,9 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
 
     @Autowired
     private NodeManager nodeManager;
+
+    @Autowired
+    private DerbySnapshotOperation snapshotOperation;
 
     private DataSourceService dataSourceService;
 
@@ -260,11 +265,18 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
         return protocol;
     }
 
+    @Override
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.singletonList(snapshotOperation);
+    }
+
     @SuppressWarnings("all")
     @Override
     public <R> GetResponse<R> getData(GetRequest request) {
         SelectRequest selectRequest = serializer.deSerialize(request.getCtx(), SelectRequest.class);
         RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
+
+        // TODO 需要优化下
 
         GetResponse<R> response = new GetResponse<>();
         try {
