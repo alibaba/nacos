@@ -37,7 +37,7 @@ public class RaftConfig implements Config<LogProcessor4CP> {
 
     private static final long serialVersionUID = 9174789390266064002L;
 
-    private Map<String, String> data = new HashMap<>();
+    private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
 
     private List<LogProcessor4CP> processors = Collections.synchronizedList(new ArrayList<>());
 
@@ -46,11 +46,11 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     }
 
     public void setData(Map<String, String> data) {
-        this.data = data;
+        this.data = Collections.synchronizedMap(data);
     }
 
     @Override
-    public synchronized void setVal(String key, String value) {
+    public void setVal(String key, String value) {
         data.put(key, value);
     }
 

@@ -21,22 +21,48 @@ package com.alibaba.nacos.core.distributed.distro;
  */
 public final class DistroSysConstants {
 
-    // distro meta global data
+    // ======= default value ======= //
 
-    public static final String DISTRO_META_PARENT = "DISTRO";
+    /**
+     * {@link DistroSysConstants#TASK_DISPATCH_PERIOD_MS}
+     */
+    public static final long DEFAULT_TASK_DISPATCH_PERIOD = 2000;
 
-    public static final String DISTRO_META_GLOBAL = "GLOBAL";
+    /**
+     * {@link DistroSysConstants#BATCH_SYNC_KEY_COUNT}
+     */
+    public static final int DEFAULT_BATCH_SYNC_KEY_COUNT = 1000;
 
-    public static final String TASK_DISPATCH_PERIOD = "task_dispatch_period";
+    /**
+     * {@link DistroSysConstants#SYNC_RETRY_DELAY_MS}
+     */
+    public static final long DEFAULT_SYNC_RETRY_DELAY_MS = 5000;
 
+    /**
+     * {@link DistroSysConstants#DISTRO_ENABLED}
+     */
+    public static final boolean DEFAULT_DISTRO_ENABLED = true;
+
+    // ======= setting key ======= //
+
+    /**
+     * Maximum interval between two data transmissions
+     */
+    public static final String TASK_DISPATCH_PERIOD_MS = "task_dispatch_period_ms";
+
+    /**
+     * Number of keys per batch of tasks
+     */
     public static final String BATCH_SYNC_KEY_COUNT = "batch_sync_key_count";
 
-    public static final String SYNC_RETRY_DELAY = "sync_retry_delay";
+    /**
+     * Task retry delay time
+     */
+    public static final String SYNC_RETRY_DELAY_MS = "sync_retry_delay_ms";
 
-    public static final String DATA_WARM_UP = "data_warm_up";
-
-    public static final String DATA_SERIALIZER_TYPE = "data_serializer_type";
-
+    /**
+     * Whether to enable the authoritative server mechanism
+     */
     public static final String DISTRO_ENABLED = "distro_enabled";
 
 }

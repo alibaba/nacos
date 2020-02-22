@@ -17,14 +17,13 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
@@ -35,11 +34,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -64,17 +62,11 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     private CPProtocol protocol;
 
     // If it is in stand-alone mode, it succeeds directly
-
     private volatile boolean isOk = SystemUtils.STANDALONE_MODE;
 
     @PostConstruct
     protected void init() {
-
-        Executor executor = ExecutorFactory.newSingleExecutorService(
-                getClass().getCanonicalName(),
-                new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
-
-        executor.execute(notifier);
+        GlobalExecutor.executeNotifier(notifier);
 
         protocol.protocolMetaData()
                 .subscribe(RaftStore.STORE_NAME , "leader", (o, arg) -> {
@@ -169,7 +161,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
                     int count = 0;
 
-                    Map<String, List<RecordListener>> listeners = raftStore.getListMap();
+                    Map<String, Set<RecordListener>> listeners = raftStore.getListMap();
 
                     if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 

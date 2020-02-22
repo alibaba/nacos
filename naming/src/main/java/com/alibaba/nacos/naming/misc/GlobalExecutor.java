@@ -18,8 +18,11 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nacos
@@ -37,6 +40,13 @@ public class GlobalExecutor {
                     new NameThreadFactory("com.alibaba.nacos.naming.timer")
             );
 
+    private static ScheduledExecutorService notifierExecutor = ExecutorFactory
+            .newScheduledExecutorService(
+                    NamingApp.class.getCanonicalName(),
+                    2,
+                    new NameThreadFactory("com.alibaba.nacos.naming.store.notifier")
+            );
+
     private static ScheduledExecutorService notifyServerListExecutor =
         ExecutorFactory.newSingleScheduledExecutorService(
                 NamingApp.class.getCanonicalName(),
@@ -46,6 +56,11 @@ public class GlobalExecutor {
         = ExecutorFactory.newSingleScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
                     new NameThreadFactory("nacos.naming.status.worker"));
+
+    private static final ScheduledExecutorService PERFORMANCE_EXECUTOR =
+            ExecutorFactory.newSingleScheduledExecutorService(
+                    PerformanceLoggerThread.class.getCanonicalName(),
+                    new NameThreadFactory("nacos-server-performance"));
 
     /**
      * thread pool that processes getting service detail from other server asynchronously
@@ -90,5 +105,16 @@ public class GlobalExecutor {
 
     public static void registerServerStatusReporter(Runnable runnable, long delay) {
         SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void executeNotifier(Runnable runnable) {
+        notifierExecutor.submit(runnable);
+    }
+
+    public static void schedulePerformance(Runnable command,
+                                           long initialDelay,
+                                           long delay,
+                                           TimeUnit unit) {
+        PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 }

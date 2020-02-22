@@ -89,7 +89,6 @@ public interface LogProcessor {
      * @param throwable {@link Throwable}
      */
     default void onError(Throwable throwable) {
-        throwable.printStackTrace();
     }
 
     /**

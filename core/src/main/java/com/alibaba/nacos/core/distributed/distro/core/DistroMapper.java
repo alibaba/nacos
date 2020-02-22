@@ -37,7 +37,6 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 /**
- * // TODO 是否需要上升到 NACOS AP 一致性协议的自定义实现的强制规范
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

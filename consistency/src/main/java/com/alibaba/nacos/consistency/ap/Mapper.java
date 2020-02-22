@@ -42,6 +42,7 @@ public interface Mapper {
      * @param suppliers customer distro rules
      * @return can distro
      */
+    @SuppressWarnings({"unchecked", "varargs"})
     boolean responsibleByCustomerRule(String key, Supplier<Boolean>... suppliers);
 
     /**

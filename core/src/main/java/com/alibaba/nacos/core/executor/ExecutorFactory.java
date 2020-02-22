@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -88,7 +87,7 @@ public class ExecutorFactory {
 
     public static ScheduledExecutorService newSingleScheduledExecutorService(final String owner,
                                                                              final ThreadFactory threadFactory) {
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, threadFactory);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1, threadFactory);
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
         return executorService;
     }
@@ -96,7 +95,7 @@ public class ExecutorFactory {
     public static ScheduledExecutorService newScheduledExecutorService(final String owner,
                                                                        final int nThreads,
                                                                        final ThreadFactory threadFactory) {
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(nThreads, threadFactory);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(nThreads, threadFactory);
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, executorService);
         return executorService;
     }

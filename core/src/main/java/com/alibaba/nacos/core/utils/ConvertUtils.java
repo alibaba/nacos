@@ -14,41 +14,34 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
+package com.alibaba.nacos.core.utils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public final class ConvertUtils {
 
-    private JLogOperaton operaton;
-
-    JLog() {}
-
-    public JLogOperaton getOperaton() {
-        return operaton;
+    public static int toInt(String val, int defaultValue) {
+        if (StringUtils.isBlank(val)) {
+            return defaultValue;
+        }
+        return Integer.parseInt(val);
     }
 
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
+    public static long toLong(String val, long defaultValue) {
+        if (StringUtils.isBlank(val)) {
+            return defaultValue;
+        }
+        return Long.parseLong(val);
     }
 
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
+    public static boolean toBoolean(String val, boolean defaultValue) {
+        if (StringUtils.isBlank(val)) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(val);
     }
 
-    public static enum JLogOperaton {
-
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
-    }
 }

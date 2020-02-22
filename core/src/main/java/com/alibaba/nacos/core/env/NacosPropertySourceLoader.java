@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.env;
 import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
@@ -42,6 +43,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Listen for changes in the application.conf file
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosPropertySourceLoader implements PropertySourceLoader {
@@ -61,12 +64,15 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
         Map<String, ?> tmp = loadProperties(resource);
         properties.putAll(tmp);
 
+        NotifyCenter.registerPublisher(RefreshEvent::new, RefreshEvent.class);
+
         WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(), new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
                     Map<String, ?> tmp1 = loadProperties(holder);
                     properties.putAll(tmp1);
+                    NotifyCenter.publishEvent(RefreshEvent.class, new RefreshEvent());
                 } catch (IOException ignore) {
 
                 }

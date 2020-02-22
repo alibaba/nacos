@@ -20,6 +20,7 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
+import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -33,10 +34,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Store of data
@@ -66,7 +66,7 @@ public class DataStore {
 
     private KVStore<Record> kvStore;
 
-    private final Map<String, List<RecordListener<?>>> listMap = new ConcurrentHashMap<>();
+    private final Map<String, Set<RecordListener<?>>> listMap = new ConcurrentHashMap<>();
 
     private boolean isStart = false;
 
@@ -91,7 +91,7 @@ public class DataStore {
     }
 
     void listener(String key, RecordListener listener) {
-        listMap.computeIfAbsent(key, s -> new CopyOnWriteArrayList<>());
+        listMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
         listMap.get(key).add(listener);
     }
 
@@ -138,7 +138,7 @@ public class DataStore {
         return isStart;
     }
 
-    public Map<String, List<RecordListener<?>>> getListMap() {
+    public Map<String, Set<RecordListener<?>>> getListMap() {
         return listMap;
     }
 }

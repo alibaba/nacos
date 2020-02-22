@@ -25,7 +25,7 @@ import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
@@ -33,6 +33,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.JLogUtils;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
@@ -44,14 +45,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP> implements CPProtocol<RaftConfig> {
-
-    private volatile boolean isStart = false;
 
     private JRaftServer raftServer;
 
@@ -63,61 +63,66 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     private int failoverRetries;
 
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+    private final AtomicBoolean shutdowned = new AtomicBoolean(false);
+
     @Override
     public void init(RaftConfig config) {
 
-        // Load all LogProcessor information in advance
+        if (initialized.compareAndSet(false, true)) {
 
-        loadLogDispatcher(config.listLogProcessor());
+            // Load all LogProcessor information in advance
 
-        this.nodeManager = SpringUtils.getBean(NodeManager.class);
+            loadLogDispatcher(config.listLogProcessor());
 
-        this.selfAddress = nodeManager.self().address();
+            this.nodeManager = SpringUtils.getBean(NodeManager.class);
 
-        NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
+            this.selfAddress = nodeManager.self().address();
 
-        this.failoverRetries = Integer.parseInt(config.getValOfDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, "3"));
+            NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
 
-        this.raftServer = new JRaftServer(this.nodeManager);
-        this.raftServer.init(config, config.listLogProcessor());
-        this.raftServer.start();
-        isStart = true;
+            this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 
-        updateSelfNodeExtendInfo();
+            this.raftServer = new JRaftServer(this.nodeManager);
+            this.raftServer.init(config, config.listLogProcessor());
+            this.raftServer.start();
 
-        // There is only one consumer to ensure that the internal consumption
-        // is sequential and there is no concurrent competition
+            updateSelfNodeExtendInfo();
 
-        NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
-            @Override
-            public void onEvent(RaftEvent event) {
-                final String groupId = event.getGroupId();
-                Map<String, Map<String, Object>> value = new HashMap<>();
-                Map<String, Object> properties = new HashMap<>();
-                final String leader = event.getLeader();
-                final long term = event.getTerm();
-                final List<String> raftClusterInfo = event.getRaftClusterInfo();
+            // There is only one consumer to ensure that the internal consumption
+            // is sequential and there is no concurrent competition
 
-                // Leader information needs to be selectively updated. If it is valid data,
-                // the information in the protocol metadata is updated.
+            NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
+                @Override
+                public void onEvent(RaftEvent event) {
+                    final String groupId = event.getGroupId();
+                    Map<String, Map<String, Object>> value = new HashMap<>();
+                    Map<String, Object> properties = new HashMap<>();
+                    final String leader = event.getLeader();
+                    final long term = event.getTerm();
+                    final List<String> raftClusterInfo = event.getRaftClusterInfo();
 
-                if (StringUtils.isNotBlank(leader)) {
-                    properties.put(Constants.LEADER_META_DATA, leader);
+                    // Leader information needs to be selectively updated. If it is valid data,
+                    // the information in the protocol metadata is updated.
+
+                    if (StringUtils.isNotBlank(leader)) {
+                        properties.put(Constants.LEADER_META_DATA, leader);
+                    }
+                    properties.put(Constants.TERM_META_DATA, term);
+                    properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    value.put(groupId, properties);
+                    metaData.load(value);
+
+                    updateSelfNodeExtendInfo();
                 }
-                properties.put(Constants.TERM_META_DATA, term);
-                properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
-                value.put(groupId, properties);
-                metaData.load(value);
 
-                updateSelfNodeExtendInfo();
-            }
-
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftEvent.class;
-            }
-        });
-
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return RaftEvent.class;
+                }
+            });
+        }
     }
 
     @Override
@@ -127,10 +132,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     @Override
     public <D> GetResponse<D> getData(GetRequest request) throws Exception {
-        String val = request.getValue(RaftSysConstants.REQUEST_FAILOVER_RETRIES);
-        val = StringUtils.isBlank(val) ? failoverRetries + "" : val;
-        int failoverRetries = Integer.parseInt(val);
-        return (GetResponse<D>) raftServer.get(request, failoverRetries).get();
+        int retryCnt = ConvertUtils.toInt(request.getValue(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
+        return (GetResponse<D>) raftServer.get(request, retryCnt).get();
     }
 
     @Override
@@ -140,18 +143,16 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
         if (result == null) {
             return false;
         }
-        return true;
+        return result;
     }
 
     @Override
     public CompletableFuture<Boolean> submitAsync(Log data) {
-        String val = data.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES);
-        val = StringUtils.isBlank(val) ? failoverRetries + "" : val;
-        int failoverRetries = Integer.parseInt(val);
+        int retryCnt = ConvertUtils.toInt(data.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
         final Throwable[] throwable = new Throwable[] { null };
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
-            raftServer.commit(JLogUtils.toJLog(data, JLog.USER_OPERATION), future, failoverRetries);
+            raftServer.commit(JLogUtils.toJLog(data, JLog.JLogOperaton.MODIFY_OPERATION), future, retryCnt);
         } catch (Throwable e) {
             throwable[0] = e;
         }
@@ -168,14 +169,14 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     @Override
     public void shutdown() {
-        if (isStart) {
+        if (initialized.get() && shutdowned.compareAndSet(false, true)) {
             raftServer.shutdown();
         }
     }
 
     @Override
-    public <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperate snapshotOperate) {
-        RaftKVStore<D> kvStore = new RaftKVStore<D>(storeName, serializer, snapshotOperate);
+    public <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperation snapshotOperation) {
+        RaftKVStore<D> kvStore = new RaftKVStore<D>(storeName, serializer, snapshotOperation);
 
         // Because Raft uses RaftProtocol internally, so LogProcessor is implemented, need to add
 
@@ -192,4 +193,5 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
         node.setExtendVal("raft", metaData);
         nodeManager.update(node);
     }
+
 }

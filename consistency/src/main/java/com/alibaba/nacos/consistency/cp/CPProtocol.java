@@ -19,7 +19,7 @@ package com.alibaba.nacos.consistency.cp;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.store.KVStore;
 
 /**
@@ -33,9 +33,9 @@ public interface CPProtocol<C extends Config> extends ConsistencyProtocol<C> {
      *
      * @param storeName
      * @param serializer
-     * @param snapshotOperate
+     * @param snapshotOperation
      * @return {@link KVStore}
      */
-    <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperate snapshotOperate);
+    <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperation snapshotOperation);
 
 }

@@ -22,9 +22,10 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
@@ -60,7 +61,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     protected final LogProcessor processor;
 
-    private Collection<JSnapshotOperate> operates;
+    private Collection<JSnapshotOperation> operations;
 
     private final String groupId;
 
@@ -71,43 +72,43 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         this.processor = processor;
         this.groupId = processor.bizInfo();
 
-        List<SnapshotOperate> userOperates = processor.loadSnapshotOperate();
+        List<SnapshotOperation> userOperates = processor.loadSnapshotOperate();
 
-        this.operates = new ArrayList<>();
+        this.operations = new ArrayList<>();
 
-        for (SnapshotOperate item : userOperates) {
-            operates.add(new JSnapshotOperate() {
+        for (SnapshotOperation item : userOperates) {
+            operations.add(new JSnapshotOperation() {
 
                 @Override
                 public void onSnapshotSave(SnapshotWriter writer, Closure done) {
-                    final Writer _w = new Writer(writer.getPath());
+                    final Writer wCtx = new Writer(writer.getPath());
 
                     // Do a layer of proxy operation to shield different Raft
                     // components from implementing snapshots
 
                     final BiConsumer<Boolean, Throwable> proxy = (result, t) -> {
-                        boolean[] results = new  boolean[_w.listFiles().size()];
+                        boolean[] results = new  boolean[wCtx.listFiles().size()];
                         int[] index = new int[]{ 0 };
-                        _w.listFiles().forEach((file, meta) -> results[index[0] ++] = writer.addFile(file, buildMetadata(meta)));
+                        wCtx.listFiles().forEach((file, meta) -> results[index[0] ++] = writer.addFile(file, buildMetadata(meta)));
                         final Status status = result && BooleanUtils.and(results) ? Status.OK() : new Status(RaftError.EIO,
                                 "Fail to compress snapshot at %s, error is %s", writer.getPath(),
                                 t.getMessage());
                         done.run(status);
                     };
-                    item.onSnapshotSave(_w, new CallFinally(proxy));
+                    item.onSnapshotSave(wCtx, new CallFinally(proxy));
                 }
 
                 @Override
                 public boolean onSnapshotLoad(SnapshotReader reader) {
-                    final Map<String, LocalFileMeta> metaMap = new HashMap<>(8);
+                    final Map<String, LocalFileMeta> metaMap = new HashMap<>(reader.listFiles().size());
                     for (String fileName : reader.listFiles()) {
                         LocalFileMetaOutter.LocalFileMeta fileMeta = (LocalFileMetaOutter.LocalFileMeta)
                                 reader.getFileMeta(fileName);
                         metaMap.put(fileName, new LocalFileMeta(JSON
                                 .parseObject(fileMeta.getUserMeta().toByteArray(), Properties.class)));
                     }
-                    final Reader _r = new Reader(reader.getPath(), metaMap);
-                    return item.onSnapshotLoad(_r);
+                    final Reader rCtx = new Reader(reader.getPath(), metaMap);
+                    return item.onSnapshotLoad(rCtx);
                 }
             });
         }
@@ -119,15 +120,16 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
-        for (JSnapshotOperate operate : operates) {
-            operate.onSnapshotSave(writer, done);
+        for (JSnapshotOperation operation : operations) {
+            operation.onSnapshotSave(writer, done);
         }
     }
 
     @Override
     public boolean onSnapshotLoad(SnapshotReader reader) {
-        for (JSnapshotOperate operate : operates) {
-            if (!operate.onSnapshotLoad(reader)) {
+        for (JSnapshotOperation operation : operations) {
+            if (!operation.onSnapshotLoad(reader)) {
+                Loggers.RAFT.error("Snapshot load failed on : {}", operation);
                 return false;
             }
         }
@@ -162,11 +164,6 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                 .build());
     }
 
-    @Override
-    public void onError(RaftException e) {
-        processor.onError(e);
-    }
-
     public boolean isLeader() {
         return isLeader.get();
     }
@@ -175,6 +172,14 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         if (node == null) {
             return Collections.emptyList();
         }
+
+        if (node.isLeader()) {
+            return node.listPeers()
+                    .stream()
+                    .map(peerId -> peerId.getEndpoint().toString())
+                    .collect(Collectors.toList());
+        }
+
         return RouteTable.getInstance()
                 .getConfiguration(node.getGroupId())
                 .getPeers()

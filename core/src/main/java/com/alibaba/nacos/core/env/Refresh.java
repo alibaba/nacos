@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.snapshot;
+package com.alibaba.nacos.core.env;
+
+import org.springframework.context.annotation.Scope;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Custom snapshot operation interface
- * Discovery via SPI
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface SnapshotOperate {
-
-    /**
-     * do snapshot save operation
-     *
-     * @param writer {@link Writer}
-     * @param callFinally Callback {@link CallFinally#run(boolean, Throwable)} when the snapshot operation is complete
-     */
-    void onSnapshotSave(Writer writer, CallFinally callFinally);
-
-    /**
-     * do snapshot load operation
-     *
-     * @param reader {@link Reader}
-     * @return operation label
-     */
-    boolean onSnapshotLoad(Reader reader);
-
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Scope("refresh")
+@Documented
+public @interface Refresh {
 }

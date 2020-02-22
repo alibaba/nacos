@@ -302,7 +302,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     public boolean isSelf(Node node) {
-        return Objects.equals(node.address(), self.address());
+        return Objects.equals(node.address(), localAddress);
     }
 
     private void initSys() {

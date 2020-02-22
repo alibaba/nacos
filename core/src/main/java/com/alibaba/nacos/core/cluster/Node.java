@@ -111,4 +111,5 @@ public interface Node {
      * @return Check result
      */
     boolean check();
+
 }

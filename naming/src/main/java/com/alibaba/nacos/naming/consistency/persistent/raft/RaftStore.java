@@ -23,12 +23,13 @@ import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.Reader;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.consistency.store.StartHook;
+import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.ZipUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -56,10 +57,9 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -85,7 +85,7 @@ public class RaftStore {
     @Autowired
     private RaftConsistencyServiceImpl.Notifier notifier;
 
-    private final Map<String, List<RecordListener>> listMap = new ConcurrentHashMap<>();
+    private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
 
     private KVStore<Record> kvStore;
 
@@ -98,7 +98,7 @@ public class RaftStore {
 
         serializer = SerializeFactory.getDefault();
 
-        kvStore = protocol.createKVStore(STORE_NAME, serializer, new NSnapshotOperate());
+        kvStore = protocol.createKVStore(STORE_NAME, serializer, new NSnapshotOperation());
 
         kvStore.registerHook(new NStartHook(), new NBeforeHook(), new NAfterHook());
 
@@ -120,7 +120,7 @@ public class RaftStore {
     }
 
     void listener(String key, RecordListener listener) {
-        listMap.computeIfAbsent(key, s -> new CopyOnWriteArrayList<>());
+        listMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
         listMap.get(key).add(listener);
     }
 
@@ -134,7 +134,7 @@ public class RaftStore {
         return initialized;
     }
 
-    class NSnapshotOperate implements SnapshotOperate {
+    class NSnapshotOperation implements SnapshotOperation {
 
         @Override
         public void onSnapshotSave(Writer writer, CallFinally callFinally) {
@@ -351,7 +351,7 @@ public class RaftStore {
         }
     }
 
-    public Map<String, List<RecordListener>> getListMap() {
+    public Map<String, Set<RecordListener>> getListMap() {
         return listMap;
     }
 

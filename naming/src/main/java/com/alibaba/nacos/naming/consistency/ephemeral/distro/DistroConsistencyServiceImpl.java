@@ -16,13 +16,12 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
@@ -32,12 +31,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -69,14 +67,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Autowired
     private Notifier notifier;
 
-    private ScheduledExecutorService executor = ExecutorFactory.newSingleScheduledExecutorService(
-            "distroConsistencyService",
-            new NameThreadFactory("com.alibaba.nacos.naming.distro.notifier")
-    );
-
     @PostConstruct
     protected void init() {
-        executor.submit(notifier);
+        GlobalExecutor.executeNotifier(notifier);
     }
 
     @Override
@@ -159,7 +152,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                     int count = 0;
 
-                    Map<String, List<RecordListener<?>>> listeners = dataStore.getListMap();
+                    Map<String, Set<RecordListener<?>>> listeners = dataStore.getListMap();
 
                     if (!listeners.containsKey(datumKey)) {
                         continue;

@@ -24,10 +24,10 @@ import com.alibaba.nacos.consistency.Log;
 @SuppressWarnings("all")
 public class JLogUtils {
 
-    public static final JLog toJLog(Log log, final String operate) {
+    public static final JLog toJLog(Log log, final JLog.JLogOperaton operate) {
         final JLog jLog = new JLog();
         jLog.setBiz(log.getBiz());
-        jLog.setSysOperation(operate);
+        jLog.setOperaton(operate);
         jLog.setKey(log.getKey());
         jLog.setData(log.getData());
         jLog.setClassName(log.getClassName());

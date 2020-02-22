@@ -14,41 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+package com.alibaba.nacos.consistency.exception;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class NoSuchLogProcessorException extends RuntimeException {
 
-    private JLogOperaton operaton;
-
-    JLog() {}
-
-    public JLogOperaton getOperaton() {
-        return operaton;
+    public NoSuchLogProcessorException() {
     }
 
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
+    public NoSuchLogProcessorException(String message) {
+        super(message);
     }
 
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
+    public NoSuchLogProcessorException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public static enum JLogOperaton {
+    public NoSuchLogProcessorException(Throwable cause) {
+        super(cause);
+    }
 
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
+    public NoSuchLogProcessorException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

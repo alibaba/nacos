@@ -129,7 +129,7 @@ public class SyncNodeTask extends Task {
                 if (result.ok()) {
 
                     Collection<Node> remoteNodes = result.getData();
-                    nodeManager.nodeJoin(remoteNodes);
+                    updateCluster(remoteNodes);
 
                 } else {
                     Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", node.address(), result);
@@ -239,6 +239,10 @@ public class SyncNodeTask extends Task {
 
         Loggers.CORE.info("init node cluster : {}", nodes);
 
+        updateCluster(nodes);
+    }
+
+    private void updateCluster(Collection<Node> nodes) {
         nodeManager.nodeJoin(nodes);
     }
 

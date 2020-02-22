@@ -54,7 +54,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
                              final ResResult body,
                              final TypeReference<ResResult<T>> token,
                              final Callback<T> callback) {
-        HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET);
+        HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         execute(asyncClient, token, callback, requestBase);
     }
 

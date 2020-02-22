@@ -68,9 +68,7 @@ public class PartitionDataTimedSync {
 
                 final List<Node> nodes = getServers();
 
-                if (Loggers.DISTRO.isDebugEnabled()) {
-                    Loggers.DISTRO.debug("server list is: {}", nodes);
-                }
+                Loggers.DISTRO.debug("server list is: {}", nodes);
 
                 final Map<String, Map<String, String>> keyChecksums = new HashMap<>(64);
 
@@ -98,9 +96,7 @@ public class PartitionDataTimedSync {
                             return;
                         }
 
-                        if (Loggers.DISTRO.isDebugEnabled()) {
-                            Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
-                        }
+                        Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
 
                         keyChecksums.put(s, subKeyChecksums);
 

@@ -14,41 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
+package com.alibaba.nacos.core.env;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.core.notify.Event;
 
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class RefreshEvent implements Event {
 
-    private JLogOperaton operaton;
+    private Object source;
 
-    JLog() {}
-
-    public JLogOperaton getOperaton() {
-        return operaton;
+    public Object getSource() {
+        return source;
     }
 
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
+    public void setSource(Object source) {
+        this.source = source;
     }
 
     @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
-
-    public static enum JLogOperaton {
-
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
+    public Class<? extends Event> eventType() {
+        return RefreshEvent.class;
     }
 }

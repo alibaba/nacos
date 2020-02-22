@@ -17,7 +17,7 @@
 package com.alibaba.nacos.consistency.cp;
 
 import com.alibaba.nacos.common.Serializer;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.store.KVStore;
 
 /**
@@ -26,7 +26,7 @@ import com.alibaba.nacos.consistency.store.KVStore;
 @SuppressWarnings("all")
 public abstract class CPKvStore<T> extends KVStore<T> {
 
-    protected SnapshotOperate snapshotOperate;
+    protected SnapshotOperation snapshotOperation;
 
     public CPKvStore(String name) {
         super(name);
@@ -36,14 +36,14 @@ public abstract class CPKvStore<T> extends KVStore<T> {
         super(name, serializer);
     }
 
-    public CPKvStore(String name, SnapshotOperate snapshotOperate) {
+    public CPKvStore(String name, SnapshotOperation snapshotOperation) {
         super(name);
-        this.snapshotOperate = snapshotOperate;
+        this.snapshotOperation = snapshotOperation;
     }
 
-    public CPKvStore(String name, Serializer serializer, SnapshotOperate snapshotOperate) {
+    public CPKvStore(String name, Serializer serializer, SnapshotOperation snapshotOperation) {
         super(name, serializer);
-        this.snapshotOperate = snapshotOperate;
+        this.snapshotOperation = snapshotOperation;
     }
 
 }

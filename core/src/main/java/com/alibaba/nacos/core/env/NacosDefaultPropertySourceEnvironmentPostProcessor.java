@@ -66,6 +66,8 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
 
         processPropertySource(environment, resourceLoader);
 
+        application.addInitializers(new CoreApplicationInitializer());
+
     }
 
     private ResourceLoader getResourceLoader(SpringApplication application) {

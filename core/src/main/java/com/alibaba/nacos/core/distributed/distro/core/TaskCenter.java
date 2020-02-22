@@ -18,8 +18,11 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroUtils;
+import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -45,7 +48,10 @@ public class TaskCenter {
 
     private final int cpuCoreCount;
 
-    public TaskCenter(NodeManager nodeManager, DataSyncer dataSyncer) {
+    private final DistroConfig config;
+
+    public TaskCenter(DistroConfig config, NodeManager nodeManager, DataSyncer dataSyncer) {
+        this.config = config;
         this.nodeManager = nodeManager;
         this.dataSyncer = dataSyncer;
         this.cpuCoreCount = Runtime.getRuntime().availableProcessors();
@@ -91,6 +97,8 @@ public class TaskCenter {
 
         @Override
         public void run() {
+            int batchSyncKeyCount = getBatchSyncKeyCount();
+            long taskDispatchPeriod = getTaskDispatchPeriod();
             List<String> keys = new ArrayList<>();
             for (; ; ) {
 
@@ -114,8 +122,8 @@ public class TaskCenter {
                     keys.add(key);
                     dataSize++;
 
-                    if (dataSize == 100 ||
-                            (System.currentTimeMillis() - lastDispatchTime) > 1000) {
+                    if (dataSize == batchSyncKeyCount ||
+                            (System.currentTimeMillis() - lastDispatchTime) > taskDispatchPeriod) {
 
                         for (Node member : nodeManager.allNodes()) {
                             if (Objects.equals(nodeManager.self(), member)) {
@@ -129,6 +137,12 @@ public class TaskCenter {
                         }
                         lastDispatchTime = System.currentTimeMillis();
                         dataSize = 0;
+
+                        // TODO auto refresh
+
+                        batchSyncKeyCount = getBatchSyncKeyCount();
+                        taskDispatchPeriod = getTaskDispatchPeriod();
+
                     }
 
                 } catch (Exception e) {
@@ -136,6 +150,20 @@ public class TaskCenter {
                 }
             }
         }
+    }
+
+    private int getBatchSyncKeyCount() {
+        return ConvertUtils
+                .toInt(
+                        config.getVal(DistroSysConstants.BATCH_SYNC_KEY_COUNT),
+                        DistroSysConstants.DEFAULT_BATCH_SYNC_KEY_COUNT);
+    }
+
+    private long getTaskDispatchPeriod() {
+        return ConvertUtils
+                .toLong(
+                        config.getVal(DistroSysConstants.TASK_DISPATCH_PERIOD_MS),
+                        DistroSysConstants.DEFAULT_TASK_DISPATCH_PERIOD);
     }
 
 }

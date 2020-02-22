@@ -14,41 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+package com.alibaba.nacos.consistency.snapshot;
 
 /**
- * JRaft Adapt Log Object
+ * Custom snapshot operation interface
+ * Discovery via SPI
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public interface SnapshotOperation {
 
-    private JLogOperaton operaton;
+    /**
+     * do snapshot save operation
+     *
+     * @param writer {@link Writer}
+     * @param callFinally Callback {@link CallFinally#run(boolean, Throwable)} when the snapshot operation is complete
+     */
+    void onSnapshotSave(Writer writer, CallFinally callFinally);
 
-    JLog() {}
+    /**
+     * do snapshot load operation
+     *
+     * @param reader {@link Reader}
+     * @return operation label
+     */
+    boolean onSnapshotLoad(Reader reader);
 
-    public JLogOperaton getOperaton() {
-        return operaton;
-    }
-
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
-    }
-
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
-
-    public static enum JLogOperaton {
-
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
-    }
 }

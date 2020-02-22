@@ -28,7 +28,6 @@ import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
@@ -38,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -50,7 +50,10 @@ public class DistroServer {
     private TaskCenter taskCenter;
     private DistroClient distroClient;
 
-    private boolean initialized = false;
+    private volatile boolean initialized = false;
+
+    private AtomicBoolean started = new AtomicBoolean(false);
+    private AtomicBoolean shutdowned = new AtomicBoolean(false);
 
     private final KVManager kvManager;
     private final DistroConfig config;
@@ -75,43 +78,44 @@ public class DistroServer {
 
     public void start() {
 
-        // === start:Initialize related members of the distro protocol
+        if (started.compareAndSet(false, true)) {
 
-        this.distroClient = new DistroClient(
-                this.nodeManager,
-                this.serializer);
+            // === start:Initialize related members of the distro protocol
 
-        this.timedSync = new PartitionDataTimedSync(
-                this.kvManager,
-                this.distroMapper,
-                this.nodeManager,
-                this.distroClient);
+            this.distroClient = new DistroClient(
+                    this.nodeManager,
+                    this.serializer);
 
-        this.dataSyncer = new DataSyncer(
-                SpringUtils.getBean(NodeManager.class),
-                this.kvManager,
-                this.distroClient);
+            this.timedSync = new PartitionDataTimedSync(
+                    this.kvManager,
+                    this.distroMapper,
+                    this.nodeManager,
+                    this.distroClient);
 
-        this.taskCenter = new TaskCenter(this.nodeManager, this.dataSyncer);
+            this.dataSyncer = new DataSyncer(
+                    SpringUtils.getBean(NodeManager.class),
+                    this.kvManager,
+                    this.distroClient);
 
-        // === end
+            this.taskCenter = new TaskCenter(config, this.nodeManager, this.dataSyncer);
 
-        // === start:Start relevant members of the distro protocol
+            // === end
 
-        DistroExecutor.executeByGlobal(() -> {
-            try {
+            // === start:Start relevant members of the distro protocol
 
-                // sync data from remote node
+            DistroExecutor.executeByGlobal(() -> {
+                try {
+                    // sync data from remote node
+                    load();
+                } catch (Exception e) {
+                    Loggers.DISTRO.error("load data failed.", e);
+                }
+            });
 
-                load();
-            } catch (Exception e) {
-                Loggers.DISTRO.error("load data failed.", e);
-            }
-        });
-
-        this.dataSyncer.start();
-        this.timedSync.start();
-        this.taskCenter.start();
+            this.dataSyncer.start();
+            this.timedSync.start();
+            this.taskCenter.start();
+        }
     }
 
     private void load() throws Exception {
@@ -124,19 +128,23 @@ public class DistroServer {
             Loggers.DISTRO.info("waiting server list init...");
         }
 
-        for (Node server : nodeManager.allNodes()) {
-            if (Objects.equals(nodeManager.self().address(), server.address())) {
-                continue;
-            }
-            if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("sync from " + server);
-            }
+        // Until one node is successfully synchronized, 5 maximum retries
+        int retryCnr = 5;
 
-            // try sync data from remote server:
+        for (int i = 0; i < retryCnr || !initialized; i ++) {
+            for (Node server : nodeManager.allNodes()) {
+                if (Objects.equals(nodeManager.self().address(), server.address())) {
+                    continue;
+                }
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("sync from " + server);
+                }
 
-            if (syncAllDataFromRemote(server)) {
-                initialized = true;
-                return;
+                // try sync data from remote server:
+                if (syncAllDataFromRemote(server)) {
+                    initialized = true;
+                    return;
+                }
             }
         }
     }
@@ -148,13 +156,12 @@ public class DistroServer {
     }
 
     private boolean syncAllDataFromRemote(Node server) {
-
         try {
             byte[] data = distroClient.getAllData(server.address());
             processData(data);
             return true;
         } catch (Exception e) {
-            Loggers.DISTRO.error("sync full data from " + server.address() + " failed!", ExceptionUtil.getAllExceptionMsg(e));
+            Loggers.DISTRO.error("sync full data from " + server.address() + " failed!", e);
             return false;
         }
     }
@@ -244,14 +251,16 @@ public class DistroServer {
     }
 
     public void shutdown() {
-        if (Objects.nonNull(timedSync)) {
-            timedSync.shutdown();
-        }
-        if (Objects.nonNull(dataSyncer)) {
-            dataSyncer.shutdown();
-        }
-        if (Objects.nonNull(taskCenter)) {
-            taskCenter.shutdown();
+        if (shutdowned.compareAndSet(false, true)) {
+            if (Objects.nonNull(timedSync)) {
+                timedSync.shutdown();
+            }
+            if (Objects.nonNull(dataSyncer)) {
+                dataSyncer.shutdown();
+            }
+            if (Objects.nonNull(taskCenter)) {
+                taskCenter.shutdown();
+            }
         }
     }
 

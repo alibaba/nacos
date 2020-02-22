@@ -14,41 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft.utils;
+package com.alibaba.nacos.core.env;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * JRaft Adapt Log Object
+ * To register the Refresh Scope
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
-
-    private JLogOperaton operaton;
-
-    JLog() {}
-
-    public JLogOperaton getOperaton() {
-        return operaton;
-    }
-
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
-    }
+public class CoreApplicationInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
-
-    public static enum JLogOperaton {
-
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+        NRefreshScope refreshScope = new NRefreshScope();
+        NotifyCenter.registerSubscribe(refreshScope);
+        applicationContext.getBeanFactory().registerScope("refresh", refreshScope);
     }
 }

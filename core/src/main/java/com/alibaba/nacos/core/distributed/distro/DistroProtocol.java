@@ -22,6 +22,7 @@ import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.consistency.exception.NoSuchLogProcessorException;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.Collections;
@@ -74,7 +76,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
         if (processor != null) {
             return processor.getData(request);
         }
-        return null;
+        throw new NoSuchLogProcessorException(biz);
     }
 
     @Override
@@ -85,7 +87,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
             processor.onApply(data);
             return distroServer.submit(data);
         }
-        return false;
+        throw new NoSuchLogProcessorException(biz);
     }
 
     @Override
@@ -110,6 +112,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
                     try {
                         processor.onApply(log);
                     } catch (Exception e) {
+                        Loggers.DISTRO.error("An exception occurred while processing a transaction request, " +
+                                "processor : {}, error : {}", processor, e);
                     }
                 }
             });

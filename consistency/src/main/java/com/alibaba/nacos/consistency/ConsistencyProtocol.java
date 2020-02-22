@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
+import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 
@@ -114,6 +115,16 @@ public interface ConsistencyProtocol<T extends Config> {
      */
     default boolean batchSubmit(Map<String, List<Log>> datums) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    /**
+     * Operation and maintenance interface of consistent protocol
+     *
+     * @param argv command
+     * @return {@link ResResult<String>}
+     */
+    default ResResult<String> maintenance(String[] argv) {
+        return ResResult.<String>builder().build();
     }
 
     /**

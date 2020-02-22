@@ -22,13 +22,13 @@ import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.ZeroByteStringHelper;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-interface JSnapshotOperate {
+interface JSnapshotOperation {
 
     /**
      * do snapshot save operation
@@ -56,7 +56,7 @@ interface JSnapshotOperate {
     default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) {
         return metadata == null ? null
                 : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ByteString.copyFrom(JSON.toJSONBytes(metadata.getFileMeta())))
+                .setUserMeta(ZeroByteStringHelper.wrap(JSON.toJSONBytes(metadata.getFileMeta())))
                 .build();
     }
 

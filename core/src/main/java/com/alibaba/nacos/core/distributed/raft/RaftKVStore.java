@@ -27,9 +27,8 @@ import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.raft.exception.RaftKVStoreException;
-import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 
@@ -63,14 +62,14 @@ class RaftKVStore<T> extends CPKvStore<T> {
         this.funcCaller = new KvSuperFuncCaller();
     }
 
-    public RaftKVStore(String name, SnapshotOperate snapshotOperate) {
-        super(name, snapshotOperate);
+    public RaftKVStore(String name, SnapshotOperation snapshotOperation) {
+        super(name, snapshotOperation);
         this.logProcessor = new KVLogProcessor();
         this.funcCaller = new KvSuperFuncCaller();
     }
 
-    public RaftKVStore(String name, Serializer serializer, SnapshotOperate snapshotOperate) {
-        super(name, serializer, snapshotOperate);
+    public RaftKVStore(String name, Serializer serializer, SnapshotOperation snapshotOperation) {
+        super(name, serializer, snapshotOperation);
         this.logProcessor = new KVLogProcessor();
         this.funcCaller = new KvSuperFuncCaller();
     }
@@ -104,18 +103,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public boolean contains(String key) {
-        GetResponse<Boolean> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(Collections.singletonList(key)))
-                    .addInfo("type", "contains")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "contains", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Boolean> response = request(key, "contains");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -124,18 +112,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public byte[] getByKey(String key) {
-        GetResponse<byte[]> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(Collections.singletonList(key)))
-                    .addInfo("type", "getByKey")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKey", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<byte[]> response = request(key, "getByKey");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -144,18 +121,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public T getByKeyAutoConvert(String key) {
-        GetResponse<T> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(Collections.singletonList(key)))
-                    .addInfo("type", "getByKeyAutoConvert")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getByKeyAutoConvert", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<T> response = request(key, "getByKeyAutoConvert");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -164,18 +130,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Item getItemByKey(String key) {
-        GetResponse<Item> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(Collections.singletonList(key)))
-                    .addInfo("type", "getItemByKey")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByKey", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Item> response = request(key, "getItemByKey");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -184,21 +139,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Map<String, T> batchGetAutoConvert(Collection<String> keys) {
-        GetResponse<Map<String, T>> response;
-        try {
-
-            // Just as data routing analysis
-
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(keys))
-                    .addInfo("type", "batchGetAutoConvert")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "batchGetAutoConvert", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Map<String, T>> response = request(keys, "batchGetAutoConvert");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -207,18 +148,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Map<String, Item> getItemByBatch(Collection<String> keys) {
-        GetResponse<Map<String, Item>> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(keys))
-                    .addInfo("type", "getItemByBatch")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getItemByBatch", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Map<String, Item>> response = request(keys, "getItemByBatch");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -227,18 +157,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public String getCheckSum(String key) {
-        GetResponse<String> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(Collections.singletonList(key)))
-                    .addInfo("type", "getCheckSum")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "getCheckSum", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<String> response = request(key, "getCheckSum");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -247,17 +166,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Collection<String> allKeys() {
-        GetResponse<Collection<String>> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .addInfo("type", "allKeys")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            Loggers.RAFT.error("execute raft read operation : [{}] has error : {}", "allKeys", e);
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Collection<String>> response = request(null, "allKeys");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -273,17 +182,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public Map<String, byte[]> batchGet(Collection keys) {
-        GetResponse<Map<String, byte[]>> response;
-        try {
-            final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
-                    .ctx(serializer.serialize(keys))
-                    .addInfo("type", "batchGet")
-                    .build();
-            response = protocol.getData(request);
-        } catch (Exception e) {
-            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
-        }
+        GetResponse<Map<String, byte[]>> response = request(keys, "batchGet");
         if (response.getData() != null) {
             return response.getData();
         }
@@ -300,6 +199,23 @@ class RaftKVStore<T> extends CPKvStore<T> {
                 operate(key, Pair.with(source, item.getBytes()), PUT_COMMAND);
             }
         });
+    }
+
+    private <R> GetResponse<R> request(Object arg, String type) {
+        try {
+            final GetRequest request = GetRequest.builder()
+                    .biz(logProcessor.bizInfo())
+                    .addInfo("type", type)
+                    .build();
+
+            if (arg != null) {
+                request.setCtx(serializer.serialize(arg));
+            }
+
+            return protocol.getData(request);
+        } catch (Exception e) {
+            throw new RaftKVStoreException(e, e.getClass().getCanonicalName());
+        }
     }
 
     class KVLogProcessor implements LogProcessor4CP {
@@ -349,9 +265,14 @@ class RaftKVStore<T> extends CPKvStore<T> {
         }
 
         @Override
-        public List<SnapshotOperate> loadSnapshotOperate() {
-            return RaftKVStore.this.snapshotOperate == null ? Collections.emptyList()
-                    : Collections.singletonList(RaftKVStore.this.snapshotOperate);
+        public void onError(Throwable throwable) {
+            throw new RaftKVStoreException(throwable, throwable.getClass().getCanonicalName());
+        }
+
+        @Override
+        public List<SnapshotOperation> loadSnapshotOperate() {
+            return RaftKVStore.this.snapshotOperation == null ? Collections.emptyList()
+                    : Collections.singletonList(RaftKVStore.this.snapshotOperation);
         }
 
         @Override

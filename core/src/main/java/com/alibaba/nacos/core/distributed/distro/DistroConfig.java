@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * // TODO 支持 hot-update
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
@@ -37,7 +39,7 @@ public class DistroConfig implements Config<LogProcessor4AP> {
 
     private static final long serialVersionUID = -3073040842709279788L;
 
-    private Map<String, String> data = new HashMap<>();
+    private Map<String, String> data = Collections.synchronizedMap(new HashMap<>(8));
 
     private List<LogProcessor4AP> processors = Collections.synchronizedList(new ArrayList<>());
 
@@ -46,11 +48,11 @@ public class DistroConfig implements Config<LogProcessor4AP> {
     }
 
     public void setData(Map<String, String> data) {
-        this.data = data;
+        this.data = Collections.synchronizedMap(data);
     }
 
     @Override
-    public synchronized void setVal(String key, String value) {
+    public void setVal(String key, String value) {
         data.put(key, value);
     }
 

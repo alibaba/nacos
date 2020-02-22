@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
-import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -62,11 +61,11 @@ public class NacosStateMachine extends AbstractStateMachine {
                         log = serializer.deSerialize(data.array(), JLog.class);
                     }
 
-                    Loggers.RAFT.info("receive datum : {}", log);
+                    Loggers.RAFT.debug("receive log : {}", log);
 
                     // read request
 
-                    if (StringUtils.equals(JLog.SYS_OPERATION, log.getSysOperation())) {
+                    if (Objects.equals(JLog.JLogOperaton.READ_OPERATION, log.getOperaton())) {
                         raftRead(closure, log);
                     } else {
                         try {
@@ -81,9 +80,8 @@ public class NacosStateMachine extends AbstractStateMachine {
 
                             // TODO 这里的处理需要考虑下，如果业务层能够处理错误避免一致性问题，则处理，
                             //  否则还是需要抛出交给状态机
-
-                            processor.onError(t);
                             status = new Status(RaftError.UNKNOWN, t.getMessage());
+                            processor.onError(t);
                         }
                     }
                 }

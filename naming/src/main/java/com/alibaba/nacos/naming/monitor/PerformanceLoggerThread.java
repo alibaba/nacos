@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,16 +40,6 @@ public class PerformanceLoggerThread {
     @Autowired
     private PushService pushService;
 
-    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("nacos-server-performance");
-            return t;
-        }
-    });
-
     private static final long PERIOD = 5 * 60;
 
     @PostConstruct
@@ -61,7 +49,7 @@ public class PerformanceLoggerThread {
 
     private void start() {
         PerformanceLogTask task = new PerformanceLogTask();
-        executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
+        GlobalExecutor.schedulePerformance(task, 30, PERIOD, TimeUnit.SECONDS);
     }
 
     @Scheduled(cron = "0 0 0 * * ?")

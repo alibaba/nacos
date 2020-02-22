@@ -17,7 +17,7 @@
 package com.alibaba.nacos.consistency.cp;
 
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +35,7 @@ public interface LogProcessor4CP extends LogProcessor {
      *
      * @return {@link List <SnapshotOperate>}
      */
-    default List<SnapshotOperate> loadSnapshotOperate() {
+    default List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.emptyList();
     }
 
