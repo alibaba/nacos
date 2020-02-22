@@ -24,14 +24,16 @@ import com.alibaba.nacos.common.model.HttpResResult;
 public interface Callback<T> {
 
     /**
+     * Callback after the request is responded
      *
-     * @param result
+     * @param result {@link HttpResResult}
      */
     void onReceive(HttpResResult<T> result);
 
     /**
+     * An error occurred during the request
      *
-     * @param throwable
+     * @param throwable {@link Throwable}
      */
     void onError(Throwable throwable);
 

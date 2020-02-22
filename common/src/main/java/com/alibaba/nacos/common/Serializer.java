@@ -26,9 +26,9 @@ import java.util.Map;
  */
 public interface Serializer {
 
-    Object monitor = new Object();
+    Object MONITOR = new Object();
 
-    Map<String, Class> CLASS_CACHE = new HashMap<String, Class>();
+    Map<String, Class<?>> CLASS_CACHE = new HashMap<String, Class<?>>(8);
 
     /**
      * 将数据反序列化

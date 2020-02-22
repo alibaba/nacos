@@ -44,6 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
 
     public static final String GLOBAL = "global";
@@ -52,7 +53,7 @@ public final class ProtocolMetaData {
 
     public static final String SELF = "self";
 
-    private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>();
+    private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 
     public Map<String, Map<Object, Object>> getMetaDataMap() {
         return metaDataMap.entrySet()
@@ -98,13 +99,14 @@ public final class ProtocolMetaData {
                 .subscribe(key, observer);
     }
 
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public static final class MetaData {
 
         // Each biz does not affect each other
 
         private transient final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>();
+        private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>(8);
 
         private transient final String group;
 

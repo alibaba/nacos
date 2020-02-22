@@ -69,7 +69,7 @@ public final class ThreadPoolManager {
             Map<String, Map<String, Object>> subInfo = new HashMap<String, Map<String, Object>>(8);
             info.put(entry.getKey(), subInfo);
             for (Map.Entry<String, Set<ExecutorService>> mapEntry : entry.getValue().entrySet()) {
-                Map<String, Object> details = new HashMap<String, Object>();
+                Map<String, Object> details = new HashMap<String, Object>(8);
                 subInfo.put(mapEntry.getKey(), details);
                 for (ExecutorService service : mapEntry.getValue()) {
                     if (service instanceof ThreadPoolExecutor) {

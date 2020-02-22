@@ -41,11 +41,11 @@ public class HealthController {
     private final DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
-    private static final String heathUpStr = "UP";
+    private static final String HEATH_UP_STR = "UP";
 
-    private static final String heathDownStr = "DOWN";
+    private static final String HEATH_DOWN_STR = "DOWN";
 
-    private static final String heathWarnStr = "WARN";
+    private static final String HEATH_WARN_STR = "WARN";
 
     @Autowired
     public HealthController(ServerNodeManager serverNodeManager,
@@ -64,16 +64,16 @@ public class HealthController {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
-        if (dbStatus.contains(heathUpStr) && serverNodeManager.isAddressServerHealth() && serverNodeManager
+        if (dbStatus.contains(HEATH_UP_STR) && serverNodeManager.isAddressServerHealth() && serverNodeManager
             .isInIpList()) {
-            sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && serverNodeManager.isAddressServerHealth() && serverNodeManager
+            sb.append(HEATH_UP_STR);
+        } else if (dbStatus.contains(HEATH_WARN_STR) && serverNodeManager.isAddressServerHealth() && serverNodeManager
             .isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
             sb.append("DOWN:");
-            if (dbStatus.contains(heathDownStr)) {
+            if (dbStatus.contains(HEATH_DOWN_STR)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
             if (!serverNodeManager.isAddressServerHealth()) {

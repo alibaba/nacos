@@ -81,7 +81,7 @@ public class SerializeFactory {
                 Class<?> cls;
 
                 if (!CLASS_CACHE.containsKey(classFullName)) {
-                    synchronized (monitor) {
+                    synchronized (MONITOR) {
                         if (!CLASS_CACHE.containsKey(classFullName)) {
                             cls = Class.forName(classFullName);
                             CLASS_CACHE.put(classFullName, cls);

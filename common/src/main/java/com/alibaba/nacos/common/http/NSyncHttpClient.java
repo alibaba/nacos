@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.model.ResResult;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public interface NSyncHttpClient extends NHttpClient {
 
     /**
@@ -34,6 +35,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param query http query param
      * @param token return type
      * @return {@link ResResult <T>}
+     * @throws Exception
      */
     <T> ResResult<T> get(String url, Header header, Query query,
                          TypeReference<ResResult<T>> token) throws Exception;
@@ -60,6 +62,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param query http query param
      * @param token return type
      * @return {@link ResResult<T>}
+     * @throws Exception
      */
     <T> ResResult<T> delete(String url, Header header, Query query,
                             TypeReference<ResResult<T>> token) throws Exception;
@@ -73,6 +76,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param body http body param
      * @param token return type
      * @return {@link ResResult}
+     * @throws Exception
      */
     <T> ResResult<T> put(String url, Header header, Query query, ResResult body,
                          TypeReference<ResResult<T>> token) throws Exception;
@@ -86,6 +90,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @param body http body param
      * @param token return type
      * @return {@link ResResult}
+     * @throws Exception
      */
     <T> ResResult<T> post(String url, Header header, Query query, ResResult body,
                           TypeReference<ResResult<T>> token) throws Exception;

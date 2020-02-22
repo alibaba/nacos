@@ -53,8 +53,8 @@ public final class DiskUtils {
     private final static String DISK_QUATA_CN = "超出磁盘限额";
     private final static String DISK_QUATA_EN = "Disk quota exceeded";
 
-    private static final Charset charset = StandardCharsets.UTF_8;
-    private static final CharsetDecoder decoder = charset.newDecoder();
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
+    private static final CharsetDecoder DECODER = CHARSET.newDecoder();
 
     public static String readFile(String path, String fileName) {
         File file = openFile(path, fileName);
@@ -85,7 +85,7 @@ public final class DiskUtils {
             CharBuffer charBuffer = CharBuffer.allocate(4096);
             while (fileChannel.read(buffer) != -1) {
                 buffer.flip();
-                decoder.decode(buffer, charBuffer, false);
+                DECODER.decode(buffer, charBuffer, false);
                 charBuffer.flip();
                 while (charBuffer.hasRemaining()) {
                     text.append(charBuffer.get());

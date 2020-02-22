@@ -33,9 +33,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class HttpClientManager {
 
-    private static final Object monitor = new Object();
+    private static final Object MONITOR = new Object();
 
-    private static final Object asyncMonitor = new Object();
+    private static final Object ASYNC_MONITOR = new Object();
 
     private static final int TIMEOUT = 5000;
 
@@ -51,7 +51,7 @@ public class HttpClientManager {
                     for (NSyncHttpClient httpClient : entry.getValue()) {
                         try {
                             httpClient.close();
-                        } catch (Exception e) {
+                        } catch (Exception ignore) {
 
                         }
                     }
@@ -66,8 +66,7 @@ public class HttpClientManager {
                     for (NAsyncHttpClient httpClient : entry.getValue()) {
                         try {
                             httpClient.close();
-                        } catch (Exception e) {
-
+                        } catch (Exception ignore) {
                         }
                     }
                 }
@@ -119,13 +118,13 @@ public class HttpClientManager {
 
     private static void checkExist(String owner, boolean async) {
         if (async) {
-            synchronized (asyncMonitor) {
+            synchronized (ASYNC_MONITOR) {
                 if (!HTTP_ASYNC_CLIENT_MAP.containsKey(owner)) {
                     HTTP_ASYNC_CLIENT_MAP.put(owner, new CopyOnWriteArraySet<NAsyncHttpClient>());
                 }
             }
         } else {
-            synchronized (monitor) {
+            synchronized (MONITOR) {
                 if (!HTTP_CLIENT_MAP.containsKey(owner)) {
                     HTTP_CLIENT_MAP.put(owner, new CopyOnWriteArraySet<NSyncHttpClient>());
                 }

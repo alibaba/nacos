@@ -74,7 +74,7 @@ public class GetRequest implements Serializable {
 
     public void addValue(String key, String value) {
         if (info == null) {
-            info = new HashMap<>();
+            info = new HashMap<>(4);
         }
         info.put(key, value);
     }
@@ -119,7 +119,7 @@ public class GetRequest implements Serializable {
 
         public GetRequestBuilder addInfo(String key, String value) {
             if (this.info == null) {
-                info = new HashMap<>();
+                info = new HashMap<>(4);
             }
             info.put(key, value);
             return this;

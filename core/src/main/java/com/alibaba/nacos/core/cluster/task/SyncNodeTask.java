@@ -63,6 +63,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class SyncNodeTask extends Task {
 
     private volatile int addressServerFailCount = 0;

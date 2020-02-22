@@ -91,6 +91,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  * @author leiwen.zh
  * @since 1.0
  */
+@SuppressWarnings("PMD.MethodReturnWrapperTypeRule")
 @Repository
 public class PersistService {
 

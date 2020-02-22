@@ -85,7 +85,7 @@ public class DataSyncer {
 
             List<String> keys = task.getKeys();
 
-            Map<String, Map<String, KVStore.Item>> syncData = new HashMap<>();
+            Map<String, Map<String, KVStore.Item>> syncData = new HashMap<>(4);
 
             // 2. get the datums by keys and check the datum is empty or not
             Map<String, KVStore.Item> datumMap = distroStore.getItemByBatch(keys);

@@ -21,6 +21,7 @@ import java.io.Serializable;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class SQL implements Serializable {
 
     private static final long serialVersionUID = 4548851816596520564L;

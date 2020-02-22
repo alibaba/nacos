@@ -21,6 +21,7 @@ import java.io.Closeable;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface NHttpClient extends Closeable {
 
 }

@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class NacosPropertySourceLoader implements PropertySourceLoader {
 
     private final Map<String, Object> properties = new ConcurrentHashMap<>(16);

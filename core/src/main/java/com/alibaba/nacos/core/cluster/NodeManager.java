@@ -105,8 +105,9 @@ public interface NodeManager {
     void unSubscribe(NodeChangeListener listener);
 
     /**
+     * get web-context path
      *
-     * @return
+     * @return path
      */
     String getContextPath();
 

@@ -24,9 +24,9 @@ import java.util.Map;
 public interface ShutHook {
 
     /**
+     * Close callback
      *
-     *
-     * @param data
+     * @param data {@link Map<String, KVStore.Item>}
      */
     void hook(Map<String, KVStore.Item> data);
 

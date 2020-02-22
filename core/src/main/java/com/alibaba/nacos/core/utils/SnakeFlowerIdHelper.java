@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.exception.SnakflowerException;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.AvoidCommentBehindStatementRule")
 public class SnakeFlowerIdHelper {
 
     // ==============================Fields===========================================

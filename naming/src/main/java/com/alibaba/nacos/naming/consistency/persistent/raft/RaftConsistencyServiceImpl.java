@@ -62,6 +62,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     private CPProtocol protocol;
 
     // If it is in stand-alone mode, it succeeds directly
+
     private volatile boolean isOk = SystemUtils.STANDALONE_MODE;
 
     @PostConstruct

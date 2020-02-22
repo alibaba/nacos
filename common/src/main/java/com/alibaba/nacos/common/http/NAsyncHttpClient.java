@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.model.ResResult;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public interface NAsyncHttpClient extends NHttpClient {
 
     /**

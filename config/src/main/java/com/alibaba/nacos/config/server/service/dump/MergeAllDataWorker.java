@@ -47,7 +47,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 class MergeAllDataWorker implements Runnable {
 
-    private static final Executor executor = ExecutorFactory.newFixExecutorService(
+    private static final Executor EXECUTOR = ExecutorFactory.newFixExecutorService(
             MergeAllDataWorker.class.getCanonicalName(),
             8,
             new NameThreadFactory("com.alibaba.nacos.config.config-merge")
@@ -71,7 +71,7 @@ class MergeAllDataWorker implements Runnable {
     }
 
     public void start() {
-        executor.execute(this);
+        EXECUTOR.execute(this);
     }
 
     @Override

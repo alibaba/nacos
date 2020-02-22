@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.exception;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class RaftKVStoreException extends RuntimeException {
 
     private final String originExceptionName;

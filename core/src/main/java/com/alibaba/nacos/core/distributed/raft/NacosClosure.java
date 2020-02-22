@@ -66,6 +66,7 @@ public class NacosClosure implements Closure {
 
     // Pass the Throwable inside the state machine to the outer layer
 
+    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class NStatus extends Status {
 
         private Status status;

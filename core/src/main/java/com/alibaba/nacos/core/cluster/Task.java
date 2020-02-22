@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
 
     private boolean inExecute = false;
