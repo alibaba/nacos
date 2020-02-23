@@ -42,6 +42,9 @@ public class GlobalConfig {
     @Value("${nacos.naming.expireInstance:true}")
     private boolean expireInstance = true;
 
+    @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
+    private long loadDataRetryDelayMillis = 30000;
+
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
@@ -60,5 +63,9 @@ public class GlobalConfig {
 
     public boolean isExpireInstance() {
         return expireInstance;
+    }
+
+    public long getLoadDataRetryDelayMillis() {
+        return loadDataRetryDelayMillis;
     }
 }
