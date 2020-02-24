@@ -13,18 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.alibaba.nacos.core.distributed.id;
 
-package com.alibaba.nacos.core.utils;
-
+import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.exception.SnakflowerException;
 
 /**
- * copy from https://juejin.im/post/5a7f9176f265da4e721c73a8
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AvoidCommentBehindStatementRule")
-public class SnakeFlowerIdHelper {
+public class SnakeFlowerIdGenerator implements IdGenerator {
+
+    private static int DATA_CENTER_ID = 1;
+
+    private static int WORKER_ID = 1;
+
+    static {
+
+        // Snowflake algorithm default parameter information
+
+        String valForDataCenter = System.getProperty("nacos。snowflake.data-center", "1");
+        String valForWorker = System.getProperty("nacos.snowflake.worker", "1");
+
+        DATA_CENTER_ID = Integer.parseInt(valForDataCenter);
+        WORKER_ID = Integer.parseInt(valForWorker);
+    }
+
+    @Override
+    public void init() {
+        initialize(DATA_CENTER_ID, WORKER_ID);
+    }
+
+    @Override
+    public synchronized long nextId() {
+        long timestamp = timeGen();
+
+        // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
+        if (timestamp < lastTimestamp) {
+            throw new SnakflowerException(String.format(
+                    "Clock moved backwards.  Refusing to generate id for %d milliseconds",
+                    lastTimestamp - timestamp));
+        }
+
+        // 如果是同一时间生成的，则进行毫秒内序列
+        if (lastTimestamp == timestamp) {
+            sequence = (sequence + 1) & sequenceMask;
+            // 毫秒内序列溢出
+            if (sequence == 0) {
+                // 阻塞到下一个毫秒,获得新的时间戳
+                timestamp = tilNextMillis(lastTimestamp);
+            }
+        }
+        // 时间戳改变，毫秒内序列重置
+        else {
+            sequence = 0L;
+        }
+
+        // 上次生成ID的时间截
+        lastTimestamp = timestamp;
+
+        // 移位并通过或运算拼到一起组成64位的ID
+        return ((timestamp - twepoch) << timestampLeftShift) //
+                | (datacenterId << datacenterIdShift) //
+                | (workerId << workerIdShift) //
+                | sequence;
+    }
 
     // ==============================Fields===========================================
     /** 开始时间截 (2015-01-01) */
@@ -76,7 +128,7 @@ public class SnakeFlowerIdHelper {
      * @param workerId 工作ID (0~31)
      * @param datacenterId 数据中心ID (0~31)
      */
-    public SnakeFlowerIdHelper(long workerId, long datacenterId) {
+    public void initialize(long workerId, long datacenterId) {
         if (workerId > maxWorkerId || workerId < 0) {
             throw new IllegalArgumentException(String.format(
                     "worker Id can't be greater than %d or less than 0", maxWorkerId));
@@ -88,45 +140,6 @@ public class SnakeFlowerIdHelper {
         }
         this.workerId = workerId;
         this.datacenterId = datacenterId;
-    }
-
-    // ==============================Methods==========================================
-    /**
-     * 获得下一个ID (该方法是线程安全的)
-     * @return SnowflakeId
-     */
-    public synchronized long nextId() {
-        long timestamp = timeGen();
-
-        // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
-        if (timestamp < lastTimestamp) {
-            throw new SnakflowerException(String.format(
-                    "Clock moved backwards.  Refusing to generate id for %d milliseconds",
-                    lastTimestamp - timestamp));
-        }
-
-        // 如果是同一时间生成的，则进行毫秒内序列
-        if (lastTimestamp == timestamp) {
-            sequence = (sequence + 1) & sequenceMask;
-            // 毫秒内序列溢出
-            if (sequence == 0) {
-                // 阻塞到下一个毫秒,获得新的时间戳
-                timestamp = tilNextMillis(lastTimestamp);
-            }
-        }
-        // 时间戳改变，毫秒内序列重置
-        else {
-            sequence = 0L;
-        }
-
-        // 上次生成ID的时间截
-        lastTimestamp = timestamp;
-
-        // 移位并通过或运算拼到一起组成64位的ID
-        return ((timestamp - twepoch) << timestampLeftShift) //
-                | (datacenterId << datacenterIdShift) //
-                | (workerId << workerIdShift) //
-                | sequence;
     }
 
     /**
@@ -149,5 +162,4 @@ public class SnakeFlowerIdHelper {
     protected long timeGen() {
         return System.currentTimeMillis();
     }
-
 }

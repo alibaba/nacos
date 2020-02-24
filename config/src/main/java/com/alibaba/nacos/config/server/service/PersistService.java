@@ -103,6 +103,9 @@ public class PersistService {
     @Autowired
     private DynamicDataSource dynamicDataSource;
 
+    @Autowired
+    private IdGeneratorManager idGeneratorManager;
+
     private DataSourceService dataSourceService;
 
     private static final String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
@@ -135,7 +138,7 @@ public class PersistService {
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();
 
-        IdGeneratorManager.register(
+        idGeneratorManager.register(
                 CONFIG_INFO_ID,
                 CONFIG_HISTORY_ID,
                 CONFIG_TAG_RELATION_ID,

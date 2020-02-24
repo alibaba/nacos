@@ -17,81 +17,58 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
-import com.alibaba.nacos.core.utils.SnakeFlowerIdHelper;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Component
 public class IdGeneratorManager {
 
     private static final Map<String, IdGenerator> ID_GENERATOR_MAP = new ConcurrentHashMap<>();
 
-    private static int DATA_CENTER_ID = 1;
+    private static final String ID_TYPE = System.getProperty("nacos.idGenerator.type", "default");
 
-    private static int WORKER_ID = 1;
-
-    static {
-
-        // Snowflake algorithm default parameter information
-
-        String valForDataCenter = System.getProperty("nacos。snowflake.data-center", "1");
-        String valForWorker = System.getProperty("nacos.snowflake.worker", "1");
-
-        DATA_CENTER_ID = Integer.parseInt(valForDataCenter);
-        WORKER_ID = Integer.parseInt(valForWorker);
-    }
-
-    private static final Supplier<IdGenerator> SUPPLIER = () -> {
+    private static final Function<String, IdGenerator> SUPPLIER = s -> {
         IdGenerator generator;
         ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
         Iterator<IdGenerator> iterator = loader.iterator();
         if (iterator.hasNext()) {
             generator = iterator.next();
         } else {
-            generator = new SnakeFlowerIdGenerator();
+            if (Objects.equals(ID_TYPE, "snakeflower")) {
+                generator = new SnakeFlowerIdGenerator();
+            } else {
+                generator = new DefaultIdGenerator();
+            }
         }
         generator.init();
         return generator;
     };
 
-    public static void register(String resource) {
-        ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.get());
+    public void register(String resource) {
+        ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
     }
 
-    public static void register(String... resources) {
+    public void register(String... resources) {
         for (String resource : resources) {
-            ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.get());
+            ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
         }
     }
 
-    public static long nextId(String resource) {
+    public long nextId(String resource) {
         if (ID_GENERATOR_MAP.containsKey(resource)) {
             return ID_GENERATOR_MAP.get(resource).nextId();
         }
         throw new NoSuchElementException("The resource is not registered with the distributed " +
                 "ID resource for the time being.");
-    }
-
-    public static class SnakeFlowerIdGenerator implements IdGenerator {
-
-        SnakeFlowerIdHelper helper;
-
-        @Override
-        public void init() {
-            helper = new SnakeFlowerIdHelper(DATA_CENTER_ID, WORKER_ID);
-        }
-
-        @Override
-        public long nextId() {
-            return helper.nextId();
-        }
     }
 
 }

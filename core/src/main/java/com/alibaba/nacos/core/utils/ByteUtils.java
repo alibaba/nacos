@@ -47,6 +47,10 @@ public final class ByteUtils {
         return s.getBytes(Charset.forName(StandardCharsets.UTF_8.name()));
     }
 
+    public static byte[] toBytes(long s) {
+        return toBytes(String.valueOf(s));
+    }
+
     public static String toString(byte[] bytes) {
         if (Objects.isNull(bytes)) {
             return StringUtils.EMPTY;

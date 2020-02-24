@@ -36,7 +36,7 @@ public class NamingTest {
     public void testServiceList() throws Exception {
 
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "11.160.165.126:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "http://127.0.0.1:8848");
         properties.put(PropertyKeyConst.NAMESPACE, "t1");
 
         NamingService namingService = NacosFactory.createNamingService(properties);
@@ -55,8 +55,15 @@ public class NamingTest {
 //        ExpressionSelector expressionSelector = new ExpressionSelector();
 //        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
 //        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
+    }
 
-        Thread.sleep(1000000000L);
+    @Test
+    public void test_server_addr() {
+        String serverAddr = "http://nacos.dev-oxes.liaochuntao:8848";
+        if (serverAddr.lastIndexOf("/") != -1) {
+            serverAddr = serverAddr.substring(0, serverAddr.length() - 1);
+        }
+        System.out.println(serverAddr);
     }
 
 
