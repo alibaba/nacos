@@ -189,6 +189,9 @@ class RaftKVStore<T> extends CPKvStore<T> {
         throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
     }
 
+    // This operation is limited to the Snapshot operation of Raft to
+    // quickly recover data and is not available for other operations
+
     @Override
     public void load(Map<String, Item> remoteData) {
         remoteData.forEach(new BiConsumer<String, Item>() {

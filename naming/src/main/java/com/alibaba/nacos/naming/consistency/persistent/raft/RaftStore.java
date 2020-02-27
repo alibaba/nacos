@@ -40,13 +40,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,6 +52,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.PostConstruct;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Component;
 
 /**
  * @author nacos
@@ -97,7 +96,17 @@ public class RaftStore {
     protected void init() throws Exception {
         serializer = SerializeFactory.getDefault();
         kvStore = protocol.createKVStore(STORE_NAME, serializer, new NSnapshotOperation());
-        kvStore.registerHook(new NStartHook(), new NBeforeHook(), new NAfterHook());
+        kvStore.registerHook(new StartHook() {
+            @Override
+            public void hook(Map dataStore, KVStore kvStore) throws Exception {
+
+                // Delete existing data, relying on raft's snapshot and log
+                // playback to reply to the data is the correct behavior.
+
+                FileUtils.forceDelete(new File(cacheDir));
+
+            }
+        }, new NBeforeHook(), new NAfterHook());
         kvStore.start();
         initialized = true;
     }
@@ -190,17 +199,6 @@ public class RaftStore {
             } finally {
                 TimerContext.end(Loggers.RAFT);
             }
-        }
-    }
-
-    class NStartHook implements StartHook<Record> {
-
-        @Override
-        public void hook(Map<String, KVStore.Item> dataStore, KVStore<Record> kvStore) throws Exception {
-            long start = System.currentTimeMillis();
-            loadFromFile(new File(cacheDir));
-            Loggers.RAFT.info("finish loading all data, size: {} cost {} ms.",
-                    dataStore.size(), (System.currentTimeMillis() - start));
         }
     }
 

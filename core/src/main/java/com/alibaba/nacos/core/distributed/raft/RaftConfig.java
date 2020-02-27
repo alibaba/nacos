@@ -32,7 +32,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-@ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.raft")
+@ConfigurationProperties(prefix = "nacos.core.protocol.raft")
 public class RaftConfig implements Config<LogProcessor4CP> {
 
     private static final long serialVersionUID = 9174789390266064002L;

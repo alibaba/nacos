@@ -56,19 +56,19 @@ public class DefaultIdGenerator implements IdGenerator {
     @Override
     public synchronized long nextId() {
         currentId ++;
-        long[] buffer = choose();
+        long[] buffer = current();
         if (currentId > buffer[0]) {
-            transfer();
-            currentId = choose()[0];
+            swap();
+            currentId = current()[0];
         }
-        if (needToAcquire(currentId, choose())) {
+        if (needToAcquire(currentId, current())) {
             inAcquire = true;
             doAcquire();
         }
         return currentId;
     }
 
-    public long[] choose() {
+    public long[] current() {
         return bufferIndex ? bufferOne : bufferTwo;
     }
 
@@ -76,7 +76,7 @@ public class DefaultIdGenerator implements IdGenerator {
         return bufferIndex ? bufferTwo : bufferOne;
     }
 
-    public void transfer() {
+    public void swap() {
         bufferIndex = !bufferIndex;
     }
 

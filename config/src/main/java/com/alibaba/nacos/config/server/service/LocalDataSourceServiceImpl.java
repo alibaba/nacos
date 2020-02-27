@@ -20,6 +20,18 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,17 +41,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
@@ -69,24 +70,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         if (!PropertyUtil.isUseMysql()) {
 
             logger.info("use local db service");
-
-            HikariDataSource ds = new HikariDataSource();
-            ds.setDriverClassName(JDBC_DRIVER_NAME);
-            ds.setJdbcUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
-            ds.setUsername(USER_NAME);
-            ds.setPassword(PASSWORD);
-            ds.setMaximumPoolSize(80);
-            ds.setConnectionTimeout(10000L);
-
-            jt = new JdbcTemplate();
-            jt.setMaxRows(50000);
-            jt.setQueryTimeout(5000);
-            jt.setDataSource(ds);
-            DataSourceTransactionManager tm = new DataSourceTransactionManager();
-            tjt = new TransactionTemplate(tm);
-            tm.setDataSource(ds);
-            tjt.setTimeout(5000);
-            reload();
+            initialize();
         }
     }
 
@@ -104,6 +88,40 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
             throw new RuntimeException("load schema.sql error." + ExceptionUtil.getAllExceptionMsg(e));
         }
+    }
+
+    @Override
+    public void destroyThenReload() throws Exception {
+        if (!PropertyUtil.isUseMysql()) {
+
+            logger.info("use local db service");
+
+            DriverManager.getConnection("jdbc:derby:;shutdown=true");
+
+            FileUtils.forceDelete(new File(NACOS_HOME + File.separator + DERBY_BASE_DIR));
+
+            initialize();
+        }
+    }
+
+    private void initialize() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setDriverClassName(JDBC_DRIVER_NAME);
+        ds.setJdbcUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
+        ds.setUsername(USER_NAME);
+        ds.setPassword(PASSWORD);
+        ds.setMaximumPoolSize(80);
+        ds.setConnectionTimeout(10000L);
+
+        jt = new JdbcTemplate();
+        jt.setMaxRows(50000);
+        jt.setQueryTimeout(5000);
+        jt.setDataSource(ds);
+        DataSourceTransactionManager tm = new DataSourceTransactionManager();
+        tjt = new TransactionTemplate(tm);
+        tm.setDataSource(ds);
+        tjt.setTimeout(5000);
+        reload();
     }
 
     @Override

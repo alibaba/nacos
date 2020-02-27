@@ -17,30 +17,22 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.exception.SnakflowerException;
+import com.alibaba.nacos.core.utils.ConvertUtils;
 
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 public class SnakeFlowerIdGenerator implements IdGenerator {
 
-    private static int DATA_CENTER_ID = 1;
-
-    private static int WORKER_ID = 1;
-
-    static {
+    @Override
+    public void init() {
 
         // Snowflake algorithm default parameter information
 
-        String valForDataCenter = System.getProperty("nacos。snowflake.data-center", "1");
-        String valForWorker = System.getProperty("nacos.snowflake.worker", "1");
+        int dataCenterId = ConvertUtils.toInt(System.getProperty("nacos。snowflake.data-center"), 1);
+        int workerId = ConvertUtils.toInt(System.getProperty("nacos.snowflake.worker"), 1);
 
-        DATA_CENTER_ID = Integer.parseInt(valForDataCenter);
-        WORKER_ID = Integer.parseInt(valForWorker);
-    }
-
-    @Override
-    public void init() {
-        initialize(DATA_CENTER_ID, WORKER_ID);
+        initialize(dataCenterId, workerId);
     }
 
     @Override

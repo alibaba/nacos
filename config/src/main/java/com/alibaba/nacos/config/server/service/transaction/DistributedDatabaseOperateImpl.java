@@ -35,6 +35,10 @@ import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.NodeManager;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +47,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import javax.annotation.PostConstruct;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
@@ -85,12 +84,19 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     private String selfIp;
 
     @PostConstruct
-    protected void init() {
+    protected void init() throws Exception {
         dataSourceService = dynamicDataSource.getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
         selfIp = nodeManager.self().address();
         defaultLog.info("use DistributedTransactionServicesImpl");
+
+        // Delete existing data, relying on raft's snapshot and log
+        // playback to reply to the data is the correct behavior.
+
+        // TODO Derby recreates the startup
+
+        dataSourceService.destroyThenReload();
     }
 
     @Override

@@ -34,7 +34,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-@ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.distro")
+@ConfigurationProperties(prefix = "nacos.core.protocol.distro")
 public class DistroConfig implements Config<LogProcessor4AP> {
 
     private static final long serialVersionUID = -3073040842709279788L;

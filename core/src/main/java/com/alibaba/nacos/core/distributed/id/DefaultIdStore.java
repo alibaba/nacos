@@ -71,12 +71,17 @@ public class DefaultIdStore implements LogProcessor4CP {
     private Serializer serializer;
 
     @PostConstruct
-    protected void init() {
+    protected void init() throws Exception {
         this.storeFileMap = new ConcurrentHashMap<>(4);
         this.serializer = SerializeFactory.getDefault();
         ACQUIRE_STEP =
                 ConvertUtils.toLong(System.getProperty("nacos.idGenerator.default.acquire.step"), 1000);
         FILE_PATH = Paths.get(FILE_PATH, "IdGenerator").toString();
+
+        // Delete existing data, relying on raft's snapshot and log
+        // playback to reply to the data is the correct behavior.
+
+        FileUtils.forceDelete(new File(FILE_PATH));
     }
 
     public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
