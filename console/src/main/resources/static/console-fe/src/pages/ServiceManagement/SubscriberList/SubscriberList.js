@@ -37,10 +37,7 @@ const FormItem = Form.Item;
 const { Row, Col } = Grid;
 const { Column } = Table;
 
-@connect(
-  state => ({ subscriberData: state.subscribers }),
-  { getSubscribers, removeSubscribers }
-)
+@connect(state => ({ subscriberData: state.subscribers }), { getSubscribers, removeSubscribers })
 @ConfigProvider.config
 class SubscriberList extends React.Component {
   static displayName = 'SubscriberList';

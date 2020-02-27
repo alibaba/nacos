@@ -181,7 +181,8 @@ CREATE TABLE users (
 
 CREATE TABLE roles (
 	username varchar(50) NOT NULL,
-	role varchar(50) NOT NULL
+	role varchar(50) NOT NULL,
+	constraint uk_username_role UNIQUE (username,role)
 );
 
 CREATE TABLE permissions (

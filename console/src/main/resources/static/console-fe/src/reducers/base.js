@@ -20,6 +20,12 @@ const initialState = {
   functionMode: '',
 };
 
+/**
+ * 用户登录
+ * @param {*} param0
+ */
+const login = user => request.post('v1/auth/users/login', user);
+
 const getState = () => dispatch =>
   request
     .get('v1/console/server/state')
@@ -52,4 +58,4 @@ export default (state = initialState, action) => {
   }
 };
 
-export { getState };
+export { getState, login };

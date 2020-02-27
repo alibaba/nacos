@@ -133,7 +133,8 @@ class ConfigurationManagement extends React.Component {
               <div>
                 <div style={{ fontSize: '15px', lineHeight: '22px' }}>
                   {locale.ad}
-                  <a href={'https://survey.aliyun.com/survey/k0BjJ2ARC'} target={'_blank'}>
+                  {/* eslint-disable */}
+                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC" target="_blank">
                     {locale.questionnaire2}
                   </a>
                 </div>
@@ -285,9 +286,6 @@ class ConfigurationManagement extends React.Component {
       }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
         this.state.pageSize
       }`,
-      beforeSend() {
-        self.openLoading();
-      },
       success(data) {
         if (data != null) {
           self.setState({
@@ -312,9 +310,6 @@ class ConfigurationManagement extends React.Component {
           total: 0,
           currentPage: 0,
         });
-      },
-      complete() {
-        self.closeLoading();
       },
     });
   }
@@ -438,21 +433,12 @@ class ConfigurationManagement extends React.Component {
         isPageEnter: e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
-      () => {
-        this.getData(value, false);
-      }
+      () => this.getData(value, false)
     );
   }
 
   handlePageSizeChange(pageSize) {
-    this.setState(
-      {
-        pageSize,
-      },
-      () => {
-        this.changePage(1);
-      }
-    );
+    this.setState({ pageSize }, () => this.changePage(1));
   }
 
   onInputUpdate() {}
@@ -689,28 +675,51 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  openUri(url, params) {
+    window.open(
+      [
+        url,
+        Object.keys(params)
+          .map(key => `${key}=${params[key]}`)
+          .join('&'),
+      ].join('?')
+    );
+  }
+
   exportData() {
-    let url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
-      'namespace'
-    )}&appName=${this.appName}&ids=&dataId=${this.dataId}`;
-    window.location.href = url;
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
   }
 
   exportSelectedData() {
+    const ids = [];
     const { locale = {} } = this.props;
-    if (configsTableSelected.size === 0) {
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
         content: locale.exportSelectedAlertContent,
       });
-    } else {
-      let idsStr = '';
-      configsTableSelected.forEach((value, key, map) => {
-        idsStr = `${idsStr + key},`;
-      });
-      let url = `v1/cs/configs?export=true&group=&tenant=&appName=&ids=${idsStr}`;
-      window.location.href = url;
+      return;
     }
+    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    this.openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: '',
+      group: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+    });
   }
 
   multipleSelectionDeletion() {
@@ -1160,7 +1169,7 @@ class ConfigurationManagement extends React.Component {
   render() {
     const { locale = {} } = this.props;
     return (
-      <div>
+      <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
         <Loading
           shape={'flower'}
@@ -1172,7 +1181,7 @@ class ConfigurationManagement extends React.Component {
           <div className={this.state.hasdash ? 'dash-page-container' : ''}>
             <div
               className={this.state.hasdash ? 'dash-left-container' : ''}
-              style={{ position: 'relative', padding: 10 }}
+              style={{ position: 'relative' }}
             >
               <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>
                 <RegionGroup
@@ -1424,7 +1433,7 @@ class ConfigurationManagement extends React.Component {
             )}
           </div>
         </Loading>
-      </div>
+      </>
     );
   }
 }

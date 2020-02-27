@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class GlobalConfig {
 
-    @Value("${nacos.naming.distro.taskDispatchPeriod:200}")
+    @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
     private int taskDispatchPeriod = 2000;
 
     @Value("${nacos.naming.distro.batchSyncKeyCount:1000}")
@@ -41,6 +41,9 @@ public class GlobalConfig {
 
     @Value("${nacos.naming.expireInstance:true}")
     private boolean expireInstance = true;
+
+    @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
+    private long loadDataRetryDelayMillis = 30000;
 
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
@@ -60,5 +63,9 @@ public class GlobalConfig {
 
     public boolean isExpireInstance() {
         return expireInstance;
+    }
+
+    public long getLoadDataRetryDelayMillis() {
+        return loadDataRetryDelayMillis;
     }
 }
