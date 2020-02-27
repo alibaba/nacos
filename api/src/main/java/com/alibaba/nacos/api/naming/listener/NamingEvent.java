@@ -20,61 +20,17 @@ import java.util.List;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 /**
- * Naming Event
+ * Naming change event
  *
  * @author nkorange
  */
-public class NamingEvent implements Event {
-
-    private String serviceName;
-
-    private String groupName;
-
-    private String clusters;
-
-    private List<Instance> instances;
+public class NamingEvent extends NamingBaseEvent {
 
     public NamingEvent(String serviceName, List<Instance> instances) {
-        this.serviceName = serviceName;
-        this.instances = instances;
+        super(serviceName, instances);
     }
 
     public NamingEvent(String serviceName, String groupName, String clusters, List<Instance> instances) {
-        this.serviceName = serviceName;
-        this.groupName = groupName;
-        this.clusters = clusters;
-        this.instances = instances;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public List<Instance> getInstances() {
-        return instances;
-    }
-
-    public void setInstances(List<Instance> instances) {
-        this.instances = instances;
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
-    public String getClusters() {
-        return clusters;
-    }
-
-    public void setClusters(String clusters) {
-        this.clusters = clusters;
+        super(serviceName, groupName, clusters, instances);
     }
 }

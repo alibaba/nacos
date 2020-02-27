@@ -179,6 +179,12 @@ public class HostReactor {
 
             serviceInfo.setJsonFromServer(json);
 
+            if (remvHosts.size() > 0) {
+                // todo 添加改变的事件
+                oldService.setHosts(new ArrayList<Instance>(remvHosts));
+                eventDispatcher.serviceRemoved(oldService);
+            }
+
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
                 eventDispatcher.serviceChanged(serviceInfo);
                 DiskCache.write(serviceInfo, cacheDir);
