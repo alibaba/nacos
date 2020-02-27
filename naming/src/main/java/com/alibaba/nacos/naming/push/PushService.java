@@ -317,8 +317,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         try {
             packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
             Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
             ackEntry.data = data;
