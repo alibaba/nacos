@@ -28,10 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -111,7 +108,9 @@ public class SecurityProxy {
     public boolean login(String server) {
 
         if (StringUtils.isNotBlank(username)) {
-            String body = "username=" + username + "&password=" + password;
+            Map<String, String> params = new HashMap<String, String>(2);
+            params.put("username", username);
+            String body = "password=" + password;
             String url = "http://" + server + contextPath + LOGIN_URL;
 
             if (server.contains(Constants.HTTP_PREFIX)) {
@@ -119,7 +118,7 @@ public class SecurityProxy {
             }
 
             HttpClient.HttpResult result = HttpClient.request(url, new ArrayList<String>(2),
-                new HashMap<String, String>(2), body, Charsets.UTF_8.name(), HttpMethod.POST);
+                params, body, Charsets.UTF_8.name(), HttpMethod.POST);
 
             if (result.code != HttpURLConnection.HTTP_OK) {
                 SECURITY_LOGGER.error("login failed: {}", JSON.toJSONString(result));

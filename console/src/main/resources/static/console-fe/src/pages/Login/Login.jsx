@@ -4,8 +4,8 @@ import { withRouter } from 'react-router-dom';
 
 import './index.scss';
 import Header from '../../layouts/Header';
-import { request } from '../../globalLib';
 import PropTypes from 'prop-types';
+import { login } from '../../reducers/base';
 
 const FormItem = Form.Item;
 
@@ -24,35 +24,29 @@ class Login extends React.Component {
     this.field = new Field(this);
   }
 
+  componentDidMount() {
+    if (localStorage.getItem('token')) {
+      const [baseUrl] = location.href.split('#');
+      location.href = `${baseUrl}#/`;
+    }
+  }
+
   handleSubmit = () => {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) {
         return;
       }
-      request({
-        type: 'post',
-        url: 'v1/auth/login',
-        data: values,
-        success: ({ code, data }) => {
-          if (code === 200) {
-            // TODO: 封装一个方法存储、读取token
-            localStorage.setItem('token', data);
-            // TODO: 使用react router
-            this.props.history.push('/');
-          }
-          if (code === 401) {
-            Message.error({
-              content: locale.invalidUsernameOrPassword,
-            });
-          }
-        },
-        error: () => {
+      login(values)
+        .then(res => {
+          localStorage.setItem('token', JSON.stringify(res));
+          this.props.history.push('/');
+        })
+        .catch(() => {
           Message.error({
             content: locale.invalidUsernameOrPassword,
           });
-        },
-      });
+        });
     });
   };
 

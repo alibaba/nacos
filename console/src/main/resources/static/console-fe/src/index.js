@@ -44,6 +44,9 @@ import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 import SubscriberList from './pages/ServiceManagement/SubscriberList';
 import ClusterNodeList from './pages/ClusterManagement/ClusterNodeList';
+import UserManagement from './pages/AuthorityControl/UserManagement';
+import PermissionsManagement from './pages/AuthorityControl/PermissionsManagement';
+import RolesManagement from './pages/AuthorityControl/RolesManagement';
 import Welcome from './pages/Welcome/Welcome';
 
 import reducers from './reducers';
@@ -65,10 +68,7 @@ const reducer = combineReducers({
 
 const store = createStore(
   reducer,
-  compose(
-    applyMiddleware(thunk),
-    window[REDUX_DEVTOOLS] ? window[REDUX_DEVTOOLS]() : f => f
-  )
+  compose(applyMiddleware(thunk), window[REDUX_DEVTOOLS] ? window[REDUX_DEVTOOLS]() : f => f)
 );
 
 const MENU = [
@@ -89,12 +89,12 @@ const MENU = [
   { path: '/serviceDetail', component: ServiceDetail },
   { path: '/subscriberList', component: SubscriberList },
   { path: '/clusterManagement', component: ClusterNodeList },
+  { path: '/userManagement', component: UserManagement },
+  { path: '/rolesManagement', component: RolesManagement },
+  { path: '/permissionsManagement', component: PermissionsManagement },
 ];
 
-@connect(
-  state => ({ ...state.locale }),
-  { changeLanguage }
-)
+@connect(state => ({ ...state.locale }), { changeLanguage })
 class App extends React.Component {
   static propTypes = {
     locale: PropTypes.object,

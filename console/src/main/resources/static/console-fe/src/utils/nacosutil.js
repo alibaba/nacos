@@ -46,3 +46,26 @@ export const getParameter = (search, name) => {
   const [, value = ''] = hit.split('=');
   return value;
 };
+
+export const isJsonString = str => {
+  try {
+    if (typeof JSON.parse(str) === 'object') {
+      return true;
+    }
+  } catch (e) {}
+  return false;
+};
+
+export const generateUrl = (url, params) => {
+  return [
+    url,
+    '?',
+    Object.keys(params)
+      .map(key => [key, params[key]].join('='))
+      .join('&'),
+  ].join('');
+};
+
+export const isPlainObject = obj => {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+};

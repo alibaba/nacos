@@ -359,7 +359,10 @@ public class ClientWorker {
      */
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
-        List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
+
+        List<String> params = new ArrayList<String>(2);
+        params.add(Constants.PROBE_MODIFY_REQUEST);
+        params.add(probeUpdateString);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -516,6 +519,7 @@ public class ClientWorker {
 
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
+                LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
 
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);

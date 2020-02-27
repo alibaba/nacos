@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.fastjson.JSON;
+
 /**
  * Permission to auth
  *
@@ -56,5 +58,10 @@ public class Permission {
 
     public void setAction(String action) {
         this.action = action;
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 }
