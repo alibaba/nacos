@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.cluster.ClusterConfConstants;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerNode;
@@ -34,31 +33,19 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.config.RequestConfig;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.config.RequestConfig;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -151,11 +138,9 @@ public class SyncNodeTask extends Task {
                 if (HttpServletResponse.SC_OK == resResult.getCode()) {
                     nodeManager.setAddressServerHealth(true);
 
-                    Properties conf = new Properties();
+                    Reader reader = new StringReader(resResult.getData());
 
-                    conf.load(new StringReader(resResult.getData()));
-
-                    readServerConf(conf);
+                    readServerConf(SystemUtils.analyzeClusterConf(reader));
 
                     addressServerFailCount = 0;
 
@@ -177,13 +162,9 @@ public class SyncNodeTask extends Task {
     }
 
     private void readServerConfFromDisk() {
-        try (Reader reader = new InputStreamReader(new FileInputStream(new File(SystemUtils.CLUSTER_CONF_FILE_PATH)),
-                StandardCharsets.UTF_8)) {
-
-            Properties properties = new Properties();
-            properties.load(reader);
-
-            readServerConf(properties);
+        try {
+            List<String> members = SystemUtils.readClusterConf();
+            readServerConf(members);
             alreadyLoadServer = true;
         } catch (Exception e) {
             Loggers.CORE.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
@@ -191,51 +172,47 @@ public class SyncNodeTask extends Task {
         }
     }
 
-    private void readServerConf(Properties properties) {
+    // 默认配置格式解析，只有nacos-server的ip:port or hostname:port 信息
+
+    // example 192.168.16.1:8848?raft_port=8849&
+
+    private void readServerConf(List<String> members) {
         Set<Node> nodes = new HashSet<>();
+        int defaultPort = nodeManager.getPort();
 
-        // If it is in stand-alone mode, manually put the local IP into
-        // Properties for easy unified processing below
+        // Set the default Raft port information for security
 
-        if (STANDALONE_MODE) {
-            final String nodeAddressKey = String.format(ClusterConfConstants.NODE_ADDRESS, 0);
-            if (!properties.containsKey(nodeAddressKey)) {
-                String nodeAddressValue = LOCAL_IP;
-                if (!nodeAddressValue.contains(":")) {
-                    nodeAddressValue += ":" + SpringUtils.getProperty("server.port", "8848");
-                }
-                properties.put(nodeAddressKey, nodeAddressValue);
+        int defaultRaftPort = defaultPort + 1 > 65536 ? defaultPort + 1 : defaultPort - 1;
+
+        for (String member : members) {
+            String[] memberDetails = member.split("\\?");
+            String address = memberDetails[0];
+            int port = defaultPort;
+            if (address.contains(":")) {
+                String[] info = address.split(":");
+                address = info[0];
+                port = Integer.parseInt(info[1]);
             }
-        }
 
-        for (int i = 0; ; i++) {
-            final String nodeAddressKey = String.format(ClusterConfConstants.NODE_ADDRESS, i);
-            String nodeAddressValue = properties.getProperty(nodeAddressKey);
-            if (StringUtils.isBlank(nodeAddressValue)) {
-                break;
-            }
-            final String[] nodeAddressInfo = nodeAddressValue.split(":");
-            final String ip = nodeAddressInfo[0].trim();
-            final int port = Integer.parseInt(nodeAddressInfo[1].trim());
-            final String nodeExtendInfoPrefix = String.format(ClusterConfConstants.NODE_EXTEND_DATA, i);
-            Map<String, String> extendInfo = new HashMap<>(8);
-            Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
-            Pattern pattern = Pattern.compile(nodeExtendInfoPrefix);
-            while (iterator.hasNext()) {
-                Map.Entry<Object, Object> entry = iterator.next();
-                final String key = String.valueOf(entry.getKey());
-                Matcher matcher = pattern.matcher(key);
-                if (matcher.find()) {
-                    extendInfo.put(matcher.group(1), String.valueOf(entry.getValue()));
-                    iterator.remove();
+            // example ip:port?raft_port=&node_name=
+
+            Map<String, String> extendInfo = new HashMap<>(4);
+
+            if (memberDetails.length == 2) {
+                String[] parameters = memberDetails[1].split("&");
+                for (String parameter : parameters) {
+                    String[] info = parameter.split("=");
+                    extendInfo.put(info[0].trim(), info[1].trim());
                 }
             }
+
             nodes.add(ServerNode.builder()
-                    .ip(ip)
+                    .ip(address)
                     .port(port)
                     .extendInfo(extendInfo)
                     .state(NodeState.UP)
                     .build());
+
         }
 
         Loggers.CORE.info("init node cluster : {}", nodes);

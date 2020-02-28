@@ -126,33 +126,38 @@ public class SystemUtils {
     }
 
     public static List<String> readClusterConf() throws IOException {
-        List<String> instanceList = new ArrayList<String>();
+
         try(Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
         StandardCharsets.UTF_8)) {
-            List<String> lines = IoUtils.readLines(reader);
-            String comment = "#";
-            for (String line : lines) {
-                String instance = line.trim();
-                if (instance.startsWith(comment)) {
-                    // # it is ip
-                    continue;
-                }
-                if (instance.contains(comment)) {
-                    // 192.168.71.52:8848 # Instance A
-                    instance = instance.substring(0, instance.indexOf(comment));
-                    instance = instance.trim();
-                }
-                int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
-                if (multiIndex > 0) {
-                    // support the format: ip1:port,ip2:port  # multi inline
-                    instanceList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
-                } else {
-                    //support the format: 192.168.71.52:8848
-                    instanceList.add(instance);
-                }
-            }
-            return instanceList;
+            return analyzeClusterConf(reader);
         }
+    }
+
+    public static List<String> analyzeClusterConf(Reader reader) throws IOException {
+        List<String> instanceList = new ArrayList<String>();
+        List<String> lines = IoUtils.readLines(reader);
+        String comment = "#";
+        for (String line : lines) {
+            String instance = line.trim();
+            if (instance.startsWith(comment)) {
+                // # it is ip
+                continue;
+            }
+            if (instance.contains(comment)) {
+                // 192.168.71.52:8848 # Instance A
+                instance = instance.substring(0, instance.indexOf(comment));
+                instance = instance.trim();
+            }
+            int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
+            if (multiIndex > 0) {
+                // support the format: ip1:port,ip2:port  # multi inline
+                instanceList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
+            } else {
+                //support the format: 192.168.71.52:8848
+                instanceList.add(instance);
+            }
+        }
+        return instanceList;
     }
 
     public static void writeClusterConf(String content) throws IOException {

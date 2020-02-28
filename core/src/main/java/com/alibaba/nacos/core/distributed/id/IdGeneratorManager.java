@@ -46,7 +46,7 @@ public class IdGeneratorManager {
             if (Objects.equals(ID_TYPE, "snakeflower")) {
                 generator = new SnakeFlowerIdGenerator();
             } else {
-                generator = new DefaultIdGenerator();
+                generator = new DefaultIdGenerator(s);
             }
         }
         generator.init();

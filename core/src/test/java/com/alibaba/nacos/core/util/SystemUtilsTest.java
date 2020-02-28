@@ -107,4 +107,12 @@ public class SystemUtilsTest {
         Assert.assertEquals(instanceList.get(1), "192.168.1.3");
     }
 
+    @Test
+    public void testReadClusterWithParameter() {
+        String ip = "192.168.1.2:8848";
+        Assert.assertEquals(1, ip.split("\\?").length);
+        String ip2 = "192.168.1.2:8848?raft_port";
+        Assert.assertEquals(2, ip2.split("\\?").length);
+    }
+
 }
