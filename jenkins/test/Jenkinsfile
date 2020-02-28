@@ -8,21 +8,20 @@ pipeline {
     projectName = 'msmp-nacos'
     jarName = 'nacos-server'
     envName = 'test'
-    version = '1.1.4'
     suffix = 'zip'
   }
   stages {
     stage('compile') {
       steps {
       	sh 'pwd'
-      	git 'https://github.com/michaelmofa/nacos.git'
+      	git branch: 'develop', url: 'https://github.com/michaelmofa/nacos.git'
         sh 'mvn clean install -Dmaven.test.skip=true -Prelease-nacos'
       }
     }
     stage('copy resource to dir') {
       steps {
         sh 'pwd'
-        sh 'cp distribution/target/${jarName}-${version}.${suffix} jenkins/${envName}/${jarName}.${suffix}'
+        sh 'cp distribution/target/*.${suffix} jenkins/${envName}/${jarName}.${suffix}'
       }
     }
     stage('send to remote address') {
@@ -31,7 +30,7 @@ pipeline {
           continueOnError: false, failOnError: true,
           publishers: [
             sshPublisherDesc(
-              configName: "39.108.155.113",
+              configName: "120.78.149.135",
               transfers: [
                 sshTransfer(
                   sourceFiles: "jenkins/${envName}/*",
