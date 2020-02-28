@@ -1,0 +1,50 @@
+pipeline {
+  agent any
+  tools {
+    // Install the Maven version configured as "M3" and add it to the path.
+    maven "M3"
+  }
+  environment {
+    projectName = 'msmp-nacos'
+    jarName = 'nacos-server'
+    envName = 'local'
+    suffix = 'zip'
+  }
+  stages {
+    stage('compile') {
+      steps {
+      	sh 'pwd'
+        sh 'mvn clean install -Dmaven.test.skip=true -Prelease-nacos'
+      }
+    }
+    stage('copy resource to dir') {
+      steps {
+        sh 'pwd'
+        sh 'cp distribution/target/*.${suffix} jenkins/${envName}/${jarName}.${suffix}'
+      }
+    }
+    stage('send to remote address') {
+      steps {
+        sshPublisher(
+          continueOnError: false, failOnError: true,
+          publishers: [
+            sshPublisherDesc(
+              configName: "127.0.0.1",
+              transfers: [
+                sshTransfer(
+                  sourceFiles: "jenkins/${envName}/*",
+                  removePrefix: "jenkins/${envName}",
+                  remoteDirectory: "/dockerfile/${envName}/${projectName}/",
+                  execCommand: "cd /root/dockerfile/${envName}/${projectName}/ && chmod +x deploy.sh && ./deploy.sh"
+                )
+	          ],
+	          usePromotionTimestamp: false,
+              useWorkspaceInPromotion: false,
+              verbose: false
+            )
+	      ]
+	    )
+	  }
+    }
+  }
+}
