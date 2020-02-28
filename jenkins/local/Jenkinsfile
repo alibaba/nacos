@@ -23,28 +23,10 @@ pipeline {
         sh 'cp distribution/target/*.${suffix} jenkins/${envName}/${jarName}.${suffix}'
       }
     }
-    stage('send to remote address') {
+    stage('build docker and run') {
       steps {
-        sshPublisher(
-          continueOnError: false, failOnError: true,
-          publishers: [
-            sshPublisherDesc(
-              configName: "127.0.0.1",
-              transfers: [
-                sshTransfer(
-                  sourceFiles: "jenkins/${envName}/*",
-                  removePrefix: "jenkins/${envName}",
-                  remoteDirectory: "/dockerfile/${envName}/${projectName}/",
-                  execCommand: "cd /root/dockerfile/${envName}/${projectName}/ && chmod +x deploy.sh && ./deploy.sh"
-                )
-	          ],
-	          usePromotionTimestamp: false,
-              useWorkspaceInPromotion: false,
-              verbose: false
-            )
-	      ]
-	    )
-	  }
+        sh 'cd jenkins/${envName} && chmod +x deploy.sh && ./deploy.sh'
+      }
     }
   }
 }
