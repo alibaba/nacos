@@ -198,8 +198,8 @@ public class PersistService {
             boolean enableDistributedID = PropertyUtil.isEnableDistributedID();
 
             if (enableDistributedID) {
-                configId = IdGeneratorManager.nextId(CONFIG_INFO_ID);
-                configHistoryId = IdGeneratorManager.nextId(CONFIG_HISTORY_ID);
+                configId = idGeneratorManager.nextId(CONFIG_INFO_ID);
+                configHistoryId = idGeneratorManager.nextId(CONFIG_HISTORY_ID);
             }
 
             addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, time, configAdvanceInfo);
