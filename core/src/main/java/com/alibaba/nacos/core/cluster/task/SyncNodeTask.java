@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerNode;
 import com.alibaba.nacos.core.cluster.Task;
+import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
@@ -204,6 +205,11 @@ public class SyncNodeTask extends Task {
                     String[] info = parameter.split("=");
                     extendInfo.put(info[0].trim(), info[1].trim());
                 }
+            } else {
+
+                // 需要默认设置 Raft Port 信息
+                extendInfo.put(RaftSysConstants.RAFT_PORT, String.valueOf(defaultRaftPort));
+
             }
 
             nodes.add(ServerNode.builder()

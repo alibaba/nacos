@@ -445,7 +445,6 @@
         <module>cmdb</module>
         <module>istio</module>
         <module>consistency</module>
-        <module>shell</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
