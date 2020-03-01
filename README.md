@@ -103,7 +103,7 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 
 ## Download
 
-- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`，If it is not available, please contact liaotao@live.com
+- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`，If it is not available, please contact liaochuntao@live.com
 
 
 ## Who is using
