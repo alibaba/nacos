@@ -18,11 +18,13 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.listener.NamingRemoveEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
@@ -135,6 +137,29 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
         }
 
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+    }
+
+    @Test
+    public void namingRemoveEvent() throws NacosException, InterruptedException {
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c1");
+
+        TimeUnit.SECONDS.sleep(3);
+
+        naming.subscribe(serviceName, event -> {
+            if (!(event instanceof NamingRemoveEvent)) {
+                return;
+            }
+            instances = ((NamingRemoveEvent) event).getInstances();
+        });
+        String ip = "127.0.0.1";
+        naming.deregisterInstance(serviceName, ip, TEST_PORT, "c1");
+
+        while (instances.isEmpty()) {
+            Thread.sleep(1000L);
+        }
+        Assert.assertEquals(instances.get(0).getIp(), ip);
     }
 
     /**
