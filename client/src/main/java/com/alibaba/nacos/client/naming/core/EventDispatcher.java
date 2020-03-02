@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.api.naming.listener.EventListener;
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.listener.*;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -36,7 +35,7 @@ public class EventDispatcher {
 
     private ExecutorService executor = null;
 
-    private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
+    private BlockingQueue<NamingBaseEvent> changedServices = new LinkedBlockingQueue<NamingBaseEvent>();
 
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
@@ -106,36 +105,44 @@ public class EventDispatcher {
             return;
         }
 
-        changedServices.add(serviceInfo);
+        List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
+        changedServices.add(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
+    }
+
+    public void serviceRemoved(ServiceInfo serviceInfo) {
+        if (serviceInfo == null) {
+            return;
+        }
+        List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
+        changedServices.add(new NamingRemoveEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
     }
 
     private class Notifier implements Runnable {
         @Override
         public void run() {
             while (true) {
-                ServiceInfo serviceInfo = null;
+                NamingBaseEvent event = null;
                 try {
-                    serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
+                    event = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
 
-                if (serviceInfo == null) {
+                if (event == null || event.getInstances() == null) {
                     continue;
                 }
 
                 try {
-                    List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
+                    List<EventListener> listeners = observerMap.get(ServiceInfo.getKey(event.getServiceName(), event.getClusters()));
 
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
-                            List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
+                            listener.onEvent(event);
                         }
                     }
 
                 } catch (Exception e) {
                     NAMING_LOGGER.error("[NA] notify error for service: "
-                        + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
+                        + event.getServiceName() + ", clusters: " + event.getClusters(), e);
                 }
             }
         }
