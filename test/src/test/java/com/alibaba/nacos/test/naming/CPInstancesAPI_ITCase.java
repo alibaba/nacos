@@ -119,7 +119,7 @@ public class CPInstancesAPI_ITCase {
      * @TestStep :
      * @ExpectResult :
      */
-    @Test(expected = AssertionError.class)
+    @Test
     public void registerInstance_ephemeral_false() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
@@ -174,7 +174,7 @@ public class CPInstancesAPI_ITCase {
      * @TestStep :
      * @ExpectResult :
      */
-    @Test(expected = AssertionError.class)
+    @Test
     public void deleteService_hasInstace() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1);

@@ -394,6 +394,14 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
+        if (port == 0) {
+            port = event.getWebServer().getPort();
+            List<String> newList = new ArrayList<String>();
+            for (String serverAddrTmp : serverList) {
+                newList.add(getFormatServerAddr(serverAddrTmp));
+            }
+            setServerList(new ArrayList<String>(newList));
+        }
         httpclient.start();
         CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
         TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
