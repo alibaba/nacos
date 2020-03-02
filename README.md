@@ -104,7 +104,7 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 ## Download
 
 - [Github Release](https://github.com/alibaba/nacos/releases)
-- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`，If it is not available, please contact liaochuntao@live.com
+- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
 
 
 ## Who is using
