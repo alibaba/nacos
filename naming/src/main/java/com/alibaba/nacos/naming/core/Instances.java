@@ -41,6 +41,8 @@ public class Instances implements Record {
 
     private static MessageDigest MESSAGE_DIGEST;
 
+    private static final Object LOCK = new Object();
+
     static {
         try {
             MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
@@ -84,8 +86,10 @@ public class Instances implements Record {
         }
 
         if (MESSAGE_DIGEST != null) {
-            checksum =
-                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
+            synchronized (LOCK) {
+                checksum =
+                        new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
+            }
         } else {
             checksum = RandomStringUtils.randomAscii(32);
         }
