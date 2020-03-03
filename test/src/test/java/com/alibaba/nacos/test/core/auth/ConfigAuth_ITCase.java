@@ -130,7 +130,8 @@ public class ConfigAuth_ITCase extends AuthBase {
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertEquals(content, res);
 
-        latch.await();
+        latch.await(5, TimeUnit.SECONDS);
+        Assert.assertEquals(0, latch.getCount());
     }
 
     @Test
@@ -224,7 +225,8 @@ public class ConfigAuth_ITCase extends AuthBase {
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertEquals(content, res);
 
-        latch.await();
+        latch.await(5, TimeUnit.SECONDS);
+        Assert.assertEquals(0, latch.getCount());
 
         result = iconfig.removeConfig(dataId, group);
         Assert.assertTrue(result);

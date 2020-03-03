@@ -15,22 +15,21 @@
  */
 package com.alibaba.nacos.api.naming.listener;
 
-import java.util.List;
-
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
-/**
- * Naming change event
- *
- * @author nkorange
- */
-public class NamingEvent extends NamingBaseEvent {
+import java.util.List;
 
-    public NamingEvent(String serviceName, List<Instance> instances) {
+/**
+ * Naming remove event
+ *
+ * @author zhixiang.yuan
+ */
+public class NamingRemoveEvent extends NamingBaseEvent {
+    public NamingRemoveEvent(String serviceName, List<Instance> instances) {
         super(serviceName, instances);
     }
 
-    public NamingEvent(String serviceName, String groupName, String clusters, List<Instance> instances) {
+    public NamingRemoveEvent(String serviceName, String groupName, String clusters, List<Instance> instances) {
         super(serviceName, groupName, clusters, instances);
     }
 }

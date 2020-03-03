@@ -99,6 +99,10 @@ public class GlobalExecutor {
         notifyServerListExecutor.submit(runnable);
     }
 
+    public static void submit(Runnable runnable, long delay) {
+        executorService.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
     public static void submitServiceUpdate(Runnable runnable) {
         serviceUpdateExecutor.execute(runnable);
     }
