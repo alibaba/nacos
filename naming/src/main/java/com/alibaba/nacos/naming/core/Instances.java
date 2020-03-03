@@ -39,18 +39,17 @@ import java.util.Map;
  */
 public class Instances implements Record {
 
-    private static MessageDigest MESSAGE_DIGEST;
-
-    private static final Object LOCK = new Object();
-
-    static {
-        try {
-            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            MESSAGE_DIGEST = null;
+    private static ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
+        @Override
+        protected MessageDigest initialValue() {
+            try {
+                return MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
+                return null;
+            }
         }
-    }
+    };
 
     private List<Instance> instanceList = new ArrayList<>();
 
@@ -85,11 +84,10 @@ public class Instances implements Record {
             sb.append(",");
         }
 
-        if (MESSAGE_DIGEST != null) {
-            synchronized (LOCK) {
-                checksum =
-                        new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-            }
+        if (MESSAGE_DIGEST_LOCAL.get() != null) {
+            checksum = new BigInteger(1,
+                    MESSAGE_DIGEST_LOCAL.get().digest((sb.toString()).getBytes(Charset.forName("UTF-8"))))
+                    .toString(16);
         } else {
             checksum = RandomStringUtils.randomAscii(32);
         }

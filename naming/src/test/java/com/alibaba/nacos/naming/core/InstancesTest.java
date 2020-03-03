@@ -39,6 +39,17 @@ public class InstancesTest {
         }
     }
 
+    private static ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
+        @Override
+        protected MessageDigest initialValue() {
+            try {
+                return MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                return null;
+            }
+        }
+    };
+
     @Test
     public void checkSumNotThreadSafe() throws Exception {
 
@@ -96,8 +107,6 @@ public class InstancesTest {
     }
 
     private String checkSumThreadSafeVersion(String checkString) {
-        synchronized (MessageDigest.class) {
-            return new BigInteger(1, MESSAGE_DIGEST.digest((checkString).getBytes(Charset.forName("UTF-8")))).toString(16);
-        }
+        return new BigInteger(1, MESSAGE_DIGEST_LOCAL.get().digest((checkString).getBytes(Charset.forName("UTF-8")))).toString(16);
     }
 }
