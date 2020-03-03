@@ -84,10 +84,10 @@ public class Instances implements Record {
             sb.append(",");
         }
 
-        if (MESSAGE_DIGEST_LOCAL.get() != null) {
+        MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
+        if (messageDigest != null) {
             checksum = new BigInteger(1,
-                    MESSAGE_DIGEST_LOCAL.get().digest((sb.toString()).getBytes(Charset.forName("UTF-8"))))
-                    .toString(16);
+                    messageDigest.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
         } else {
             checksum = RandomStringUtils.randomAscii(32);
         }
