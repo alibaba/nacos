@@ -244,6 +244,11 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+
+        if (msg == null) {
+            return;
+        }
+
         JSONObject serviceJson = JSON.parseObject(msg.getData());
 
         JSONArray ipList = serviceJson.getJSONArray("ips");

@@ -98,6 +98,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return allInstances;
     }
 
+    public boolean isEmpty() {
+        return persistentInstances.isEmpty() && ephemeralInstances.isEmpty();
+    }
+
     public List<Instance> allIPs(boolean ephemeral) {
         return ephemeral ? new ArrayList<>(ephemeralInstances) : new ArrayList<>(persistentInstances);
     }

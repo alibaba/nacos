@@ -16,13 +16,33 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -32,19 +52,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * @author nacos
@@ -317,8 +324,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         try {
             packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
             Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
             ackEntry.data = data;
@@ -649,7 +654,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 try {
                     udpSocket.receive(packet);
 
-                    String json = new String(packet.getData(), 0, packet.getLength(), Charset.forName("UTF-8")).trim();
+                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
                     AckPacket ackPacket = JSON.parseObject(json, AckPacket.class);
 
                     InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
@@ -669,7 +674,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                     long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
 
-                    Loggers.PUSH.info("received ack: {} from: {}:, cost: {} ms, unacked: {}, total push: {}",
+                    Loggers.PUSH.info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}",
                         json, ip, port, pushCost, ackMap.size(), totalPush);
 
                     pushCostMap.put(ackKey, pushCost);

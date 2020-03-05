@@ -19,17 +19,16 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.math.BigInteger;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Package of instance list
@@ -85,7 +84,7 @@ public class Instances implements Record {
 
         if (MESSAGE_DIGEST != null) {
             checksum =
-                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
+                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(StandardCharsets.UTF_8))).toString(16);
         } else {
             checksum = RandomStringUtils.randomAscii(32);
         }

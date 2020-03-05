@@ -56,6 +56,10 @@ public final class DiskUtils {
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     private static final CharsetDecoder DECODER = CHARSET.newDecoder();
 
+    public static void touch(File file) throws IOException {
+        FileUtils.touch(file);
+    }
+
     public static String readFile(String path, String fileName) {
         File file = openFile(path, fileName);
         if (file.exists()) {
@@ -143,14 +147,20 @@ public final class DiskUtils {
         return false;
     }
 
-    public static boolean deleteDir(String path) {
-        try {
-            FileUtils.deleteDirectory(new File(path));
-            return true;
-        }
-        catch (IOException e) {
-            return false;
-        }
+    public static void deleteDirectory(String path) throws IOException {
+        FileUtils.deleteDirectory(new File(path));
+    }
+
+    public static void forceMkdir(String path) throws IOException {
+        FileUtils.forceMkdir(new File(path));
+    }
+
+    public static void copyDirectory(File srcDir, File destDir) throws IOException {
+        FileUtils.copyDirectory(srcDir, destDir);
+    }
+
+    public static void copyFile(File src, File target) throws IOException {
+        FileUtils.copyFile(src, target);
     }
 
     public static File openFile(String path, String fileName) {

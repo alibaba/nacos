@@ -30,7 +30,8 @@ public class ConditionOnEmbedStoreType implements Condition {
 
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return Objects.equals(context.getEnvironment().getProperty("embeddedDistributedStorage"), "true") &&
+        boolean result = Objects.equals(context.getEnvironment().getProperty("embeddedDistributedStorage"), "true") &&
                 StringUtils.isBlank(context.getEnvironment().getProperty("spring.datasource.platform"));
+        return result;
     }
 }

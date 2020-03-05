@@ -36,7 +36,7 @@ public class SerializeFactory {
 
     static {
 
-        DEFAULT_SERIALIZER = System.getProperty("com.alibaba.nacos.serializer-type", JSON_INDEX).toLowerCase();
+        DEFAULT_SERIALIZER = System.getProperty("nacos.serializer-type", JSON_INDEX).toLowerCase();
 
         Serializer jsonSerializer = new JsonSerializer();
 

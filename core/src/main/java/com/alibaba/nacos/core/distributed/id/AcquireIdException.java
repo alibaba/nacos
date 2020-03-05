@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro;
-
-import com.alibaba.nacos.core.distributed.distro.route.DistroCondition;
-import com.alibaba.nacos.core.distributed.distro.route.DistroController;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
+package com.alibaba.nacos.core.distributed.id;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Configuration
-public class DistroConfiguration {
+public class AcquireIdException extends RuntimeException {
 
-    @Conditional(DistroCondition.class)
-    @Bean
-    public DistroController distroController() {
-        return new DistroController();
+    public AcquireIdException() {
+        super();
     }
 
+    public AcquireIdException(String message) {
+        super(message);
+    }
+
+    public AcquireIdException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public AcquireIdException(Throwable cause) {
+        super(cause);
+    }
+
+    protected AcquireIdException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

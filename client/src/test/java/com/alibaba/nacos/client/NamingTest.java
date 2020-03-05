@@ -37,7 +37,9 @@ public class NamingTest {
 
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "http://127.0.0.1:8848");
-        properties.put(PropertyKeyConst.NAMESPACE, "t1");
+        properties.put(PropertyKeyConst.USERNAME, "nacos");
+        properties.put(PropertyKeyConst.PASSWORD, "nacos");
+        properties.put(PropertyKeyConst.NAMESPACE, "");
 
         NamingService namingService = NacosFactory.createNamingService(properties);
 

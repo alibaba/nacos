@@ -24,6 +24,8 @@ import com.alibaba.nacos.core.utils.ConvertUtils;
  */
 public class SnakeFlowerIdGenerator implements IdGenerator {
 
+    private volatile long currentId;
+
     @Override
     public void init() {
 
@@ -33,6 +35,11 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
         int workerId = ConvertUtils.toInt(System.getProperty("nacos.snowflake.worker"), 1);
 
         initialize(dataCenterId, workerId);
+    }
+
+    @Override
+    public long currentId() {
+        return currentId;
     }
 
     @Override
@@ -64,10 +71,11 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
         lastTimestamp = timestamp;
 
         // 移位并通过或运算拼到一起组成64位的ID
-        return ((timestamp - twepoch) << timestampLeftShift) //
+        currentId = ((timestamp - twepoch) << timestampLeftShift) //
                 | (datacenterId << datacenterIdShift) //
                 | (workerId << workerIdShift) //
                 | sequence;
+        return currentId;
     }
 
     // ==============================Fields===========================================

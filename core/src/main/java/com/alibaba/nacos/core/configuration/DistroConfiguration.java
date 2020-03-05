@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency;
+package com.alibaba.nacos.core.configuration;
+
+import com.alibaba.nacos.core.controller.DistroController;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface IdGenerator {
+@Configuration
+public class DistroConfiguration {
 
-    /**
-     * Perform the corresponding initialization operation
-     */
-    void init();
-
-    /**
-     * current id info
-     *
-     * @return current id
-     */
-    long currentId();
-
-    /**
-     * Get next id
-     *
-     * @return next id
-     */
-    long nextId();
+    @Conditional(DistroCondition.class)
+    @Bean
+    public DistroController distroController() {
+        return new DistroController();
+    }
 
 }

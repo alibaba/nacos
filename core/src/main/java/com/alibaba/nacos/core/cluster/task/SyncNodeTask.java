@@ -179,11 +179,14 @@ public class SyncNodeTask extends Task {
 
     private void readServerConf(List<String> members) {
         Set<Node> nodes = new HashSet<>();
-        int defaultPort = nodeManager.getPort();
+        int selfPort = nodeManager.getPort();
 
+        // Nacos default port is 8848
+
+        int defaultPort = 8848;
         // Set the default Raft port information for security
 
-        int defaultRaftPort = defaultPort + 1 > 65536 ? defaultPort + 1 : defaultPort - 1;
+        int defaultRaftPort = selfPort + 1 > 65536 ? selfPort + 1 : selfPort - 1;
 
         for (String member : members) {
             String[] memberDetails = member.split("\\?");
@@ -237,7 +240,7 @@ public class SyncNodeTask extends Task {
 
     @Override
     public TaskInfo scheduleInfo() {
-        return new TaskInfo(0L, 30L, TimeUnit.SECONDS);
+        return new TaskInfo(0L, 5L, TimeUnit.SECONDS);
     }
 
 }

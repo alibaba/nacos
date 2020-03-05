@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.route;
+package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.SerializeFactory;

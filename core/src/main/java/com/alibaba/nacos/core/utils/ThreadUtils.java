@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.route;
-
-import org.springframework.web.bind.annotation.RestController;
+package com.alibaba.nacos.core.utils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@RestController
-public class BaseController {
+public final class ThreadUtils {
+
+    public static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
+    }
+
 }

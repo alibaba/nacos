@@ -95,8 +95,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         if (!PropertyUtil.isUseMysql()) {
 
             logger.info("use local db service");
+            try {
+                DriverManager.getConnection("jdbc:derby:;shutdown=true");
+            } catch (Exception e) {
 
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
+                // An error is thrown when the Derby shutdown is executed, which should be ignored
+
+                if (!StringUtils.contains(e.getMessage().toLowerCase(), "Derby system shutdown.".toLowerCase())) {
+                    throw e;
+                }
+            }
 
             FileUtils.forceDelete(new File(NACOS_HOME + File.separator + DERBY_BASE_DIR));
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.route;
+package com.alibaba.nacos.core.configuration;
 
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import org.springframework.context.annotation.Condition;

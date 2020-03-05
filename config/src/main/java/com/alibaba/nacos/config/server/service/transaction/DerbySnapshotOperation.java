@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
@@ -24,13 +25,7 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
-import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
-
-import javax.sql.DataSource;
-import java.io.File;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import java.io.FileOutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
@@ -43,6 +38,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -51,7 +50,6 @@ import java.util.zip.ZipOutputStream;
 @Component
 public class DerbySnapshotOperation implements SnapshotOperation {
 
-    @Autowired
     private DataSource dataSource;
 
     private final String queryAllDataByTable = "select * from %s";
@@ -76,6 +74,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             "permissions",
     };
 
+    @PostConstruct
+    protected void init() {
+        dataSource = SpringUtils.getBean(DynamicDataSource.class).getDataSource().getJdbcTemplate().getDataSource();
+    }
+
     @Override
     public void onSnapshotSave(Writer writer, CallFinally callFinally) {
         GlobalExecutor.executeOnSnapshot(() -> {
@@ -83,9 +86,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 final String writePath = writer.getPath();
                 final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
                 final String outputFile = Paths.get(writePath, String.format(SNAPSHOT_ARCHIVE, LocalDateTime.now())).toString();
-                final File file = new File(parentPath);
-                FileUtils.deleteDirectory(file);
-                FileUtils.forceMkdir(file);
+                DiskUtils.deleteDirectory(parentPath);
+                DiskUtils.forceMkdir(parentPath);
                 final List<String> sqls = new ArrayList<>();
                 String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('%s', '%s', null, null, null,)";
                 for (String tableName : tableNames) {
@@ -99,7 +101,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                     WritableByteChannel channel = Channels.newChannel(zOut);
                     DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
                             channel);
-                    FileUtils.deleteDirectory(file);
+                    DiskUtils.deleteDirectory(parentPath);
                 }
                 callFinally.run(writer.addFile(SNAPSHOT_ARCHIVE), null);
             } catch (Throwable t) {
@@ -125,8 +127,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 sqls.add(String.format(sqlTemplate, importFile));
             }
             return batchExec(sqls, "Snapshot load");
-        }
-        catch (final Throwable t) {
+        } catch (final Throwable t) {
             LogUtil.defaultLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                     reader.listFiles(), t);
             return false;
@@ -146,8 +147,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             }
             connection.commit();
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             if (Objects.nonNull(holder)) {
                 try {
                     holder.rollback();

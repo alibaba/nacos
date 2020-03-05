@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.route;
+package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.cluster.ServerNode;
+import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -45,6 +45,9 @@ public class NacosClusterRouter {
 
     @Autowired
     private NodeManager nodeManager;
+
+    @Autowired
+    private IdGeneratorManager idGeneratorManager;
 
     @GetMapping(value = "/self")
     public ResResult<Node> self() {
@@ -90,6 +93,11 @@ public class NacosClusterRouter {
     public ResResult<Map<String, Map<String, Map<String, Object>>>> currentSysThreadPoolInfo() {
         ThreadPoolManager manager = ThreadPoolManager.getInstance();
         return ResResultUtils.success(manager.getThreadPoolsInfo());
+    }
+
+    @GetMapping("/sys/idGeneratorInfo")
+    public ResResult<Map<String, Long>> idGeneratorInfo() {
+        return ResResultUtils.success(idGeneratorManager.idGeneratorInfo());
     }
 
 }

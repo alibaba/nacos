@@ -14,30 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency;
+package com.alibaba.nacos.core.controller;
+
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface IdGenerator {
-
-    /**
-     * Perform the corresponding initialization operation
-     */
-    void init();
-
-    /**
-     * current id info
-     *
-     * @return current id
-     */
-    long currentId();
-
-    /**
-     * Get next id
-     *
-     * @return next id
-     */
-    long nextId();
-
+@RestController
+public class BaseController {
 }

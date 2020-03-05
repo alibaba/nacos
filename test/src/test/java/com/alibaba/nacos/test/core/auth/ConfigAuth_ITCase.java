@@ -104,6 +104,7 @@ public class ConfigAuth_ITCase extends AuthBase {
         iconfig = NacosFactory.createConfigService(properties);
 
         final String content = "test" + System.currentTimeMillis();
+        System.out.println(content);
 
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
@@ -132,6 +133,7 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         latch.await(5, TimeUnit.SECONDS);
         Assert.assertEquals(0, latch.getCount());
+
     }
 
     @Test
@@ -226,6 +228,7 @@ public class ConfigAuth_ITCase extends AuthBase {
         Assert.assertEquals(content, res);
 
         latch.await(5, TimeUnit.SECONDS);
+
         Assert.assertEquals(0, latch.getCount());
 
         result = iconfig.removeConfig(dataId, group);

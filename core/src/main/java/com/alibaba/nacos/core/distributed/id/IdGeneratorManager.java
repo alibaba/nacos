@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -52,6 +53,11 @@ public class IdGeneratorManager {
         generator.init();
         return generator;
     };
+
+    public Map<String, Long> idGeneratorInfo() {
+        return ID_GENERATOR_MAP.entrySet().stream()
+                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().currentId()), HashMap::putAll);
+    }
 
     public void register(String resource) {
         ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));

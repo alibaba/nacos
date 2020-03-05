@@ -58,7 +58,6 @@ public class NamespaceController {
      * @return namespace list
      */
     @GetMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response) {
         RestResult<List<Namespace>> rr = new RestResult<List<Namespace>>();
         rr.setCode(200);
@@ -86,7 +85,6 @@ public class NamespaceController {
      * @return namespace all info
      */
     @GetMapping(params = "show=all")
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public NamespaceAllInfo getNamespace(HttpServletRequest request, HttpServletResponse response,
                                          @RequestParam("namespaceId") String namespaceId) {
         // TODO 获取用kp

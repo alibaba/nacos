@@ -151,10 +151,10 @@ public class RaftStore {
                     final String writePath = writer.getPath();
                     final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
                     final File file = new File(parentPath);
-                    FileUtils.deleteDirectory(file);
-                    FileUtils.forceMkdir(file);
+                    DiskUtils.deleteDirectory(parentPath);
+                    DiskUtils.forceMkdir(parentPath);
 
-                    FileUtils.copyDirectory(new File(cacheDir), new File(parentPath));
+                    DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
 
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
 
@@ -163,7 +163,7 @@ public class RaftStore {
                         WritableByteChannel channel = Channels.newChannel(zOut);
                         DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
                                 channel);
-                        FileUtils.deleteDirectory(file);
+                        DiskUtils.deleteDirectory(parentPath);
                     }
 
                     writer.addFile(SNAPSHOT_ARCHIVE);

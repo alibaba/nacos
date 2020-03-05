@@ -33,6 +33,7 @@ import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import java.io.File;
@@ -40,19 +41,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipOutputStream;
 import javax.annotation.PostConstruct;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
+ * Simple implementation of LeafID based on Raft+File
+ *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 @ConditionalOnProperty(value = "nacos.idGenerator.type", havingValue = "default", matchIfMissing = true)
@@ -60,6 +64,8 @@ import org.springframework.stereotype.Component;
 public class DefaultIdStore implements LogProcessor4CP {
 
     private ConsistencyProtocol<? extends Config> protocol;
+
+    private static final File[] EMPTY = new File[0];
 
     private static long ACQUIRE_STEP;
     private static String FILE_PATH = SystemUtils.NACOS_HOME;
@@ -72,16 +78,18 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     @PostConstruct
     protected void init() throws Exception {
+        Loggers.ID_GENERATOR.info("The Leaf-ID start");
         this.storeFileMap = new ConcurrentHashMap<>(4);
         this.serializer = SerializeFactory.getDefault();
         ACQUIRE_STEP =
-                ConvertUtils.toLong(System.getProperty("nacos.idGenerator.default.acquire.step"), 1000);
-        FILE_PATH = Paths.get(FILE_PATH, "IdGenerator").toString();
+                ConvertUtils.toLong(SpringUtils.getProperty("nacos.idGenerator.default.acquire.step"), 1000);
+        FILE_PATH = Paths.get(FILE_PATH, "data", "IdGenerator").toString();
 
         // Delete existing data, relying on raft's snapshot and log
         // playback to reply to the data is the correct behavior.
 
-        FileUtils.forceDelete(new File(FILE_PATH));
+        DiskUtils.deleteDirectory(FILE_PATH);
+        DiskUtils.forceMkdir(FILE_PATH);
     }
 
     public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
@@ -93,7 +101,7 @@ public class DefaultIdStore implements LogProcessor4CP {
                     .ctx(ByteUtils.toBytes(resource))
                     .build()).getData();
             final long minId = currentMaxId + 1;
-            final long maxId = currentMaxId + 1 + ACQUIRE_STEP;
+            final long maxId = minId + ACQUIRE_STEP;
             final AcquireId acquireId = AcquireId.builder()
                     .minId(minId)
                     .maxId(maxId)
@@ -104,10 +112,11 @@ public class DefaultIdStore implements LogProcessor4CP {
                         .data(serializer.serialize(acquireId))
                         .build())) {
                     generator.update(new long[]{ minId, maxId });
+                    Loggers.ID_GENERATOR.info("[{}] ID application successful, startId : {}, endId : {}", resource, minId, maxId);
                     return;
                 }
             } catch (Exception e) {
-                Loggers.ID_GENERATOR.error("An error occurred while applying for ID");
+                Loggers.ID_GENERATOR.error("[{}] An error occurred while applying for ID, error : {}", resource, e);
                 break;
             }
         }
@@ -148,6 +157,11 @@ public class DefaultIdStore implements LogProcessor4CP {
     }
 
     @Override
+    public void onError(Throwable throwable) {
+        Loggers.ID_GENERATOR.error("An error occurred while onApply for ID, error : {}", throwable);
+    }
+
+    @Override
     public String bizInfo() {
         return "Default-IdGenerator";
     }
@@ -169,11 +183,9 @@ public class DefaultIdStore implements LogProcessor4CP {
                 try {
                     final String writePath = writer.getPath();
                     final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
-                    final File file = new File(parentPath);
-                    FileUtils.deleteDirectory(file);
-                    FileUtils.forceMkdir(file);
-
-                    FileUtils.copyDirectory(new File(FILE_PATH), new File(parentPath));
+                    DiskUtils.deleteDirectory(parentPath);
+                    DiskUtils.forceMkdir(parentPath);
+                    DiskUtils.copyDirectory(new File(FILE_PATH), new File(parentPath));
 
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
 
@@ -182,13 +194,14 @@ public class DefaultIdStore implements LogProcessor4CP {
                         WritableByteChannel channel = Channels.newChannel(zOut);
                         DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
                                 channel);
-                        FileUtils.deleteDirectory(file);
+                        DiskUtils.deleteDirectory(parentPath);
                     }
 
                     writer.addFile(SNAPSHOT_ARCHIVE);
 
                     result = true;
                 } catch (Exception e) {
+                    Loggers.ID_GENERATOR.error("Snapshot execution error : {}", e);
                     throwable = e;
                 }
 
@@ -206,17 +219,17 @@ public class DefaultIdStore implements LogProcessor4CP {
                 DiskUtils.unzipFile(sourceFile, readerPath);
                 final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
                         + File.separator;
-                Loggers.RAFT.info("snapshot load from : {}", loadPath);
+                Loggers.ID_GENERATOR.info("snapshot load from : {}", loadPath);
                 File sourceDir = new File(sourceFile);
                 DefaultIdStore.this.loadFromFile(sourceDir);
                 return true;
             }
             catch (final Throwable t) {
-                Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+                Loggers.ID_GENERATOR.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                         reader.listFiles(), t);
                 return false;
             } finally {
-                TimerContext.end(Loggers.RAFT);
+                TimerContext.end(Loggers.ID_GENERATOR);
             }
         }
     }
@@ -225,7 +238,12 @@ public class DefaultIdStore implements LogProcessor4CP {
         if (parentFile == null) {
             throw new NullPointerException();
         }
-        for (File file : parentFile.listFiles()) {
+
+        if (!parentFile.isDirectory()) {
+            throw new NotDirectoryException(parentFile.getPath() + " not a file directory");
+        }
+
+        for (File file : Optional.ofNullable(parentFile.listFiles()).orElse(EMPTY)) {
             String resourceName = file.getName();
             storeFileMap.computeIfAbsent(resourceName, s -> new IdStoreFile(resourceName));
             IdStoreFile storeFile = storeFileMap.get(resourceName);
@@ -240,7 +258,7 @@ public class DefaultIdStore implements LogProcessor4CP {
         public IdStoreFile(String resourceName) {
             try {
                 file = new File(Paths.get(FILE_PATH, resourceName).toUri());
-                FileUtils.touch(file);
+                DiskUtils.touch(file);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -256,13 +274,13 @@ public class DefaultIdStore implements LogProcessor4CP {
         }
 
         void forceWrite(File remoteFile) throws IOException {
-            FileUtils.copyFile(file, remoteFile);
+            DiskUtils.copyFile(file, remoteFile);
         }
 
         public Long getCurrentMaxId() {
             String data = DiskUtils.readFile(file);
             if (StringUtils.isBlank(data)) {
-                return 0L;
+                return -1L;
             }
             return Long.parseLong(data);
         }

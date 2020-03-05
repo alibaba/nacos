@@ -300,6 +300,15 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs;
     }
 
+    public boolean isEmpty() {
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Instance> srvIPs(List<String> clusters) {
         if (CollectionUtils.isEmpty(clusters)) {
             clusters = new ArrayList<>();

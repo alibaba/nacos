@@ -17,7 +17,9 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ThreadUtils;
 
 /**
  * // TODO 基于文件的美团Leaf实现
@@ -51,32 +53,57 @@ public class DefaultIdGenerator implements IdGenerator {
         idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this);
     }
 
+    @Override
+    public long currentId() {
+        return currentId;
+    }
+
     // TODO 两个 buffer 都用完的情况需要处理
 
     @Override
     public synchronized long nextId() {
-        currentId ++;
+        long tmp = currentId + 1;
         long[] buffer = current();
-        if (currentId > buffer[0]) {
+        if (tmp > buffer[1]) {
+
+            // The currently used buffer has been used up, and the standby buffer was not applied successfully
+
+            if (inAcquire) {
+                int waitCnt = 5;
+                for (; ; ) {
+                    waitCnt--;
+                    if (waitCnt < 0) {
+                        if (inAcquire) {
+                            throw new AcquireIdException("[" + resource + "] ID resource application failed");
+                        } else {
+                            break;
+                        }
+                    }
+                    ThreadUtils.sleep(10);
+                    Loggers.ID_GENERATOR.warn("[{}] The current ID buffer has been used up and is being applied", resource);
+                }
+            }
+
             swap();
-            currentId = current()[0];
+            tmp = current()[0];
         }
-        if (needToAcquire(currentId, current())) {
+        if (needToAcquire(tmp, current())) {
             inAcquire = true;
             doAcquire();
         }
+        currentId = tmp;
         return currentId;
     }
 
-    public long[] current() {
+    private long[] current() {
         return bufferIndex ? bufferOne : bufferTwo;
     }
 
-    public long[] another() {
+    private long[] another() {
         return bufferIndex ? bufferTwo : bufferOne;
     }
 
-    public void swap() {
+    private void swap() {
         bufferIndex = !bufferIndex;
     }
 
