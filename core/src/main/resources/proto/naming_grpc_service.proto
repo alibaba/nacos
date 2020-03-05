@@ -1,0 +1,20 @@
+
+syntax = "proto3";
+
+import "base_grpc_service.proto";
+
+option java_multiple_files = true;
+option java_package = "com.alibaba.nacos.naming.grpc";
+
+message Instance {
+
+}
+
+service NamingService {
+
+    rpc registerInstance(Instance) returns (Response) {}
+
+    rpc deregisterInstance(Instance) returns (Response) {}
+
+    rpc queryInstances(Query) returns (Resource) {}
+}
