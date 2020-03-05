@@ -701,6 +701,10 @@ public class ClientWorker {
                     }
                 }
                 for (CacheData cacheData : cacheDatas) {
+                    /**
+                     * cacheData不是初始化状态   或者初始化列表中包含当前cacheData对应的key（包含tenant）
+                     * 过滤了那些属于初始化状态且允许使用当前cacheData的缓存数据？？
+                     */
                     if (!cacheData.isInitializing() || inInitializingCacheList
                         .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
                         /**
@@ -708,7 +712,7 @@ public class ClientWorker {
                          */
                         cacheData.checkListenerMd5();
                         /**
-                         * 之后得请求不再需要nacos挂起   和长轮询有关
+                         * 之后得请求不再阻止nacos挂起   允许长轮询有关
                          */
                         cacheData.setInitializing(false);
                     }
