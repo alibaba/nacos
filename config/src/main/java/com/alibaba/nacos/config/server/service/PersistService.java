@@ -962,7 +962,7 @@ public class PersistService {
     public long findConfigMaxId() {
         String sql = "SELECT max(id) FROM config_info";
         try {
-            return jt.queryForObject(sql, Integer.class);
+            return (long) jt.queryForObject(sql, Integer.class);
         } catch (NullPointerException e) {
             return 0;
         }

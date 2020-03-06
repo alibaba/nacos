@@ -19,4 +19,4 @@ echo 运行新的容器 ...
 docker build -t ${imageTag}/${projectName}:${envName} .
 
 # 后端
-docker run -d --net=host -p 8849:8848 --name ${projectName}-${envName} ${imageTag}/${projectName}:${envName}
+docker run -d --net=host -p 8848:8848 --name ${projectName}-${envName} ${imageTag}/${projectName}:${envName}
