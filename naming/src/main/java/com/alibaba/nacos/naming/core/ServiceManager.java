@@ -126,6 +126,8 @@ public class ServiceManager implements RecordListener<Service> {
             // and then created due to the heartbeat mechanism
 
             GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), 60_000L, 20_000L);
+
+            Loggers.SRV_LOG.info("open empty service auto clean job");
         }
 
         try {
@@ -806,14 +808,19 @@ public class ServiceManager implements RecordListener<Service> {
         @Override
         public void run() {
             int parallelSize = 100;
-            serviceMap.forEach((s, stringServiceMap) -> {
+            serviceMap.forEach((namespace, stringServiceMap) -> {
                 Stream<Map.Entry<String, Service>> stream = null;
                 if (stringServiceMap.size() > parallelSize) {
                     stream = stringServiceMap.entrySet().parallelStream();
                 } else {
                     stream = stringServiceMap.entrySet().stream();
                 }
-                stream.forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
+                stream
+                        .filter(entry -> {
+                            final String serviceName = entry.getKey();
+                            return distroMapper.responsible(serviceName);
+                        })
+                        .forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
                     if (service.isEmpty()) {
 
                         // To avoid violent Service removal, the number of times the Service
@@ -821,13 +828,20 @@ public class ServiceManager implements RecordListener<Service> {
                         // value is reached, it is removed
 
                         if (service.getFinalizeCnt() > maxFinalizeCnt) {
-                            Loggers.SRV_LOG.warn("[{}] services are automatically cleaned", serviceName);
-                            return null;
+                            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned",
+                                    namespace, serviceName);
+                            try {
+                                easyRemoveService(namespace, serviceName);
+                            } catch (Exception e) {
+                                Loggers.SRV_LOG.error("namespace : {}, [{}] services are automatically clean has " +
+                                        "error : {}", namespace, serviceName, e);
+                            }
                         }
 
                         service.setFinalizeCnt(service.getFinalizeCnt() + 1);
 
-                        Loggers.SRV_LOG.debug("[{}] The number of times the current service experiences an empty instance is : {}", serviceName, service.getFinalizeCnt());
+                        Loggers.SRV_LOG.debug("namespace : {}, [{}] The number of times the current service experiences " +
+                                "an empty instance is : {}", namespace, serviceName, service.getFinalizeCnt());
                     } else {
                         service.setFinalizeCnt(0);
                     }
