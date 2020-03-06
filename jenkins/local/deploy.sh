@@ -5,8 +5,6 @@ imageTag="msmp"
 projectName="msmp-nacos"
 envName="local"
 
-cd /root/dockerfile/${envName}/${projectName}/
-
 containerName=$(docker ps -a|grep ${projectName}-${envName}|awk '{print $1}')
 if [ "$containerName" != "" ] ; then
 echo 删除容器 $containerName ...
