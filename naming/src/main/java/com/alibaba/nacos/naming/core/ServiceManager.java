@@ -106,6 +106,8 @@ public class ServiceManager implements RecordListener<Service> {
     @Value("${nacos.naming.empty.service.auto-clean:true}")
     private boolean emptyServiceAutoClean;
 
+    private int maxFinalizeCnt = 3;
+
     private final Object putServiceLock = new Object();
 
     @PostConstruct
@@ -117,9 +119,13 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (emptyServiceAutoClean) {
 
-            // delay 60s, period 120s
+            // delay 60s, period 20s;
 
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), 60000, 120000);
+            // This task is not recommended to be performed frequently in order to avoid
+            // the possibility that the service cache information may just be deleted
+            // and then created due to the heartbeat mechanism
+
+            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), 60_000L, 20_000L);
         }
 
         try {
@@ -794,6 +800,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+
     private class EmptyServiceAutoClean implements Runnable {
 
         @Override
@@ -806,7 +813,21 @@ public class ServiceManager implements RecordListener<Service> {
                 } else {
                     stream = stringServiceMap.entrySet().stream();
                 }
-                stream.forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> service.isEmpty() ? null : service));
+                stream.forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
+                    if (service.isEmpty()) {
+
+                        // To avoid violent Service removal, the number of times the Service
+                        // experiences Empty is determined by finalizeCnt, and if the specified
+                        // value is reached, it is removed
+
+                        if (service.getFinalizeCnt() > maxFinalizeCnt) {
+                            return null;
+                        }
+
+                        service.setFinalizeCnt(service.getFinalizeCnt() + 1);
+                    }
+                    return service;
+                }));
             });
         }
     }

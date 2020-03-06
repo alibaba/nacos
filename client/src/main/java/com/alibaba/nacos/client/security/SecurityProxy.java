@@ -84,6 +84,7 @@ public class SecurityProxy {
         username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
         contextPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
+        contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
     }
 
     public boolean login(List<String> servers) {
@@ -99,7 +100,7 @@ public class SecurityProxy {
                     return true;
                 }
             }
-        } catch (Throwable t) {
+        } catch (Throwable ignore) {
         }
 
         return false;

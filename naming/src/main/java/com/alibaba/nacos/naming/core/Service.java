@@ -57,6 +57,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
+    /**
+     * Identify the information used to determine how many isEmpty judgments the service has experienced
+     */
+    private int finalizeCnt = 0;
+
     private String token;
     private List<String> owners = new ArrayList<>();
     private Boolean resetWeight = false;
@@ -510,6 +515,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
             cluster.destroy();
         }
+    }
+
+    public int getFinalizeCnt() {
+        return finalizeCnt;
+    }
+
+    public void setFinalizeCnt(int finalizeCnt) {
+        this.finalizeCnt = finalizeCnt;
     }
 
     public void addCluster(Cluster cluster) {
