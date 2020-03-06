@@ -29,26 +29,41 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.Message;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.Synchronizer;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Core manager storing all services in Nacos
@@ -88,6 +103,9 @@ public class ServiceManager implements RecordListener<Service> {
     @Autowired
     private RaftPeerSet raftPeerSet;
 
+    @Value("${nacos.naming.empty.service.auto-clean:true}")
+    private boolean emptyServiceAutoClean;
+
     private final Object putServiceLock = new Object();
 
     @PostConstruct
@@ -96,6 +114,13 @@ public class ServiceManager implements RecordListener<Service> {
         UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
         UtilsAndCommons.SERVICE_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
+
+        if (emptyServiceAutoClean) {
+
+            // delay 60s, period 120s
+
+            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), 60000, 120000);
+        }
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
@@ -765,8 +790,24 @@ public class ServiceManager implements RecordListener<Service> {
                     serviceName, checksum);
                 return;
             }
-
             serviceName2Checksum.put(serviceName, checksum);
+        }
+    }
+
+    private class EmptyServiceAutoClean implements Runnable {
+
+        @Override
+        public void run() {
+            int parallelSize = 100;
+            serviceMap.forEach((s, stringServiceMap) -> {
+                Stream<Map.Entry<String, Service>> stream = null;
+                if (stringServiceMap.size() > parallelSize) {
+                    stream = stringServiceMap.entrySet().parallelStream();
+                } else {
+                    stream = stringServiceMap.entrySet().stream();
+                }
+                stream.forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> service.isEmpty() ? null : service));
+            });
         }
     }
 
@@ -794,7 +835,7 @@ public class ServiceManager implements RecordListener<Service> {
 
                         Service service = getService(namespaceId, serviceName);
 
-                        if (service == null) {
+                        if (service == null || service.isEmpty()) {
                             continue;
                         }
 

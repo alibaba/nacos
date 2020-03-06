@@ -268,6 +268,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
     }
 
+    public boolean isEmpty() {
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            final Cluster cluster = entry.getValue();
+            if (!cluster.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Instance> allIPs() {
         List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
