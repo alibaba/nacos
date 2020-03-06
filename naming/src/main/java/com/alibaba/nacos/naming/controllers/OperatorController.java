@@ -19,6 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
@@ -30,7 +32,6 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,7 +118,7 @@ public class OperatorController {
         return switchDomain;
     }
 
-    @NeedAuth
+    @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
     public String updateSwitch(@RequestParam(required = false) boolean debug,
                                @RequestParam String entry, @RequestParam String value) throws Exception {
@@ -127,6 +128,7 @@ public class OperatorController {
         return "ok";
     }
 
+    @Secured(resource = "naming/metrics", action = ActionTypes.READ)
     @GetMapping("/metrics")
     public JSONObject metrics(HttpServletRequest request) {
 

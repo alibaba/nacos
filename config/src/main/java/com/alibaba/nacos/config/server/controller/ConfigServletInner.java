@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -98,6 +99,8 @@ public class ConfigServletInner {
             request.setAttribute("content", newResult);
         }
 
+        Loggers.AUTH.info("new content:" + newResult);
+
         // 禁用缓存
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -130,6 +133,8 @@ public class ConfigServletInner {
                             isBeta = true;
                         }
                     }
+                    String configType = cacheItem.getType();
+                    response.setHeader("Config-Type", (null != configType) ? configType : "text");
                 }
                 File file = null;
                 ConfigInfoBase configInfoBase = null;

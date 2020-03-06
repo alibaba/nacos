@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;

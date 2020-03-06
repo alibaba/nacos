@@ -37,7 +37,7 @@ public class GlobalExecutor {
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
 
     private static ScheduledExecutorService executorService =
-        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -61,7 +61,6 @@ public class GlobalExecutor {
                 return t;
             }
         });
-
 
     private static ScheduledExecutorService dataSyncExecutor =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -161,6 +160,10 @@ public class GlobalExecutor {
 
     public static void submit(Runnable runnable) {
         executorService.submit(runnable);
+    }
+
+    public static void submit(Runnable runnable, long delay) {
+        executorService.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void submitServiceUpdate(Runnable runnable) {

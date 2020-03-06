@@ -113,6 +113,7 @@ public class PersistService {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
+            info.setType(rs.getString("type"));
 
             try {
                 info.setContent(rs.getString("content"));
@@ -232,6 +233,11 @@ public class PersistService {
             }
             try {
                 info.setId(rs.getLong("ID"));
+            } catch (SQLException e) {
+                // ignore
+            }
+            try {
+                info.setType(rs.getString("type"));
             } catch (SQLException e) {
                 // ignore
             }
@@ -1325,7 +1331,7 @@ public class PersistService {
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCount = "select count(*) from config_info";
-        String sql = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
+        String sql = "select ID,data_id,group_id,tenant_id,app_name,content,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
@@ -1944,7 +1950,7 @@ public class PersistService {
 
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         String select
-            = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where id > ? "
+            = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
             + "order by id asc limit ?,?";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
         try {
@@ -2927,8 +2933,8 @@ public class PersistService {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.queryForObject(
-                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
-                new Object[]{dataId, group, tenantTmp}, CONFIG_INFO_ROW_MAPPER);
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+                new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -3230,36 +3236,6 @@ public class PersistService {
             throw e;
         }
     }
-
-    public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
-        try {
-            return this.jt.queryForObject(sql, new Object[]{username}, USER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            fatalLog.error("[db-other-error]" + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 更新用户密码
-     */
-    public void updateUserPassword(String username, String password) {
-        try {
-            jt.update(
-                "UPDATE users SET password = ? WHERE username=?",
-                password, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
-    }
-
 
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
@@ -3566,7 +3542,7 @@ public class PersistService {
 
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
 
-    static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
+    protected static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
     static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 
@@ -3599,7 +3575,7 @@ public class PersistService {
 
     private static String PATTERN_STR = "*";
     private final static int QUERY_LIMIT_SIZE = 50;
-    private JdbcTemplate jt;
-    private TransactionTemplate tjt;
+    protected JdbcTemplate jt;
+    protected TransactionTemplate tjt;
 
 }

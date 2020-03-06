@@ -195,18 +195,6 @@ public class UtilsAndCommons {
 
     }
 
-    public static String getAllExceptionMsg(Throwable e) {
-        Throwable cause = e;
-        StringBuilder strBuilder = new StringBuilder();
-
-        while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
-            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
-            cause = cause.getCause();
-        }
-
-        return strBuilder.toString();
-    }
-
     public static String getSwitchDomainKey() {
         return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }

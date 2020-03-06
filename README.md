@@ -101,6 +101,11 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 
 ![cwex](https://img.alicdn.com/tfs/TB1bpBlQmrqK1RjSZK9XXXyypXa-830-972.png_288x480q80.jpg)
 
+## Download
+
+- [Github Release](https://github.com/alibaba/nacos/releases)
+- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
+
 
 ## Who is using
 

@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -32,6 +34,7 @@ import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +56,7 @@ public class CatalogController {
     @Autowired
     protected ServiceManager serviceManager;
 
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @GetMapping("/service")
     public JSONObject serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                     String serviceName) throws NacosException {
@@ -93,6 +97,7 @@ public class CatalogController {
         return detailView;
     }
 
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
     public JSONObject instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                    @RequestParam String serviceName,
@@ -134,6 +139,7 @@ public class CatalogController {
         return result;
     }
 
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @GetMapping("/services")
     public Object listDetail(@RequestParam(required = false) boolean withInstances,
                              @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,

@@ -168,12 +168,6 @@ public class ServiceManager implements RecordListener<Service> {
         Service service = chooseServiceMap(namespace).get(name);
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
 
-        // check again:
-        if (service != null && !service.allIPs().isEmpty()) {
-            Loggers.SRV_LOG.warn("service not empty, key: {}", key);
-            return;
-        }
-
         if (service != null) {
             service.destroy();
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
@@ -412,10 +406,6 @@ public class ServiceManager implements RecordListener<Service> {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
             throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
-        }
-
-        if (!service.allIPs().isEmpty()) {
-            throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
         }
 
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));

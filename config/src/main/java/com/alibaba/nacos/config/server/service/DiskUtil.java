@@ -176,7 +176,7 @@ public class DiskUtil {
     }
 
     static public File heartBeatFile() {
-        return new File(NACOS_HOME, "status/heartBeat.txt");
+        return new File(NACOS_HOME, "status" + File.separator + "heartBeat.txt");
     }
 
     static public String relativePath(String dataId, String group) {

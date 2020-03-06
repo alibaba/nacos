@@ -99,6 +99,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public volatile Notifier notifier = new Notifier();
 
+    private LoadDataTask loadDataTask = new LoadDataTask();
+
     private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
@@ -117,6 +119,22 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         });
 
         executor.submit(notifier);
+        GlobalExecutor.submit(loadDataTask);
+    }
+
+    private class LoadDataTask implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                load();
+                if (!initialized) {
+                    GlobalExecutor.submit(this, globalConfig.getLoadDataRetryDelayMillis());
+                }
+            } catch (Exception e) {
+                Loggers.DISTRO.error("load data failed.", e);
+            }
+        }
     }
 
     public void load() throws Exception {
