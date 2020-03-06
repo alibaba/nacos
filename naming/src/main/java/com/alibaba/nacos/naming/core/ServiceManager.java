@@ -103,7 +103,7 @@ public class ServiceManager implements RecordListener<Service> {
     @Autowired
     private RaftPeerSet raftPeerSet;
 
-    @Value("${nacos.naming.empty.service.auto-clean:true}")
+    @Value("${nacos.naming.empty.service.auto-clean:false}")
     private boolean emptyServiceAutoClean;
 
     private int maxFinalizeCnt = 3;
@@ -821,10 +821,15 @@ public class ServiceManager implements RecordListener<Service> {
                         // value is reached, it is removed
 
                         if (service.getFinalizeCnt() > maxFinalizeCnt) {
+                            Loggers.SRV_LOG.warn("[{}] services are automatically cleaned", serviceName);
                             return null;
                         }
 
                         service.setFinalizeCnt(service.getFinalizeCnt() + 1);
+
+                        Loggers.SRV_LOG.debug("[{}] The number of times the current service experiences an empty instance is : {}", serviceName, service.getFinalizeCnt());
+                    } else {
+                        service.setFinalizeCnt(0);
                     }
                     return service;
                 }));
