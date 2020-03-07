@@ -106,7 +106,7 @@ public class ServiceManager implements RecordListener<Service> {
     @Value("${nacos.naming.empty.service.auto-clean:false}")
     private boolean emptyServiceAutoClean;
 
-    private int maxFinalizeCnt = 3;
+    private int maxFinalizeCount = 3;
 
     private final Object putServiceLock = new Object();
 
@@ -827,7 +827,7 @@ public class ServiceManager implements RecordListener<Service> {
                         // experiences Empty is determined by finalizeCnt, and if the specified
                         // value is reached, it is removed
 
-                        if (service.getFinalizeCnt() > maxFinalizeCnt) {
+                        if (service.getFinalizeCount() > maxFinalizeCount) {
                             Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned",
                                     namespace, serviceName);
                             try {
@@ -838,12 +838,12 @@ public class ServiceManager implements RecordListener<Service> {
                             }
                         }
 
-                        service.setFinalizeCnt(service.getFinalizeCnt() + 1);
+                        service.setFinalizeCount(service.getFinalizeCount() + 1);
 
                         Loggers.SRV_LOG.debug("namespace : {}, [{}] The number of times the current service experiences " +
-                                "an empty instance is : {}", namespace, serviceName, service.getFinalizeCnt());
+                                "an empty instance is : {}", namespace, serviceName, service.getFinalizeCount());
                     } else {
-                        service.setFinalizeCnt(0);
+                        service.setFinalizeCount(0);
                     }
                     return service;
                 }));
