@@ -60,7 +60,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     /**
      * Identify the information used to determine how many isEmpty judgments the service has experienced
      */
-    private int finalizeCnt = 0;
+    private int finalizeCount = 0;
 
     private String token;
     private List<String> owners = new ArrayList<>();
@@ -517,12 +517,12 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
-    public int getFinalizeCnt() {
-        return finalizeCnt;
+    public int getFinalizeCount() {
+        return finalizeCount;
     }
 
-    public void setFinalizeCnt(int finalizeCnt) {
-        this.finalizeCnt = finalizeCnt;
+    public void setFinalizeCount(int finalizeCount) {
+        this.finalizeCount = finalizeCount;
     }
 
     public void addCluster(Cluster cluster) {
