@@ -110,6 +110,12 @@ public class ServiceManager implements RecordListener<Service> {
 
     private final Object putServiceLock = new Object();
 
+    @Value("${nacos.naming.empty-service.clean.initial-delay-ms:60000}")
+    private int cleanEmptyServiceDelay;
+
+    @Value("${nacos.naming.empty-service.clean.period-time-ms:20000}")
+    private int cleanEmptyServicePeriod;
+
     @PostConstruct
     public void init() {
 
@@ -119,15 +125,15 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (emptyServiceAutoClean) {
 
+            Loggers.SRV_LOG.info("open empty service auto clean job, initialDelay : {} ms, period : {} ms", cleanEmptyServiceDelay, cleanEmptyServicePeriod);
+
             // delay 60s, period 20s;
 
             // This task is not recommended to be performed frequently in order to avoid
             // the possibility that the service cache information may just be deleted
             // and then created due to the heartbeat mechanism
 
-            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), 60_000L, 20_000L);
-
-            Loggers.SRV_LOG.info("open empty service auto clean job");
+            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), cleanEmptyServiceDelay, cleanEmptyServicePeriod);
         }
 
         try {
