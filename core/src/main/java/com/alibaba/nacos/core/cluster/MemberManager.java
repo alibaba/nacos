@@ -17,12 +17,11 @@
 package com.alibaba.nacos.core.cluster;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface NodeManager {
+public interface MemberManager {
 
     /**
      * node manager init
@@ -41,9 +40,9 @@ public interface NodeManager {
     /**
      * update self-node info
      *
-     * @param node
+     * @param member
      */
-    void update(Node node);
+    void update(Member member);
 
     /**
      * Determine if the node exists according to ip: port or ip,
@@ -53,14 +52,14 @@ public interface NodeManager {
      * @param address ip:port
      * @return exist result
      */
-    boolean hasNode(String address);
+    boolean hasMember(String address);
 
     /**
      * get self node
      *
-     * @return {@link Node}
+     * @return {@link Member}
      */
-    Node self();
+    Member self();
 
     /**
      * this node ip is the first in node collection
@@ -72,37 +71,37 @@ public interface NodeManager {
     /**
      * list all nodes which status is health
      *
-     * @return {@link Collection<Node>}
+     * @return {@link Collection< Member >}
      */
-    List<Node> allNodes();
+    Collection<Member> allMembers();
 
     /**
      * New node join
      *
-     * @param node
+     * @param member
      */
-    void nodeJoin(Collection<Node> node);
+    void memberJoin(Collection<Member> member);
 
     /**
      * One node Leave
      *
-     * @param node
+     * @param member
      */
-    void nodeLeave(Collection<Node> node);
+    void memberLeave(Collection<Member> member);
 
     /**
      * subscribe node change event
      *
-     * @param listener {@link NodeChangeListener}
+     * @param listener {@link MemberChangeListener}
      */
-    void subscribe(NodeChangeListener listener);
+    void subscribe(MemberChangeListener listener);
 
     /**
      * unsubscribe node change event
      *
-     * @param listener {@link NodeChangeListener}
+     * @param listener {@link MemberChangeListener}
      */
-    void unSubscribe(NodeChangeListener listener);
+    void unSubscribe(MemberChangeListener listener);
 
     /**
      * get web-context path

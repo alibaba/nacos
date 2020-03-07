@@ -22,8 +22,8 @@ import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
@@ -57,7 +57,7 @@ public class DistroServer {
 
     private final KVManager kvManager;
     private final DistroConfig config;
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
     private final DistroMapper distroMapper;
 
     private final Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
@@ -65,14 +65,14 @@ public class DistroServer {
     private Serializer serializer;
 
     public DistroServer(
-            final NodeManager nodeManager,
+            final MemberManager memberManager,
             final KVManager kvManager,
             final DistroConfig config) {
-        this.nodeManager = nodeManager;
+        this.memberManager = memberManager;
         this.config = config;
         this.serializer = SerializeFactory.getDefault();
 
-        this.distroMapper = new DistroMapper(nodeManager, config);
+        this.distroMapper = new DistroMapper(memberManager, config);
         this.kvManager = kvManager;
     }
 
@@ -83,22 +83,22 @@ public class DistroServer {
             // === start:Initialize related members of the distro protocol
 
             this.distroClient = new DistroClient(
-                    this.nodeManager,
+                    this.memberManager,
                     this.serializer);
 
             this.timedSync = new PartitionDataTimedSync(
                     this.kvManager,
                     this.distroMapper,
-                    this.nodeManager,
+                    this.memberManager,
                     this.distroClient);
 
             this.dataSyncer = new DataSyncer(
                     config,
-                    SpringUtils.getBean(NodeManager.class),
+                    SpringUtils.getBean(MemberManager.class),
                     this.kvManager,
                     this.distroClient);
 
-            this.taskCenter = new TaskCenter(config, this.nodeManager, this.dataSyncer);
+            this.taskCenter = new TaskCenter(config, this.memberManager, this.dataSyncer);
 
             // === end
 
@@ -124,7 +124,7 @@ public class DistroServer {
             initialized = true;
             return;
         }
-        while (nodeManager.allNodes().size() <= 1) {
+        while (memberManager.allMembers().size() <= 1) {
             Thread.sleep(1000L);
             Loggers.DISTRO.info("waiting server list init...");
         }
@@ -133,8 +133,8 @@ public class DistroServer {
         int retryCnr = 5;
 
         for (int i = 0; i < retryCnr || !initialized; i ++) {
-            for (Node server : nodeManager.allNodes()) {
-                if (Objects.equals(nodeManager.self().address(), server.address())) {
+            for (Member server : memberManager.allMembers()) {
+                if (Objects.equals(memberManager.self().address(), server.address())) {
                     continue;
                 }
                 if (Loggers.DISTRO.isDebugEnabled()) {
@@ -156,7 +156,7 @@ public class DistroServer {
         return true;
     }
 
-    private boolean syncAllDataFromRemote(Node server) {
+    private boolean syncAllDataFromRemote(Member server) {
         try {
             byte[] data = distroClient.getAllData(server.address());
             processData(data);

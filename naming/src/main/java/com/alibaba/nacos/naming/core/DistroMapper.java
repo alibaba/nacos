@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
-import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -35,7 +35,7 @@ import java.util.List;
  * @author nkorange
  */
 @Component("distroMapper")
-public class DistroMapper implements NodeChangeListener {
+public class DistroMapper implements MemberChangeListener {
 
     private List<String> healthyList = new ArrayList<>();
 
@@ -47,14 +47,14 @@ public class DistroMapper implements NodeChangeListener {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     /**
      * init server list
      */
     @PostConstruct
     public void init() {
-        nodeManager.subscribe(this);
+        memberManager.subscribe(this);
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -105,8 +105,8 @@ public class DistroMapper implements NodeChangeListener {
     @Override
     public void onEvent(NodeChangeEvent event) {
         List<String> newHealthyList = new ArrayList<>();
-        for (Node node : event.getAllNodes()) {
-            newHealthyList.add(node.address());
+        for (Member member : event.getAllMembers()) {
+            newHealthyList.add(member.address());
         }
         this.healthyList = newHealthyList;
     }

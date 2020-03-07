@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.core.controller;
 
-import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.cluster.ServerNode;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.cluster.ServerMember;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -44,19 +43,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class NacosClusterRouter {
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private IdGeneratorManager idGeneratorManager;
 
     @GetMapping(value = "/self")
-    public ResResult<Node> self() {
-        return ResResultUtils.success(nodeManager.self());
+    public ResResult<Member> self() {
+        return ResResultUtils.success(memberManager.self());
     }
 
     @GetMapping(value = "/nodes")
-    public ResResult<Collection<Node>> listAllNode() {
-        return ResResultUtils.success(nodeManager.allNodes());
+    public ResResult<Collection<Member>> listAllNode() {
+        return ResResultUtils.success(memberManager.allMembers());
     }
 
     // The client can get all the nacos node information in the current
@@ -64,8 +63,8 @@ public class NacosClusterRouter {
 
     @GetMapping(value = "/simple/nodes")
     public ResResult<Collection<String>> listSimpleNodes() {
-        List<String> ips = nodeManager.allNodes().stream()
-                .map(Node::address)
+        List<String> ips = memberManager.allMembers().stream()
+                .map(Member::address)
                 .collect(Collectors.toList());
         return ResResultUtils.success(ips);
     }
@@ -76,23 +75,17 @@ public class NacosClusterRouter {
     }
 
     @PostMapping("/server/report")
-    public ResResult<Boolean> report(@RequestBody ResResult<ServerNode> resResult) {
+    public ResResult<Boolean> report(@RequestBody ResResult<ServerMember> resResult) {
 
-        final ServerNode node = resResult.getData();
+        final ServerMember node = resResult.getData();
 
         if (!node.check()) {
             return ResResultUtils.failed("Node information is illegal");
         }
 
         Loggers.CORE.debug("node state report, receive info : {}", node);
-        nodeManager.update(node);
+        memberManager.update(node);
         return ResResultUtils.success(true);
-    }
-
-    @GetMapping("/sys/threadPool")
-    public ResResult<Map<String, Map<String, Map<String, Object>>>> currentSysThreadPoolInfo() {
-        ThreadPoolManager manager = ThreadPoolManager.getInstance();
-        return ResResultUtils.success(manager.getThreadPoolsInfo());
     }
 
     @GetMapping("/sys/idGeneratorInfo")

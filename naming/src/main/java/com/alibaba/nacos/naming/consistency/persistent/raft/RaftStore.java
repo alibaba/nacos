@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
@@ -53,7 +52,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipOutputStream;
 import javax.annotation.PostConstruct;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -64,11 +62,9 @@ import org.springframework.stereotype.Component;
  * @author lessspring
  */
 @Component
-@DependsOn("serverNodeManager")
+@DependsOn("serverMemberManager")
 @SuppressWarnings("all")
 public class RaftStore {
-
-    private static final TypeReference<Map<String, KVStore.Item>> reference = new TypeReference<Map<String, KVStore.Item>>(){};
 
     private final String SNAPSHOT_DIR = "nacos-naming";
     private final String SNAPSHOT_ARCHIVE = "nacos-naming.zip";
@@ -103,7 +99,7 @@ public class RaftStore {
                 // Delete existing data, relying on raft's snapshot and log
                 // playback to reply to the data is the correct behavior.
 
-                FileUtils.forceDelete(new File(cacheDir));
+                DiskUtils.deleteDirectory(cacheDir);
 
             }
         }, new NBeforeHook(), new NAfterHook());
@@ -125,7 +121,10 @@ public class RaftStore {
 
     void listener(String key, RecordListener listener) {
         listMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
-        listMap.get(key).add(listener);
+        Set<RecordListener> set = listMap.get(key);
+        if (!set.contains(listener)) {
+            set.add(listener);
+        }
     }
 
     void unlisten(String key, RecordListener listener) {
@@ -171,6 +170,7 @@ public class RaftStore {
                     result = true;
                 } catch (Exception e) {
                     throwable = e;
+                    Loggers.RAFT.error("An error occurred while saving the snapshot : {}", throwable);
                 }
 
                 callFinally.run(result, throwable);
@@ -208,6 +208,9 @@ public class RaftStore {
         public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
             if (isPut) {
                 try {
+
+                    // We need to make sure the data drops before we can proceed
+
                     write(key, item);
                 } catch (Exception e) {
                     Loggers.RAFT.error("Data persistence error : {}", e);
@@ -240,7 +243,8 @@ public class RaftStore {
     File[] listCaches() throws Exception {
         File cacheDir = new File(this.cacheDir);
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new IllegalStateException("cloud not make out directory: " + cacheDir.getName());
+            MetricsMonitor.getDiskException().increment();
+            throw new IllegalStateException("can not make out directory: " + cacheDir.getName());
         }
 
         return cacheDir.listFiles();
@@ -317,6 +321,8 @@ public class RaftStore {
     private static String decodeFileName(String fileName) {
         return fileName.replace("#", ":");
     }
+
+    // This method is limited to data read operations when the snapshot is loaded
 
     private void loadFromFile(File parent) throws IOException {
 

@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +37,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 
-    private final ServerNodeManager serverNodeManager;
+    private final ServerMemberManager serverNodeManager;
     private final DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
@@ -48,7 +48,7 @@ public class HealthController {
     private static final String HEATH_WARN_STR = "WARN";
 
     @Autowired
-    public HealthController(ServerNodeManager serverNodeManager,
+    public HealthController(ServerMemberManager serverNodeManager,
                             DynamicDataSource dynamicDataSource) {
         this.serverNodeManager = serverNodeManager;
         this.dynamicDataSource = dynamicDataSource;

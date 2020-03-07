@@ -27,26 +27,26 @@ public class NodeChangeEvent implements Event {
 
     private static final long serialVersionUID = 7308126651076668976L;
 
-    private Collection<Node> changeNodes;
+    private Collection<Member> changeMembers;
 
-    private Collection<Node> allNodes;
+    private Collection<Member> allMembers;
 
     private String kind;
 
-    public Collection<Node> getChangeNodes() {
-        return changeNodes;
+    public Collection<Member> getChangeMembers() {
+        return changeMembers;
     }
 
-    public void setChangeNodes(Collection<Node> changeNodes) {
-        this.changeNodes = changeNodes;
+    public void setChangeMembers(Collection<Member> changeMembers) {
+        this.changeMembers = changeMembers;
     }
 
-    public Collection<Node> getAllNodes() {
-        return allNodes;
+    public Collection<Member> getAllMembers() {
+        return allMembers;
     }
 
-    public void setAllNodes(Collection<Node> allNodes) {
-        this.allNodes = allNodes;
+    public void setAllMembers(Collection<Member> allMembers) {
+        this.allMembers = allMembers;
     }
 
     public String getKind() {
@@ -67,20 +67,20 @@ public class NodeChangeEvent implements Event {
     }
 
     public static final class NodeChangeEventBuilder {
-        private Collection<Node> changeNodes;
-        private Collection<Node> allNodes;
+        private Collection<Member> changeMembers;
+        private Collection<Member> allMembers;
         private String kind;
 
         private NodeChangeEventBuilder() {
         }
 
-        public NodeChangeEventBuilder changeNodes(Collection<Node> changeNodes) {
-            this.changeNodes = changeNodes;
+        public NodeChangeEventBuilder changeNodes(Collection<Member> changeMembers) {
+            this.changeMembers = changeMembers;
             return this;
         }
 
-        public NodeChangeEventBuilder allNodes(Collection<Node> allNodes) {
-            this.allNodes = allNodes;
+        public NodeChangeEventBuilder allNodes(Collection<Member> allMembers) {
+            this.allMembers = allMembers;
             return this;
         }
 
@@ -91,9 +91,9 @@ public class NodeChangeEvent implements Event {
 
         public NodeChangeEvent build() {
             NodeChangeEvent nodeChangeEvent = new NodeChangeEvent();
-            nodeChangeEvent.setChangeNodes(changeNodes);
+            nodeChangeEvent.setChangeMembers(changeMembers);
             nodeChangeEvent.setKind(kind);
-            nodeChangeEvent.setAllNodes(allNodes);
+            nodeChangeEvent.setAllMembers(allMembers);
             return nodeChangeEvent;
         }
     }

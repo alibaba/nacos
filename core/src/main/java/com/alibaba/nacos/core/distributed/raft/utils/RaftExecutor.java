@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 
+import com.alibaba.nacos.core.utils.ConvertUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -37,10 +38,10 @@ public final class RaftExecutor {
 
     public static void init(RaftConfig config) {
 
-        int raftCoreThreadNum = Integer.parseInt(config.getValOfDefault(
-                RaftSysConstants.RAFT_CORE_THREAD_NUM, "8"));
-        int raftCliServiceThreadNum = Integer.parseInt(config.getValOfDefault(
-                RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
+        int raftCoreThreadNum = ConvertUtils.toInt(config.getVal(
+                RaftSysConstants.RAFT_CORE_THREAD_NUM), 8);
+        int raftCliServiceThreadNum = ConvertUtils.toInt(config.getVal(
+                RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM), 4);
 
         raftCoreExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
                 raftCoreThreadNum,

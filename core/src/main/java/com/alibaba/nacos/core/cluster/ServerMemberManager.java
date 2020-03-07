@@ -33,6 +33,7 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import java.util.function.BiFunction;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -61,17 +62,17 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Component(value = "serverNodeManager")
+@Component(value = "serverMemberManager")
 @SuppressWarnings("all")
-public class ServerNodeManager implements ApplicationListener<WebServerInitializedEvent>, NodeManager {
+public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, MemberManager {
 
-    private final NodeTaskManager taskManager = new NodeTaskManager(this);
+    private final MemberTaskManager taskManager = new MemberTaskManager(this);
 
-    private Map<String, Node> serverListHealth = new ConcurrentSkipListMap<>();
+    private Map<String, Member> serverListHealth = new ConcurrentSkipListMap<>();
 
     private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
 
-    private Set<Node> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
+    private Set<Member> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
 
     private volatile boolean isInIpList = true;
 
@@ -101,9 +102,9 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private final ServletContext servletContext;
 
-    private Node self;
+    private Member self;
 
-    public ServerNodeManager(ServletContext servletContext) {
+    public ServerMemberManager(ServletContext servletContext) {
         this.servletContext = servletContext;
     }
 
@@ -130,18 +131,23 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     @Override
-    public void update(Node newNode) {
+    public void update(Member newMember) {
 
-        String address = newNode.address();
+        String address = newMember.address();
 
         long nowTime = System.currentTimeMillis();
 
-        // If this node updates itself, ignore the health judgment
+        // If this member updates itself, ignore the health judgment
 
-        if (!isSelf(newNode)) {
-            serverListUnHealth.remove(newNode);
-            lastRefreshTimeRecord.put(address, nowTime);
-            serverListHealth.put(address, newNode);
+        if (!isSelf(newMember)) {
+            serverListUnHealth.remove(newMember);
+            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+                @Override
+                public Member apply(String s, Member member) {
+                    lastRefreshTimeRecord.put(address, nowTime);
+                    return newMember;
+                }
+            });
         }
 
     }
@@ -149,7 +155,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public int indexOf(String address) {
         int index = 1;
-        for (Map.Entry<String, Node> entry : serverListHealth.entrySet()) {
+        for (Map.Entry<String, Member> entry : serverListHealth.entrySet()) {
             if (Objects.equals(entry.getKey(), address)) {
                 return index;
             }
@@ -159,10 +165,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     @Override
-    public boolean hasNode(String address) {
+    public boolean hasMember(String address) {
         boolean result = serverListHealth.containsKey(address);
         if (!result) {
-            for (Map.Entry<String, Node> entry : serverListHealth.entrySet()) {
+            for (Map.Entry<String, Member> entry : serverListHealth.entrySet()) {
                 if (StringUtils.contains(entry.getKey(), address)) {
                     result = true;
                     break;
@@ -173,94 +179,100 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     @Override
-    public Node self() {
+    public Member self() {
         if (Objects.isNull(self)) {
             self = serverListHealth.get(localAddress);
         }
         return self;
     }
 
-    // TODO 能不能优化下
-
     @Override
-    public List<Node> allNodes() {
-         return new ArrayList<>(serverListHealth.values());
+    public Collection<Member> allMembers() {
+         return serverListHealth.values();
     }
 
     @Override
-    public synchronized void nodeJoin(Collection<Node> nodes) {
+    public void memberJoin(Collection<Member> members) {
 
         long lastRefreshTime = System.currentTimeMillis();
 
-        if (nodes.isEmpty()) {
+        if (members.isEmpty()) {
             return;
         }
 
-        String address = null;
 
-        for (Iterator<Node> iterator = nodes.iterator(); iterator.hasNext();) {
+        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
 
-            Node node = iterator.next();
-            address = node.address();
+            final Member newMember = iterator.next();
+            final String address = newMember.address();
 
-            // 本节点不参与 nodeJoin
+            // 本节点不参与 memberJoin
 
-            if (Objects.equals(node, self) || serverListHealth.containsKey(address)) {
+            if (Objects.equals(newMember, self) || serverListHealth.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
 
-            serverListHealth.put(address, node);
-            lastRefreshTimeRecord.put(address, lastRefreshTime);
+            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+                @Override
+                public Member apply(String s, Member member) {
+                    lastRefreshTimeRecord.put(address, lastRefreshTime);
+                    return newMember;
+                }
+            });
         }
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
-                .changeNodes(nodes)
-                .allNodes(allNodes())
+                .changeNodes(members)
+                .allNodes(allMembers())
                 .build());
 
     }
 
     @Override
-    public synchronized void nodeLeave(Collection<Node> nodes) {
+    public void memberLeave(Collection<Member> members) {
 
-        if (nodes.isEmpty()) {
+        if (members.isEmpty()) {
             return;
         }
 
-        String address = null;
 
-        for (Iterator<Node> iterator = nodes.iterator(); iterator.hasNext();) {
+        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
 
-            Node node = iterator.next();
-            address = node.address();
+            Member member = iterator.next();
+            final String address = member.address();
 
-            // 本节点不参与 nodeJoin
+            // 本节点不参与 memberLeave
 
-            if (Objects.equals(node, self) || serverListHealth.containsKey(address)) {
+            if (Objects.equals(member, self) || serverListHealth.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
 
-            serverListHealth.remove(address);
-            lastRefreshTimeRecord.remove(address);
+            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+                @Override
+                public Member apply(String s, Member member) {
+                    lastRefreshTimeRecord.remove(address);
+                    return null;
+                }
+            });
         }
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("leave")
-                .changeNodes(nodes)
-                .allNodes(allNodes())
+                .changeNodes(members)
+                .allNodes(allMembers())
                 .build());
     }
 
     @Override
-    public void subscribe(NodeChangeListener listener) {
+    public void subscribe(MemberChangeListener listener) {
         NotifyCenter.registerSubscribe(listener);
     }
 
     @Override
-    public void unSubscribe(NodeChangeListener listener) {
+    public void unSubscribe(MemberChangeListener listener) {
         NotifyCenter.deregisterSubscribe(listener);
     }
 
@@ -301,8 +313,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         }
     }
 
-    public boolean isSelf(Node node) {
-        return Objects.equals(node.address(), localAddress);
+    public boolean isSelf(Member member) {
+        return Objects.equals(member.address(), localAddress);
     }
 
     private void initSys() {
@@ -366,7 +378,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         // /global/cluster => [ip:port, ip:port, ...]
         // /global/self => ip:port
 
-        sub.put(ProtocolMetaData.CLUSTER_INFO, allNodes().stream().map(Node::address).collect(Collectors.toList()));
+        sub.put(ProtocolMetaData.CLUSTER_INFO, allMembers().stream().map(Member::address).collect(Collectors.toList()));
         sub.put(ProtocolMetaData.SELF, self().address());
 
         metaData.load(defaultMetaData);
@@ -398,11 +410,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         taskManager.execute(new ClearInvalidNodeTask());
     }
 
-    public Map<String, Node> getServerListHealth() {
+    public Map<String, Member> getServerListHealth() {
         return serverListHealth;
     }
 
-    public Set<Node> getServerListUnHealth() {
+    public Set<Member> getServerListUnHealth() {
         return serverListUnHealth;
     }
 

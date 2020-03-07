@@ -177,7 +177,7 @@
 * Fully integrate with and seamlessly support Spring framework, Spring Boot and Spring Cloud
 * Separate nacos-api from nacos client implementation
 * Support high available cluster mode
-* Fix cluster node health check abnormality
+* Fix cluster member health check abnormality
 * Fix stand-alone mode gets the change history list exception
 * Fix Pulling does not exist configuration print io exception
 * Optimized log framework
@@ -190,7 +190,7 @@
 #### FEATURES:
 
 * separate nacos-api from nacos client implementation
-* Cluster node health check abnormality
+* Cluster member health check abnormality
 * Stand-alone mode gets the change history list exception
 * Pulling does not exist configuration print io exception
 * Optimized log framework

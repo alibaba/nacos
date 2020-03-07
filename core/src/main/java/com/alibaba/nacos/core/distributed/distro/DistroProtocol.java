@@ -26,7 +26,7 @@ import com.alibaba.nacos.consistency.exception.NoSuchLogProcessorException;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -49,19 +50,23 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
 
     private DistroServer distroServer;
 
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
+
+    private final AtomicBoolean initialize = new AtomicBoolean(false);
 
     @Override
     public void init(DistroConfig config) {
-        this.nodeManager = SpringUtils.getBean(NodeManager.class);
-        this.kvManager = new KVManager();
-        this.distroServer = new DistroServer(nodeManager, kvManager, config);
+        if (initialize.compareAndSet(false, true)) {
+            this.memberManager = SpringUtils.getBean(MemberManager.class);
+            this.kvManager = new KVManager();
+            this.distroServer = new DistroServer(memberManager, kvManager, config);
 
-        loadLogDispatcher(config.listLogProcessor());
+            loadLogDispatcher(config.listLogProcessor());
 
-        // distro server start
+            // distro server start
 
-        distroServer.start();
+            distroServer.start();
+        }
     }
 
     @Override
@@ -114,6 +119,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
                     } catch (Exception e) {
                         Loggers.DISTRO.error("An exception occurred while processing a transaction request, " +
                                 "processor : {}, error : {}", processor, e);
+                        processor.onError(e);
                     }
                 }
             });

@@ -19,8 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
@@ -63,7 +63,7 @@ public class HealthCheckCommon {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private PushService pushService;
@@ -93,13 +93,13 @@ public class HealthCheckCommon {
             List list = Arrays.asList(healthCheckResults.toArray());
             healthCheckResults.clear();
 
-            List<Node> sameSiteServers = nodeManager.allNodes();
+            List<Member> sameSiteServers = memberManager.allMembers();
 
             if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                 return;
             }
 
-            for (Node server : sameSiteServers) {
+            for (Member server : sameSiteServers) {
                 if (server.address().equals(NetUtils.localServer())) {
                     continue;
                 }

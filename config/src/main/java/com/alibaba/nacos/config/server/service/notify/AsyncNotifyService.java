@@ -24,8 +24,8 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -63,7 +63,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @Service
 public class AsyncNotifyService extends AbstractEventListener {
 
-    private ServerNodeManager serverNodeManager;
+    private ServerMemberManager serverNodeManager;
 
     @Override
     public List<Class<? extends Event>> interest() {
@@ -84,7 +84,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             String group = evt.group;
             String tenant = evt.tenant;
             String tag = evt.tag;
-            List<Node> ipList = serverNodeManager.allNodes();
+            List<Member> ipList = serverNodeManager.allMembers();
 
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
@@ -96,7 +96,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     }
 
     @Autowired
-    public AsyncNotifyService(ServerNodeManager serverNodeManager) {
+    public AsyncNotifyService(ServerMemberManager serverNodeManager) {
         this.serverNodeManager = serverNodeManager;
         httpclient.start();
     }
@@ -133,7 +133,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             while (!queue.isEmpty()) {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
-                if (serverNodeManager.hasNode(targetIp)) {
+                if (serverNodeManager.hasMember(targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
                     if (serverNodeManager.isHealthCheck()
                         && serverNodeManager.getServerListUnHealth().contains(targetIp)) {

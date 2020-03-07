@@ -82,7 +82,7 @@ public class DefaultIdStore implements LogProcessor4CP {
         this.storeFileMap = new ConcurrentHashMap<>(4);
         this.serializer = SerializeFactory.getDefault();
         ACQUIRE_STEP =
-                ConvertUtils.toLong(SpringUtils.getProperty("nacos.idGenerator.default.acquire.step"), 1000);
+                ConvertUtils.toLong(SpringUtils.getProperty("nacos.core.idGenerator.default.acquire.step"), 1000);
         FILE_PATH = Paths.get(FILE_PATH, "data", "IdGenerator").toString();
 
         // Delete existing data, relying on raft's snapshot and log

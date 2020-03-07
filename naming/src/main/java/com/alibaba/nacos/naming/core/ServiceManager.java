@@ -23,8 +23,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -38,6 +38,7 @@ import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Sets;
+import java.util.Collection;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +68,7 @@ import java.util.stream.Collectors;
  * @author nkorange
  */
 @Component
-@DependsOn("serverNodeManager")
+@DependsOn("serverMemberManager")
 public class ServiceManager implements RecordListener<Service> {
 
     /**
@@ -92,7 +93,7 @@ public class ServiceManager implements RecordListener<Service> {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private PushService pushService;
@@ -766,13 +767,13 @@ public class ServiceManager implements RecordListener<Service> {
 
                     msg.setData(JSON.toJSONString(checksum));
 
-                    List<Node> sameSiteServers = nodeManager.allNodes();
+                    Collection<Member> sameSiteServers = memberManager.allMembers();
 
                     if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (Node server : sameSiteServers) {
+                    for (Member server : sameSiteServers) {
                         if (server.address().equals(NetUtils.localServer())) {
                             continue;
                         }

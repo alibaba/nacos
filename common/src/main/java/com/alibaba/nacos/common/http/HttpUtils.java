@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.env;
-
-import com.alibaba.nacos.core.notify.Event;
+package com.alibaba.nacos.common.http;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class RefreshEvent implements Event {
+public final class HttpUtils {
 
-    private static final long serialVersionUID = 6724154321493385314L;
-
-    private Object source;
-
-    public Object getSource() {
-        return source;
+    public static String buildUrl(boolean isHttps, String serverAddr, String... subPaths) {
+        StringBuilder sb = new StringBuilder();
+        if (isHttps) {
+            sb.append("https://");
+        } else {
+            sb.append("http://");
+        }
+        sb.append(serverAddr);
+        for (String subPath : subPaths) {
+            if (subPath.startsWith("/")) {
+                sb.append(subPath);
+            } else {
+                sb.append("/").append(subPath);
+            }
+        }
+        return sb.toString();
     }
 
-    public void setSource(Object source) {
-        this.source = source;
-    }
-
-    @Override
-    public Class<? extends Event> eventType() {
-        return RefreshEvent.class;
-    }
 }

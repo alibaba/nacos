@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +39,12 @@ public class CleanConfigHistoryExecutor {
     private static final Logger log = LoggerFactory.getLogger(CleanConfigHistoryExecutor.class);
 
     private PersistService persistService;
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
     private int retentionDays = 30;
 
-    public CleanConfigHistoryExecutor(DumpService dumpService, NodeManager nodeManager) {
+    public CleanConfigHistoryExecutor(DumpService dumpService, MemberManager memberManager) {
         this.persistService = dumpService.getPersistService();
-        this.nodeManager = nodeManager;
+        this.memberManager = memberManager;
     }
 
     public void start() {
@@ -53,7 +53,7 @@ public class CleanConfigHistoryExecutor {
 
     private void execute() {
         log.warn("clearConfigHistory start");
-        if (nodeManager.isFirstIp()) {
+        if (memberManager.isFirstIp()) {
             try {
                 Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                 int totalCount = persistService.findConfigHistoryCountByTime(startTime);

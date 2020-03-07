@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -54,7 +54,7 @@ public class SubscribeManager {
     private PushService pushService;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
 
     private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
@@ -75,13 +75,13 @@ public class SubscribeManager {
     public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) throws InterruptedException {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
-            if (nodeManager.allNodes().size() <= 1) {
+            if (memberManager.allMembers().size() <= 1) {
                 return getSubscribersFuzzy(serviceName, namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
             // try sync data from remote server:
-            for (Node server : nodeManager.allNodes()) {
+            for (Member server : memberManager.allMembers()) {
 
                 Map<String, String> paramValues = new HashMap<>(128);
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);

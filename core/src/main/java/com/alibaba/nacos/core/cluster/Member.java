@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Node {
+public interface Member {
 
     String SITE_KEY = "site";
 

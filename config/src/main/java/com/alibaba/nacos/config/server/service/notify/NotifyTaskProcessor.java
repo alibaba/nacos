@@ -23,8 +23,8 @@ import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +43,10 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class NotifyTaskProcessor implements TaskProcessor {
 
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
-    public NotifyTaskProcessor(NodeManager nodeManager) {
-        this.nodeManager = nodeManager;
+    public NotifyTaskProcessor(MemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @Override
@@ -59,8 +59,8 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
         boolean isok = true;
 
-        for (Node node : nodeManager.allNodes()) {
-            isok = notifyToDump(dataId, group, tenant, lastModified, node.address()) && isok;
+        for (Member member : memberManager.allMembers()) {
+            isok = notifyToDump(dataId, group, tenant, lastModified, member.address()) && isok;
         }
         return isok;
     }

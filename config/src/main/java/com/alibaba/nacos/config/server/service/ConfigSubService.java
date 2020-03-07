@@ -24,8 +24,8 @@ import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,11 +59,11 @@ public class ConfigSubService {
 
     private ScheduledExecutorService scheduler;
 
-    private ServerNodeManager serverNodeManager;
+    private ServerMemberManager serverNodeManager;
 
     @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ConfigSubService(ServerNodeManager serverNodeManager) {
+    public ConfigSubService(ServerMemberManager serverNodeManager) {
         this.serverNodeManager = serverNodeManager;
 
         scheduler = Executors.newScheduledThreadPool(
@@ -97,12 +97,12 @@ public class ConfigSubService {
                                                 CompletionService<SampleResult> completionService,
                                                 List<SampleResult> resultList) {
 
-        List<Node> ipList = serverNodeManager.allNodes();
+        List<Member> ipList = serverNodeManager.allMembers();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(
             ipList.size());
         // 提交查询任务
-        for (Node node : ipList) {
-            final String ip = node.address();
+        for (Member member : ipList) {
+            final String ip = member.address();
             try {
                 completionService.submit(new Job(ip, url, params));
             } catch (Exception e) { // 发送请求失败
@@ -235,7 +235,7 @@ public class ConfigSubService {
             params.put("tenant", tenant);
         }
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-                serverNodeManager.allNodes().size());
+                serverNodeManager.allMembers().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 
@@ -256,7 +256,7 @@ public class ConfigSubService {
         Map<String, String> params = new HashMap<String, String>(50);
         params.put("ip", ip);
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-                serverNodeManager.allNodes().size());
+                serverNodeManager.allMembers().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 

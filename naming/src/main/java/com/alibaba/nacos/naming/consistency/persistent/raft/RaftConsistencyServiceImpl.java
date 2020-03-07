@@ -172,6 +172,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                                 try {
                                     if (action == ApplyAction.CHANGE) {
                                         listener.onChange(key, raftStore.get(key));
+                                        continue;
                                     }
 
                                     if (action == ApplyAction.DELETE) {
@@ -200,7 +201,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
                             if (action == ApplyAction.DELETE) {
                                 listener.onDelete(key);
-                                continue;
                             }
                         } catch (Throwable e) {
                             Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);

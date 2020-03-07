@@ -40,7 +40,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  *
  * @author Nacos
  */
-@DependsOn("serverNodeManager")
+@DependsOn("serverMemberManager")
 @Service
 public class DumpService {
 
@@ -77,7 +77,7 @@ public class DumpService {
     private PersistService persistService;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private CPProtocol protocol;
@@ -111,7 +111,7 @@ public class DumpService {
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-        CleanConfigHistoryExecutor cleanHistoryProcessor = new CleanConfigHistoryExecutor(this, nodeManager);
+        CleanConfigHistoryExecutor cleanHistoryProcessor = new CleanConfigHistoryExecutor(this, memberManager);
 
         dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
@@ -139,7 +139,7 @@ public class DumpService {
                 dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             }
 
-            if (nodeManager.isFirstIp()) {
+            if (memberManager.isFirstIp()) {
 
                 // add to dump aggr
 

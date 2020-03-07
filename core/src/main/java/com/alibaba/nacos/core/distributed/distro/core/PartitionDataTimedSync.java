@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
@@ -37,17 +37,17 @@ public class PartitionDataTimedSync {
 
     private final KVManager kvManager;
     private final DistroMapper distroMapper;
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
     private final DistroClient distroClient;
 
     private Worker worker;
 
     public PartitionDataTimedSync(
             KVManager kvManager,
-            DistroMapper distroMapper, NodeManager nodeManager, DistroClient distroClient) {
+            DistroMapper distroMapper, MemberManager memberManager, DistroClient distroClient) {
         this.kvManager = kvManager;
         this.distroMapper = distroMapper;
-        this.nodeManager = nodeManager;
+        this.memberManager = memberManager;
         this.distroClient = distroClient;
     }
 
@@ -66,9 +66,9 @@ public class PartitionDataTimedSync {
         public void run() {
             try {
 
-                final List<Node> nodes = getServers();
+                final List<Member> members = getServers();
 
-                Loggers.DISTRO.debug("server list is: {}", nodes);
+                Loggers.DISTRO.debug("server list is: {}", members);
 
                 final Map<String, DistroKVStore> kvStoreMap = kvManager.list();
 
@@ -106,8 +106,8 @@ public class PartitionDataTimedSync {
                         // biz because of an error.
 
                         keyChecksums.put(biz, subKeyChecksums);
-                        for (Node member : nodes) {
-                            if (Objects.equals(nodeManager.self(), member)) {
+                        for (Member member : members) {
+                            if (Objects.equals(memberManager.self(), member)) {
                                 continue;
                             }
                             distroClient.syncCheckSums(keyChecksums, member.address());
@@ -121,8 +121,8 @@ public class PartitionDataTimedSync {
         }
     }
 
-    public List<Node> getServers() {
-        return nodeManager.allNodes();
+    public List<Member> getServers() {
+        return memberManager.allMembers();
     }
 
     private String buildKey(String key, String targetServer) {

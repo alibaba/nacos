@@ -51,7 +51,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
  * @author Nacos
  */
 @Conditional(ConditionOnUseDerby.class)
-@DependsOn(value = "serverNodeManager")
+@DependsOn(value = "serverMemberManager")
 @Component("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
 

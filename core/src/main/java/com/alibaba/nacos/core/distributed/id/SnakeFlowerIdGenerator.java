@@ -31,8 +31,8 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 
         // Snowflake algorithm default parameter information
 
-        int dataCenterId = ConvertUtils.toInt(System.getProperty("nacos。snowflake.data-center"), 1);
-        int workerId = ConvertUtils.toInt(System.getProperty("nacos.snowflake.worker"), 1);
+        int dataCenterId = ConvertUtils.toInt(System.getProperty("nacos.core.snowflake.data-center"), 1);
+        int workerId = ConvertUtils.toInt(System.getProperty("nacos.core.snowflake.worker-id"), 1);
 
         initialize(dataCenterId, workerId);
     }

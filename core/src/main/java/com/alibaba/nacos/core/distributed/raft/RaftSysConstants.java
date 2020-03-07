@@ -120,109 +120,109 @@ public final class RaftSysConstants {
     /**
      * Election timeout in milliseconds
      */
-    public static final String RAFT_ELECTION_TIMEOUT_MS = "raft_election_timeout_ms";
+    public static final String RAFT_ELECTION_TIMEOUT_MS = "election_timeout_ms";
 
     /**
      * Snapshot interval in seconds
      */
-    public static final String RAFT_SNAPSHOT_INTERVAL_SECS = "raft_snapshot_interval_secs";
+    public static final String RAFT_SNAPSHOT_INTERVAL_SECS = "snapshot_interval_secs";
 
     /**
      * Requested retries
      */
-    public static final String REQUEST_FAILOVER_RETRIES = "raft_request_failoverRetries";
+    public static final String REQUEST_FAILOVER_RETRIES = "request_failoverRetries";
 
     /**
      * raft internal worker threads
      */
-    public static final String RAFT_CORE_THREAD_NUM = "raft_core_thread_num";
+    public static final String RAFT_CORE_THREAD_NUM = "core_thread_num";
 
     /**
      * Number of threads required for raft business request processing
      */
-    public static final String RAFT_CLI_SERVICE_THREAD_NUM = "raft_cli_service_thread_num";
+    public static final String RAFT_CLI_SERVICE_THREAD_NUM = "cli_service_thread_num";
 
     /**
      * raft group routing table information refresh interval
      */
-    public static final String RAFT_ROUTE_REFRESH_PERIOD_MS = "raft_route_refresh_period_ms";
+    public static final String RAFT_ROUTE_REFRESH_PERIOD_MS = "route_refresh_period_ms";
 
     /**
      * raft linear read strategy, defaults to index
      */
-    public static final String RAFT_READ_INDEX_TYPE = "raft_read_index_type";
+    public static final String RAFT_READ_INDEX_TYPE = "read_index_type";
 
     /**
      * rpc request timeout, default 5 seconds
      */
-    public static final String RAFT_RPC_REQUEST_TIMEOUT_MS = "raft_rpc_request_timeout_ms";
+    public static final String RAFT_RPC_REQUEST_TIMEOUT_MS = "rpc_request_timeout_ms";
 
     /**
      * Maximum size of each file RPC (snapshot copy) request between nodes, default is 128 K
      */
-    public static final String MAX_BYTE_COUNT_PER_RPC = "raft_max_byte_count_per_rpc";
+    public static final String MAX_BYTE_COUNT_PER_RPC = "max_byte_count_per_rpc";
 
     /**
      * Maximum number of logs sent from leader to follower, default is 1024
      */
-    public static final String MAX_ENTRIES_SIZE = "raft_max_entries_size";
+    public static final String MAX_ENTRIES_SIZE = "max_entries_size";
 
     /**
      * Maximum body size for sending logs from leader to follower, default is 512K
      */
-    public static final String MAX_BODY_SIZE = "raft_max_body_size";
+    public static final String MAX_BODY_SIZE = "max_body_size";
 
     /**
      * Maximum log storage buffer size, default 256K
      */
-    public static final String MAX_APPEND_BUFFER_SIZE = "raft_max_append_buffer_size";
+    public static final String MAX_APPEND_BUFFER_SIZE = "max_append_buffer_size";
 
     /**
      * Election timer interval will be a random maximum outside the specified time, default is 1 second
      */
-    public static final String MAX_ELECTION_DELAY_MS = "raft_max_election_delay_ms";
+    public static final String MAX_ELECTION_DELAY_MS = "max_election_delay_ms";
 
     /**
      * Specify the ratio between election timeout and heartbeat interval. Heartbeat interval is equal to
      * electionTimeoutMs/electionHeartbeatFactor，One tenth by default.
      */
-    public static final String ELECTION_HEARTBEAT_FACTOR = "raft_election_heartbeat_factor";
+    public static final String ELECTION_HEARTBEAT_FACTOR = "election_heartbeat_factor";
 
     /**
      * The tasks submitted to the leader accumulate the maximum batch
      * size of a batch flush log storage. The default is 32 tasks.
      */
-    public static final String APPLY_BATCH = "raft_apply_batch";
+    public static final String APPLY_BATCH = "apply_batch";
 
     /**
      * Call fsync when necessary when writing logs and meta information, usually should be true
      */
-    public static final String SYNC = "raft_sync";
+    public static final String SYNC = "sync";
 
     /**
      * Whether to write snapshot / raft meta-information to call fsync.
      * The default is false. When sync is true, it is preferred to respect sync.
      */
-    public static final String SYNC_META = "raft_sync_meta";
+    public static final String SYNC_META = "sync_meta";
 
     /**
      * Internal disruptor buffer size. For applications with high write throughput,
      * you need to increase this value. The default value is 16384.
      */
-    public static final String DISRUPTOR_BUFFER_SIZE = "raft_disruptor_buffer_size";
+    public static final String DISRUPTOR_BUFFER_SIZE = "disruptor_buffer_size";
 
     /**
      * Whether to enable replication of pipeline request optimization, which is enabled by default
      */
-    public static final String REPLICATOR_PIPELINE = "raft_replicator_pipeline";
+    public static final String REPLICATOR_PIPELINE = "replicator_pipeline";
 
     /**
      * Maximum number of in-flight requests with pipeline requests enabled, default is 256
      */
-    public static final String MAX_REPLICATOR_INFLIGHT_MSGS = "raft_max_replicator_inflight_msgs";
+    public static final String MAX_REPLICATOR_INFLIGHT_MSGS = "max_replicator_inflight_msgs";
 
     /**
      * Whether to enable LogEntry checksum
      */
-    public static final String ENABLE_LOG_ENTRY_CHECKSUM = "raft_enable_log_entry_checksum";
+    public static final String ENABLE_LOG_ENTRY_CHECKSUM = "enable_log_entry_checksum";
 }

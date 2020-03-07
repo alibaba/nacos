@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.Task;
 
 import java.util.Map;
@@ -43,20 +43,20 @@ public class ClearInvalidNodeTask extends Task {
     @Override
     protected void executeBody() {
         Map<String, Long> lastRefreshRecord = nodeManager.getLastRefreshTimeRecord();
-        Map<String, Node> nodeMap = nodeManager.getServerListHealth();
-        Set<Node> unHealthNodes = nodeManager.getServerListUnHealth();
+        Map<String, Member> nodeMap = nodeManager.getServerListHealth();
+        Set<Member> unHealthMembers = nodeManager.getServerListUnHealth();
 
         long currentTime = System.currentTimeMillis();
 
         lastRefreshRecord.forEach((address, lastRefresh) -> {
             if (lastRefresh + EXPIRE_TIME < currentTime) {
-                Node node = nodeMap.get(address);
-                if (node != null) {
-                    unHealthNodes.add(node);
+                Member member = nodeMap.get(address);
+                if (member != null) {
+                    unHealthMembers.add(member);
                 }
             }
             if (lastRefresh + REMOVAL_TIME < currentTime) {
-                Node old = nodeMap.remove(address);
+                Member old = nodeMap.remove(address);
 
                 if (old != null) {
                     if (lastRefreshRecord.get(old.address()) + EXPIRE_TIME > currentTime) {
@@ -69,8 +69,8 @@ public class ClearInvalidNodeTask extends Task {
         cleanCnt ++;
 
         if (cleanCnt > MAX_CLEAN_CNT) {
-            nodeManager.nodeLeave(unHealthNodes);
-            unHealthNodes.clear();
+            nodeManager.memberLeave(unHealthMembers);
+            unHealthMembers.clear();
             cleanCnt = 0;
         }
 

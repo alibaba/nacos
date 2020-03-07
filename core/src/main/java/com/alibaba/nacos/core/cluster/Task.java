@@ -26,9 +26,9 @@ public abstract class Task implements Runnable {
 
     private boolean inExecute = false;
 
-    protected ServerNodeManager nodeManager;
+    protected ServerMemberManager nodeManager;
 
-    void setNodeManager(ServerNodeManager nodeManager) {
+    void setNodeManager(ServerMemberManager nodeManager) {
         this.nodeManager = nodeManager;
     }
 

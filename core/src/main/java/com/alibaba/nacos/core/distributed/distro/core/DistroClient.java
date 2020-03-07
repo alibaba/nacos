@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.model.HttpResResult;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
@@ -58,12 +58,12 @@ class DistroClient {
 
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
     private final NSyncHttpClient httpClient;
     private final Serializer serializer;
 
-    public DistroClient(NodeManager nodeManager, Serializer serializer) {
-        this.nodeManager = nodeManager;
+    public DistroClient(MemberManager memberManager, Serializer serializer) {
+        this.memberManager = memberManager;
         this.serializer = serializer;
         this.httpClient = HttpClientManager.newHttpClient(DataSyncer.class.getCanonicalName());
     }
@@ -82,7 +82,7 @@ class DistroClient {
             final ResResult body = ResResultUtils.success(checksumMap);
 
             final Query query = Query.newInstance()
-                    .addParam("source", nodeManager.self().address());
+                    .addParam("source", memberManager.self().address());
 
             DistroExecutor.executeByGlobal(() -> {
                 try {
@@ -165,6 +165,6 @@ class DistroClient {
     }
 
     private String buildUrl(String path, String server) {
-        return "http://" + server + nodeManager.getContextPath() + Commons.NACOS_CORE_CONTEXT + path;
+        return "http://" + server + memberManager.getContextPath() + Commons.NACOS_CORE_CONTEXT + path;
     }
 }

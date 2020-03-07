@@ -18,11 +18,11 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
+import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,9 +34,11 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
     private static final String INTEREST_NAME = JLog.class.getName();
 
     private final JRaftServer server;
+    private  final int failoverRetries;
 
-    public NacosAsyncProcessor(JRaftServer server) {
+    public NacosAsyncProcessor(JRaftServer server, final int failoverRetries) {
         this.server = server;
+        this.failoverRetries = failoverRetries;
     }
 
     @Override
@@ -49,8 +51,9 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
         }
 
         if (tuple.getNode().isLeader()) {
+            int retryCnt = ConvertUtils.toInt(log.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
             CompletableFuture<Object> future = new CompletableFuture<>();
-            server.commit(log, future, 3).whenComplete((result, t) -> {
+            server.commit(log, future, retryCnt).whenComplete((result, t) -> {
                 if (t == null) {
                     asyncCtx.sendResponse(ResResultUtils.success(result));
                 } else {

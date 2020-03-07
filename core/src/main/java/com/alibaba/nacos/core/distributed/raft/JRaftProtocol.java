@@ -26,7 +26,8 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.distributed.raft.utils.JLogUtils;
@@ -57,7 +58,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     private Node raftNode;
 
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     private String selfAddress = InetUtils.getSelfIp();
 
@@ -76,15 +77,15 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
             loadLogDispatcher(config.listLogProcessor());
 
-            this.nodeManager = SpringUtils.getBean(NodeManager.class);
+            this.memberManager = SpringUtils.getBean(MemberManager.class);
 
-            this.selfAddress = nodeManager.self().address();
+            this.selfAddress = memberManager.self().address();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
 
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 
-            this.raftServer = new JRaftServer(this.nodeManager);
+            this.raftServer = new JRaftServer(this.memberManager, failoverRetries);
             this.raftServer.init(config, config.listLogProcessor());
             this.raftServer.start();
 
@@ -189,9 +190,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
 
     void updateSelfNodeExtendInfo() {
-        com.alibaba.nacos.core.cluster.Node node = nodeManager.self();
-        node.setExtendVal("raft", metaData);
-        nodeManager.update(node);
+        Member member = memberManager.self();
+        member.setExtendVal("raft", metaData);
+        memberManager.update(member);
     }
 
 }

@@ -16,31 +16,30 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroUtils;
 import com.alibaba.nacos.core.utils.ConvertUtils;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class TaskCenter {
 
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     private DataSyncer dataSyncer;
 
@@ -50,19 +49,22 @@ public class TaskCenter {
 
     private final DistroConfig config;
     private volatile boolean shutdown = false;
+    private AtomicBoolean initialize = new AtomicBoolean(false);
 
-    public TaskCenter(DistroConfig config, NodeManager nodeManager, DataSyncer dataSyncer) {
+    public TaskCenter(DistroConfig config, MemberManager memberManager, DataSyncer dataSyncer) {
         this.config = config;
-        this.nodeManager = nodeManager;
+        this.memberManager = memberManager;
         this.dataSyncer = dataSyncer;
         this.cpuCoreCount = Runtime.getRuntime().availableProcessors();
     }
 
     public void start() {
-        for (int i = 0; i < cpuCoreCount; i++) {
-            Worker worker = new Worker(i);
-            workers.add(worker);
-            DistroExecutor.executeWorker(worker);
+        if (initialize.compareAndSet(false, true)) {
+            for (int i = 0; i < cpuCoreCount; i++) {
+                Worker worker = new Worker(i);
+                workers.add(worker);
+                DistroExecutor.executeWorker(worker);
+            }
         }
     }
 
@@ -104,13 +106,14 @@ public class TaskCenter {
             for (; ; ) {
 
                 if (shutdown) {
+                    queue.clear();
                     return;
                 }
 
                 try {
                     String key = queue.poll(1000, TimeUnit.MILLISECONDS);
 
-                    if (CollectionUtils.isEmpty(nodeManager.allNodes())) {
+                    if (CollectionUtils.isEmpty(memberManager.allMembers())) {
                         continue;
                     }
 
@@ -128,8 +131,8 @@ public class TaskCenter {
                     if (dataSize == batchSyncKeyCount ||
                             (System.currentTimeMillis() - lastDispatchTime) > taskDispatchPeriod) {
 
-                        for (Node member : nodeManager.allNodes()) {
-                            if (Objects.equals(nodeManager.self(), member)) {
+                        for (Member member : memberManager.allMembers()) {
+                            if (Objects.equals(memberManager.self(), member)) {
                                 continue;
                             }
                             SyncTask syncTask = new SyncTask();
@@ -141,14 +144,14 @@ public class TaskCenter {
                         lastDispatchTime = System.currentTimeMillis();
                         dataSize = 0;
 
-                        // TODO auto refresh
+                        // TODO to support auto-refresh by operations
 
                         batchSyncKeyCount = getBatchSyncKeyCount();
                         taskDispatchPeriod = getTaskDispatchPeriod();
                     }
 
                 } catch (Exception e) {
-                    Loggers.DISTRO.error("worker [{}] execute has error : {}", index, ExceptionUtil.getAllExceptionMsg(e));
+                    Loggers.DISTRO.error("worker [{}] execute has error : {}", index, e);
                 }
             }
         }

@@ -18,13 +18,14 @@ package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.ServerNode;
+import com.alibaba.nacos.core.cluster.ServerMember;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.file.FileChangeEvent;
@@ -53,6 +54,8 @@ import org.apache.http.client.config.RequestConfig;
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class SyncNodeTask extends Task {
+
+    private static final TypeReference<ResResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<ResResult<Collection<Member>>>() {};
 
     private volatile int addressServerFailCount = 0;
     private int maxFailCount = 12;
@@ -97,8 +100,10 @@ public class SyncNodeTask extends Task {
     protected void executeBody() {
 
         // Whether to enable the node self-discovery function that comes with nacos
+        // The reason why instance properties are not used here is so that
+        // the hot update mechanism can be implemented later
 
-        if (SystemUtils.NODE_SELF_DISCOVERY) {
+        if (SpringUtils.getProperty("nacos.core.node.self-discovery", Boolean.class, false)) {
             syncBySelfDiscovery();
         } else {
             syncFromAddressUrl();
@@ -106,26 +111,26 @@ public class SyncNodeTask extends Task {
     }
 
     private void syncBySelfDiscovery() {
-        List<Node> nodes = nodeManager.allNodes();
-        for (Node node : nodes) {
-            final String url = "http://" + node.address() + "/" + context.getContextPath() + Commons.NACOS_CORE_CONTEXT + "/cluster/nodes";
+        List<Member> members = nodeManager.allMembers();
+        for (Member member : members) {
+
+            final String url = HttpUtils.buildUrl(false, member.address(), context.getContextPath(), Commons.NACOS_CORE_CONTEXT, "/cluster/nodes");
 
             try {
-                ResResult<Collection<Node>> result = httpclient.get(url, Header.EMPTY,
-                        Query.EMPTY, new TypeReference<ResResult<Collection<Node>>>() {
-                        });
+                ResResult<Collection<Member>> result = httpclient.get(url, Header.EMPTY,
+                        Query.EMPTY, TYPE_REFERENCE);
 
                 if (result.ok()) {
 
-                    Collection<Node> remoteNodes = result.getData();
-                    updateCluster(remoteNodes);
+                    Collection<Member> remoteMembers = result.getData();
+                    updateCluster(remoteMembers);
 
                 } else {
-                    Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", node.address(), result);
+                    Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", member.address(), result);
                 }
 
             } catch (Exception e) {
-                Loggers.CORE.error("[serverlist] exception, " + e.toString(), e);
+                Loggers.CORE.error("[serverlist] exception : {}, node : {}", e, member.address());
             }
         }
     }
@@ -168,22 +173,23 @@ public class SyncNodeTask extends Task {
             readServerConf(members);
             alreadyLoadServer = true;
         } catch (Exception e) {
-            Loggers.CORE.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
+            Loggers.CORE.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e);
             alreadyLoadServer = false;
         }
     }
 
     // 默认配置格式解析，只有nacos-server的ip:port or hostname:port 信息
 
-    // example 192.168.16.1:8848?raft_port=8849&
+    // example 192.168.16.1:8848?raft_port=8849&key=value
 
     private void readServerConf(List<String> members) {
-        Set<Node> nodes = new HashSet<>();
+        Set<Member> nodes = new HashSet<>();
         int selfPort = nodeManager.getPort();
 
         // Nacos default port is 8848
 
         int defaultPort = 8848;
+
         // Set the default Raft port information for security
 
         int defaultRaftPort = selfPort + 1 > 65536 ? selfPort + 1 : selfPort - 1;
@@ -210,12 +216,12 @@ public class SyncNodeTask extends Task {
                 }
             } else {
 
-                // 需要默认设置 Raft Port 信息
+                // The Raft Port information needs to be set by default
                 extendInfo.put(RaftSysConstants.RAFT_PORT, String.valueOf(defaultRaftPort));
 
             }
 
-            nodes.add(ServerNode.builder()
+            nodes.add(ServerMember.builder()
                     .ip(address)
                     .port(port)
                     .extendInfo(extendInfo)
@@ -229,8 +235,8 @@ public class SyncNodeTask extends Task {
         updateCluster(nodes);
     }
 
-    private void updateCluster(Collection<Node> nodes) {
-        nodeManager.nodeJoin(nodes);
+    private void updateCluster(Collection<Member> members) {
+        nodeManager.memberJoin(members);
     }
 
     @Override

@@ -63,28 +63,6 @@ public final class ThreadPoolManager {
         resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
     }
 
-    public Map<String, Map<String, Map<String, Object>>> getThreadPoolsInfo() {
-        Map<String, Map<String, Map<String, Object>>> info = new HashMap<String, Map<String, Map<String, Object>>>(4);
-        for (Map.Entry<String, Map<String, Set<ExecutorService>>> entry : resourcesManager.entrySet()) {
-            Map<String, Map<String, Object>> subInfo = new HashMap<String, Map<String, Object>>(8);
-            info.put(entry.getKey(), subInfo);
-            for (Map.Entry<String, Set<ExecutorService>> mapEntry : entry.getValue().entrySet()) {
-                Map<String, Object> details = new HashMap<String, Object>(8);
-                subInfo.put(mapEntry.getKey(), details);
-                for (ExecutorService service : mapEntry.getValue()) {
-                    if (service instanceof ThreadPoolExecutor) {
-                        ThreadPoolExecutor executor = (ThreadPoolExecutor) service;
-                        details.put("activeCount", executor.getActiveCount());
-                        details.put("corePoolSize", executor.getCorePoolSize());
-                        details.put("maximumPoolSiz", executor.getMaximumPoolSize());
-                        details.put("workCount", executor.getQueue().size());
-                    }
-                }
-            }
-        }
-        return info;
-    }
-
     /**
 	 * Register the thread pool resources with the resource manager
 	 *

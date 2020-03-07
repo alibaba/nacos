@@ -16,6 +16,7 @@
 package com.alibaba.nacos.common.utils;
 
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
 
 /**
  * MD5 generator
@@ -26,11 +27,17 @@ public class Md5Utils {
 
     private static final int HEX_VALUE_COUNT = 16;
 
+    private static final ThreadLocal<java.security.MessageDigest> MESSAGE_DIGEST_THREAD_LOCAL = new ThreadLocal<MessageDigest>();
+
     public static String getMD5(byte[] bytes) {
+
         char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
         char[] str = new char[16 * 2];
         try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            if (MESSAGE_DIGEST_THREAD_LOCAL.get() == null) {
+                MESSAGE_DIGEST_THREAD_LOCAL.set(java.security.MessageDigest.getInstance("MD5"));
+            }
+            java.security.MessageDigest md = MESSAGE_DIGEST_THREAD_LOCAL.get();
             md.update(bytes);
             byte[] tmp = md.digest();
             int k = 0;

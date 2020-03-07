@@ -34,7 +34,7 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +67,7 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     private DynamicDataSource dynamicDataSource;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private DerbySnapshotOperation snapshotOperation;
@@ -88,7 +88,7 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
         dataSourceService = dynamicDataSource.getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
-        selfIp = nodeManager.self().address();
+        selfIp = memberManager.self().address();
         defaultLog.info("use DistributedTransactionServicesImpl");
 
         // Delete existing data, relying on raft's snapshot and log

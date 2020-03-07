@@ -22,8 +22,8 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
@@ -53,7 +53,7 @@ public class NodeStateReportTask extends Task {
                 .build();
 
         this.httpClient = HttpClientManager
-                .newHttpClient(ServerNodeManager.class.getCanonicalName(), requestConfig);
+                .newHttpClient(ServerMemberManager.class.getCanonicalName(), requestConfig);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class NodeStateReportTask extends Task {
         try {
             long startCheckTime = System.currentTimeMillis();
 
-            final Node self = nodeManager.self();
+            final Member self = nodeManager.self();
 
             // self node information is not ready
 
@@ -74,21 +74,21 @@ public class NodeStateReportTask extends Task {
                 weight = 1;
             }
 
-            self.setExtendVal(Node.WEIGHT, String.valueOf(weight));
+            self.setExtendVal(Member.WEIGHT, String.valueOf(weight));
 
             nodeManager.update(self);
 
-            for (Node node : nodeManager.allNodes()) {
+            for (Member member : nodeManager.allMembers()) {
 
                 // local node or node check failed will not perform task processing
 
-                if (Objects.equals(self, node) || !node.check()) {
+                if (Objects.equals(self, member) || !member.check()) {
                     continue;
                 }
 
                 // Compatible with old codes,use status.taobao
 
-                String url = "http://" + node.address() + nodeManager.getContextPath() +
+                String url = "http://" + member.address() + nodeManager.getContextPath() +
                         Commons.NACOS_CORE_CONTEXT + "/cluster/server/report";
 
                 // "/nacos/server/report";
@@ -98,14 +98,14 @@ public class NodeStateReportTask extends Task {
                             , ResResultUtils.success(self), reference);
                     if (result.ok()) {
                         Loggers.CORE.debug("Successfully synchronizing information to node : {}," +
-                                " result : {}", node, result);
+                                " result : {}", member, result);
                     } else {
                         Loggers.CORE.warn("An exception occurred while reporting their " +
-                                "information to the node : {}, error : {}", node.address(), result.getErrMsg());
+                                "information to the node : {}, error : {}", member.address(), result.getErrMsg());
                     }
                 } catch (Exception e) {
                     Loggers.CORE.error("An exception occurred while reporting their " +
-                            "information to the node : {}, error : {}", node.address(), e);
+                            "information to the node : {}, error : {}", member.address(), e);
                 }
             }
             long endCheckTime = System.currentTimeMillis();

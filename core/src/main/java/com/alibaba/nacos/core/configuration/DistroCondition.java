@@ -24,6 +24,8 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import java.util.ServiceLoader;
 
 /**
+ * Determine whether to open the internal AP protocol implementation of Nacos
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")

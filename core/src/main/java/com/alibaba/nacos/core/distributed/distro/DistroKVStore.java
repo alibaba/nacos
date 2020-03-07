@@ -74,8 +74,7 @@ public class DistroKVStore<T> extends KVStore<T> {
                 .addContextValue("source", data)
                 .build();
 
-        logProcessor.commitAutoSetBiz(log);
-        return true;
+        return logProcessor.commitAutoSetBiz(log);
     }
 
     @Override
@@ -85,8 +84,7 @@ public class DistroKVStore<T> extends KVStore<T> {
                 .operation(REMOVE_COMMAND)
                 .build();
 
-        logProcessor.commitAutoSetBiz(log);
-        return true;
+        return logProcessor.commitAutoSetBiz(log);
     }
 
     // Loading data, will not trigger AP consistent interface call

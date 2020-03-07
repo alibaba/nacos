@@ -17,14 +17,13 @@
 package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
-import org.apache.commons.lang3.StringUtils;
-
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +31,15 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DataSyncer {
 
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
 
     private final KVManager kvManager;
 
@@ -50,21 +51,29 @@ public class DataSyncer {
 
     private RetryPolicy policy;
 
+    private AtomicBoolean isStarted = new AtomicBoolean(false);
+
     public DataSyncer(
             DistroConfig config,
-            NodeManager nodeManager,
+            MemberManager memberManager,
             KVManager kvManager,
             DistroClient distroClient) {
         this.config = config;
-        this.nodeManager = nodeManager;
+        this.memberManager = memberManager;
         this.kvManager = kvManager;
         this.distroClient = distroClient;
     }
 
     public void start() {
+        isStarted.compareAndSet(false, true);
     }
 
     public void submit(SyncTask task, long delay) {
+
+        if (!isStarted.get()) {
+            throw new IllegalStateException("Syncer does not call the start method or the shutdown method has been executed");
+        }
+
         // If it's a new task:
         if (task.getRetryCount() == 0) {
             // associated key already exist:
@@ -77,50 +86,51 @@ public class DataSyncer {
             return;
         }
 
-        kvManager.list().forEach((s, distroStore) -> DistroExecutor.scheduleDataSync(() -> {
-            // 1. check the server
-            if (getServers() == null || getServers().isEmpty()) {
-                return;
-            }
+        kvManager.list().forEach((s, distroStore) ->
+                DistroExecutor.scheduleDataSync(() -> {
+                    // 1. check the server
+                    if (getServers() == null || getServers().isEmpty()) {
+                        return;
+                    }
 
-            List<String> keys = task.getKeys();
+                    List<String> keys = task.getKeys();
 
-            Map<String, Map<String, KVStore.Item>> syncData = new HashMap<>(4);
+                    Map<String, Map<String, KVStore.Item>> syncData = new HashMap<>(4);
 
-            // 2. get the datums by keys and check the datum is empty or not
-            Map<String, KVStore.Item> datumMap = distroStore.getItemByBatch(keys);
-            if (datumMap.isEmpty()) {
-                // clear all flags of this task:
-                for (String key : keys) {
-                    taskMap.remove(buildKey(key, task.getTargetServer()));
-                }
-                return;
-            }
+                    // 2. get the datums by keys and check the datum is empty or not
+                    Map<String, KVStore.Item> itemMap = distroStore.getItemByBatch(keys);
+                    if (itemMap.isEmpty()) {
+                        // clear all flags of this task:
+                        for (String key : keys) {
+                            taskMap.remove(buildKey(key, task.getTargetServer()));
+                        }
+                        return;
+                    }
 
-            syncData.put(distroStore.storeName(), datumMap);
+                    syncData.put(distroStore.storeName(), itemMap);
 
-            long timestamp = System.currentTimeMillis();
-            boolean success = distroClient.syncData(syncData, task.getTargetServer());
-            if (success) {
-                // clear all flags of this task:
-                for (String key : task.getKeys()) {
-                    taskMap.remove(buildKey(key, task.getTargetServer()));
-                }
-            } else {
-                SyncTask syncTask = new SyncTask();
-                syncTask.setBizInfo(distroStore.storeName());
-                syncTask.setKeys(task.getKeys());
-                syncTask.setRetryCount(task.getRetryCount() + 1);
-                syncTask.setLastExecuteTime(timestamp);
-                syncTask.setTargetServer(task.getTargetServer());
-                retrySync(syncTask);
-            }
-        }, delay, TimeUnit.MILLISECONDS));
+                    long timestamp = System.currentTimeMillis();
+                    boolean success = distroClient.syncData(syncData, task.getTargetServer());
+                    if (success) {
+                        // clear all flags of this task:
+                        for (String key : task.getKeys()) {
+                            taskMap.remove(buildKey(key, task.getTargetServer()));
+                        }
+                    } else {
+                        SyncTask syncTask = new SyncTask();
+                        syncTask.setBizInfo(distroStore.storeName());
+                        syncTask.setKeys(task.getKeys());
+                        syncTask.setRetryCount(task.getRetryCount() + 1);
+                        syncTask.setLastExecuteTime(timestamp);
+                        syncTask.setTargetServer(task.getTargetServer());
+                        retrySync(syncTask);
+                    }
+                }, delay, TimeUnit.MILLISECONDS));
     }
 
     public void retrySync(SyncTask syncTask) {
 
-        if (!nodeManager.hasNode(syncTask.getTargetServer())) {
+        if (!memberManager.hasMember(syncTask.getTargetServer())) {
             // if server is no longer in healthy server list, ignore this task:
             //fix #1665 remove existing tasks
             if (syncTask.getKeys() != null) {
@@ -135,12 +145,12 @@ public class DataSyncer {
         getRetryPolicy().retryTask(syncTask);
     }
 
-    public List<Node> getServers() {
-        return nodeManager.allNodes();
+    public Collection<Member> getServers() {
+        return memberManager.allMembers();
     }
 
     public void shutdown() {
-
+        isStarted.compareAndSet(true, false);
     }
 
     private RetryPolicy getRetryPolicy() {

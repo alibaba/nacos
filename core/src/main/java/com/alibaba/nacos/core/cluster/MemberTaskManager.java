@@ -26,16 +26,16 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NodeTaskManager {
+public class MemberTaskManager {
 
     private final ScheduledExecutorService executorService;
 
-    private final ServerNodeManager nodeManager;
+    private final ServerMemberManager nodeManager;
 
-    public NodeTaskManager(final ServerNodeManager nodeManager) {
+    public MemberTaskManager(final ServerMemberManager nodeManager) {
         this.nodeManager = nodeManager;
         this.executorService = ExecutorFactory.newScheduledExecutorService(
-                ServerNodeManager.class.getCanonicalName(),
+                ServerMemberManager.class.getCanonicalName(),
                 2,
                 new NameThreadFactory("com.alibaba.nacos.core.cluster"));
     }

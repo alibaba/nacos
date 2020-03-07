@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ServerNode implements Node {
+public class ServerMember implements Member {
 
     private String ip;
 
@@ -37,7 +37,7 @@ public class ServerNode implements Node {
 
     private String address = "";
 
-    public ServerNode() {
+    public ServerMember() {
         extendInfo.put(SITE_KEY, "unknown");
         extendInfo.put(AD_WEIGHT, "0");
         extendInfo.put(LAST_REF_TIME, "0");
@@ -139,7 +139,7 @@ public class ServerNode implements Node {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ServerNode that = (ServerNode) o;
+        ServerMember that = (ServerMember) o;
         if (StringUtils.isAnyBlank(address, that.address)) {
             return port == that.port &&
                     Objects.equals(ip, that.ip);
@@ -197,8 +197,8 @@ public class ServerNode implements Node {
             return this;
         }
 
-        public ServerNode build() {
-            ServerNode serverNode = new ServerNode();
+        public ServerMember build() {
+            ServerMember serverNode = new ServerMember();
             serverNode.extendInfo.putAll(this.extendInfo);
             serverNode.state = this.state;
             serverNode.ip = this.ip;

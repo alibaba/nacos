@@ -29,7 +29,7 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
@@ -79,7 +79,7 @@ public class ServiceController {
     protected ServiceManager serviceManager;
 
     @Autowired
-    private NodeManager nodeManager;
+    private MemberManager memberManager;
 
     @Autowired
     private SubscribeManager subscribeManager;
@@ -317,7 +317,7 @@ public class ServiceController {
         String statuses = json.getString("statuses");
         String serverIp = json.getString("clientIP");
 
-        if (!nodeManager.hasNode(serverIp)) {
+        if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "ip: " + serverIp + " is not in serverlist");
         }

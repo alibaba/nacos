@@ -18,15 +18,17 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
@@ -56,11 +58,6 @@ public class SystemUtils {
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
         .getOperatingSystemMXBean();
-
-    /**
-     * Node self-discovery
-     */
-    public static final boolean NODE_SELF_DISCOVERY = Objects.equals("true", System.getProperty("nacos.node.self-discovery", "false"));
 
     /**
      * nacos local ip

@@ -18,12 +18,9 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -32,6 +29,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Notify Single server
@@ -112,8 +111,8 @@ public class NotifySingleService {
     }
 
     @Autowired
-    public NotifySingleService(ServerNodeManager serverNodeManager) {
-        this.serverNodeManager = serverNodeManager;
+    public NotifySingleService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
         setupNotifyExecutors();
     }
 
@@ -121,11 +120,11 @@ public class NotifySingleService {
      * 系统启动时 or 集群扩容、下线时：单线程setupNotifyExecutors executors使用ConcurrentHashMap目的在于保证可见性
      */
     private void setupNotifyExecutors() {
-        List<Node> clusterIps = serverNodeManager.allNodes();
+        Collection<Member> clusterIps = memberManager.allMembers();
 
-        for (Node node : clusterIps) {
+        for (Member member : clusterIps) {
 
-            final String ip = node.ip();
+            final String ip = member.ip();
 
             // 固定线程数，无界队列（基于假设: 线程池的吞吐量不错，不会出现持续任务堆积，存在偶尔的瞬间压力）
             @SuppressWarnings("PMD.ThreadPoolCreationRule")
@@ -153,7 +152,7 @@ public class NotifySingleService {
 
     private final static Logger logger = LogUtil.fatalLog;
 
-    private ServerNodeManager serverNodeManager;
+    private ServerMemberManager memberManager;
 
     private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
 

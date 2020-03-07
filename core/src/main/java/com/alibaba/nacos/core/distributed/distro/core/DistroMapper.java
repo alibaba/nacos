@@ -18,10 +18,10 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.consistency.ap.KeyAnalysis;
 import com.alibaba.nacos.consistency.ap.Mapper;
-import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
-import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -41,11 +41,11 @@ import java.util.function.Supplier;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class DistroMapper implements Mapper, NodeChangeListener {
+public class DistroMapper implements Mapper, MemberChangeListener {
 
-    private volatile List<Node> healthyList = new ArrayList<>();
+    private volatile List<Member> healthyList = new ArrayList<>();
 
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
 
     private final DistroConfig distroConfig;
 
@@ -53,8 +53,8 @@ public class DistroMapper implements Mapper, NodeChangeListener {
 
     private final List<KeyAnalysis> keyAnalyses;
 
-    public DistroMapper(NodeManager nodeManager, DistroConfig config) {
-        this.nodeManager = nodeManager;
+    public DistroMapper(MemberManager memberManager, DistroConfig config) {
+        this.memberManager = memberManager;
         this.distroConfig = config;
         this.isDistroEnabled = Boolean.parseBoolean(
                 config.getValOfDefault(DistroSysConstants.DISTRO_ENABLED, "true")
@@ -81,7 +81,7 @@ public class DistroMapper implements Mapper, NodeChangeListener {
 
         // end
 
-        this.nodeManager.subscribe(this);
+        this.memberManager.subscribe(this);
 
     }
 
@@ -117,7 +117,7 @@ public class DistroMapper implements Mapper, NodeChangeListener {
             }
         }
 
-        final Node self = nodeManager.self();
+        final Member self = memberManager.self();
 
         if (!isDistroEnabled || SystemUtils.STANDALONE_MODE) {
             return true;
@@ -141,7 +141,7 @@ public class DistroMapper implements Mapper, NodeChangeListener {
     @Override
     public String mapSrv(String key) {
 
-        final Node self = nodeManager.self();
+        final Member self = memberManager.self();
 
         if (CollectionUtils.isEmpty(healthyList) || !isDistroEnabled) {
             return self.address();
@@ -167,7 +167,7 @@ public class DistroMapper implements Mapper, NodeChangeListener {
 
     @Override
     public void onEvent(NodeChangeEvent event) {
-        List<Node> newHealthyList = new ArrayList<>(event.getAllNodes());
+        List<Member> newHealthyList = new ArrayList<>(event.getAllMembers());
         this.healthyList = newHealthyList;
     }
 }

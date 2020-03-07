@@ -24,9 +24,10 @@ import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
-import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.RouteTableException;
@@ -63,14 +64,10 @@ import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import org.apache.commons.io.FileUtils;
-import org.springframework.util.CollectionUtils;
-
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -79,12 +76,15 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.apache.commons.io.FileUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
  * JRaft server instance, away from Spring IOC management
@@ -92,7 +92,7 @@ import java.util.function.Consumer;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class JRaftServer implements NodeChangeListener {
+public class JRaftServer implements MemberChangeListener {
 
     private Configuration conf;
     private RpcServer rpcServer;
@@ -103,20 +103,22 @@ public class JRaftServer implements NodeChangeListener {
 
     private Set<String> alreadyRegisterBiz = new HashSet<>();
     private Serializer serializer;
-    private Map<String, RaftGroupTuple> multiRaftGroup = new HashMap<>();
+    private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
     private Collection<LogProcessor4CP> processors;
 
+    private int failoverRetries;
     private String selfIp;
     private int selfPort;
-    private final NodeManager nodeManager;
+    private final MemberManager memberManager;
     private RaftConfig raftConfig;
     private PeerId localPeerId;
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     private int rpcRequestTimeoutMs;
 
-    public JRaftServer(final NodeManager nodeManager) {
-        this.nodeManager = nodeManager;
+    public JRaftServer(final MemberManager memberManager, final int failoverRetries) {
+        this.memberManager = memberManager;
+        this.failoverRetries = failoverRetries;
         this.conf = new Configuration();
 
         NotifyCenter.registerSubscribe(this);
@@ -128,7 +130,7 @@ public class JRaftServer implements NodeChangeListener {
 
         RaftExecutor.init(config);
 
-        final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
+        final Member self = memberManager.self();
         selfIp = self.ip();
         selfPort = Integer.parseInt(String.valueOf(self.extendVal(RaftSysConstants.RAFT_PORT)));
         localPeerId = new PeerId(selfIp, selfPort);
@@ -159,12 +161,12 @@ public class JRaftServer implements NodeChangeListener {
 
                 com.alipay.sofa.jraft.NodeManager raftNodeManager = com.alipay.sofa.jraft.NodeManager.getInstance();
 
-                nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
+                memberManager.allMembers().forEach(new Consumer<Member>() {
                     @Override
-                    public void accept(com.alibaba.nacos.core.cluster.Node node) {
-                        final String ip = node.ip();
-                        final int raftPort = Integer.parseInt(String.valueOf(node.extendVal(RaftSysConstants.RAFT_PORT)));
-                        PeerId peerId = new PeerId(node.ip(), raftPort);
+                    public void accept(Member member) {
+                        final String ip = member.ip();
+                        final int raftPort = Integer.parseInt(String.valueOf(member.extendVal(RaftSysConstants.RAFT_PORT)));
+                        PeerId peerId = new PeerId(member.ip(), raftPort);
                         conf.addPeer(peerId);
                         raftNodeManager.addAddress(peerId.getEndpoint());
                     }
@@ -174,7 +176,7 @@ public class JRaftServer implements NodeChangeListener {
 
                 rpcServer = new RpcServer(selfPort, true, false);
 
-                rpcServer.registerUserProcessor(new NacosAsyncProcessor(this));
+                rpcServer.registerUserProcessor(new NacosAsyncProcessor(this, failoverRetries));
 
                 RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                         RaftExecutor.getRaftCliServiceExecutor());
@@ -347,32 +349,32 @@ public class JRaftServer implements NodeChangeListener {
         return future;
     }
 
-    void addNode(com.alibaba.nacos.core.cluster.Node node) {
+    void addNode(Member member) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             final String groupId = entry.getKey();
             Status status = cliService.addPeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                    PeerId.parsePeer(node.address()));
+                    PeerId.parsePeer(member.address()));
 
             if (status.isOk()) {
                 refreshRouteTable(groupId);
             } else {
-                Loggers.RAFT.error("Node join failed, node : {}, status : {}", node, status);
+                Loggers.RAFT.error("Node join failed, node : {}, status : {}", member, status);
             }
         }
     }
 
-    void removeNode(com.alibaba.nacos.core.cluster.Node node) {
+    void removeNode(Member member) {
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             final String groupId = entry.getKey();
             Status status = cliService.removePeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                    PeerId.parsePeer(node.address()));
+                    PeerId.parsePeer(member.address()));
 
             if (status.isOk()) {
                 refreshRouteTable(groupId);
             } else {
-                Loggers.RAFT.error("Node join failed, node : {}, status : {}", node, status);
+                Loggers.RAFT.error("Node join failed, node : {}, status : {}", member, status);
             }
         }
     }
@@ -416,12 +418,12 @@ public class JRaftServer implements NodeChangeListener {
     @Override
     public void onEvent(NodeChangeEvent event) {
         final String kind = event.getKind();
-        final Collection<com.alibaba.nacos.core.cluster.Node> changeNodes = event.getChangeNodes();
-        for (com.alibaba.nacos.core.cluster.Node node : changeNodes) {
+        final Collection<Member> changeMembers = event.getChangeMembers();
+        for (Member member : changeMembers) {
             if (Objects.equals("join", kind)) {
-                addNode(node);
+                addNode(member);
             } else {
-                removeNode(node);
+                removeNode(member);
             }
         }
     }

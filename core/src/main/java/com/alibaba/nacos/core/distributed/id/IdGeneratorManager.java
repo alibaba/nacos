@@ -35,7 +35,7 @@ public class IdGeneratorManager {
 
     private static final Map<String, IdGenerator> ID_GENERATOR_MAP = new ConcurrentHashMap<>();
 
-    private static final String ID_TYPE = System.getProperty("nacos.idGenerator.type", "default");
+    private static final String ID_TYPE = System.getProperty("nacos.core.idGenerator.type", "default");
 
     private static final Function<String, IdGenerator> SUPPLIER = s -> {
         IdGenerator generator;

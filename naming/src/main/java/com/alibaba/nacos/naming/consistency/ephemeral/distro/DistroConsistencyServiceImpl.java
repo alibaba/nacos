@@ -25,17 +25,16 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -152,7 +151,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                     int count = 0;
 
-                    Map<String, Set<RecordListener<?>>> listeners = dataStore.getListMap();
+                    Map<String, List<RecordListener>> listeners = dataStore.getListMap();
 
                     if (!listeners.containsKey(datumKey)) {
                         continue;

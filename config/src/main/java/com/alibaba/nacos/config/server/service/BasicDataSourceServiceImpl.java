@@ -49,7 +49,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  * @author Nacos
  */
 @Conditional(ConditionOnUseMySql.class)
-@DependsOn(value = "serverNodeManager")
+@DependsOn(value = "serverMemberManager")
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 

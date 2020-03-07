@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface NodeChangeListener extends Subscribe<NodeChangeEvent> {
+public interface MemberChangeListener extends Subscribe<NodeChangeEvent> {
 
     /**
      * return NodeChangeEvent.class info
