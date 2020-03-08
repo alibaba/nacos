@@ -142,7 +142,6 @@ public class NamespaceController {
      * @return java.lang.Boolean
      */
     @GetMapping(params = "checkNamespaceIdExist=true")
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.READ)
     public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
         if(StringUtils.isBlank(namespaceId)){
             return false;
