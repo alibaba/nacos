@@ -145,6 +145,13 @@ class NewConfig extends React.Component {
     }
   }
 
+  tagSearch(value) {
+    const { tagLst } = this.state;
+    if (!tagLst.includes(value)) {
+      this.setState({ tagLst: [value, ...tagLst] });
+    }
+  }
+
   setConfigTags(value) {
     if (value.length > 5) {
       value.pop();
@@ -155,6 +162,7 @@ class NewConfig extends React.Component {
       }
     });
     this.setState({
+      tagLst: value,
       config_tags: value,
     });
   }
@@ -497,6 +505,7 @@ class NewConfig extends React.Component {
             >
               <Select
                 size={'medium'}
+                showSearch
                 hasArrow
                 style={{ width: '100%', height: '100%!important' }}
                 autoWidth
@@ -507,6 +516,7 @@ class NewConfig extends React.Component {
                 dataSource={this.state.tagLst}
                 value={this.state.config_tags}
                 onChange={this.setConfigTags.bind(this)}
+                onSearch={val => this.tagSearch(val)}
                 hasClear
               />
             </FormItem>
