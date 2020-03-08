@@ -117,6 +117,7 @@ public class RaftStore {
 
     public void remove(String key) throws Exception {
         kvStore.remove(key);
+        listMap.remove(key);
     }
 
     void listener(String key, RecordListener listener) {
@@ -145,7 +146,7 @@ public class RaftStore {
 
                 boolean result = false;
                 Throwable throwable = null;
-
+                TimerContext.start("[Naming] RaftStore snapshot save job");
                 try {
                     final String writePath = writer.getPath();
                     final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
@@ -171,10 +172,10 @@ public class RaftStore {
                 } catch (Exception e) {
                     throwable = e;
                     Loggers.RAFT.error("An error occurred while saving the snapshot : {}", throwable);
+                } finally {
+                    callFinally.run(result, throwable);
+                    TimerContext.end(Loggers.RAFT);
                 }
-
-                callFinally.run(result, throwable);
-
             });
         }
 

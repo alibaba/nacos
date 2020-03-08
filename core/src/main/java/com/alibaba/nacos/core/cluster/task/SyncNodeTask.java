@@ -111,7 +111,7 @@ public class SyncNodeTask extends Task {
     }
 
     private void syncBySelfDiscovery() {
-        List<Member> members = nodeManager.allMembers();
+        Collection<Member> members = nodeManager.allMembers();
         for (Member member : members) {
 
             final String url = HttpUtils.buildUrl(false, member.address(), context.getContextPath(), Commons.NACOS_CORE_CONTEXT, "/cluster/nodes");

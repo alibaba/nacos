@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.core;
+package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.consistency.ap.KeyAnalysis;
-import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.distributed.distro.DistroConfig;
-import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
+import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.springframework.util.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Component(value = "distroMapper")
 @SuppressWarnings("all")
 public class DistroMapper implements Mapper, MemberChangeListener {
 
@@ -47,19 +44,10 @@ public class DistroMapper implements Mapper, MemberChangeListener {
 
     private final MemberManager memberManager;
 
-    private final DistroConfig distroConfig;
-
-    private volatile boolean isDistroEnabled = false;
-
     private final List<KeyAnalysis> keyAnalyses;
 
-    public DistroMapper(MemberManager memberManager, DistroConfig config) {
+    public DistroMapper(MemberManager memberManager) {
         this.memberManager = memberManager;
-        this.distroConfig = config;
-        this.isDistroEnabled = Boolean.parseBoolean(
-                config.getValOfDefault(DistroSysConstants.DISTRO_ENABLED, "true")
-        );
-
         List<KeyAnalysis> tmp = new ArrayList<>();
 
         // discovery by java spi
@@ -82,11 +70,6 @@ public class DistroMapper implements Mapper, MemberChangeListener {
         // end
 
         this.memberManager.subscribe(this);
-
-    }
-
-    @Override
-    public void injectNodeManager(List<String> servers, String localAddress) {
 
     }
 
@@ -119,7 +102,8 @@ public class DistroMapper implements Mapper, MemberChangeListener {
 
         final Member self = memberManager.self();
 
-        if (!isDistroEnabled || SystemUtils.STANDALONE_MODE) {
+        if (!SpringUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)
+                || SystemUtils.STANDALONE_MODE) {
             return true;
         }
 
@@ -143,7 +127,8 @@ public class DistroMapper implements Mapper, MemberChangeListener {
 
         final Member self = memberManager.self();
 
-        if (CollectionUtils.isEmpty(healthyList) || !isDistroEnabled) {
+        if (CollectionUtils.isEmpty(healthyList) ||
+                !SpringUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)) {
             return self.address();
         }
 
@@ -154,11 +139,6 @@ public class DistroMapper implements Mapper, MemberChangeListener {
 
             return self.address();
         }
-    }
-
-    @Override
-    public void update(List<String> server) {
-
     }
 
     private int distroHash(String serviceName) {

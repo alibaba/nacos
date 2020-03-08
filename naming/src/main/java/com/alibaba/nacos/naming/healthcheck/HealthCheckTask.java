@@ -16,8 +16,8 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -53,7 +53,7 @@ public class HealthCheckTask implements Runnable {
 
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
-        mapper = SpringUtils.getBean(APProtocol.class).mapper();
+        mapper = SpringUtils.getBean(DistroMapper.class);
         switchDomain = SpringUtils.getBean(SwitchDomain.class);
         healthCheckProcessor = SpringUtils.getBean(HealthCheckProcessorDelegate.class);
         initCheckRT();

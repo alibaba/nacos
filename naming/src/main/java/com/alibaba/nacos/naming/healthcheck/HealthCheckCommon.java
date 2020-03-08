@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -32,6 +32,7 @@ import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import java.util.Collection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -57,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("all")
 public class HealthCheckCommon {
 
+    @Autowired
     private Mapper mapper;
 
     @Autowired
@@ -87,13 +89,11 @@ public class HealthCheckCommon {
 
         this.protocol = SpringUtils.getBean(APProtocol.class);
 
-        this.mapper = protocol.mapper();
-
         executorService.schedule(() -> {
             List list = Arrays.asList(healthCheckResults.toArray());
             healthCheckResults.clear();
 
-            List<Member> sameSiteServers = memberManager.allMembers();
+            Collection<Member> sameSiteServers = memberManager.allMembers();
 
             if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                 return;

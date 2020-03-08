@@ -1,7 +1,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;

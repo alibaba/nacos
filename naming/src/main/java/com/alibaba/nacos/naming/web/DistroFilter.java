@@ -19,28 +19,13 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.codec.Charsets;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -49,6 +34,17 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.Charsets;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author nacos
@@ -58,6 +54,7 @@ public class DistroFilter implements Filter {
     private static final int PROXY_CONNECT_TIMEOUT = 2000;
     private static final int PROXY_READ_TIMEOUT = 2000;
 
+    @Autowired
     private Mapper mapper;
 
     @Autowired
@@ -70,7 +67,6 @@ public class DistroFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        mapper = SpringUtils.getBean(APProtocol.class).mapper();
 
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;

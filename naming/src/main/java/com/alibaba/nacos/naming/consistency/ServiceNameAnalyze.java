@@ -16,20 +16,22 @@
 
 package com.alibaba.nacos.naming.consistency;
 
-import com.alibaba.nacos.consistency.ap.KeyAnalysis;
+import com.alibaba.nacos.core.distributed.KeyAnalysis;
 
 /**
+ * The service discovery module parses the relevant key information for routing distribution
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ServiceNameAnalyze implements KeyAnalysis {
 
     @Override
     public String analyze(String source) {
-        return null;
+        return KeyBuilder.getServiceName(source);
     }
 
     @Override
     public boolean interest(String source) {
-        return false;
+        return KeyBuilder.matchEphemeralKey(source) || KeyBuilder.matchPersistentKey(source) || KeyBuilder.matchServiceMetaKey(source);
     }
 }

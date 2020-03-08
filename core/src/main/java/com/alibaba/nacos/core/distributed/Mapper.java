@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.ap;
+package com.alibaba.nacos.core.distributed;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Can listen to global.cluster and global.self data in ProtocolMetaData
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Mapper {
-
-    /**
-     * Injecting cluster node management
-     *
-     * @param servers all nodes, already sorted
-     * @param localServer local node address
-     */
-    void injectNodeManager(List<String> servers, String localServer);
 
     /**
      * Distro calling function provided to the business party, passing
@@ -61,10 +51,4 @@ public interface Mapper {
      */
     String mapSrv(String key);
 
-    /**
-     * update server
-     *
-     * @param server all nodes, already sorted
-     */
-    void update(List<String> server);
 }

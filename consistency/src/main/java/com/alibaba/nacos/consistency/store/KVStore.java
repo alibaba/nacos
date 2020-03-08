@@ -255,14 +255,17 @@ public abstract class KVStore<T> extends BaseStore {
             final T value = pair.getValue0();
             final byte[] data = pair.getValue1();
             final boolean[] isCreate = new boolean[]{false};
-            dataStore.computeIfAbsent(key, s -> {
-                isCreate[0] = true;
-                return new Item(data, value.getClass().getCanonicalName());
-            });
 
-            Item item = dataStore.get(key);
+            final Item item = new Item(data, value.getClass().getCanonicalName());
 
             before(key, value, item, true);
+
+            dataStore.computeIfAbsent(key, s -> {
+                isCreate[0] = true;
+                return item;
+            });
+
+            Item currentItem = dataStore.get(key);
 
             if (!isCreate[0]) {
 
@@ -271,7 +274,7 @@ public abstract class KVStore<T> extends BaseStore {
                 dataStore.get(key).setBytes(data);
             }
 
-            after(key, value, item, true);
+            after(key, value, currentItem, true);
             return true;
         }
     };

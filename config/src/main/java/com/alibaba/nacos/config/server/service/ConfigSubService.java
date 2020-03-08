@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -97,7 +98,7 @@ public class ConfigSubService {
                                                 CompletionService<SampleResult> completionService,
                                                 List<SampleResult> resultList) {
 
-        List<Member> ipList = serverNodeManager.allMembers();
+        Collection<Member> ipList = serverNodeManager.allMembers();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(
             ipList.size());
         // 提交查询任务
@@ -113,7 +114,7 @@ public class ConfigSubService {
         }
         // 获取结果并合并
         SampleResult sampleResults = null;
-        for (int i = 0; i < ipList.size(); i++) {
+        for (Member member : ipList) {
             try {
                 Future<SampleResult> f = completionService.poll(1000,
                     TimeUnit.MILLISECONDS);
@@ -125,8 +126,7 @@ public class ConfigSubService {
                         }
                     } else {
                         LogUtil.defaultLog
-                            .warn("The task in ip: {}  did not completed in 1000ms ",
-                                ipList.get(i));
+                            .warn("The task in ip: {}  did not completed in 1000ms ", member.address());
                     }
                 } catch (TimeoutException e) {
                     if (f != null) {

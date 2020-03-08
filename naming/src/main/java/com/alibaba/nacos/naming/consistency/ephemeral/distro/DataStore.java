@@ -88,6 +88,7 @@ public class DataStore {
 
     public void remove(String key) throws Exception {
         kvStore.remove(key);
+        listMap.remove(key);
     }
 
     void listener(String key, RecordListener listener) {
@@ -143,6 +144,9 @@ public class DataStore {
 
         @Override
         public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
+            if (!listMap.containsKey(key)) {
+                return;
+            }
             if (isPut) {
                 notifier.addTask(key, ApplyAction.CHANGE);
             } else {

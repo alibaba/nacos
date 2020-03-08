@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.ap;
+package com.alibaba.nacos.core.distributed;
 
 /**
  * Double discovery using Java SPI mechanism or Spring IOC

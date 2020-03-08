@@ -24,6 +24,7 @@ import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
@@ -58,11 +59,12 @@ public class DistroServer {
     private final KVManager kvManager;
     private final DistroConfig config;
     private final MemberManager memberManager;
-    private final DistroMapper distroMapper;
 
     private final Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
 
     private Serializer serializer;
+
+    private DistroMapper distroMapper;
 
     public DistroServer(
             final MemberManager memberManager,
@@ -71,9 +73,8 @@ public class DistroServer {
         this.memberManager = memberManager;
         this.config = config;
         this.serializer = SerializeFactory.getDefault();
-
-        this.distroMapper = new DistroMapper(memberManager, config);
         this.kvManager = kvManager;
+        this.distroMapper = SpringUtils.getBean(DistroMapper.class);
     }
 
     public void start() {

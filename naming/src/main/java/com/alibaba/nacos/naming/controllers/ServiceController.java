@@ -24,13 +24,10 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
@@ -44,6 +41,15 @@ import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,17 +60,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Service operation controller
@@ -84,15 +79,8 @@ public class ServiceController {
     @Autowired
     private SubscribeManager subscribeManager;
 
+    @Autowired
     private Mapper mapper;
-
-    private APProtocol<? extends Config> protocol;
-
-    @PostConstruct
-    protected void init() {
-        protocol = SpringUtils.getBean(APProtocol.class);
-        mapper = protocol.mapper();
-    }
 
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)

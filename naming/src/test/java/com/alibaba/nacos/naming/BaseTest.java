@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming;
 
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.SwitchDomain;

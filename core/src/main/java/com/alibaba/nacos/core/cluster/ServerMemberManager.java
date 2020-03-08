@@ -33,16 +33,6 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import java.util.function.BiFunction;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.context.WebServerInitializedEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,10 +46,18 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.servlet.ServletContext;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.context.WebServerInitializedEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
 
 /**
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
@@ -137,19 +135,17 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         long nowTime = System.currentTimeMillis();
 
-        // If this member updates itself, ignore the health judgment
-
-        if (!isSelf(newMember)) {
-            serverListUnHealth.remove(newMember);
-            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
-                @Override
-                public Member apply(String s, Member member) {
+        serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+            @Override
+            public Member apply(String s, Member member) {
+                // If this member updates itself, ignore the health judgment
+                if (!isSelf(newMember)) {
+                    serverListUnHealth.remove(newMember);
                     lastRefreshTimeRecord.put(address, nowTime);
-                    return newMember;
                 }
-            });
-        }
-
+                return newMember;
+            }
+        });
     }
 
     @Override
@@ -159,7 +155,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             if (Objects.equals(entry.getKey(), address)) {
                 return index;
             }
-            index ++;
+            index++;
         }
         return index;
     }
@@ -188,7 +184,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public Collection<Member> allMembers() {
-         return serverListHealth.values();
+        return serverListHealth.values();
     }
 
     @Override
@@ -201,17 +197,20 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
 
 
-        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             final Member newMember = iterator.next();
             final String address = newMember.address();
 
-            // 本节点不参与 memberJoin
+            // Since this start, this node does not participate in memberJoin
 
             if (Objects.equals(newMember, self) || serverListHealth.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
+
+            // Ensure that the node is created only once
+            serverListHealth.computeIfAbsent(address, s -> newMember);
 
             serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
@@ -238,7 +237,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         }
 
 
-        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext();) {
+        for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             Member member = iterator.next();
             final String address = member.address();

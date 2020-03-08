@@ -21,7 +21,6 @@ import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
-import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.consistency.exception.NoSuchLogProcessorException;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
@@ -135,11 +134,6 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     @Override
     public void shutdown() {
         distroServer.shutdown();
-    }
-
-    @Override
-    public Mapper mapper() {
-        return distroServer.getDistroMapper();
     }
 
     @Override

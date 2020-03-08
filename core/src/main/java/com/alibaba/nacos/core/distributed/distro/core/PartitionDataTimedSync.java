@@ -18,13 +18,13 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -66,7 +66,7 @@ public class PartitionDataTimedSync {
         public void run() {
             try {
 
-                final List<Member> members = getServers();
+                final Collection<Member> members = getServers();
 
                 Loggers.DISTRO.debug("server list is: {}", members);
 
@@ -121,7 +121,7 @@ public class PartitionDataTimedSync {
         }
     }
 
-    public List<Member> getServers() {
+    public Collection<Member> getServers() {
         return memberManager.allMembers();
     }
 

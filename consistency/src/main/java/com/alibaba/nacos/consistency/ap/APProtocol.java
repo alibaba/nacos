@@ -27,13 +27,6 @@ import com.alibaba.nacos.consistency.store.KVStore;
 public interface APProtocol<C extends Config> extends ConsistencyProtocol<C> {
 
     /**
-     * get mapper
-     *
-     * @return {@link Mapper}
-     */
-    Mapper mapper();
-
-    /**
      * create kv-store
      *
      * @param storeName

@@ -19,14 +19,21 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -34,15 +41,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Old API entry
@@ -60,12 +58,8 @@ public class ApiController extends InstanceController {
     @Autowired
     private ServiceManager serviceManager;
 
+    @Autowired
     private Mapper mapper;
-
-    @PostConstruct
-    protected void init() {
-        mapper = protocol.mapper();
-    }
 
     @RequestMapping("/allDomNames")
     public JSONObject allDomNames(HttpServletRequest request) throws Exception {

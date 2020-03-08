@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
@@ -35,6 +35,9 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,11 +46,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 /**
  * Operation for operators
@@ -85,12 +83,8 @@ public class OperatorController {
     @Autowired
     private RaftConsistencyServiceImpl raftConsistencyService;
 
+    @Autowired
     private Mapper mapper;
-
-    @PostConstruct
-    protected void init() {
-        mapper = apProtocol.mapper();
-    }
 
     @RequestMapping("/push/state")
     public JSONObject pushState(@RequestParam(required = false) boolean detail, @RequestParam(required = false) boolean reset) {

@@ -25,8 +25,8 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -151,7 +151,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                     int count = 0;
 
-                    Map<String, List<RecordListener>> listeners = dataStore.getListMap();
+                    Map<String, Set<RecordListener>> listeners = dataStore.getListMap();
 
                     if (!listeners.containsKey(datumKey)) {
                         continue;

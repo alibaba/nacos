@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
+import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
@@ -34,7 +34,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
-
 import java.net.HttpURLConnection;
 import java.util.List;
 
@@ -59,7 +58,7 @@ public class ClientBeatCheckTask implements Runnable {
 
     @JSONField(serialize = false)
     public Mapper getDistroMapper() {
-        return SpringUtils.getBean(APProtocol.class).mapper();
+        return SpringUtils.getBean(DistroMapper.class);
     }
 
     public GlobalConfig getGlobalConfig() {

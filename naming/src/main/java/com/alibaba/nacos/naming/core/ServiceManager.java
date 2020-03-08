@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.Mapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -100,12 +100,11 @@ public class ServiceManager implements RecordListener<Service> {
 
     private final Object putServiceLock = new Object();
 
+    @Autowired
     private Mapper mapper;
 
     @PostConstruct
     public void init() {
-
-        mapper = protocol.mapper();
 
         UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
