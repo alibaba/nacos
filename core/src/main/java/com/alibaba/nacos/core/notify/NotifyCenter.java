@@ -22,7 +22,6 @@ import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
-
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -46,8 +45,8 @@ public class NotifyCenter {
      * a placeholder Publisher first. not call {@link Publisher#start()}
      *
      * @param eventType Types of events that Subscriber cares about
-     * @param consumer subscriber
-     * @param <T> event type
+     * @param consumer  subscriber
+     * @param <T>       event type
      */
     public static <T> void registerSubscribe(final Subscribe consumer) {
         final String topic = consumer.subscribeType().getCanonicalName();
@@ -111,15 +110,11 @@ public class NotifyCenter {
 
     private static class Publisher {
 
-        private Disruptor<EventHandle> disruptor;
-
-        private Supplier<? extends Event> supplier;
-
         private final Class<? extends Event> eventType;
-
         private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
-
         private final AtomicBoolean initialized = new AtomicBoolean(false);
+        private Disruptor<EventHandle> disruptor;
+        private Supplier<? extends Event> supplier;
         private volatile boolean canOpen = false;
 
         public Publisher(final Class<? extends Event> eventType) {
@@ -145,10 +140,10 @@ public class NotifyCenter {
                 @Override
                 public void onEvent(EventHandle handle, long sequence, boolean endOfBatch) throws Exception {
 
-                    // To ensure that messages are not lost, enable EentHandler when
+                    // To ensure that messages are not lost, enable EventHandler when
                     // waiting for the first Subscriber to register
 
-                    for ( ; ; ) {
+                    for (; ; ) {
                         if (canOpen) {
                             break;
                         }

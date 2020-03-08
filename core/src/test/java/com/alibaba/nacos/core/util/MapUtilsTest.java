@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.core.util;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

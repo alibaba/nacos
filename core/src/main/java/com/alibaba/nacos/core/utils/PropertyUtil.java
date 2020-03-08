@@ -16,23 +16,22 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Nacos
  */
 public class PropertyUtil {
-    private static Properties properties = new Properties();
     private static final Logger log = LoggerFactory.getLogger(PropertyUtil.class);
+    private static Properties properties = new Properties();
 
     static {
         InputStream inputStream = null;
@@ -42,7 +41,7 @@ public class PropertyUtil {
                 inputStream = new FileInputStream(baseDir + "/conf/application.properties");
             } else {
                 inputStream = PropertyUtil.class
-                    .getResourceAsStream("/application.properties");
+                        .getResourceAsStream("/application.properties");
             }
             properties.load(inputStream);
         } catch (Exception e) {

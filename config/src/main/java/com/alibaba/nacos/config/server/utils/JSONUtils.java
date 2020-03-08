@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-
 import java.io.IOException;
 
 
@@ -39,7 +38,7 @@ public class JSONUtils {
     }
 
     public static <T> T deserializeObject(String s, TypeReference<T> typeReference)
-        throws IOException {
+            throws IOException {
         return JSON.parseObject(s, typeReference);
     }
 

@@ -21,13 +21,12 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * * Created with IntelliJ IDEA. User: dingjoey Date: 13-12-12 Time: 21:12 client api && sdk api 请求日志打点逻辑
@@ -41,22 +40,22 @@ public class RequestLogAspect {
      * publish config
      */
     private static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
-        + "(request,response,dataId,group,tenant,content,..)";
+            = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
+            + "(request,response,dataId,group,tenant,content,..)";
 
     /**
      * get config
      */
     private static final String CLIENT_INTERFACE_GET_CONFIG
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,"
-        + "response,dataId,group,tenant,..)";
+            = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,"
+            + "response,dataId,group,tenant,..)";
 
     /**
      * remove config
      */
     private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
-        + "response,dataId,group,tenant,..)";
+            = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
+            + "response,dataId,group,tenant,..)";
 
 
     /**
@@ -106,7 +105,7 @@ public class RequestLogAspect {
         // rt | status | requestIp | opType | dataId | group | datumId | md5 |
         // appName
         LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt, retVal, requestIp, requestType, dataId, group, tenant,
-            md5, appName);
+                md5, appName);
         return retVal;
     }
 

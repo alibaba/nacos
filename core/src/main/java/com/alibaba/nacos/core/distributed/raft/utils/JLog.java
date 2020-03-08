@@ -29,7 +29,8 @@ public class JLog extends NLog {
 
     private JLogOperaton operaton;
 
-    JLog() {}
+    JLog() {
+    }
 
     public JLogOperaton getOperaton() {
         return operaton;

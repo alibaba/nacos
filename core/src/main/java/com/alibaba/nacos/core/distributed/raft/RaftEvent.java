@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.core.notify.Event;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -35,6 +34,10 @@ public class RaftEvent implements Event {
     private long term;
 
     private List<String> raftClusterInfo = Collections.emptyList();
+
+    public static RaftEventBuilder builder() {
+        return new RaftEventBuilder();
+    }
 
     public String getGroupId() {
         return groupId;
@@ -71,10 +74,6 @@ public class RaftEvent implements Event {
     @Override
     public Class<? extends Event> eventType() {
         return RaftEvent.class;
-    }
-
-    public static RaftEventBuilder builder() {
-        return new RaftEventBuilder();
     }
 
     public static final class RaftEventBuilder {

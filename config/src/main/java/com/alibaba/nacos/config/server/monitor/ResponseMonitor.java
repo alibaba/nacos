@@ -24,8 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Nacos
  */
 public class ResponseMonitor {
-    private static AtomicLong[] getConfigCountDetail = new AtomicLong[8];
-    private static AtomicLong getConfigCount = new AtomicLong();
     private static final int MS_50 = 50;
     private static final int MS_100 = 100;
     private static final int MS_200 = 200;
@@ -33,6 +31,8 @@ public class ResponseMonitor {
     private static final int MS_1000 = 1000;
     private static final int MS_2000 = 2000;
     private static final int MS_3000 = 3000;
+    private static AtomicLong[] getConfigCountDetail = new AtomicLong[8];
+    private static AtomicLong getConfigCount = new AtomicLong();
 
     static {
         refresh();
@@ -69,19 +69,19 @@ public class ResponseMonitor {
         DecimalFormat df = new DecimalFormat("##.0");
         StringBuilder s = new StringBuilder("getConfig monitor:\r\n");
         s.append("0-50ms:" + df.format(getConfigCountDetail[0].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("100-200ms:" + df.format(getConfigCountDetail[2].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("200-500ms:" + df.format(getConfigCountDetail[3].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("500-1000ms:" + df.format(getConfigCountDetail[4].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("1000-2000ms:" + df.format(getConfigCountDetail[5].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("2000-3000ms:" + df.format(getConfigCountDetail[6].getAndSet(0) * 100 / getConfigCount.get())).append(
-            "%\r\n");
+                "%\r\n");
         s.append("3000以上ms:" + df.format(getConfigCountDetail[7].getAndSet(0) * 100 / getConfigCount.getAndSet(0)))
-            .append("%\r\n");
+                .append("%\r\n");
         return s.toString();
     }
 }

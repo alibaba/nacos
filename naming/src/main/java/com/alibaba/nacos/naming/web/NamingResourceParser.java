@@ -15,14 +15,12 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.auth.Resource;
 import com.alibaba.nacos.core.auth.ResourceParser;
-import org.apache.commons.lang3.StringUtils;
-
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Naming resource parser
@@ -57,14 +55,14 @@ public class NamingResourceParser implements ResourceParser {
 
         if (StringUtils.isBlank(serviceName)) {
             sb.append("*")
-                .append(Resource.SPLITTER)
-                .append(AUTH_NAMING_PREFIX)
-                .append("*");
+                    .append(Resource.SPLITTER)
+                    .append(AUTH_NAMING_PREFIX)
+                    .append("*");
         } else {
             sb.append(groupName)
-                .append(Resource.SPLITTER)
-                .append(AUTH_NAMING_PREFIX)
-                .append(serviceName);
+                    .append(Resource.SPLITTER)
+                    .append(AUTH_NAMING_PREFIX)
+                    .append(serviceName);
         }
 
         return sb.toString();

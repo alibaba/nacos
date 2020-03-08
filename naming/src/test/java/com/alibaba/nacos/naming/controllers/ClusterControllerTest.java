@@ -63,12 +63,12 @@ public class ClusterControllerTest extends BaseTest {
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
-                .param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME)
-                .param("healthChecker", "{\"type\":\"HTTP\"}")
-                .param("checkPort", "1")
-                .param("useInstancePort4Check", "true");
+                MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
+                        .param("clusterName", TEST_CLUSTER_NAME)
+                        .param("serviceName", TEST_SERVICE_NAME)
+                        .param("healthChecker", "{\"type\":\"HTTP\"}")
+                        .param("checkPort", "1")
+                        .param("useInstancePort4Check", "true");
         Assert.assertEquals("ok", mockmvc.perform(builder).andReturn().getResponse().getContentAsString());
 
         Cluster expectedCluster = new Cluster(TEST_CLUSTER_NAME, service);
@@ -84,12 +84,12 @@ public class ClusterControllerTest extends BaseTest {
         expectedException.expectCause(isA(NacosException.class));
         expectedException.expectMessage("service not found:test-service-not-found");
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
-                .param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", "test-service-not-found")
-                .param("healthChecker", "{\"type\":\"HTTP\"}")
-                .param("checkPort", "1")
-                .param("useInstancePort4Check", "true");
+                MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
+                        .param("clusterName", TEST_CLUSTER_NAME)
+                        .param("serviceName", "test-service-not-found")
+                        .param("healthChecker", "{\"type\":\"HTTP\"}")
+                        .param("checkPort", "1")
+                        .param("useInstancePort4Check", "true");
         mockmvc.perform(builder);
     }
 
@@ -101,12 +101,12 @@ public class ClusterControllerTest extends BaseTest {
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
-                .param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME)
-                .param("healthChecker", "{\"type\":\"123\"}")
-                .param("checkPort", "1")
-                .param("useInstancePort4Check", "true");
+                MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
+                        .param("clusterName", TEST_CLUSTER_NAME)
+                        .param("serviceName", TEST_SERVICE_NAME)
+                        .param("healthChecker", "{\"type\":\"123\"}")
+                        .param("checkPort", "1")
+                        .param("useInstancePort4Check", "true");
         mockmvc.perform(builder);
     }
 

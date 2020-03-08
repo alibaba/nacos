@@ -93,7 +93,7 @@ public class GroupInfo implements Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        GroupInfo other = (GroupInfo)obj;
+        GroupInfo other = (GroupInfo) obj;
         if (address == null) {
             if (other.address != null) {
                 return false;

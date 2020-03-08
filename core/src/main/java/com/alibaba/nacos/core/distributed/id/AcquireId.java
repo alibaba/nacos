@@ -31,6 +31,9 @@ public class AcquireId implements Serializable {
 
     private String applicant;
 
+    public static AcquireIdBuilder builder() {
+        return new AcquireIdBuilder();
+    }
 
     public long getMinId() {
         return minId;
@@ -54,10 +57,6 @@ public class AcquireId implements Serializable {
 
     public void setApplicant(String applicant) {
         this.applicant = applicant;
-    }
-
-    public static AcquireIdBuilder builder() {
-        return new AcquireIdBuilder();
     }
 
     public static final class AcquireIdBuilder {

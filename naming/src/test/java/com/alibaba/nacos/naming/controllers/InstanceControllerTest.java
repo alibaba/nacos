@@ -24,12 +24,13 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -40,9 +41,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author nkorange
@@ -82,10 +80,10 @@ public class InstanceControllerTest extends BaseTest {
         Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
-                .param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", "1.1.1.1")
-                .param("port", "9999");
+                MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
+                        .param("serviceName", TEST_SERVICE_NAME)
+                        .param("ip", "1.1.1.1")
+                        .param("port", "9999");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -95,11 +93,11 @@ public class InstanceControllerTest extends BaseTest {
     public void deregisterInstance() throws Exception {
 
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
-                .param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", "1.1.1.1")
-                .param("port", "9999")
-                .param("clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+                MockMvcRequestBuilders.delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
+                        .param("serviceName", TEST_SERVICE_NAME)
+                        .param("ip", "1.1.1.1")
+                        .param("port", "9999")
+                        .param("clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -126,8 +124,8 @@ public class InstanceControllerTest extends BaseTest {
         Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
-                .param("serviceName", TEST_SERVICE_NAME);
+                MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
+                        .param("serviceName", TEST_SERVICE_NAME);
 
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -150,8 +148,8 @@ public class InstanceControllerTest extends BaseTest {
         Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
 
         MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
-                .param("serviceName", TEST_SERVICE_NAME);
+                MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
+                        .param("serviceName", TEST_SERVICE_NAME);
 
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();

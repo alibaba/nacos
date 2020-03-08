@@ -16,12 +16,11 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author nkorange

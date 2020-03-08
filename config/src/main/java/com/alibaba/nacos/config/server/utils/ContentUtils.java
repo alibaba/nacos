@@ -26,6 +26,8 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  */
 public class ContentUtils {
 
+    private final static int LIMIT_CONTENT_SIZE = 100;
+
     public static void verifyIncrementPubContent(String content) {
 
         if (content == null || content.length() == 0) {
@@ -67,6 +69,4 @@ public class ContentUtils {
             return content.substring(0, 100) + "...";
         }
     }
-
-    private final static int LIMIT_CONTENT_SIZE = 100;
 }

@@ -21,10 +21,9 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 
 import static com.alibaba.nacos.config.server.service.RowMapperManager.USER_ROW_MAPPER;
 

@@ -19,12 +19,11 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -37,15 +36,12 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 
+    private static final String HEATH_UP_STR = "UP";
+    private static final String HEATH_DOWN_STR = "DOWN";
+    private static final String HEATH_WARN_STR = "WARN";
     private final ServerMemberManager serverNodeManager;
     private final DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
-
-    private static final String HEATH_UP_STR = "UP";
-
-    private static final String HEATH_DOWN_STR = "DOWN";
-
-    private static final String HEATH_WARN_STR = "WARN";
 
     @Autowired
     public HealthController(ServerMemberManager serverNodeManager,
@@ -65,10 +61,10 @@ public class HealthController {
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
         if (dbStatus.contains(HEATH_UP_STR) && serverNodeManager.isAddressServerHealth() && serverNodeManager
-            .isInIpList()) {
+                .isInIpList()) {
             sb.append(HEATH_UP_STR);
         } else if (dbStatus.contains(HEATH_WARN_STR) && serverNodeManager.isAddressServerHealth() && serverNodeManager
-            .isInIpList()) {
+                .isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {

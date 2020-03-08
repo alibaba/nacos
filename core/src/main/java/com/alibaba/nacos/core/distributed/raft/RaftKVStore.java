@@ -29,15 +29,14 @@ import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.raft.exception.RaftKVStoreException;
-import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
 
 /**
  * Strong consistency key-value pair storage
@@ -48,7 +47,8 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("all")
 class RaftKVStore<T> extends CPKvStore<T> {
 
-    private static final TypeReference<Collection<String>> reference = new TypeReference<Collection<String>>(){};
+    private static final TypeReference<Collection<String>> reference = new TypeReference<Collection<String>>() {
+    };
 
     private KVLogProcessor logProcessor;
 
@@ -221,6 +221,10 @@ class RaftKVStore<T> extends CPKvStore<T> {
         }
     }
 
+    public KVLogProcessor getLogProcessor() {
+        return logProcessor;
+    }
+
     class KVLogProcessor implements LogProcessor4CP {
 
         @Override
@@ -282,10 +286,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
         public String bizInfo() {
             return storeName();
         }
-    }
-
-    public KVLogProcessor getLogProcessor() {
-        return logProcessor;
     }
 
     class KvSuperFuncCaller {

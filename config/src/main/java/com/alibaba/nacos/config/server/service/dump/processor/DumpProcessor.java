@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class DumpProcessor implements TaskProcessor {
 
+    final DumpService dumpService;
     private PersistService persistService;
 
     public DumpProcessor(DumpService dumpService) {
@@ -46,7 +47,7 @@ public class DumpProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        DumpTask dumpTask = (DumpTask)task;
+        DumpTask dumpTask = (DumpTask) task;
         String[] pair = GroupKey2.parseKey(dumpTask.getGroupKey());
         String dataId = pair[0];
         String group = pair[1];
@@ -142,6 +143,4 @@ public class DumpProcessor implements TaskProcessor {
         }
 
     }
-
-    final DumpService dumpService;
 }

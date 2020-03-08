@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-
-import java.util.Objects;
 
 /**
  * 没有开启 embeddedDistributedStorage 以及 spring.datasource.platform 设置了参数

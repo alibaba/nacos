@@ -21,11 +21,14 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author nacos
@@ -50,27 +53,27 @@ public class NamingProxy {
             headers.put("Connection", "Keep-Alive");
 
             HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
-                headers, JSON.toJSONBytes(checksumMap),
-                new AsyncCompletionHandler() {
-                    @Override
-                    public Object onCompleted(Response response) throws Exception {
-                        if (HttpURLConnection.HTTP_OK != response.getStatusCode()) {
-                            Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
-                                "http://" + server + RunningConfig.getContextPath() +
-                                    UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL,
-                                response.getStatusCode(), response.getResponseBody());
+                            + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
+                    headers, JSON.toJSONBytes(checksumMap),
+                    new AsyncCompletionHandler() {
+                        @Override
+                        public Object onCompleted(Response response) throws Exception {
+                            if (HttpURLConnection.HTTP_OK != response.getStatusCode()) {
+                                Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
+                                        "http://" + server + RunningConfig.getContextPath() +
+                                                UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL,
+                                        response.getStatusCode(), response.getResponseBody());
+                            }
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        Loggers.DISTRO.error("failed to req API:" + "http://" + server
-                            + RunningConfig.getContextPath()
-                            + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, t);
-                    }
-                });
+                        @Override
+                        public void onThrowable(Throwable t) {
+                            Loggers.DISTRO.error("failed to req API:" + "http://" + server
+                                    + RunningConfig.getContextPath()
+                                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, t);
+                        }
+                    });
         } catch (Exception e) {
             Loggers.DISTRO.warn("NamingProxy", e);
         }
@@ -81,38 +84,38 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
         HttpClient.HttpResult result = HttpClient.httpGetLarge("http://" + server + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JSON.toJSONString(params));
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JSON.toJSONString(params));
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content.getBytes();
         }
 
         throw new IOException("failed to req API: " + "http://" + server
-            + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
-            + result.code + " msg: " + result.content);
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
+                + result.code + " msg: " + result.content);
     }
 
     public static byte[] getAllData(String server) throws Exception {
 
         Map<String, String> params = new HashMap<>(8);
         HttpClient.HttpResult result = HttpClient.httpGet("http://" + server + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL, new ArrayList<>(), params);
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL, new ArrayList<>(), params);
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content.getBytes();
         }
 
         throw new IOException("failed to req API: " + "http://" + server
-            + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
-            + result.code + " msg: " + result.content);
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
+                + result.code + " msg: " + result.content);
     }
 
 
     public static boolean syncData(byte[] data, String curServer) {
         Map<String, String> headers = new HashMap<>(128);
-        
+
         headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
         headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         headers.put("Accept-Encoding", "gzip,deflate,sdch");
@@ -121,7 +124,7 @@ public class NamingProxy {
 
         try {
             HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
             if (HttpURLConnection.HTTP_OK == result.code) {
                 return true;
             }
@@ -129,9 +132,9 @@ public class NamingProxy {
                 return true;
             }
             throw new IOException("failed to req API:" + "http://" + curServer
-                + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL + ". code:"
-                + result.code + " msg: " + result.content);
+                    + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL + ". code:"
+                    + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
@@ -141,11 +144,11 @@ public class NamingProxy {
     public static String reqAPI(String api, Map<String, String> params, String curServer) throws Exception {
         try {
             List<String> headers = Arrays.asList(
-                HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
-                HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch",
-                "Connection", "Keep-Alive",
-                "Content-Encoding", "gzip");
+                    HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+                    HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
+                    "Accept-Encoding", "gzip,deflate,sdch",
+                    "Connection", "Keep-Alive",
+                    "Content-Encoding", "gzip");
 
 
             HttpClient.HttpResult result;
@@ -166,7 +169,7 @@ public class NamingProxy {
             }
 
             throw new IOException("failed to req API:" + "http://" + curServer + api + ". code:"
-                + result.code + " msg: " + result.content);
+                    + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
@@ -176,11 +179,11 @@ public class NamingProxy {
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {
             List<String> headers = Arrays.asList(
-                HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
-                HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch",
-                "Connection", "Keep-Alive",
-                "Content-Encoding", "gzip");
+                    HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+                    HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
+                    "Accept-Encoding", "gzip,deflate,sdch",
+                    "Connection", "Keep-Alive",
+                    "Content-Encoding", "gzip");
 
 
             HttpClient.HttpResult result;
@@ -191,10 +194,10 @@ public class NamingProxy {
 
             if (isPost) {
                 result = HttpClient.httpPost("http://" + curServer + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
             } else {
                 result = HttpClient.httpGet("http://" + curServer + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
             }
 
             if (HttpURLConnection.HTTP_OK == result.code) {
@@ -206,9 +209,9 @@ public class NamingProxy {
             }
 
             throw new IOException("failed to req API:" + "http://" + curServer
-                + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
-                + result.code + " msg: " + result.content);
+                    + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
+                    + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
@@ -218,10 +221,10 @@ public class NamingProxy {
     public static String reqCommon(String path, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {
             List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
-                "User-Agent", UtilsAndCommons.SERVER_VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch",
-                "Connection", "Keep-Alive",
-                "Content-Encoding", "gzip");
+                    "User-Agent", UtilsAndCommons.SERVER_VERSION,
+                    "Accept-Encoding", "gzip,deflate,sdch",
+                    "Connection", "Keep-Alive",
+                    "Content-Encoding", "gzip");
 
 
             HttpClient.HttpResult result;
@@ -232,10 +235,10 @@ public class NamingProxy {
 
             if (isPost) {
                 result = HttpClient.httpPost("http://" + curServer + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
             } else {
                 result = HttpClient.httpGet("http://" + curServer + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
             }
 
             if (HttpURLConnection.HTTP_OK == result.code) {
@@ -247,9 +250,9 @@ public class NamingProxy {
             }
 
             throw new IOException("failed to req API:" + "http://" + curServer
-                + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:"
-                + result.code + " msg: " + result.content);
+                    + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:"
+                    + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }

@@ -47,7 +47,7 @@ public class GroupkeyListenserStatus implements Serializable {
     }
 
     public void setLisentersGroupkeyStatus(
-        Map<String, String> lisentersGroupkeyStatus) {
+            Map<String, String> lisentersGroupkeyStatus) {
         this.lisentersGroupkeyStatus = lisentersGroupkeyStatus;
     }
 }

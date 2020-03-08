@@ -26,22 +26,21 @@ import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
-import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
-
 import java.util.Map;
 import java.util.function.BiConsumer;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
 
 /**
  * Eventual consistency key-value pair storage
  * Implementation class needs to be discovered by Spring
  *
  * <p>
- *      Provides AP consistency internally, that is, the KV data
- *      under each node will eventually be consistent, and the AP
- *      protocol is shielded. Users only need to use the provided
- *      data operation method to enjoy distributed KV based on final
- *      consistency
+ * Provides AP consistency internally, that is, the KV data
+ * under each node will eventually be consistent, and the AP
+ * protocol is shielded. Users only need to use the provided
+ * data operation method to enjoy distributed KV based on final
+ * consistency
  * </p>
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -103,6 +102,10 @@ public class DistroKVStore<T> extends KVStore<T> {
 
     // Provide AP consistency capability for KV storage
 
+    KVLogProcessor getKVLogProcessor() {
+        return logProcessor;
+    }
+
     final class KVLogProcessor implements LogProcessor4AP {
 
         @Override
@@ -153,10 +156,6 @@ public class DistroKVStore<T> extends KVStore<T> {
             return storeName();
         }
 
-    }
-
-    KVLogProcessor getKVLogProcessor() {
-        return logProcessor;
     }
 
 }

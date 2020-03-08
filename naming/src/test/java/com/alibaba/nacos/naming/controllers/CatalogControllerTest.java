@@ -45,9 +45,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @AutoConfigureMockMvc
 public class CatalogControllerTest {
 
+    private static final String TEST_CLUSTER_NAME = "test-cluster";
+    private static final String TEST_SERVICE_NAME = "test-service";
+    private static final String TEST_GROUP_NAME = "test-group-name";
     @Autowired
     private MockMvc mockmvc;
-
     @MockBean
     private ServiceManager serviceManager;
 
@@ -63,10 +65,10 @@ public class CatalogControllerTest {
         service.addCluster(cluster);
         when(serviceManager.getService(anyString(), anyString())).thenReturn(service);
         String result1 = mockmvc.perform(get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
-            .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
-            .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)
-            .param(CommonParams.GROUP_NAME, TEST_GROUP_NAME))
-            .andReturn().getResponse().getContentAsString();
+                .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
+                .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)
+                .param(CommonParams.GROUP_NAME, TEST_GROUP_NAME))
+                .andReturn().getResponse().getContentAsString();
         JSONObject result = JSONObject.parseObject(result1);
         JSONObject serviceResult = (JSONObject) result.get("service");
         Assert.assertEquals(TEST_SERVICE_NAME, serviceResult.get("name"));
@@ -86,13 +88,9 @@ public class CatalogControllerTest {
     @Test
     public void testServiceDetailNotFound() throws Exception {
         String result = mockmvc.perform(get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
-            .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
-            .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)).andReturn().getResponse().getContentAsString();
+                .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
+                .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)).andReturn().getResponse().getContentAsString();
 
         Assert.assertTrue(result.contains("test-service is not found!"));
     }
-
-    private static final String TEST_CLUSTER_NAME = "test-cluster";
-    private static final String TEST_SERVICE_NAME = "test-service";
-    private static final String TEST_GROUP_NAME = "test-group-name";
 }

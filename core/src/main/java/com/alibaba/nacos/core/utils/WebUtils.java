@@ -16,11 +16,10 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author nkorange
@@ -78,8 +77,8 @@ public class WebUtils {
      *
      * @param request HttpServletRequest
      * @return the value of the request header "user-agent", or the value of the
-     *         request header "client-version" if the request does not have a
-     *         header of "user-agent"
+     * request header "client-version" if the request does not have a
+     * header of "user-agent"
      */
     public static String getUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);

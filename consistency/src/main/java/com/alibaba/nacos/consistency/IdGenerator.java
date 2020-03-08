@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.consistency;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -39,5 +41,12 @@ public interface IdGenerator {
      * @return next id
      */
     long nextId();
+
+    /**
+     * Returns information for the current IDGenerator
+     *
+     * @return {@link Map<Object, Object>}
+     */
+    Map<Object, Object> info();
 
 }

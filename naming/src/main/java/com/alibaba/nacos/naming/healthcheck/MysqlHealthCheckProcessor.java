@@ -23,17 +23,21 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import io.netty.channel.ConnectTimeoutException;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -46,21 +50,11 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
     public static final String TYPE = "MYSQL";
-
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
-
-    @Autowired
-    private SwitchDomain switchDomain;
-
     public static final int CONNECT_TIMEOUT_MS = 500;
-
     private static final String CHECK_MYSQL_MASTER_SQL = "show global variables where variable_name='read_only'";
     private static final String MYSQL_SLAVE_READONLY = "ON";
-
     private static ConcurrentMap<String, Connection> CONNECTION_POOL
             = new ConcurrentHashMap<String, Connection>();
-
     private static ExecutorService EXECUTOR;
 
     static {
@@ -79,6 +73,11 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 }
         );
     }
+
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+    @Autowired
+    private SwitchDomain switchDomain;
 
     public MysqlHealthCheckProcessor() {
     }
@@ -109,7 +108,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
                 if (!ip.markChecking()) {
                     SRV_LOG.warn("mysql check started before last one finished, service: {}:{}:{}",
-                        task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
+                            task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                     continue;

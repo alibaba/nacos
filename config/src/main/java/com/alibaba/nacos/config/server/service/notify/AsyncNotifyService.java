@@ -26,7 +26,19 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEvent
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -41,19 +53,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
@@ -64,7 +63,40 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @Service
 public class AsyncNotifyService extends AbstractEventListener {
 
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    private static final Executor EXECUTOR = Executors.newScheduledThreadPool(100, new NotifyThreadFactory());
+    private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
+    private static int MIN_RETRY_INTERVAL = 500;
+    private static int INCREASE_STEPS = 1000;
+    private static int MAX_COUNT = 6;
     private ServerMemberManager serverNodeManager;
+    private RequestConfig requestConfig = RequestConfig.custom()
+            .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
+            .setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
+
+    private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
+            .setDefaultRequestConfig(requestConfig).build();
+
+    @Autowired
+    public AsyncNotifyService(ServerMemberManager serverNodeManager) {
+        this.serverNodeManager = serverNodeManager;
+        httpclient.start();
+    }
+
+    /**
+     * get delayTime and also set failCount to task;失败时间指数增加，以免断网场景不断重试无效任务，影响正常同步
+     *
+     * @param task notify task
+     * @return delay
+     */
+    private static int getDelayTime(NotifySingleTask task) {
+        int failCount = task.getFailCount();
+        int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
+        if (failCount <= MAX_COUNT) {
+            task.setFailCount(failCount + 1);
+        }
+        return delay;
+    }
 
     @Override
     public List<Class<? extends Event>> interest() {
@@ -96,71 +128,8 @@ public class AsyncNotifyService extends AbstractEventListener {
         }
     }
 
-    @Autowired
-    public AsyncNotifyService(ServerMemberManager serverNodeManager) {
-        this.serverNodeManager = serverNodeManager;
-        httpclient.start();
-    }
-
     public Executor getExecutor() {
         return EXECUTOR;
-    }
-
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static final Executor EXECUTOR = Executors.newScheduledThreadPool(100, new NotifyThreadFactory());
-
-    private RequestConfig requestConfig = RequestConfig.custom()
-        .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
-        .setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
-
-    private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
-        .setDefaultRequestConfig(requestConfig).build();
-
-    private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
-
-    class AsyncTask implements Runnable {
-
-        public AsyncTask(CloseableHttpAsyncClient httpclient, Queue<NotifySingleTask> queue) {
-            this.httpclient = httpclient;
-            this.queue = queue;
-        }
-
-        @Override
-        public void run() {
-            executeAsyncInvoke();
-        }
-
-        private void executeAsyncInvoke() {
-            while (!queue.isEmpty()) {
-                NotifySingleTask task = queue.poll();
-                String targetIp = task.getTargetIP();
-                if (serverNodeManager.hasMember(targetIp)) {
-                    // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
-                    if (serverNodeManager.isHealthCheck()
-                        && serverNodeManager.getServerListUnHealth().contains(targetIp)) {
-                        // target ip 不健康，则放入通知列表中
-                        ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                            task.getLastModified(),
-                            LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
-                        // get delay time and set fail count to the task
-                        asyncTaskExecute(task);
-                    } else {
-                        HttpGet request = new HttpGet(task.url);
-                        request.setHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
-                            String.valueOf(task.getLastModified()));
-                        request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
-                        if (task.isBeta) {
-                            request.setHeader("isBeta", "true");
-                        }
-                        httpclient.execute(request, new AsyncNotifyCallBack(httpclient, task));
-                    }
-                }
-            }
-        }
-
-        private Queue<NotifySingleTask> queue;
-        private CloseableHttpAsyncClient httpclient;
-
     }
 
     private void asyncTaskExecute(NotifySingleTask task) {
@@ -171,93 +140,16 @@ public class AsyncNotifyService extends AbstractEventListener {
         ((ScheduledThreadPoolExecutor) EXECUTOR).schedule(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
 
-
-    class AsyncNotifyCallBack implements FutureCallback<HttpResponse> {
-
-        public AsyncNotifyCallBack(CloseableHttpAsyncClient httpClient, NotifySingleTask task) {
-            this.task = task;
-            this.httpClient = httpClient;
-        }
-
-        @Override
-        public void completed(HttpResponse response) {
-
-            long delayed = System.currentTimeMillis() - task.getLastModified();
-
-            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                ConfigTraceService.logNotifyEvent(task.getDataId(),
-                    task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                    LOCAL_IP,
-                    ConfigTraceService.NOTIFY_EVENT_OK, delayed,
-                    task.target);
-            } else {
-                log.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}",
-                    task.target, task.getDataId(), task.getGroup(), task.getLastModified(), response.getStatusLine().getStatusCode());
-                ConfigTraceService.logNotifyEvent(task.getDataId(),
-                    task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                    LOCAL_IP,
-                    ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
-                    task.target);
-
-                //get delay time and set fail count to the task
-                asyncTaskExecute(task);
-
-                LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
-                    task.target, task.getDataId(), task.getGroup(), task.getLastModified());
-
-                MetricsMonitor.getConfigNotifyException().increment();
-            }
-            HttpClientUtils.closeQuietly(response);
-        }
-
-        @Override
-        public void failed(Exception ex) {
-
-            long delayed = System.currentTimeMillis() - task.getLastModified();
-            log.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}",
-                task.target, task.getDataId(), task.getGroup(), task.getLastModified(), ex.toString());
-            ConfigTraceService.logNotifyEvent(task.getDataId(),
-                task.getGroup(), task.getTenant(), null, task.getLastModified(),
-                LOCAL_IP,
-                ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
-                task.target);
-
-            //get delay time and set fail count to the task
-            asyncTaskExecute(task);
-            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
-                task.target, task.getDataId(), task.getGroup(), task.getLastModified());
-
-            MetricsMonitor.getConfigNotifyException().increment();
-        }
-
-        @Override
-        public void cancelled() {
-
-            LogUtil.notifyLog.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}",
-                task.target, task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
-
-            //get delay time and set fail count to the task
-            asyncTaskExecute(task);
-            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
-                task.target, task.getDataId(), task.getGroup(), task.getLastModified());
-
-            MetricsMonitor.getConfigNotifyException().increment();
-        }
-
-        private NotifySingleTask task;
-        private CloseableHttpAsyncClient httpClient;
-    }
-
     static class NotifySingleTask extends NotifyTask {
 
-        private String target;
-        public String url;
-        private boolean isBeta;
         private static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH
-            + "/dataChange"
-            + "?dataId={2}&group={3}";
+                + "/dataChange"
+                + "?dataId={2}&group={3}";
         private static final String URL_PATTERN_TENANT = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH
-            + "/dataChange" + "?dataId={2}&group={3}&tenant={4}";
+                + "/dataChange" + "?dataId={2}&group={3}&tenant={4}";
+        public String url;
+        private String target;
+        private boolean isBeta;
         private int failCount;
 
         public NotifySingleTask(String dataId, String group, String tenant, long lastModified, String target) {
@@ -282,10 +174,10 @@ public class AsyncNotifyService extends AbstractEventListener {
             }
             if (StringUtils.isBlank(tenant)) {
                 this.url = MessageFormat.format(URL_PATTERN, target, RunningConfigUtils.getContextPath(), dataId,
-                    group);
+                        group);
             } else {
                 this.url = MessageFormat.format(URL_PATTERN_TENANT, target, RunningConfigUtils.getContextPath(), dataId,
-                    group, tenant);
+                        group, tenant);
             }
             if (StringUtils.isNotEmpty(tag)) {
                 url = url + "&tag=" + tag;
@@ -295,13 +187,13 @@ public class AsyncNotifyService extends AbstractEventListener {
         }
 
         @Override
-        public void setFailCount(int count) {
-            this.failCount = count;
+        public int getFailCount() {
+            return failCount;
         }
 
         @Override
-        public int getFailCount() {
-            return failCount;
+        public void setFailCount(int count) {
+            this.failCount = count;
         }
 
         public String getTargetIP() {
@@ -320,23 +212,125 @@ public class AsyncNotifyService extends AbstractEventListener {
         }
     }
 
-    /**
-     * get delayTime and also set failCount to task;失败时间指数增加，以免断网场景不断重试无效任务，影响正常同步
-     *
-     * @param task notify task
-     * @return delay
-     */
-    private static int getDelayTime(NotifySingleTask task) {
-        int failCount = task.getFailCount();
-        int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
-        if (failCount <= MAX_COUNT) {
-            task.setFailCount(failCount + 1);
+    class AsyncTask implements Runnable {
+
+        private Queue<NotifySingleTask> queue;
+        private CloseableHttpAsyncClient httpclient;
+
+        public AsyncTask(CloseableHttpAsyncClient httpclient, Queue<NotifySingleTask> queue) {
+            this.httpclient = httpclient;
+            this.queue = queue;
         }
-        return delay;
+
+        @Override
+        public void run() {
+            executeAsyncInvoke();
+        }
+
+        private void executeAsyncInvoke() {
+            while (!queue.isEmpty()) {
+                NotifySingleTask task = queue.poll();
+                String targetIp = task.getTargetIP();
+                if (serverNodeManager.hasMember(targetIp)) {
+                    // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
+                    if (serverNodeManager.isHealthCheck()
+                            && serverNodeManager.getServerListUnHealth().contains(targetIp)) {
+                        // target ip 不健康，则放入通知列表中
+                        ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                                task.getLastModified(),
+                                LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
+                        // get delay time and set fail count to the task
+                        asyncTaskExecute(task);
+                    } else {
+                        HttpGet request = new HttpGet(task.url);
+                        request.setHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
+                                String.valueOf(task.getLastModified()));
+                        request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
+                        if (task.isBeta) {
+                            request.setHeader("isBeta", "true");
+                        }
+                        httpclient.execute(request, new AsyncNotifyCallBack(httpclient, task));
+                    }
+                }
+            }
+        }
+
     }
 
-    private static int MIN_RETRY_INTERVAL = 500;
-    private static int INCREASE_STEPS = 1000;
-    private static int MAX_COUNT = 6;
+    class AsyncNotifyCallBack implements FutureCallback<HttpResponse> {
+
+        private NotifySingleTask task;
+        private CloseableHttpAsyncClient httpClient;
+
+        public AsyncNotifyCallBack(CloseableHttpAsyncClient httpClient, NotifySingleTask task) {
+            this.task = task;
+            this.httpClient = httpClient;
+        }
+
+        @Override
+        public void completed(HttpResponse response) {
+
+            long delayed = System.currentTimeMillis() - task.getLastModified();
+
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                ConfigTraceService.logNotifyEvent(task.getDataId(),
+                        task.getGroup(), task.getTenant(), null, task.getLastModified(),
+                        LOCAL_IP,
+                        ConfigTraceService.NOTIFY_EVENT_OK, delayed,
+                        task.target);
+            } else {
+                log.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}",
+                        task.target, task.getDataId(), task.getGroup(), task.getLastModified(), response.getStatusLine().getStatusCode());
+                ConfigTraceService.logNotifyEvent(task.getDataId(),
+                        task.getGroup(), task.getTenant(), null, task.getLastModified(),
+                        LOCAL_IP,
+                        ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
+                        task.target);
+
+                //get delay time and set fail count to the task
+                asyncTaskExecute(task);
+
+                LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+                        task.target, task.getDataId(), task.getGroup(), task.getLastModified());
+
+                MetricsMonitor.getConfigNotifyException().increment();
+            }
+            HttpClientUtils.closeQuietly(response);
+        }
+
+        @Override
+        public void failed(Exception ex) {
+
+            long delayed = System.currentTimeMillis() - task.getLastModified();
+            log.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}",
+                    task.target, task.getDataId(), task.getGroup(), task.getLastModified(), ex.toString());
+            ConfigTraceService.logNotifyEvent(task.getDataId(),
+                    task.getGroup(), task.getTenant(), null, task.getLastModified(),
+                    LOCAL_IP,
+                    ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
+                    task.target);
+
+            //get delay time and set fail count to the task
+            asyncTaskExecute(task);
+            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+                    task.target, task.getDataId(), task.getGroup(), task.getLastModified());
+
+            MetricsMonitor.getConfigNotifyException().increment();
+        }
+
+        @Override
+        public void cancelled() {
+
+            LogUtil.notifyLog.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}",
+                    task.target, task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
+
+            //get delay time and set fail count to the task
+            asyncTaskExecute(task);
+            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+                    task.target, task.getDataId(), task.getGroup(), task.getLastModified());
+
+            MetricsMonitor.getConfigNotifyException().increment();
+        }
+    }
 
 }

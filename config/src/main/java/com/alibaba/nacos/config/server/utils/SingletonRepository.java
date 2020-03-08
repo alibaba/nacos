@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SingletonRepository<T> {
 
+    private final ConcurrentHashMap<T, T> shared;
+
     public SingletonRepository() {
         // 初始化大小2^16, 这个容器本身大概占用50k的内存，避免不停扩容
         shared = new ConcurrentHashMap<T, T>(1 << 16);
@@ -47,16 +49,14 @@ public class SingletonRepository<T> {
         shared.remove(obj);
     }
 
-    private final ConcurrentHashMap<T, T> shared;
-
     /**
      * DataId和Group的缓存。
      */
     static public class DataIdGroupIdCache {
+        static SingletonRepository<String> cache = new SingletonRepository<String>();
+
         static public String getSingleton(String str) {
             return cache.getSingleton(str);
         }
-
-        static SingletonRepository<String> cache = new SingletonRepository<String>();
     }
 }

@@ -18,11 +18,10 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
-import org.springframework.util.StringUtils;
-
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.util.StringUtils;
 
 /**
  * Report local server status to other server
@@ -41,11 +40,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
         params.put("serverStatus", msg.getData());
 
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort()
-            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
+                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
 
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                + "/operator/server/status";
+                    + "/operator/server/status";
         }
 
         try {
@@ -54,7 +53,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
-                            serverIP);
+                                serverIP);
 
                         return 1;
                     }

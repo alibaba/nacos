@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.service.transaction;
 
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
+import java.util.List;
+import java.util.Map;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -26,16 +28,13 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.List;
-import java.util.Map;
-
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class BaseDatabaseOperate {
-    
+
     public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Class<R> cls) {
         try {
             return jdbcTemplate.queryForObject(sql, cls);
@@ -50,7 +49,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    
+
     public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> cls) {
         try {
             return jdbcTemplate.queryForObject(sql, args, cls);
@@ -68,7 +67,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    
+
     public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
         try {
             return jdbcTemplate.queryForObject(sql, args, mapper);
@@ -86,7 +85,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    
+
     public <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
         try {
             return jdbcTemplate.query(sql, args, mapper);
@@ -102,7 +101,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    
+
     public <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> rClass) {
         try {
             return jdbcTemplate.queryForList(sql, args, rClass);
@@ -118,7 +117,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    
+
     public List<Map<String, Object>> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args) {
         try {
             return jdbcTemplate.queryForList(sql, args);
@@ -136,8 +135,8 @@ public class BaseDatabaseOperate {
 
     public Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<SQL> sqlContext) {
         return transactionTemplate.execute(status -> {
-            String[] errSql = new String[]{ null };
-            Object[][] args = new Object[][]{ null };
+            String[] errSql = new String[]{null};
+            Object[][] args = new Object[][]{null};
             try {
                 sqlContext.forEach(pair -> {
                     errSql[0] = pair.getSql();

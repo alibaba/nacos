@@ -16,7 +16,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.SubscriberStatus;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +27,11 @@ import java.util.concurrent.ConcurrentMap;
  * @author Nacos
  */
 public class ClientTrackService {
+    /**
+     * 所有客户端记录。遍历 >> 新增/删除
+     */
+    static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<String, ClientRecord>();
+
     /**
      * 跟踪客户端md5.
      */
@@ -157,11 +161,6 @@ public class ClientTrackService {
     static public void refreshClientRecord() {
         clientRecords = new ConcurrentHashMap<String, ClientRecord>(50);
     }
-
-    /**
-     * 所有客户端记录。遍历 >> 新增/删除
-     */
-    static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<String, ClientRecord>();
 }
 
 /**
@@ -169,9 +168,9 @@ public class ClientTrackService {
  */
 class ClientRecord {
     final String ip;
-    volatile long lastTime;
     final ConcurrentMap<String, String> groupKey2md5Map;
     final ConcurrentMap<String, Long> groupKey2pollingTsMap;
+    volatile long lastTime;
 
     ClientRecord(String clientIp) {
         ip = clientIp;

@@ -20,7 +20,6 @@ import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RetryAgainException;
-
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -33,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 public class FailoverClosureImpl<T> implements FailoverClosure<T> {
 
     private final CompletableFuture<T> future;
-    private final int                  retriesLeft;
-    private final RetryRunner          retryRunner;
+    private final int retriesLeft;
+    private final RetryRunner retryRunner;
     private volatile T data;
     private volatile Throwable throwable;
 

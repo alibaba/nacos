@@ -16,15 +16,20 @@
 package com.alibaba.nacos.core.code;
 
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.reflections.Reflections;
-import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
-
 import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.lang3.ArrayUtils;
+import org.reflections.Reflections;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 /**
  * Method cache
@@ -36,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ControllerMethodsCache {
 
     private ConcurrentMap<String, Method> methods = new
-        ConcurrentHashMap<>();
+            ConcurrentHashMap<>();
 
     public ConcurrentMap<String, Method> getMethods() {
         return methods;

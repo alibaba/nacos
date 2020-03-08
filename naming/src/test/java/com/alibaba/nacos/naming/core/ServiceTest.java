@@ -16,13 +16,12 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.BaseTest;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Spy;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author jifengnan  2019-04-28

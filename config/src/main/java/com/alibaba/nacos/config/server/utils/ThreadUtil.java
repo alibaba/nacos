@@ -22,6 +22,8 @@ package com.alibaba.nacos.config.server.utils;
  */
 public class ThreadUtil {
 
+    private final static int THREAD_MULTIPLER = 2;
+
     /**
      * 通过内核数，算出合适的线程数；1.5-2倍cpu内核数
      *
@@ -35,6 +37,4 @@ public class ThreadUtil {
         }
         return workerCount;
     }
-
-    private final static int THREAD_MULTIPLER = 2;
 }

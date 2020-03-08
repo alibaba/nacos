@@ -24,9 +24,8 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
 
-    private boolean inExecute = false;
-
     protected ServerMemberManager nodeManager;
+    private boolean inExecute = false;
 
     void setNodeManager(ServerMemberManager nodeManager) {
         this.nodeManager = nodeManager;
@@ -92,8 +91,7 @@ public abstract class Task implements Runnable {
         /**
          * Execute by current thread
          */
-        NOW_THREAD(4)
-        ;
+        NOW_THREAD(4);
 
         private int type;
 

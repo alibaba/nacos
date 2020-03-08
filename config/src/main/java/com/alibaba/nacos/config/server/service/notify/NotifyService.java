@@ -23,11 +23,10 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import java.util.List;
 import org.apache.http.client.config.RequestConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * 通知其他节点取最新数据的服务。 监听数据变更事件，通知所有的server。
@@ -38,12 +37,14 @@ import java.util.List;
 public class NotifyService {
 
     /**
+     * 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
+     */
+    static public final String NOTIFY_HEADER_LAST_MODIFIED = "lastModified";
+    static public final String NOTIFY_HEADER_OP_HANDLE_IP = "opHandleIp";
+    /**
      * 和其他server的连接超时和socket超时
      */
     private static final int TIMEOUT = 500;
-
-    private TaskManager notifyTaskManager;
-
     private static NSyncHttpClient syncHttpClient;
 
     static {
@@ -53,17 +54,12 @@ public class NotifyService {
                 .build());
     }
 
+    private TaskManager notifyTaskManager;
     @Autowired
     public NotifyService(MemberManager memberManager) {
         notifyTaskManager = new TaskManager("com.alibaba.nacos.NotifyTaskManager");
         notifyTaskManager.setDefaultTaskProcessor(new NotifyTaskProcessor(memberManager));
     }
-
-    /**
-     * 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
-     */
-    static public final String NOTIFY_HEADER_LAST_MODIFIED = "lastModified";
-    static public final String NOTIFY_HEADER_OP_HANDLE_IP = "opHandleIp";
 
     static public <T> ResResult<T> invokeURL(final String url,
                                              final List<String> headers,

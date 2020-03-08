@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.core.distributed.DistroMapper;
+import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -36,11 +36,24 @@ import static org.mockito.Mockito.doReturn;
  */
 public class BaseTest {
 
+    protected static final String TEST_CLUSTER_NAME = "test-cluster";
+    protected static final String TEST_SERVICE_NAME = "test-service";
+    protected static final String TEST_GROUP_NAME = "test-group-name";
+    protected static final String TEST_NAMESPACE = "test-namespace";
     @Mock
     public ServiceManager serviceManager;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+    @Spy
+    protected ApplicationContext context;
+    @Mock
+    protected DistroMapper distroMapper;
+    @Spy
+    protected SwitchDomain switchDomain;
+    @Mock
+    protected HealthCheckProcessorDelegate delegate;
+    @Mock
+    protected PushService pushService;
 
     @Before
     public void before() {
@@ -52,20 +65,4 @@ public class BaseTest {
         doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
         doReturn(pushService).when(context).getBean(PushService.class);
     }
-
-    protected static final String TEST_CLUSTER_NAME = "test-cluster";
-    protected static final String TEST_SERVICE_NAME = "test-service";
-    protected static final String TEST_GROUP_NAME = "test-group-name";
-    protected static final String TEST_NAMESPACE = "test-namespace";
-
-    @Spy
-    protected ApplicationContext context;
-    @Mock
-    protected DistroMapper distroMapper;
-    @Spy
-    protected SwitchDomain switchDomain;
-    @Mock
-    protected HealthCheckProcessorDelegate delegate;
-    @Mock
-    protected PushService pushService;
 }

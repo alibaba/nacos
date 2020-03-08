@@ -34,11 +34,8 @@ import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.error.RaftError;
-import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
-import org.apache.commons.lang3.BooleanUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,22 +46,18 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class AbstractStateMachine extends StateMachineAdapter {
 
-    private final AtomicBoolean isLeader = new AtomicBoolean(false);
-
     protected final JRaftServer server;
-
     protected final LogProcessor processor;
-
-    private Collection<JSnapshotOperation> operations;
-
+    private final AtomicBoolean isLeader = new AtomicBoolean(false);
     private final String groupId;
-
+    private final Collection<JSnapshotOperation> operations;
     private Node node;
 
     public AbstractStateMachine(JRaftServer server, LogProcessor4CP processor) {
@@ -74,10 +67,16 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
         List<SnapshotOperation> userOperates = processor.loadSnapshotOperate();
 
-        this.operations = new ArrayList<>();
+        List<JSnapshotOperation> tmp = new ArrayList<>();
 
         for (SnapshotOperation item : userOperates) {
-            operations.add(new JSnapshotOperation() {
+
+            if (item == null) {
+                Loggers.RAFT.error("Existing SnapshotOperation for null");
+                continue;
+            }
+
+            tmp.add(new JSnapshotOperation() {
 
                 @Override
                 public void onSnapshotSave(SnapshotWriter writer, Closure done) {
@@ -87,12 +86,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                     // components from implementing snapshots
 
                     final BiConsumer<Boolean, Throwable> proxy = (result, t) -> {
-                        boolean[] results = new  boolean[wCtx.listFiles().size()];
-                        int[] index = new int[]{ 0 };
-                        wCtx.listFiles().forEach((file, meta) -> results[index[0] ++] = writer.addFile(file, buildMetadata(meta)));
+                        boolean[] results = new boolean[wCtx.listFiles().size()];
+                        int[] index = new int[]{0};
+                        wCtx.listFiles().forEach((file, meta) -> results[index[0]++] = writer.addFile(file));
                         final Status status = result && BooleanUtils.and(results) ? Status.OK() : new Status(RaftError.EIO,
                                 "Fail to compress snapshot at %s, error is %s", writer.getPath(),
-                                t.getMessage());
+                                t == null ? "" : t.getMessage());
                         done.run(status);
                     };
                     item.onSnapshotSave(wCtx, new CallFinally(proxy));
@@ -110,8 +109,15 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                     final Reader rCtx = new Reader(reader.getPath(), metaMap);
                     return item.onSnapshotLoad(rCtx);
                 }
+
+                @Override
+                public String info() {
+                    return item.toString();
+                }
             });
         }
+
+        this.operations = Collections.unmodifiableList(tmp);
     }
 
     public void setNode(Node node) {
@@ -121,7 +127,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     @Override
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
         for (JSnapshotOperation operation : operations) {
-            operation.onSnapshotSave(writer, done);
+            try {
+                operation.onSnapshotSave(writer, done);
+            } catch (Throwable t) {
+                Loggers.RAFT.error("There was an error saving the snapshot , error : {}, operation : {}", t, operation.info());
+                throw t;
+            }
         }
     }
 
@@ -129,7 +140,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public boolean onSnapshotLoad(SnapshotReader reader) {
         for (JSnapshotOperation operation : operations) {
             if (!operation.onSnapshotLoad(reader)) {
-                Loggers.RAFT.error("Snapshot load failed on : {}", operation);
+                Loggers.RAFT.error("Snapshot load failed on : {}", operation.info());
                 return false;
             }
         }

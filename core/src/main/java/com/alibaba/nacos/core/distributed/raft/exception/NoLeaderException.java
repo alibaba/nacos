@@ -29,7 +29,7 @@ public class NoLeaderException extends Exception {
     }
 
     public NoLeaderException(String group) {
-        super("The Raft Group [" + group +"] did not find the Leader node");
+        super("The Raft Group [" + group + "] did not find the Leader node");
     }
 
     public NoLeaderException(String message, Throwable cause) {

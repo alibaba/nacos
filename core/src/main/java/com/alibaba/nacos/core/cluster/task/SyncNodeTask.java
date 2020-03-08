@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.ServerMember;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.file.FileChangeEvent;
@@ -55,15 +54,12 @@ import org.apache.http.client.config.RequestConfig;
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class SyncNodeTask extends Task {
 
-    private static final TypeReference<ResResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<ResResult<Collection<Member>>>() {};
-
+    private static final TypeReference<ResResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<ResResult<Collection<Member>>>() {
+    };
+    private final ServletContext context;
     private volatile int addressServerFailCount = 0;
     private int maxFailCount = 12;
-
     private NSyncHttpClient httpclient;
-
-    private final ServletContext context;
-
     private volatile boolean alreadyLoadServer = false;
 
     public SyncNodeTask(final ServletContext context) {
@@ -103,7 +99,7 @@ public class SyncNodeTask extends Task {
         // The reason why instance properties are not used here is so that
         // the hot update mechanism can be implemented later
 
-        if (SpringUtils.getProperty("nacos.core.node.self-discovery", Boolean.class, false)) {
+        if (SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false)) {
             syncBySelfDiscovery();
         } else {
             syncFromAddressUrl();
@@ -114,6 +110,10 @@ public class SyncNodeTask extends Task {
         Collection<Member> members = nodeManager.allMembers();
         for (Member member : members) {
 
+            if (nodeManager.isSelf(member)) {
+                continue;
+            }
+
             final String url = HttpUtils.buildUrl(false, member.address(), context.getContextPath(), Commons.NACOS_CORE_CONTEXT, "/cluster/nodes");
 
             try {
@@ -123,7 +123,9 @@ public class SyncNodeTask extends Task {
                 if (result.ok()) {
 
                     Collection<Member> remoteMembers = result.getData();
-                    updateCluster(remoteMembers);
+                    if (remoteMembers != null) {
+                        updateCluster(remoteMembers);
+                    }
 
                 } else {
                     Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", member.address(), result);
@@ -192,7 +194,7 @@ public class SyncNodeTask extends Task {
 
         // Set the default Raft port information for security
 
-        int defaultRaftPort = selfPort + 1 > 65536 ? selfPort + 1 : selfPort - 1;
+        int defaultRaftPort = selfPort + 1000 >= 65535 ? selfPort + 1 : selfPort + 1000;
 
         for (String member : members) {
             String[] memberDetails = member.split("\\?");
@@ -221,7 +223,7 @@ public class SyncNodeTask extends Task {
 
             }
 
-            nodes.add(ServerMember.builder()
+            nodes.add(Member.builder()
                     .ip(address)
                     .port(port)
                     .extendInfo(extendInfo)

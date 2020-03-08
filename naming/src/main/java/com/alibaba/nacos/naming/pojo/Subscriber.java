@@ -103,11 +103,11 @@ public class Subscriber implements Serializable {
         }
         Subscriber that = (Subscriber) o;
         return Objects.equals(addrStr, that.addrStr) &&
-            Objects.equals(agent, that.agent) &&
-            Objects.equals(app, that.app) &&
-            Objects.equals(ip, that.ip) &&
-            Objects.equals(namespaceId, that.namespaceId) &&
-            Objects.equals(serviceName, that.serviceName);
+                Objects.equals(agent, that.agent) &&
+                Objects.equals(app, that.app) &&
+                Objects.equals(ip, that.ip) &&
+                Objects.equals(namespaceId, that.namespaceId) &&
+                Objects.equals(serviceName, that.serviceName);
     }
 
     @Override
@@ -118,12 +118,12 @@ public class Subscriber implements Serializable {
     @Override
     public String toString() {
         return "Subscriber{" +
-            "addrStr='" + addrStr + '\'' +
-            ", agent='" + agent + '\'' +
-            ", app='" + app + '\'' +
-            ", ip='" + ip + '\'' +
-            ", namespaceId='" + namespaceId + '\'' +
-            ", serviceName='" + serviceName + '\'' +
-            '}';
+                "addrStr='" + addrStr + '\'' +
+                ", agent='" + agent + '\'' +
+                ", app='" + app + '\'' +
+                ", ip='" + ip + '\'' +
+                ", namespaceId='" + namespaceId + '\'' +
+                ", serviceName='" + serviceName + '\'' +
+                '}';
     }
 }

@@ -39,15 +39,11 @@ import org.springframework.util.CollectionUtils;
  */
 public class TaskCenter {
 
-    private MemberManager memberManager;
-
-    private DataSyncer dataSyncer;
-
-    private List<Worker> workers = new ArrayList<>();
-
     private final int cpuCoreCount;
-
     private final DistroConfig config;
+    private MemberManager memberManager;
+    private DataSyncer dataSyncer;
+    private List<Worker> workers = new ArrayList<>();
     private volatile boolean shutdown = false;
     private AtomicBoolean initialize = new AtomicBoolean(false);
 
@@ -74,6 +70,20 @@ public class TaskCenter {
 
     public void shutdown() {
         shutdown = true;
+    }
+
+    private int getBatchSyncKeyCount() {
+        return ConvertUtils
+                .toInt(
+                        config.getVal(DistroSysConstants.BATCH_SYNC_KEY_COUNT),
+                        DistroSysConstants.DEFAULT_BATCH_SYNC_KEY_COUNT);
+    }
+
+    private long getTaskDispatchPeriod() {
+        return ConvertUtils
+                .toLong(
+                        config.getVal(DistroSysConstants.TASK_DISPATCH_PERIOD_MS),
+                        DistroSysConstants.DEFAULT_TASK_DISPATCH_PERIOD);
     }
 
     class Worker implements Runnable {
@@ -155,20 +165,6 @@ public class TaskCenter {
                 }
             }
         }
-    }
-
-    private int getBatchSyncKeyCount() {
-        return ConvertUtils
-                .toInt(
-                        config.getVal(DistroSysConstants.BATCH_SYNC_KEY_COUNT),
-                        DistroSysConstants.DEFAULT_BATCH_SYNC_KEY_COUNT);
-    }
-
-    private long getTaskDispatchPeriod() {
-        return ConvertUtils
-                .toLong(
-                        config.getVal(DistroSysConstants.TASK_DISPATCH_PERIOD_MS),
-                        DistroSysConstants.DEFAULT_TASK_DISPATCH_PERIOD);
     }
 
 }

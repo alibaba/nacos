@@ -34,7 +34,7 @@ interface JSnapshotOperation {
      * do snapshot save operation
      *
      * @param writer {@link SnapshotWriter}
-     * @param done {@link Closure}
+     * @param done   {@link Closure}
      */
     void onSnapshotSave(SnapshotWriter writer, Closure done);
 
@@ -47,10 +47,17 @@ interface JSnapshotOperation {
     boolean onSnapshotLoad(SnapshotReader reader);
 
     /**
+     * return actually snapshot executor
+     *
+     * @return name
+     */
+    String info();
+
+    /**
      * Metadata information for snapshot files
      *
      * @param metadata meta data
-     * @param <T> type
+     * @param <T>      type
      * @return {@link LocalFileMetaOutter.LocalFileMeta}
      */
     default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) {

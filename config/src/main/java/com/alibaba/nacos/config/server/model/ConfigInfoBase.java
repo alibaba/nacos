@@ -16,7 +16,6 @@
 package com.alibaba.nacos.config.server.model;
 
 import com.alibaba.nacos.config.server.utils.MD5;
-
 import java.io.PrintWriter;
 import java.io.Serializable;
 
@@ -174,7 +173,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         if (getClass() != obj.getClass()) {
             return false;
         }
-        ConfigInfoBase other = (ConfigInfoBase)obj;
+        ConfigInfoBase other = (ConfigInfoBase) obj;
         if (content == null) {
             if (other.content != null) {
                 return false;
@@ -209,7 +208,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     @Override
     public String toString() {
         return "ConfigInfoBase{" + "id=" + id + ", dataId='" + dataId + '\''
-            + ", group='" + group + '\'' + ", content='" + content + '\''
-            + ", md5='" + md5 + '\'' + '}';
+                + ", group='" + group + '\'' + ", content='" + content + '\''
+                + ", md5='" + md5 + '\'' + '}';
     }
 }

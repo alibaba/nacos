@@ -23,7 +23,7 @@ import com.alibaba.fastjson.JSON;
  * @Date: 2019/05/19 15:51
  * @Description:
  */
-public class ClusterStateView{
+public class ClusterStateView {
 
     private String nodeIp;
 

@@ -29,17 +29,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerTaskService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private static ScheduledExecutorService scheduledExecutorService = Executors
-        .newScheduledThreadPool(10, new ThreadFactory() {
-            AtomicInteger count = new AtomicInteger(0);
+            .newScheduledThreadPool(10, new ThreadFactory() {
+                AtomicInteger count = new AtomicInteger(0);
 
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
-                return t;
-            }
-        });
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r);
+                    t.setDaemon(true);
+                    t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
+                    return t;
+                }
+            });
 
     static public void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
                                               TimeUnit unit) {

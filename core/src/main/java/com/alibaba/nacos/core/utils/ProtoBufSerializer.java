@@ -26,7 +26,6 @@ import io.protostuff.ProtostuffOutput;
 import io.protostuff.Schema;
 import io.protostuff.WriteSession;
 import io.protostuff.runtime.RuntimeSchema;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 

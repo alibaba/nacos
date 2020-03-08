@@ -18,12 +18,11 @@ package com.alibaba.nacos.core.env;
 
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.config.Scope;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

@@ -26,6 +26,6 @@ public class DuplicateRaftGroupException extends RuntimeException {
     private static final long serialVersionUID = -6276695537457486790L;
 
     public DuplicateRaftGroupException(String group) {
-        super("The Raft Group [" + group +"] is already used");
+        super("The Raft Group [" + group + "] is already used");
     }
 }

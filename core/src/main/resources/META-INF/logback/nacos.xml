@@ -141,7 +141,7 @@
     </logger>
 
     <logger name="com.alipay.sofa.jraft" additivity="false">
-        <level value="DEBUG"/>
+        <level value="WARN"/>
         <appender-ref ref="protocol-raft"/>
     </logger>
 

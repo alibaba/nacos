@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
@@ -32,13 +32,9 @@ import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import java.util.Collection;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +43,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Health check public methods
@@ -58,22 +57,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("all")
 public class HealthCheckCommon {
 
-    @Autowired
-    private Mapper mapper;
-
-    @Autowired
-    private SwitchDomain switchDomain;
-
-    @Autowired
-    private MemberManager memberManager;
-
-    @Autowired
-    private PushService pushService;
-
-    private APProtocol<? extends Config> protocol;
-
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
-
     private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -83,6 +67,15 @@ public class HealthCheckCommon {
             return thread;
         }
     });
+    @Autowired
+    private Mapper mapper;
+    @Autowired
+    private SwitchDomain switchDomain;
+    @Autowired
+    private MemberManager memberManager;
+    @Autowired
+    private PushService pushService;
+    private APProtocol<? extends Config> protocol;
 
     @PostConstruct
     public void init() {
@@ -107,16 +100,16 @@ public class HealthCheckCommon {
                 params.put("result", JSON.toJSONString(list));
                 if (Loggers.SRV_LOG.isDebugEnabled()) {
                     Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
-                        server, JSON.toJSONString(list));
+                            server, JSON.toJSONString(list));
                 }
 
                 HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.address()
-                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                    + "/api/healthCheckResult", null, params);
+                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + "/api/healthCheckResult", null, params);
 
                 if (httpResult.code != HttpURLConnection.HTTP_OK) {
                     Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}",
-                        server, JSON.toJSONString(list));
+                            server, JSON.toJSONString(list));
                 }
 
             }
@@ -167,17 +160,17 @@ public class HealthCheckCommon {
                         addResult(new HealthCheckResult(service.getName(), ip));
 
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         if (!ip.isMockValid()) {
                             ip.setMockValid(true);
                             Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                    cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                         }
                     }
                 } else {
                     Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
-                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getOKCount(), msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getOKCount(), msg);
                 }
             }
         } catch (Throwable t) {
@@ -208,15 +201,15 @@ public class HealthCheckCommon {
                         pushService.serviceChanged(service);
 
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 } else {
                     Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
-                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getFailCount(), msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getFailCount(), msg);
                 }
             }
         } catch (Throwable t) {
@@ -246,12 +239,12 @@ public class HealthCheckCommon {
                     addResult(new HealthCheckResult(service.getName(), ip));
 
                     Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                 } else {
                     if (ip.isMockValid()) {
                         ip.setMockValid(false);
                         Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 }

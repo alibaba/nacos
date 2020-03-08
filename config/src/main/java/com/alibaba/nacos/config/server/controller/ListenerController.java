@@ -20,6 +20,8 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
@@ -27,9 +29,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Config longpolling
@@ -54,10 +53,10 @@ public class ListenerController {
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
                                                              @RequestParam(value = "all", required = false) boolean all,
                                                              @RequestParam(value = "tenant", required = false)
-                                                                 String tenant,
+                                                                     String tenant,
                                                              @RequestParam(value = "sampleTime", required = false,
-                                                                 defaultValue = "1") int sampleTime, ModelMap modelMap)
-        throws Exception {
+                                                                     defaultValue = "1") int sampleTime, ModelMap modelMap)
+            throws Exception {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);

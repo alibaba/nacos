@@ -27,9 +27,9 @@ public interface BeforeHook<T> {
     /**
      * Hooks before data manipulation
      *
-     * @param key key
-     * @param data data maybe is null
-     * @param item Actually stored data
+     * @param key   key
+     * @param data  data maybe is null
+     * @param item  Actually stored data
      * @param isPut is put operation
      */
     void hook(String key, T data, KVStore.Item item, boolean isPut);

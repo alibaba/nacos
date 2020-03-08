@@ -18,7 +18,6 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-
 import java.util.concurrent.CompletableFuture;
 
 /**

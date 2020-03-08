@@ -19,7 +19,6 @@ package com.alibaba.nacos.consistency;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -68,9 +67,9 @@ public interface ConsistencyProtocol<T extends Config> {
      * Get the value of the corresponding metadata information according to the key
      * 根据 key 获取元数据信息中的某个值
      *
-     * @param key key
+     * @param key    key
      * @param subKey if value is key-value struct
-     * @param <R> target type
+     * @param <R>    target type
      * @return value
      */
     <R> R metaData(String key, String... subKey);

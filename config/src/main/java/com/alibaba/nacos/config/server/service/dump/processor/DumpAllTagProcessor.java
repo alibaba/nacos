@@ -33,6 +33,10 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  */
 public class DumpAllTagProcessor implements TaskProcessor {
 
+    static final int PAGE_SIZE = 1000;
+    final DumpService dumpService;
+    final PersistService persistService;
+
     public DumpAllTagProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
         this.persistService = dumpService.getPersistService();
@@ -41,7 +45,7 @@ public class DumpAllTagProcessor implements TaskProcessor {
     @Override
     public boolean process(String taskType, AbstractTask task) {
         int rowCount = persistService.configInfoTagCount();
-        int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+        int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
@@ -61,9 +65,4 @@ public class DumpAllTagProcessor implements TaskProcessor {
         }
         return true;
     }
-
-    static final int PAGE_SIZE = 1000;
-
-    final DumpService dumpService;
-    final PersistService persistService;
 }

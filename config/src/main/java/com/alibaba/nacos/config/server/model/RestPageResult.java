@@ -37,6 +37,10 @@ public class RestPageResult<T> implements Serializable {
     private int currentPage;
     private T data;
 
+    public static long getSerialversionuid() {
+        return serialVersionUID;
+    }
+
     public int getCode() {
         return code;
     }
@@ -83,10 +87,6 @@ public class RestPageResult<T> implements Serializable {
 
     public void setData(T data) {
         this.data = data;
-    }
-
-    public static long getSerialversionuid() {
-        return serialVersionUID;
     }
 
 }

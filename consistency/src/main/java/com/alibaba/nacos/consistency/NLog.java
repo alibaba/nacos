@@ -39,20 +39,8 @@ public class NLog implements Log {
 
     protected transient Map<String, Object> localContext = new HashMap<>(3);
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public void setOperation(String operation) {
-        this.operation = operation;
+    public static NLogBuilder builder() {
+        return new NLogBuilder();
     }
 
     public void setExtendInfo(Map<String, String> extendInfo) {
@@ -74,9 +62,17 @@ public class NLog implements Log {
         return key;
     }
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     @Override
     public byte[] getData() {
         return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
     }
 
     @Override
@@ -84,9 +80,17 @@ public class NLog implements Log {
         return className;
     }
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
     @Override
     public String getOperation() {
         return operation;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
     }
 
     @Override
@@ -138,10 +142,6 @@ public class NLog implements Log {
                 ", extendInfo=" + extendInfo +
                 ", localContext=" + localContext +
                 '}';
-    }
-
-    public static NLogBuilder builder() {
-        return new NLogBuilder();
     }
 
     public static final class NLogBuilder {

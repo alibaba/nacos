@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,38 +42,36 @@ public enum HealthCheckType {
      */
     NONE("none", AbstractHealthChecker.None.class);
 
-    private String name;
-
-    private Class healthCheckerClass;
-
     private static Map<String, Class> EXTEND =
-        new ConcurrentHashMap<>();
+            new ConcurrentHashMap<>();
+    private String name;
+    private Class healthCheckerClass;
 
     HealthCheckType(String name, Class healthCheckerClass) {
         this.name = name;
         this.healthCheckerClass = healthCheckerClass;
     }
 
-    public static void registerHealthChecker(String type, Class healthCheckerClass){
+    public static void registerHealthChecker(String type, Class healthCheckerClass) {
         EXTEND.putIfAbsent(type, healthCheckerClass);
     }
 
-    public static Class ofHealthCheckerClass(String type){
+    public static Class ofHealthCheckerClass(String type) {
         HealthCheckType enumType;
         try {
             enumType = valueOf(type);
-        }catch (Exception e){
+        } catch (Exception e) {
             return EXTEND.get(type);
         }
         return enumType.healthCheckerClass;
     }
 
-    public static List<Class> getLoadedHealthCheckerClasses(){
+    public static List<Class> getLoadedHealthCheckerClasses() {
         List<Class> all = new ArrayList<>();
-        for(HealthCheckType type : values()){
+        for (HealthCheckType type : values()) {
             all.add(type.healthCheckerClass);
         }
-        for(Map.Entry<String, Class> entry : EXTEND.entrySet()){
+        for (Map.Entry<String, Class> entry : EXTEND.entrySet()) {
             all.add(entry.getValue());
         }
         return all;

@@ -22,12 +22,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.math.NumberUtils;
-
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * IP under service
@@ -39,43 +38,19 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
     private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
     private static final double MIN_WEIGHT_VALUE = 0.00D;
-
+    private static final Pattern IP_PATTERN
+            = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
+    private static final Pattern ONLY_DIGIT_AND_DOT
+            = Pattern.compile("(\\d|\\.)+");
+    private static final String SPLITER = "_";
     private volatile long lastBeat = System.currentTimeMillis();
-
     @JSONField(serialize = false)
     private volatile boolean mockValid = false;
-
     private volatile boolean marked = false;
-
     private String tenant;
-
     private String app;
 
-    private static final Pattern IP_PATTERN
-        = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
-
-    private static final Pattern ONLY_DIGIT_AND_DOT
-        = Pattern.compile("(\\d|\\.)+");
-
-    private static final String SPLITER = "_";
-
     public Instance() {
-    }
-
-    public boolean isMockValid() {
-        return mockValid;
-    }
-
-    public void setMockValid(boolean mockValid) {
-        this.mockValid = mockValid;
-    }
-
-    public long getLastBeat() {
-        return lastBeat;
-    }
-
-    public void setLastBeat(long lastBeat) {
-        this.lastBeat = lastBeat;
     }
 
     public Instance(String ip, int port) {
@@ -139,13 +114,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'valid':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 instance.setHealthy(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
 
             // determine 'cluster':
             if (!Boolean.TRUE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1]) &&
-                !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
+                    !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
                 instance.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
             }
         }
@@ -155,27 +130,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'marked':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 instance.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
         }
 
         return instance;
     }
-
-    public String toIPAddr() {
-        return getIp() + ":" + getPort();
-    }
-
-    @Override
-    public String toString() {
-        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER + getClusterName();
-    }
-
-    public String toJSON() {
-        return JSON.toJSONString(this);
-    }
-
 
     public static Instance fromJSON(String json) {
         Instance ip;
@@ -209,6 +170,35 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return ip;
     }
 
+    public boolean isMockValid() {
+        return mockValid;
+    }
+
+    public void setMockValid(boolean mockValid) {
+        this.mockValid = mockValid;
+    }
+
+    public long getLastBeat() {
+        return lastBeat;
+    }
+
+    public void setLastBeat(long lastBeat) {
+        this.lastBeat = lastBeat;
+    }
+
+    public String toIPAddr() {
+        return getIp() + ":" + getPort();
+    }
+
+    @Override
+    public String toString() {
+        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER + getClusterName();
+    }
+
+    public String toJSON() {
+        return JSON.toJSONString(this);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (null == obj || obj.getClass() != getClass()) {
@@ -221,7 +211,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
         // 0 means wild
         return getIp().equals(other.getIp()) && (getPort() == other.getPort() || getPort() == 0)
-            && this.isEphemeral() == other.isEphemeral();
+                && this.isEphemeral() == other.isEphemeral();
     }
 
     @JSONField(serialize = false)
@@ -261,6 +251,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     @JSONField(serialize = false)
+    public void setCheckRT(long checkRT) {
+        HealthCheckStatus.get(this).checkRT = checkRT;
+    }
+
+    @JSONField(serialize = false)
     public AtomicInteger getOKCount() {
         return HealthCheckStatus.get(this).checkOKCount;
     }
@@ -268,11 +263,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     @JSONField(serialize = false)
     public AtomicInteger getFailCount() {
         return HealthCheckStatus.get(this).checkFailCount;
-    }
-
-    @JSONField(serialize = false)
-    public void setCheckRT(long checkRT) {
-        HealthCheckStatus.get(this).checkRT = checkRT;
     }
 
     public boolean isMarked() {
@@ -314,6 +304,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     /**
      * Generate instance id which could be used for snowflake algorithm.
+     *
      * @param currentInstanceIds existing instance ids, which can not be used by new instance.
      * @return
      */
@@ -337,7 +328,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
             throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from " +
-                MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
+                    MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
         }
 
     }

@@ -19,13 +19,12 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.PushService;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author nacos
@@ -34,13 +33,11 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class PerformanceLoggerThread {
 
+    private static final long PERIOD = 5 * 60;
     @Autowired
     private ServiceManager serviceManager;
-
     @Autowired
     private PushService pushService;
-
-    private static final long PERIOD = 5 * 60;
 
     @PostConstruct
     public void init() {
@@ -79,24 +76,6 @@ public class PerformanceLoggerThread {
         MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
     }
 
-    class PerformanceLogTask implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                int serviceCount = serviceManager.getServiceCount();
-                int ipCount = serviceManager.getInstanceCount();
-                long maxPushCost = getMaxPushCost();
-                long avgPushCost = getAvgPushCost();
-
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
-            }
-
-        }
-    }
-
     private long getMaxPushCost() {
         long max = -1;
 
@@ -124,5 +103,23 @@ public class PerformanceLoggerThread {
             avgCost = totalCost / size;
         }
         return avgCost;
+    }
+
+    class PerformanceLogTask implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                int serviceCount = serviceManager.getServiceCount();
+                int ipCount = serviceManager.getInstanceCount();
+                long maxPushCost = getMaxPushCost();
+                long avgPushCost = getAvgPushCost();
+
+                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
+            }
+
+        }
     }
 }

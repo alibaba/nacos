@@ -17,11 +17,10 @@
 package com.alibaba.nacos.core.distributed.distro.utils;
 
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.RandomStringUtils;
-
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -44,7 +43,7 @@ public final class DistroUtils {
      * the number will be nearly uniform distribution.
      * <p>
      * <p>
-     *
+     * <p>
      * e.g. Assume there's an array which contains some IP of the servers provide the same service,
      * the caller name can be used to choose the server to achieve load balance.
      * <blockquote><pre>
@@ -57,8 +56,8 @@ public final class DistroUtils {
      * @param upperLimit the upper limit of the returned number, must be a positive integer, which means > 0
      * @return a number between 0(inclusive) and upperLimit(exclusive)
      * @throws IllegalArgumentException if the upper limit equals or less than 0
-     * @since 1.0.0
      * @author jifengnan
+     * @since 1.0.0
      */
     public static int shakeUp(String string, int upperLimit) {
         if (upperLimit < 1) {

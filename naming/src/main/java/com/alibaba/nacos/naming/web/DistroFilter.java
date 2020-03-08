@@ -19,8 +19,8 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -114,7 +114,7 @@ public class DistroFilter implements Filter {
                     // This request is sent from peer server, should not be redirected again:
                     Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                        "receive invalid redirect request from peer " + req.getRemoteAddr());
+                            "receive invalid redirect request from peer " + req.getRemoteAddr());
                     return;
                 }
 
@@ -129,9 +129,9 @@ public class DistroFilter implements Filter {
                 String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
 
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + mapper.mapSrv(groupedServiceName) + urlString, headerList,
-                        StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
-                        , body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+                        HttpClient.request("http://" + mapper.mapSrv(groupedServiceName) + urlString, headerList,
+                                StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
+                                , body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
 
                 try {
                     resp.setCharacterEncoding("UTF-8");
@@ -151,11 +151,11 @@ public class DistroFilter implements Filter {
             return;
         } catch (NoSuchMethodException e) {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
-                "no such api:" + req.getMethod() + ":" + req.getRequestURI());
+                    "no such api:" + req.getMethod() + ":" + req.getRequestURI());
             return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                "Server failed," + ExceptionUtil.getAllExceptionMsg(e));
+                    "Server failed," + ExceptionUtil.getAllExceptionMsg(e));
             return;
         }
 

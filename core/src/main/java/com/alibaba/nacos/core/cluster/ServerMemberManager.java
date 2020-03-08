@@ -34,6 +34,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,41 +66,24 @@ import org.springframework.stereotype.Component;
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, MemberManager {
 
     private final MemberTaskManager taskManager = new MemberTaskManager(this);
-
-    private Map<String, Member> serverListHealth = new ConcurrentSkipListMap<>();
-
-    private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
-
-    private Set<Member> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
-
-    private volatile boolean isInIpList = true;
-
-    private volatile boolean isAddressServerHealth = true;
-
+    private final ServletContext servletContext;
     public String domainName;
-
     public String addressPort;
-
     public String addressUrl;
-
     public String envIdUrl;
-
     public String addressServerUrl;
-
+    private Map<String, Member> serverListHealth = new ConcurrentSkipListMap<>();
+    private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
+    private Set<Member> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
+    private volatile boolean isInIpList = true;
+    private volatile boolean isAddressServerHealth = true;
     private boolean isHealthCheck = true;
-
     private String contextPath = "";
-
     @Value("${server.port:8848}")
     private int port;
-
     private String localAddress;
-
     @Value("${useAddressServer:false}")
     private boolean isUseAddressServer;
-
-    private final ServletContext servletContext;
-
     private Member self;
 
     public ServerMemberManager(ServletContext servletContext) {
@@ -134,6 +118,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         String address = newMember.address();
 
         long nowTime = System.currentTimeMillis();
+
+        if (!serverListHealth.containsKey(address)) {
+            memberJoin(new ArrayList<>(Arrays.asList(newMember)));
+            return;
+        }
 
         serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
             @Override
@@ -192,19 +181,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         long lastRefreshTime = System.currentTimeMillis();
 
-        if (members.isEmpty()) {
-            return;
-        }
-
-
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             final Member newMember = iterator.next();
             final String address = newMember.address();
 
-            // Since this start, this node does not participate in memberJoin
-
-            if (Objects.equals(newMember, self) || serverListHealth.containsKey(address)) {
+            if (serverListHealth.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
@@ -221,6 +203,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             });
         }
 
+        if (members.isEmpty()) {
+            return;
+        }
+
+        Loggers.CORE.warn("New node join : {}", members);
+
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
                 .changeNodes(members)
@@ -232,17 +220,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public void memberLeave(Collection<Member> members) {
 
-        if (members.isEmpty()) {
-            return;
-        }
-
-
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             Member member = iterator.next();
             final String address = member.address();
-
-            // 本节点不参与 memberLeave
 
             if (Objects.equals(member, self) || serverListHealth.containsKey(address)) {
                 iterator.remove();
@@ -257,6 +238,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 }
             });
         }
+
+        if (members.isEmpty()) {
+            return;
+        }
+
+        Loggers.CORE.warn("have node leave : {}", members);
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("leave")
@@ -449,6 +436,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return isAddressServerHealth;
     }
 
+    public void setAddressServerHealth(boolean addressServerHealth) {
+        isAddressServerHealth = addressServerHealth;
+    }
+
     public String getAddressServerUrl() {
         return addressServerUrl;
     }
@@ -467,10 +458,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     public int getPort() {
         return port;
-    }
-
-    public void setAddressServerHealth(boolean addressServerHealth) {
-        isAddressServerHealth = addressServerHealth;
     }
 
     public Map<String, Long> getLastRefreshTimeRecord() {

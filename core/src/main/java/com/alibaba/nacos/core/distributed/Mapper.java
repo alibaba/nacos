@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed;
 import java.util.function.Supplier;
 
 /**
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Mapper {
@@ -28,7 +27,7 @@ public interface Mapper {
      * Distro calling function provided to the business party, passing
      * in custom rule Supplier and key information
      *
-     * @param key origin key
+     * @param key       origin key
      * @param suppliers customer distro rules
      * @return can distro
      */

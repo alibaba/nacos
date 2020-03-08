@@ -19,9 +19,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
-import org.slf4j.Logger;
-
-import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Map;
@@ -30,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.management.ObjectName;
+import org.slf4j.Logger;
 
 /**
  * 用于处理一定要执行成功的任务 单线程的方式处理任务，保证任务一定被成功处理
@@ -43,47 +42,16 @@ public class TaskManager implements TaskManagerMBean {
     private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
 
     private final ConcurrentHashMap<String, TaskProcessor> taskProcessors =
-        new ConcurrentHashMap<String, TaskProcessor>();
-
-    private TaskProcessor defaultTaskProcessor;
-
-    Thread processingThread;
-
+            new ConcurrentHashMap<String, TaskProcessor>();
     private final AtomicBoolean closed = new AtomicBoolean(true);
-
-    private String name;
-
-
-    class ProcessRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            while (!TaskManager.this.closed.get()) {
-                try {
-                    Thread.sleep(100);
-                    TaskManager.this.process();
-                } catch (Throwable e) {
-                }
-            }
-
-        }
-
-    }
-
+    Thread processingThread;
     ReentrantLock lock = new ReentrantLock();
-
     Condition notEmpty = this.lock.newCondition();
+    private TaskProcessor defaultTaskProcessor;
+    private String name;
 
     public TaskManager() {
         this(null);
-    }
-
-    public AbstractTask getTask(String type) {
-        return this.tasks.get(type);
-    }
-
-    public TaskProcessor getTaskProcessor(String type) {
-        return this.taskProcessors.get(type);
     }
 
     @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
@@ -97,6 +65,14 @@ public class TaskManager implements TaskManagerMBean {
         this.processingThread.setDaemon(true);
         this.closed.set(false);
         this.processingThread.start();
+    }
+
+    public AbstractTask getTask(String type) {
+        return this.tasks.get(type);
+    }
+
+    public TaskProcessor getTaskProcessor(String type) {
+        return this.taskProcessors.get(type);
     }
 
     public int size() {
@@ -274,5 +250,21 @@ public class TaskManager implements TaskManagerMBean {
         } catch (Exception e) {
             log.error("registerMBean_fail : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
+    }
+
+    class ProcessRunnable implements Runnable {
+
+        @Override
+        public void run() {
+            while (!TaskManager.this.closed.get()) {
+                try {
+                    Thread.sleep(100);
+                    TaskManager.this.process();
+                } catch (Throwable e) {
+                }
+            }
+
+        }
+
     }
 }

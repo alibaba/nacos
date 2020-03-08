@@ -27,7 +27,7 @@ public interface StartHook<T> {
      * Started callback function
      *
      * @param dataStore {@link Map<String, KVStore.Item>}
-     * @param kvStore {@link KVStore}
+     * @param kvStore   {@link KVStore}
      * @throws Exception
      */
     void hook(Map<String, KVStore.Item> dataStore, KVStore<T> kvStore) throws Exception;

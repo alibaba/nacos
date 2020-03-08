@@ -39,16 +39,26 @@ import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-import java.net.InetSocketAddress;
-import java.util.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Instance operation controller
@@ -76,8 +86,8 @@ public class InstanceController {
             JSONObject result = new JSONObject();
             try {
                 result = doSrvIPXT(client.getNamespaceId(), client.getServiceName(), client.getAgent(),
-                    client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
-                    false, StringUtils.EMPTY, StringUtils.EMPTY, false);
+                        client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
+                        false, StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: service is not modified", e);
             }
@@ -108,7 +118,7 @@ public class InstanceController {
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -134,7 +144,7 @@ public class InstanceController {
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
             serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
         } else {
             serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
@@ -192,7 +202,7 @@ public class InstanceController {
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String agent = WebUtils.getUserAgent(request);
@@ -209,7 +219,7 @@ public class InstanceController {
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
         return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
-            healthyOnly);
+                healthyOnly);
     }
 
     @GetMapping
@@ -217,7 +227,7 @@ public class InstanceController {
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
@@ -234,7 +244,7 @@ public class InstanceController {
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
             throw new NacosException(NacosException.NOT_FOUND,
-                "no ips found for cluster " + cluster + " in service " + serviceName);
+                    "no ips found for cluster " + cluster + " in service " + serviceName);
         }
 
         for (Instance instance : ips) {
@@ -265,9 +275,9 @@ public class InstanceController {
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME,
-            UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+                UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.optional(request, "ip", StringUtils.EMPTY);
         int port = Integer.parseInt(WebUtils.optional(request, "port", "0"));
         String beat = WebUtils.optional(request, "beat", StringUtils.EMPTY);
@@ -313,7 +323,7 @@ public class InstanceController {
 
         if (service == null) {
             throw new NacosException(NacosException.SERVER_ERROR,
-                "service not found: " + serviceName + "@" + namespaceId);
+                    "service not found: " + serviceName + "@" + namespaceId);
         }
         if (clientBeat == null) {
             clientBeat = new RsInfo();
@@ -404,7 +414,7 @@ public class InstanceController {
         }
 
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
-            String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+                String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));
@@ -428,7 +438,7 @@ public class InstanceController {
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
                                 int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly)
-        throws Exception {
+            throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
@@ -453,12 +463,12 @@ public class InstanceController {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
 
                 pushService.addClient(namespaceId, serviceName,
-                    clusters,
-                    agent,
-                    new InetSocketAddress(clientIP, udpPort),
-                    pushDataSource,
-                    tid,
-                    app);
+                        clusters,
+                        agent,
+                        new InetSocketAddress(clientIP, udpPort),
+                        pushDataSource,
+                        tid,
+                        app);
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
@@ -482,7 +492,7 @@ public class InstanceController {
             }
 
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-                clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                    clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
                 result.put("dom", serviceName);
             } else {
                 result.put("dom", NamingUtils.getServiceName(serviceName));
@@ -562,7 +572,7 @@ public class InstanceController {
                 ipObj.put("weight", instance.getWeight());
                 ipObj.put("clusterName", instance.getClusterName());
                 if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-                    clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                        clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
                     ipObj.put("serviceName", instance.getServiceName());
                 } else {
                     ipObj.put("serviceName", NamingUtils.getServiceName(instance.getServiceName()));
@@ -576,7 +586,7 @@ public class InstanceController {
 
         result.put("hosts", hosts);
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
             result.put("dom", serviceName);
         } else {
             result.put("dom", NamingUtils.getServiceName(serviceName));

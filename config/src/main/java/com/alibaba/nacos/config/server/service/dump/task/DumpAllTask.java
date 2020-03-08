@@ -23,9 +23,9 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
  */
 public class DumpAllTask extends AbstractTask {
 
+    public static final String TASK_ID = "dumpAllConfigTask";
+
     @Override
     public void merge(AbstractTask task) {
     }
-
-    public static final String TASK_ID = "dumpAllConfigTask";
 }

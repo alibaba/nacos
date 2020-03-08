@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +36,9 @@ import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -76,8 +75,7 @@ public final class DiskUtils {
                 textBuilder.append(lineTxt);
             }
             return textBuilder.toString();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             return null;
         }
     }
@@ -98,8 +96,7 @@ public final class DiskUtils {
                 charBuffer.clear();
             }
             return text.toString();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             return null;
         }
     }
@@ -124,8 +121,7 @@ public final class DiskUtils {
             ByteBuffer buffer = ByteBuffer.wrap(content);
             fileChannel.write(buffer);
             return true;
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
@@ -186,16 +182,14 @@ public final class DiskUtils {
             if (file.exists()) {
                 if (rewrite) {
                     file.delete();
-                }
-                else {
+                } else {
                     create = false;
                 }
             }
             if (create) {
                 file.createNewFile();
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return file;
@@ -211,8 +205,7 @@ public final class DiskUtils {
             if (file.isDirectory()) {
                 compressDirectoryToZipFile(rootDir,
                         Paths.get(sourceDir, file.getName()).toString(), zos, channel);
-            }
-            else {
+            } else {
                 zos.putNextEntry(
                         new ZipEntry(Paths.get(sourceDir, file.getName()).toString()));
                 try (final FileInputStream in = new FileInputStream(

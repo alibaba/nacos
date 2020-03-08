@@ -30,7 +30,7 @@ public class TaskDispatcherTest {
 
     @Before
     public void init() {
-        taskDispatcher = new TaskCenter(null,null, null);
+        taskDispatcher = new TaskCenter(null, null, null);
         GlobalConfig conf = new GlobalConfig();
         ReflectionTestUtils.setField(conf, "taskDispatchThreadCount", 3);
         ReflectionTestUtils.setField(taskDispatcher, "partitionConfig", conf);

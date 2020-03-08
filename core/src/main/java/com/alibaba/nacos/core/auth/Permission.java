@@ -25,6 +25,15 @@ import com.alibaba.fastjson.JSON;
  */
 public class Permission {
 
+    /**
+     * An unique key of resource
+     */
+    private String resource;
+    /**
+     * Action on resource, refer to class ActionTypes
+     */
+    private String action;
+
     public Permission() {
 
     }
@@ -33,16 +42,6 @@ public class Permission {
         this.resource = resource;
         this.action = action;
     }
-
-    /**
-     * An unique key of resource
-     */
-    private String resource;
-
-    /**
-     * Action on resource, refer to class ActionTypes
-     */
-    private String action;
 
     public String getResource() {
         return resource;

@@ -18,7 +18,6 @@ package com.alibaba.nacos.consistency.cp;
 
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-
 import java.util.Collections;
 import java.util.List;
 

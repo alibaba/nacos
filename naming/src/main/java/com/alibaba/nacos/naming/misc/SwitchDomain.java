@@ -17,10 +17,14 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.springframework.stereotype.Component;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.springframework.stereotype.Component;
 
 /**
  * @author nacos
@@ -90,6 +94,10 @@ public class SwitchDomain implements Record, Cloneable {
     private String overriddenServerStatus = null;
 
     private boolean defaultInstanceEphemeral = true;
+    private Set<String> healthCheckWhiteList = new HashSet<>();
+
+    public SwitchDomain() {
+    }
 
     public boolean isEnableAuthentication() {
         return enableAuthentication;
@@ -107,8 +115,6 @@ public class SwitchDomain implements Record, Cloneable {
         this.healthCheckWhiteList = healthCheckWhiteList;
     }
 
-    private Set<String> healthCheckWhiteList = new HashSet<>();
-
     public long getClientBeatInterval() {
         return clientBeatInterval;
     }
@@ -123,9 +129,6 @@ public class SwitchDomain implements Record, Cloneable {
 
     public void setEnableStandalone(boolean enableStandalone) {
         this.enableStandalone = enableStandalone;
-    }
-
-    public SwitchDomain() {
     }
 
     public boolean isSendBeatOnly() {
@@ -418,9 +421,17 @@ public class SwitchDomain implements Record, Cloneable {
             return max;
         }
 
+        public void setMax(int max) {
+            this.max = max;
+        }
+
         @Override
         public int getMin() {
             return min;
+        }
+
+        public void setMin(int min) {
+            this.min = min;
         }
 
         @Override
@@ -430,14 +441,6 @@ public class SwitchDomain implements Record, Cloneable {
 
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-
-        public void setMax(int max) {
-            this.max = max;
-        }
-
-        public void setMin(int min) {
-            this.min = min;
         }
     }
 
@@ -451,9 +454,17 @@ public class SwitchDomain implements Record, Cloneable {
             return max;
         }
 
+        public void setMax(int max) {
+            this.max = max;
+        }
+
         @Override
         public int getMin() {
             return min;
+        }
+
+        public void setMin(int min) {
+            this.min = min;
         }
 
         @Override
@@ -463,14 +474,6 @@ public class SwitchDomain implements Record, Cloneable {
 
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-
-        public void setMax(int max) {
-            this.max = max;
-        }
-
-        public void setMin(int min) {
-            this.min = min;
         }
     }
 
@@ -484,9 +487,17 @@ public class SwitchDomain implements Record, Cloneable {
             return max;
         }
 
+        public void setMax(int max) {
+            this.max = max;
+        }
+
         @Override
         public int getMin() {
             return min;
+        }
+
+        public void setMin(int min) {
+            this.min = min;
         }
 
         @Override
@@ -496,14 +507,6 @@ public class SwitchDomain implements Record, Cloneable {
 
         public void setFactor(float factor) {
             this.factor = factor;
-        }
-
-        public void setMax(int max) {
-            this.max = max;
-        }
-
-        public void setMin(int min) {
-            this.min = min;
         }
     }
 }

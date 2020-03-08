@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.Task;
-
+import com.alibaba.nacos.core.utils.Loggers;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +35,8 @@ public class ClearInvalidNodeTask extends Task {
     // 2 minute
 
     private static final long REMOVAL_TIME = EXPIRE_TIME << 1;
-
-    private int cleanCnt = 0;
-
     private static final int MAX_CLEAN_CNT = 15;
+    private int cleanCnt = 0;
 
     @Override
     protected void executeBody() {
@@ -66,9 +64,10 @@ public class ClearInvalidNodeTask extends Task {
             }
         });
 
-        cleanCnt ++;
+        cleanCnt++;
 
         if (cleanCnt > MAX_CLEAN_CNT) {
+            Loggers.CORE.warn("Node to leave : {}", unHealthMembers);
             nodeManager.memberLeave(unHealthMembers);
             unHealthMembers.clear();
             cleanCnt = 0;

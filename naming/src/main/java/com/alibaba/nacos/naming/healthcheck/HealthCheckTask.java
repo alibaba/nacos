@@ -16,8 +16,8 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.distributed.DistroMapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -71,7 +71,7 @@ public class HealthCheckTask implements Runnable {
 
         try {
             if (mapper.responsible(cluster.getService().getName()) &&
-                switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
+                    switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);
                 if (Loggers.EVT_LOG.isDebugEnabled()) {
                     Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
@@ -79,18 +79,18 @@ public class HealthCheckTask implements Runnable {
             }
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
-                cluster.getService().getName(), cluster.getName(), e);
+                    cluster.getService().getName(), cluster.getName(), e);
         } finally {
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
 
                 // worst == 0 means never checked
                 if (this.getCheckRTWorst() > 0
-                    && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
-                    && mapper.responsible(cluster.getService().getName())) {
+                        && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
+                        && mapper.responsible(cluster.getService().getName())) {
                     // TLog doesn't support float so we must convert it into long
                     long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
-                        / this.getCheckRTLastLast();
+                            / this.getCheckRTLastLast();
 
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
@@ -98,9 +98,9 @@ public class HealthCheckTask implements Runnable {
 
                     if (Loggers.CHECK_RT.isDebugEnabled()) {
                         Loggers.CHECK_RT.debug("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                            cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
-                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                            this.getCheckRTLast(), diff);
+                                cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                                this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                                this.getCheckRTLast(), diff);
                     }
                 }
             }
@@ -119,8 +119,16 @@ public class HealthCheckTask implements Runnable {
         return checkRTNormalized;
     }
 
+    public void setCheckRTNormalized(long checkRTNormalized) {
+        this.checkRTNormalized = checkRTNormalized;
+    }
+
     public long getCheckRTBest() {
         return checkRTBest;
+    }
+
+    public void setCheckRTBest(long checkRTBest) {
+        this.checkRTBest = checkRTBest;
     }
 
     public long getCheckRTWorst() {
@@ -129,14 +137,6 @@ public class HealthCheckTask implements Runnable {
 
     public void setCheckRTWorst(long checkRTWorst) {
         this.checkRTWorst = checkRTWorst;
-    }
-
-    public void setCheckRTBest(long checkRTBest) {
-        this.checkRTBest = checkRTBest;
-    }
-
-    public void setCheckRTNormalized(long checkRTNormalized) {
-        this.checkRTNormalized = checkRTNormalized;
     }
 
     public boolean isCancelled() {

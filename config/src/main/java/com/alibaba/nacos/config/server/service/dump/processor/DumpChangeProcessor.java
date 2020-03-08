@@ -26,7 +26,6 @@ import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
-
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -35,8 +34,14 @@ import java.util.List;
  */
 public class DumpChangeProcessor implements TaskProcessor {
 
+    final DumpService dumpService;
+    final PersistService persistService;
+
+    // =====================
+    final Timestamp startTime;
+    final Timestamp endTime;
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime,
-                        Timestamp endTime) {
+                               Timestamp endTime) {
         this.dumpService = dumpService;
         this.persistService = dumpService.getPersistService();
         this.startTime = startTime;
@@ -89,7 +94,7 @@ public class DumpChangeProcessor implements TaskProcessor {
             final String md5 = MD5.getInstance().getMD5String(content);
             LogUtil.defaultLog.info(
                     "[dump-change-ok] {}, {}, length={}, md5={}",
-                    new Object[] {
+                    new Object[]{
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
                             cf.getLastModified(), content.length(), md5});
         }
@@ -99,11 +104,4 @@ public class DumpChangeProcessor implements TaskProcessor {
                 endChangeConfigTime - startChangeConfigTime);
         return true;
     }
-
-    // =====================
-
-    final DumpService dumpService;
-    final PersistService persistService;
-    final Timestamp startTime;
-    final Timestamp endTime;
 }

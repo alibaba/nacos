@@ -25,23 +25,36 @@ public class ResResultUtils {
 
     public static <T> ResResult<T> success() {
         return ResResult.<T>builder()
-            .withCode(200)
-            .build();
+                .withCode(200)
+                .build();
     }
 
     public static <T> ResResult<T> success(T data) {
         return ResResult.<T>builder()
-            .withCode(200)
-            .withData(data)
-            .build();
+                .withCode(200)
+                .withData(data)
+                .build();
     }
 
     public static ResResult<Boolean> failed(String errMsg) {
         return ResResult.<Boolean>builder()
-            .withCode(200)
-            .withData(false)
-            .withErrMsg(errMsg)
-            .build();
+                .withCode(200)
+                .withData(false)
+                .withErrMsg(errMsg)
+                .build();
+    }
+
+    public static <T> ResResult<T> failed() {
+        return ResResult.<T>builder()
+                .withCode(200)
+                .build();
+    }
+
+    public static <T> ResResult<T> failed(T data) {
+        return ResResult.<T>builder()
+                .withCode(200)
+                .withData(data)
+                .build();
     }
 
 }

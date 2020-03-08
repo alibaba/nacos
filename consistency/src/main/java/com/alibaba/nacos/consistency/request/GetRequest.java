@@ -36,6 +36,10 @@ public class GetRequest implements Serializable {
 
     private Map<String, String> info;
 
+    public static GetRequestBuilder builder() {
+        return new GetRequestBuilder();
+    }
+
     @Override
     public String toString() {
         return "GetRequest{" +
@@ -84,10 +88,6 @@ public class GetRequest implements Serializable {
             return null;
         }
         return info.get(key);
-    }
-
-    public static GetRequestBuilder builder() {
-        return new GetRequestBuilder();
     }
 
     public static final class GetRequestBuilder {

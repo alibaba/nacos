@@ -37,7 +37,7 @@ public interface AuthManager {
      * Authorization of request, constituted with resource and user.
      *
      * @param permission permission to auth
-     * @param user     user who wants to access the resource.
+     * @param user       user who wants to access the resource.
      * @throws AccessException if authorization is failed
      */
     void auth(Permission permission, User user) throws AccessException;

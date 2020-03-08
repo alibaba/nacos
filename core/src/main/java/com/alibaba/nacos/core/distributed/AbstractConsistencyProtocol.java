@@ -20,7 +20,6 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;

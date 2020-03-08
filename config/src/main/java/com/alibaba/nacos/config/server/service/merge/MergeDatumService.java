@@ -21,12 +21,11 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -40,13 +39,12 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @Service
 public class MergeDatumService {
 
-    private MemberManager memberManager;
-    private PersistService persistService;
     static final int INIT_THREAD_COUNT = 40;
     static final AtomicInteger FINISHED = new AtomicInteger();
     static int total = 0;
-
     final TaskManager mergeTasks;
+    private MemberManager memberManager;
+    private PersistService persistService;
 
     @Autowired
     public MergeDatumService(PersistService persistService) {

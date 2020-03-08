@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.naming.core.Instance;
-
 import java.util.List;
 
 /**

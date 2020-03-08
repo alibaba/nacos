@@ -19,19 +19,18 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.Protocol;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,6 +40,12 @@ import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -53,22 +58,71 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 @Service
 public class ConfigServletInner {
 
+    private static final int TRY_GET_LOCK_TIMES = 9;
+    private static final int START_LONGPOLLING_VERSION_NUM = 204;
     @Autowired
     private LongPollingService longPollingService;
-
     @Autowired
     private PersistService persistService;
 
-    private static final int TRY_GET_LOCK_TIMES = 9;
+    private static void releaseConfigReadLock(String groupKey) {
+        ConfigService.releaseReadLock(groupKey);
+    }
 
-    private static final int START_LONGPOLLING_VERSION_NUM = 204;
+    private static int tryConfigReadLock(String groupKey) {
+        /**
+         *  默认加锁失败
+         */
+        int lockResult = -1;
+        /**
+         *  尝试加锁，最多10次
+         */
+        for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
+            lockResult = ConfigService.tryReadLock(groupKey);
+            /**
+             *  数据不存在
+             */
+            if (0 == lockResult) {
+                break;
+            }
+
+            /**
+             *  success
+             */
+            if (lockResult > 0) {
+                break;
+            }
+            /**
+             *  retry
+             */
+            if (i > 0) {
+                try {
+                    Thread.sleep(1);
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        return lockResult;
+    }
+
+    private static boolean isUseTag(CacheItem cacheItem, String tag) {
+        if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
+            return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
+        }
+        return false;
+    }
+
+    private static boolean fileNotExist(File file) {
+        return file == null || !file.exists();
+    }
 
     /**
      * 轮询接口
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
                                   Map<String, String> clientMd5Map, int probeRequestSize)
-        throws IOException {
+            throws IOException {
 
         // 长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
@@ -166,7 +220,7 @@ public class ConfigServletInner {
                             }
 
                             response.setHeader("Vipserver-Tag",
-                                URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
+                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
@@ -179,7 +233,7 @@ public class ConfigServletInner {
                                 // FIXME CacheItem
                                 // 不存在了无法简单的计算推送delayed，这里简单的记做-1
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -211,8 +265,8 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // 不存在了无法简单的计算推送delayed，这里简单的记做-1
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                ConfigTraceService.PULL_EVENT_NOTFOUND,
-                                -1, requestIp);
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND,
+                                    -1, requestIp);
 
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -246,7 +300,7 @@ public class ConfigServletInner {
                     out.close();
                 } else {
                     fis.getChannel().transferTo(0L, fis.getChannel().size(),
-                        Channels.newChannel(response.getOutputStream()));
+                            Channels.newChannel(response.getOutputStream()));
                 }
 
                 LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
@@ -256,8 +310,8 @@ public class ConfigServletInner {
                 // TODO distinguish pull-get && push-get
                 // 否则无法直接把delayed作为推送延时的依据，因为主动get请求的delayed值都很大
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                    ConfigTraceService.PULL_EVENT_OK, delayed,
-                    requestIp);
+                        ConfigTraceService.PULL_EVENT_OK, delayed,
+                        requestIp);
 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -269,7 +323,7 @@ public class ConfigServletInner {
 
             // FIXME CacheItem 不存在了无法简单的计算推送delayed，这里简单的记做-1
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
 
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().println("config data not exist");
@@ -286,58 +340,6 @@ public class ConfigServletInner {
         }
 
         return HttpServletResponse.SC_OK + "";
-    }
-
-    private static void releaseConfigReadLock(String groupKey) {
-        ConfigService.releaseReadLock(groupKey);
-    }
-
-    private static int tryConfigReadLock(String groupKey) {
-        /**
-         *  默认加锁失败
-         */
-        int lockResult = -1;
-        /**
-         *  尝试加锁，最多10次
-         */
-        for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
-            lockResult = ConfigService.tryReadLock(groupKey);
-            /**
-             *  数据不存在
-             */
-            if (0 == lockResult) {
-                break;
-            }
-
-            /**
-             *  success
-             */
-            if (lockResult > 0) {
-                break;
-            }
-            /**
-             *  retry
-             */
-            if (i > 0) {
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                }
-            }
-        }
-
-        return lockResult;
-    }
-
-    private static boolean isUseTag(CacheItem cacheItem, String tag) {
-        if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
-            return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
-        }
-        return false;
-    }
-
-    private static boolean fileNotExist(File file) {
-        return file == null || !file.exists();
     }
 
 }

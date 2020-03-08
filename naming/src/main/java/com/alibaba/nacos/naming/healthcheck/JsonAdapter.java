@@ -23,7 +23,6 @@ import com.alibaba.fastjson.serializer.JSONSerializer;
 import com.alibaba.fastjson.serializer.ObjectSerializer;
 import com.alibaba.fastjson.serializer.SerializeWriter;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -49,7 +48,7 @@ public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
 
         Class target = HealthCheckType.ofHealthCheckerClass(checkType);
 
-        if(target != null){
+        if (target != null) {
             return (T) JSON.parseObject(jsonObj.toJSONString(), target);
         }
 

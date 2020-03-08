@@ -32,7 +32,6 @@ import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,22 +45,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("all")
 public class DistroServer {
 
+    private final KVManager kvManager;
+    private final DistroConfig config;
+    private final MemberManager memberManager;
+    private final Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     private DataSyncer dataSyncer;
     private PartitionDataTimedSync timedSync;
     private TaskCenter taskCenter;
     private DistroClient distroClient;
-
     private volatile boolean initialized = false;
-
     private AtomicBoolean started = new AtomicBoolean(false);
     private AtomicBoolean shutdowned = new AtomicBoolean(false);
-
-    private final KVManager kvManager;
-    private final DistroConfig config;
-    private final MemberManager memberManager;
-
-    private final Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
-
     private Serializer serializer;
 
     private DistroMapper distroMapper;
@@ -133,7 +127,7 @@ public class DistroServer {
         // Until one node is successfully synchronized, 5 maximum retries
         int retryCnr = 5;
 
-        for (int i = 0; i < retryCnr || !initialized; i ++) {
+        for (int i = 0; i < retryCnr || !initialized; i++) {
             for (Member server : memberManager.allMembers()) {
                 if (Objects.equals(memberManager.self().address(), server.address())) {
                     continue;

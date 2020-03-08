@@ -69,9 +69,6 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     @Autowired
     private MemberManager memberManager;
 
-    @Autowired
-    private DerbySnapshotOperation snapshotOperation;
-
     private DataSourceService dataSourceService;
 
     private JdbcTemplate jdbcTemplate;
@@ -273,7 +270,7 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
 
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(snapshotOperation);
+        return Collections.singletonList(new DerbySnapshotOperation());
     }
 
     @SuppressWarnings("all")

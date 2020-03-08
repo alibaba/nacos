@@ -1,10 +1,9 @@
 package com.alibaba.nacos.naming.pojo;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Nicholas

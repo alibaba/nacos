@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.executor;
 
 import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -35,7 +34,7 @@ import java.util.concurrent.ThreadFactory;
 public class ExecutorFactory {
 
     private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
-    
+
     private static final String DEFAULT_BIZ = "nacos";
 
     static {

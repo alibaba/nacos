@@ -29,11 +29,11 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5 {
-    private static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static final int DIGITS_COUNT = 16;
     private static final int DIGITS_CHAR_SIZE = 32;
-
+    private static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static Map<Character, Integer> rDigits = Maps.newHashMapWithExpectedSize(16);
+    private static MD5 me = new MD5();
 
     static {
         for (int i = 0; i < digits.length; ++i) {
@@ -41,7 +41,6 @@ public class MD5 {
         }
     }
 
-    private static MD5 me = new MD5();
     private MessageDigest mHasher;
     private ReentrantLock opLock = new ReentrantLock();
 
@@ -147,7 +146,7 @@ public class MD5 {
         for (int i = 0; i < DIGITS_COUNT; ++i) {
             int h = rDigits.get(chs[i * 2]);
             int l = rDigits.get(chs[i * 2 + 1]);
-            data[i] = (byte)((h & 0x0F) << 4 | (l & 0x0F));
+            data[i] = (byte) ((h & 0x0F) << 4 | (l & 0x0F));
         }
         return data;
     }

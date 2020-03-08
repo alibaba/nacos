@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -30,8 +26,17 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.alibaba.nacos.core.utils.Constants.*;
+import static com.alibaba.nacos.core.utils.Constants.IGNORED_INTERFACES;
+import static com.alibaba.nacos.core.utils.Constants.IP_ADDRESS;
+import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_IP;
+import static com.alibaba.nacos.core.utils.Constants.PREFERRED_NETWORKS;
+import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP;
+import static com.alibaba.nacos.core.utils.Constants.SYSTEM_PREFER_HOSTNAME_OVER_IP;
+import static com.alibaba.nacos.core.utils.Constants.USE_ONLY_SITE_INTERFACES;
 
 /**
  * @author Nacos
@@ -108,7 +113,7 @@ public class InetUtils {
         try {
             int lowest = Integer.MAX_VALUE;
             for (Enumeration<NetworkInterface> nics = NetworkInterface
-                .getNetworkInterfaces(); nics.hasMoreElements(); ) {
+                    .getNetworkInterfaces(); nics.hasMoreElements(); ) {
                 NetworkInterface ifc = nics.nextElement();
                 if (ifc.isUp()) {
                     log.info("Testing interface: " + ifc.getDisplayName());
@@ -120,13 +125,13 @@ public class InetUtils {
 
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc
-                            .getInetAddresses(); addrs.hasMoreElements(); ) {
+                                .getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
                             if (address instanceof Inet4Address
-                                && !address.isLoopbackAddress()
-                                && isPreferredAddress(address)) {
+                                    && !address.isLoopbackAddress()
+                                    && isPreferredAddress(address)) {
                                 log.info("Found non-loopback interface: "
-                                    + ifc.getDisplayName());
+                                        + ifc.getDisplayName());
                                 result = address;
                             }
                         }

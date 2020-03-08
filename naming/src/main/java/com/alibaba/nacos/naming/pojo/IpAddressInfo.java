@@ -24,17 +24,17 @@ import java.util.Map;
  */
 public class IpAddressInfo implements Serializable {
 
-    private boolean            valid;
+    private boolean valid;
 
     private Map<String, String> metadata;
 
-    private Integer             port;
+    private Integer port;
 
-    private String              ip;
+    private String ip;
 
-    private Double              weight;
+    private Double weight;
 
-    private boolean            enabled;
+    private boolean enabled;
 
     public boolean isEnabled() {
         return enabled;

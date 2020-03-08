@@ -21,16 +21,6 @@ import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.env.OriginTrackedMapPropertySource;
-import org.springframework.boot.env.PropertySourceLoader;
-import org.springframework.boot.origin.Origin;
-import org.springframework.boot.origin.OriginTrackedValue;
-import org.springframework.boot.origin.TextResourceOrigin;
-import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.util.Assert;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -41,6 +31,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.env.OriginTrackedMapPropertySource;
+import org.springframework.boot.env.PropertySourceLoader;
+import org.springframework.boot.origin.Origin;
+import org.springframework.boot.origin.OriginTrackedValue;
+import org.springframework.boot.origin.TextResourceOrigin;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.Assert;
 
 /**
  * Listen for changes in the application.conf file
@@ -102,6 +101,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
 
         /**
          * Create a new {@link OriginTrackedPropertiesLoader} instance.
+         *
          * @param resource the resource of the {@code .properties} data
          */
         OriginTrackedPropertiesLoader(Resource resource) {
@@ -112,6 +112,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
         /**
          * Load {@code .properties} data and return a map of {@code String} ->
          * {@link OriginTrackedValue}.
+         *
          * @return the loaded properties
          * @throws IOException on read error
          */
@@ -122,6 +123,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
         /**
          * Load {@code .properties} data and return a map of {@code String} ->
          * {@link OriginTrackedValue}.
+         *
          * @param expandLists if list {@code name[]=a,b,c} shortcuts should be expanded
          * @return the loaded properties
          * @throws IOException on read error
@@ -143,8 +145,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
                             }
                         }
                         while (!reader.isEndOfLine());
-                    }
-                    else {
+                    } else {
                         OriginTrackedValue value = loadValue(buffer, reader, false);
                         put(result, key, value);
                     }
@@ -200,7 +201,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
          */
         private class CharacterReader implements Closeable {
 
-            private final String[] ESCAPES = { "trnf", "\t\r\n\f" };
+            private final String[] ESCAPES = {"trnf", "\t\r\n\f"};
 
             private final LineNumberReader reader;
 
@@ -237,8 +238,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
                 if (this.character == '\\') {
                     this.escaped = true;
                     readEscaped();
-                }
-                else if (this.character == '\n') {
+                } else if (this.character == '\n') {
                     this.columnNumber = -1;
                 }
                 return !isEndOfFile();
@@ -266,12 +266,10 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
                 int escapeIndex = ESCAPES[0].indexOf(this.character);
                 if (escapeIndex != -1) {
                     this.character = ESCAPES[1].charAt(escapeIndex);
-                }
-                else if (this.character == '\n') {
+                } else if (this.character == '\n') {
                     this.columnNumber = -1;
                     read(true);
-                }
-                else if (this.character == 'u') {
+                } else if (this.character == 'u') {
                     readUnicode();
                 }
             }
@@ -282,14 +280,11 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
                     int digit = this.reader.read();
                     if (digit >= '0' && digit <= '9') {
                         this.character = (this.character << 4) + digit - '0';
-                    }
-                    else if (digit >= 'a' && digit <= 'f') {
+                    } else if (digit >= 'a' && digit <= 'f') {
                         this.character = (this.character << 4) + digit - 'a' + 10;
-                    }
-                    else if (digit >= 'A' && digit <= 'F') {
+                    } else if (digit >= 'A' && digit <= 'F') {
                         this.character = (this.character << 4) + digit - 'A' + 10;
-                    }
-                    else {
+                    } else {
                         throw new IllegalStateException("Malformed \\uxxxx encoding.");
                     }
                 }

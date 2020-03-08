@@ -22,9 +22,9 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DumpAllTagTask extends AbstractTask {
+    public static final String TASK_ID = "dumpAllTagConfigTask";
+
     @Override
     public void merge(AbstractTask task) {
     }
-
-    public static final String TASK_ID = "dumpAllTagConfigTask";
 }

@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -55,8 +54,7 @@ public class NacosStateMachine extends AbstractStateMachine {
                     if (iter.done() != null) {
                         closure = (NacosClosure) iter.done();
                         log = closure.getLog();
-                    }
-                    else {
+                    } else {
                         final ByteBuffer data = iter.getData();
                         log = serializer.deSerialize(data.array(), JLog.class);
                     }
@@ -84,8 +82,7 @@ public class NacosStateMachine extends AbstractStateMachine {
                             processor.onError(t);
                         }
                     }
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                     index++;
                     throw e;
                 }
@@ -99,8 +96,7 @@ public class NacosStateMachine extends AbstractStateMachine {
                 iter.next();
             }
 
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             Loggers.RAFT.error("StateMachine meet critical error: {}.", ExceptionUtil.getAllExceptionMsg(t));
             iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
                     "StateMachine meet critical error: %s.", t.getMessage()));

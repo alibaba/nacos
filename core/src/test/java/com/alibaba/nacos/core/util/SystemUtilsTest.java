@@ -17,15 +17,14 @@ package com.alibaba.nacos.core.util;
 
 
 import com.alibaba.nacos.core.utils.SystemUtils;
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
@@ -100,8 +99,8 @@ public class SystemUtilsTest {
          *   192.168.1.2:8848 # Instance A
          */
         SystemUtils.writeClusterConf(
-            "#it is ip" + lineSeparator + "  #example" + lineSeparator + "  # 192.168.1.1:8848" + lineSeparator
-                + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
+                "#it is ip" + lineSeparator + "  #example" + lineSeparator + "  # 192.168.1.1:8848" + lineSeparator
+                        + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
         List<String> instanceList = SystemUtils.readClusterConf();
         Assert.assertEquals(instanceList.get(0), "192.168.1.2:8848");
         Assert.assertEquals(instanceList.get(1), "192.168.1.3");

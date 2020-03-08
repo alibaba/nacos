@@ -56,28 +56,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     private static final Logger logger = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
     private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
     private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static String JDBC_DRIVER_NAME;
-
-    /**
-     * JDBC执行超时时间, 单位秒
-     */
-    private int queryTimeout = 3;
-
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
-
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
-
-    private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
-    private JdbcTemplate jt;
-    private DataSourceTransactionManager tm;
-    private TransactionTemplate tjt;
-
-    private JdbcTemplate testMasterJT;
-    private JdbcTemplate testMasterWritableJT;
-
-    volatile private List<JdbcTemplate> testJTList;
-    volatile private List<Boolean> isHealthList;
-    private volatile int masterIndex;
+    private static String JDBC_DRIVER_NAME;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
     static {
@@ -89,6 +70,24 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             logger.info("Use Mysql as the driver");
             JDBC_DRIVER_NAME = DEFAULT_MYSQL_DRIVER;
         }
+    }
+
+    /**
+     * JDBC执行超时时间, 单位秒
+     */
+    private int queryTimeout = 3;
+    private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
+    private JdbcTemplate jt;
+    private DataSourceTransactionManager tm;
+    private TransactionTemplate tjt;
+    private JdbcTemplate testMasterJT;
+    private JdbcTemplate testMasterWritableJT;
+    volatile private List<JdbcTemplate> testJTList;
+    volatile private List<Boolean> isHealthList;
+    private volatile int masterIndex;
+
+    static String defaultIfNull(String value, String defaultValue) {
+        return null == value ? defaultValue : value;
     }
 
     @PostConstruct
@@ -294,10 +293,6 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         }
 
         return "";
-    }
-
-    static String defaultIfNull(String value, String defaultValue) {
-        return null == value ? defaultValue : value;
     }
 
     class SelectMasterTask implements Runnable {

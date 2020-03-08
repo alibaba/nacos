@@ -19,8 +19,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.consistency.ap.APProtocol;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -72,7 +72,7 @@ public class ApiController extends InstanceController {
         String agent = WebUtils.getUserAgent(request);
         ClientInfo clientInfo = new ClientInfo(agent);
         if (clientInfo.type == ClientInfo.ClientType.DNS &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
+                clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
 
             List<String> doms = new ArrayList<String>();
             Set<String> domSet = null;
@@ -127,7 +127,7 @@ public class ApiController extends InstanceController {
     public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
 
         String dom = WebUtils.required(request, "dom");
         String agent = WebUtils.getUserAgent(request);
@@ -144,7 +144,7 @@ public class ApiController extends InstanceController {
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
         return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
-            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+                agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
     @CanDistro
@@ -152,7 +152,7 @@ public class ApiController extends InstanceController {
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
         OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
         requestWrapper.addParameter(CommonParams.SERVICE_NAME,
-            Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
+                Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
         return beat(requestWrapper);
     }
 }

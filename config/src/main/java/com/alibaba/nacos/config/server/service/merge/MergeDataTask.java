@@ -24,6 +24,13 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
  */
 class MergeDataTask extends AbstractTask {
 
+    static final long DELAY = 0L;
+    final String dataId;
+    final String groupId;
+    final String tenant;
+    final String tag;
+    private final String clientIp;
+
     MergeDataTask(String dataId, String groupId, String tenant, String clientIp) {
         this(dataId, groupId, tenant, null, clientIp);
     }
@@ -56,12 +63,4 @@ class MergeDataTask extends AbstractTask {
     public String getClientIp() {
         return clientIp;
     }
-
-    static final long DELAY = 0L;
-
-    final String dataId;
-    final String groupId;
-    final String tenant;
-    final String tag;
-    private final String clientIp;
 }

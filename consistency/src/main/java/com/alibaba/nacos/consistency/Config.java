@@ -30,7 +30,7 @@ public interface Config<L extends LogProcessor> extends Serializable {
     /**
      * Add configuration content
      *
-     * @param key config key
+     * @param key   config key
      * @param value config value
      */
     void setVal(String key, String value);
@@ -46,7 +46,7 @@ public interface Config<L extends LogProcessor> extends Serializable {
     /**
      * get configuration content by key, if not found, use default-val
      *
-     * @param key config key
+     * @param key        config key
      * @param defaultVal default value
      * @return config value
      */

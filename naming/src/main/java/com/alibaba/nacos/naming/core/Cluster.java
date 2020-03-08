@@ -20,12 +20,18 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author nkorange
@@ -146,19 +152,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * this method has been deprecated, the service name shouldn't be changed.
-     *
-     * @param serviceName the service name
-     * @author jifengnan  2019-04-26
-     * @since 1.0.1
-     */
-    @Deprecated
-    @Override
-    public void setServiceName(String serviceName) {
-        super.setServiceName(serviceName);
-    }
-
-    /**
      * Get the service name of the current cluster.
      * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
      * but the name of the service to which the current cluster belongs.
@@ -172,6 +165,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         } else {
             return super.getServiceName();
         }
+    }
+
+    /**
+     * this method has been deprecated, the service name shouldn't be changed.
+     *
+     * @param serviceName the service name
+     * @author jifengnan  2019-04-26
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
     }
 
     @Override
@@ -210,7 +216,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 if (ip.isHealthy() != oldIP.isHealthy()) {
                     // ip validation status updated
                     Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                        getService().getName(), (ip.isHealthy() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
+                            getService().getName(), (ip.isHealthy() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {
@@ -223,7 +229,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
-                getService().getName(), getName(), newIPs.size(), newIPs.toString());
+                    getService().getName(), getName(), newIPs.size(), newIPs.toString());
 
             for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
@@ -234,7 +240,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
-                getService().getName(), getName(), deadIPs.size(), deadIPs.toString());
+                    getService().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
             for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
@@ -341,31 +347,31 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         if (!getHealthChecker().equals(cluster.getHealthChecker())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                getService().getName(), getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
+                    getService().getName(), getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
             setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                getService().getName(), getName(), defCkport, cluster.getDefCkport());
+                    getService().getName(), getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                getService().getName(), getName(), defIPPort, cluster.getDefIPPort());
+                    getService().getName(), getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                getService().getName(), getName(), sitegroup, cluster.getSitegroup());
+                    getService().getName(), getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
-                getService().getName(), getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
+                    getService().getName(), getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 

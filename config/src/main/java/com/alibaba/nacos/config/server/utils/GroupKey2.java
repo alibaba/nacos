@@ -89,7 +89,7 @@ public class GroupKey2 {
             }
         }
 
-        return new String[] {dataId, group, tenant};
+        return new String[]{dataId, group, tenant};
     }
 
     /**

@@ -38,8 +38,6 @@ import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -54,19 +53,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("all")
 public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP> implements CPProtocol<RaftConfig> {
 
-    private JRaftServer raftServer;
-
-    private Node raftNode;
-
-    private MemberManager memberManager;
-
-    private String selfAddress = InetUtils.getSelfIp();
-
-    private int failoverRetries;
-
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-
     private final AtomicBoolean shutdowned = new AtomicBoolean(false);
+    private JRaftServer raftServer;
+    private Node raftNode;
+    private MemberManager memberManager;
+    private String selfAddress = InetUtils.getSelfIp();
+    private int failoverRetries;
 
     @Override
     public void init(RaftConfig config) {
@@ -150,7 +143,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     @Override
     public CompletableFuture<Boolean> submitAsync(Log data) {
         int retryCnt = ConvertUtils.toInt(data.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
-        final Throwable[] throwable = new Throwable[] { null };
+        final Throwable[] throwable = new Throwable[]{null};
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
             raftServer.commit(JLogUtils.toJLog(data, JLog.JLogOperaton.MODIFY_OPERATION), future, retryCnt);

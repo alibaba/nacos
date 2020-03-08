@@ -15,10 +15,9 @@
  */
 package com.alibaba.nacos.core.auth;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Annotation indicating that the annotated request should be authorized.

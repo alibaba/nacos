@@ -30,6 +30,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -37,8 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author nkorange
@@ -55,7 +54,7 @@ public class ClusterController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String healthChecker = WebUtils.required(request, "healthChecker");
@@ -81,7 +80,7 @@ public class ClusterController {
         AbstractHealthChecker abstractHealthChecker;
         String type = healthCheckObj.getString("type");
         Class<AbstractHealthChecker> healthCheckClass = HealthCheckType.ofHealthCheckerClass(type);
-        if(healthCheckClass == null){
+        if (healthCheckClass == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "unknown health check type:" + healthChecker);
         }
         abstractHealthChecker = JSON.parseObject(healthChecker, healthCheckClass);

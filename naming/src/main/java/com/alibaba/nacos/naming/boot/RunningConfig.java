@@ -18,14 +18,12 @@ package com.alibaba.nacos.naming.boot;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
+import javax.servlet.ServletContext;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.ServletContext;
-import java.util.TreeMap;
 
 /**
  * @author nkorange
@@ -36,22 +34,9 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     private static int serverPort;
 
     private static String contextPath;
-
+    private static volatile boolean isServerInitialized = false;
     @Autowired
     private ServletContext servletContext;
-
-    private static volatile boolean isServerInitialized = false;
-
-    @Override
-    public void onApplicationEvent(WebServerInitializedEvent event) {
-
-        Loggers.SRV_LOG.info("[SERVER-INIT] got port: {}", event.getWebServer().getPort());
-        Loggers.SRV_LOG.info("[SERVER-INIT] got path: {}", servletContext.getContextPath());
-
-        serverPort = event.getWebServer().getPort();
-        contextPath = servletContext.getContextPath();
-        isServerInitialized = true;
-    }
 
     public static int getServerPort() {
         return serverPort;
@@ -68,5 +53,16 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
             }
         }
         return contextPath;
+    }
+
+    @Override
+    public void onApplicationEvent(WebServerInitializedEvent event) {
+
+        Loggers.SRV_LOG.info("[SERVER-INIT] got port: {}", event.getWebServer().getPort());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got path: {}", servletContext.getContextPath());
+
+        serverPort = event.getWebServer().getPort();
+        contextPath = servletContext.getContextPath();
+        isServerInitialized = true;
     }
 }

@@ -27,30 +27,25 @@ import org.apache.commons.lang3.StringUtils;
 public class KeyBuilder {
 
     public static final String NAMESPACE_KEY_CONNECTOR = "##";
-
-    private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
-
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
-
     public static final String INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist.";
-
     public static final String BRIEF_SERVICE_META_KEY_PREFIX = "meta.";
-
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
+    private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
 
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
-            + serviceName;
+                + serviceName;
     }
 
     private static String buildPersistentInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
-            + serviceName;
+                + serviceName;
     }
 
     public static String buildInstanceListKey(String namespaceId, String serviceName, boolean ephemeral) {
         return ephemeral ? buildEphemeralInstanceListKey(namespaceId, serviceName) :
-            buildPersistentInstanceListKey(namespaceId, serviceName);
+                buildPersistentInstanceListKey(namespaceId, serviceName);
     }
 
     public static String buildServiceMetaKey(String namespaceId, String serviceName) {
@@ -108,12 +103,12 @@ public class KeyBuilder {
 
     public static String detailInstanceListkey(String key) {
         return INSTANCE_LIST_KEY_PREFIX.substring(0, INSTANCE_LIST_KEY_PREFIX.indexOf(BRIEF_INSTANCE_LIST_KEY_PREFIX))
-            + key;
+                + key;
     }
 
     public static String detailServiceMetaKey(String key) {
         return SERVICE_META_KEY_PREFIX.substring(0, SERVICE_META_KEY_PREFIX.indexOf(BRIEF_SERVICE_META_KEY_PREFIX))
-            + key;
+                + key;
     }
 
     public static String getNamespace(String key) {

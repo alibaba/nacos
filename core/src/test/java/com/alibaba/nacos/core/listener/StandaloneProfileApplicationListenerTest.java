@@ -39,13 +39,13 @@ import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class StandaloneProfileApplicationListenerTest {
 
+    @Autowired
+    private Environment environment;
+
     @BeforeClass
     public static void init() {
         System.setProperty("nacos.standalone", "true");
     }
-
-    @Autowired
-    private Environment environment;
 
     @Test
     public void testProfile() {

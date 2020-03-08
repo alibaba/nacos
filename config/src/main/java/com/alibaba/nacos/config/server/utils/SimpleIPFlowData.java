@@ -48,15 +48,6 @@ public class SimpleIPFlowData {
 
     });
 
-    class DefaultIPFlowDataManagerTask implements Runnable {
-
-        @Override
-        public void run() {
-            rotateSlot();
-        }
-
-    }
-
     public SimpleIPFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
@@ -103,5 +94,14 @@ public class SimpleIPFlowData {
 
     public int getAverageCount() {
         return this.averageCount;
+    }
+
+    class DefaultIPFlowDataManagerTask implements Runnable {
+
+        @Override
+        public void run() {
+            rotateSlot();
+        }
+
     }
 }

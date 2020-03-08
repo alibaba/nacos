@@ -22,6 +22,11 @@ package com.alibaba.nacos.config.server.utils;
  */
 public class SimpleReadWriteLock {
 
+    /**
+     * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
+     */
+    private int status = 0;
+
     public synchronized boolean tryReadLock() {
         if (isWriteLocked()) {
             return false;
@@ -55,9 +60,4 @@ public class SimpleReadWriteLock {
     private boolean isFree() {
         return status == 0;
     }
-
-    /**
-     * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
-     */
-    private int status = 0;
 }

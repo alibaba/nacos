@@ -32,6 +32,10 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.google.common.collect.Lists;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +44,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Health status related operation controller
@@ -68,7 +67,7 @@ public class HealthController {
     public JSONObject server() {
         JSONObject result = new JSONObject();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
-            + ", local port:" + RunningConfig.getServerPort());
+                + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
 
@@ -78,10 +77,10 @@ public class HealthController {
     public String update(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME
-            , UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+                , UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -106,8 +105,8 @@ public class HealthController {
                 if (instance.getIp().equals(ip) && instance.getPort() == port) {
                     instance.setHealthy(valid);
                     Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
-                        + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
-                        + ", service: " + serviceName + ", msg: update thought HealthController api");
+                            + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
+                            + ", service: " + serviceName + ", msg: update thought HealthController api");
                     pushService.serviceChanged(service);
                     break;
                 }

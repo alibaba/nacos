@@ -42,6 +42,7 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ThreadUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
@@ -94,39 +95,36 @@ import org.springframework.util.CollectionUtils;
 @SuppressWarnings("all")
 public class JRaftServer implements MemberChangeListener {
 
+    private final MemberManager memberManager;
+    private final AtomicBoolean isStarted = new AtomicBoolean(false);
     private Configuration conf;
     private RpcServer rpcServer;
     private BoltCliClientService cliClientService;
     private CliService cliService;
     private AsyncUserProcessor userProcessor;
     private NodeOptions nodeOptions;
-
     private Set<String> alreadyRegisterBiz = new HashSet<>();
     private Serializer serializer;
     private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
     private Collection<LogProcessor4CP> processors;
-
     private int failoverRetries;
     private String selfIp;
     private int selfPort;
-    private final MemberManager memberManager;
     private RaftConfig raftConfig;
     private PeerId localPeerId;
-    private final AtomicBoolean isStarted = new AtomicBoolean(false);
-
     private int rpcRequestTimeoutMs;
 
     public JRaftServer(final MemberManager memberManager, final int failoverRetries) {
         this.memberManager = memberManager;
         this.failoverRetries = failoverRetries;
         this.conf = new Configuration();
-
-        NotifyCenter.registerSubscribe(this);
     }
 
     void init(RaftConfig config, Collection<LogProcessor4CP> processors) {
         this.raftConfig = config;
         this.serializer = SerializeFactory.getDefault();
+
+        Loggers.RAFT.info("raft-config info : {}", config);
 
         RaftExecutor.init(config);
 
@@ -148,7 +146,6 @@ public class JRaftServer implements MemberChangeListener {
         RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 
         nodeOptions.setRaftOptions(raftOptions);
-
         this.processors = processors;
     }
 
@@ -198,6 +195,8 @@ public class JRaftServer implements MemberChangeListener {
                 Loggers.RAFT.error("raft protocol start failure, error : {}", e);
                 throw new RuntimeException(e);
             }
+
+            NotifyCenter.registerSubscribe(this);
         }
     }
 
@@ -350,32 +349,71 @@ public class JRaftServer implements MemberChangeListener {
     }
 
     void addNode(Member member) {
+
+        if (multiRaftGroup.isEmpty()) {
+            Loggers.RAFT.warn("No RaftGroup information currently exists");
+            return;
+        }
+
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             final String groupId = entry.getKey();
-            Status status = cliService.addPeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                    PeerId.parsePeer(member.address()));
+            final Configuration conf = RouteTable.getInstance().getConfiguration(groupId);
+            final PeerId peerId = new PeerId(member.ip(), ConvertUtils.toInt(String.valueOf(member.extendVal(RaftSysConstants.RAFT_PORT)), member.port() + 1000));
 
-            if (status.isOk()) {
-                refreshRouteTable(groupId);
-            } else {
-                Loggers.RAFT.error("Node join failed, node : {}, status : {}", member, status);
+            final int retryCnt = failoverRetries > 1 ? failoverRetries : 5;
+
+            if (conf.contains(peerId)) {
+                continue;
             }
+
+            RaftExecutor.executeByRaftCore(() -> {
+                for (int i = 0; i < retryCnt; i ++) {
+
+                    Status status = cliService.addPeer(groupId, conf, peerId);
+                    if (status.isOk()) {
+                        refreshRouteTable(groupId);
+                        return;
+                    } else {
+                        Loggers.RAFT.error("Node join failed, groupId : {} node : {}, status : {}", groupId, member, status);
+                    }
+                }
+            });
         }
     }
 
     void removeNode(Member member) {
+
+        if (multiRaftGroup.isEmpty()) {
+            Loggers.RAFT.warn("No RaftGroup information currently exists");
+            return;
+        }
+
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 
             final String groupId = entry.getKey();
-            Status status = cliService.removePeer(groupId, RouteTable.getInstance().getConfiguration(groupId),
-                    PeerId.parsePeer(member.address()));
+            final Configuration conf = RouteTable.getInstance().getConfiguration(groupId);
+            final PeerId peerId = new PeerId(member.ip(), ConvertUtils.toInt(String.valueOf(member.extendVal(RaftSysConstants.RAFT_PORT)), member.port() + 1000));
 
-            if (status.isOk()) {
-                refreshRouteTable(groupId);
-            } else {
-                Loggers.RAFT.error("Node join failed, node : {}, status : {}", member, status);
+            final int retryCnt = failoverRetries > 1 ? failoverRetries : 5;
+
+            if (conf.contains(peerId)) {
+                continue;
             }
+
+            RaftExecutor.executeByRaftCore(() -> {
+                for (int i = 0; i < retryCnt; i ++) {
+                    Status status = cliService.removePeer(groupId, conf, peerId);
+                    if (status.isOk()) {
+                        refreshRouteTable(groupId);
+                        return;
+                    } else {
+                        Loggers.RAFT.error("Node join failed, groupId : {}, node : {}, status : {}", groupId, member, status);
+                        ThreadUtils.sleep(500L);
+                    }
+                }
+            });
+
         }
     }
 
@@ -491,7 +529,7 @@ public class JRaftServer implements MemberChangeListener {
         try {
             RouteTable.getInstance().refreshConfiguration(this.cliClientService, group, 5000);
         } catch (InterruptedException | TimeoutException e) {
-            Loggers.RAFT.error("Fail to refresh route configuration error is : {}", e.getMessage());
+            Loggers.RAFT.error("Fail to refresh route configuration error is : {}", e);
         }
     }
 

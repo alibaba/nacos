@@ -22,6 +22,9 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import java.nio.charset.Charset;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -29,10 +32,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.Charset;
 
 /**
  * 容量管理切面：批量写入、更新暂不处理
@@ -45,12 +44,12 @@ public class CapacityManagementAspect {
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityManagementAspect.class);
 
     private static final String SYNC_UPDATE_CONFIG_ALL
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
-        + "(request,response,dataId,group,content,appName,srcUser,tenant,tag,..)";
+            = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
+            + "(request,response,dataId,group,content,appName,srcUser,tenant,tag,..)";
 
     private static final String DELETE_CONFIG
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
-        + "(request,response,dataId,group,tenant,..)";
+            = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
+            + "(request,response,dataId,group,tenant,..)";
 
     @Autowired
     private CapacityService capacityService;
@@ -64,7 +63,7 @@ public class CapacityManagementAspect {
     public Object aroundSyncUpdateConfigAll(ProceedingJoinPoint pjp, HttpServletRequest request,
                                             HttpServletResponse response, String dataId, String group, String content,
                                             String appName, String srcUser, String tenant, String tag)
-        throws Throwable {
+            throws Throwable {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }
@@ -113,7 +112,7 @@ public class CapacityManagementAspect {
      */
     private Object do4Insert(ProceedingJoinPoint pjp, HttpServletRequest request,
                              HttpServletResponse response, String group, String tenant, String content)
-        throws Throwable {
+            throws Throwable {
         LOGGER.info("[capacityManagement] do4Insert");
         CounterMode counterMode = CounterMode.INCREMENT;
         boolean hasTenant = hasTenant(tenant);
@@ -161,7 +160,7 @@ public class CapacityManagementAspect {
      */
     private Object do4Delete(ProceedingJoinPoint pjp, HttpServletResponse response, String group, String tenant,
                              ConfigInfo configInfo)
-        throws Throwable {
+            throws Throwable {
         boolean hasTenant = hasTenant(tenant);
         if (configInfo == null) {
             // "configInfo == null"有2种可能：
@@ -203,7 +202,7 @@ public class CapacityManagementAspect {
             return result;
         } catch (Throwable throwable) {
             LOGGER.warn("[capacityManagement] inner operation throw exception, rollback, group: {}, tenant: {}",
-                group, tenant, throwable);
+                    group, tenant, throwable);
             rollback(counterMode, group, tenant, hasTenant);
             throw throwable;
         }
@@ -226,7 +225,7 @@ public class CapacityManagementAspect {
     }
 
     private LimitType getLimitType(CounterMode counterMode, String group, String tenant, String content, boolean
-        hasTenant) {
+            hasTenant) {
         try {
             boolean clusterLimited = !capacityService.insertAndUpdateClusterUsage(counterMode, false);
             if (clusterLimited) {
@@ -238,7 +237,7 @@ public class CapacityManagementAspect {
             }
             int currentSize = getCurrentSize(content);
             LimitType limitType = getGroupOrTenantLimitType(counterMode, group, tenant, currentSize,
-                hasTenant);
+                    hasTenant);
             if (limitType != null) {
                 rollbackClusterUsage(counterMode);
                 return limitType;
@@ -351,12 +350,12 @@ public class CapacityManagementAspect {
         if (currentSize > maxSize) {
             if (hasTenant) {
                 LOGGER.warn(
-                    "[capacityManagement] tenant content is over maxSize, tenant: {}, maxSize: {}, currentSize: {}",
-                    tenant, maxSize, currentSize);
+                        "[capacityManagement] tenant content is over maxSize, tenant: {}, maxSize: {}, currentSize: {}",
+                        tenant, maxSize, currentSize);
             } else {
                 LOGGER.warn(
-                    "[capacityManagement] group content is over maxSize, group: {}, maxSize: {}, currentSize: {}",
-                    group, maxSize, currentSize);
+                        "[capacityManagement] group content is over maxSize, group: {}, maxSize: {}, currentSize: {}",
+                        group, maxSize, currentSize);
             }
             return true;
         }
@@ -368,8 +367,8 @@ public class CapacityManagementAspect {
         try {
             if (!isSuccess(response, result)) {
                 LOGGER.warn(
-                    "[capacityManagement] inner operation is fail, rollback, counterMode: {}, group: {}, tenant: {}",
-                    counterMode, group, tenant);
+                        "[capacityManagement] inner operation is fail, rollback, counterMode: {}, group: {}, tenant: {}",
+                        counterMode, group, tenant);
                 rollback(counterMode, group, tenant, hasTenant);
             }
         } catch (Exception e) {
@@ -383,7 +382,7 @@ public class CapacityManagementAspect {
             return true;
         }
         LOGGER.warn("[capacityManagement] response status is not 200, status: {}, result: {}", status,
-            result);
+                result);
         return false;
     }
 

@@ -15,10 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import java.io.IOException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.io.IOException;
 
 /**
  * datasource interface
@@ -37,7 +36,7 @@ public interface DataSourceService {
     /**
      * First, empty the data in the database and restart
      * <p>This is a very dangerous operation!!!</p>
-     *
+     * <p>
      * The method is currently only allowed {@link com.alibaba.nacos.config.server.service.transaction.DistributedDatabaseOperateImpl}
      * to be called
      *

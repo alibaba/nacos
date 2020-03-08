@@ -17,13 +17,12 @@ package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * global exception handler

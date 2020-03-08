@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.notify.listener;
 
 import com.alibaba.nacos.core.notify.Event;
-
 import java.util.concurrent.Executor;
 
 /**

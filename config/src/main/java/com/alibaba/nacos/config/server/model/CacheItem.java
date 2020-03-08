@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.model;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.config.server.utils.SingletonRepository.DataIdGroupIdCache;
-
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,21 @@ import java.util.Map;
  * @author Nacos
  */
 public class CacheItem {
+
+    final String groupKey;
+    public volatile String md5 = Constants.NULL;
+    public volatile long lastModifiedTs;
+    /**
+     * use for beta
+     */
+    public volatile boolean isBeta = false;
+    public volatile String md54Beta = Constants.NULL;
+    public volatile List<String> ips4Beta;
+    public volatile long lastModifiedTs4Beta;
+    public volatile Map<String, String> tagMd5;
+    public volatile Map<String, Long> tagLastModifiedTs;
+    public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
+    public String type;
 
     public CacheItem(String groupKey) {
         this.groupKey = DataIdGroupIdCache.getSingleton(groupKey);
@@ -97,12 +111,12 @@ public class CacheItem {
         return tagMd5;
     }
 
-    public Map<String, Long> getTagLastModifiedTs() {
-        return tagLastModifiedTs;
-    }
-
     public void setTagMd5(Map<String, String> tagMd5) {
         this.tagMd5 = tagMd5;
+    }
+
+    public Map<String, Long> getTagLastModifiedTs() {
+        return tagLastModifiedTs;
     }
 
     public void setTagLastModifiedTs(Map<String, Long> tagLastModifiedTs) {
@@ -116,21 +130,5 @@ public class CacheItem {
     public void setType(String type) {
         this.type = type;
     }
-
-    final String groupKey;
-    public volatile String md5 = Constants.NULL;
-    public volatile long lastModifiedTs;
-
-    /**
-     * use for beta
-     */
-    public volatile boolean isBeta = false;
-    public volatile String md54Beta = Constants.NULL;
-    public volatile List<String> ips4Beta;
-    public volatile long lastModifiedTs4Beta;
-    public volatile Map<String, String> tagMd5;
-    public volatile Map<String, Long> tagLastModifiedTs;
-    public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
-    public String type;
 
 }

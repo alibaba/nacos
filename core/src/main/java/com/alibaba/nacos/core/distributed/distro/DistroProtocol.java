@@ -31,7 +31,6 @@ import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,19 +38,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, LogProcessor4AP> implements APProtocol<DistroConfig> {
 
-    private KVManager kvManager;
-
-    private DistroServer distroServer;
-
-    private MemberManager memberManager;
-
     private final AtomicBoolean initialize = new AtomicBoolean(false);
+    private KVManager kvManager;
+    private DistroServer distroServer;
+    private MemberManager memberManager;
 
     @Override
     public void init(DistroConfig config) {

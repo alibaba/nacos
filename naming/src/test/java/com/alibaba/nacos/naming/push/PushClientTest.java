@@ -17,14 +17,13 @@ package com.alibaba.nacos.naming.push;
 
 
 import com.alibaba.nacos.naming.BaseTest;
-import org.junit.Test;
-
 import java.net.InetSocketAddress;
+import org.junit.Test;
 
 /**
  * @author nkorange
  */
-public class PushClientTest extends BaseTest  {
+public class PushClientTest extends BaseTest {
 
     @Test
     public void testAddClient() {
@@ -39,12 +38,12 @@ public class PushClientTest extends BaseTest  {
 
 
         pushService.addClient(namespaceId
-            , serviceName
-            , clusters
-            , agent
-            , new InetSocketAddress(clientIp, udpPort)
-            , null
-            , namespaceId
-            , app);
+                , serviceName
+                , clusters
+                , agent
+                , new InetSocketAddress(clientIp, udpPort)
+                , null
+                , namespaceId
+                , app);
     }
 }

@@ -16,9 +16,13 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.misc.Loggers;
-
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nacos

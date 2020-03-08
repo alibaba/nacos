@@ -18,6 +18,9 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,10 +29,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.context.ApplicationContext;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import static org.mockito.Mockito.doReturn;
 
 /**
@@ -37,11 +36,11 @@ import static org.mockito.Mockito.doReturn;
  */
 public class DomainTest {
 
-    private Service service;
     @Spy
     protected ApplicationContext context;
     @Mock
     protected PushService pushService;
+    private Service service;
 
     @Before
     public void before() {

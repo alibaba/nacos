@@ -66,27 +66,30 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("all")
 public class RaftStore {
 
-    private final String SNAPSHOT_DIR = "nacos-naming";
-    private final String SNAPSHOT_ARCHIVE = "nacos-naming.zip";
+    public static final String STORE_NAME = "persistent_service";
+    private final String SNAPSHOT_DIR = "nacos_naming";
 
     // example : ../naming/data/ or ../namimh/data/{namespace_id}/
-
-    private final String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
-    public static final String STORE_NAME = "persistent_service";
-
+    private final String SNAPSHOT_ARCHIVE = "nacos_naming.zip";
+    private final String cacheDir = Paths.get(UtilsAndCommons.DATA_BASE_DIR,"data").toString();
+    private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
     @Autowired
     private CPProtocol protocol;
-
     @Autowired
     private RaftConsistencyServiceImpl.Notifier notifier;
-
-    private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
-
     private KVStore<Record> kvStore;
 
     private Serializer serializer;
 
     private boolean initialized = false;
+
+    private static String encodeFileName(String fileName) {
+        return fileName.replace(':', '#');
+    }
+
+    private static String decodeFileName(String fileName) {
+        return fileName.replace("#", ":");
+    }
 
     @PostConstruct
     protected void init() throws Exception {
@@ -100,6 +103,7 @@ public class RaftStore {
                 // playback to reply to the data is the correct behavior.
 
                 DiskUtils.deleteDirectory(cacheDir);
+                DiskUtils.forceMkdir(cacheDir);
 
             }
         }, new NBeforeHook(), new NAfterHook());
@@ -136,99 +140,6 @@ public class RaftStore {
 
     public boolean isInitialized() {
         return initialized;
-    }
-
-    class NSnapshotOperation implements SnapshotOperation {
-
-        @Override
-        public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-            GlobalExecutor.execute(() -> {
-
-                boolean result = false;
-                Throwable throwable = null;
-                TimerContext.start("[Naming] RaftStore snapshot save job");
-                try {
-                    final String writePath = writer.getPath();
-                    final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
-                    final File file = new File(parentPath);
-                    DiskUtils.deleteDirectory(parentPath);
-                    DiskUtils.forceMkdir(parentPath);
-
-                    DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
-
-                    final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-
-                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
-                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
-                        WritableByteChannel channel = Channels.newChannel(zOut);
-                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
-                                channel);
-                        DiskUtils.deleteDirectory(parentPath);
-                    }
-
-                    writer.addFile(SNAPSHOT_ARCHIVE);
-
-                    result = true;
-                } catch (Exception e) {
-                    throwable = e;
-                    Loggers.RAFT.error("An error occurred while saving the snapshot : {}", throwable);
-                } finally {
-                    callFinally.run(result, throwable);
-                    TimerContext.end(Loggers.RAFT);
-                }
-            });
-        }
-
-        @Override
-        public boolean onSnapshotLoad(Reader reader) {
-            final String readerPath = reader.getPath();
-            final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
-            TimerContext.start("[Naming] RaftStore snapshot load job");
-            try {
-                DiskUtils.unzipFile(sourceFile, readerPath);
-                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
-                        + File.separator;
-                Loggers.RAFT.info("snapshot load from : {}", loadPath);
-                File sourceDir = new File(sourceFile);
-                loadFromFile(sourceDir);
-                return true;
-            }
-            catch (final Throwable t) {
-                Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
-                        reader.listFiles(), t);
-                return false;
-            } finally {
-                TimerContext.end(Loggers.RAFT);
-            }
-        }
-    }
-
-    class NBeforeHook implements BeforeHook<Record> {
-
-        @Override
-        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
-            if (isPut) {
-                try {
-
-                    // We need to make sure the data drops before we can proceed
-
-                    write(key, item);
-                } catch (Exception e) {
-                    Loggers.RAFT.error("Data persistence error : {}", e);
-                }
-            }
-        }
-    }
-
-    class NAfterHook implements AfterHook<Record> {
-
-        @Override
-        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
-            if (!isPut) {
-                delete(key, item);
-            }
-            notifier.addTask(key, isPut ? ApplyAction.CHANGE : ApplyAction.DELETE);
-        }
     }
 
     KVStore.Item readItem(File file, String namespaceId) throws IOException {
@@ -315,16 +226,6 @@ public class RaftStore {
         return listMap;
     }
 
-    private static String encodeFileName(String fileName) {
-        return fileName.replace(':', '#');
-    }
-
-    private static String decodeFileName(String fileName) {
-        return fileName.replace("#", ":");
-    }
-
-    // This method is limited to data read operations when the snapshot is loaded
-
     private void loadFromFile(File parent) throws IOException {
 
         if (!parent.exists() && !parent.mkdirs()) {
@@ -352,6 +253,99 @@ public class RaftStore {
         }
 
         kvStore.load(tmp);
+    }
+
+    class NSnapshotOperation implements SnapshotOperation {
+
+        @Override
+        public void onSnapshotSave(Writer writer, CallFinally callFinally) {
+            GlobalExecutor.execute(() -> {
+
+                boolean result = false;
+                Throwable throwable = null;
+                TimerContext.start("[Naming] RaftStore snapshot save job");
+                try {
+                    final String writePath = writer.getPath();
+                    final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
+                    final File file = new File(parentPath);
+                    DiskUtils.deleteDirectory(parentPath);
+                    DiskUtils.forceMkdir(parentPath);
+
+                    DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
+
+                    final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
+
+                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
+                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
+                        WritableByteChannel channel = Channels.newChannel(zOut);
+                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
+                                channel);
+                        DiskUtils.deleteDirectory(parentPath);
+                    }
+
+                    writer.addFile(SNAPSHOT_ARCHIVE);
+                    result = true;
+                } catch (Exception e) {
+                    throwable = e;
+                    Loggers.RAFT.error("An error occurred while saving the snapshot : {}", throwable);
+                } finally {
+                    callFinally.run(result, throwable);
+                    TimerContext.end(Loggers.RAFT);
+                }
+            });
+        }
+
+        @Override
+        public boolean onSnapshotLoad(Reader reader) {
+            final String readerPath = reader.getPath();
+            final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
+            TimerContext.start("[Naming] RaftStore snapshot load job");
+            try {
+                DiskUtils.unzipFile(sourceFile, readerPath);
+                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
+                        + File.separator;
+                Loggers.RAFT.info("snapshot load from : {}", loadPath);
+                File sourceDir = new File(sourceFile);
+                loadFromFile(sourceDir);
+                return true;
+            } catch (final Throwable t) {
+                Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+                        reader.listFiles(), t);
+                return false;
+            } finally {
+                TimerContext.end(Loggers.RAFT);
+            }
+        }
+    }
+
+    class NBeforeHook implements BeforeHook<Record> {
+
+        @Override
+        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
+            if (isPut) {
+                try {
+
+                    // We need to make sure the data drops before we can proceed
+
+                    write(key, item);
+                } catch (Exception e) {
+                    Loggers.RAFT.error("Data persistence error : {}", e);
+                }
+            }
+        }
+    }
+
+    // This method is limited to data read operations when the snapshot is loaded
+
+    class NAfterHook implements AfterHook<Record> {
+
+        @Override
+        public void hook(String key, Record data, KVStore.Item item, boolean isPut) {
+            if (!isPut) {
+                delete(key, item);
+            }
+            notifier.addTask(key, isPut ? ApplyAction.CHANGE : ApplyAction.DELETE);
+        }
     }
 
 }

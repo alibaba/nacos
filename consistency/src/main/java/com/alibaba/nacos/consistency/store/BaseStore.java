@@ -17,7 +17,6 @@
 package com.alibaba.nacos.consistency.store;
 
 import com.alibaba.nacos.common.Serializer;
-
 import java.util.Objects;
 
 /**
@@ -26,13 +25,10 @@ import java.util.Objects;
 @SuppressWarnings("all")
 abstract class BaseStore implements Store {
 
-    protected CommandAnalyzer commandAnalyzer;
-
-    private final int openParller = 50;
-
     protected final Serializer serializer;
-
     protected final String name;
+    private final int openParller = 50;
+    protected CommandAnalyzer commandAnalyzer;
 
     public BaseStore(String name, Serializer serializer) {
         this.name = name;

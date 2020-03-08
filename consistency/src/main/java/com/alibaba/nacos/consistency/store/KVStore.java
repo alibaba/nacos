@@ -19,15 +19,14 @@ package com.alibaba.nacos.consistency.store;
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.common.utils.Md5Utils;
-import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
 
 /**
  * Key-value pair data storage structure abstraction
@@ -46,8 +45,46 @@ public abstract class KVStore<T> extends BaseStore {
     private StartHook startHook;
     private BeforeHook beforeHook;
     private AfterHook afterHook;
-    private ShutHook shutHook;
+    BiFunction<String, Pair<T, byte[]>, Boolean> put = new BiFunction<String, Pair<T, byte[]>, Boolean>() {
+        @Override
+        public Boolean apply(String key, Pair<T, byte[]> pair) {
+            final T value = pair.getValue0();
+            final byte[] data = pair.getValue1();
+            final boolean[] isCreate = new boolean[]{false};
 
+            final Item item = new Item(data, value.getClass().getCanonicalName());
+
+            before(key, value, item, true);
+
+            dataStore.computeIfAbsent(key, s -> {
+                isCreate[0] = true;
+                return item;
+            });
+
+            Item currentItem = dataStore.get(key);
+
+            if (!isCreate[0]) {
+
+                // will auto update checkSum
+
+                dataStore.get(key).setBytes(data);
+            }
+
+            after(key, value, currentItem, true);
+            return true;
+        }
+    };
+    BiFunction<String, T, Boolean> remove = new BiFunction<String, T, Boolean>() {
+        @Override
+        public Boolean apply(String key, T data) {
+            before(key, null, null, false);
+            T source = getByKeyAutoConvert(key);
+            Item item = dataStore.remove(key);
+            after(key, source, item, false);
+            return true;
+        }
+    };
+    private ShutHook shutHook;
     private volatile boolean isStart = false;
 
     public KVStore(String name) {
@@ -60,6 +97,7 @@ public abstract class KVStore<T> extends BaseStore {
     }
 
     public final void registerHook(StartHook startHook, BeforeHook beforeHook, AfterHook afterHook) {
+        this.startHook = startHook;
         this.beforeHook = beforeHook;
         this.afterHook = afterHook;
     }
@@ -92,7 +130,7 @@ public abstract class KVStore<T> extends BaseStore {
      * Hooks before data manipulation
      *
      * @param key
-     * @param data if operate == -1, the data is null
+     * @param data  if operate == -1, the data is null
      * @param isPut is put operation
      */
     protected void before(String key, T data, Item item, boolean isPut) {
@@ -103,7 +141,7 @@ public abstract class KVStore<T> extends BaseStore {
      * Hooks after data manipulation
      *
      * @param key
-     * @param data remove source data
+     * @param data  remove source data
      * @param isPut is put operation
      */
     protected void after(String key, T data, Item item, boolean isPut) {
@@ -192,6 +230,8 @@ public abstract class KVStore<T> extends BaseStore {
         return dataStore.get(key).getBytes();
     }
 
+    // put operation
+
     public static class Item {
 
         byte[] bytes;
@@ -204,10 +244,6 @@ public abstract class KVStore<T> extends BaseStore {
         public Item(byte[] bytes, String className) {
             this.bytes = bytes;
             this.checkSum = Md5Utils.getMD5(bytes);
-            this.className = className;
-        }
-
-        public void setClassName(String className) {
             this.className = className;
         }
 
@@ -231,7 +267,13 @@ public abstract class KVStore<T> extends BaseStore {
         public String getClassName() {
             return className;
         }
+
+        public void setClassName(String className) {
+            this.className = className;
+        }
     }
+
+    // remove operation
 
     class KVCommandAnalyzer implements CommandAnalyzer {
 
@@ -246,50 +288,5 @@ public abstract class KVStore<T> extends BaseStore {
             throw new UnsupportedOperationException();
         }
     }
-
-    // put operation
-
-    BiFunction<String, Pair<T, byte[]>, Boolean> put = new BiFunction<String, Pair<T, byte[]>, Boolean>() {
-        @Override
-        public Boolean apply(String key, Pair<T, byte[]> pair) {
-            final T value = pair.getValue0();
-            final byte[] data = pair.getValue1();
-            final boolean[] isCreate = new boolean[]{false};
-
-            final Item item = new Item(data, value.getClass().getCanonicalName());
-
-            before(key, value, item, true);
-
-            dataStore.computeIfAbsent(key, s -> {
-                isCreate[0] = true;
-                return item;
-            });
-
-            Item currentItem = dataStore.get(key);
-
-            if (!isCreate[0]) {
-
-                // will auto update checkSum
-
-                dataStore.get(key).setBytes(data);
-            }
-
-            after(key, value, currentItem, true);
-            return true;
-        }
-    };
-
-    // remove operation
-
-    BiFunction<String, T, Boolean> remove = new BiFunction<String, T, Boolean>() {
-        @Override
-        public Boolean apply(String key, T data) {
-            before(key, null, null, false);
-            T source = getByKeyAutoConvert(key);
-            Item item = dataStore.remove(key);
-            after(key, source, item, false);
-            return true;
-        }
-    };
 
 }

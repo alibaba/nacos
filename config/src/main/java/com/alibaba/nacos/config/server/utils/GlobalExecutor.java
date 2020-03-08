@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.service.transaction.DerbySnapshotOperation;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
-
 import java.util.concurrent.Executor;
 
 /**

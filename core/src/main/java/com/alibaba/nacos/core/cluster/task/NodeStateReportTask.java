@@ -30,10 +30,9 @@ import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.apache.http.client.config.RequestConfig;
-
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import org.apache.http.client.config.RequestConfig;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -41,7 +40,8 @@ import java.util.concurrent.TimeUnit;
 public class NodeStateReportTask extends Task {
 
     private final TypeReference<ResResult<String>> reference
-            = new TypeReference<ResResult<String>>() {};
+            = new TypeReference<ResResult<String>>() {
+    };
 
     private NSyncHttpClient httpClient;
 

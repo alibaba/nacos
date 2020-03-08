@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.pojo;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Service;
-
 import java.util.List;
 
 /**

@@ -21,6 +21,7 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
@@ -46,6 +47,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipOutputStream;
@@ -59,22 +62,20 @@ import org.springframework.stereotype.Component;
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-@ConditionalOnProperty(value = "nacos.idGenerator.type", havingValue = "default", matchIfMissing = true)
+@ConditionalOnProperty(value = "nacos.core.idGenerator.type", havingValue = "default", matchIfMissing = true)
 @Component
 public class DefaultIdStore implements LogProcessor4CP {
 
-    private ConsistencyProtocol<? extends Config> protocol;
-
     private static final File[] EMPTY = new File[0];
-
+    private static final String SNAPSHOT_DIR = "id-generator";
+    private static final String SNAPSHOT_ARCHIVE = "id_generator.zip";
+    private static final String FILE_PATH = Paths.get(SystemUtils.NACOS_HOME, "data", "id-generator").toString();
     private static long ACQUIRE_STEP;
-    private static String FILE_PATH = SystemUtils.NACOS_HOME;
-
-    private static final String SNAPSHOT_DIR = "idGenerator";
-    private static final String SNAPSHOT_ARCHIVE = "idGenerator.zip";
-
+    private ConsistencyProtocol<? extends Config> protocol;
     private Map<String, IdStoreFile> storeFileMap;
     private Serializer serializer;
+
+    private volatile boolean hasLeader = false;
 
     @PostConstruct
     protected void init() throws Exception {
@@ -83,7 +84,6 @@ public class DefaultIdStore implements LogProcessor4CP {
         this.serializer = SerializeFactory.getDefault();
         ACQUIRE_STEP =
                 ConvertUtils.toLong(SpringUtils.getProperty("nacos.core.idGenerator.default.acquire.step"), 1000);
-        FILE_PATH = Paths.get(FILE_PATH, "data", "IdGenerator").toString();
 
         // Delete existing data, relying on raft's snapshot and log
         // playback to reply to the data is the correct behavior.
@@ -92,9 +92,13 @@ public class DefaultIdStore implements LogProcessor4CP {
         DiskUtils.forceMkdir(FILE_PATH);
     }
 
+    public boolean isHasLeader() {
+        return hasLeader;
+    }
+
     public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
         storeFileMap.computeIfAbsent(resource, s -> new IdStoreFile(resource));
-        for (int i = 0 ; i < maxRetryCnt; i ++) {
+        for (int i = 0; i < maxRetryCnt; i++) {
             // need read maxId from raft-leader
             long currentMaxId = (long) getData(GetRequest.builder()
                     .biz(bizInfo())
@@ -111,20 +115,28 @@ public class DefaultIdStore implements LogProcessor4CP {
                 if (commitAutoSetBiz(NLog.builder()
                         .data(serializer.serialize(acquireId))
                         .build())) {
-                    generator.update(new long[]{ minId, maxId });
+                    generator.update(new long[]{minId, maxId});
                     Loggers.ID_GENERATOR.info("[{}] ID application successful, startId : {}, endId : {}", resource, minId, maxId);
                     return;
                 }
             } catch (Exception e) {
                 Loggers.ID_GENERATOR.error("[{}] An error occurred while applying for ID, error : {}", resource, e);
-                break;
             }
         }
+        throw new AcquireIdException("[" + resource + "] The maximum number of retries exceeded");
     }
 
     @Override
     public void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
         this.protocol = protocol;
+        this.protocol.protocolMetaData()
+                .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
+                    @Override
+                    public void update(Observable o, Object arg) {
+                        System.out.println(arg);
+                        hasLeader = true;
+                    }
+                });
     }
 
     @Override
@@ -142,6 +154,7 @@ public class DefaultIdStore implements LogProcessor4CP {
                 .build();
     }
 
+    @SuppressWarnings("all")
     @Override
     public boolean onApply(Log log) {
         byte[] data = log.getData();
@@ -163,75 +176,12 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     @Override
     public String bizInfo() {
-        return "Default-IdGenerator";
+        return "default-id-generator";
     }
 
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.singletonList(new IdSnapshotOperation());
-    }
-
-    class IdSnapshotOperation implements SnapshotOperation {
-
-        @Override
-        public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-            GlobalExecutor.executeByCommon(() -> {
-
-                boolean result = false;
-                Throwable throwable = null;
-
-                try {
-                    final String writePath = writer.getPath();
-                    final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
-                    DiskUtils.deleteDirectory(parentPath);
-                    DiskUtils.forceMkdir(parentPath);
-                    DiskUtils.copyDirectory(new File(FILE_PATH), new File(parentPath));
-
-                    final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-
-                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
-                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
-                        WritableByteChannel channel = Channels.newChannel(zOut);
-                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
-                                channel);
-                        DiskUtils.deleteDirectory(parentPath);
-                    }
-
-                    writer.addFile(SNAPSHOT_ARCHIVE);
-
-                    result = true;
-                } catch (Exception e) {
-                    Loggers.ID_GENERATOR.error("Snapshot execution error : {}", e);
-                    throwable = e;
-                }
-
-                callFinally.run(result, throwable);
-
-            });
-        }
-
-        @Override
-        public boolean onSnapshotLoad(Reader reader) {
-            final String readerPath = reader.getPath();
-            final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
-            TimerContext.start("[Naming] RaftStore snapshot load job");
-            try {
-                DiskUtils.unzipFile(sourceFile, readerPath);
-                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
-                        + File.separator;
-                Loggers.ID_GENERATOR.info("snapshot load from : {}", loadPath);
-                File sourceDir = new File(sourceFile);
-                DefaultIdStore.this.loadFromFile(sourceDir);
-                return true;
-            }
-            catch (final Throwable t) {
-                Loggers.ID_GENERATOR.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
-                        reader.listFiles(), t);
-                return false;
-            } finally {
-                TimerContext.end(Loggers.ID_GENERATOR);
-            }
-        }
     }
 
     void loadFromFile(File parentFile) throws IOException {
@@ -285,5 +235,67 @@ public class DefaultIdStore implements LogProcessor4CP {
             return Long.parseLong(data);
         }
 
+    }
+
+    class IdSnapshotOperation implements SnapshotOperation {
+
+        @Override
+        public void onSnapshotSave(Writer writer, CallFinally callFinally) {
+            GlobalExecutor.executeByCommon(() -> {
+
+                boolean result = false;
+                Throwable throwable = null;
+                final String writePath = writer.getPath();
+
+                try {
+                    final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
+                    DiskUtils.deleteDirectory(parentPath);
+                    DiskUtils.forceMkdir(parentPath);
+                    DiskUtils.copyDirectory(new File(FILE_PATH), new File(parentPath));
+
+                    final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
+
+                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
+                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
+                        WritableByteChannel channel = Channels.newChannel(zOut);
+                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
+                                channel);
+                        DiskUtils.deleteDirectory(parentPath);
+                    }
+
+                    writer.addFile(SNAPSHOT_ARCHIVE);
+
+                    result = true;
+                } catch (Exception e) {
+                    Loggers.ID_GENERATOR.error("path : {}, snapshot execution error : {}", writePath, e);
+                    throwable = e;
+                }
+
+                callFinally.run(result, throwable);
+
+            });
+        }
+
+        @Override
+        public boolean onSnapshotLoad(Reader reader) {
+            final String readerPath = reader.getPath();
+            final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
+            TimerContext.start("[DefaultIdStore] RaftStore snapshot load job");
+            try {
+                DiskUtils.unzipFile(sourceFile, readerPath);
+                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
+                        + File.separator;
+                Loggers.ID_GENERATOR.info("snapshot load from : {}", loadPath);
+                File sourceDir = new File(sourceFile);
+                DefaultIdStore.this.loadFromFile(sourceDir);
+                return true;
+            } catch (final Throwable t) {
+                Loggers.ID_GENERATOR.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+                        reader.listFiles(), t);
+                return false;
+            } finally {
+                TimerContext.end(Loggers.ID_GENERATOR);
+            }
+        }
     }
 }

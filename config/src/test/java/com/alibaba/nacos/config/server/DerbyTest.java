@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.config.server;
 
-import org.junit.Test;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import org.junit.Test;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
@@ -42,7 +41,7 @@ public class DerbyTest {
         Connection connection = DriverManager.getConnection("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true",
                 USER_NAME, PASSWORD);
 
-            connection.prepareStatement("INSERT INTO users (username, password, enabled) VALUES ('qwasdasdqwq', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE)").executeUpdate();
+        connection.prepareStatement("INSERT INTO users (username, password, enabled) VALUES ('qwasdasdqwq', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE)").executeUpdate();
 
     }
 

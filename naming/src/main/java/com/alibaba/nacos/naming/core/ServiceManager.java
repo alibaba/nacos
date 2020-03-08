@@ -22,9 +22,9 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -38,17 +38,8 @@ import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Sets;
-import java.util.Collection;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +52,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Core manager storing all services in Nacos
@@ -71,35 +70,25 @@ import java.util.stream.Collectors;
 @DependsOn("serverMemberManager")
 public class ServiceManager implements RecordListener<Service> {
 
+    private final Lock lock = new ReentrantLock();
+    private final Object putServiceLock = new Object();
     /**
      * Map<namespace, Map<group::serviceName, Service>>
      */
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
-
     private LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
-
     private Synchronizer synchronizer = new ServiceStatusSynchronizer();
-
-    private final Lock lock = new ReentrantLock();
-
     @Autowired
     @Qualifier("consistencyDelegate")
     private ConsistencyService consistencyService;
-
     @Autowired
     private APProtocol protocol;
-
     @Autowired
     private SwitchDomain switchDomain;
-
     @Autowired
     private MemberManager memberManager;
-
     @Autowired
     private PushService pushService;
-
-    private final Object putServiceLock = new Object();
-
     @Autowired
     private Mapper mapper;
 
@@ -194,54 +183,6 @@ public class ServiceManager implements RecordListener<Service> {
         chooseServiceMap(namespace).remove(name);
     }
 
-    private class UpdatedServiceProcessor implements Runnable {
-        //get changed service from other server asynchronously
-        @Override
-        public void run() {
-            ServiceKey serviceKey = null;
-
-            try {
-                while (true) {
-                    try {
-                        serviceKey = toBeUpdatedServicesQueue.take();
-                    } catch (Exception e) {
-                        Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
-                    }
-
-                    if (serviceKey == null) {
-                        continue;
-                    }
-                    GlobalExecutor.submitServiceUpdate(new ServiceUpdater(serviceKey));
-                }
-            } catch (Exception e) {
-                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {}", serviceKey, e);
-            }
-        }
-    }
-
-    private class ServiceUpdater implements Runnable {
-
-        String namespaceId;
-        String serviceName;
-        String serverIP;
-
-        public ServiceUpdater(ServiceKey serviceKey) {
-            this.namespaceId = serviceKey.getNamespaceId();
-            this.serviceName = serviceKey.getServiceName();
-            this.serverIP = serviceKey.getServerIP();
-        }
-
-        @Override
-        public void run() {
-            try {
-                updatedHealthStatus(namespaceId, serviceName, serverIP);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}",
-                    serviceName, serverIP, e);
-            }
-        }
-    }
-
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
 
@@ -276,8 +217,8 @@ public class ServiceManager implements RecordListener<Service> {
                 changed = true;
                 instance.setHealthy(valid);
                 Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}:{}@{}",
-                    serviceName, (instance.isHealthy() ? "ENABLED" : "DISABLED"),
-                    instance.getIp(), instance.getPort(), instance.getClusterName());
+                        serviceName, (instance.isHealthy() ? "ENABLED" : "DISABLED"),
+                        instance.getIp(), instance.getPort(), instance.getClusterName());
             }
         }
 
@@ -293,7 +234,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (changed && Loggers.EVT_LOG.isDebugEnabled()) {
             Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
-                service.getNamespaceId(), service.getName(), stringBuilder.toString());
+                    service.getNamespaceId(), service.getName(), stringBuilder.toString());
         }
 
     }
@@ -421,7 +362,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (service == null) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+                    "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
@@ -433,7 +374,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (service == null) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+                    "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
         if (!service.allIPs().contains(instance)) {
@@ -528,7 +469,7 @@ public class ServiceManager implements RecordListener<Service> {
                 cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                    instance.getClusterName(), instance.toJSON());
+                        instance.getClusterName(), instance.toJSON());
             }
 
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
@@ -542,7 +483,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (instanceMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
             throw new IllegalArgumentException("ip list can not be empty, service: " + service.getName() + ", ip list: "
-                + JSON.toJSONString(instanceMap.values()));
+                    + JSON.toJSONString(instanceMap.values()));
         }
 
         return new ArrayList<>(instanceMap.values());
@@ -599,7 +540,6 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
     }
-
 
     public List<Service> searchServices(String namespaceId, String regex) {
         List<Service> result = new ArrayList<>();
@@ -721,11 +661,94 @@ public class ServiceManager implements RecordListener<Service> {
         public void addItem(String serviceName, String checksum) {
             if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(checksum)) {
                 Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] serviceName or checksum is empty,serviceName: {}, checksum: {}",
-                    serviceName, checksum);
+                        serviceName, checksum);
                 return;
             }
 
             serviceName2Checksum.put(serviceName, checksum);
+        }
+    }
+
+    private static class ServiceKey {
+        private String namespaceId;
+        private String serviceName;
+        private String serverIP;
+        private String checksum;
+
+        public ServiceKey(String namespaceId, String serviceName, String serverIP, String checksum) {
+            this.namespaceId = namespaceId;
+            this.serviceName = serviceName;
+            this.serverIP = serverIP;
+            this.checksum = checksum;
+        }
+
+        public String getChecksum() {
+            return checksum;
+        }
+
+        public String getServerIP() {
+            return serverIP;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public String getNamespaceId() {
+            return namespaceId;
+        }
+
+        @Override
+        public String toString() {
+            return JSON.toJSONString(this);
+        }
+    }
+
+    private class UpdatedServiceProcessor implements Runnable {
+        //get changed service from other server asynchronously
+        @Override
+        public void run() {
+            ServiceKey serviceKey = null;
+
+            try {
+                while (true) {
+                    try {
+                        serviceKey = toBeUpdatedServicesQueue.take();
+                    } catch (Exception e) {
+                        Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
+                    }
+
+                    if (serviceKey == null) {
+                        continue;
+                    }
+                    GlobalExecutor.submitServiceUpdate(new ServiceUpdater(serviceKey));
+                }
+            } catch (Exception e) {
+                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {}", serviceKey, e);
+            }
+        }
+    }
+
+    private class ServiceUpdater implements Runnable {
+
+        String namespaceId;
+        String serviceName;
+        String serverIP;
+
+        public ServiceUpdater(ServiceKey serviceKey) {
+            this.namespaceId = serviceKey.getNamespaceId();
+            this.serviceName = serviceKey.getServiceName();
+            this.serverIP = serviceKey.getServerIP();
+        }
+
+        @Override
+        public void run() {
+            try {
+                updatedHealthStatus(namespaceId, serviceName, serverIP);
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}",
+                        serviceName, serverIP, e);
+            }
         }
     }
 
@@ -784,41 +807,6 @@ public class ServiceManager implements RecordListener<Service> {
             } finally {
                 UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
-        }
-    }
-
-    private static class ServiceKey {
-        private String namespaceId;
-        private String serviceName;
-        private String serverIP;
-        private String checksum;
-
-        public String getChecksum() {
-            return checksum;
-        }
-
-        public String getServerIP() {
-            return serverIP;
-        }
-
-        public String getServiceName() {
-            return serviceName;
-        }
-
-        public String getNamespaceId() {
-            return namespaceId;
-        }
-
-        public ServiceKey(String namespaceId, String serviceName, String serverIP, String checksum) {
-            this.namespaceId = namespaceId;
-            this.serviceName = serviceName;
-            this.serverIP = serverIP;
-            this.checksum = checksum;
-        }
-
-        @Override
-        public String toString() {
-            return JSON.toJSONString(this);
         }
     }
 }

@@ -3,6 +3,8 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.PushService;
+import java.net.InetSocketAddress;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,9 +14,6 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-
-import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * @description:
@@ -50,32 +49,32 @@ public class PushServiceTest extends BaseTest {
         int testUdpPort = 10001;
 
         pushService.addClient(namespaceId
-            , helloServiceName
-            , clusters
-            , agent
-            , new InetSocketAddress(clientIp, helloUdpPort)
-            , null
-            , namespaceId
-            , app);
+                , helloServiceName
+                , clusters
+                , agent
+                , new InetSocketAddress(clientIp, helloUdpPort)
+                , null
+                , namespaceId
+                , app);
 
         pushService.addClient(namespaceId
-            , testServiceName
-            , clusters
-            , agent
-            , new InetSocketAddress(clientIp, testUdpPort)
-            , null
-            , namespaceId
-            , app);
+                , testServiceName
+                , clusters
+                , agent
+                , new InetSocketAddress(clientIp, testUdpPort)
+                , null
+                , namespaceId
+                , app);
 
-        List<Subscriber> fuzzylist =  pushService.getClientsFuzzy("hello@@hello","public");
-        Assert.assertEquals(fuzzylist.size(),1);
-        Assert.assertEquals(fuzzylist.get(0).getServiceName(),"helloGroupName@@helloServiceName");
+        List<Subscriber> fuzzylist = pushService.getClientsFuzzy("hello@@hello", "public");
+        Assert.assertEquals(fuzzylist.size(), 1);
+        Assert.assertEquals(fuzzylist.get(0).getServiceName(), "helloGroupName@@helloServiceName");
 
-        List<Subscriber> list =  pushService.getClientsFuzzy("helloGroupName@@helloServiceName","public");
-        Assert.assertEquals(list.size(),1);
-        Assert.assertEquals(list.get(0).getServiceName(),"helloGroupName@@helloServiceName");
+        List<Subscriber> list = pushService.getClientsFuzzy("helloGroupName@@helloServiceName", "public");
+        Assert.assertEquals(list.size(), 1);
+        Assert.assertEquals(list.get(0).getServiceName(), "helloGroupName@@helloServiceName");
 
-        List<Subscriber> noDataList =  pushService.getClientsFuzzy("badGroupName@@badServiceName","public");
-        Assert.assertEquals(noDataList.size(),0);
+        List<Subscriber> noDataList = pushService.getClientsFuzzy("badGroupName@@badServiceName", "public");
+        Assert.assertEquals(noDataList.size(), 0);
     }
 }

@@ -142,15 +142,12 @@ public final class ProtocolMetaData {
 
     public static final class ValueItem extends Observable {
 
-        private volatile Object data;
-
         private transient final MetaData holder;
         private transient final String path;
-
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
         private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-
+        private volatile Object data;
         private BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
 
         public ValueItem(MetaData holder, String path) {

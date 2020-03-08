@@ -17,15 +17,14 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
@@ -47,9 +46,9 @@ public class DiskUtil {
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
 
     static public void saveHeartBeatToDisk(String heartBeatTime)
-        throws IOException {
+            throws IOException {
         FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime,
-            Constants.ENCODE);
+                Constants.ENCODE);
     }
 
     /**
@@ -72,7 +71,7 @@ public class DiskUtil {
      * 保存配置信息到磁盘
      */
     static public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
-        throws IOException {
+            throws IOException {
         File targetFile = targetTagFile(dataId, group, tenant, tag);
         FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
     }
@@ -154,11 +153,11 @@ public class DiskUtil {
     }
 
     static public String getConfig(String dataId, String group, String tenant)
-        throws IOException {
+            throws IOException {
         File file = targetFile(dataId, group, tenant);
         if (file.exists()) {
 
-            try(FileInputStream fis = new FileInputStream(file);) {
+            try (FileInputStream fis = new FileInputStream(file);) {
                 return IoUtils.toString(fis, Constants.ENCODE);
             } catch (FileNotFoundException e) {
                 return StringUtils.EMPTY;
@@ -169,7 +168,7 @@ public class DiskUtil {
     }
 
     static public String getLocalConfigMd5(String dataId, String group, String tenant)
-        throws IOException {
+            throws IOException {
         return MD5.getInstance().getMD5String(getConfig(dataId, group, tenant));
     }
 

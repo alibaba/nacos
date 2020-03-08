@@ -26,12 +26,15 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
@@ -133,14 +136,14 @@ public class UtilsAndCommons {
 
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
+                .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+                .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
 
         SerializeConfig.getGlobalInstance()
-            .put(Selector.class, SelectorJsonAdapter.getInstance());
+                .put(Selector.class, SelectorJsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-            .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
+                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -150,7 +153,7 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
         SERVICE_SYNCHRONIZATION_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -161,7 +164,7 @@ public class UtilsAndCommons {
         });
 
         SERVICE_UPDATE_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -172,7 +175,7 @@ public class UtilsAndCommons {
         });
 
         INIT_CONFIG_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -183,7 +186,7 @@ public class UtilsAndCommons {
         });
 
         RAFT_PUBLISH_EXECUTOR
-            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -235,7 +238,7 @@ public class UtilsAndCommons {
      * the number will be nearly uniform distribution.
      * <p>
      * <p>
-     *
+     * <p>
      * e.g. Assume there's an array which contains some IP of the servers provide the same service,
      * the caller name can be used to choose the server to achieve load balance.
      * <blockquote><pre>
@@ -248,8 +251,8 @@ public class UtilsAndCommons {
      * @param upperLimit the upper limit of the returned number, must be a positive integer, which means > 0
      * @return a number between 0(inclusive) and upperLimit(exclusive)
      * @throws IllegalArgumentException if the upper limit equals or less than 0
-     * @since 1.0.0
      * @author jifengnan
+     * @since 1.0.0
      */
     public static int shakeUp(String string, int upperLimit) {
         if (upperLimit < 1) {

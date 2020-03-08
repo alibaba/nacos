@@ -139,7 +139,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         public void run() {
             Loggers.DISTRO.info("distro notifier started");
 
-            for ( ; ; ) {
+            for (; ; ) {
                 try {
 
                     Pair<String, ApplyAction> pair = tasks.take();

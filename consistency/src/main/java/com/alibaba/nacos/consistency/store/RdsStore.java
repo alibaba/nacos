@@ -18,7 +18,6 @@ package com.alibaba.nacos.consistency.store;
 
 import com.alibaba.nacos.common.SerializeFactory;
 import com.alibaba.nacos.common.Serializer;
-
 import java.util.Collection;
 
 /**
@@ -41,7 +40,7 @@ public abstract class RdsStore extends BaseStore {
      * query by command
      *
      * @param command this operate command name
-     * @param <T> type
+     * @param <T>     type
      * @return target data
      */
     public abstract <T> T query(String command);
@@ -50,7 +49,7 @@ public abstract class RdsStore extends BaseStore {
      * query by command
      *
      * @param command this operate command name
-     * @param <T> type
+     * @param <T>     type
      * @return target datas
      */
     public abstract <T> Collection<T> queryBatch(String command);

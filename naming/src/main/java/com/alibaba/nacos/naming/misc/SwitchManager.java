@@ -21,18 +21,17 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Switch manager
@@ -43,13 +42,11 @@ import java.util.concurrent.locks.ReentrantLock;
 @Component
 public class SwitchManager implements RecordListener<SwitchDomain> {
 
+    ReentrantLock lock = new ReentrantLock();
     @Autowired
     private SwitchDomain switchDomain;
-
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
-
-    ReentrantLock lock = new ReentrantLock();
 
     @PostConstruct
     public void init() {
@@ -75,21 +72,21 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 SwitchDomain dom = JSON.parseObject(value, SwitchDomain.class);
                 dom.setEnableStandalone(switchDomain.isEnableStandalone());
                 if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                    || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
+                        || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
 
                     throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
                 }
 
                 if (dom.getHttpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                    || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
+                        || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
 
                     throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
                 }
 
                 if (dom.getHttpHealthParams().getFactor() < 0
-                    || dom.getHttpHealthParams().getFactor() > 1
-                    || dom.getTcpHealthParams().getFactor() < 0
-                    || dom.getTcpHealthParams().getFactor() > 1) {
+                        || dom.getHttpHealthParams().getFactor() > 1
+                        || dom.getTcpHealthParams().getFactor() < 0
+                        || dom.getTcpHealthParams().getFactor() > 1) {
 
                     throw new IllegalArgumentException("malformed factor");
                 }

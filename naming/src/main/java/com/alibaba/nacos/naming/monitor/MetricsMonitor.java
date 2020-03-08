@@ -19,7 +19,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -136,11 +135,11 @@ public class MetricsMonitor {
 
     public static Counter getDiskException() {
         return Metrics.counter("nacos_exception",
-            "module", "naming", "name", "disk");
+                "module", "naming", "name", "disk");
     }
 
     public static Counter getLeaderSendBeatFailedException() {
         return Metrics.counter("nacos_exception",
-            "module", "naming", "name", "leaderSendBeatFailed");
+                "module", "naming", "name", "leaderSendBeatFailed");
     }
 }

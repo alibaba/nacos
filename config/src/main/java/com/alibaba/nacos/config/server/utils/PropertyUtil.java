@@ -88,6 +88,150 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
 
     private Environment env;
 
+    public static int getNotifyConnectTimeout() {
+        return notifyConnectTimeout;
+    }
+
+    public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
+        PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
+    }
+
+    public static int getNotifySocketTimeout() {
+        return notifySocketTimeout;
+    }
+
+    public static void setNotifySocketTimeout(int notifySocketTimeout) {
+        PropertyUtil.notifySocketTimeout = notifySocketTimeout;
+    }
+
+    public static int getMaxHealthCheckFailCount() {
+        return maxHealthCheckFailCount;
+    }
+
+    public static void setMaxHealthCheckFailCount(int maxHealthCheckFailCount) {
+        PropertyUtil.maxHealthCheckFailCount = maxHealthCheckFailCount;
+    }
+
+    public static boolean isHealthCheck() {
+        return isHealthCheck;
+    }
+
+    public static void setHealthCheck(boolean isHealthCheck) {
+        PropertyUtil.isHealthCheck = isHealthCheck;
+    }
+
+    public static int getMaxContent() {
+        return maxContent;
+    }
+
+    public static void setMaxContent(int maxContent) {
+        PropertyUtil.maxContent = maxContent;
+    }
+
+    public static boolean isManageCapacity() {
+        return isManageCapacity;
+    }
+
+    public static void setManageCapacity(boolean isManageCapacity) {
+        PropertyUtil.isManageCapacity = isManageCapacity;
+    }
+
+    public static int getDefaultClusterQuota() {
+        return defaultClusterQuota;
+    }
+
+    public static void setDefaultClusterQuota(int defaultClusterQuota) {
+        PropertyUtil.defaultClusterQuota = defaultClusterQuota;
+    }
+
+    public static boolean isCapacityLimitCheck() {
+        return isCapacityLimitCheck;
+    }
+
+    public static void setCapacityLimitCheck(boolean isCapacityLimitCheck) {
+        PropertyUtil.isCapacityLimitCheck = isCapacityLimitCheck;
+    }
+
+    public static int getDefaultGroupQuota() {
+        return defaultGroupQuota;
+    }
+
+    public static void setDefaultGroupQuota(int defaultGroupQuota) {
+        PropertyUtil.defaultGroupQuota = defaultGroupQuota;
+    }
+
+    public static int getDefaultTenantQuota() {
+        return defaultTenantQuota;
+    }
+
+    public static void setDefaultTenantQuota(int defaultTenantQuota) {
+        PropertyUtil.defaultTenantQuota = defaultTenantQuota;
+    }
+
+    public static int getInitialExpansionPercent() {
+        return initialExpansionPercent;
+    }
+
+    public static void setInitialExpansionPercent(int initialExpansionPercent) {
+        PropertyUtil.initialExpansionPercent = initialExpansionPercent;
+    }
+
+    public static int getDefaultMaxSize() {
+        return defaultMaxSize;
+    }
+
+    public static void setDefaultMaxSize(int defaultMaxSize) {
+        PropertyUtil.defaultMaxSize = defaultMaxSize;
+    }
+
+    public static int getDefaultMaxAggrCount() {
+        return defaultMaxAggrCount;
+    }
+
+    public static void setDefaultMaxAggrCount(int defaultMaxAggrCount) {
+        PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
+    }
+
+    public static int getDefaultMaxAggrSize() {
+        return defaultMaxAggrSize;
+    }
+
+    public static void setDefaultMaxAggrSize(int defaultMaxAggrSize) {
+        PropertyUtil.defaultMaxAggrSize = defaultMaxAggrSize;
+    }
+
+    public static int getCorrectUsageDelay() {
+        return correctUsageDelay;
+    }
+
+    public static void setCorrectUsageDelay(int correctUsageDelay) {
+        PropertyUtil.correctUsageDelay = correctUsageDelay;
+    }
+
+    public static boolean isStandaloneMode() {
+        return STANDALONE_MODE;
+    }
+
+    public static boolean isUseMysql() {
+        return useMysql;
+    }
+
+    public static void setUseMysql(boolean useMysql) {
+        PropertyUtil.useMysql = useMysql;
+    }
+
+    public static boolean isEmbeddedDistributedStorage() {
+        return embeddedDistributedStorage;
+    }
+
+    public static void setEmbeddedDistributedStorage(boolean embeddedDistributedStorage) {
+        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage && !isUseMysql();
+    }
+
+    public static boolean isEnableDistributedID() {
+        return !STANDALONE_MODE && isEmbeddedDistributedStorage();
+    }
+
     private void loadSetting() {
         try {
             setNotifyConnectTimeout(Integer.parseInt(env.getProperty("notifyConnectTimeout", "100")));
@@ -118,22 +262,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         }
     }
 
-    public static int getNotifyConnectTimeout() {
-        return notifyConnectTimeout;
-    }
-
-    public static int getNotifySocketTimeout() {
-        return notifySocketTimeout;
-    }
-
-    public static int getMaxHealthCheckFailCount() {
-        return maxHealthCheckFailCount;
-    }
-
-    public static boolean isHealthCheck() {
-        return isHealthCheck;
-    }
-
     private boolean getBoolean(String key, boolean defaultValue) {
         return Boolean.parseBoolean(getString(key, String.valueOf(defaultValue)));
     }
@@ -159,136 +287,9 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return env.getProperty(key, defaultValue);
     }
 
-    public static int getMaxContent() {
-        return maxContent;
-    }
-
-    public static boolean isManageCapacity() {
-        return isManageCapacity;
-    }
-
-    public static int getDefaultClusterQuota() {
-        return defaultClusterQuota;
-    }
-
-    public static boolean isCapacityLimitCheck() {
-        return isCapacityLimitCheck;
-    }
-
-    public static int getDefaultGroupQuota() {
-        return defaultGroupQuota;
-    }
-
-    public static int getDefaultTenantQuota() {
-        return defaultTenantQuota;
-    }
-
-    public static int getInitialExpansionPercent() {
-        return initialExpansionPercent;
-    }
-
-    public static int getDefaultMaxSize() {
-        return defaultMaxSize;
-    }
-
-    public static int getDefaultMaxAggrCount() {
-        return defaultMaxAggrCount;
-    }
-
-    public static int getDefaultMaxAggrSize() {
-        return defaultMaxAggrSize;
-    }
-
-    public static int getCorrectUsageDelay() {
-        return correctUsageDelay;
-    }
-
-    public static boolean isStandaloneMode() {
-        return STANDALONE_MODE;
-    }
-
-    public static boolean isUseMysql() {
-        return useMysql;
-    }
-
-    public static boolean isEmbeddedDistributedStorage() {
-        return embeddedDistributedStorage;
-    }
-
-    public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
-        PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
-    }
-
-    public static void setNotifySocketTimeout(int notifySocketTimeout) {
-        PropertyUtil.notifySocketTimeout = notifySocketTimeout;
-    }
-
-    public static void setMaxHealthCheckFailCount(int maxHealthCheckFailCount) {
-        PropertyUtil.maxHealthCheckFailCount = maxHealthCheckFailCount;
-    }
-
-    public static void setHealthCheck(boolean isHealthCheck) {
-        PropertyUtil.isHealthCheck = isHealthCheck;
-    }
-
-    public static void setMaxContent(int maxContent) {
-        PropertyUtil.maxContent = maxContent;
-    }
-
-    public static void setManageCapacity(boolean isManageCapacity) {
-        PropertyUtil.isManageCapacity = isManageCapacity;
-    }
-
-    public static void setCapacityLimitCheck(boolean isCapacityLimitCheck) {
-        PropertyUtil.isCapacityLimitCheck = isCapacityLimitCheck;
-    }
-
-    public static void setDefaultClusterQuota(int defaultClusterQuota) {
-        PropertyUtil.defaultClusterQuota = defaultClusterQuota;
-    }
-
-    public static void setDefaultGroupQuota(int defaultGroupQuota) {
-        PropertyUtil.defaultGroupQuota = defaultGroupQuota;
-    }
-
-    public static void setDefaultTenantQuota(int defaultTenantQuota) {
-        PropertyUtil.defaultTenantQuota = defaultTenantQuota;
-    }
-
-    public static void setDefaultMaxSize(int defaultMaxSize) {
-        PropertyUtil.defaultMaxSize = defaultMaxSize;
-    }
-
-    public static void setDefaultMaxAggrCount(int defaultMaxAggrCount) {
-        PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
-    }
-
-    public static void setDefaultMaxAggrSize(int defaultMaxAggrSize) {
-        PropertyUtil.defaultMaxAggrSize = defaultMaxAggrSize;
-    }
-
-    public static void setInitialExpansionPercent(int initialExpansionPercent) {
-        PropertyUtil.initialExpansionPercent = initialExpansionPercent;
-    }
-
-    public static void setCorrectUsageDelay(int correctUsageDelay) {
-        PropertyUtil.correctUsageDelay = correctUsageDelay;
-    }
-    public static void setUseMysql(boolean useMysql) {
-        PropertyUtil.useMysql = useMysql;
-    }
-
-    public static void setEmbeddedDistributedStorage(boolean embeddedDistributedStorage) {
-        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage && !isUseMysql();
-    }
-
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
         env = configurableApplicationContext.getEnvironment();
         loadSetting();
-    }
-
-    public static boolean isEnableDistributedID() {
-        return !STANDALONE_MODE && isEmbeddedDistributedStorage();
     }
 }

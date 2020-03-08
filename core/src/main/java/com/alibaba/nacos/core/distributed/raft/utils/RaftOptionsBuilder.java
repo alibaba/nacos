@@ -23,7 +23,32 @@ import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.option.ReadOnlyOption;
 import org.apache.commons.lang3.StringUtils;
 
-import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.*;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.APPLY_BATCH;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_APPLY_BATCH;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_DISRUPTOR_BUFFER_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_ELECTION_HEARTBEAT_FACTOR;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_APPEND_BUFFER_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_BODY_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_BYTE_COUNT_PER_RPC;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_ELECTION_DELAY_MS;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_ENTRIES_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_MAX_REPLICATOR_INFLIGHT_MSGS;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_REPLICATOR_PIPELINE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_SYNC;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DEFAULT_SYNC_META;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.DISRUPTOR_BUFFER_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.ELECTION_HEARTBEAT_FACTOR;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.ENABLE_LOG_ENTRY_CHECKSUM;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_APPEND_BUFFER_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_BODY_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_BYTE_COUNT_PER_RPC;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_ELECTION_DELAY_MS;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_ENTRIES_SIZE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.MAX_REPLICATOR_INFLIGHT_MSGS;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.REPLICATOR_PIPELINE;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.SYNC;
+import static com.alibaba.nacos.core.distributed.raft.RaftSysConstants.SYNC_META;
 
 /**
  * // TODO finish jraft options initialize

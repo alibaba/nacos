@@ -62,7 +62,7 @@ public class ApplicationInfo {
     }
 
     public void setLastSubscribeInfoCollectedTime(
-        long lastSubscribeInfoCollectedTime) {
+            long lastSubscribeInfoCollectedTime) {
         this.lastSubscribeInfoCollectedTime = lastSubscribeInfoCollectedTime;
     }
 
@@ -79,7 +79,7 @@ public class ApplicationInfo {
     }
 
     public void setSubInfoCollectLockExpireTime(
-        long subInfoCollectLockExpireTime) {
+            long subInfoCollectLockExpireTime) {
         this.subInfoCollectLockExpireTime = subInfoCollectLockExpireTime;
     }
 
@@ -92,7 +92,7 @@ public class ApplicationInfo {
 
     public boolean canCurrentServerOwnTheLock() {
         boolean currentOwnerIsMe = subInfoCollectLockOwner == null || LOCAL_IP
-            .equals(subInfoCollectLockOwner);
+                .equals(subInfoCollectLockOwner);
 
         if (currentOwnerIsMe) {
             return true;

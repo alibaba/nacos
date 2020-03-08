@@ -27,18 +27,17 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import javax.annotation.PostConstruct;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * Use simplified Raft protocol to maintain the consistency status of Nacos cluster.
@@ -70,7 +69,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         GlobalExecutor.executeNotifier(notifier);
 
         protocol.protocolMetaData()
-                .subscribe(RaftStore.STORE_NAME , "leader", (o, arg) -> {
+                .subscribe(RaftStore.STORE_NAME, "leader", (o, arg) -> {
                     isOk = true;
                 });
 
@@ -148,7 +147,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
         public void run() {
             Loggers.RAFT.info("raft notifier started");
 
-            for ( ; ; ){
+            for (; ; ) {
                 try {
 
                     Pair<String, ApplyAction> pair = tasks.take();

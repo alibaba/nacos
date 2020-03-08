@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.config.server.utils.event;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Event dispatcher
@@ -27,6 +26,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Nacos
  */
 public class EventDispatcher {
+
+    static final CopyOnWriteArrayList<Entry> LISTENER_HUB = new CopyOnWriteArrayList<Entry>();
+    static private final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
     /**
      * add event listener
@@ -82,6 +84,9 @@ public class EventDispatcher {
         }
     }
 
+    public interface Event {
+    }
+
     static private class Entry {
         final Class<? extends Event> eventType;
         final CopyOnWriteArrayList<AbstractEventListener> listeners;
@@ -99,7 +104,7 @@ public class EventDispatcher {
             if (this == obj) {
                 return true;
             }
-            return eventType == ((Entry)obj).eventType;
+            return eventType == ((Entry) obj).eventType;
         }
 
         @Override
@@ -107,13 +112,6 @@ public class EventDispatcher {
             return super.hashCode();
         }
 
-    }
-
-    static private final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
-
-    static final CopyOnWriteArrayList<Entry> LISTENER_HUB = new CopyOnWriteArrayList<Entry>();
-
-    public interface Event {
     }
 
     static public abstract class AbstractEventListener {

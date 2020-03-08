@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 

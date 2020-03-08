@@ -17,11 +17,10 @@
 package com.alibaba.nacos.core.configuration;
 
 import com.alibaba.nacos.consistency.ap.APProtocol;
+import java.util.ServiceLoader;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-
-import java.util.ServiceLoader;
 
 /**
  * Determine whether to open the internal AP protocol implementation of Nacos

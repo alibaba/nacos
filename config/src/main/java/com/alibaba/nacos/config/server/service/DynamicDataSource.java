@@ -43,10 +43,10 @@ public class DynamicDataSource {
 
     /**
      * 判断顺序：
-     *      1、单机模式：mysql
-     *      2、单机模式：derby
-     *      3、集群模式：mysql
-     *      4、集群模式：derby-cluster
+     * 1、单机模式：mysql
+     * 2、单机模式：derby
+     * 3、集群模式：mysql
+     * 4、集群模式：derby-cluster
      *
      * @return Whether to use derby storage
      */

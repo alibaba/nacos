@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -82,7 +81,7 @@ public class ClientBeatProcessor implements Runnable {
                     if (!instance.isHealthy()) {
                         instance.setHealthy(true);
                         Loggers.EVT_LOG.info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
-                            cluster.getService().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
+                                cluster.getService().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
                         getPushService().serviceChanged(service);
                     }
                 }

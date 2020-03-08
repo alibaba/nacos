@@ -25,14 +25,13 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -43,6 +42,9 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class NotifyTaskProcessor implements TaskProcessor {
 
+    static final Logger log = LoggerFactory.getLogger(NotifyTaskProcessor.class);
+    static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
+            + "?dataId={2}&group={3}";
     private MemberManager memberManager;
 
     public NotifyTaskProcessor(MemberManager memberManager) {
@@ -51,7 +53,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        NotifyTask notifyTask = (NotifyTask)task;
+        NotifyTask notifyTask = (NotifyTask) task;
         String dataId = notifyTask.getDataId();
         String group = notifyTask.getGroup();
         String tenant = notifyTask.getTenant();
@@ -73,41 +75,37 @@ public class NotifyTaskProcessor implements TaskProcessor {
         try {
             // XXX 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
             List<String> headers = Arrays.asList(
-                NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
-                NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
+                    NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
+                    NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
             String urlString = MessageFormat.format(URL_PATTERN, serverIp, RunningConfigUtils.getContextPath(), dataId,
-                group);
+                    group);
 
-            ResResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE, new TypeReference<ResResult<String>>(){});
+            ResResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE, new TypeReference<ResResult<String>>() {
+            });
             if (result.getCode() == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
-                    ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+                        ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
 
                 MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
 
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
-                log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
-                    serverIp, result.getCode()});
+                log.error("[notify-error] {}, {}, to {}, result {}", new Object[]{dataId, group,
+                        serverIp, result.getCode()});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
-                    ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
+                        ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
             MetricsMonitor.getConfigNotifyException().increment();
             log.error(
-                "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
-                    + e.toString());
+                    "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
+                            + e.toString());
             log.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
             ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
-                ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
+                    ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }
-
-    static final Logger log = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-
-    static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
-        + "?dataId={2}&group={3}";
 }

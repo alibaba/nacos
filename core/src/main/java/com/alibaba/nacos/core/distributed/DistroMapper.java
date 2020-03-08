@@ -33,18 +33,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 /**
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "distroMapper")
 @SuppressWarnings("all")
 public class DistroMapper implements Mapper, MemberChangeListener {
 
-    private volatile List<Member> healthyList = new ArrayList<>();
-
     private final MemberManager memberManager;
-
     private final List<KeyAnalysis> keyAnalyses;
+    private volatile List<Member> healthyList = new ArrayList<>();
 
     public DistroMapper(MemberManager memberManager) {
         this.memberManager = memberManager;
@@ -82,7 +79,7 @@ public class DistroMapper implements Mapper, MemberChangeListener {
             boolean[] booleans = new boolean[suppliers.length];
             int index = 0;
             for (Supplier<Boolean> supplier : suppliers) {
-                booleans[index ++] = supplier.get();
+                booleans[index++] = supplier.get();
             }
             customerResult = BooleanUtils.and(booleans);
         }

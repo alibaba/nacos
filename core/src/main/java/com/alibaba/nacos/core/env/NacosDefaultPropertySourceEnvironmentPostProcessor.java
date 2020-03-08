@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.env;
 
+import java.io.IOException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.Ordered;
@@ -30,8 +31,6 @@ import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePropertySource;
-
-import java.io.IOException;
 
 import static org.springframework.core.io.support.ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX;
 
@@ -55,7 +54,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
      * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
      */
     public static final String RESOURCE_LOCATION_PATTERN = CLASSPATH_ALL_URL_PREFIX
-        + "META-INF/nacos-default.properties";
+            + "META-INF/nacos-default.properties";
 
     private static final String FILE_ENCODING = "UTF-8";
 
@@ -100,7 +99,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
     }
 
     private void appendPropertySource(CompositePropertySource propertySource, ResourceLoader resourceLoader)
-        throws IOException {
+            throws IOException {
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver(resourceLoader);
         Resource[] resources = resourcePatternResolver.getResources(RESOURCE_LOCATION_PATTERN);
         for (Resource resource : resources) {
@@ -108,7 +107,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
             if (resource.exists()) {
                 String internalName = String.valueOf(resource.getURL());
                 propertySource.addPropertySource(new ResourcePropertySource(internalName,
-                    new EncodedResource(resource, FILE_ENCODING)));
+                        new EncodedResource(resource, FILE_ENCODING)));
             }
         }
     }

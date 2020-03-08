@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.listener;
 
+import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
@@ -22,8 +23,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.core.env.ConfigurableEnvironment;
-
-import java.util.Arrays;
 
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
@@ -37,7 +36,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  * @since 0.2.2
  */
 public class StandaloneProfileApplicationListener implements ApplicationListener<ApplicationEnvironmentPreparedEvent>,
-    PriorityOrdered {
+        PriorityOrdered {
 
     private static final Logger logger = LoggerFactory.getLogger(StandaloneProfileApplicationListener.class);
 
@@ -52,8 +51,8 @@ public class StandaloneProfileApplicationListener implements ApplicationListener
 
         if (logger.isInfoEnabled()) {
             logger.info("Spring Environment's active profiles : {} in standalone mode : {}",
-                Arrays.asList(environment.getActiveProfiles()),
-                STANDALONE_MODE
+                    Arrays.asList(environment.getActiveProfiles()),
+                    STANDALONE_MODE
             );
         }
 

@@ -24,18 +24,24 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.config.server.utils.LogUtil.*;
 
 /**
  * config service
@@ -44,6 +50,16 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.*;
  */
 public class ConfigService {
 
+    static final Logger log = LoggerFactory.getLogger(ConfigService.class);
+    private final static String NO_SPACE_CN = "设备上没有空间";
+    private final static String NO_SPACE_EN = "No space left on device";
+    private final static String DISK_QUATA_CN = "超出磁盘限额";
+    private final static String DISK_QUATA_EN = "Disk quota exceeded";
+    /**
+     * groupKey -> cacheItem
+     */
+    static private final ConcurrentHashMap<String, CacheItem> CACHE =
+            new ConcurrentHashMap<String, CacheItem>();
     @Autowired
     private static PersistService persistService;
 
@@ -86,9 +102,9 @@ public class ConfigService {
             final String md5 = MD5.getInstance().getMD5String(content);
             if (md5.equals(ConfigService.getContentMd5(groupKey))) {
                 dumpLog.warn(
-                    "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
-                        + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                        "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}",
+                        groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
@@ -99,7 +115,7 @@ public class ConfigService {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN)
-                    || errMsg.contains(DISK_QUATA_EN)) {
+                        || errMsg.contains(DISK_QUATA_EN)) {
                     // 磁盘写满保护代码
                     fatalLog.error("磁盘满自杀退出", ioe);
                     System.exit(0);
@@ -131,9 +147,9 @@ public class ConfigService {
             final String md5 = MD5.getInstance().getMD5String(content);
             if (md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
                 dumpLog.warn(
-                    "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
-                        + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                        "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}",
+                        groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
@@ -143,7 +159,7 @@ public class ConfigService {
             return true;
         } catch (IOException ioe) {
             dumpLog.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe.toString(),
-                ioe);
+                    ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -170,9 +186,9 @@ public class ConfigService {
             final String md5 = MD5.getInstance().getMD5String(content);
             if (md5.equals(ConfigService.getContentTagMd5(groupKey, tag))) {
                 dumpLog.warn(
-                    "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
-                        + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                        "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}",
+                        groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
@@ -181,7 +197,7 @@ public class ConfigService {
             return true;
         } catch (IOException ioe) {
             dumpLog.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(),
-                ioe);
+                    ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -209,9 +225,9 @@ public class ConfigService {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {
                     dumpLog.warn(
-                        "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
-                            + "lastModifiedNew={}",
-                        groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                            "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                                    + "lastModifiedNew={}",
+                            groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
                 } else {
                     DiskUtil.saveToDisk(dataId, group, tenant, content);
                 }
@@ -220,7 +236,7 @@ public class ConfigService {
             return true;
         } catch (IOException ioe) {
             dumpLog.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(),
-                ioe);
+                    ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -232,13 +248,13 @@ public class ConfigService {
         try {
             if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
-                    "DEFAULT_GROUP");
+                        "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
                 }
             } else {
                 aggreds = DiskUtil.getConfig(AggrWhitelist.AGGRIDS_METADATA,
-                    "DEFAULT_GROUP", StringUtils.EMPTY);
+                        "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (aggreds != null) {
                 AggrWhitelist.load(aggreds);
@@ -251,33 +267,33 @@ public class ConfigService {
         try {
             if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(
-                    ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
+                        ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
                 }
             } else {
                 clientIpWhitelist = DiskUtil.getConfig(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP",
-                    StringUtils.EMPTY);
+                        StringUtils.EMPTY);
             }
             if (clientIpWhitelist != null) {
                 ClientIpWhiteList.load(clientIpWhitelist);
             }
         } catch (IOException e) {
             dumpLog.error("reload fail:"
-                + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
+                    + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
         }
 
         String switchContent = null;
         try {
             if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
-                    "DEFAULT_GROUP");
+                        "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
                 }
             } else {
                 switchContent = DiskUtil.getConfig(
-                    SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP", StringUtils.EMPTY);
+                        SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (switchContent != null) {
                 SwitchService.load(switchContent);
@@ -301,17 +317,17 @@ public class ConfigService {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (!entry.getValue().md5.equals(loacalMd5)) {
                     defaultLog.warn("[md5-different] dataId:{},group:{}",
-                        dataId, group);
+                            dataId, group);
                     diffList.add(groupKey);
                 }
             } catch (IOException e) {
                 defaultLog.error("getLocalConfigMd5 fail,dataId:{},group:{}",
-                    dataId, group);
+                        dataId, group);
             }
         }
         long endTime = System.currentTimeMillis();
         defaultLog.warn("checkMd5 cost:{}; diffCount:{}", endTime - startTime,
-            diffList.size());
+                diffList.size());
         return diffList;
     }
 
@@ -591,16 +607,5 @@ public class ConfigService {
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
     }
-
-    private final static String NO_SPACE_CN = "设备上没有空间";
-    private final static String NO_SPACE_EN = "No space left on device";
-    private final static String DISK_QUATA_CN = "超出磁盘限额";
-    private final static String DISK_QUATA_EN = "Disk quota exceeded";
-    static final Logger log = LoggerFactory.getLogger(ConfigService.class);
-    /**
-     * groupKey -> cacheItem
-     */
-    static private final ConcurrentHashMap<String, CacheItem> CACHE =
-        new ConcurrentHashMap<String, CacheItem>();
 }
 

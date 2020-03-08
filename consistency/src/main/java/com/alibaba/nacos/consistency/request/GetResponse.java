@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.consistency.request;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.Serializable;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -30,6 +29,10 @@ public class GetResponse<T> implements Serializable {
     private T data;
     private String exceptionName;
     private String errMsg;
+
+    public static <T> GetResponseBuilder<T> builder() {
+        return new GetResponseBuilder<>();
+    }
 
     public T getData() {
         return data;
@@ -57,10 +60,6 @@ public class GetResponse<T> implements Serializable {
 
     public boolean success() {
         return data != null || (StringUtils.isEmpty(errMsg) && StringUtils.isEmpty(exceptionName));
-    }
-
-    public static <T> GetResponseBuilder<T> builder() {
-        return new GetResponseBuilder<>();
     }
 
     public static final class GetResponseBuilder<T> {

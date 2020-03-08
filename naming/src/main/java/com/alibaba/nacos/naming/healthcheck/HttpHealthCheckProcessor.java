@@ -25,10 +25,6 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import io.netty.channel.ConnectTimeoutException;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
@@ -36,6 +32,9 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -48,16 +47,8 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     public static final String TYPE = "HTTP";
-
-    @Autowired
-    private SwitchDomain switchDomain;
-
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
-
-    private static AsyncHttpClient asyncHttpClient;
-
     private static final int CONNECT_TIMEOUT_MS = 500;
+    private static AsyncHttpClient asyncHttpClient;
 
     static {
         try {
@@ -78,6 +69,11 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
             SRV_LOG.error("[HEALTH-CHECK] Error while constructing HTTP asynchronous client", e);
         }
     }
+
+    @Autowired
+    private SwitchDomain switchDomain;
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
 
     @Override
     public String getType() {
@@ -109,7 +105,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
                 if (!ip.markChecking()) {
                     SRV_LOG.warn("http check started before last one finished, service: {}:{}:{}",
-                        task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
+                            task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getHttpHealthParams());
                     continue;

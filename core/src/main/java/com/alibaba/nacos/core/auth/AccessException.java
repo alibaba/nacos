@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  */
 public class AccessException extends NacosException {
 
-    public AccessException(){
+    public AccessException() {
 
     }
 

@@ -43,13 +43,6 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -60,6 +53,12 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -73,14 +72,41 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 @Service
 public class DumpService {
 
+    /**
+     * 全量dump间隔
+     */
+    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
+    /**
+     * 全量dump间隔
+     */
+    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
+    static final int INIT_THREAD_COUNT = 10;
+    private static final Logger log = LoggerFactory.getLogger(DumpService.class);
+    private final static String TRUE_STR = "true";
+    private final static String BETA_TABLE_NAME = "config_info_beta";
+    private final static String TAG_TABLE_NAME = "config_info_tag";
+    int total = 0;
+    Boolean isQuickStart = false;
     @Autowired
     private PersistService persistService;
-
     @Autowired
     private MemberManager memberManager;
-
     @Autowired
     private CPProtocol protocol;
+    private TaskManager dumpTaskMgr;
+    private TaskManager dumpAllTaskMgr;
+
+    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
+        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(new ArrayList<ConfigInfoChanged>());
+        }
+        for (int i = 0; i < list.size(); i++) {
+            ConfigInfoChanged config = list.get(i);
+            result.get(i % count).add(config);
+        }
+        return result;
+    }
 
     @PostConstruct
     public void init() {
@@ -302,39 +328,5 @@ public class DumpService {
     public PersistService getPersistService() {
         return persistService;
     }
-
-    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
-        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
-        for (int i = 0; i < count; i++) {
-            result.add(new ArrayList<ConfigInfoChanged>());
-        }
-        for (int i = 0; i < list.size(); i++) {
-            ConfigInfoChanged config = list.get(i);
-            result.get(i % count).add(config);
-        }
-        return result;
-    }
-
-    /**
-     * 全量dump间隔
-     */
-    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
-    /**
-     * 全量dump间隔
-     */
-    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
-
-    private TaskManager dumpTaskMgr;
-    private TaskManager dumpAllTaskMgr;
-
-    private static final Logger log = LoggerFactory.getLogger(DumpService.class);
-
-    static final int INIT_THREAD_COUNT = 10;
-    int total = 0;
-    private final static String TRUE_STR = "true";
-    private final static String BETA_TABLE_NAME = "config_info_beta";
-    private final static String TAG_TABLE_NAME = "config_info_tag";
-
-    Boolean isQuickStart = false;
 
 }

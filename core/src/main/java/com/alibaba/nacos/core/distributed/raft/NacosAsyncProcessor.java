@@ -34,7 +34,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
     private static final String INTEREST_NAME = JLog.class.getName();
 
     private final JRaftServer server;
-    private  final int failoverRetries;
+    private final int failoverRetries;
 
     public NacosAsyncProcessor(JRaftServer server, final int failoverRetries) {
         this.server = server;

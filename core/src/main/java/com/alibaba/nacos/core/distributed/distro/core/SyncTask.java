@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.nacos.core.notify.Event;
-
 import java.util.List;
 
 /**
@@ -36,6 +35,10 @@ public class SyncTask implements Event {
     private long lastExecuteTime;
 
     private String targetServer;
+
+    public static SyncTaskBuilder builder() {
+        return new SyncTaskBuilder();
+    }
 
     public String getBizInfo() {
         return bizInfo;
@@ -91,10 +94,6 @@ public class SyncTask implements Event {
     @Override
     public Class<? extends Event> eventType() {
         return SyncTask.class;
-    }
-
-    public static SyncTaskBuilder builder() {
-        return new SyncTaskBuilder();
     }
 
     public static final class SyncTaskBuilder {

@@ -25,6 +25,7 @@ import java.util.Map;
  */
 public class Writer {
 
+    private final Map<String, LocalFileMeta> files = new HashMap<>();
     private String path;
 
     public Writer(String path) {
@@ -34,8 +35,6 @@ public class Writer {
     public String getPath() {
         return path;
     }
-
-    private final Map<String, LocalFileMeta> files = new HashMap<>();
 
     /**
      * Adds a snapshot file without metadata.

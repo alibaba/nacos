@@ -29,6 +29,10 @@ public class SelectRequest {
     private Object[] args;
     private String className;
 
+    public static SelectRequestBuilder builder() {
+        return new SelectRequestBuilder();
+    }
+
     public boolean isQueryOne() {
         return queryOne;
     }
@@ -77,10 +81,6 @@ public class SelectRequest {
                 ", args=" + Arrays.toString(args) +
                 ", mapperName='" + className + '\'' +
                 '}';
-    }
-
-    public static SelectRequestBuilder builder() {
-        return new SelectRequestBuilder();
     }
 
     public static final class SelectRequestBuilder {

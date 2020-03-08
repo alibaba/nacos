@@ -15,8 +15,11 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
-import io.micrometer.core.instrument.*;
-
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,32 +96,32 @@ public class MetricsMonitor {
 
     public static Timer getNotifyRtTimer() {
         return Metrics.timer("nacos_timer",
-            "module", "config", "name", "notifyRt");
+                "module", "config", "name", "notifyRt");
     }
 
     public static Counter getIllegalArgumentException() {
         return Metrics.counter("nacos_exception",
-            "module", "config", "name", "illegalArgument");
+                "module", "config", "name", "illegalArgument");
     }
 
     public static Counter getNacosException() {
         return Metrics.counter("nacos_exception",
-            "module", "config", "name", "nacos");
+                "module", "config", "name", "nacos");
     }
 
     public static Counter getDbException() {
         return Metrics.counter("nacos_exception",
-            "module", "config", "name", "db");
+                "module", "config", "name", "db");
     }
 
     public static Counter getConfigNotifyException() {
         return Metrics.counter("nacos_exception",
-            "module", "config", "name", "configNotify");
+                "module", "config", "name", "configNotify");
     }
 
     public static Counter getUnhealthException() {
         return Metrics.counter("nacos_exception",
-            "module", "config", "name", "unhealth");
+                "module", "config", "name", "unhealth");
     }
 
 }

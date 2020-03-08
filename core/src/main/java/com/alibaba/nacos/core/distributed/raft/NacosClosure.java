@@ -97,12 +97,12 @@ public class NacosClosure implements Closure {
             this.result = result;
         }
 
-        public void setThrowable(Throwable throwable) {
-            this.throwable = throwable;
-        }
-
         public Throwable getThrowable() {
             return throwable;
+        }
+
+        public void setThrowable(Throwable throwable) {
+            this.throwable = throwable;
         }
 
 

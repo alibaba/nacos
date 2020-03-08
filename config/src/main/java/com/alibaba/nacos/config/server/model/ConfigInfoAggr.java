@@ -116,7 +116,7 @@ public class ConfigInfoAggr implements Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        ConfigInfoAggr other = (ConfigInfoAggr)obj;
+        ConfigInfoAggr other = (ConfigInfoAggr) obj;
         if (content == null) {
             if (other.content != null) {
                 return false;
@@ -151,7 +151,7 @@ public class ConfigInfoAggr implements Serializable {
     @Override
     public String toString() {
         return "ConfigInfoAggr [dataId=" + dataId + ", group=" + group + ", datumId=" + datumId + ", content="
-            + content + "]";
+                + content + "]";
     }
 
     public String getAppName() {

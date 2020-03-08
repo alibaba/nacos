@@ -33,13 +33,12 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_HEADER;
 
@@ -48,16 +47,12 @@ import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_HEADER;
  */
 class DistroClient {
 
-    private final TypeReference<ResResult<String>> reference = new TypeReference<ResResult<String>>() {};
-
     private static final String DATA_ON_SYNC_URL = "/distro/items";
-
     private static final String DATA_GET_URL = "/distro/items";
-
     private static final String ALL_DATA_GET_URL = "/distro/all/items";
-
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
-
+    private final TypeReference<ResResult<String>> reference = new TypeReference<ResResult<String>>() {
+    };
     private final MemberManager memberManager;
     private final NSyncHttpClient httpClient;
     private final Serializer serializer;

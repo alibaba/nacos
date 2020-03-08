@@ -54,31 +54,24 @@ public class SystemUtils {
 
     public static final String FUNCTION_MODE_CONFIG = "config";
     public static final String FUNCTION_MODE_NAMING = "naming";
-
-
-    private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
-        .getOperatingSystemMXBean();
-
     /**
      * nacos local ip
      */
     public static final String LOCAL_IP = InetUtils.getSelfIp();
-
-
     /**
      * The key of nacos home.
      */
     public static final String NACOS_HOME_KEY = "nacos.home";
-
     /**
      * The home of nacos.
      */
     public static final String NACOS_HOME = getNacosHome();
-
     /**
      * The file path of cluster conf.
      */
     public static final String CLUSTER_CONF_FILE_PATH = getClusterConfFilePath();
+    private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
+            .getOperatingSystemMXBean();
 
     public static List<String> getIPsBySystemEnv(String key) {
         String env = getSystemEnv(key);
@@ -103,7 +96,7 @@ public class SystemUtils {
 
     public static float getMem() {
         return (float) (1 - (double) operatingSystemMXBean.getFreePhysicalMemorySize() / (double) operatingSystemMXBean
-            .getTotalPhysicalMemorySize());
+                .getTotalPhysicalMemorySize());
     }
 
     private static String getNacosHome() {
@@ -124,8 +117,8 @@ public class SystemUtils {
 
     public static List<String> readClusterConf() throws IOException {
 
-        try(Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
-        StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+                StandardCharsets.UTF_8)) {
             return analyzeClusterConf(reader);
         }
     }

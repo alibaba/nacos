@@ -21,9 +21,7 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
-import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 /**

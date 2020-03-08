@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import javax.servlet.ServletContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
-
 /**
  * Running config
+ *
  * @author nkorange
  */
 @Component
@@ -35,34 +35,34 @@ public class RunningConfigUtils implements ApplicationListener<WebServerInitiali
 
     private static String clusterName = "serverlist";
 
-	@Autowired
+    @Autowired
     private ServletContext servletContext;
-
-    @Override
-	public void onApplicationEvent(WebServerInitializedEvent event) {
-
-		setServerPort(event.getWebServer().getPort());
-		setContextPath(servletContext.getContextPath());
-	}
 
     public static int getServerPort() {
         return serverPort;
+    }
+
+    public static void setServerPort(int serverPort) {
+        RunningConfigUtils.serverPort = serverPort;
     }
 
     public static String getContextPath() {
         return contextPath;
     }
 
+    public static void setContextPath(String contextPath) {
+        RunningConfigUtils.contextPath = contextPath;
+    }
+
     public static String getClusterName() {
-		return clusterName;
-	}
+        return clusterName;
+    }
 
-	public static void setServerPort(int serverPort) {
-		RunningConfigUtils.serverPort = serverPort;
-	}
+    @Override
+    public void onApplicationEvent(WebServerInitializedEvent event) {
 
-	public static void setContextPath(String contextPath) {
-		RunningConfigUtils.contextPath = contextPath;
-	}
+        setServerPort(event.getWebServer().getPort());
+        setContextPath(servletContext.getContextPath());
+    }
 
 }

@@ -16,11 +16,10 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
-import org.springframework.jdbc.core.RowMapper;
-
+import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import java.util.List;
+import org.springframework.jdbc.core.RowMapper;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
@@ -37,7 +36,7 @@ public class PaginationHelper<E> {
     /**
      * 取分页
      *
-     * @param services           jdbcTemplate
+     * @param services     jdbcTemplate
      * @param sqlCountRows 查询总数的SQL
      * @param sqlFetchRows 查询数据的sql
      * @param args         查询参数
@@ -213,7 +212,7 @@ public class PaginationHelper<E> {
             SqlContextUtils.cleanCurrentSqlContext();
         }
     }
-    
+
     private boolean isDerby() {
         return (STANDALONE_MODE && !PropertyUtil.isUseMysql()) ||
                 PropertyUtil.isEmbeddedDistributedStorage();

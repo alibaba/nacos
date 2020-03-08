@@ -40,6 +40,15 @@ public class ConfigHistoryInfo {
     private String tenant;
     private String appName;
     private String md5;
+    private String content;
+    private String srcIp;
+    private String srcUser;
+    /**
+     * 操作类型, 包括插入、更新、删除
+     */
+    private String opType;
+    private Timestamp createdTime;
+    private Timestamp lastModifiedTime;
 
     public long getId() {
         return id;
@@ -144,16 +153,4 @@ public class ConfigHistoryInfo {
     public void setMd5(String md5) {
         this.md5 = md5;
     }
-
-    private String content;
-
-    private String srcIp;
-    private String srcUser;
-    /**
-     * 操作类型, 包括插入、更新、删除
-     */
-    private String opType;
-
-    private Timestamp createdTime;
-    private Timestamp lastModifiedTime;
 }

@@ -72,7 +72,7 @@ public class ConfigInfoChanged {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        ConfigInfoChanged other = (ConfigInfoChanged)obj;
+        ConfigInfoChanged other = (ConfigInfoChanged) obj;
         if (dataId == null) {
             if (other.dataId != null) {
                 return false;

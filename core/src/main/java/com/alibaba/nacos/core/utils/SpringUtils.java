@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.core.utils;
 
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Locale;
+import java.util.Map;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -30,11 +34,6 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Profiles;
 import org.springframework.core.io.Resource;
-
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -227,12 +226,6 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
         return environment;
     }
 
-    @Override
-    public void initialize(ConfigurableApplicationContext context) {
-        applicationContext = context;
-        environment = context.getEnvironment();
-    }
-
     public static String[] getActiveProfiles() {
         return environment.getActiveProfiles();
     }
@@ -261,11 +254,11 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
         return environment.getProperty(s, s1);
     }
 
-    public static  <T> T getProperty(String s, Class<T> aClass) {
+    public static <T> T getProperty(String s, Class<T> aClass) {
         return environment.getProperty(s, aClass);
     }
 
-    public static  <T> T getProperty(String s, Class<T> aClass, T t) {
+    public static <T> T getProperty(String s, Class<T> aClass, T t) {
         return environment.getProperty(s, aClass, t);
     }
 
@@ -273,7 +266,7 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
         return environment.getRequiredProperty(s);
     }
 
-    public static  <T> T getRequiredProperty(String s, Class<T> aClass) throws IllegalStateException {
+    public static <T> T getRequiredProperty(String s, Class<T> aClass) throws IllegalStateException {
         return environment.getRequiredProperty(s, aClass);
     }
 
@@ -283,6 +276,12 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
 
     public static String resolveRequiredPlaceholders(String s) throws IllegalArgumentException {
         return environment.resolveRequiredPlaceholders(s);
+    }
+
+    @Override
+    public void initialize(ConfigurableApplicationContext context) {
+        applicationContext = context;
+        environment = context.getEnvironment();
     }
 }
 

@@ -35,6 +35,12 @@ import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +48,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
 
 /**
  * @author nkorange
@@ -152,7 +155,7 @@ public class CatalogController {
     ) {
 
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
+                StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
         if (withInstances) {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
@@ -209,7 +212,7 @@ public class CatalogController {
     public JSONObject rt4Service(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 

@@ -30,6 +30,10 @@ public class FileChangeEvent implements Event {
 
     private WatchEvent<?> event;
 
+    public static FileChangeEventBuilder builder() {
+        return new FileChangeEventBuilder();
+    }
+
     public String getPaths() {
         return paths;
     }
@@ -58,10 +62,6 @@ public class FileChangeEvent implements Event {
     @Override
     public Class<? extends Event> eventType() {
         return FileChangeEvent.class;
-    }
-
-    public static FileChangeEventBuilder builder() {
-        return new FileChangeEventBuilder();
     }
 
     public static final class FileChangeEventBuilder {

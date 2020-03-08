@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
-
 import java.util.Map;
 
 /**

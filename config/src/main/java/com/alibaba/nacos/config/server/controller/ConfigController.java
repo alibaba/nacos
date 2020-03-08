@@ -43,6 +43,19 @@ import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -60,20 +73,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -120,7 +119,7 @@ public class ConfigController {
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
                                  @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                                  @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
-                                     String tenant,
+                                         String tenant,
                                  @RequestParam("content") String content,
                                  @RequestParam(value = "tag", required = false) String tag,
                                  @RequestParam(value = "appName", required = false) String appName,
@@ -131,7 +130,7 @@ public class ConfigController {
                                  @RequestParam(value = "effect", required = false) String effect,
                                  @RequestParam(value = "type", required = false) String type,
                                  @RequestParam(value = "schema", required = false) String schema)
-        throws NacosException {
+            throws NacosException {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -160,7 +159,7 @@ public class ConfigController {
 
         if (AggrWhitelist.isAggrDataId(dataId)) {
             log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}",
-                RequestUtil.getRemoteIp(request), dataId, group);
+                    RequestUtil.getRemoteIp(request), dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
 
@@ -180,7 +179,7 @@ public class ConfigController {
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-            LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 
         return true;
     }
@@ -197,9 +196,9 @@ public class ConfigController {
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
                           @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                           @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
-                              String tenant,
+                                  String tenant,
                           @RequestParam(value = "tag", required = false) String tag)
-        throws IOException, ServletException, NacosException {
+            throws IOException, ServletException, NacosException {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
@@ -218,8 +217,8 @@ public class ConfigController {
     public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
                                           @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                                           @RequestParam(value = "tenant", required = false,
-                                              defaultValue = StringUtils.EMPTY) String tenant)
-        throws NacosException {
+                                                  defaultValue = StringUtils.EMPTY) String tenant)
+            throws NacosException {
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         return persistService.findConfigAllInfo(dataId, group, tenant);
@@ -236,7 +235,7 @@ public class ConfigController {
                                 @RequestParam("dataId") String dataId, //
                                 @RequestParam("group") String group, //
                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
-                                    String tenant,
+                                        String tenant,
                                 @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
@@ -248,7 +247,7 @@ public class ConfigController {
         }
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
-            ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
         return true;
     }
@@ -270,10 +269,10 @@ public class ConfigController {
         if (!CollectionUtils.isEmpty(configInfoList)) {
             for (ConfigInfo configInfo : configInfoList) {
                 ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                    configInfo.getTenant(), null, time.getTime(), clientIp,
-                    ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                        configInfo.getTenant(), null, time.getTime(), clientIp,
+                        ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-                    configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
+                        configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
             }
         }
         return ResultBuilder.buildSuccessResult(true);
@@ -284,7 +283,7 @@ public class ConfigController {
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
                                                               @RequestParam("group") String group,
                                                               @RequestParam(value = "tenant", required = false,
-                                                                  defaultValue = StringUtils.EMPTY) String tenant) {
+                                                                      defaultValue = StringUtils.EMPTY) String tenant) {
         RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
         ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
         rr.setCode(200);
@@ -298,7 +297,7 @@ public class ConfigController {
     @PostMapping("/listener")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public void listener(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
         request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
         String probeModify = request.getParameter("Listening-Configs");
         if (StringUtils.isBlank(probeModify)) {
@@ -331,7 +330,7 @@ public class ConfigController {
                                                 @RequestParam("group") String group,
                                                 @RequestParam(value = "tenant", required = false) String tenant,
                                                 @RequestParam(value = "sampleTime", required = false,
-                                                    defaultValue = "1") int sampleTime) throws Exception {
+                                                        defaultValue = "1") int sampleTime) throws Exception {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
@@ -351,7 +350,7 @@ public class ConfigController {
                                          @RequestParam("group") String group,
                                          @RequestParam(value = "appName", required = false) String appName,
                                          @RequestParam(value = "tenant", required = false,
-                                             defaultValue = StringUtils.EMPTY) String tenant,
+                                                 defaultValue = StringUtils.EMPTY) String tenant,
                                          @RequestParam(value = "config_tags", required = false) String configTags,
                                          @RequestParam("pageNo") int pageNo,
                                          @RequestParam("pageSize") int pageSize) {
@@ -364,7 +363,7 @@ public class ConfigController {
         }
         try {
             return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
-                configAdvanceInfo);
+                    configAdvanceInfo);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             log.error(errorMsg, e);
@@ -381,7 +380,7 @@ public class ConfigController {
                                               @RequestParam("group") String group,
                                               @RequestParam(value = "appName", required = false) String appName,
                                               @RequestParam(value = "tenant", required = false,
-                                                  defaultValue = StringUtils.EMPTY) String tenant,
+                                                      defaultValue = StringUtils.EMPTY) String tenant,
                                               @RequestParam(value = "config_tags", required = false) String configTags,
                                               @RequestParam("pageNo") int pageNo,
                                               @RequestParam("pageSize") int pageSize) {
@@ -394,7 +393,7 @@ public class ConfigController {
         }
         try {
             return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
-                configAdvanceInfo);
+                    configAdvanceInfo);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             log.error(errorMsg, e);
@@ -407,7 +406,7 @@ public class ConfigController {
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,
                                         @RequestParam(value = "tenant", required = false,
-                                            defaultValue = StringUtils.EMPTY) String tenant) {
+                                                defaultValue = StringUtils.EMPTY) String tenant) {
         RestResult<Boolean> rr = new RestResult<Boolean>();
         try {
             persistService.removeConfigInfo4Beta(dataId, group, tenant);
@@ -430,7 +429,7 @@ public class ConfigController {
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
                                                  @RequestParam(value = "group") String group,
                                                  @RequestParam(value = "tenant", required = false,
-                                                     defaultValue = StringUtils.EMPTY) String tenant) {
+                                                         defaultValue = StringUtils.EMPTY) String tenant) {
         RestResult<ConfigInfo4Beta> rr = new RestResult<ConfigInfo4Beta>();
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
@@ -452,7 +451,7 @@ public class ConfigController {
                                                @RequestParam(value = "group", required = false) String group,
                                                @RequestParam(value = "appName", required = false) String appName,
                                                @RequestParam(value = "tenant", required = false,
-                                                   defaultValue = StringUtils.EMPTY) String tenant,
+                                                       defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
@@ -467,11 +466,11 @@ public class ConfigController {
                 String metaDataId = ci.getDataId();
                 if (metaDataId.contains(".")) {
                     metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf("."))
-                        + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
+                            + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
                 }
                 metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
-                    // Fixed use of "\r\n" here
-                    .append(ci.getAppName()).append("\r\n");
+                        // Fixed use of "\r\n" here
+                        .append(ci.getAppName()).append("\r\n");
             }
             String itemName = ci.getGroup() + "/" + ci.getDataId();
             zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
@@ -492,7 +491,7 @@ public class ConfigController {
                                                                   @RequestParam(value = "src_user", required = false) String srcUser,
                                                                   @RequestParam(value = "namespace", required = false) String namespace,
                                                                   @RequestParam(value = "policy", defaultValue = "ABORT")
-                                                                      SameConfigPolicy policy,
+                                                                          SameConfigPolicy policy,
                                                                   MultipartFile file) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
 
@@ -533,7 +532,7 @@ public class ConfigController {
                     String tempDataId = dataId;
                     if (tempDataId.contains(".")) {
                         tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf("."))
-                            + "~" + tempDataId.substring(tempDataId.lastIndexOf(".") + 1);
+                                + "~" + tempDataId.substring(tempDataId.lastIndexOf(".") + 1);
                     }
                     String metaDataId = group + "." + tempDataId + ".app";
                     ConfigAllInfo ci = new ConfigAllInfo();
@@ -560,13 +559,13 @@ public class ConfigController {
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
-            null, time, false, policy);
+                null, time, false, policy);
         for (ConfigInfo configInfo : configInfoList) {
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant(), time.getTime()));
+                    configInfo.getTenant(), time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant(), requestIpApp, time.getTime(),
-                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+                    configInfo.getTenant(), requestIpApp, time.getTime(),
+                    LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("导入成功", saveResult);
     }
@@ -579,9 +578,9 @@ public class ConfigController {
                                                        @RequestBody(required = true)
                                                                List<SameNamespaceCloneConfigBean> configBeansList,
                                                        @RequestParam(value = "policy", defaultValue = "ABORT")
-                                                           SameConfigPolicy policy) throws NacosException {
+                                                               SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
-        if(CollectionUtils.isEmpty(configBeansList)){
+        if (CollectionUtils.isEmpty(configBeansList)) {
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
         }
@@ -596,10 +595,10 @@ public class ConfigController {
 
         List<Long> idList = new ArrayList<>(configBeansList.size());
         Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
-            .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
-                idList.add(cfg.getCfgId());
-                return cfg;
-            },(k1, k2) -> k1));
+                .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
+                    idList.add(cfg.getCfgId());
+                    return cfg;
+                }, (k1, k2) -> k1));
 
         List<ConfigAllInfo> queryedDataList = persistService.findAllConfigInfo4Export(null, null, null, null, idList);
 
@@ -632,13 +631,13 @@ public class ConfigController {
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp,
-            null, time, false, policy);
+                null, time, false, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant(), time.getTime()));
+                    configInfo.getTenant(), time.getTime()));
             ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant(), requestIpApp, time.getTime(),
-                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+                    configInfo.getTenant(), requestIpApp, time.getTime(),
+                    LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("克隆成功", saveResult);
     }

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.notify.Event;
-
 import java.util.Collection;
 
 /**
@@ -32,6 +31,10 @@ public class NodeChangeEvent implements Event {
     private Collection<Member> allMembers;
 
     private String kind;
+
+    public static NodeChangeEventBuilder builder() {
+        return new NodeChangeEventBuilder();
+    }
 
     public Collection<Member> getChangeMembers() {
         return changeMembers;
@@ -60,10 +63,6 @@ public class NodeChangeEvent implements Event {
     @Override
     public Class<? extends Event> eventType() {
         return NodeChangeEvent.class;
-    }
-
-    public static NodeChangeEventBuilder builder() {
-        return new NodeChangeEventBuilder();
     }
 
     public static final class NodeChangeEventBuilder {

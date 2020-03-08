@@ -22,8 +22,6 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.slf4j.Logger;
-
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.StandardWatchEventKinds;
@@ -37,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import org.slf4j.Logger;
 
 /**
  * Unified file change monitoring management center, which uses {@link WatchService} internally.
@@ -51,25 +50,21 @@ public class WatchFileCenter {
     private static final Logger logger = Loggers.WATCH_FILE;
 
     private static final int MAX_WATCH_FILE_JOB = 32;
-
-    private static int NOW_WATCH_JOB_CNT = 0;
-
     private static final Map<String, WatchJob> MANAGER = new HashMap<>(MAX_WATCH_FILE_JOB);
-
     private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
-
     private static final ExecutorService WATCH_FILE_EXECUTOR = ExecutorFactory.newFixExecutorService(
             WatchFileCenter.class.getCanonicalName(),
             MAX_WATCH_FILE_JOB,
             new NameThreadFactory("com.alibaba.nacos.core.file.watch")
     );
+    private static int NOW_WATCH_JOB_CNT = 0;
 
     static {
         NotifyCenter.registerPublisher(FileChangeEvent::new, FileChangeEvent.class);
     }
 
     public synchronized static boolean registerWatcher(final String paths, FileWatcher watcher) {
-        NOW_WATCH_JOB_CNT ++;
+        NOW_WATCH_JOB_CNT++;
         if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
             return false;
         }

@@ -33,28 +33,20 @@ import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.zip.ZipOutputStream;
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(ConditionOnEmbedStoreType.class)
-@Component
 public class DerbySnapshotOperation implements SnapshotOperation {
 
-    private DataSource dataSource;
-
     private final String queryAllDataByTable = "select * from %s";
-    private final String SNAPSHOT_DIR = "db";
-    private final String SNAPSHOT_ARCHIVE = "db-%s.zip";
+    private final String SNAPSHOT_DIR = "derby_data";
+    private final String SNAPSHOT_ARCHIVE = "derby_data.zip";
     private final String fileSuffix = ".del";
     private final String[] tableNames = new String[]{
             "config_info",
@@ -74,28 +66,23 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             "permissions",
     };
 
-    @PostConstruct
-    protected void init() {
-        dataSource = SpringUtils.getBean(DynamicDataSource.class).getDataSource().getJdbcTemplate().getDataSource();
-    }
-
     @Override
     public void onSnapshotSave(Writer writer, CallFinally callFinally) {
         GlobalExecutor.executeOnSnapshot(() -> {
             try {
                 final String writePath = writer.getPath();
                 final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
-                final String outputFile = Paths.get(writePath, String.format(SNAPSHOT_ARCHIVE, LocalDateTime.now())).toString();
                 DiskUtils.deleteDirectory(parentPath);
                 DiskUtils.forceMkdir(parentPath);
                 final List<String> sqls = new ArrayList<>();
-                String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('%s', '%s', null, null, null,)";
+                String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('%s', '%s', null, null, null)";
                 for (String tableName : tableNames) {
                     final String queryAllData = String.format(queryAllDataByTable, tableNames);
                     final String exportFile = Paths.get(parentPath, tableName + fileSuffix).toString();
                     sqls.add(String.format(sqlTemplate, queryAllData, exportFile));
                 }
                 batchExec(sqls, "Snapshot save");
+                final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
                 try (final FileOutputStream fOut = new FileOutputStream(outputFile);
                      final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
                     WritableByteChannel channel = Channels.newChannel(zOut);
@@ -135,13 +122,20 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     private boolean batchExec(List<String> sqls, String type) {
+        DataSource dataSource = SpringUtils.getBean(DynamicDataSource.class).getDataSource()
+                .getJdbcTemplate().getDataSource();
+
+        if (dataSource == null) {
+            throw new NullPointerException("The DataSource object does not exist in the Spring container");
+        }
+
         String sql = "";
         Connection holder = null;
         try (Connection connection = dataSource.getConnection()) {
             holder = connection;
             for (String t : sqls) {
-                CallableStatement statement = connection.prepareCall(sql);
                 sql = t;
+                CallableStatement statement = connection.prepareCall(sql);
                 LogUtil.defaultLog.info("snapshot load exec sql : {}", sql);
                 statement.execute();
             }

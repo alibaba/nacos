@@ -21,7 +21,6 @@ import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
-
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,6 +34,9 @@ public final class RaftExecutor {
     private static ExecutorService raftCoreExecutor;
     private static ExecutorService raftCliServiceExecutor;
     private static ScheduledExecutorService raftMemberRefreshExecutor;
+
+    private RaftExecutor() {
+    }
 
     public static void init(RaftConfig config) {
 
@@ -59,10 +61,7 @@ public final class RaftExecutor {
 
     }
 
-    private RaftExecutor() {
-    }
-
-    public static void scheduleRaftMemberRefreshJob(Runnable runnable,long initialDelay,
+    public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
                                                     long period,
                                                     TimeUnit unit) {
         raftMemberRefreshExecutor.scheduleAtFixedRate(runnable, initialDelay, period, unit);
@@ -79,4 +78,9 @@ public final class RaftExecutor {
     public static ScheduledExecutorService getRaftMemberRefreshExecutor() {
         return raftMemberRefreshExecutor;
     }
+
+    public static void executeByRaftCore(Runnable runnable) {
+        raftCoreExecutor.execute(runnable);
+    }
+
 }

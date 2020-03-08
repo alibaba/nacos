@@ -19,7 +19,6 @@ import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,41 +31,35 @@ public class GlobalExecutor {
     private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
-
+    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR
+            = ExecutorFactory.newSingleScheduledExecutorService(
+            NamingApp.class.getCanonicalName(),
+            new NameThreadFactory("nacos.naming.status.worker"));
+    private static final ScheduledExecutorService PERFORMANCE_EXECUTOR =
+            ExecutorFactory.newSingleScheduledExecutorService(
+                    PerformanceLoggerThread.class.getCanonicalName(),
+                    new NameThreadFactory("nacos-server-performance"));
     private static ScheduledExecutorService executorService = ExecutorFactory
             .newScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
                     Runtime.getRuntime().availableProcessors(),
                     new NameThreadFactory("com.alibaba.nacos.naming.timer")
             );
-
     private static ScheduledExecutorService notifierExecutor = ExecutorFactory
             .newScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
                     2,
                     new NameThreadFactory("com.alibaba.nacos.naming.store.notifier")
             );
-
     private static ScheduledExecutorService notifyServerListExecutor =
-        ExecutorFactory.newSingleScheduledExecutorService(
-                NamingApp.class.getCanonicalName(),
-                new NameThreadFactory("com.alibaba.nacos.naming.server.list.notifier"));
-
-    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR
-        = ExecutorFactory.newSingleScheduledExecutorService(
-                    NamingApp.class.getCanonicalName(),
-                    new NameThreadFactory("nacos.naming.status.worker"));
-
-    private static final ScheduledExecutorService PERFORMANCE_EXECUTOR =
             ExecutorFactory.newSingleScheduledExecutorService(
-                    PerformanceLoggerThread.class.getCanonicalName(),
-                    new NameThreadFactory("nacos-server-performance"));
-
+                    NamingApp.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.nacos.naming.server.list.notifier"));
     /**
      * thread pool that processes getting service detail from other server asynchronously
      */
     private static ExecutorService serviceUpdateExecutor
-        = ExecutorFactory.newFixExecutorService(
+            = ExecutorFactory.newFixExecutorService(
             NamingApp.class.getCanonicalName(),
             2,
             new NameThreadFactory("com.alibaba.nacos.naming.service.update.http.handler"));

@@ -15,13 +15,12 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * System config
@@ -30,9 +29,8 @@ import java.util.Enumeration;
  */
 public class SystemConfig {
 
-    public static final String LOCAL_IP = getHostAddress();
-
     private static final Logger log = LoggerFactory.getLogger(SystemConfig.class);
+    public static final String LOCAL_IP = getHostAddress();
 
     private static String getHostAddress() {
         String address = System.getProperty("nacos.server.ip");
@@ -50,7 +48,7 @@ public class SystemConfig {
                     InetAddress ip = ads.nextElement();
                     // 兼容集团不规范11网段
                     if (!ip.isLoopbackAddress()
-                        && ip.getHostAddress().indexOf(":") == -1
+                            && ip.getHostAddress().indexOf(":") == -1
                         /* && ip.isSiteLocalAddress() */) {
                         return ip.getHostAddress();
                     }

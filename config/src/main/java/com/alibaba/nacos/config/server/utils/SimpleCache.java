@@ -28,16 +28,6 @@ public class SimpleCache<E> {
 
     final ConcurrentMap<String, CacheEntry<E>> cache = new ConcurrentHashMap<String, CacheEntry<E>>();
 
-    private static class CacheEntry<E> {
-        final long expireTime;
-        final E value;
-
-        public CacheEntry(E value, long expire) {
-            this.expireTime = expire;
-            this.value = value;
-        }
-    }
-
     public void put(String key, E e, long ttlMs) {
         if (key == null || e == null) {
             return;
@@ -52,5 +42,15 @@ public class SimpleCache<E> {
             return entry.value;
         }
         return null;
+    }
+
+    private static class CacheEntry<E> {
+        final long expireTime;
+        final E value;
+
+        public CacheEntry(E value, long expire) {
+            this.expireTime = expire;
+            this.value = value;
+        }
     }
 }

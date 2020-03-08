@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.mockito.ArgumentMatchers.eq;
 

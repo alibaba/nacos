@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.controller;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.cluster.ServerMember;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -75,9 +74,9 @@ public class NacosClusterRouter {
     }
 
     @PostMapping("/server/report")
-    public ResResult<Boolean> report(@RequestBody ResResult<ServerMember> resResult) {
+    public ResResult<Boolean> report(@RequestBody ResResult<Member> resResult) {
 
-        final ServerMember node = resResult.getData();
+        final Member node = resResult.getData();
 
         if (!node.check()) {
             return ResResultUtils.failed("Node information is illegal");
@@ -89,7 +88,7 @@ public class NacosClusterRouter {
     }
 
     @GetMapping("/sys/idGeneratorInfo")
-    public ResResult<Map<String, Long>> idGeneratorInfo() {
+    public ResResult<Map<String, Map<Object, Object>>> idGeneratorInfo() {
         return ResResultUtils.success(idGeneratorManager.idGeneratorInfo());
     }
 

@@ -24,10 +24,10 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
@@ -166,7 +166,7 @@ public class ServiceController {
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
@@ -236,7 +236,7 @@ public class ServiceController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
@@ -307,7 +307,7 @@ public class ServiceController {
 
         if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "ip: " + serverIp + " is not in serverlist");
+                    "ip: " + serverIp + " is not in serverlist");
         }
 
         try {
@@ -334,7 +334,7 @@ public class ServiceController {
                 if (!checksum.equals(service.getChecksum())) {
                     if (Loggers.SRV_LOG.isDebugEnabled()) {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
-                            serviceName, serverIp, checksum, service.getChecksum());
+                                serviceName, serverIp, checksum, service.getChecksum());
                     }
                     serviceManager.addUpdatedService2Queue(checksums.namespaceId, serviceName, serverIp, checksum);
                 }
@@ -350,13 +350,13 @@ public class ServiceController {
     public JSONObject checksum(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND,
-                "serviceName not found: " + serviceName);
+                    "serviceName not found: " + serviceName);
         }
 
         service.recalculateChecksum();
@@ -382,7 +382,7 @@ public class ServiceController {
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+                Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         boolean aggregation = Boolean.parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
 

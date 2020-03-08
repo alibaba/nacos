@@ -54,9 +54,9 @@ public class IdGeneratorManager {
         return generator;
     };
 
-    public Map<String, Long> idGeneratorInfo() {
+    public Map<String, Map<Object, Object>> idGeneratorInfo() {
         return ID_GENERATOR_MAP.entrySet().stream()
-                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().currentId()), HashMap::putAll);
+                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().info()), HashMap::putAll);
     }
 
     public void register(String resource) {

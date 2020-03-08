@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.env;
 
+import java.util.HashSet;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,8 +26,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.HashSet;
 
 import static com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor.PROPERTY_SOURCE_NAME;
 import static com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor.RESOURCE_LOCATION_PATTERN;

@@ -16,7 +16,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-
 import java.util.List;
 
 /**

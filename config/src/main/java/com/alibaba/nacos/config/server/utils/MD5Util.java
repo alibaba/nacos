@@ -17,16 +17,20 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigService;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
@@ -38,6 +42,9 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
+
+    static final char WORD_SEPARATOR_CHAR = (char) 2;
+    static final char LINE_SEPARATOR_CHAR = (char) 1;
 
     static public List<String> compareMd5(HttpServletRequest request,
                                           HttpServletResponse response, Map<String, String> clientMd5Map) {
@@ -148,7 +155,7 @@ public class MD5Util {
 
     static public String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
-            : toString(new InputStreamReader(input, encoding));
+                : toString(new InputStreamReader(input, encoding));
     }
 
     static public String toString(Reader reader) throws IOException {
@@ -166,9 +173,6 @@ public class MD5Util {
         }
         return count;
     }
-
-    static final char WORD_SEPARATOR_CHAR = (char)2;
-    static final char LINE_SEPARATOR_CHAR = (char)1;
 
 }
 

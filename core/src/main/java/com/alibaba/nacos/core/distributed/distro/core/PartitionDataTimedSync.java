@@ -60,6 +60,14 @@ public class PartitionDataTimedSync {
 
     }
 
+    public Collection<Member> getServers() {
+        return memberManager.allMembers();
+    }
+
+    private String buildKey(String key, String targetServer) {
+        return key + "@@@@" + targetServer;
+    }
+
     private class Worker implements Runnable {
 
         @Override
@@ -119,14 +127,6 @@ public class PartitionDataTimedSync {
                 Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
-    }
-
-    public Collection<Member> getServers() {
-        return memberManager.allMembers();
-    }
-
-    private String buildKey(String key, String targetServer) {
-        return key + "@@@@" + targetServer;
     }
 
 }

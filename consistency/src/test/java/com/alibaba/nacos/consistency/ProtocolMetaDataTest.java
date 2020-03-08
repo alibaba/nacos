@@ -1,11 +1,10 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.fastjson.JSON;
-import org.junit.Test;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Test;
 
 public class ProtocolMetaDataTest {
 

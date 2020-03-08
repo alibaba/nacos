@@ -27,7 +27,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @WebAppConfiguration
 public class GroupKeyTest {
 
-  @Rule public final ExpectedException thrown = ExpectedException.none();
+    @Rule
+    public final ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void test_parseGroupKey_非法的() {
@@ -116,7 +117,7 @@ public class GroupKeyTest {
         final String[] actual = GroupKey.parseKey("/");
 
         // Assert result
-        Assert.assertArrayEquals(new String[] {null, "/", null}, actual);
+        Assert.assertArrayEquals(new String[]{null, "/", null}, actual);
     }
 
     @Test

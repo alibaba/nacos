@@ -49,25 +49,18 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("all")
 public class DataStore {
 
+    public static final String STORE_NAME = "ephemeral_services";
+    private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
     @Lazy
     @Autowired
     private ServiceManager serviceManager;
-
     @Autowired
     private SwitchDomain switchDomain;
-
     @Autowired
     private APProtocol protocol;
-
     @Autowired
     private DistroConsistencyServiceImpl.Notifier notifier;
-
-    public static final String STORE_NAME = "ephemeral_services";
-
     private KVStore<Record> kvStore;
-
-    private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
-
     private boolean isStart = false;
 
     @PostConstruct
@@ -103,6 +96,14 @@ public class DataStore {
         if (listMap.containsKey(key)) {
             listMap.get(key).remove(listener);
         }
+    }
+
+    public boolean isStart() {
+        return isStart;
+    }
+
+    public Map<String, Set<RecordListener>> getListMap() {
+        return listMap;
     }
 
     class NBeforeHook implements BeforeHook<Record> {
@@ -153,13 +154,5 @@ public class DataStore {
                 notifier.addTask(key, ApplyAction.DELETE);
             }
         }
-    }
-
-    public boolean isStart() {
-        return isStart;
-    }
-
-    public Map<String, Set<RecordListener>> getListMap() {
-        return listMap;
     }
 }

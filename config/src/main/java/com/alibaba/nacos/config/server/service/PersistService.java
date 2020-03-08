@@ -46,16 +46,6 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
-
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -66,6 +56,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.PostConstruct;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -95,33 +94,16 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 @Repository
 public class PersistService {
 
-    private static final Object[] EMPTY_ARRAY = new Object[]{};
-
-    @Autowired
-    private DatabaseOperate databaseOperate;
-
-    @Autowired
-    private DynamicDataSource dynamicDataSource;
-
-    @Autowired
-    private IdGeneratorManager idGeneratorManager;
-
-    private DataSourceService dataSourceService;
-
-    private static final String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
-
-    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
-
-    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
-
-    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
-
     /**
      * @author klw
      * @Description: constant variables
      */
     public static final String SPOT = ".";
-
+    private static final Object[] EMPTY_ARRAY = new Object[]{};
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
+    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
+    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
+    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
     private static final String CONFIG_INFO_ID = "config-info-id";
     private static final String CONFIG_HISTORY_ID = "config-history-id";
     private static final String CONFIG_TAG_RELATION_ID = "config-tag-relation-id";
@@ -130,6 +112,17 @@ public class PersistService {
     private static final String USER_ID = "user-id";
     private static final String ROLE_ID = "role-id";
     private static final String PERMISSION_ID = "permissions_id";
+    private final static int QUERY_LIMIT_SIZE = 50;
+    private static String PATTERN_STR = "*";
+    protected JdbcTemplate jt;
+    protected TransactionTemplate tjt;
+    @Autowired
+    private DatabaseOperate databaseOperate;
+    @Autowired
+    private DynamicDataSource dynamicDataSource;
+    @Autowired
+    private IdGeneratorManager idGeneratorManager;
+    private DataSourceService dataSourceService;
 
     @PostConstruct
     public void init() {
@@ -138,16 +131,18 @@ public class PersistService {
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();
 
-        idGeneratorManager.register(
-                CONFIG_INFO_ID,
-                CONFIG_HISTORY_ID,
-                CONFIG_TAG_RELATION_ID,
-                CONFIG_BETA_ID,
-                NAMESPACE_ID,
-                USER_ID,
-                ROLE_ID,
-                PERMISSION_ID
-        );
+        if (PropertyUtil.isEnableDistributedID()) {
+            idGeneratorManager.register(
+                    CONFIG_INFO_ID,
+                    CONFIG_HISTORY_ID,
+                    CONFIG_TAG_RELATION_ID,
+                    CONFIG_BETA_ID,
+                    NAMESPACE_ID,
+                    USER_ID,
+                    ROLE_ID,
+                    PERMISSION_ID
+            );
+        }
     }
 
     public boolean checkMasterWritable() {
@@ -161,6 +156,8 @@ public class PersistService {
     public synchronized void reload() throws IOException {
         this.dataSourceService.reload();
     }
+
+    // ----------------------- config_info 表 insert update delete
 
     /**
      * 单元测试用
@@ -180,8 +177,6 @@ public class PersistService {
     public DatabaseOperate getDatabaseOperate() {
         return databaseOperate;
     }
-
-    // ----------------------- config_info 表 insert update delete
 
     /**
      * //TODO 大事务提交
@@ -459,6 +454,8 @@ public class PersistService {
         }
     }
 
+    // ----------------------- config_aggr_info 表 insert update delete
+
     /**
      * // TODO 暂时未对外开放使用
      * <p>
@@ -555,8 +552,6 @@ public class PersistService {
 
         }
     }
-
-    // ----------------------- config_aggr_info 表 insert update delete
 
     /**
      * 增加聚合前数据到数据库, select -> update or insert
@@ -2898,7 +2893,6 @@ public class PersistService {
         return result;
     }
 
-
     /**
      * query tenantInfo (namespace) existence based by tenantId
      *
@@ -2913,10 +2907,5 @@ public class PersistService {
         }
         return result;
     }
-
-    private static String PATTERN_STR = "*";
-    private final static int QUERY_LIMIT_SIZE = 50;
-    protected JdbcTemplate jt;
-    protected TransactionTemplate tjt;
 
 }

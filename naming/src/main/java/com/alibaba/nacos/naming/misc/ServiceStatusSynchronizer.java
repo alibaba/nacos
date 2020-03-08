@@ -19,11 +19,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
-import org.apache.commons.lang3.StringUtils;
-
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author nacos
@@ -31,11 +30,11 @@ import java.util.Map;
 public class ServiceStatusSynchronizer implements Synchronizer {
     @Override
     public void send(final String serverIP, Message msg) {
-        if(serverIP == null) {
+        if (serverIP == null) {
             return;
         }
 
-        Map<String,String> params = new HashMap<String, String>(10);
+        Map<String, String> params = new HashMap<String, String>(10);
 
         params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());
@@ -69,11 +68,11 @@ public class ServiceStatusSynchronizer implements Synchronizer {
 
     @Override
     public Message get(String serverIP, String key) {
-        if(serverIP == null) {
+        if (serverIP == null) {
             return null;
         }
 
-        Map<String,String> params = new HashMap<>(10);
+        Map<String, String> params = new HashMap<>(10);
 
         params.put("key", key);
 
@@ -83,13 +82,13 @@ public class ServiceStatusSynchronizer implements Synchronizer {
                 Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
             }
             result = NamingProxy.reqAPI(RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "statuses", params, serverIP);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "statuses", params, serverIP);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);
             return null;
         }
 
-        if(result == null || result.equals(StringUtils.EMPTY)) {
+        if (result == null || result.equals(StringUtils.EMPTY)) {
             return null;
         }
 

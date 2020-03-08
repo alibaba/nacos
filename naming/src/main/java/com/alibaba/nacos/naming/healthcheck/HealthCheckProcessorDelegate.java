@@ -16,13 +16,12 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * @author nacos
@@ -31,17 +30,17 @@ import java.util.stream.Collectors;
 public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
     private Map<String, HealthCheckProcessor> healthCheckProcessorMap
-        = new HashMap<>();
+            = new HashMap<>();
 
     public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
         provider.init();
     }
 
     @Autowired
-    public void addProcessor(Collection<HealthCheckProcessor> processors){
+    public void addProcessor(Collection<HealthCheckProcessor> processors) {
         healthCheckProcessorMap.putAll(processors.stream()
-            .filter(processor -> processor.getType() != null)
-            .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
+                .filter(processor -> processor.getType() != null)
+                .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
     }
 
     @Override
@@ -49,7 +48,7 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
         String type = task.getCluster().getHealthChecker().getType();
         HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
-        if(processor == null){
+        if (processor == null) {
             processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
         }
 

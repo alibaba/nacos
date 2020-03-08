@@ -26,10 +26,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.naming.push.PushService;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * @author Nicholas
@@ -56,6 +55,10 @@ public class SubscribeManager {
     @Autowired
     private MemberManager memberManager;
 
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
+        return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;
+    }
 
     private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
         return pushService.getClients(serviceName, namespaceId);
@@ -93,7 +96,7 @@ public class SubscribeManager {
                 }
 
                 HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.address() + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {
                     Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
@@ -101,16 +104,11 @@ public class SubscribeManager {
                 }
             }
             return CollectionUtils.isNotEmpty(subscriberList) ?
-                subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList())
-                : Collections.EMPTY_LIST;
+                    subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList())
+                    : Collections.EMPTY_LIST;
         } else {
             // local server
             return getSubscribersFuzzy(serviceName, namespaceId);
         }
-    }
-
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
-        Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
-        return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;
     }
 }

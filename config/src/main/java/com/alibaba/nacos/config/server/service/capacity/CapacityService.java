@@ -25,21 +25,20 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
 
 /**
  * Capacity service
@@ -68,7 +67,7 @@ public class CapacityService {
     public void init() {
         // 每个Server都有修正usage的Job在跑，幂等
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
-            "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
+                "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -143,7 +142,7 @@ public class CapacityService {
         int pageSize = 100;
         while (true) {
             List<GroupCapacity> groupCapacityList = groupCapacityPersistService.getCapacityList4CorrectUsage(lastId,
-                pageSize);
+                    pageSize);
             if (groupCapacityList.isEmpty()) {
                 break;
             }
@@ -168,7 +167,7 @@ public class CapacityService {
         int pageSize = 100;
         while (true) {
             List<TenantCapacity> tenantCapacityList = tenantCapacityPersistService.getCapacityList4CorrectUsage(lastId,
-                pageSize);
+                    pageSize);
             if (tenantCapacityList.isEmpty()) {
                 break;
             }
@@ -198,12 +197,12 @@ public class CapacityService {
             insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
         }
         return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
-            PropertyUtil.getDefaultClusterQuota(), ignoreQuotaLimit);
+                PropertyUtil.getDefaultClusterQuota(), ignoreQuotaLimit);
     }
 
     public boolean updateClusterUsage(CounterMode counterMode) {
         return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
-            PropertyUtil.getDefaultClusterQuota(), false);
+                PropertyUtil.getDefaultClusterQuota(), false);
     }
 
     /**
@@ -263,15 +262,15 @@ public class CapacityService {
         // 初始化的时候该Group/租户就已经到达限额，自动扩容，降低运维成本
         int initialExpansionPercent = PropertyUtil.getInitialExpansionPercent();
         if (initialExpansionPercent > 0) {
-            int finalQuota = (int)(usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
+            int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
                 LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant,
-                    usage, defaultQuota, finalQuota);
+                        usage, defaultQuota, finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
                 LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group,
-                    usage, defaultQuota, finalQuota);
+                        usage, defaultQuota, finalQuota);
             }
         }
     }
@@ -378,7 +377,7 @@ public class CapacityService {
             }
             // 先按默认值限额更新，大部分情况下都是默认值，默认值表里面的quota字段为0
             return groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(groupCapacity)
-                || groupCapacityPersistService.incrementUsageWithQuotaLimit(groupCapacity);
+                    || groupCapacityPersistService.incrementUsageWithQuotaLimit(groupCapacity);
         }
         return groupCapacityPersistService.decrementUsage(groupCapacity);
     }
@@ -412,7 +411,7 @@ public class CapacityService {
             }
             // 先按默认值限额更新，大部分情况下都是默认值，默认值表里面的quota字段为0
             return tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(tenantCapacity)
-                || tenantCapacityPersistService.incrementUsageWithQuotaLimit(tenantCapacity);
+                    || tenantCapacityPersistService.incrementUsageWithQuotaLimit(tenantCapacity);
         }
         return tenantCapacityPersistService.decrementUsage(tenantCapacity);
     }
@@ -481,14 +480,14 @@ public class CapacityService {
      * @return 是否操作成功
      */
     public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize, Integer
-        maxAggrCount, Integer maxAggrSize) {
+            maxAggrCount, Integer maxAggrSize) {
         if (StringUtils.isNotBlank(tenant)) {
             Capacity capacity = tenantCapacityPersistService.getTenantCapacity(tenant);
             if (capacity == null) {
                 return initTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             }
             return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount,
-                maxAggrSize);
+                    maxAggrSize);
         }
         Capacity capacity = groupCapacityPersistService.getGroupCapacity(group);
         if (capacity == null) {

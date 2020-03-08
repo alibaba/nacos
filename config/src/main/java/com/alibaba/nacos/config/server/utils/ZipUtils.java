@@ -15,16 +15,17 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author klw
@@ -35,8 +36,54 @@ public class ZipUtils {
 
     private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
 
+    public static byte[] zip(List<ZipItem> source) {
+        byte[] result = null;
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(byteOut)) {
+            for (ZipItem item : source) {
+                zipOut.putNextEntry(new ZipEntry(item.getItemName()));
+                zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
+            }
+            zipOut.flush();
+            zipOut.finish();
+            result = byteOut.toByteArray();
+        } catch (IOException e) {
+            log.error("an error occurred while compressing data.", e);
+        }
+        return result;
+    }
 
-    public static class ZipItem{
+    public static UnZipResult unzip(byte[] source) {
+
+        List<ZipItem> itemList = new ArrayList<>();
+        ZipItem metaDataItem = null;
+        try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
+            ZipEntry entry;
+            while ((entry = zipIn.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int offset;
+                    while ((offset = zipIn.read(buffer)) != -1) {
+                        out.write(buffer, 0, offset);
+                    }
+                    if (".meta.yml".equals(entry.getName())) {
+                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
+                    } else {
+                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    }
+                } catch (IOException e) {
+                    log.error("unzip error", e);
+                }
+            }
+        } catch (IOException e) {
+            log.error("unzip error", e);
+        }
+        return new UnZipResult(itemList, metaDataItem);
+    }
+
+    public static class ZipItem {
 
         private String itemName;
 
@@ -64,7 +111,7 @@ public class ZipUtils {
         }
     }
 
-    public static class UnZipResult{
+    public static class UnZipResult {
 
         private List<ZipItem> zipItemList;
 
@@ -92,54 +139,6 @@ public class ZipUtils {
             this.metaDataItem = metaDataItem;
         }
     }
-
-    public static byte[] zip(List<ZipItem> source){
-        byte[] result = null;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(byteOut)){
-            for (ZipItem item : source) {
-                zipOut.putNextEntry(new ZipEntry(item.getItemName()));
-                zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
-            }
-            zipOut.flush();
-            zipOut.finish();
-            result = byteOut.toByteArray();
-        } catch (IOException e) {
-            log.error("an error occurred while compressing data.", e);
-        }
-        return result;
-    }
-
-    public static UnZipResult unzip(byte[] source) {
-
-        List<ZipItem> itemList = new ArrayList<>();
-        ZipItem metaDataItem = null;
-        try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
-            ZipEntry entry;
-            while ((entry = zipIn.getNextEntry()) != null) {
-                if(entry.isDirectory()){
-                    continue;
-                }
-                try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                    byte[] buffer = new byte[1024];
-                    int offset;
-                    while ((offset = zipIn.read(buffer)) != -1) {
-                        out.write(buffer, 0, offset);
-                    }
-                    if(".meta.yml".equals(entry.getName())){
-                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
-                    } else {
-                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
-                    }
-                } catch (IOException e) {
-                    log.error("unzip error", e);
-                }
-            }
-        } catch (IOException e) {
-            log.error("unzip error", e);
-        }
-        return new UnZipResult(itemList, metaDataItem);
-    }
-
 
 
 }

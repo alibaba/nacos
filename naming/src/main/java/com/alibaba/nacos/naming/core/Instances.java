@@ -77,14 +77,14 @@ public class Instances implements Record {
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isHealthy() + "_" + ip.isEnabled() + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
+                    + ip.isHealthy() + "_" + ip.isEnabled() + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
             sb.append(string);
             sb.append(",");
         }
 
         if (MESSAGE_DIGEST != null) {
             checksum =
-                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(StandardCharsets.UTF_8))).toString(16);
+                    new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(StandardCharsets.UTF_8))).toString(16);
         } else {
             checksum = RandomStringUtils.randomAscii(32);
         }

@@ -16,100 +16,193 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Member {
+public class Member {
 
-    String SITE_KEY = "site";
+    public static final String SITE_KEY = "site";
 
-    String AD_WEIGHT = "adweight";
+    public static final String AD_WEIGHT = "adweight";
 
-    String LAST_REF_TIME = "lastRefTime";
+    public static final String LAST_REF_TIME = "lastRefTime";
 
-    String WEIGHT = "weight";
+    public static final String WEIGHT = "weight";
 
-    String DISTRO_BEATS = "distroBeats";
+    public static final String DISTRO_BEATS = "distroBeats";
 
-    /**
-     * update node ip info
-     *
-     * @param ip server ip
-     */
-    void setIp(String ip);
+    private String ip;
 
-    /**
-     * update node port info;
-     *
-     * @param port server port
-     */
-    void setPort(int port);
+    private int port = -1;
 
-    /**
-     * update node state
-     *
-     * @param state {@link NodeState}
-     */
-    void setState(NodeState state);
+    private NodeState state;
 
-    /**
-     * get this node ip info
-     *
-     * @return ip info
-     */
-    String ip();
+    private Map<String, Object> extendInfo = new HashMap<>();
 
-    /**
-     * get this node port info
-     *
-     * @return port info
-     */
-    int port();
+    private String address = "";
 
-    /**
-     * return ip：port
-     *
-     * @return ip:port
-     */
-    String address();
+    public Member() {
+        extendInfo.put(SITE_KEY, "unknown");
+        extendInfo.put(AD_WEIGHT, "0");
+        extendInfo.put(LAST_REF_TIME, "0");
+        extendInfo.put(WEIGHT, "1");
+        extendInfo.put(DISTRO_BEATS, null);
+    }
 
-    /**
-     * get this node state info
-     *
-     * @return state info
-     */
-    NodeState state();
+    public static ServerNodeBuilder builder() {
+        return new ServerNodeBuilder();
+    }
 
-    /**
-     * get this node extend info
-     *
-     * @return all extend info
-     */
-    Map<String, Object> extendInfo();
+    public String getIp() {
+        return ip;
+    }
 
-    /**
-     * get extend data by key
-     *
-     * @param key extend info key
-     * @return get target extend info
-     */
-    Object extendVal(String key);
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
 
-    /**
-     * set extend data by key
-     *
-     * @param key extend info key
-     * @param value extend value
-     */
-    void setExtendVal(String key, Object value);
+    public int getPort() {
+        return port;
+    }
 
-    /**
-     * Verify node information
-     *
-     * @return Check result
-     */
-    boolean check();
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public NodeState getState() {
+        return state;
+    }
+
+    public void setState(NodeState state) {
+        this.state = state;
+    }
+
+    public Map<String, Object> getExtendInfo() {
+        return extendInfo;
+    }
+
+    public void setExtendInfo(Map<String, Object> extendInfo) {
+        this.extendInfo = extendInfo;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String ip() {
+        return ip;
+    }
+
+    public int port() {
+        return port;
+    }
+
+    public String address() {
+        if (StringUtils.isBlank(address)) {
+            address = ip + ":" + port;
+        }
+        return address;
+    }
+
+    public NodeState state() {
+        return state;
+    }
+
+    public Map<String, Object> extendInfo() {
+        return extendInfo;
+    }
+
+    public Object extendVal(String key) {
+        return extendInfo.get(key);
+    }
+
+    public void setExtendVal(String key, Object value) {
+        extendInfo.put(key, value);
+    }
+
+    public boolean check() {
+        return StringUtils.isNoneBlank(ip, address) && port != -1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Member that = (Member) o;
+        if (StringUtils.isAnyBlank(address, that.address)) {
+            return port == that.port &&
+                    Objects.equals(ip, that.ip);
+        }
+        return StringUtils.equals(address, that.address);
+    }
+
+    @Override
+    public String toString() {
+        return "Member{" +
+                "ip='" + ip + '\'' +
+                ", port=" + port +
+                ", state=" + state +
+                ", extendInfo=" + extendInfo +
+                ", address='" + address + '\'' +
+                '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ip, port);
+    }
+
+    public static final class ServerNodeBuilder {
+        private String ip;
+        private int port;
+        private NodeState state;
+        private Map<String, String> extendInfo;
+
+        private ServerNodeBuilder() {
+        }
+
+        public ServerNodeBuilder ip(String ip) {
+            this.ip = ip;
+            return this;
+        }
+
+        public ServerNodeBuilder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public ServerNodeBuilder state(NodeState state) {
+            this.state = state;
+            return this;
+        }
+
+        public ServerNodeBuilder extendInfo(Map<String, String> extendInfo) {
+            this.extendInfo = extendInfo;
+            return this;
+        }
+
+        public Member build() {
+            Member serverNode = new Member();
+            serverNode.extendInfo.putAll(this.extendInfo);
+            serverNode.state = this.state;
+            serverNode.ip = this.ip;
+            serverNode.port = this.port;
+            serverNode.address = this.ip + ":" + this.port;
+            return serverNode;
+        }
+    }
 
 }

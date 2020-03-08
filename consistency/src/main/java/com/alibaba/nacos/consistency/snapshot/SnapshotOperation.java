@@ -27,7 +27,7 @@ public interface SnapshotOperation {
     /**
      * do snapshot save operation
      *
-     * @param writer {@link Writer}
+     * @param writer      {@link Writer}
      * @param callFinally Callback {@link CallFinally#run(boolean, Throwable)} when the snapshot operation is complete
      */
     void onSnapshotSave(Writer writer, CallFinally callFinally);

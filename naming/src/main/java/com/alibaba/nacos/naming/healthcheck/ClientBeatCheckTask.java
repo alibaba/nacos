@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.distributed.DistroMapper;
+import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
@@ -93,8 +93,8 @@ public class ClientBeatCheckTask implements Runnable {
                         if (instance.isHealthy()) {
                             instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
-                                instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
-                                UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
+                                    instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
+                                    UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             getPushService().serviceChanged(service);
                             SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
@@ -132,14 +132,14 @@ public class ClientBeatCheckTask implements Runnable {
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp())
-                .appendParam("port", String.valueOf(instance.getPort()))
-                .appendParam("ephemeral", "true")
-                .appendParam("clusterName", instance.getClusterName())
-                .appendParam("serviceName", service.getName())
-                .appendParam("namespaceId", service.getNamespaceId());
+                    .appendParam("port", String.valueOf(instance.getPort()))
+                    .appendParam("ephemeral", "true")
+                    .appendParam("clusterName", instance.getClusterName())
+                    .appendParam("serviceName", service.getName())
+                    .appendParam("namespaceId", service.getNamespaceId());
 
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
 
             // delete instance asynchronously:
             HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
@@ -147,7 +147,7 @@ public class ClientBeatCheckTask implements Runnable {
                 public Object onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
-                            instance.toJSON(), response.getResponseBody(), response.getStatusCode());
+                                instance.toJSON(), response.getResponseBody(), response.getStatusCode());
                     }
                     return null;
                 }

@@ -23,12 +23,11 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.Instance;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A selector to implement a so called same-label-prior rule for service discovery.
@@ -57,6 +56,18 @@ import java.util.Set;
  */
 public class LabelSelector extends ExpressionSelector implements Selector {
 
+    private static final Set<String> SUPPORTED_INNER_CONNCETORS = new HashSet<>();
+    private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
+    private static final String CONSUMER_PREFIX = "CONSUMER.label.";
+    private static final String PROVIDER_PREFIX = "PROVIDER.label.";
+    private static final char CEQUAL = '=';
+    private static final char CAND = '&';
+
+    static {
+        SUPPORTED_INNER_CONNCETORS.add(String.valueOf(CEQUAL));
+        SUPPORTED_OUTER_CONNCETORS.add(String.valueOf(CAND));
+    }
+
     /**
      * The labels relevant to this the selector.
      *
@@ -64,21 +75,12 @@ public class LabelSelector extends ExpressionSelector implements Selector {
      */
     private Set<String> labels;
 
-    private static final Set<String> SUPPORTED_INNER_CONNCETORS = new HashSet<>();
+    public LabelSelector() {
+        setType(SelectorType.label.name());
+    }
 
-    private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
-
-    private static final String CONSUMER_PREFIX = "CONSUMER.label.";
-
-    private static final String PROVIDER_PREFIX = "PROVIDER.label.";
-
-    private static final char CEQUAL = '=';
-
-    private static final char CAND = '&';
-
-    static {
-        SUPPORTED_INNER_CONNCETORS.add(String.valueOf(CEQUAL));
-        SUPPORTED_OUTER_CONNCETORS.add(String.valueOf(CAND));
+    public static Set<String> parseExpression(String expression) throws NacosException {
+        return ExpressionInterpreter.parseExpression(expression);
     }
 
     public Set<String> getLabels() {
@@ -89,18 +91,9 @@ public class LabelSelector extends ExpressionSelector implements Selector {
         this.labels = labels;
     }
 
-    public LabelSelector() {
-        setType(SelectorType.label.name());
-    }
-
     private CmdbReader getCmdbReader() {
         return SpringContext.getAppContext().getBean(CmdbReader.class);
     }
-
-    public static Set<String> parseExpression(String expression) throws NacosException {
-        return ExpressionInterpreter.parseExpression(expression);
-    }
-
 
     @Override
     public List<Instance> select(String consumer, List<Instance> providers) {
@@ -119,7 +112,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
 
                 if (StringUtils.isNotBlank(consumerLabelValue) &&
                         !StringUtils.equals(consumerLabelValue,
-                            getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
+                                getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
                     break;
                 }
@@ -208,8 +201,8 @@ public class LabelSelector extends ExpressionSelector implements Selector {
                 char ch = chars[index];
                 if (characters.contains(ch)) {
                     terms.add(expression.substring(lastIndex, index));
-                    terms.add(expression.substring(index, index+1));
-                    index ++;
+                    terms.add(expression.substring(index, index + 1));
+                    index++;
                     lastIndex = index;
                 }
             }

@@ -145,17 +145,17 @@ public class MonitorInfo {
     @Override
     public String toString() {
         return "MonitorInfo{" +
-            "totalMemory=" + totalMemory +
-            ", freeMemory=" + freeMemory +
-            ", maxMemory=" + maxMemory +
-            ", cpuRatio=" + cpuRatio +
-            ", load=" + load +
-            ", ygc=" + ygc +
-            ", ygct=" + ygct +
-            ", fgc=" + fgc +
-            ", fgct=" + fgct +
-            ", gct=" + gct +
-            '}';
+                "totalMemory=" + totalMemory +
+                ", freeMemory=" + freeMemory +
+                ", maxMemory=" + maxMemory +
+                ", cpuRatio=" + cpuRatio +
+                ", load=" + load +
+                ", ygc=" + ygc +
+                ", ygct=" + ygct +
+                ", fgc=" + fgc +
+                ", fgct=" + fgct +
+                ", gct=" + gct +
+                '}';
     }
 }
 

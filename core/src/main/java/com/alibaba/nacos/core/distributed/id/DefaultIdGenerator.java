@@ -20,22 +20,20 @@ import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.ThreadUtils;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * // TODO 基于文件的美团Leaf实现
- *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 public class DefaultIdGenerator implements IdGenerator {
 
-    private DefaultIdStore idStore;
-
-    // tow buffer
-
     private static final double SWAP_CRITICAL_VALUE = 0.1D;
 
-    private volatile long[] bufferOne = new long[2];
-    private volatile long[] bufferTwo = new long[2];
+    // tow buffer
+    private DefaultIdStore idStore;
+    private volatile long[] bufferOne = new long[]{-1L, -1L};
+    private volatile long[] bufferTwo = new long[]{-1L, -1L};
 
     private long currentId;
     private boolean bufferIndex = true;
@@ -50,7 +48,13 @@ public class DefaultIdGenerator implements IdGenerator {
     @Override
     public void init() {
         idStore = SpringUtils.getBean(DefaultIdStore.class);
-        idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this);
+
+        if (idStore.isHasLeader()) {
+            idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this);
+        } else {
+            GlobalExecutor.executeByCommon(() -> idStore
+                    .acquireNewIdSequence(resource, Integer.MAX_VALUE, this));
+        }
     }
 
     @Override
@@ -95,6 +99,17 @@ public class DefaultIdGenerator implements IdGenerator {
         return currentId;
     }
 
+    @Override
+    public Map<Object, Object> info() {
+        Map<Object, Object> info = new HashMap<>();
+        info.put("currentId", currentId);
+        info.put("bufferOneStart", current()[0]);
+        info.put("bufferOneEnd", current()[1]);
+        info.put("bufferTwoStart", another()[0]);
+        info.put("bufferTwoEnd", another()[1]);
+        return info;
+    }
+
     private long[] current() {
         return bufferIndex ? bufferOne : bufferTwo;
     }
@@ -108,7 +123,7 @@ public class DefaultIdGenerator implements IdGenerator {
     }
 
     private boolean needToAcquire(long currentId, long[] bufferUse) {
-        return  (currentId * 1.0D - bufferUse[0] + 1) / (bufferUse[1] * 1.0D - bufferUse[0] + 1) > SWAP_CRITICAL_VALUE;
+        return (currentId * 1.0D - bufferUse[0] + 1) / (bufferUse[1] * 1.0D - bufferUse[0] + 1) > SWAP_CRITICAL_VALUE;
     }
 
     public void update(long[] newBuffer) {

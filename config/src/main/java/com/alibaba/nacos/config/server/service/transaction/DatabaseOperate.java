@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
-import org.springframework.jdbc.core.RowMapper;
-
 import java.util.List;
 import java.util.Map;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -39,10 +38,10 @@ public interface DatabaseOperate {
     /**
      * Data query transaction
      *
-     * @param sql sqk text
+     * @param sql  sqk text
      * @param args sql parameters
-     * @param cls target type
-     * @param <R> return type
+     * @param cls  target type
+     * @param <R>  return type
      * @return query result
      */
     <R> R queryOne(String sql, Object[] args, Class<R> cls);
@@ -50,10 +49,10 @@ public interface DatabaseOperate {
     /**
      * Data query transaction
      *
-     * @param sql sqk text
-     * @param args sql parameters
+     * @param sql    sqk text
+     * @param args   sql parameters
      * @param mapper Database query result converter
-     * @param <R> return type
+     * @param <R>    return type
      * @return query result
      */
     <R> R queryOne(String sql, Object[] args, RowMapper<R> mapper);
@@ -61,10 +60,10 @@ public interface DatabaseOperate {
     /**
      * Data query transaction
      *
-     * @param sql sqk text
-     * @param args sql parameters
+     * @param sql    sqk text
+     * @param args   sql parameters
      * @param mapper Database query result converter
-     * @param <R> return type
+     * @param <R>    return type
      * @return query result
      */
     <R> List<R> queryMany(String sql, Object[] args, RowMapper<R> mapper);
@@ -72,10 +71,10 @@ public interface DatabaseOperate {
     /**
      * Data query transaction
      *
-     * @param sql sqk text
-     * @param args sql parameters
+     * @param sql    sqk text
+     * @param args   sql parameters
      * @param rClass target type
-     * @param <R> return type
+     * @param <R>    return type
      * @return query result
      */
     <R> List<R> queryMany(String sql, Object[] args, Class<R> rClass);
@@ -83,7 +82,7 @@ public interface DatabaseOperate {
     /**
      * Data query transaction
      *
-     * @param sql sqk text
+     * @param sql  sqk text
      * @param args sql parameters
      * @return query result
      */

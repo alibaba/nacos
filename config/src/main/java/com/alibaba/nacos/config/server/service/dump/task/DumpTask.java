@@ -23,6 +23,11 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
  */
 public class DumpTask extends AbstractTask {
 
+    final String groupKey;
+    final long lastModified;
+    final String handleIp;
+    final boolean isBeta;
+    final String tag;
     public DumpTask(String groupKey, long lastModified, String handleIp) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
@@ -34,7 +39,6 @@ public class DumpTask extends AbstractTask {
          */
         setTaskInterval(1000L);
     }
-
     public DumpTask(String groupKey, long lastModified, String handleIp, boolean isBeta) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
@@ -46,7 +50,6 @@ public class DumpTask extends AbstractTask {
          */
         setTaskInterval(1000L);
     }
-
     public DumpTask(String groupKey, String tag, long lastModified, String handleIp, boolean isBeta) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
@@ -62,12 +65,6 @@ public class DumpTask extends AbstractTask {
     @Override
     public void merge(AbstractTask task) {
     }
-
-    final String groupKey;
-    final long lastModified;
-    final String handleIp;
-    final boolean isBeta;
-    final String tag;
 
     public String getGroupKey() {
         return groupKey;
