@@ -62,6 +62,8 @@ public class Constants {
 
     public static final String CONFIG_VERSION = "Config-Version";
 
+    public static final String CONFIG_TYPE = "Config-Type";
+
     public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
     public static final String SPACING_INTERVAL = "client-spacing-interval";
@@ -69,6 +71,16 @@ public class Constants {
     public static final String BASE_PATH = "/v1/cs";
 
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
+
+    public static final String TOKEN = "token";
+
+    public static final String ACCESS_TOKEN = "accessToken";
+
+    public static final String TOKEN_TTL = "tokenTtl";
+
+    public static final String GLOBAL_ADMIN = "globalAdmin";
+
+    public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
 
     /**
      * second
@@ -168,5 +180,7 @@ public class Constants {
     public static final String DEFAULT_INSTANCE_ID_GENERATOR = "simple";
 
     public static final String SNOWFLAKE_INSTANCE_ID_GENERATOR = "snowflake";
+
+    public static final String HTTP_PREFIX = "http";
 
 }

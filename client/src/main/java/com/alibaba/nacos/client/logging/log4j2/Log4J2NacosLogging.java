@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
-import com.alibaba.nacos.common.util.ResourceUtils;
+import com.alibaba.nacos.common.utils.ResourceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;

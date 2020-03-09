@@ -1,21 +1,15 @@
 package com.alibaba.nacos.test.naming;
 
-import java.net.URL;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
-import com.alibaba.nacos.naming.NamingApp;
-
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,14 +18,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
@@ -39,7 +35,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MultiTenant_InstanceAPI_ITCase {
 
@@ -417,6 +413,58 @@ public class MultiTenant_InstanceAPI_ITCase {
                 .done(),
             String.class,
             HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName) //获取naming中的实例
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("groupName", TEST_GROUP_2)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("8.0", json.getJSONArray("hosts").getJSONObject(0).getString("weight"));
+    }
+
+    /**
+     * @TCDescription : 多租户, 多group下，注册IP，patchInstance接口, 部分更新实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_patchInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", 80);
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", "80")
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("weight", "8.0")
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", "80")
+                .appendParam("namespaceId", "namespace-2")
+                .done(),
+            String.class,
+            HttpMethod.PATCH);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         response = request("/nacos/v1/ns/instance/list",

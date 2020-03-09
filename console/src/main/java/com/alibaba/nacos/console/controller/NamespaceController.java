@@ -20,6 +20,9 @@ import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * namespace service
@@ -41,6 +45,10 @@ public class NamespaceController {
 
     @Autowired
     private PersistService persistService;
+
+    private Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
+
+    private static final int NAMESPACE_ID_MAX_LENGTH = 128;
 
     /**
      * Get namespace list
@@ -101,14 +109,44 @@ public class NamespaceController {
      * @return whether create ok
      */
     @PostMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean createNamespace(HttpServletRequest request, HttpServletResponse response,
+                                   @RequestParam("customNamespaceId") String namespaceId,
                                    @RequestParam("namespaceName") String namespaceName,
                                    @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
-        String namespaceId = UUID.randomUUID().toString();
+        if(StringUtils.isBlank(namespaceId)){
+            namespaceId = UUID.randomUUID().toString();
+        } else {
+            namespaceId = namespaceId.trim();
+            if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
+                return false;
+            }
+            if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
+                return false;
+            }
+            if(persistService.tenantInfoCountByTenantId(namespaceId) > 0){
+                return false;
+            }
+        }
         persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
             System.currentTimeMillis());
         return true;
+    }
+
+    /**
+     * @author klw(213539@qq.com)
+     * @Description: check namespaceId exist
+     * @Date 2019/12/10 21:41
+     * @param: namespaceId
+     * @return java.lang.Boolean
+     */
+    @GetMapping(params = "checkNamespaceIdExist=true")
+    public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
+        if(StringUtils.isBlank(namespaceId)){
+            return false;
+        }
+        return (persistService.tenantInfoCountByTenantId(namespaceId) > 0);
     }
 
     /**
@@ -120,6 +158,7 @@ public class NamespaceController {
      * @return whether edit ok
      */
     @PutMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean editNamespace(@RequestParam("namespace") String namespace,
                                  @RequestParam("namespaceShowName") String namespaceShowName,
                                  @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
@@ -137,6 +176,7 @@ public class NamespaceController {
      * @return whether del ok
      */
     @DeleteMapping
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("namespaceId") String namespaceId) {
         persistService.removeTenantInfoAtomic("1", namespaceId);

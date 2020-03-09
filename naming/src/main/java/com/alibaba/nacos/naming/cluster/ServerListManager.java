@@ -431,10 +431,10 @@ public class ServerListManager {
 
         if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
             // for every change disable healthy check for some while
-            if (switchDomain.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
-                        "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
-                    healthyServers, newHealthyList);
+            Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}",
+                healthyServers, newHealthyList);
+            if (switchDomain.isHealthCheckEnabled() && switchDomain.isAutoChangeHealthCheckEnabled()) {
+                Loggers.SRV_LOG.info("[NACOS-DISTRO] disable health check for {} ms from now on.", STABLE_PERIOD);
 
                 switchDomain.setHealthCheckEnabled(false);
                 autoDisabledHealthCheck = true;
@@ -446,5 +446,4 @@ public class ServerListManager {
             notifyListeners();
         }
     }
-
 }

@@ -18,11 +18,15 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -50,10 +54,7 @@ public class DistroFilter implements Filter {
     private DistroMapper distroMapper;
 
     @Autowired
-    private SwitchDomain switchDomain;
-
-    @Autowired
-    private FilterBase filterBase;
+    private ControllerMethodsCache controllerMethodsCache;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -78,7 +79,11 @@ public class DistroFilter implements Filter {
             if (StringUtils.isBlank(serviceName)) {
                 serviceName = req.getParameter("dom");
             }
-            Method method = filterBase.getMethod(req.getMethod(), path);
+
+            if (StringUtils.isNotBlank(serviceName)) {
+                serviceName = serviceName.trim();
+            }
+            Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
 
             if (method == null) {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
@@ -115,10 +120,13 @@ public class DistroFilter implements Filter {
                     headerList.add(headerName);
                     headerList.add(req.getHeader(headerName));
                 }
+
+                String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
+
                 HttpClient.HttpResult result =
                     HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
                         StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
-                        , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
+                        , body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
 
                 try {
                     resp.setCharacterEncoding("UTF-8");
@@ -134,14 +142,15 @@ public class DistroFilter implements Filter {
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, resp);
         } catch (AccessControlException e) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + UtilsAndCommons.getAllExceptionMsg(e));
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
             return;
         } catch (NoSuchMethodException e) {
-            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api: " + e.getMessage());
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
+                "no such api:" + req.getMethod() + ":" + req.getRequestURI());
             return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
+                "Server failed," + ExceptionUtil.getAllExceptionMsg(e));
             return;
         }
 

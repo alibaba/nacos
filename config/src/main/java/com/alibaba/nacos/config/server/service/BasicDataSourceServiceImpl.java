@@ -234,7 +234,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             if (result == null) {
                 return false;
             } else {
-                return result.intValue() == 0 ? true : false;
+                return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);

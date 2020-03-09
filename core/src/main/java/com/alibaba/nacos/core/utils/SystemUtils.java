@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
 

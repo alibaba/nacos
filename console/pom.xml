@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.1.4</version>
+        <version>1.2.0</version>
     </parent>
     <artifactId>nacos-console</artifactId>
     <!--<packaging>war</packaging>-->

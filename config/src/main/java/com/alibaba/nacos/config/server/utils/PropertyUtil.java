@@ -97,7 +97,7 @@ public class PropertyUtil {
             logger.info("notifyConnectTimeout:{}", notifyConnectTimeout);
             setNotifySocketTimeout(Integer.parseInt(env.getProperty("notifySocketTimeout", "200")));
             logger.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.valueOf(env.getProperty("isHealthCheck", "true")));
+            setHealthCheck(Boolean.parseBoolean(env.getProperty("isHealthCheck", "true")));
             logger.info("isHealthCheck:{}", isHealthCheck);
             setMaxHealthCheckFailCount(Integer.parseInt(env.getProperty("maxHealthCheckFailCount", "12")));
             logger.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
@@ -138,7 +138,7 @@ public class PropertyUtil {
     }
 
     private boolean getBoolean(String key, boolean defaultValue) {
-        return Boolean.valueOf(getString(key, String.valueOf(defaultValue)));
+        return Boolean.parseBoolean(getString(key, String.valueOf(defaultValue)));
     }
 
     private int getInt(String key, int defaultValue) {

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -25,7 +26,7 @@ import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.*;
-import org.apache.commons.io.IOUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,7 +179,7 @@ public class DumpService {
                 File heartbeatFile = DiskUtil.heartBeatFile();
                 if (heartbeatFile.exists()) {
                     fis = new FileInputStream(heartbeatFile);
-                    String heartheatTempLast = IOUtils.toString(fis, Constants.ENCODE);
+                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
                     heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
                     if (TimeUtils.getCurrentTime().getTime()
                         - heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {

@@ -22,10 +22,7 @@ import { changeLanguage } from '@/reducers/locale';
 import './index.scss';
 
 @withRouter
-@connect(
-  state => ({ ...state.locale }),
-  { changeLanguage }
-)
+@connect(state => ({ ...state.locale }), { changeLanguage })
 @ConfigProvider.config
 class Header extends React.Component {
   static displayName = 'Header';
@@ -56,10 +53,15 @@ class Header extends React.Component {
   getUsername = () => {
     const token = window.localStorage.getItem('token');
     if (token) {
-      const base64Url = token.split('.')[1];
+      const [, base64Url = ''] = token.split('.');
       const base64 = base64Url.replace('-', '+').replace('_', '/');
-      const parsedToken = JSON.parse(window.atob(base64));
-      return parsedToken.sub;
+      try {
+        const parsedToken = JSON.parse(window.atob(base64));
+        return parsedToken.sub;
+      } catch (e) {
+        delete localStorage.token;
+        location.reload();
+      }
     }
     return '';
   };

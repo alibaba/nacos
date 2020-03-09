@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +34,7 @@ import java.util.Map;
 @RequestMapping("/v1/console/server")
 public class ServerStateController {
 
-    @GetMapping("state")
+    @GetMapping("/state")
     public ResponseEntity serverState() {
         Map<String,String> serverState = new HashMap<>(3);
         serverState.put("standalone_mode",SystemUtils.STANDALONE_MODE ?

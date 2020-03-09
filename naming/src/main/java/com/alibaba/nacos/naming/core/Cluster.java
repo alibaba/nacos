@@ -22,8 +22,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -181,6 +179,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
+    }
+
+    public boolean isEmpty() {
+        return ephemeralInstances.isEmpty() && persistentInstances.isEmpty();
     }
 
     public void updateIPs(List<Instance> ips, boolean ephemeral) {

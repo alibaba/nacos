@@ -17,28 +17,24 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.util.UuidUtils;
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Http tool
  *
  * @author Nacos
- *
  */
 public class HttpSimpleClient {
 
@@ -55,10 +51,10 @@ public class HttpSimpleClient {
         HttpURLConnection conn = null;
 
         try {
-            conn = (HttpURLConnection)new URL(url).openConnection();
+            conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);
-            conn.setReadTimeout((int)readTimeoutMs);
+            conn.setReadTimeout((int) readTimeoutMs);
             List<String> newHeaders = getHeaders(url, headers, paramValues);
             setHeaders(conn, newHeaders, encoding);
 
@@ -68,15 +64,13 @@ public class HttpSimpleClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -111,10 +105,10 @@ public class HttpSimpleClient {
         }
         HttpURLConnection conn = null;
         try {
-            conn = (HttpURLConnection)new URL(url).openConnection();
+            conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 3000 ? ParamUtil.getConnectTimeout() : 3000);
-            conn.setReadTimeout((int)readTimeoutMs);
+            conn.setReadTimeout((int) readTimeoutMs);
             conn.setDoOutput(true);
             conn.setDoInput(true);
             List<String> newHeaders = getHeaders(url, headers, paramValues);
@@ -126,15 +120,13 @@ public class HttpSimpleClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (null != conn) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -167,10 +159,10 @@ public class HttpSimpleClient {
         HttpURLConnection conn = null;
 
         try {
-            conn = (HttpURLConnection)new URL(url).openConnection();
+            conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("DELETE");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);
-            conn.setReadTimeout((int)readTimeoutMs);
+            conn.setReadTimeout((int) readTimeoutMs);
             List<String> newHeaders = getHeaders(url, headers, paramValues);
             setHeaders(conn, newHeaders, encoding);
 
@@ -180,15 +172,13 @@ public class HttpSimpleClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
