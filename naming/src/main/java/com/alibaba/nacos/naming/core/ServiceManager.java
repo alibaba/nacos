@@ -813,7 +813,11 @@ public class ServiceManager implements RecordListener<Service> {
 
         @Override
         public void run() {
+
+            // Parallel flow opening threshold
+
             int parallelSize = 100;
+
             serviceMap.forEach((namespace, stringServiceMap) -> {
                 Stream<Map.Entry<String, Service>> stream = null;
                 if (stringServiceMap.size() > parallelSize) {
