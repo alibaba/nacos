@@ -16,6 +16,8 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import org.slf4j.Logger;
 
@@ -36,7 +38,7 @@ public class ParamUtil {
     public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
 
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
-    private static String defaultContextPath = "nacos";
+    private static String defaultContextPath;
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
     private static String appName;
@@ -48,6 +50,8 @@ public class ParamUtil {
     static {
         // 客户端身份信息
         appKey = System.getProperty("nacos.client.appKey", "");
+
+        defaultContextPath = System.getProperty("nacos.client.contextPath", "nacos");
 
         appName = AppNameUtils.getAppName();
 
@@ -150,6 +154,36 @@ public class ParamUtil {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
 
+    public static String parseNamespace(Properties properties) {
+        String namespaceTmp = null;
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    return TenantUtil.getUserTenantForAcm();
+                }
+            });
+
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    return org.apache.commons.lang3.StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
+                }
+            });
+        }
+
+        if (org.apache.commons.lang3.StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
+        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
+    }
 
     public static String parsingEndpointRule(String endpointUrl) {
         // 配置文件中输入的话，以 ENV 中的优先，

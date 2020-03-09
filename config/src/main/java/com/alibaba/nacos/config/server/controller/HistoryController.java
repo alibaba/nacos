@@ -53,9 +53,9 @@ public class HistoryController {
                                                      @RequestParam(value = "pageSize", required = false)
                                                          Integer pageSize, //
                                                      ModelMap modelMap) {
-        pageNo = null == pageNo ? Integer.valueOf(1) : pageNo;
-        pageSize = null == pageSize ? Integer.valueOf(100) : pageSize;
-        pageSize = pageSize > 500 ? Integer.valueOf(500) : pageSize;
+        pageNo = null == pageNo ? 1 : pageNo;
+        pageSize = null == pageSize ? 100 : pageSize;
+        pageSize = Math.min(500,pageSize);
         // configInfoBase没有appName字段
         return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }

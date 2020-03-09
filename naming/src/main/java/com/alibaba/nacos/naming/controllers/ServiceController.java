@@ -19,20 +19,23 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.*;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
-import org.apache.commons.io.IOUtils;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +67,7 @@ public class ServiceController {
     private SubscribeManager subscribeManager;
 
     @PostMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                          @RequestParam String serviceName,
                          @RequestParam(required = false) float protectThreshold,
@@ -98,6 +102,7 @@ public class ServiceController {
     }
 
     @DeleteMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                          @RequestParam String serviceName) throws Exception {
 
@@ -107,6 +112,7 @@ public class ServiceController {
     }
 
     @GetMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                              @RequestParam String serviceName) throws NacosException {
 
@@ -138,6 +144,7 @@ public class ServiceController {
     }
 
     @GetMapping("/list")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
@@ -209,6 +216,7 @@ public class ServiceController {
     }
 
     @PutMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -238,6 +246,7 @@ public class ServiceController {
     }
 
     @RequestMapping("/names")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
                                     @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
                                     @RequestParam(required = false) boolean responsibleOnly) {
@@ -272,17 +281,17 @@ public class ServiceController {
     @PostMapping("/status")
     public String serviceStatus(HttpServletRequest request) throws Exception {
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
         //format: service1@@checksum@@@service2@@checksum
         String statuses = json.getString("statuses");
-        String serverIP = json.getString("clientIP");
+        String serverIp = json.getString("clientIP");
 
-        if (!serverListManager.contains(serverIP)) {
+        if (!serverListManager.contains(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "ip: " + serverIP + " is not in serverlist");
+                "ip: " + serverIp + " is not in serverlist");
         }
 
         try {
@@ -309,9 +318,9 @@ public class ServiceController {
                 if (!checksum.equals(service.getChecksum())) {
                     if (Loggers.SRV_LOG.isDebugEnabled()) {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
-                            serviceName, serverIP, checksum, service.getChecksum());
+                            serviceName, serverIp, checksum, service.getChecksum());
                     }
-                    serviceManager.addUpdatedService2Queue(checksums.namespaceId, serviceName, serverIP, checksum);
+                    serviceManager.addUpdatedService2Queue(checksums.namespaceId, serviceName, serverIp, checksum);
                 }
             }
         } catch (Exception e) {
@@ -350,6 +359,7 @@ public class ServiceController {
      * @return
      */
     @GetMapping("/subscribers")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject subscribers(HttpServletRequest request) {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
@@ -358,7 +368,7 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        boolean aggregation = Boolean.valueOf(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
+        boolean aggregation = Boolean.parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
 
         JSONObject result = new JSONObject();
 

@@ -16,6 +16,7 @@ import PropTypes from 'prop-types';
 import { Button, Checkbox, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 
 import './index.scss';
 
@@ -91,13 +92,9 @@ class ConfigSync extends React.Component {
     const { locale = {} } = this.props;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${
-      this.dataId
-    }/group/${this.group}/tenant/${this.tenant}?id=`;
+    let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
     if (this.tenant === 'global' || !this.tenant) {
-      url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${
-        this.group
-      }?id=`;
+      url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
     }
     request({
       url,
@@ -168,9 +165,7 @@ class ConfigSync extends React.Component {
     request({
       type: 'put',
       contentType: 'application/json',
-      url: `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${
-        payload.group
-      }?id=`,
+      url: `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}?id=`,
       data: JSON.stringify(payload),
       success(res) {
         const _payload = {};
@@ -193,7 +188,7 @@ class ConfigSync extends React.Component {
     const dataId = this.field.getValue('dataId');
     const gruop = this.field.getValue('group');
     this.props.history.push(
-      `/diamond-ops/static/pages/config-sync/index.html?serverId=center&dataId=${dataId}&group=${gruop}`
+      generateUrl('/diamond-ops/static/pages/config-sync/index.html', { dataId, gruop })
     );
   }
 
@@ -209,9 +204,8 @@ class ConfigSync extends React.Component {
   }
 
   goResult() {
-    this.props.history.push(
-      `/consistencyEfficacy?serverId=${this.serverId}&dataId=${this.dataId}&group=${this.group}`
-    );
+    const { serverId, dataId, group } = this;
+    this.props.history.push(generateUrl('/consistencyEfficacy', { serverId, dataId, group }));
   }
 
   openLoading() {

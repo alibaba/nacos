@@ -38,7 +38,7 @@ public class PropertyUtil {
         InputStream inputStream = null;
         try {
             String baseDir = System.getProperty("nacos.home");
-            if (!StringUtils.isBlank(baseDir)) {
+            if (StringUtils.isNotBlank(baseDir)) {
                 inputStream = new FileInputStream(baseDir + "/conf/application.properties");
             } else {
                 inputStream = PropertyUtil.class

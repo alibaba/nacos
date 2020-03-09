@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
@@ -28,23 +29,16 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.TenantUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -53,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 
 /**
  * Longpolling
@@ -190,8 +185,8 @@ public class ClientWorker {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    String content = getServerConfig(dataId, group, tenant, 3000L);
-                    cache.setContent(content);
+                    String[] ct = getServerConfig(dataId, group, tenant, 3000L);
+                    cache.setContent(ct[0]);
                 }
             }
 
@@ -217,8 +212,9 @@ public class ClientWorker {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
-    public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
+    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
         throws NacosException {
+        String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -227,9 +223,9 @@ public class ClientWorker {
         try {
             List<String> params = null;
             if (StringUtils.isBlank(tenant)) {
-                params = Arrays.asList("dataId", dataId, "group", group);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group));
             } else {
-                params = Arrays.asList("dataId", dataId, "group", group, "tenant", tenant);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group, "tenant", tenant));
             }
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
@@ -243,10 +239,16 @@ public class ClientWorker {
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);
-                return result.content;
+                ct[0] = result.content;
+                if (result.headers.containsKey(CONFIG_TYPE)) {
+                    ct[1] = result.headers.get(CONFIG_TYPE).get(0);
+                } else {
+                    ct[1] = ConfigType.TEXT.getType();
+                }
+                return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return null;
+                return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
                     "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
@@ -357,7 +359,10 @@ public class ClientWorker {
      */
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
-        List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
+
+        List<String> params = new ArrayList<String>(2);
+        params.add(Constants.PROBE_MODIFY_REQUEST);
+        params.add(probeUpdateString);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -374,8 +379,12 @@ public class ClientWorker {
         }
 
         try {
+            // In order to prevent the server from handling the delay of the client's long task,
+            // increase the client's read timeout to avoid this problem.
+
+            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), timeout);
+                agent.getEncode(), readTimeoutMs);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
@@ -510,6 +519,7 @@ public class ClientWorker {
 
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
+                LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
 
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);
@@ -520,12 +530,15 @@ public class ClientWorker {
                         tenant = key[2];
                     }
                     try {
-                        String content = getServerConfig(dataId, group, tenant, 3000L);
+                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(content);
-                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
+                        cache.setContent(ct[0]);
+                        if (null != ct[1]) {
+                            cache.setType(ct[1]);
+                        }
+                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
                             agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(content));
+                            ContentUtils.truncateContent(ct[0]), ct[1]);
                     } catch (NacosException ioe) {
                         String message = String.format(
                             "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",

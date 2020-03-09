@@ -25,6 +25,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -147,9 +148,10 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     }
 
     private void logFilePath() {
-        LOGGER.info("Nacos Log files: {}/logs/", NACOS_HOME);
-        LOGGER.info("Nacos Conf files: {}/conf/", NACOS_HOME);
-        LOGGER.info("Nacos Data files: {}/data/", NACOS_HOME);
+        String[] dirNames = new String[]{"logs", "conf", "data"};
+        for (String dirName: dirNames) {
+            LOGGER.info("Nacos {} files: {}{}{}{}", dirName,  NACOS_HOME, File.separatorChar, dirName, File.separatorChar);
+        }
     }
 
     private void logStarting() {

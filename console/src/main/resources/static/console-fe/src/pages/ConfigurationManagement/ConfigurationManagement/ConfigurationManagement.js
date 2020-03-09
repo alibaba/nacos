@@ -39,6 +39,7 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
+import axios from 'axios';
 
 import './index.scss';
 import { LANGUAGE_KEY } from '../../../constants';
@@ -104,6 +105,7 @@ class ConfigurationManagement extends React.Component {
         onChange: this.configDataTableOnChange.bind(this),
         selectedRowKeys: [],
       },
+      isPageEnter: false,
     };
     const obj = {
       dataId: this.dataId || '',
@@ -131,7 +133,8 @@ class ConfigurationManagement extends React.Component {
               <div>
                 <div style={{ fontSize: '15px', lineHeight: '22px' }}>
                   {locale.ad}
-                  <a href={'https://survey.aliyun.com/survey/k0BjJ2ARC'} target={'_blank'}>
+                  {/* eslint-disable */}
+                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC" target="_blank">
                     {locale.questionnaire2}
                   </a>
                 </div>
@@ -199,6 +202,12 @@ class ConfigurationManagement extends React.Component {
   keyDownSearch(e) {
     const theEvent = e || window.event;
     const code = theEvent.keyCode || theEvent.which || theEvent.charCode;
+    if (this.state.isPageEnter) {
+      this.setState({
+        isPageEnter: false,
+      });
+      return false;
+    }
     if (code === 13) {
       this.getData();
       return false;
@@ -277,9 +286,6 @@ class ConfigurationManagement extends React.Component {
       }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
         this.state.pageSize
       }`,
-      beforeSend() {
-        self.openLoading();
-      },
       success(data) {
         if (data != null) {
           self.setState({
@@ -304,9 +310,6 @@ class ConfigurationManagement extends React.Component {
           total: 0,
           currentPage: 0,
         });
-      },
-      complete() {
-        self.closeLoading();
       },
     });
   }
@@ -424,26 +427,18 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  changePage(value) {
+  changePage(value, e) {
     this.setState(
       {
+        isPageEnter: e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
-      () => {
-        this.getData(value, false);
-      }
+      () => this.getData(value, false)
     );
   }
 
   handlePageSizeChange(pageSize) {
-    this.setState(
-      {
-        pageSize,
-      },
-      () => {
-        this.changePage(1);
-      }
-    );
+    this.setState({ pageSize }, () => this.changePage(1));
   }
 
   onInputUpdate() {}
@@ -680,29 +675,51 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  openUri(url, params) {
+    window.open(
+      [
+        url,
+        Object.keys(params)
+          .map(key => `${key}=${params[key]}`)
+          .join('&'),
+      ].join('?')
+    );
+  }
+
   exportData() {
-    let url =
-      `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams('namespace')}&appName=${
-        this.appName
-      }&ids=&dataId=` + this.dataId;
-    window.location.href = url;
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
   }
 
   exportSelectedData() {
+    const ids = [];
     const { locale = {} } = this.props;
-    if (configsTableSelected.size === 0) {
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
         content: locale.exportSelectedAlertContent,
       });
-    } else {
-      let idsStr = '';
-      configsTableSelected.forEach((value, key, map) => {
-        idsStr = `${idsStr + key},`;
-      });
-      let url = `v1/cs/configs?export=true&group=&tenant=&appName=&ids=${idsStr}`;
-      window.location.href = url;
+      return;
     }
+    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    this.openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: '',
+      group: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+    });
   }
 
   multipleSelectionDeletion() {
@@ -733,11 +750,9 @@ class ConfigurationManagement extends React.Component {
           </div>
         ),
         onOk: () => {
-          let idsStr = '';
-          configsTableSelected.forEach((value, key, map) => {
-            idsStr = `${idsStr + key},`;
-          });
-          const url = `v1/cs/configs?delType=ids&ids=${idsStr}`;
+          const url = `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
+            ','
+          )}`;
           request({
             url,
             type: 'delete',
@@ -777,19 +792,54 @@ class ConfigurationManagement extends React.Component {
         }
         let namespaces = data.data;
         let namespaceSelectData = [];
-        namespaces.forEach(item => {
-          if (self.state.nownamespace_id !== item.namespace) {
-            let dataItem = {};
-            if (item.namespaceShowName === 'public') {
-              dataItem.label = 'public | public';
-              dataItem.value = 'public';
-            } else {
-              dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
-              dataItem.value = item.namespace;
-            }
-            namespaceSelectData.push(dataItem);
+        let namespaceSelecItemRender = item => {
+          if (item.isCurrent) {
+            return <span style={{ color: '#00AA00', 'font-weight': 'bold' }}>{item.label}</span>;
+          } else {
+            return <span>{item.label}</span>;
           }
+        };
+        namespaces.forEach(item => {
+          let dataItem = {};
+          dataItem.isCurrent = false;
+          if (self.state.nownamespace_id === item.namespace) {
+            dataItem.isCurrent = true;
+          }
+          if (item.namespaceShowName === 'public') {
+            dataItem.label = 'public | public';
+            dataItem.value = 'public';
+          } else {
+            dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
+            dataItem.value = item.namespace;
+          }
+          namespaceSelectData.push(dataItem);
         });
+
+        let editableTableData = [];
+        let configsTableSelectedDeepCopyed = new Map();
+        configsTableSelected.forEach((value, key, map) => {
+          let dataItem = {};
+          dataItem.id = key;
+          dataItem.dataId = value.dataId;
+          dataItem.group = value.group;
+          editableTableData.push(dataItem);
+          configsTableSelectedDeepCopyed.set(key, JSON.parse(JSON.stringify(value)));
+        });
+        let editableTableOnBlur = (record, type, e) => {
+          if (type === 1) {
+            configsTableSelectedDeepCopyed.get(record.id).dataId = e.target.value;
+          } else {
+            configsTableSelectedDeepCopyed.get(record.id).group = e.target.value;
+          }
+        };
+
+        let renderEditableTableCellDataId = (value, index, record) => (
+          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 1)} />
+        );
+        let renderEditableTableCellGroup = (value, index, record) => (
+          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 2)} />
+        );
+
         const cloneConfirm = Dialog.confirm({
           title: locale.cloningConfiguration,
           footer: false,
@@ -816,6 +866,7 @@ class ConfigurationManagement extends React.Component {
                   showSearch
                   hasClear={false}
                   mode="single"
+                  itemRender={namespaceSelecItemRender}
                   dataSource={namespaceSelectData}
                   onChange={(value, actionType, item) => {
                     if (value) {
@@ -860,7 +911,7 @@ class ConfigurationManagement extends React.Component {
                   }}
                 />
               </div>
-              <div>
+              <div style={{ marginBottom: 10 }}>
                 <Button
                   type={'primary'}
                   style={{ marginRight: 10 }}
@@ -872,13 +923,21 @@ class ConfigurationManagement extends React.Component {
                       document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
                     }
                     let idsStr = '';
-                    configsTableSelected.forEach((value, key, map) => {
-                      idsStr = `${idsStr + key},`;
+                    let clonePostData = [];
+                    configsTableSelectedDeepCopyed.forEach((value, key, map) => {
+                      let postDataItem = {};
+                      postDataItem.cfgId = key;
+                      postDataItem.dataId = value.dataId;
+                      postDataItem.group = value.group;
+                      clonePostData.push(postDataItem);
                     });
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&ids=${idsStr}`,
+                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      method: 'post',
+                      data: JSON.stringify(clonePostData),
+                      contentType: 'application/json',
                       beforeSend() {
                         self.openLoading();
                       },
@@ -901,6 +960,25 @@ class ConfigurationManagement extends React.Component {
                 >
                   {locale.startCloning}
                 </Button>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: '#00AA00', 'font-weight': 'bold' }}>
+                  {locale.cloneEditableTitle}
+                </span>
+              </div>
+              <div>
+                <Table dataSource={editableTableData}>
+                  <Table.Column
+                    title="Data Id"
+                    dataIndex="dataId"
+                    cell={renderEditableTableCellDataId}
+                  />
+                  <Table.Column
+                    title="Group"
+                    dataIndex="group"
+                    cell={renderEditableTableCellGroup}
+                  />
+                </Table>
               </div>
             </div>
           ),
@@ -1083,15 +1161,15 @@ class ConfigurationManagement extends React.Component {
     rowSelection.selectedRowKeys = ids;
     this.setState({ rowSelection });
     configsTableSelected.clear();
-    ids.forEach((id, i) => {
-      configsTableSelected.set(id, id);
+    records.forEach((record, i) => {
+      configsTableSelected.set(record.id, record);
     });
   }
 
   render() {
     const { locale = {} } = this.props;
     return (
-      <div>
+      <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
         <Loading
           shape={'flower'}
@@ -1103,7 +1181,7 @@ class ConfigurationManagement extends React.Component {
           <div className={this.state.hasdash ? 'dash-page-container' : ''}>
             <div
               className={this.state.hasdash ? 'dash-left-container' : ''}
-              style={{ position: 'relative', padding: 10 }}
+              style={{ position: 'relative' }}
             >
               <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>
                 <RegionGroup
@@ -1355,7 +1433,7 @@ class ConfigurationManagement extends React.Component {
             )}
           </div>
         </Loading>
-      </div>
+      </>
     );
   }
 }

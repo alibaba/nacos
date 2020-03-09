@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.address;
 
+import com.alibaba.nacos.common.utils.IoUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -172,9 +174,7 @@ public class SimpleHttpTestUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (urlCon != null) {
-                urlCon.disconnect();
-            }
+            IoUtils.closeQuietly(urlCon);
         }
         return responseContent;
     }

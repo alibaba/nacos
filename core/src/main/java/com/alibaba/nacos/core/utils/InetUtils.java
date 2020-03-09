@@ -51,7 +51,7 @@ public class InetUtils {
     private static List<String> ignoredInterfaces = new ArrayList<String>();
 
     static {
-        useOnlySiteLocalInterface = Boolean.valueOf(PropertyUtil.getProperty(USE_ONLY_SITE_INTERFACES));
+        useOnlySiteLocalInterface = Boolean.parseBoolean(PropertyUtil.getProperty(USE_ONLY_SITE_INTERFACES));
 
         List<String> networks = PropertyUtil.getPropertyList(PREFERRED_NETWORKS);
         for (String preferred : networks) {

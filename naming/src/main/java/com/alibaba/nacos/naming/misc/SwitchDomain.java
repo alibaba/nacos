@@ -42,6 +42,8 @@ public class SwitchDomain implements Record, Cloneable {
 
     private boolean healthCheckEnabled = true;
 
+    private boolean autoChangeHealthCheckEnabled = true;
+
     private boolean distroEnabled = true;
 
     private boolean enableStandalone = true;
@@ -65,6 +67,8 @@ public class SwitchDomain implements Record, Cloneable {
     private boolean disableAddIP = false;
 
     private boolean sendBeatOnly = false;
+
+    private boolean lightBeatEnabled = true;
 
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
@@ -210,6 +214,14 @@ public class SwitchDomain implements Record, Cloneable {
         return healthCheckEnabled || getHealthCheckWhiteList().contains(serviceName);
     }
 
+    public boolean isAutoChangeHealthCheckEnabled() {
+        return autoChangeHealthCheckEnabled;
+    }
+
+    public void setAutoChangeHealthCheckEnabled(boolean autoChangeHealthCheckEnabled) {
+        this.autoChangeHealthCheckEnabled = autoChangeHealthCheckEnabled;
+    }
+
     public boolean isDistroEnabled() {
         return distroEnabled;
     }
@@ -344,6 +356,14 @@ public class SwitchDomain implements Record, Cloneable {
 
     public void setDefaultInstanceEphemeral(boolean defaultInstanceEphemeral) {
         this.defaultInstanceEphemeral = defaultInstanceEphemeral;
+    }
+
+    public boolean isLightBeatEnabled() {
+        return lightBeatEnabled;
+    }
+
+    public void setLightBeatEnabled(boolean lightBeatEnabled) {
+        this.lightBeatEnabled = lightBeatEnabled;
     }
 
     @Override

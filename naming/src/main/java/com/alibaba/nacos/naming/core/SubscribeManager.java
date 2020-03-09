@@ -57,6 +57,10 @@ public class SubscribeManager {
         return pushService.getClients(serviceName, namespaceId);
     }
 
+    private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
+        return pushService.getClientsFuzzy(serviceName, namespaceId);
+    }
+
     /**
      * @param serviceName
      * @param namespaceId
@@ -68,7 +72,7 @@ public class SubscribeManager {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
             if (serverListManager.getHealthyServers().size() <= 1) {
-                return getSubscribers(serviceName, namespaceId);
+                return getSubscribersFuzzy(serviceName, namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
@@ -80,7 +84,7 @@ public class SubscribeManager {
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
-                    subscriberList.addAll(getSubscribers(serviceName, namespaceId));
+                    subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
                 }
 
@@ -97,7 +101,7 @@ public class SubscribeManager {
                 : Collections.EMPTY_LIST;
         } else {
             // local server
-            return getSubscribers(serviceName, namespaceId);
+            return getSubscribersFuzzy(serviceName, namespaceId);
         }
     }
 

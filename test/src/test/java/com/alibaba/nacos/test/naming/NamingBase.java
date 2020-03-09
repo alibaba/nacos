@@ -18,18 +18,17 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.test.base.HttpClient4Test;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author nkorange
  */
-public class NamingBase {
+public class NamingBase extends HttpClient4Test {
 
 
     public static final String TEST_DOM_1 = "nacos.test.1";
@@ -177,7 +176,28 @@ public class NamingBase {
         headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
         headers.add("Nacos-Server");
         HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
+            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
+
+        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+
+
+        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
+        headers = new ArrayList<String>();
+        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
+        headers.add("Nacos-Server");
+        result =
+            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
+
+        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+    }
+
+    public static void destoryServer(int localPort) {
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+        List<String> headers = new ArrayList<String>();
+        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
+        headers.add("Nacos-Server");
+        HttpClient.HttpResult result =
+            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
 
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
     }

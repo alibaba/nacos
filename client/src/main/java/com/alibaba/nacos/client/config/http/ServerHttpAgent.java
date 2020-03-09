@@ -22,17 +22,19 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -42,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 
 /**
  * Server Agent
@@ -52,6 +54,12 @@ import java.util.concurrent.Callable;
 public class ServerHttpAgent implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
+
+    private SecurityProxy securityProxy;
+
+    private String namespaceId;
+
+    private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -67,7 +75,7 @@ public class ServerHttpAgent implements HttpAgent {
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         final boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -102,7 +110,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-GET] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -120,7 +128,7 @@ public class ServerHttpAgent implements HttpAgent {
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -157,7 +165,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-POST] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -175,7 +183,7 @@ public class ServerHttpAgent implements HttpAgent {
                                  long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -210,7 +218,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-DELETE] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -224,7 +232,9 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     public static String getAppname() {
@@ -242,7 +252,38 @@ public class ServerHttpAgent implements HttpAgent {
 
     public ServerHttpAgent(Properties properties) throws NacosException {
         serverListMgr = new ServerListManager(properties);
+        securityProxy = new SecurityProxy(properties);
+        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
+        securityProxy.login(serverListMgr.getServerUrls());
+
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+    }
+
+    private void injectSecurityInfo(List<String> params) {
+        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
+            params.add(Constants.ACCESS_TOKEN);
+            params.add(securityProxy.getAccessToken());
+        }
+        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
+            params.add(SpasAdapter.TENANT_KEY);
+            params.add(namespaceId);
+        }
     }
 
     private void init(Properties properties) {
@@ -349,17 +390,15 @@ public class ServerHttpAgent implements HttpAgent {
             conn.connect();
             respCode = conn.getResponseCode();
             if (HttpURLConnection.HTTP_OK == respCode) {
-                response = IOUtils.toString(conn.getInputStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getInputStream(), Constants.ENCODE);
             } else {
-                response = IOUtils.toString(conn.getErrorStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getErrorStream(), Constants.ENCODE);
             }
         } catch (IOException e) {
             LOGGER.error("can not get security credentials", e);
             throw e;
         } finally {
-            if (null != conn) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
         if (HttpURLConnection.HTTP_OK == respCode) {
             return response;

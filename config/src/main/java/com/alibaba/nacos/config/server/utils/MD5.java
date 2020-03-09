@@ -145,8 +145,8 @@ public class MD5 {
         byte[] data = new byte[16];
         char[] chs = str.toCharArray();
         for (int i = 0; i < DIGITS_COUNT; ++i) {
-            int h = rDigits.get(chs[i * 2]).intValue();
-            int l = rDigits.get(chs[i * 2 + 1]).intValue();
+            int h = rDigits.get(chs[i * 2]);
+            int l = rDigits.get(chs[i * 2 + 1]);
             data[i] = (byte)((h & 0x0F) << 4 | (l & 0x0F));
         }
         return data;

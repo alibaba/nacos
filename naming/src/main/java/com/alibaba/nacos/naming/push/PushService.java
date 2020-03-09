@@ -16,6 +16,8 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -225,7 +227,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         addClient(client);
     }
 
-    public static void addClient(PushClient client) {
+    public void addClient(PushClient client) {
         // client is stored by key 'serviceName' because notify event is driven by serviceName change
         String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getServiceName());
         ConcurrentMap<String, PushClient> clients =
@@ -260,6 +262,31 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return clients;
     }
 
+    /**
+     *  fuzzy search subscriber
+     * @param serviceName
+     * @param namespaceId
+     * @return
+     */
+    public List<Subscriber> getClientsFuzzy(String serviceName, String namespaceId) {
+        List<Subscriber> clients = new ArrayList<Subscriber>();
+        clientMap.forEach((outKey, clientConcurrentMap) -> {
+            //get groupedName from key
+            String serviceFullName = outKey.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[1];
+            //get groupName
+            String groupName = NamingUtils.getGroupName(serviceFullName);
+            //get serviceName
+            String name = NamingUtils.getServiceName(serviceFullName);
+            //fuzzy match
+            if (outKey.startsWith(namespaceId) && name.indexOf(NamingUtils.getServiceName(serviceName)) >= 0 && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
+                clientConcurrentMap.forEach((key, client) -> {
+                    clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceFullName));
+                });
+            }
+        });
+        return clients;
+    }
+
     public static void removeClientIfZombie() {
 
         int size = 0;
@@ -290,8 +317,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         try {
             packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
             Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
             ackEntry.data = data;
@@ -403,21 +428,18 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return dataSource;
         }
 
-        public PushClient(InetSocketAddress socketAddr) {
-            this.socketAddr = socketAddr;
-        }
-
         public boolean zombie() {
             return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(serviceName);
         }
 
         @Override
         public String toString() {
-            return "serviceName: " + serviceName
-                + ", clusters: " + clusters
-                + ", ip: " + socketAddr.getAddress().getHostAddress()
-                + ", port: " + socketAddr.getPort()
-                + ", agent: " + agent;
+            StringBuilder sb = new StringBuilder();
+            sb.append("serviceName: ").append(serviceName)
+                .append(", clusters: ").append(clusters)
+                .append(", address: ").append(socketAddr)
+                .append(", agent: ").append(agent);
+            return sb.toString();
         }
 
         public String getAgent() {
@@ -625,7 +647,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 try {
                     udpSocket.receive(packet);
 
-                    String json = new String(packet.getData(), 0, packet.getLength(), Charset.forName("UTF-8")).trim();
+                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
                     AckPacket ackPacket = JSON.parseObject(json, AckPacket.class);
 
                     InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
@@ -645,7 +667,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                     long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
 
-                    Loggers.PUSH.info("received ack: {} from: {}:, cost: {} ms, unacked: {}, total push: {}",
+                    Loggers.PUSH.info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}",
                         json, ip, port, pushCost, ackMap.size(), totalPush);
 
                     pushCostMap.put(ackKey, pushCost);

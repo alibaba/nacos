@@ -101,6 +101,11 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
 
 ![cwex](https://img.alicdn.com/tfs/TB1bpBlQmrqK1RjSZK9XXXyypXa-830-972.png_288x480q80.jpg)
 
+## Download
+
+- [Github Release](https://github.com/alibaba/nacos/releases)
+- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
+
 
 ## Who is using
 
@@ -163,7 +168,6 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![时代光华](https://img.alicdn.com/tfs/TB1UzuyNhTpK1RjSZR0XXbEwXXa-201-86.jpg)
 ![康美](https://img.alicdn.com/tfs/TB19RCANgHqK1RjSZFPXXcwapXa-180-180.jpg)
 ![环球易购](https://img.alicdn.com/tfs/TB1iCGyNb2pK1RjSZFsXXaNlXXa-143-143.jpg)
-![海格管家](https://img.alicdn.com/tfs/TB1FNq4EwHqK1RjSZFgXXa7JXXa-232-232.jpg)
 ![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
 ![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)
