@@ -103,7 +103,7 @@ public class ServiceManager implements RecordListener<Service> {
     @Autowired
     private RaftPeerSet raftPeerSet;
 
-    @Value("${nacos.naming.empty.service.auto-clean:false}")
+    @Value("${nacos.naming.empty-service.auto-clean:false}")
     private boolean emptyServiceAutoClean;
 
     private int maxFinalizeCount = 3;
