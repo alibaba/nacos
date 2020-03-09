@@ -89,8 +89,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     private LoadDataTask loadDataTask = new LoadDataTask();
 
-    private LoadDataTask loadDataTask = new LoadDataTask();
-
     private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
