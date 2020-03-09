@@ -125,6 +125,18 @@ public class GlobalExecutor {
             }
     );
 
+    private static ScheduledExecutorService distroNotifyExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+
+            t.setDaemon(true);
+            t.setName("com.alibaba.nacos.naming.distro.notifier");
+
+            return t;
+        }
+    });
+
     public static void submitDataSync(Runnable runnable, long delay) {
         dataSyncExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
@@ -176,6 +188,10 @@ public class GlobalExecutor {
 
     public static void submit(Runnable runnable, long delay) {
         executorService.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void submitDistroNotifyTask(Runnable runnable) {
+        distroNotifyExecutor.submit(runnable);
     }
 
     public static void submitServiceUpdate(Runnable runnable) {
