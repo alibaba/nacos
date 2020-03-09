@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
@@ -32,7 +31,6 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
-import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
@@ -42,7 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -101,10 +98,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                 public boolean onSnapshotLoad(SnapshotReader reader) {
                     final Map<String, LocalFileMeta> metaMap = new HashMap<>(reader.listFiles().size());
                     for (String fileName : reader.listFiles()) {
-                        LocalFileMetaOutter.LocalFileMeta fileMeta = (LocalFileMetaOutter.LocalFileMeta)
-                                reader.getFileMeta(fileName);
-                        metaMap.put(fileName, new LocalFileMeta(JSON
-                                .parseObject(fileMeta.getUserMeta().toByteArray(), Properties.class)));
+                        metaMap.put(fileName, new LocalFileMeta());
                     }
                     final Reader rCtx = new Reader(reader.getPath(), metaMap);
                     return item.onSnapshotLoad(rCtx);
@@ -139,8 +133,13 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     @Override
     public boolean onSnapshotLoad(SnapshotReader reader) {
         for (JSnapshotOperation operation : operations) {
-            if (!operation.onSnapshotLoad(reader)) {
-                Loggers.RAFT.error("Snapshot load failed on : {}", operation.info());
+            try {
+                if (!operation.onSnapshotLoad(reader)) {
+                    Loggers.RAFT.error("Snapshot load failed on : {}", operation.info());
+                    return false;
+                }
+            } catch (Throwable t) {
+                Loggers.RAFT.error("Snapshot load failed on : {}, has error : {}", operation.info(), t);
                 return false;
             }
         }

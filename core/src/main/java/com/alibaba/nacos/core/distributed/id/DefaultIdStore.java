@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.core.distributed.id;
 
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
@@ -38,10 +38,7 @@ import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -51,7 +48,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.CRC32;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -252,17 +249,9 @@ public class DefaultIdStore implements LogProcessor4CP {
                     DiskUtils.deleteDirectory(parentPath);
                     DiskUtils.forceMkdir(parentPath);
                     DiskUtils.copyDirectory(new File(FILE_PATH), new File(parentPath));
-
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-
-                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
-                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
-                        WritableByteChannel channel = Channels.newChannel(zOut);
-                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
-                                channel);
-                        DiskUtils.deleteDirectory(parentPath);
-                    }
-
+                    DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, new CRC32());
+                    DiskUtils.deleteDirectory(parentPath);
                     writer.addFile(SNAPSHOT_ARCHIVE);
 
                     result = true;
@@ -282,15 +271,13 @@ public class DefaultIdStore implements LogProcessor4CP {
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
             TimerContext.start("[DefaultIdStore] RaftStore snapshot load job");
             try {
-                DiskUtils.unzipFile(sourceFile, readerPath);
-                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
-                        + File.separator;
+                DiskUtils.decompress(sourceFile, readerPath, new CRC32());
+                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
                 Loggers.ID_GENERATOR.info("snapshot load from : {}", loadPath);
-                File sourceDir = new File(sourceFile);
-                DefaultIdStore.this.loadFromFile(sourceDir);
+                DiskUtils.copyDirectory(new File(loadPath), new File(FILE_PATH));
                 return true;
             } catch (final Throwable t) {
-                Loggers.ID_GENERATOR.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+                Loggers.ID_GENERATOR.error("Fail to load snapshot, path={}, file list={}, error : {}.", readerPath,
                         reader.listFiles(), t);
                 return false;
             } finally {

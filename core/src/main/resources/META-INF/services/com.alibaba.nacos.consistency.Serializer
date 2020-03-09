@@ -1,2 +1,1 @@
-com.alibaba.nacos.core.utils.KryoSerializer
 com.alibaba.nacos.core.utils.ProtoBufSerializer

@@ -17,8 +17,9 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.Reader;
@@ -40,17 +41,14 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.CRC32;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,8 +109,17 @@ public class RaftStore {
         initialized = true;
     }
 
-    public Record get(String key) {
-        return kvStore.getByKeyAutoConvert(key);
+    public Record get(String key) throws NacosException {
+        Record record = kvStore.getByKeyAutoConvert(key);
+        if (record == null) {
+            try {
+                loadByKey(key);
+                record = kvStore.getByKeyAutoConvert(key);
+            } catch (Exception e) {
+                throw new NacosException(NacosException.SERVER_ERROR, "Failed to load data from file :" + key);
+            }
+        }
+        return record;
     }
 
     public void put(String key, Record record) throws Exception {
@@ -176,6 +183,24 @@ public class RaftStore {
                 throw new IllegalStateException("failed to delete datum: " + key);
             }
         }
+    }
+
+    void loadByKey(String key) throws Exception {
+        String namespaceId = KeyBuilder.getNamespace(key);
+
+        File cacheFile;
+
+        if (StringUtils.isNotBlank(namespaceId)) {
+            cacheFile = new File(cacheDir + File.separator +
+                    namespaceId + File.separator + encodeFileName(key));
+        } else {
+            cacheFile = new File(cacheDir + File.separator + encodeFileName(key));
+        }
+
+        byte[] data = DiskUtils.readFileBytes(cacheFile);
+        KVStore.Item item = JSON.parseObject(data, KVStore.Item.class);
+        Record record = serializer.deSerialize(item.getBytes(), item.getClassName());
+        kvStore.put(key, record);
     }
 
     synchronized void write(String key, final KVStore.Item item) throws Exception {
@@ -274,15 +299,8 @@ public class RaftStore {
                     DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
 
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-
-                    try (final FileOutputStream fOut = new FileOutputStream(outputFile);
-                         final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
-                        WritableByteChannel channel = Channels.newChannel(zOut);
-                        DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
-                                channel);
-                        DiskUtils.deleteDirectory(parentPath);
-                    }
-
+                    DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, new CRC32());
+                    DiskUtils.deleteDirectory(parentPath);
                     writer.addFile(SNAPSHOT_ARCHIVE);
                     result = true;
                 } catch (Exception e) {
@@ -301,12 +319,11 @@ public class RaftStore {
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
             TimerContext.start("[Naming] RaftStore snapshot load job");
             try {
-                DiskUtils.unzipFile(sourceFile, readerPath);
-                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString()
-                        + File.separator;
+                DiskUtils.decompress(sourceFile, readerPath, new CRC32());
+                final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
                 Loggers.RAFT.info("snapshot load from : {}", loadPath);
-                File sourceDir = new File(sourceFile);
-                loadFromFile(sourceDir);
+                File loadDir = new File(loadPath);
+                loadFromFile(loadDir);
                 return true;
             } catch (final Throwable t) {
                 Loggers.RAFT.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,

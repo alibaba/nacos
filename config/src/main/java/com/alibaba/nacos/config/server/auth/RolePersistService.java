@@ -20,7 +20,9 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import java.util.ArrayList;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,11 @@ public class RolePersistService extends PersistService {
 
     @Autowired
     private DatabaseOperate databaseOperate;
+
+    @PostConstruct
+    protected void postConstruct() {
+        NotifyCenter.registerPublisher(RoleChangeEvent::new, RoleChangeEvent.class);
+    }
 
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
 
@@ -89,6 +96,7 @@ public class RolePersistService extends PersistService {
         try {
             SqlContextUtils.addSqlContext(sql, role, userName);
             databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -99,6 +107,7 @@ public class RolePersistService extends PersistService {
         try {
             SqlContextUtils.addSqlContext(sql, role);
             databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }
@@ -109,6 +118,7 @@ public class RolePersistService extends PersistService {
         try {
             SqlContextUtils.addSqlContext(sql, role, username);
             databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
         } finally {
             SqlContextUtils.cleanCurrentSqlContext();
         }

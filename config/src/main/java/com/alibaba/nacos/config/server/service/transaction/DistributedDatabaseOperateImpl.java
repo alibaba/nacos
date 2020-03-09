@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.transaction;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;

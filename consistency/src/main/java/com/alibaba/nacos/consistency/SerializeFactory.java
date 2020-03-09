@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common;
+package com.alibaba.nacos.consistency;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.pool.KryoPool;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -28,19 +32,19 @@ import java.util.ServiceLoader;
  */
 public class SerializeFactory {
 
-    public static final String JSON_INDEX = "FastJson".toLowerCase();
+    public static final String KRYO_INDEX = "Kryo".toLowerCase();
 
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
 
-    public static String DEFAULT_SERIALIZER = JSON_INDEX;
+    public static String DEFAULT_SERIALIZER = KRYO_INDEX;
 
     static {
 
-        DEFAULT_SERIALIZER = System.getProperty("nacos.serializer-type", JSON_INDEX).toLowerCase();
+        DEFAULT_SERIALIZER = System.getProperty("nacos.serializer-type", KRYO_INDEX).toLowerCase();
 
-        Serializer jsonSerializer = new JsonSerializer();
+        Serializer jsonSerializer = new KryoSerializer();
 
-        SERIALIZER_MAP.put(JSON_INDEX, jsonSerializer);
+        SERIALIZER_MAP.put(KRYO_INDEX, jsonSerializer);
 
         ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
 
@@ -54,24 +58,26 @@ public class SerializeFactory {
         return SERIALIZER_MAP.get(DEFAULT_SERIALIZER);
     }
 
-    public static Serializer getSerializerDefaultJson(String name) {
-        Serializer serializer = SERIALIZER_MAP.get(name.toLowerCase());
-        if (serializer == null) {
-            return SERIALIZER_MAP.get(JSON_INDEX);
-        }
-        return serializer;
-    }
+    public static final class KryoSerializer implements Serializer {
 
-    private static class JsonSerializer implements Serializer {
+        private final KryoPool kryoPool;
+
+        public KryoSerializer() {
+            kryoPool = new KryoPool.Builder(new KryoFactory()).softReferences().build();
+        }
 
         @Override
         public <T> T deSerialize(byte[] data, Class<T> cls) {
-            return JSON.parseObject(data, cls);
+            return kryoPool.run(kryo -> {
+                ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
+                Input input = new Input(byteArrayInputStream);
+                return (T) kryo.readClassAndObject(input);
+            });
         }
 
         @Override
         public <T> T deSerialize(byte[] data, TypeReference<T> reference) {
-            return JSON.parseObject(new String(data), reference);
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -99,13 +105,31 @@ public class SerializeFactory {
 
         @Override
         public <T> byte[] serialize(T obj) {
-            return JSON.toJSONBytes(obj);
+            return kryoPool.run(kryo -> {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                Output output = new Output(byteArrayOutputStream);
+                kryo.writeClassAndObject(output, obj);
+                output.close();
+                return byteArrayOutputStream.toByteArray();
+            });
         }
 
         @Override
         public String name() {
-            return JSON_INDEX;
+            return "Kryo";
+        }
+
+        private static class KryoFactory implements com.esotericsoftware.kryo.pool.KryoFactory {
+
+            @Override
+            public Kryo create() {
+                Kryo kryo = new Kryo();
+                kryo.setRegistrationRequired(false);
+                kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(
+                        new org.objenesis.strategy.StdInstantiatorStrategy()));
+                return kryo;
+            }
+
         }
     }
-
 }

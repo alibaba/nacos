@@ -15,13 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
+import java.io.Serializable;
+
 /**
  * Application Publish Record
  *
  * @author Nacos
  */
-public class ApplicationPublishRecord {
+public class ApplicationPublishRecord implements Serializable {
 
+    private static final long serialVersionUID = -6235881685279344468L;
     private String appName;
     private GroupKey configInfo;
 

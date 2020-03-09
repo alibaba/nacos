@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency.store;
 
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.Serializer;
 import java.util.Objects;
 
 /**

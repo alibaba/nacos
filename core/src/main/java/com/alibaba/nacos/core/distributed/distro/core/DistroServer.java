@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.Member;

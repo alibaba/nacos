@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.model.capacity;
+
+package com.alibaba.nacos.config.server.auth;
+
+import com.alibaba.nacos.core.notify.Event;
 
 /**
- * Tenant Capacity
- *
- * @author hexu.hxy
- * @date 2018/3/13
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class TenantCapacity extends Capacity {
-    private static final long serialVersionUID = -1238179608935781384L;
-    private String tenant;
+public class RoleChangeEvent implements Event {
 
-    public String getTenant() {
-        return tenant;
-    }
+    private static final long serialVersionUID = -3330183341806538483L;
 
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    @Override
+    public Class<? extends Event> eventType() {
+        return RoleChangeEvent.class;
     }
 }

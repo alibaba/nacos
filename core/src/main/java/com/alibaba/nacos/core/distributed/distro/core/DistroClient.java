@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;

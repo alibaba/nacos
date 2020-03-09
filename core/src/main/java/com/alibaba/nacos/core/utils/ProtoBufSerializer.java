@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.Serializer;
 import io.protostuff.ByteArrayInput;
 import io.protostuff.Input;
 import io.protostuff.LinkedBuffer;

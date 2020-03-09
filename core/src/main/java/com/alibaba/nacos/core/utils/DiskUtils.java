@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.utils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,18 +27,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.CheckedOutputStream;
+import java.util.zip.Checksum;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,45 +200,63 @@ public final class DiskUtils {
         return file;
     }
 
-    public static void compressDirectoryToZipFile(final String rootDir,
-                                                  final String sourceDir, final ZipOutputStream zos,
-                                                  final WritableByteChannel channel) throws IOException {
+    // copy from sofa-jraft
+
+    public static void compress(final String rootDir, final String sourceDir, final String outputFile,
+                                final Checksum checksum) throws IOException {
+        try (final FileOutputStream fos = new FileOutputStream(outputFile);
+             final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
+             final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
+            compressDirectoryToZipFile(rootDir, sourceDir, zos);
+            zos.flush();
+            fos.getFD().sync();
+        }
+    }
+
+    // copy from sofa-jraft
+
+    private static void compressDirectoryToZipFile(final String rootDir, final String sourceDir,
+                                                   final ZipOutputStream zos) throws IOException {
         final String dir = Paths.get(rootDir, sourceDir).toString();
-        final File[] files = new File(dir).listFiles();
-        assert files != null;
+        final File[] files = Objects.requireNonNull(new File(dir).listFiles(), "files");
         for (final File file : files) {
+            final String child = Paths.get(sourceDir, file.getName()).toString();
             if (file.isDirectory()) {
-                compressDirectoryToZipFile(rootDir,
-                        Paths.get(sourceDir, file.getName()).toString(), zos, channel);
+                compressDirectoryToZipFile(rootDir, child, zos);
             } else {
-                zos.putNextEntry(
-                        new ZipEntry(Paths.get(sourceDir, file.getName()).toString()));
-                try (final FileInputStream in = new FileInputStream(
-                        Paths.get(rootDir, sourceDir, file.getName()).toString())) {
-                    FileChannel fileChannel = in.getChannel();
-                    fileChannel.transferTo(0, fileChannel.size(), channel);
+                zos.putNextEntry(new ZipEntry(child));
+                try (final FileInputStream fis = new FileInputStream(file);
+                     final BufferedInputStream bis = new BufferedInputStream(fis)) {
+                    IOUtils.copy(bis, zos);
                 }
             }
         }
     }
 
-    public static void unzipFile(final String sourceFile, final String outputDir)
+    // copy from sofa-jraft
+
+    public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
             throws IOException {
-        try (final ZipInputStream zis = new ZipInputStream(
-                new FileInputStream(sourceFile))) {
-            ReadableByteChannel channel = Channels.newChannel(zis);
-            ZipEntry zipEntry = zis.getNextEntry();
-            while (zipEntry != null) {
-                final String fileName = zipEntry.getName();
-                final File entryFile = new File(outputDir + File.separator + fileName);
+        try (final FileInputStream fis = new FileInputStream(sourceFile);
+             final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
+             final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                final String fileName = entry.getName();
+                final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
-                try (final FileOutputStream fos = new FileOutputStream(entryFile)) {
-                    FileChannel fileChannel = fos.getChannel();
-                    fileChannel.transferFrom(channel, 0, zipEntry.getSize());
+                try (final FileOutputStream fos = new FileOutputStream(entryFile);
+                     final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                    IOUtils.copy(zis, bos);
+                    bos.flush();
+                    fos.getFD().sync();
                 }
-                zipEntry = zis.getNextEntry();
             }
-            zis.closeEntry();
+            // Continue to read all remaining bytes(extra metadata of ZipEntry) directly from the checked stream,
+            // Otherwise, the checksum value maybe unexpected.
+            //
+            // See https://coderanch.com/t/279175/java/ZipInputStream
+            IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
         }
     }
 

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency.cp;
 
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.store.KVStore;
 

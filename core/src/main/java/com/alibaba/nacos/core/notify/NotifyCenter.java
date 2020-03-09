@@ -74,6 +74,15 @@ public class NotifyCenter {
     /**
      * request publisher publish event
      *
+     * @param event
+     */
+    public static void publishEvent(final Event event) {
+        publishEvent(event.eventType(), event);
+    }
+
+    /**
+     * request publisher publish event
+     *
      * @param eventType
      * @param event
      */

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service.transaction;
 
 import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -31,7 +30,6 @@ public class ConditionOnDefaultStoreType implements Condition {
 
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return !Objects.equals(context.getEnvironment().getProperty("embeddedDistributedStorage"), "true")
-                && StringUtils.isNotBlank(context.getEnvironment().getProperty("spring.datasource.platform"));
+        return !Objects.equals(context.getEnvironment().getProperty("embeddedDistributedStorage"), "true");
     }
 }

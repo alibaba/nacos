@@ -31,12 +31,14 @@ import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +64,11 @@ public class SyncNodeTask extends Task {
     private NSyncHttpClient httpclient;
     private volatile boolean alreadyLoadServer = false;
 
+    private Runnable standaloneJob = () -> {
+        final String url = InetUtils.getSelfIp() + ":" + nodeManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
+        readServerConf(Collections.singletonList(url));
+    };
+
     public SyncNodeTask(final ServletContext context) {
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
@@ -74,26 +81,37 @@ public class SyncNodeTask extends Task {
 
     @Override
     protected void init() {
-        readServerConfFromDisk();
 
-        // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
+        if (SystemUtils.STANDALONE_MODE) {
+            standaloneJob.run();
+        } else {
 
-        WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(),
-                new FileWatcher() {
-                    @Override
-                    public void onChange(FileChangeEvent event) {
-                        readServerConfFromDisk();
-                    }
+            readServerConfFromDisk();
 
-                    @Override
-                    public boolean interest(String context) {
-                        return StringUtils.contains(context, "cluster.conf");
-                    }
-                });
+            // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
+
+            WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(),
+                    new FileWatcher() {
+                        @Override
+                        public void onChange(FileChangeEvent event) {
+                            readServerConfFromDisk();
+                        }
+
+                        @Override
+                        public boolean interest(String context) {
+                            return StringUtils.contains(context, "cluster.conf");
+                        }
+                    });
+        }
     }
 
     @Override
     protected void executeBody() {
+
+        if (SystemUtils.STANDALONE_MODE) {
+            standaloneJob.run();
+            return;
+        }
 
         // Whether to enable the node self-discovery function that comes with nacos
         // The reason why instance properties are not used here is so that

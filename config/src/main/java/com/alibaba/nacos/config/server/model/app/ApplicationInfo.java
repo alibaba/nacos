@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
+import java.io.Serializable;
+
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
@@ -22,7 +24,9 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  *
  * @author Nacos
  */
-public class ApplicationInfo {
+public class ApplicationInfo implements Serializable {
+
+    private static final long serialVersionUID = 2068736939759510643L;
 
     private static final long LOCK_EXPIRE_DURATION = 30 * 1000L;
     private static final long RECENTLY_DURATION = 24 * 60 * 60 * 1000L;

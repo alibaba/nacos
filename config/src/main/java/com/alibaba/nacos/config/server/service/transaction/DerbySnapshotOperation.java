@@ -26,9 +26,6 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import java.io.FileOutputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -36,7 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.CRC32;
 import javax.sql.DataSource;
 
 /**
@@ -77,19 +74,14 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 final List<String> sqls = new ArrayList<>();
                 String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('%s', '%s', null, null, null)";
                 for (String tableName : tableNames) {
-                    final String queryAllData = String.format(queryAllDataByTable, tableNames);
+                    final String queryAllData = String.format(queryAllDataByTable, tableName);
                     final String exportFile = Paths.get(parentPath, tableName + fileSuffix).toString();
                     sqls.add(String.format(sqlTemplate, queryAllData, exportFile));
                 }
                 batchExec(sqls, "Snapshot save");
                 final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-                try (final FileOutputStream fOut = new FileOutputStream(outputFile);
-                     final ZipOutputStream zOut = new ZipOutputStream(fOut)) {
-                    WritableByteChannel channel = Channels.newChannel(zOut);
-                    DiskUtils.compressDirectoryToZipFile(writePath, SNAPSHOT_DIR, zOut,
-                            channel);
-                    DiskUtils.deleteDirectory(parentPath);
-                }
+                DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, new CRC32());
+                DiskUtils.deleteDirectory(parentPath);
                 callFinally.run(writer.addFile(SNAPSHOT_ARCHIVE), null);
             } catch (Throwable t) {
                 LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.",
@@ -104,18 +96,18 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
         try {
-            DiskUtils.unzipFile(sourceFile, readerPath);
+            DiskUtils.decompress(sourceFile, readerPath, new CRC32());
             final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
-            LogUtil.defaultLog.info("snapshot load from : {}", loadPath);
+            LogUtil.fatalLog.info("snapshot load from : {}", loadPath);
             List<String> sqls = new ArrayList<>();
-            final String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE(null,'STAFF','%s',null,null,null,0);";
+            final String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE(null,'STAFF','%s',null,null,null,0)";
             for (String tableName : tableNames) {
                 final String importFile = Paths.get(loadPath, tableName + fileSuffix).toString();
                 sqls.add(String.format(sqlTemplate, importFile));
             }
             return batchExec(sqls, "Snapshot load");
         } catch (final Throwable t) {
-            LogUtil.defaultLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
+            LogUtil.fatalLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                     reader.listFiles(), t);
             return false;
         }
@@ -136,7 +128,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             for (String t : sqls) {
                 sql = t;
                 CallableStatement statement = connection.prepareCall(sql);
-                LogUtil.defaultLog.info("snapshot load exec sql : {}", sql);
+                LogUtil.fatalLog.info("snapshot load exec sql : {}", sql);
                 statement.execute();
             }
             connection.commit();
@@ -146,10 +138,10 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 try {
                     holder.rollback();
                 } catch (SQLException ex) {
-                    LogUtil.defaultLog.error("transaction rollback has error : {}", ExceptionUtil.getAllExceptionMsg(e));
+                    LogUtil.fatalLog.error("transaction rollback has error : {}", ExceptionUtil.getAllExceptionMsg(e));
                 }
             }
-            LogUtil.defaultLog.error(type + " exec sql : {} has some error : {}", sql, e);
+            LogUtil.fatalLog.error(type + " exec sql : {} has some error : {}", sql, e);
             return false;
         }
     }

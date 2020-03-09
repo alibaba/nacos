@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.SerializeFactory;
-import com.alibaba.nacos.common.Serializer;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.store.KVStore;

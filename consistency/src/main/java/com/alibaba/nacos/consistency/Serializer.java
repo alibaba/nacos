@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common;
+package com.alibaba.nacos.consistency;
 
 import com.alibaba.fastjson.TypeReference;
 

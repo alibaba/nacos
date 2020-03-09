@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.security.nacos.roles;
 
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
+import com.alibaba.nacos.config.server.auth.RoleChangeEvent;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
@@ -25,17 +26,27 @@ import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.auth.Permission;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.lang.Collections;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.mina.util.ConcurrentHashSet;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * Nacos builtin role service.
@@ -66,7 +77,26 @@ public class NacosRoleServiceImpl {
 
     private Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
 
-    @Scheduled(initialDelay = 5000, fixedDelay = 15000)
+    private ScheduledExecutorService refreshRoleInfoExecutor = ExecutorFactory.newSingleScheduledExecutorService(getClass().getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.console.role-info-refresh"));
+
+    @PostConstruct
+    protected void init() {
+        NotifyCenter.registerSubscribe(new Subscribe<RoleChangeEvent>() {
+            @Override
+            public void onEvent(RoleChangeEvent event) {
+                reload();
+            }
+
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return RoleChangeEvent.class;
+            }
+        });
+
+        refreshRoleInfoExecutor.schedule(this::reload, 5, TimeUnit.SECONDS);
+    }
+
     private void reload() {
         try {
             Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserName(StringUtils.EMPTY, 1, Integer.MAX_VALUE);
@@ -92,6 +122,13 @@ public class NacosRoleServiceImpl {
             roleSet = tmpRoleSet;
             roleInfoMap = tmpRoleInfoMap;
             permissionInfoMap = tmpPermissionInfoMap;
+
+            if (roleSet.isEmpty() || roleInfoMap.isEmpty() || permissionInfoMap.isEmpty()) {
+                refreshRoleInfoExecutor.schedule(this::reload, 15, TimeUnit.SECONDS);
+            } else {
+                refreshRoleInfoExecutor.schedule(this::reload, 30, TimeUnit.MINUTES);
+            }
+
         } catch (Exception e) {
             Loggers.AUTH.warn("[LOAD-ROLES] load failed", e);
         }
