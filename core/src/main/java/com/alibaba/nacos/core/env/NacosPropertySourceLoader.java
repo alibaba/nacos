@@ -37,6 +37,7 @@ import org.springframework.boot.env.PropertySourceLoader;
 import org.springframework.boot.origin.Origin;
 import org.springframework.boot.origin.OriginTrackedValue;
 import org.springframework.boot.origin.TextResourceOrigin;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
@@ -47,7 +48,7 @@ import org.springframework.util.Assert;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
-public class NacosPropertySourceLoader implements PropertySourceLoader {
+public class NacosPropertySourceLoader implements PropertySourceLoader, Ordered {
 
     private final Map<String, Object> properties = new ConcurrentHashMap<>(16);
 
@@ -55,7 +56,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
 
     @Override
     public String[] getFileExtensions() {
-        return new String[]{"nconf"};
+        return new String[]{"conf"};
     }
 
     @Override
@@ -88,11 +89,16 @@ public class NacosPropertySourceLoader implements PropertySourceLoader {
             return Collections.emptyList();
         }
         return Collections
-                .singletonList(new OriginTrackedMapPropertySource(name, properties));
+                .singletonList(new OriginTrackedMapPropertySource("nacos_application_conf", properties));
     }
 
     private Map<String, ?> loadProperties(Resource resource) throws IOException {
         return new OriginTrackedPropertiesLoader(resource).load();
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
     static class OriginTrackedPropertiesLoader {

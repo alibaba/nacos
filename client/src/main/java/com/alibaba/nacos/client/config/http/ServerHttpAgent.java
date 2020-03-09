@@ -276,7 +276,9 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     public static String getAppname() {

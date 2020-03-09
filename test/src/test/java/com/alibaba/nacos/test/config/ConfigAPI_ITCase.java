@@ -72,6 +72,7 @@ public class ConfigAPI_ITCase {
     public void setUp() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
+        properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
 
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));

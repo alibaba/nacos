@@ -31,26 +31,31 @@ public class GlobalExecutor {
     private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
+
     private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR
             = ExecutorFactory.newSingleScheduledExecutorService(
             NamingApp.class.getCanonicalName(),
             new NameThreadFactory("nacos.naming.status.worker"));
+
     private static final ScheduledExecutorService PERFORMANCE_EXECUTOR =
             ExecutorFactory.newSingleScheduledExecutorService(
                     PerformanceLoggerThread.class.getCanonicalName(),
                     new NameThreadFactory("nacos-server-performance"));
+
     private static ScheduledExecutorService executorService = ExecutorFactory
             .newScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
                     Runtime.getRuntime().availableProcessors(),
                     new NameThreadFactory("com.alibaba.nacos.naming.timer")
             );
+
     private static ScheduledExecutorService notifierExecutor = ExecutorFactory
             .newScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
                     2,
                     new NameThreadFactory("com.alibaba.nacos.naming.store.notifier")
             );
+
     private static ScheduledExecutorService notifyServerListExecutor =
             ExecutorFactory.newSingleScheduledExecutorService(
                     NamingApp.class.getCanonicalName(),
@@ -63,6 +68,12 @@ public class GlobalExecutor {
             NamingApp.class.getCanonicalName(),
             2,
             new NameThreadFactory("com.alibaba.nacos.naming.service.update.http.handler"));
+
+    private static ScheduledExecutorService emptyServiceAutoCleanExecutor =
+            ExecutorFactory.newSingleScheduledExecutorService(
+                    NamingApp.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.empty-clean")
+            );
 
     public static void registerServerListUpdater(Runnable runnable) {
         executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
@@ -113,5 +124,11 @@ public class GlobalExecutor {
                                            long delay,
                                            TimeUnit unit) {
         PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+
+    public static void scheduleServiceAutoClean(Runnable runnable,
+                                                long initialDelay,
+                                                long period) {
+        emptyServiceAutoCleanExecutor.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 }

@@ -45,7 +45,7 @@ public class NamingTest {
 
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
-        instance.setPort(80);
+        instance.setPort(800);
         instance.setWeight(2);
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external");

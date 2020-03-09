@@ -67,9 +67,9 @@ import org.springframework.stereotype.Component;
 public class DefaultIdStore implements LogProcessor4CP {
 
     private static final File[] EMPTY = new File[0];
-    private static final String SNAPSHOT_DIR = "id-generator";
+    private static final String SNAPSHOT_DIR = "id_generator";
     private static final String SNAPSHOT_ARCHIVE = "id_generator.zip";
-    private static final String FILE_PATH = Paths.get(SystemUtils.NACOS_HOME, "data", "id-generator").toString();
+    private static final String FILE_PATH = Paths.get(SystemUtils.NACOS_HOME, "data", "id_generator").toString();
     private static long ACQUIRE_STEP;
     private ConsistencyProtocol<? extends Config> protocol;
     private Map<String, IdStoreFile> storeFileMap;
@@ -176,7 +176,7 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     @Override
     public String bizInfo() {
-        return "default-id-generator";
+        return "default_id_generator";
     }
 
     @Override

@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.healthcheck.events.InstanceHeartbeatTimeoutEvent;
@@ -70,7 +71,7 @@ public class ClientBeatCheckTask implements Runnable {
     }
 
     public String taskKey() {
-        return service.getName();
+        return KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName());
     }
 
     @Override

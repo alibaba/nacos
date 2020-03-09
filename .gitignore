@@ -11,4 +11,7 @@ target
 *.iml
 node_modules
 test/derby.log
+test/log
+test/work
 derby.log
+work

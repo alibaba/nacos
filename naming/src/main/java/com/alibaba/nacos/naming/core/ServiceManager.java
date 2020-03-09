@@ -52,11 +52,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -92,12 +94,36 @@ public class ServiceManager implements RecordListener<Service> {
     @Autowired
     private Mapper mapper;
 
+    @Value("${nacos.naming.empty-service.auto-clean:false}")
+    private boolean emptyServiceAutoClean;
+
+    private int maxFinalizeCount = 3;
+
+    @Value("${nacos.naming.empty-service.clean.initial-delay-ms:60000}")
+    private int cleanEmptyServiceDelay;
+
+    @Value("${nacos.naming.empty-service.clean.period-time-ms:20000}")
+    private int cleanEmptyServicePeriod;
+
     @PostConstruct
     public void init() {
 
         UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
         UtilsAndCommons.SERVICE_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
+
+        if (emptyServiceAutoClean) {
+
+            Loggers.SRV_LOG.info("open empty service auto clean job, initialDelay : {} ms, period : {} ms", cleanEmptyServiceDelay, cleanEmptyServicePeriod);
+
+            // delay 60s, period 20s;
+
+            // This task is not recommended to be performed frequently in order to avoid
+            // the possibility that the service cache information may just be deleted
+            // and then created due to the heartbeat mechanism
+
+            GlobalExecutor.scheduleServiceAutoClean(new EmptyServiceAutoClean(), cleanEmptyServiceDelay, cleanEmptyServicePeriod);
+        }
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
@@ -664,7 +690,6 @@ public class ServiceManager implements RecordListener<Service> {
                         serviceName, checksum);
                 return;
             }
-
             serviceName2Checksum.put(serviceName, checksum);
         }
     }
@@ -749,6 +774,59 @@ public class ServiceManager implements RecordListener<Service> {
                 Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}",
                         serviceName, serverIP, e);
             }
+
+        }
+    }
+
+    private class EmptyServiceAutoClean implements Runnable {
+
+        @Override
+        public void run() {
+
+            // Parallel flow opening threshold
+
+            int parallelSize = 100;
+
+            serviceMap.forEach((namespace, stringServiceMap) -> {
+                Stream<Map.Entry<String, Service>> stream = null;
+                if (stringServiceMap.size() > parallelSize) {
+                    stream = stringServiceMap.entrySet().parallelStream();
+                } else {
+                    stream = stringServiceMap.entrySet().stream();
+                }
+                stream
+                        .filter(entry -> {
+                            final String serviceName = entry.getKey();
+                            return mapper.responsible(serviceName);
+                        })
+                        .forEach(entry -> stringServiceMap.computeIfPresent(entry.getKey(), (serviceName, service) -> {
+                            if (service.isEmpty()) {
+
+                                // To avoid violent Service removal, the number of times the Service
+                                // experiences Empty is determined by finalizeCnt, and if the specified
+                                // value is reached, it is removed
+
+                                if (service.getFinalizeCount() > maxFinalizeCount) {
+                                    Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned",
+                                            namespace, serviceName);
+                                    try {
+                                        easyRemoveService(namespace, serviceName);
+                                    } catch (Exception e) {
+                                        Loggers.SRV_LOG.error("namespace : {}, [{}] services are automatically clean has " +
+                                                "error : {}", namespace, serviceName, e);
+                                    }
+                                }
+
+                                service.setFinalizeCount(service.getFinalizeCount() + 1);
+
+                                Loggers.SRV_LOG.debug("namespace : {}, [{}] The number of times the current service experiences " +
+                                        "an empty instance is : {}", namespace, serviceName, service.getFinalizeCount());
+                            } else {
+                                service.setFinalizeCount(0);
+                            }
+                            return service;
+                        }));
+            });
         }
     }
 
@@ -776,7 +854,7 @@ public class ServiceManager implements RecordListener<Service> {
 
                         Service service = getService(namespaceId, serviceName);
 
-                        if (service == null) {
+                        if (service == null || service.isEmpty()) {
                             continue;
                         }
 

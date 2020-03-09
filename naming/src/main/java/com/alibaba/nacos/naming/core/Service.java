@@ -62,6 +62,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
+    /**
+     * Identify the information used to determine how many isEmpty judgments the service has experienced
+     */
+    private int finalizeCount = 0;
+
     private String token;
     private List<String> owners = new ArrayList<>();
     private Boolean resetWeight = false;
@@ -273,6 +278,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
     }
 
+    public boolean isEmpty() {
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            final Cluster cluster = entry.getValue();
+            if (!cluster.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Instance> allIPs() {
         List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
@@ -303,15 +318,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
 
         return allIPs;
-    }
-
-    public boolean isEmpty() {
-        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public List<Instance> srvIPs(List<String> clusters) {
@@ -514,6 +520,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
             cluster.destroy();
         }
+    }
+
+    public int getFinalizeCount() {
+        return finalizeCount;
+    }
+
+    public void setFinalizeCount(int finalizeCount) {
+        this.finalizeCount = finalizeCount;
     }
 
     public void addCluster(Cluster cluster) {

@@ -58,13 +58,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private DataStore dataStore;
 
     @Autowired
-    private GlobalConfig globalConfig;
-
-    @Autowired
     private SwitchDomain switchDomain;
 
     @Autowired
     private Notifier notifier;
+
+    @Autowired
+    private GlobalConfig globalConfig;
 
     @PostConstruct
     protected void init() {
