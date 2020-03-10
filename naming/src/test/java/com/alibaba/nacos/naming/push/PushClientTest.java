@@ -38,7 +38,7 @@ public class PushClientTest extends BaseTest  {
         int udpPort = 10000;
 
 
-        pushService.addClient(namespaceId
+        pushService.addUdpClient(namespaceId
             , serviceName
             , clusters
             , agent

@@ -1,0 +1,47 @@
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.alibaba.nacos.common.grpc";
+
+message GrpcMetadata {
+
+    string name = 1;
+
+    google.protobuf.Timestamp create_time = 2;
+
+    string version = 3;
+
+    map<string,string> labels = 4;
+}
+
+message GrpcResponse {
+    string client_id = 1;
+    string request_id = 2;
+    string source = 3;
+    int32 code = 4;
+    google.protobuf.Any message = 5;
+    GrpcMetadata metadata = 6;
+}
+
+message GrpcRequest {
+    string client_id = 1;
+    string request_id = 2;
+    string action = 3;
+    string source = 4;
+    map<string,string> params = 5;
+    google.protobuf.Any body = 6;
+    GrpcMetadata metadata = 7;
+    string module = 8;
+}
+
+service GrpcStreamService {
+    rpc streamRequest(GrpcRequest) returns (stream GrpcResponse) {}
+}
+
+service GrpcService {
+    rpc request(GrpcRequest) returns (GrpcResponse) {}
+}

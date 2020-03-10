@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -47,7 +47,7 @@ public class SubscribeManager {
     private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
 
     @Autowired
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Autowired
     private ServerListManager serverListManager;

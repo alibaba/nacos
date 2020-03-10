@@ -1,5 +1,4 @@
-package com.alibaba.nacos.naming.grpc;
-
+package com.alibaba.nacos.core.remoting.grpc.impl;
 
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -8,7 +7,7 @@ import io.grpc.ServerInterceptor;
 import org.springframework.stereotype.Service;
 
 @Service
-public class NamingGrpcIntercepter implements ServerInterceptor {
+public class StreamGrpcIntercepter implements ServerInterceptor {
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,

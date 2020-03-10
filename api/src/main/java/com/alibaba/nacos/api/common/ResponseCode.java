@@ -34,4 +34,6 @@ public class ResponseCode {
      * Everything normal
      */
     public static final int OK = 10200;
+
+    public static final int ERROR_UNKNOWN = 10500;
 }

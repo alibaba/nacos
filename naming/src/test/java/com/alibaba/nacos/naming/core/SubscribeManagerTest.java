@@ -4,7 +4,7 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ public class SubscribeManagerTest extends BaseTest {
     private SubscribeManager subscribeManager;
 
     @Mock
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Mock
     private ServerListManager serverListManager;

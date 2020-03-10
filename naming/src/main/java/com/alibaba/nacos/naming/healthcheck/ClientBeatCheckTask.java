@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.healthcheck.events.InstanceHeartbeatTimeoutEvent;
 import com.alibaba.nacos.naming.misc.*;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 
@@ -47,8 +47,8 @@ public class ClientBeatCheckTask implements Runnable {
 
 
     @JSONField(serialize = false)
-    public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+    public NamingPushService getPushService() {
+        return SpringContext.getAppContext().getBean(NamingPushService.class);
     }
 
     @JSONField(serialize = false)

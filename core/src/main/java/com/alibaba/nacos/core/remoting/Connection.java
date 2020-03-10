@@ -2,16 +2,20 @@ package com.alibaba.nacos.core.remoting;
 
 public class Connection {
 
+    private ConnectionType connectionType;
+
     private String connectionId;
 
     private long lastBeat;
 
-    public String getConnectionId() {
-        return connectionId;
+    public Connection(String connectionId, ConnectionType connectionType) {
+        this.connectionId = connectionId;
+        this.connectionType = connectionType;
+        this.lastBeat = System.currentTimeMillis();
     }
 
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
+    public String getConnectionId() {
+        return connectionId;
     }
 
     public long getLastBeat() {
@@ -20,5 +24,9 @@ public class Connection {
 
     public void setLastBeat(long lastBeat) {
         this.lastBeat = lastBeat;
+    }
+
+    public ConnectionType getConnectionType() {
+        return connectionType;
     }
 }

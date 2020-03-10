@@ -37,20 +37,9 @@ message GrpcResponse {
     string message = 2;
 }
 
-enum ConnectionType {
-
-    DEFAULT = 0;
-
-    CONFIG = 1;
-
-    NAMING = 2;
-};
-
 message GrpcConnection {
 
     string connection_id = 1;
-
-    ConnectionType connection_type = 3;
 
     GrpcMetadata metadata = 4;
 }

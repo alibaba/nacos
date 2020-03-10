@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.SubscribeInfo;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -211,8 +212,8 @@ public class HostReactor {
         return serviceInfoMap.get(key);
     }
 
-    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
-        String result = serverProxy.queryList(serviceName, clusters, 0, false);
+    public ServiceInfo getServiceInfoDirectlyFromServer(String serviceName, String groupName, final String clusters) throws NacosException {
+        String result = serverProxy.queryList(serviceName, groupName, clusters, SubscribeInfo.noneSubscribe(), false);
         if (StringUtils.isNotEmpty(result)) {
             return JSON.parseObject(result, ServiceInfo.class);
         }
@@ -258,7 +259,6 @@ public class HostReactor {
     }
 
 
-
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -278,7 +278,8 @@ public class HostReactor {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
-            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            String result = serverProxy.queryList(serviceName, clusters,
+                SubscribeInfo.udpSubscribe(pushReceiver.getUDPPort()), false);
 
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
@@ -296,7 +297,8 @@ public class HostReactor {
 
     public void refreshOnly(String serviceName, String clusters) {
         try {
-            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            serverProxy.queryList(serviceName, clusters,
+                SubscribeInfo.udpSubscribe(pushReceiver.getUDPPort()), false);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }

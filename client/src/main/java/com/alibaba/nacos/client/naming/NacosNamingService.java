@@ -204,7 +204,7 @@ public class NacosNamingService implements NamingService {
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
-        serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+        serverProxy.registerService(serviceName, groupName, instance);
     }
 
 
@@ -243,7 +243,7 @@ public class NacosNamingService implements NamingService {
         if (instance.isEphemeral()) {
             beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
         }
-        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
+        serverProxy.deregisterService(serviceName, groupName, instance);
     }
 
     @Override
@@ -289,7 +289,7 @@ public class NacosNamingService implements NamingService {
         if (subscribe) {
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, groupName, StringUtils.join(clusters, ","));
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -343,7 +343,7 @@ public class NacosNamingService implements NamingService {
         if (subscribe) {
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, groupName, StringUtils.join(clusters, ","));
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -392,7 +392,7 @@ public class NacosNamingService implements NamingService {
                 hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         } else {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfoDirectlyFromServer(serviceName, groupName, StringUtils.join(clusters, ",")));
         }
     }
 

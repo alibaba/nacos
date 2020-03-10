@@ -18,4 +18,21 @@ public class ConnectionManager {
         connectionMap.get(connectionId).setLastBeat(System.currentTimeMillis());
     }
 
+    public boolean hasConnection(String connectionId) {
+        return connectionMap.containsKey(connectionId);
+    }
+
+    public boolean putIfAbsent(Connection connection) {
+        connectionMap.putIfAbsent(connection.getConnectionId(), connection);
+        return true;
+    }
+
+    public void listen(String connectionId, ConnectionEventListener listener) {
+
+    }
+
+    public Connection getConnection(String connectionId) {
+        return connectionMap.get(connectionId);
+    }
+
 }

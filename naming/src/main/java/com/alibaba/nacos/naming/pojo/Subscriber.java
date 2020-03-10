@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.pojo;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -36,7 +37,7 @@ public class Subscriber implements Serializable {
 
     private String serviceName;
 
-    public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName) {
+    public Subscriber(String addrStr, String agent, String namespaceId, String serviceName, Map<String, String> metadata) {
         this.addrStr = addrStr;
         this.agent = agent;
         this.app = app;

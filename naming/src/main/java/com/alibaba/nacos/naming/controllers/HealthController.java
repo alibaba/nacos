@@ -29,7 +29,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
@@ -62,7 +62,7 @@ public class HealthController {
 
 
     @Autowired
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @RequestMapping("/server")
     public JSONObject server() {

@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.test.smoke;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.net.NamingGrpcClient;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 public class nacosSmoke_ITCase {
 
@@ -36,6 +40,9 @@ public class nacosSmoke_ITCase {
     }
 
     @Test
-    public void testSmoke() {
+    public void testSmoke() throws Exception {
+        NamingGrpcClient grpcClient = new NamingGrpcClient("127.0.0.1", 18849);
+        grpcClient.registerInstance("test.1", new Instance());
+        TimeUnit.SECONDS.sleep(100000000L);
     }
 }

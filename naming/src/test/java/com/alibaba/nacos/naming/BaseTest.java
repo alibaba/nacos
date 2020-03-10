@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
@@ -68,7 +68,7 @@ public class BaseTest {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
         doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
         doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
-        doReturn(pushService).when(context).getBean(PushService.class);
+        doReturn(pushService).when(context).getBean(NamingPushService.class);
     }
 
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
@@ -85,5 +85,5 @@ public class BaseTest {
     @Mock
     protected HealthCheckProcessorDelegate delegate;
     @Mock
-    protected PushService pushService;
+    protected NamingPushService pushService;
 }

@@ -2,7 +2,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +24,9 @@ import java.util.List;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
-public class PushServiceTest extends BaseTest {
+public class NamingPushServiceTest extends BaseTest {
     @InjectMocks
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Before
     public void before() {
@@ -49,7 +49,7 @@ public class PushServiceTest extends BaseTest {
         String testServiceName = "testGroupName@@testServiceName";
         int testUdpPort = 10001;
 
-        pushService.addClient(namespaceId
+        pushService.addUdpClient(namespaceId
             , helloServiceName
             , clusters
             , agent
@@ -58,7 +58,7 @@ public class PushServiceTest extends BaseTest {
             , namespaceId
             , app);
 
-        pushService.addClient(namespaceId
+        pushService.addUdpClient(namespaceId
             , testServiceName
             , clusters
             , agent

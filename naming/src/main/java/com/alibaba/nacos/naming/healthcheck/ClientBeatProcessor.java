@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,8 +39,8 @@ public class ClientBeatProcessor implements Runnable {
     private Service service;
 
     @JSONField(serialize = false)
-    public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+    public NamingPushService getPushService() {
+        return SpringContext.getAppContext().getBean(NamingPushService.class);
     }
 
     public RsInfo getRsInfo() {

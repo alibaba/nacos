@@ -27,7 +27,7 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.collections.CollectionUtils;
@@ -88,8 +88,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     @JSONField(serialize = false)
-    public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+    public NamingPushService getPushService() {
+        return SpringContext.getAppContext().getBean(NamingPushService.class);
     }
 
     public long getIpDeleteTimeout() {

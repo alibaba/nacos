@@ -33,5 +33,7 @@ public class CommonParams {
 
     public static final String GROUP_NAME = "groupName";
 
+    public static final String CLIENT_ID = "clientId";
+
     public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
 }

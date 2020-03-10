@@ -31,7 +31,7 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.pojo.ClusterStateView;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ import java.util.List;
 public class OperatorController {
 
     @Autowired
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Autowired
     private SwitchManager switchManager;
@@ -75,43 +75,6 @@ public class OperatorController {
 
     @Autowired
     private RaftCore raftCore;
-
-    @RequestMapping("/push/state")
-    public JSONObject pushState(@RequestParam(required = false) boolean detail, @RequestParam(required = false) boolean reset) {
-
-        JSONObject result = new JSONObject();
-
-        List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
-        int failedPushCount = pushService.getFailedPushCount();
-        result.put("succeed", pushService.getTotalPush() - failedPushCount);
-        result.put("total", pushService.getTotalPush());
-
-        if (pushService.getTotalPush() > 0) {
-            result.put("ratio", ((float) pushService.getTotalPush() - failedPushCount) / pushService.getTotalPush());
-        } else {
-            result.put("ratio", 0);
-        }
-
-        JSONArray dataArray = new JSONArray();
-        if (detail) {
-            for (PushService.Receiver.AckEntry entry : failedPushes) {
-                try {
-                    dataArray.add(new String(entry.origin.getData(), "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    dataArray.add("[encoding failure]");
-                }
-            }
-            result.put("data", dataArray);
-        }
-
-        if (reset) {
-            PushService.resetPushState();
-        }
-
-        result.put("reset", reset);
-
-        return result;
-    }
 
     @GetMapping("/switches")
     public SwitchDomain switches(HttpServletRequest request) {

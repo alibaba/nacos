@@ -30,11 +30,13 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.*;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.ClientInfo;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -83,7 +85,7 @@ public class ServiceManager implements RecordListener<Service> {
     private ServerListManager serverListManager;
 
     @Autowired
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Autowired
     private RaftPeerSet raftPeerSet;
@@ -609,6 +611,65 @@ public class ServiceManager implements RecordListener<Service> {
             instanceMap.put(instance.getDatumKey(), instance);
         }
         return instanceMap;
+    }
+
+    public List<Instance> getInstances(String namespaceId, String serviceName, String clusters,
+                                                     String clientIp, boolean healthyOnly) {
+
+        Service service = getService(namespaceId, serviceName);
+
+        if (service == null) {
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
+            }
+
+            return new ArrayList<>();
+        }
+
+        List<Instance> srvedIPs;
+
+        srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
+
+        // filter ips using selector:
+        if (service.getSelector() != null && StringUtils.isNotBlank(clientIp)) {
+            srvedIPs = service.getSelector().select(clientIp, srvedIPs);
+        }
+
+        if (CollectionUtils.isEmpty(srvedIPs)) {
+
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
+            }
+
+            return new ArrayList<>();
+        }
+
+        Map<Boolean, List<Instance>> ipMap = new HashMap<>(2);
+        ipMap.put(Boolean.TRUE, new ArrayList<>());
+        ipMap.put(Boolean.FALSE, new ArrayList<>());
+
+        for (Instance ip : srvedIPs) {
+            ipMap.get(ip.isHealthy()).add(ip);
+        }
+
+        double threshold = service.getProtectThreshold();
+
+        if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
+
+            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
+
+            ipMap.get(Boolean.TRUE).addAll(ipMap.get(Boolean.FALSE));
+            ipMap.get(Boolean.FALSE).clear();
+        }
+
+        srvedIPs = new ArrayList<>(ipMap.get(true));
+
+        if (!healthyOnly) {
+            srvedIPs.addAll(ipMap.get(false));
+        }
+
+        return srvedIPs;
+
     }
 
     public Service getService(String namespaceId, String serviceName) {

@@ -20,7 +20,11 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.naming.net.HttpClient;
+import com.alibaba.nacos.client.naming.utils.SignUtil;
+import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Security proxy to update security information
@@ -75,12 +82,15 @@ public class SecurityProxy {
      */
     private long tokenRefreshWindow;
 
+    private Properties properties;
+
     /**
      * Construct from properties, keeping flexibility
      *
      * @param properties a bunch of properties to read
      */
     public SecurityProxy(Properties properties) {
+        this.properties = properties;
         username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
         contextPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
@@ -138,4 +148,67 @@ public class SecurityProxy {
     public String getAccessToken() {
         return accessToken;
     }
+
+    public Map<String, String> getSecurityInfo() {
+
+        Map<String, String> params = new HashMap<String, String>(16);
+        // Inject token if exist:
+        if (StringUtils.isNotBlank(getAccessToken())) {
+            params.put(Constants.ACCESS_TOKEN, getAccessToken());
+        }
+
+        // Inject ak/sk if exist:
+        String ak = getAccessKey();
+        String sk = getSecretKey();
+        params.put("app", AppNameUtils.getAppName());
+        if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
+            try {
+                String signData = getSignData(params.get("serviceName"));
+                String signature = SignUtil.sign(signData, sk);
+                params.put("signature", signature);
+                params.put("data", signData);
+                params.put("ak", ak);
+            } catch (Exception e) {
+                NAMING_LOGGER.error("inject ak/sk failed.", e);
+            }
+        }
+
+        return params;
+    }
+
+    private static String getSignData(String serviceName) {
+        return StringUtils.isNotEmpty(serviceName)
+            ? System.currentTimeMillis() + "@@" + serviceName
+            : String.valueOf(System.currentTimeMillis());
+    }
+
+    public String getAccessKey() {
+        if (properties == null) {
+
+            return SpasAdapter.getAk();
+        }
+
+        return TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ACCESS_KEY), new Callable<String>() {
+
+            @Override
+            public String call() {
+                return SpasAdapter.getAk();
+            }
+        });
+    }
+
+    public String getSecretKey() {
+        if (properties == null) {
+
+            return SpasAdapter.getSk();
+        }
+
+        return TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SECRET_KEY), new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return SpasAdapter.getSk();
+            }
+        });
+    }
+
 }

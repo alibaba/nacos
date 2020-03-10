@@ -16,15 +16,16 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.NamingSuscribeType;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.core.remoting.ConnectionManager;
+import com.alibaba.nacos.core.remoting.PushManager;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,13 +34,13 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -50,10 +51,16 @@ import java.util.zip.GZIPOutputStream;
  * @author nacos
  */
 @Component
-public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
+public class NamingPushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
 
     @Autowired
     private SwitchDomain switchDomain;
+
+    @Autowired
+    private ConnectionManager connectionManager;
+
+    @Autowired
+    private PushManager pushManager;
 
     private ApplicationContext applicationContext;
 
@@ -100,7 +107,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
     });
 
-    static {
+    @PostConstruct
+    public void init() {
         try {
             udpSocket = new DatagramSocket();
 
@@ -151,7 +159,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Map<String, Object> cache = new HashMap<>(16);
                     long lastRefTime = System.nanoTime();
                     for (PushClient client : clients.values()) {
-                        if (client.zombie()) {
+
+                        if (isZombie(client)) {
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
                             clients.remove(client.toString());
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
@@ -160,15 +169,16 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                         Receiver.AckEntry ackEntry;
                         Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client.toString());
-                        String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
+                        String key = getPushCacheKey(serviceName, client);
                         byte[] compressData = null;
                         Map<String, Object> data = null;
                         if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
                             org.javatuples.Pair pair = (org.javatuples.Pair) cache.get(key);
+                            // TODO
                             compressData = (byte[]) (pair.getValue0());
                             data = (Map<String, Object>) pair.getValue1();
 
-                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
+                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getKey());
                         }
 
                         if (compressData != null) {
@@ -176,14 +186,24 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                         } else {
                             ackEntry = prepareAckEntry(client, prepareHostsData(client), lastRefTime);
                             if (ackEntry != null) {
-                                cache.put(key, new org.javatuples.Pair<>(ackEntry.origin.getData(), ackEntry.data));
+                                if (client.getType().equals(NamingSuscribeType.UDP.name())) {
+                                    cache.put(key, new org.javatuples.Pair<>(((DatagramPacket) ackEntry.origin).getData(), ackEntry.data));
+                                } else {
+                                    cache.put(key, new org.javatuples.Pair<>(ackEntry.origin, ackEntry.data));
+                                }
                             }
                         }
 
                         Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
-                            client.getServiceName(), client.getAddrStr(), client.getAgent(), (ackEntry == null ? null : ackEntry.key));
+                            client.getServiceName(), client.getKey(), client.getAgent(), (ackEntry == null ? null : ackEntry.key));
 
-                        udpPush(ackEntry);
+                        if (client.getType().equals(NamingSuscribeType.GRPC.name())) {
+                            PushClient.GrpcPushClient grpcClient = (PushClient.GrpcPushClient) client;
+                            pushManager.pushChange(grpcClient.getClientId(), grpcClient.getServiceName(), (byte[]) ackEntry.origin);
+                        } else {
+                            udpPush(ackEntry);
+                        }
+
                     }
                 } catch (Exception e) {
                     Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
@@ -204,19 +224,32 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
 
     public void setTotalPush(int totalPush) {
-        PushService.totalPush = totalPush;
+        NamingPushService.totalPush = totalPush;
     }
 
-    public void addClient(String namespaceId,
-                          String serviceName,
-                          String clusters,
-                          String agent,
-                          InetSocketAddress socketAddr,
-                          DataSource dataSource,
-                          String tenant,
-                          String app) {
+    public void addGrpcClient(com.alibaba.nacos.naming.push.PushClient.GrpcPushClient grpcPushClient) {
+        addClient(grpcPushClient);
+    }
 
-        PushClient client = new PushClient(namespaceId,
+    public void removeGrpcClient(com.alibaba.nacos.naming.push.PushClient.GrpcPushClient grpcPushClient) {
+        // remove grpc client:
+        String serviceKey = UtilsAndCommons.assembleFullServiceName(grpcPushClient.getNamespaceId(), grpcPushClient.getServiceName());
+        if (!clientMap.containsKey(serviceKey)) {
+            return;
+        }
+        clientMap.get(serviceKey).remove(grpcPushClient.getKey());
+    }
+
+    public void addUdpClient(String namespaceId,
+                             String serviceName,
+                             String clusters,
+                             String agent,
+                             InetSocketAddress socketAddr,
+                             DataSource dataSource,
+                             String tenant,
+                             String app) {
+
+        PushClient.UdpPushClient client = new PushClient.UdpPushClient(namespaceId,
             serviceName,
             clusters,
             agent,
@@ -224,6 +257,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             dataSource,
             tenant,
             app);
+
         addClient(client);
     }
 
@@ -237,15 +271,15 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             clients = clientMap.get(serviceKey);
         }
 
-        PushClient oldClient = clients.get(client.toString());
+        PushClient oldClient = clients.get(client.getKey());
         if (oldClient != null) {
             oldClient.refresh();
         } else {
-            PushClient res = clients.putIfAbsent(client.toString(), client);
+            PushClient res = clients.putIfAbsent(client.getKey(), client);
             if (res != null) {
-                Loggers.PUSH.warn("client: {} already associated with key {}", res.getAddrStr(), res.toString());
+                Loggers.PUSH.warn("client: {} already associated with key {}", res.getKey(), res.toString());
             }
-            Loggers.PUSH.debug("client: {} added for serviceName: {}", client.getAddrStr(), client.getServiceName());
+            Loggers.PUSH.debug("client: {} added for serviceName: {}", client.getKey(), client.getServiceName());
         }
     }
 
@@ -257,13 +291,14 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
         List<Subscriber> clients = new ArrayList<Subscriber>();
         clientConcurrentMap.forEach((key, client) -> {
-            clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceName));
+            clients.add(new Subscriber(client.getKey(), client.getAgent(), namespaceId, serviceName, client.getMetadata()));
         });
         return clients;
     }
 
     /**
-     *  fuzzy search subscriber
+     * fuzzy search subscriber
+     *
      * @param serviceName
      * @param namespaceId
      * @return
@@ -280,21 +315,34 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             //fuzzy match
             if (outKey.startsWith(namespaceId) && name.indexOf(NamingUtils.getServiceName(serviceName)) >= 0 && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
                 clientConcurrentMap.forEach((key, client) -> {
-                    clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceFullName));
+                    clients.add(new Subscriber(client.getKey(), client.getAgent(), namespaceId, serviceFullName, client.getMetadata()));
                 });
             }
         });
         return clients;
     }
 
-    public static void removeClientIfZombie() {
+    private boolean isZombie(PushClient pushClient) {
+
+        if (pushClient.getType().equals(NamingSuscribeType.UDP.name())) {
+            return System.currentTimeMillis() - pushClient.getLastRefTime() > switchDomain.getPushCacheMillis(pushClient.getServiceName());
+        }
+
+        if (pushClient.getType().equals(NamingSuscribeType.GRPC.name())) {
+            return !connectionManager.hasConnection(((PushClient.GrpcPushClient) pushClient).getClientId());
+        }
+
+        return true;
+    }
+
+    public void removeClientIfZombie() {
 
         int size = 0;
         for (Map.Entry<String, ConcurrentMap<String, PushClient>> entry : clientMap.entrySet()) {
             ConcurrentMap<String, PushClient> clientConcurrentMap = entry.getValue();
             for (Map.Entry<String, PushClient> entry1 : clientConcurrentMap.entrySet()) {
                 PushClient client = entry1.getValue();
-                if (client.zombie()) {
+                if (isZombie(client)) {
                     clientConcurrentMap.remove(entry1.getKey());
                 }
             }
@@ -310,28 +358,30 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     private static Receiver.AckEntry prepareAckEntry(PushClient client, byte[] dataBytes, Map<String, Object> data,
                                                      long lastRefTime) {
-        String key = getACKKey(client.getSocketAddr().getAddress().getHostAddress(),
-            client.getSocketAddr().getPort(),
-            lastRefTime);
-        DatagramPacket packet = null;
+
+        String key = getACKKey(client.getKey(), lastRefTime);
         try {
-            packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
-            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            // we must store the key be fore send, otherwise there will be a chance the
-            // ack returns before we put in
-            ackEntry.data = data;
+            Receiver.AckEntry ackEntry;
+            if (client.getType().equals(NamingSuscribeType.UDP.name())) {
+                DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, ((PushClient.UdpPushClient) client).getSocketAddr());
+                ackEntry = new Receiver.AckEntry(key, packet);
+                ackEntry.data = data;
+            } else {
+                ackEntry = new Receiver.AckEntry(key, dataBytes);
+                ackEntry.data = data;
+            }
 
             return ackEntry;
         } catch (Exception e) {
             Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}",
-                data, client.getSocketAddr(), e);
+                data, client.getKey(), e);
         }
 
         return null;
     }
 
-    public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
-        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+    public static String getPushCacheKey(String serviceName, PushClient pushClient) {
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + pushClient.getKey();
     }
 
     public void serviceChanged(Service service) {
@@ -377,146 +427,12 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
 
     public void setFailedPush(int failedPush) {
-        PushService.failedPush = failedPush;
+        NamingPushService.failedPush = failedPush;
     }
 
 
     public static void resetPushState() {
         ackMap.clear();
-    }
-
-    public class PushClient {
-        private String namespaceId;
-        private String serviceName;
-        private String clusters;
-        private String agent;
-        private String tenant;
-        private String app;
-        private InetSocketAddress socketAddr;
-        private DataSource dataSource;
-        private Map<String, String[]> params;
-
-        public Map<String, String[]> getParams() {
-            return params;
-        }
-
-        public void setParams(Map<String, String[]> params) {
-            this.params = params;
-        }
-
-        public long lastRefTime = System.currentTimeMillis();
-
-        public PushClient(String namespaceId,
-                          String serviceName,
-                          String clusters,
-                          String agent,
-                          InetSocketAddress socketAddr,
-                          DataSource dataSource,
-                          String tenant,
-                          String app) {
-            this.namespaceId = namespaceId;
-            this.serviceName = serviceName;
-            this.clusters = clusters;
-            this.agent = agent;
-            this.socketAddr = socketAddr;
-            this.dataSource = dataSource;
-            this.tenant = tenant;
-            this.app = app;
-        }
-
-        public DataSource getDataSource() {
-            return dataSource;
-        }
-
-        public boolean zombie() {
-            return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(serviceName);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("serviceName: ").append(serviceName)
-                .append(", clusters: ").append(clusters)
-                .append(", address: ").append(socketAddr)
-                .append(", agent: ").append(agent);
-            return sb.toString();
-        }
-
-        public String getAgent() {
-            return agent;
-        }
-
-        public String getAddrStr() {
-            return socketAddr.getAddress().getHostAddress() + ":" + socketAddr.getPort();
-        }
-
-        public String getIp() {
-            return socketAddr.getAddress().getHostAddress();
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(serviceName, clusters, socketAddr);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof PushClient)) {
-                return false;
-            }
-
-            PushClient other = (PushClient) obj;
-
-            return serviceName.equals(other.serviceName) && clusters.equals(other.clusters) && socketAddr.equals(other.socketAddr);
-        }
-
-        public String getClusters() {
-            return clusters;
-        }
-
-        public void setClusters(String clusters) {
-            this.clusters = clusters;
-        }
-
-        public String getNamespaceId() {
-            return namespaceId;
-        }
-
-        public void setNamespaceId(String namespaceId) {
-            this.namespaceId = namespaceId;
-        }
-
-        public String getServiceName() {
-            return serviceName;
-        }
-
-        public void setServiceName(String serviceName) {
-            this.serviceName = serviceName;
-        }
-
-        public String getTenant() {
-            return tenant;
-        }
-
-        public void setTenant(String tenant) {
-            this.tenant = tenant;
-        }
-
-        public String getApp() {
-            return app;
-        }
-
-        public void setApp(String app) {
-            this.app = app;
-        }
-
-        public InetSocketAddress getSocketAddr() {
-            return socketAddr;
-        }
-
-        public void refresh() {
-            lastRefTime = System.currentTimeMillis();
-        }
     }
 
     private static byte[] compressIfNecessary(byte[] dataBytes) throws IOException {
@@ -551,9 +467,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         data.put("lastRefTime", lastRefTime);
 
         // we apply lastRefTime as sequence num for further ack
-        String key = getACKKey(client.getSocketAddr().getAddress().getHostAddress(),
-            client.getSocketAddr().getPort(),
-            lastRefTime);
+        String key = getACKKey(client.getKey(), lastRefTime);
 
         String dataStr = JSON.toJSONString(data);
 
@@ -561,17 +475,22 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
             dataBytes = compressIfNecessary(dataBytes);
 
-            DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
-
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
-            Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
+            Receiver.AckEntry ackEntry;
+            if (client.getType().equals(NamingSuscribeType.UDP.name())) {
+                DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, ((PushClient.UdpPushClient) client).getSocketAddr());
+                ackEntry = new Receiver.AckEntry(key, packet);
+                ackEntry.data = data;
+            } else {
+                ackEntry = new Receiver.AckEntry(key, dataBytes);
+                ackEntry.data = data;
+            }
 
             return ackEntry;
         } catch (Exception e) {
             Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}",
-                data, client.getSocketAddr(), e);
+                data, client.getKey(), e);
             return null;
         }
     }
@@ -598,7 +517,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             udpSendTimeMap.put(ackEntry.key, System.currentTimeMillis());
 
             Loggers.PUSH.info("send udp packet: " + ackEntry.key);
-            udpSocket.send(ackEntry.origin);
+            udpSocket.send((DatagramPacket) ackEntry.origin);
 
             ackEntry.increaseRetryTime();
 
@@ -608,7 +527,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return ackEntry;
         } catch (Exception e) {
             Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}",
-                ackEntry.data, ackEntry.origin.getAddress().getHostAddress(), e);
+                ackEntry.data, ((DatagramPacket) ackEntry.origin).getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.key);
             udpSendTimeMap.remove(ackEntry.key);
             failedPush += 1;
@@ -617,8 +536,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
     }
 
-    private static String getACKKey(String host, int port, long lastRefTime) {
-        return StringUtils.strip(host) + "," + port + "," + lastRefTime;
+    private static String getACKKey(String address, long lastRefTime) {
+        return address + "," + lastRefTime;
     }
 
     public static class Retransmitter implements Runnable {
@@ -658,7 +577,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                         Loggers.PUSH.warn("ack takes too long from {} ack json: {}", packet.getSocketAddress(), json);
                     }
 
-                    String ackKey = getACKKey(ip, port, ackPacket.lastRefTime);
+                    String ackKey = getACKKey(ip + ":" + port, ackPacket.lastRefTime);
                     AckEntry ackEntry = ackMap.remove(ackKey);
                     if (ackEntry == null) {
                         throw new IllegalStateException("unable to find ackEntry for key: " + ackKey
@@ -682,7 +601,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
         public static class AckEntry {
 
-            public AckEntry(String key, DatagramPacket packet) {
+            public AckEntry(String key, Object packet) {
                 this.key = key;
                 this.origin = packet;
             }
@@ -696,7 +615,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             }
 
             public String key;
-            public DatagramPacket origin;
+            public Object origin;
             private AtomicInteger retryTimes = new AtomicInteger(0);
             public Map<String, Object> data;
         }

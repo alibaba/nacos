@@ -19,7 +19,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -42,7 +42,7 @@ public class PerformanceLoggerThread {
     private ServiceManager serviceManager;
 
     @Autowired
-    private PushService pushService;
+    private NamingPushService pushService;
 
     @Autowired
     private RaftCore raftCore;
@@ -125,7 +125,7 @@ public class PerformanceLoggerThread {
     private long getMaxPushCost() {
         long max = -1;
 
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
+        for (Map.Entry<String, Long> entry : NamingPushService.pushCostMap.entrySet()) {
             if (entry.getValue() > max) {
                 max = entry.getValue();
             }
@@ -139,11 +139,11 @@ public class PerformanceLoggerThread {
         long totalCost = 0;
         long avgCost = -1;
 
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
+        for (Map.Entry<String, Long> entry : NamingPushService.pushCostMap.entrySet()) {
             size += 1;
             totalCost += entry.getValue();
         }
-        PushService.pushCostMap.clear();
+        NamingPushService.pushCostMap.clear();
 
         if (size > 0 && totalCost > 0) {
             avgCost = totalCost / size;

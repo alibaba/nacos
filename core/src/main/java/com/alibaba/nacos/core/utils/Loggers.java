@@ -29,4 +29,6 @@ public class Loggers {
     public static final Logger AUTH = LoggerFactory.getLogger("com.alibaba.nacos.core.auth");
 
     public static final Logger GRPC = LoggerFactory.getLogger("com.alibaba.nacos.core.grpc");
+
+    public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.core.main");
 }

@@ -25,11 +25,13 @@ import org.apache.commons.lang3.StringUtils;
 public class NamingUtils {
 
     public static String getGroupedName(String serviceName, String groupName) {
-        StringBuilder resultGroupedName = new StringBuilder()
-            .append(groupName)
-            .append(Constants.SERVICE_INFO_SPLITER)
-            .append(serviceName);
-        return resultGroupedName.toString().intern();
+        if (serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+            return serviceName;
+        }
+        String resultGroupedName = groupName +
+            Constants.SERVICE_INFO_SPLITER +
+            serviceName;
+        return resultGroupedName.intern();
     }
 
     public static String getServiceName(String serviceNameWithGroup) {

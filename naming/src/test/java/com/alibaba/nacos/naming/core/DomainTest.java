@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.NamingPushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class DomainTest {
     @Spy
     protected ApplicationContext context;
     @Mock
-    protected PushService pushService;
+    protected NamingPushService pushService;
 
     @Before
     public void before() {
@@ -51,7 +51,7 @@ public class DomainTest {
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
         new SpringContext().setApplicationContext(context);
-        doReturn(pushService).when(context).getBean(PushService.class);
+        doReturn(pushService).when(context).getBean(NamingPushService.class);
     }
 
     @Test
