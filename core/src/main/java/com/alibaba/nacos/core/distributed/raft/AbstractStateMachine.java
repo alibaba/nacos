@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
@@ -31,6 +32,7 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
+import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
@@ -85,7 +87,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                     final BiConsumer<Boolean, Throwable> proxy = (result, t) -> {
                         boolean[] results = new boolean[wCtx.listFiles().size()];
                         int[] index = new int[]{0};
-                        wCtx.listFiles().forEach((file, meta) -> results[index[0]++] = writer.addFile(file));
+                        wCtx.listFiles().forEach((file, meta) -> results[index[0]++] = writer.addFile(file, buildMetadata(meta)));
                         final Status status = result && BooleanUtils.and(results) ? Status.OK() : new Status(RaftError.EIO,
                                 "Fail to compress snapshot at %s, error is %s", writer.getPath(),
                                 t == null ? "" : t.getMessage());
@@ -98,7 +100,18 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                 public boolean onSnapshotLoad(SnapshotReader reader) {
                     final Map<String, LocalFileMeta> metaMap = new HashMap<>(reader.listFiles().size());
                     for (String fileName : reader.listFiles()) {
-                        metaMap.put(fileName, new LocalFileMeta());
+                        final LocalFileMetaOutter.LocalFileMeta meta = (LocalFileMetaOutter.LocalFileMeta) reader.getFileMeta(fileName);
+
+                        byte[] bytes = meta.getUserMeta().toByteArray();
+
+                        final LocalFileMeta fileMeta;
+                        if (bytes == null || bytes.length == 0) {
+                            fileMeta = new LocalFileMeta();
+                        } else {
+                            fileMeta = JSON.parseObject(bytes, LocalFileMeta.class);
+                        }
+
+                        metaMap.put(fileName, fileMeta);
                     }
                     final Reader rCtx = new Reader(reader.getPath(), metaMap);
                     return item.onSnapshotLoad(rCtx);

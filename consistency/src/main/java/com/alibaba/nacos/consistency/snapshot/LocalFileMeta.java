@@ -41,4 +41,11 @@ public class LocalFileMeta {
     public Properties getFileMeta() {
         return fileMeta;
     }
+
+    @Override
+    public String toString() {
+        return "LocalFileMeta{" +
+                "fileMeta=" + fileMeta +
+                '}';
+    }
 }

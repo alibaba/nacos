@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
@@ -24,14 +25,19 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -53,7 +59,12 @@ public class NacosClusterRouter {
     }
 
     @GetMapping(value = "/nodes")
-    public ResResult<Collection<Member>> listAllNode() {
+    public ResResult<Collection<Member>> listAllNode(HttpServletRequest request) {
+        final String json = request.getParameter("self");
+        if (StringUtils.isNotBlank(json)) {
+            Member remoteMember = JSON.parseObject(json, Member.class);
+            memberManager.update(remoteMember);
+        }
         return ResResultUtils.success(memberManager.allMembers());
     }
 
@@ -85,6 +96,24 @@ public class NacosClusterRouter {
         Loggers.CORE.debug("node state report, receive info : {}", node);
         memberManager.update(node);
         return ResResultUtils.success(true);
+    }
+
+    @DeleteMapping("/server/leave")
+    public ResResult<Boolean> memberLeave(@RequestParam(value = "member") String address) {
+
+        Member member = new Member();
+
+        if (!address.contains(":")) {
+            member.setIp(address);
+            member.setPort(8848);
+        } else {
+            String[] info = address.split(":");
+            member.setIp(info[0]);
+            member.setPort(Integer.parseInt(info[1]));
+        }
+
+        memberManager.memberLeave(Collections.singletonList(member));
+        return ResResultUtils.success();
     }
 
     @GetMapping("/sys/idGeneratorInfo")

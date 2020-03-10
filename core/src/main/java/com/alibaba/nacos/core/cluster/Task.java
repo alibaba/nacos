@@ -16,30 +16,26 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
 
-    protected ServerMemberManager nodeManager;
-    private boolean inExecute = false;
+    protected ServerMemberManager memberManager;
 
-    void setNodeManager(ServerMemberManager nodeManager) {
-        this.nodeManager = nodeManager;
+    public void setMemberManager(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @Override
     public void run() {
-        inExecute = true;
         executeBody();
     }
 
     // init some resource
 
-    protected void init() {
+    public void init() {
 
     }
 
@@ -47,89 +43,5 @@ public abstract class Task implements Runnable {
      * Task executive
      */
     protected abstract void executeBody();
-
-    public boolean isInExecute() {
-        return inExecute;
-    }
-
-    /**
-     * Scheduled information
-     *
-     * @return {@link TaskInfo}
-     */
-    public TaskInfo scheduleInfo() {
-        return TaskInfo.DEFAULT;
-    }
-
-    /**
-     * task types
-     * 1：Need to execute regularly
-     * 2：Need to delay execution
-     * 3：Execute immediately
-     *
-     * @return {@link TaskType}
-     */
-    public abstract TaskType[] types();
-
-    public static enum TaskType {
-
-        /**
-         * Need to execute regularly
-         */
-        SCHEDULE_TASK(1),
-
-        /**
-         * Need to delay execution
-         */
-        DELAY_TASK(2),
-
-        /**
-         * Execute immediately
-         */
-        IMMEDIATELY_TASK(3),
-
-        /**
-         * Execute by current thread
-         */
-        NOW_THREAD(4);
-
-        private int type;
-
-        TaskType(int type) {
-            this.type = type;
-        }
-
-        public int getType() {
-            return type;
-        }
-    }
-
-    public static class TaskInfo {
-
-        public static final TaskInfo DEFAULT = new TaskInfo(0L, 30L, TimeUnit.SECONDS);
-
-        private final long delay;
-        private final long period;
-        private final TimeUnit unit;
-
-        public TaskInfo(long delay, long period, TimeUnit unit) {
-            this.delay = delay;
-            this.period = period;
-            this.unit = unit;
-        }
-
-        public long getDelay() {
-            return delay;
-        }
-
-        public long getPeriod() {
-            return period;
-        }
-
-        public TimeUnit getUnit() {
-            return unit;
-        }
-
-    }
 
 }

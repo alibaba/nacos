@@ -14,34 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.snapshot;
-
-import java.util.Collections;
-import java.util.Map;
+package com.alibaba.nacos.core.cluster;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Reader {
+public class MemberUtils {
 
-    private final String path;
-
-    private final Map<String, LocalFileMeta> allFiles;
-
-    public Reader(String path, Map<String, LocalFileMeta> allFiles) {
-        this.path = path;
-        this.allFiles = Collections.unmodifiableMap(allFiles);
+    public static void copy(Member newMember, Member oldMember) {
+        oldMember.extendInfo().putAll(newMember.extendInfo());
+        oldMember.setState(newMember.state());
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public Map<String, LocalFileMeta> listFiles() {
-        return allFiles;
-    }
-
-    public LocalFileMeta getFileMeta(String fileName) {
-        return allFiles.get(fileName);
-    }
 }

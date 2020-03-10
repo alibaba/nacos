@@ -16,52 +16,39 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
+import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import java.io.File;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 import javax.sql.DataSource;
+
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbySnapshotOperation implements SnapshotOperation {
 
-    private final String queryAllDataByTable = "select * from %s";
     private final String SNAPSHOT_DIR = "derby_data";
     private final String SNAPSHOT_ARCHIVE = "derby_data.zip";
-    private final String fileSuffix = ".del";
-    private final String[] tableNames = new String[]{
-            "config_info",
-            "his_config_info",
-            "config_info_beta",
-            "config_info_tag",
-            "config_info_aggr",
-            "app_list",
-            "app_configdata_relation_subs",
-            "app_configdata_relation_pubs",
-            "config_tags_relation",
-            "group_capacity",
-            "tenant_capacity",
-            "tenant_info",
-            "users",
-            "roles",
-            "permissions",
-    };
+
+    private static final String DERBY_BASE_DIR = Paths.get(NACOS_HOME, "data", "derby-data").toString();
+
+    private final String restoreDB = "jdbc:derby:restoreFrom=" + DERBY_BASE_DIR;
 
     @Override
     public void onSnapshotSave(Writer writer, CallFinally callFinally) {
@@ -71,18 +58,18 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
                 DiskUtils.deleteDirectory(parentPath);
                 DiskUtils.forceMkdir(parentPath);
-                final List<String> sqls = new ArrayList<>();
-                String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('%s', '%s', null, null, null)";
-                for (String tableName : tableNames) {
-                    final String queryAllData = String.format(queryAllDataByTable, tableName);
-                    final String exportFile = Paths.get(parentPath, tableName + fileSuffix).toString();
-                    sqls.add(String.format(sqlTemplate, queryAllData, exportFile));
-                }
-                batchExec(sqls, "Snapshot save");
+
+                doDerbyBackup(parentPath);
+
                 final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-                DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, new CRC32());
+                final Checksum checksum = new CRC32();
+                DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, checksum);
                 DiskUtils.deleteDirectory(parentPath);
-                callFinally.run(writer.addFile(SNAPSHOT_ARCHIVE), null);
+
+                final LocalFileMeta meta = new LocalFileMeta();
+                meta.append("checkSum", checksum.getValue());
+
+                callFinally.run(writer.addFile(SNAPSHOT_ARCHIVE, meta), null);
             } catch (Throwable t) {
                 LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.",
                         writer.getPath(), writer.listFiles(), t);
@@ -96,16 +83,25 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
         try {
-            DiskUtils.decompress(sourceFile, readerPath, new CRC32());
+
+            final Checksum checksum = new CRC32();
+            DiskUtils.decompress(sourceFile, readerPath, checksum);
+
             final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
-            LogUtil.fatalLog.info("snapshot load from : {}", loadPath);
-            List<String> sqls = new ArrayList<>();
-            final String sqlTemplate = "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE(null,'STAFF','%s',null,null,null,0)";
-            for (String tableName : tableNames) {
-                final String importFile = Paths.get(loadPath, tableName + fileSuffix).toString();
-                sqls.add(String.format(sqlTemplate, importFile));
-            }
-            return batchExec(sqls, "Snapshot load");
+            LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath, DERBY_BASE_DIR);
+
+            final File srcDir = new File(loadPath);
+            final File destDir = new File(DERBY_BASE_DIR);
+
+            DiskUtils.copyDirectory(srcDir, destDir);
+
+            System.out.println(destDir.listFiles().length);
+
+            doDerbyRestoreFromBackup();
+            DiskUtils.deleteDirectory(loadPath);
+            DiskUtils.deleteFile(readerPath, SNAPSHOT_ARCHIVE);
+
+            return true;
         } catch (final Throwable t) {
             LogUtil.fatalLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                     reader.listFiles(), t);
@@ -113,36 +109,20 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         }
     }
 
-    private boolean batchExec(List<String> sqls, String type) {
-        DataSource dataSource = SpringUtils.getBean(DynamicDataSource.class).getDataSource()
-                .getJdbcTemplate().getDataSource();
-
-        if (dataSource == null) {
-            throw new NullPointerException("The DataSource object does not exist in the Spring container");
-        }
-
-        String sql = "";
-        Connection holder = null;
-        try (Connection connection = dataSource.getConnection()) {
-            holder = connection;
-            for (String t : sqls) {
-                sql = t;
-                CallableStatement statement = connection.prepareCall(sql);
-                LogUtil.fatalLog.info("snapshot load exec sql : {}", sql);
-                statement.execute();
-            }
-            connection.commit();
-            return true;
-        } catch (Exception e) {
-            if (Objects.nonNull(holder)) {
-                try {
-                    holder.rollback();
-                } catch (SQLException ex) {
-                    LogUtil.fatalLog.error("transaction rollback has error : {}", ExceptionUtil.getAllExceptionMsg(e));
-                }
-            }
-            LogUtil.fatalLog.error(type + " exec sql : {} has some error : {}", sql, e);
-            return false;
+    private void doDerbyBackup(String backupDirectory) throws Exception {
+        DataSourceService sourceService = SpringUtils.getBean(DynamicDataSource.class).getDataSource();
+        DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
+        try (Connection holder = dataSource.getConnection()) {
+            CallableStatement cs = holder.prepareCall("CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)");
+            cs.setString(1, backupDirectory);
+            cs.execute();
         }
     }
+
+    private void doDerbyRestoreFromBackup() throws Exception {
+        DataSourceService sourceService = SpringUtils.getBean(DynamicDataSource.class).getDataSource();
+        LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
+        localDataSourceService.reopenDerby(restoreDB);
+    }
+
 }

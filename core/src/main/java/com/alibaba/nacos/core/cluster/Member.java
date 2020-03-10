@@ -152,11 +152,7 @@ public class Member {
     @Override
     public String toString() {
         return "Member{" +
-                "ip='" + ip + '\'' +
-                ", port=" + port +
-                ", state=" + state +
-                ", extendInfo=" + extendInfo +
-                ", address='" + address + '\'' +
+                "address='" + address + '\'' +
                 '}';
     }
 

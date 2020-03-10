@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import java.io.IOException;
@@ -29,8 +30,6 @@ import javax.sql.DataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.dao.DataAccessException;
@@ -53,7 +52,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
     private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
     private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
@@ -65,9 +63,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         try {
             Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
             JDBC_DRIVER_NAME = MYSQL_HIGH_LEVEL_DRIVER;
-            logger.info("Use Mysql 8 as the driver");
+            LogUtil.defaultLog.info("Use Mysql 8 as the driver");
         } catch (ClassNotFoundException e) {
-            logger.info("Use Mysql as the driver");
+            LogUtil.defaultLog.info("Use Mysql as the driver");
             JDBC_DRIVER_NAME = DEFAULT_MYSQL_DRIVER;
         }
     }
@@ -91,9 +89,10 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     }
 
     @PostConstruct
-    public void init() {
+    @Override
+    public void init() throws Exception {
         if (PropertyUtil.isUseMysql()) {
-            logger.info("use basic db service");
+            LogUtil.defaultLog.info("use basic db service");
 
             queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
             jt = new JdbcTemplate();
@@ -213,11 +212,6 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             throw new IOException(e);
         } finally {
         }
-    }
-
-    @Override
-    public void destroyThenReload() throws Exception {
-        throw new UnsupportedOperationException();
     }
 
     @Override

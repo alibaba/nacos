@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -27,12 +30,40 @@ public class GlobalExecutor {
 
     private static final ExecutorService COMMON_EXECUTOR = ExecutorFactory.newFixExecutorService(
             GlobalExecutor.class.getCanonicalName(),
-            Runtime.getRuntime().availableProcessors(),
+            4,
             new NameThreadFactory("com.alibaba.nacos.core.common")
     );
 
+    private static final ScheduledExecutorService syncMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+            MemberManager.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
+            );
+
+    private static final ScheduledExecutorService cleanMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+            MemberManager.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
+    );
+
+    private static final ScheduledExecutorService reportStateExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+            MemberManager.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
+    );
+
+
     public static void executeByCommon(Runnable runnable) {
         COMMON_EXECUTOR.execute(runnable);
+    }
+
+    public static void scheduleSyncJob(Runnable runnable, long delay) {
+        syncMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void scheduleCleanJob(Runnable runnable, long delay) {
+        cleanMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void scheduleReportJob(Runnable runnable, long delay) {
+        reportStateExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
 }

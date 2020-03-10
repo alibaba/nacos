@@ -52,6 +52,7 @@ import java.util.zip.CRC32;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 /**
@@ -61,6 +62,7 @@ import org.springframework.stereotype.Component;
  */
 @ConditionalOnProperty(value = "nacos.core.idGenerator.type", havingValue = "default", matchIfMissing = true)
 @Component
+@DependsOn("serverMemberManager")
 public class DefaultIdStore implements LogProcessor4CP {
 
     private static final File[] EMPTY = new File[0];
@@ -91,6 +93,16 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     public boolean isHasLeader() {
         return hasLeader;
+    }
+
+    public void firstAcquire(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
+        this.protocol.protocolMetaData()
+                .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
+                    @Override
+                    public void update(Observable o, Object arg) {
+                        GlobalExecutor.executeByCommon(() -> acquireNewIdSequence(resource, maxRetryCnt, generator));
+                    }
+                });
     }
 
     public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator) {

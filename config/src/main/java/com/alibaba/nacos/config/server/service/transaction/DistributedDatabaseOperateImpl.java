@@ -87,13 +87,6 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
         transactionTemplate = dataSourceService.getTransactionTemplate();
         selfIp = memberManager.self().address();
         defaultLog.info("use DistributedTransactionServicesImpl");
-
-        // Delete existing data, relying on raft's snapshot and log
-        // playback to reply to the data is the correct behavior.
-
-        // TODO Derby recreates the startup
-
-        dataSourceService.destroyThenReload();
     }
 
     @Override

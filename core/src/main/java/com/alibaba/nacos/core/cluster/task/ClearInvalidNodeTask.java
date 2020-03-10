@@ -18,35 +18,43 @@ package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.Task;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ClearInvalidNodeTask extends Task {
 
-    // 1 minutes
+    // 10 second
 
-    private static final long EXPIRE_TIME = 60_000L;
+    private static final long EXPIRE_TIME = 10_000L;
 
-    // 2 minute
+    // 20 second
 
-    private static final long REMOVAL_TIME = EXPIRE_TIME << 1;
-    private static final int MAX_CLEAN_CNT = 15;
+    private static final long REMOVAL_TIME = 20_000L;
+    private static final int MAX_CLEAN_CNT = 3;
     private int cleanCnt = 0;
 
     @Override
-    protected void executeBody() {
-        Map<String, Long> lastRefreshRecord = nodeManager.getLastRefreshTimeRecord();
-        Map<String, Member> nodeMap = nodeManager.getServerListHealth();
-        Set<Member> unHealthMembers = nodeManager.getServerListUnHealth();
+    public void executeBody() {
+        Map<String, Long> lastRefreshRecord = memberManager.getLastRefreshTimeRecord();
+        Map<String, Member> nodeMap = memberManager.getServerListHealth();
+        Set<Member> unHealthMembers = memberManager.getServerListUnHealth();
 
         long currentTime = System.currentTimeMillis();
 
+        final String self = memberManager.self().address();
+
         lastRefreshRecord.forEach((address, lastRefresh) -> {
+
+            if (Objects.equals(self, address)) {
+                return;
+            }
+
             if (lastRefresh + EXPIRE_TIME < currentTime) {
                 Member member = nodeMap.get(address);
                 if (member != null) {
@@ -67,21 +75,16 @@ public class ClearInvalidNodeTask extends Task {
         cleanCnt++;
 
         if (cleanCnt > MAX_CLEAN_CNT) {
-            Loggers.CORE.warn("Node to leave : {}", unHealthMembers);
-            nodeManager.memberLeave(unHealthMembers);
-            unHealthMembers.clear();
-            cleanCnt = 0;
+            if (!unHealthMembers.isEmpty()) {
+                Loggers.CORE.warn("Node to leave : {}", unHealthMembers);
+
+                memberManager.memberLeave(unHealthMembers);
+                cleanCnt = 0;
+            }
         }
 
+        GlobalExecutor.scheduleCleanJob(this::executeBody, REMOVAL_TIME);
+
     }
 
-    @Override
-    public TaskType[] types() {
-        return new TaskType[]{TaskType.SCHEDULE_TASK};
-    }
-
-    @Override
-    public TaskInfo scheduleInfo() {
-        return new TaskInfo(REMOVAL_TIME, EXPIRE_TIME, TimeUnit.MILLISECONDS);
-    }
 }

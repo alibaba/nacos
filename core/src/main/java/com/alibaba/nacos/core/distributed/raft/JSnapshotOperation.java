@@ -63,7 +63,7 @@ interface JSnapshotOperation {
     default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) {
         return metadata == null ? null
                 : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ZeroByteStringHelper.wrap(JSON.toJSONBytes(metadata.getFileMeta())))
+                .setUserMeta(ZeroByteStringHelper.wrap(JSON.toJSONBytes(metadata)))
                 .build();
     }
 

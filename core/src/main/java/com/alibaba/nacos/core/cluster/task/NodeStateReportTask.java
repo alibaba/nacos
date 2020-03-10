@@ -17,21 +17,23 @@
 package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.HttpResResult;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.apache.http.client.config.RequestConfig;
 
 /**
@@ -43,7 +45,7 @@ public class NodeStateReportTask extends Task {
             = new TypeReference<ResResult<String>>() {
     };
 
-    private NSyncHttpClient httpClient;
+    private NAsyncHttpClient httpClient;
 
     public NodeStateReportTask() {
         final RequestConfig requestConfig = RequestConfig.custom()
@@ -53,15 +55,23 @@ public class NodeStateReportTask extends Task {
                 .build();
 
         this.httpClient = HttpClientManager
-                .newHttpClient(ServerMemberManager.class.getCanonicalName(), requestConfig);
+                .newAsyncHttpClient(ServerMemberManager.class.getCanonicalName(), requestConfig);
     }
 
     @Override
-    protected void executeBody() {
+    public void executeBody() {
+
+        // If the cluster is self-discovering, there is no need to broadcast self-information
+
+        if (SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false)) {
+            GlobalExecutor.scheduleCleanJob(this::executeBody, 5_000L);
+            return;
+        }
+
         try {
             long startCheckTime = System.currentTimeMillis();
 
-            final Member self = nodeManager.self();
+            final Member self = memberManager.self();
 
             // self node information is not ready
 
@@ -76,9 +86,9 @@ public class NodeStateReportTask extends Task {
 
             self.setExtendVal(Member.WEIGHT, String.valueOf(weight));
 
-            nodeManager.update(self);
+            memberManager.update(self);
 
-            for (Member member : nodeManager.allMembers()) {
+            for (Member member : memberManager.allMembers()) {
 
                 // local node or node check failed will not perform task processing
 
@@ -88,25 +98,33 @@ public class NodeStateReportTask extends Task {
 
                 // Compatible with old codes,use status.taobao
 
-                String url = "http://" + member.address() + nodeManager.getContextPath() +
+                String url = "http://" + member.address() + memberManager.getContextPath() +
                         Commons.NACOS_CORE_CONTEXT + "/cluster/server/report";
 
                 // "/nacos/server/report";
 
-                try {
-                    ResResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY
-                            , ResResultUtils.success(self), reference);
-                    if (result.ok()) {
-                        Loggers.CORE.debug("Successfully synchronizing information to node : {}," +
-                                " result : {}", member, result);
-                    } else {
-                        Loggers.CORE.warn("An exception occurred while reporting their " +
-                                "information to the node : {}, error : {}", member.address(), result.getErrMsg());
-                    }
-                } catch (Exception e) {
-                    Loggers.CORE.error("An exception occurred while reporting their " +
-                            "information to the node : {}, error : {}", member.address(), e);
-                }
+                httpClient.post(url, Header.EMPTY, Query.EMPTY
+                        , ResResultUtils.success(self), reference, new Callback<String>() {
+                            @Override
+                            public void onReceive(HttpResResult<String> result) {
+                                if (result.ok()) {
+                                    Loggers.CORE.debug("Successfully synchronizing information to node : {}," +
+                                            " result : {}", member, result);
+
+                                } else {
+                                    Loggers.CORE.warn("An exception occurred while reporting their " +
+                                            "information to the node : {}, error : {}", member.address(), result.getErrMsg());
+                                }
+                                memberManager.getServerListUnHealth().remove(member);
+                                memberManager.getLastRefreshTimeRecord().put(member.address(), System.currentTimeMillis());
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Loggers.CORE.error("An exception occurred while reporting their " +
+                                        "information to the node : {}, error : {}", member.address(), e);
+                            }
+                        });
             }
             long endCheckTime = System.currentTimeMillis();
             long cost = endCheckTime - startCheckTime;
@@ -114,16 +132,7 @@ public class NodeStateReportTask extends Task {
         } catch (Exception e) {
             Loggers.CORE.error("node state report task has error : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
+        GlobalExecutor.scheduleCleanJob(this::executeBody, 5_000L);
     }
 
-
-    @Override
-    public TaskType[] types() {
-        return new TaskType[]{TaskType.SCHEDULE_TASK};
-    }
-
-    @Override
-    public TaskInfo scheduleInfo() {
-        return new TaskInfo(10, 30L, TimeUnit.SECONDS);
-    }
 }

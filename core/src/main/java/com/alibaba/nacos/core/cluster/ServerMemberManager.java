@@ -25,10 +25,12 @@ import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.task.ClearInvalidNodeTask;
+import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Constants;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
@@ -65,7 +67,6 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("all")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, MemberManager {
 
-    private final MemberTaskManager taskManager = new MemberTaskManager(this);
     private final ServletContext servletContext;
     public String domainName;
     public String addressPort;
@@ -104,7 +105,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         initSys();
 
         SyncNodeTask task = new SyncNodeTask(servletContext);
-        taskManager.execute(task);
+        task.setMemberManager(this);
+        task.init();
+
+        GlobalExecutor.scheduleSyncJob(task, 10_000L);
 
         // Consistency protocol module initialization
 
@@ -132,7 +136,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                     serverListUnHealth.remove(newMember);
                     lastRefreshTimeRecord.put(address, nowTime);
                 }
-                return newMember;
+                MemberUtils.copy(newMember, member);
+                return member;
             }
         });
     }
@@ -225,7 +230,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member member = iterator.next();
             final String address = member.address();
 
-            if (Objects.equals(member, self) || serverListHealth.containsKey(address)) {
+            if (Objects.equals(address, localAddress)) {
                 iterator.remove();
                 continue;
             }
@@ -392,8 +397,22 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
-        taskManager.execute(new NodeStateReportTask());
-        taskManager.execute(new ClearInvalidNodeTask());
+        NodeStateReportTask reportTask = new NodeStateReportTask();
+        ClearInvalidNodeTask clearInvalidNodeTask = new ClearInvalidNodeTask();
+        MemberShutdownTask shutdownTask = new MemberShutdownTask();
+
+        reportTask.setMemberManager(this);
+        clearInvalidNodeTask.setMemberManager(this);
+        shutdownTask.setMemberManager(this);
+
+        reportTask.init();
+        clearInvalidNodeTask.init();
+
+        GlobalExecutor.scheduleCleanJob(clearInvalidNodeTask, 30_000L);
+        GlobalExecutor.scheduleReportJob(reportTask, 20_000L);
+
+        shutdownTask.run();
+
     }
 
     public Map<String, Member> getServerListHealth() {

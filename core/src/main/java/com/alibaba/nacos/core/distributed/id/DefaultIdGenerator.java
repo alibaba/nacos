@@ -49,12 +49,9 @@ public class DefaultIdGenerator implements IdGenerator {
     public void init() {
         idStore = SpringUtils.getBean(DefaultIdStore.class);
 
-        if (idStore.isHasLeader()) {
-            idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this);
-        } else {
-            GlobalExecutor.executeByCommon(() -> idStore
-                    .acquireNewIdSequence(resource, Integer.MAX_VALUE, this));
-        }
+        // The first request requires an asynchronous request
+
+        idStore.firstAcquire(resource, Integer.MAX_VALUE, this);
     }
 
     @Override

@@ -25,24 +25,20 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @author Nacos
  */
 public interface DataSourceService {
+
+    /**
+     * Initialize the relevant resource information
+     *
+     * @throws Exception
+     */
+    void init() throws Exception;
+
     /**
      * reload
      *
      * @throws IOException exception
      */
     void reload() throws IOException;
-
-
-    /**
-     * First, empty the data in the database and restart
-     * <p>This is a very dangerous operation!!!</p>
-     * <p>
-     * The method is currently only allowed {@link com.alibaba.nacos.config.server.service.transaction.DistributedDatabaseOperateImpl}
-     * to be called
-     *
-     * @throws Exception exception
-     */
-    void destroyThenReload() throws Exception;
 
     /**
      * check master db
