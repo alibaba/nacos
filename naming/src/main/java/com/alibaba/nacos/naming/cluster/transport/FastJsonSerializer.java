@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,17 +43,13 @@ public class FastJsonSerializer implements Serializer {
 
     @Override
     public <T> T deserialize(byte[] data, Class<T> clazz) {
-        try {
-            return JSON.parseObject(new String(data, "UTF-8"), clazz);
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
+        return JSON.parseObject(new String(data, StandardCharsets.UTF_8), clazz);
     }
 
     @Override
     public <T> T deserialize(byte[] data, TypeReference<T> clazz) {
         try {
-            String dataString = new String(data, "UTF-8");
+            String dataString = new String(data, StandardCharsets.UTF_8);
             return JSON.parseObject(dataString, clazz);
         } catch (Exception e) {
             Loggers.SRV_LOG.error("deserialize data failed.", e);
@@ -64,7 +60,7 @@ public class FastJsonSerializer implements Serializer {
     @Override
     public <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
         try {
-            String dataString = new String(data, "UTF-8");
+            String dataString = new String(data, StandardCharsets.UTF_8);
             Map<String, JSONObject> dataMap = JSON.parseObject(dataString, new TypeReference<Map<String, JSONObject>>() {
             });
 

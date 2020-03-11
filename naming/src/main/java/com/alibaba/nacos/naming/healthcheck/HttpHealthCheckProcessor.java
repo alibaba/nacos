@@ -47,6 +47,8 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 @Component
 public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
+    public static final String TYPE = "HTTP";
+
     @Autowired
     private SwitchDomain switchDomain;
 
@@ -55,7 +57,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     private static AsyncHttpClient asyncHttpClient;
 
-    public static final int CONNECT_TIMEOUT_MS = 500;
+    private static final int CONNECT_TIMEOUT_MS = 500;
 
     static {
         try {
@@ -79,7 +81,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public String getType() {
-        return "HTTP";
+        return TYPE;
     }
 
     @Override

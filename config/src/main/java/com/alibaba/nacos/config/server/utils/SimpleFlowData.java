@@ -35,6 +35,7 @@ public class SimpleFlowData {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
+        @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
             t.setName("nacos flow control thread");
@@ -52,6 +53,7 @@ public class SimpleFlowData {
         }
         timer.scheduleAtFixedRate(new Runnable() {
 
+            @Override
             public void run() {
                 rotateSlot();
             }

@@ -101,4 +101,15 @@ public class Service {
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
     }
+
+    @Override
+    public String toString() {
+        return "Service{" +
+            "name='" + name + '\'' +
+            ", protectThreshold=" + protectThreshold +
+            ", appName='" + appName + '\'' +
+            ", groupName='" + groupName + '\'' +
+            ", metadata=" + metadata +
+            '}';
+    }
 }

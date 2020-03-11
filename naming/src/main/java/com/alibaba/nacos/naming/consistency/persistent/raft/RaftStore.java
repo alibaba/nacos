@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -37,8 +38,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author nacos
@@ -52,9 +55,8 @@ public class RaftStore {
 
     private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
-    public synchronized ConcurrentHashMap<String, Datum> loadDatums(RaftCore.Notifier notifier) throws Exception {
+    public synchronized void loadDatums(RaftCore.Notifier notifier, ConcurrentMap<String, Datum> datums) throws Exception {
 
-        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
         Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {
@@ -75,7 +77,6 @@ public class RaftStore {
         }
 
         Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", datums.size(), (System.currentTimeMillis() - start));
-        return datums;
     }
 
     public synchronized Properties loadMeta() throws Exception {
@@ -119,7 +120,7 @@ public class RaftStore {
             buffer = ByteBuffer.allocate((int) file.length());
             fc.read(buffer);
 
-            String json = new String(buffer.array(), "UTF-8");
+            String json = new String(buffer.array(), StandardCharsets.UTF_8);
             if (StringUtils.isBlank(json)) {
                 return null;
             }
@@ -157,8 +158,35 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
-                return JSON.parseObject(json, new TypeReference<Datum<Instances>>() {
-                });
+
+                Datum<Instances> instancesDatum;
+
+                try {
+                    instancesDatum = JSON.parseObject(json, new TypeReference<Datum<Instances>>() {
+                    });
+                } catch (Exception e) {
+                    JSONObject jsonObject = JSON.parseObject(json);
+                    instancesDatum = new Datum<>();
+                    instancesDatum.timestamp.set(jsonObject.getLongValue("timestamp"));
+
+                    String key = jsonObject.getString("key");
+                    String serviceName = KeyBuilder.getServiceName(key);
+                    key = key.substring(0, key.indexOf(serviceName)) +
+                        Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName;
+
+                    instancesDatum.key = key;
+                    instancesDatum.value = new Instances();
+                    instancesDatum.value.setInstanceList(JSON.parseObject(jsonObject.getString("value"),
+                        new TypeReference<List<Instance>>() {
+                        }));
+                    if (!instancesDatum.value.getInstanceList().isEmpty()) {
+                        for (Instance instance : instancesDatum.value.getInstanceList()) {
+                            instance.setEphemeral(false);
+                        }
+                    }
+                }
+
+                return instancesDatum;
             }
 
             return JSON.parseObject(json, Datum.class);
@@ -194,7 +222,7 @@ public class RaftStore {
         FileChannel fc = null;
         ByteBuffer data;
 
-        data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
+        data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes(StandardCharsets.UTF_8));
 
         try {
             fc = new FileOutputStream(cacheFile, false).getChannel();
@@ -206,6 +234,21 @@ public class RaftStore {
         } finally {
             if (fc != null) {
                 fc.close();
+            }
+        }
+
+        // remove old format file:
+        if (StringUtils.isNoneBlank(namespaceId)) {
+            if (datum.key.contains(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER)) {
+                String oldFormatKey =
+                    datum.key.replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
+
+                cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(oldFormatKey));
+                if (cacheFile.exists() && !cacheFile.delete()) {
+                    Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}",
+                        datum.key, datum.value);
+                    throw new IllegalStateException("failed to delete old format datum: " + datum.key);
+                }
             }
         }
     }

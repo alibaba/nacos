@@ -86,28 +86,22 @@ public class EnvUtil {
         return selfLocationTag;
     }
 
-    public static String listToString(List<String> list) {
-        if (list == null) {
+    private static String listToString(List<String> list) {
+        if (list == null || list.isEmpty()) {
             return null;
         }
         StringBuilder result = new StringBuilder();
-        boolean first = true;
-        // 第一个前面不拼接","
         for (String string : list) {
-            if (first) {
-                first = false;
-            } else {
-                result.append(",");
-            }
             result.append(string);
+            result.append(",");
         }
-        return result.toString();
+        return result.toString().substring(0, result.length() - 1);
     }
 
     private static String selfAmorayTag;
     private static String selfVipserverTag;
     private static String selfLocationTag;
-    public final static String AMORY_TAG = "Amory-Tag";
-    public final static String VIPSERVER_TAG = "Vipserver-Tag";
-    public final static String LOCATION_TAG = "Location-Tag";
+    private final static String AMORY_TAG = "Amory-Tag";
+    private final static String VIPSERVER_TAG = "Vipserver-Tag";
+    private final static String LOCATION_TAG = "Location-Tag";
 }

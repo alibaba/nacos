@@ -20,10 +20,9 @@ import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
 
@@ -34,7 +33,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  *
  * @author Nacos
  */
-@Controller
+@RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 
@@ -45,15 +44,16 @@ public class HealthController {
     private String heathWarnStr = "WARN";
 
     @Autowired
-    public HealthController(DynamicDataSource dynamicDataSource) {this.dynamicDataSource = dynamicDataSource;}
+    public HealthController(DynamicDataSource dynamicDataSource) {
+        this.dynamicDataSource = dynamicDataSource;
+    }
 
     @PostConstruct
     public void init() {
         dataSourceService = dynamicDataSource.getDataSource();
     }
 
-    @ResponseBody
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public String getHealth() {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();

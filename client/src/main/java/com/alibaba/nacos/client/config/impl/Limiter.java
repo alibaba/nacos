@@ -34,8 +34,8 @@ public class Limiter {
 
     private static final Logger LOGGER = LogUtils.logger(Limiter.class);
 
-    private static int CAPACITY_SIZE = 1000;
-    private static int LIMIT_TIME = 1000;
+    private static final int CAPACITY_SIZE = 1000;
+    private static final int LIMIT_TIME = 1000;
     private static Cache<String, RateLimiter> cache = CacheBuilder.newBuilder()
         .initialCapacity(CAPACITY_SIZE).expireAfterAccess(1, TimeUnit.MINUTES)
         .build();

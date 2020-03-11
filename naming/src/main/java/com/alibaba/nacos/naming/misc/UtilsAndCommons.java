@@ -20,8 +20,9 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
@@ -36,6 +37,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author nacos
+ * @author jifengnan
  */
 public class UtilsAndCommons {
 
@@ -69,7 +71,7 @@ public class UtilsAndCommons {
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
-    public static final String NACOS_VERSION = "1.0.0";
+    public static final String NACOS_VERSION = VersionUtils.VERSION;
 
     public static final String SUPER_TOKEN = "xy";
 
@@ -116,6 +118,8 @@ public class UtilsAndCommons {
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
 
     public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
 
@@ -191,18 +195,6 @@ public class UtilsAndCommons {
 
     }
 
-    public static String getAllExceptionMsg(Throwable e) {
-        Throwable cause = e;
-        StringBuilder strBuilder = new StringBuilder();
-
-        while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
-            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
-            cause = cause.getCause();
-        }
-
-        return strBuilder.toString();
-    }
-
     public static String getSwitchDomainKey() {
         return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
@@ -239,23 +231,25 @@ public class UtilsAndCommons {
     }
 
     /**
-     * 根据指定的字符串计算出一个0（含）到{@code upperLimit}（不含）之间的数字，本方法会试图让不同的字符串较均匀的分布在0到{@code upperLimit}之间。
-     * (Provide a number between 0(include) and {@code upperLimit}(exclude) for the given {@code string}, the number will be nearly uniform distribution.)
+     * Provide a number between 0(inclusive) and {@code upperLimit}(exclusive) for the given {@code string},
+     * the number will be nearly uniform distribution.
      * <p>
      * <p>
-     * 举个例子：假设有N个提供相同服务的服务器地址被存在一个数组中，为了实现负载均衡，可以根据调用者的名字决定使用哪个服务器。
-     * (e.g. Assume there's an array which contains some IP of the servers provide the same service, the caller name can be used to choose the server to achieve load balance.)
+     *
+     * e.g. Assume there's an array which contains some IP of the servers provide the same service,
+     * the caller name can be used to choose the server to achieve load balance.
      * <blockquote><pre>
      *     String[] serverIps = new String[10];
      *     int index = shakeUp("callerName", serverIps.length);
      *     String targetServerIp = serverIps[index];
      * </pre></blockquote>
      *
-     * @param string     字符串。如果为null会固定返回0 (a string. the number 0 will be returned if it's null)
-     * @param upperLimit 返回值的上限，必须为正整数(>0) (the upper limit of the returned number, must be a positive integer, which means > 0)
-     * @return 0（含）到upperLimit（不含）之间的一个数字 (a number between 0(include) and upperLimit(exclude))
+     * @param string     a string. the number 0 will be returned if it's null
+     * @param upperLimit the upper limit of the returned number, must be a positive integer, which means > 0
+     * @return a number between 0(inclusive) and upperLimit(exclusive)
      * @throws IllegalArgumentException if the upper limit equals or less than 0
      * @since 1.0.0
+     * @author jifengnan
      */
     public static int shakeUp(String string, int upperLimit) {
         if (upperLimit < 1) {

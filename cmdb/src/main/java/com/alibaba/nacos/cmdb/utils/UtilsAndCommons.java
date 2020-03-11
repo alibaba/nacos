@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class UtilsAndCommons {
 
-    public static final String NACOS_SERVER_VERSION = "/v1";
+    private static final String NACOS_SERVER_VERSION = "/v1";
 
     public static final String NACOS_CMDB_CONTEXT = NACOS_SERVER_VERSION + "/cmdb";
 

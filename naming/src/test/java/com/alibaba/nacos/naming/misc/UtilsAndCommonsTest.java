@@ -36,9 +36,6 @@ public class UtilsAndCommonsTest {
         MockEnvironment environment = new MockEnvironment();
 
         Assert.assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
-
-
-        Assert.assertEquals("/nacos/v1/ns", DEFAULT_NACOS_NAMING_CONTEXT);
     }
 
     @Test(expected = IllegalArgumentException.class)

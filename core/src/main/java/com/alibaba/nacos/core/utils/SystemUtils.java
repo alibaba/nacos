@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,12 +36,10 @@ import static org.apache.commons.lang3.CharEncoding.UTF_8;
  */
 public class SystemUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
-
     /**
      * Standalone mode or not
      */
-    public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     public static final String STANDALONE_MODE_ALONE = "standalone";
     public static final String STANDALONE_MODE_CLUSTER = "cluster";
@@ -50,7 +47,7 @@ public class SystemUtils {
     /**
      * server
      */
-    public static String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
+    public static final String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
 
     public static final String FUNCTION_MODE_CONFIG = "config";
     public static final String FUNCTION_MODE_NAMING = "naming";
@@ -82,7 +79,7 @@ public class SystemUtils {
 
     public static List<String> getIPsBySystemEnv(String key) {
         String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<String>();
+        List<String> ips = new ArrayList<>();
         if (StringUtils.isNotEmpty(env)) {
             ips = Arrays.asList(env.split(","));
         }
@@ -124,10 +121,8 @@ public class SystemUtils {
 
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
-        Reader reader = null;
-
-        try {
-            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8);
+        try(Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+        StandardCharsets.UTF_8)) {
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {
@@ -141,13 +136,16 @@ public class SystemUtils {
                     instance = instance.substring(0, instance.indexOf(comment));
                     instance = instance.trim();
                 }
-                instanceList.add(instance);
+                int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
+                if (multiIndex > 0) {
+                    // support the format: ip1:port,ip2:port  # multi inline
+                    instanceList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
+                } else {
+                    //support the format: 192.168.71.52:8848
+                    instanceList.add(instance);
+                }
             }
             return instanceList;
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
         }
     }
 

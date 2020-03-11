@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.0.0-RC3</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -31,12 +31,11 @@
         <maven>3.2.5</maven>
     </prerequisites>
 
-
     <scm>
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-1.0.0</tag>
+        <tag>nacos-all-1.0.1</tag>
     </scm>
 
     <mailingLists>
@@ -94,8 +93,8 @@
         <maven.test.skip>false</maven.test.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <!-- Compiler settings properties -->
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <!-- Exclude all generated code -->
         <sonar.jacoco.itReportPath>${project.basedir}/../test/target/jacoco-it.exec</sonar.jacoco.itReportPath>
@@ -202,6 +201,11 @@
                         <ruleset>rulesets/java/ali-set.xml</ruleset>
                     </rulesets>
                     <printFailingErrors>true</printFailingErrors>
+                    <excludes>
+                        <exclude>**/istio/model/mcp/*.java</exclude>
+                        <exclude>**/istio/model/naming/*.java</exclude>
+                        <exclude>**/istio/model/*.java</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -240,6 +244,7 @@
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
+                        <exclude>**/istio/model/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -320,9 +325,9 @@
 
     <profiles>
         <profile>
-            <id>jdk7</id>
+            <id>jdk8</id>
             <activation>
-                <jdk>[1.7,)</jdk>
+                <jdk>[1.8,)</jdk>
             </activation>
             <!-- Disable doclint under JDK 8 -->
             <reporting>
@@ -378,18 +383,6 @@
                     </plugin>
                 </plugins>
             </build>
-
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>sona</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>sona</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-                </repository>
-            </distributionManagement>
-
         </profile>
         <profile>
             <id>it-test</id>
@@ -404,9 +397,6 @@
                             <includes>
                                 <include>**/*ITCase.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/RestAPI_ITCase.java</exclude>
-                            </excludes>
                         </configuration>
                         <executions>
                             <execution>
@@ -443,6 +433,7 @@
         <module>config</module>
         <module>core</module>
         <module>naming</module>
+        <module>address</module>
         <module>test</module>
         <module>api</module>
         <module>client</module>
@@ -451,6 +442,7 @@
         <module>distribution</module>
         <module>console</module>
         <module>cmdb</module>
+        <module>istio</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -532,20 +524,31 @@
                 <artifactId>nacos-example</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-address</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-istio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Alibaba libs-->
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
-                <version>1.2.47</version>
+                <version>1.2.58</version>
             </dependency>
 
-            <!-- javax libs-->
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs</artifactId>
-                <version>2.1</version>
-            </dependency>
+<!--            &lt;!&ndash; javax libs&ndash;&gt;-->
+<!--            <dependency>-->
+<!--                <groupId>javax.ws.rs</groupId>-->
+<!--                <artifactId>javax.ws.rs</artifactId>-->
+<!--                <version>1.0</version>-->
+<!--            </dependency>-->
 
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -682,13 +685,13 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.9.8</version>
+                <version>2.9.10</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.8</version>
+                <version>2.9.10.3</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -717,7 +720,13 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.0.42.Final</version>
+                <version>4.1.42.Final</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>4.1.31.Final</version>
             </dependency>
 
             <dependency>
@@ -729,7 +738,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>19.0</version>
+                <version>22.0</version>
             </dependency>
 
             <dependency>
@@ -738,8 +747,65 @@
                 <version>1.2</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.keran213539</groupId>
+                <artifactId>commonOkHttp</artifactId>
+                <version>0.4.1</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>1.17.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>protoc-gen-grpc-java</artifactId>
+                <version>1.24.0</version>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.9.11</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            <id>sona</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>sona</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>
 

@@ -29,7 +29,10 @@ import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -45,16 +48,18 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  */
 @Component
 @DependsOn("serverListManager")
-public class RaftPeerSet implements ServerChangeListener {
+public class RaftPeerSet implements ServerChangeListener, ApplicationContextAware {
 
     @Autowired
     private ServerListManager serverListManager;
+
+    private ApplicationContext applicationContext;
 
     private AtomicLong localTerm = new AtomicLong(0L);
 
     private RaftPeer leader = null;
 
-    private Map<String, RaftPeer> peers = new HashMap<String, RaftPeer>();
+    private Map<String, RaftPeer> peers = new HashMap<>();
 
     private Set<String> sites = new HashSet<>();
 
@@ -62,6 +67,12 @@ public class RaftPeerSet implements ServerChangeListener {
 
     public RaftPeerSet() {
 
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+
+        this.applicationContext = applicationContext;
     }
 
     @PostConstruct
@@ -153,6 +164,7 @@ public class RaftPeerSet implements ServerChangeListener {
 
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
+                applicationContext.publishEvent(new LeaderElectFinishedEvent(this, leader));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
         }
@@ -163,12 +175,13 @@ public class RaftPeerSet implements ServerChangeListener {
     public RaftPeer makeLeader(RaftPeer candidate) {
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
+            applicationContext.publishEvent(new MakeLeaderEvent(this, leader));
             Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
                 leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
         }
 
         for (final RaftPeer peer : peers.values()) {
-            Map<String, String> params = new HashMap<String, String>(1);
+            Map<String, String> params = new HashMap<>(1);
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);

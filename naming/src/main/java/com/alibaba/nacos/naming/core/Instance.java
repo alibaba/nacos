@@ -17,11 +17,14 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,7 +37,7 @@ import java.util.regex.Pattern;
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
 
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
-    private static final double MIN_POSTIVE_WEIGHT_VALUE = 0.01D;
+    private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
     private static final double MIN_WEIGHT_VALUE = 0.00D;
 
     private volatile long lastBeat = System.currentTimeMillis();
@@ -48,10 +51,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     private String app;
 
-    public static final Pattern IP_PATTERN
+    private static final Pattern IP_PATTERN
         = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
-    public static final String SPLITER = "_";
+    private static final Pattern ONLY_DIGIT_AND_DOT
+        = Pattern.compile("(\\d|\\.)+");
+
+    private static final String SPLITER = "_";
 
     public Instance() {
     }
@@ -188,13 +194,15 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             ip.setWeight(MAX_WEIGHT_VALUE);
         }
 
-        if (ip.getWeight() < MIN_POSTIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
-            ip.setWeight(MIN_POSTIVE_WEIGHT_VALUE);
+        if (ip.getWeight() < MIN_POSITIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
+            ip.setWeight(MIN_POSITIVE_WEIGHT_VALUE);
         } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
 
-        if (!ip.validate()) {
+        try {
+            ip.validate();
+        } catch (NacosException e) {
             throw new IllegalArgumentException("malformed ip config: " + json);
         }
 
@@ -295,18 +303,48 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
-    public boolean validate() {
+    public String generateInstanceId(Set<String> currentInstanceIds) {
+        String instanceIdGenerator = getInstanceIdGenerator();
+        if (Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR.equalsIgnoreCase(instanceIdGenerator)) {
+            return generateSnowflakeInstanceId(currentInstanceIds);
+        } else {
+            return generateInstanceId();
+        }
+    }
 
-        Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-        if (!matcher.matches()) {
-            return false;
+    /**
+     * Generate instance id which could be used for snowflake algorithm.
+     * @param currentInstanceIds existing instance ids, which can not be used by new instance.
+     * @return
+     */
+    private String generateSnowflakeInstanceId(Set<String> currentInstanceIds) {
+        int id = 0;
+        while (currentInstanceIds.contains(String.valueOf(id))) {
+            id++;
+        }
+        String idStr = String.valueOf(id);
+        currentInstanceIds.add(idStr);
+        return idStr;
+    }
+
+    public void validate() throws NacosException {
+        if (onlyContainsDigitAndDot()) {
+            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
+            if (!matcher.matches()) {
+                throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: Your IP address is spelled incorrectly");
+            }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            return false;
+            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from " +
+                MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
         }
 
-        return true;
+    }
+
+    private boolean onlyContainsDigitAndDot() {
+        Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
+        return matcher.matches();
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
  */
 public class TemplateUtils {
 
-    public static final void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
+    public static void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
 
         if (StringUtils.isNotEmpty(source)) {
 
@@ -35,7 +35,7 @@ public class TemplateUtils {
         }
     }
 
-    public static final String stringEmptyAndThenExecute(String source, Callable<String> callable) {
+    public static String stringEmptyAndThenExecute(String source, Callable<String> callable) {
 
         if (StringUtils.isEmpty(source)) {
 
@@ -49,7 +49,7 @@ public class TemplateUtils {
         return source.trim();
     }
 
-    public static final String stringBlankAndThenExecute(String source, Callable<String> callable) {
+    public static String stringBlankAndThenExecute(String source, Callable<String> callable) {
 
         if (StringUtils.isBlank(source)) {
 

@@ -16,10 +16,14 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
 
 /**
  * Instance
@@ -145,6 +149,9 @@ public class Instance {
     }
 
     public void addMetadata(String key, String value) {
+        if (this.metadata == null) {
+            this.metadata = new HashMap<String, String>(4);
+        }
         this.metadata.put(key, value);
     }
 
@@ -191,6 +198,40 @@ public class Instance {
 
     private static boolean strEquals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
+    }
+
+    public long getInstanceHeartBeatInterval() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL, Constants.DEFAULT_HEART_BEAT_INTERVAL);
+    }
+
+    public long getInstanceHeartBeatTimeOut() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+    }
+
+    public long getIpDeleteTimeout() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT, Constants.DEFAULT_IP_DELETE_TIMEOUT);
+    }
+
+    public String getInstanceIdGenerator() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, Constants.DEFAULT_INSTANCE_ID_GENERATOR);
+    }
+
+    private long getMetaDataByKeyWithDefault( String key, long defaultValue) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return defaultValue;
+        }
+        String value = getMetadata().get(key);
+        if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
+            return Long.parseLong(value);
+        }
+        return defaultValue;
+    }
+
+    private String getMetaDataByKeyWithDefault( String key, String defaultValue) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return defaultValue;
+        }
+        return getMetadata().get(key);
     }
 
 }

@@ -72,7 +72,9 @@ public class HealthCheckTask implements Runnable {
             if (distroMapper.responsible(cluster.getService().getName()) &&
                 switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);
-                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
+                if (Loggers.EVT_LOG.isDebugEnabled()) {
+                    Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
+                }
             }
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
@@ -92,10 +94,13 @@ public class HealthCheckTask implements Runnable {
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                        cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
-                        this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                        this.getCheckRTLast(), diff);
+
+                    if (Loggers.CHECK_RT.isDebugEnabled()) {
+                        Loggers.CHECK_RT.debug("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                            cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                            this.getCheckRTLast(), diff);
+                    }
                 }
             }
         }

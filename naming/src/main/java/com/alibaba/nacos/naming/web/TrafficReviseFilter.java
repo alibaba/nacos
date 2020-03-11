@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.common.util.HttpMethod;
-import com.alibaba.nacos.naming.cluster.ServerMode;
+import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.core.utils.Constants;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,8 +28,6 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 /**
@@ -73,12 +71,9 @@ public class TrafficReviseFilter implements Filter {
         }
 
         // requests from peer server should be let pass:
-        String agent = req.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = req.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(req);
 
-        if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
+        if (StringUtils.startsWith(agent, Constants.NACOS_SERVER_HEADER)) {
             filterChain.doFilter(req, resp);
             return;
         }

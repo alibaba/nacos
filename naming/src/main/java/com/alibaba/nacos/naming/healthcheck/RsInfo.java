@@ -143,6 +143,7 @@ public class RsInfo {
         this.metadata = metadata;
     }
 
+    @Override
     public String toString() {
         return JSON.toJSONString(this);
     }

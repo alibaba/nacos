@@ -46,12 +46,12 @@ public class PaginationHelper<E> {
      * @return
      */
     public Page<E> fetchPage(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
-                             final Object args[], final int pageNo, final int pageSize, final RowMapper<E> rowMapper) {
+                             final Object[] args, final int pageNo, final int pageSize, final RowMapper<E> rowMapper) {
         return fetchPage(jt, sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
 
     public Page<E> fetchPage(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
-                             final Object args[], final int pageNo, final int pageSize, final Long lastMaxId,
+                             final Object[] args, final int pageNo, final int pageSize, final Long lastMaxId,
                              final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
@@ -62,11 +62,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -74,10 +73,10 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         final int startRow = (pageNo - 1) * pageSize;
@@ -98,7 +97,7 @@ public class PaginationHelper<E> {
     }
 
     public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlCountRows, final String sqlFetchRows,
-                                  final Object args[], final int pageNo, final int pageSize,
+                                  final Object[] args, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
@@ -108,11 +107,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -120,10 +118,10 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         String selectSQL = sqlFetchRows;
@@ -138,9 +136,9 @@ public class PaginationHelper<E> {
         return page;
     }
 
-    public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlCountRows, final Object args1[],
+    public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlCountRows, final Object[] args1,
                                   final String sqlFetchRows,
-                                  final Object args2[], final int pageNo, final int pageSize,
+                                  final Object[] args2, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
@@ -150,11 +148,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -162,10 +159,10 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         String selectSQL = sqlFetchRows;
@@ -181,7 +178,7 @@ public class PaginationHelper<E> {
     }
 
     public Page<E> fetchPageLimit(final JdbcTemplate jt, final String sqlFetchRows,
-                                  final Object args[], final int pageNo, final int pageSize,
+                                  final Object[] args, final int pageNo, final int pageSize,
                                   final RowMapper<E> rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
@@ -201,7 +198,7 @@ public class PaginationHelper<E> {
         return page;
     }
 
-    public void updateLimit(final JdbcTemplate jt, final String sql, final Object args[]) {
+    public void updateLimit(final JdbcTemplate jt, final String sql, final Object[] args) {
         String sqlUpdate = sql;
 
         if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {

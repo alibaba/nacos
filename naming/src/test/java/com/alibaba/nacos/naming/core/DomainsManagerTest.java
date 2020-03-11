@@ -17,47 +17,52 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 
 import java.util.List;
 
 /**
  * @author nkorange
+ * @author jifengnan 2019-05-18
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
 public class DomainsManagerTest extends BaseTest {
 
-    @Before
-    public void before() {
-        super.before();
-        serviceManager = new ServiceManager();
-    }
+    @Spy
+    @InjectMocks
+    private ServiceManager manager;
+
+    @Mock
+    private DistroConsistencyServiceImpl consistencyService;
 
     @Test
     public void easyRemoveDom() throws Exception {
-        serviceManager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.1");
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+        manager.putService(service);
+        manager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }
 
     @Test
-    public void searchDom() throws Exception {
-        Service service = new Service();
-        service.setName("nacos.test.1");
+    public void easyRemoveDomNotExist() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("specified service not exist, serviceName : " + TEST_SERVICE_NAME);
+        manager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
+    }
 
-        serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID).put("nacos.test.1", service);
+    @Test
+    public void searchDom() {
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+        manager.putService(service);
 
-        List<Service> list = serviceManager.searchServices(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.*");
+        List<Service> list = manager.searchServices(TEST_NAMESPACE, "test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
-        Assert.assertEquals("nacos.test.1", list.get(0).getName());
+        Assert.assertEquals(TEST_SERVICE_NAME, list.get(0).getName());
     }
 }

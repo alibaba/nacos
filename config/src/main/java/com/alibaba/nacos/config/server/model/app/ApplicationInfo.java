@@ -24,8 +24,8 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class ApplicationInfo {
 
-    private static final long LOCK_EXPIRE_DURATION = 30 * 1000;
-    private static final long RECENTLY_DURATION = 24 * 60 * 60 * 1000;
+    private static final long LOCK_EXPIRE_DURATION = 30 * 1000L;
+    private static final long RECENTLY_DURATION = 24 * 60 * 60 * 1000L;
 
     private String appName;
 

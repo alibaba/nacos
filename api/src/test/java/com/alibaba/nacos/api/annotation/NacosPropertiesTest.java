@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.api.annotation;
 
+import com.alibaba.fastjson.JSON;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
@@ -73,5 +74,10 @@ public class NacosPropertiesTest {
         environment.setProperty(propertyName, propertyValue);
         String resolvedValue = environment.resolvePlaceholders(placeholder);
         Assert.assertEquals(expectValue, resolvedValue);
+    }
+
+    @Test
+    public void testSort() {
+
     }
 }
