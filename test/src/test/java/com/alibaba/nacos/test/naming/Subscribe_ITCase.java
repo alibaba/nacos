@@ -15,26 +15,29 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -43,9 +46,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class Subscribe_ITCase {
+public class Subscribe_ITCase extends RestAPI_ITCase {
 
     private NamingService naming;
     @LocalServerPort
@@ -161,7 +164,7 @@ public class Subscribe_ITCase {
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
 
-    @Test
+    @Test(timeout = 20*TIME_OUT)
     public void subscribeEmpty() throws Exception {
 
         String serviceName = randomDomainName();
@@ -192,4 +195,67 @@ public class Subscribe_ITCase {
         Assert.assertEquals(0, instances.size());
         Assert.assertEquals(0, naming.getAllInstances(serviceName).size());
     }
+
+    @Test
+    public void querySubscribers() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
+            }
+        };
+
+        naming.subscribe(serviceName, listener);
+
+        TimeUnit.SECONDS.sleep(3);
+
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/subscribers",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "10")
+                .done(),
+            String.class,
+            HttpMethod.GET);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        JSONObject body = JSON.parseObject(response.getBody());
+
+        Assert.assertEquals(1, body.getJSONArray("subscribers").size());
+
+        NamingService naming2 = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+
+        naming2.subscribe(serviceName, new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
+            }
+        });
+
+        TimeUnit.SECONDS.sleep(3);
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/subscribers",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "10")
+                .done(),
+            String.class,
+            HttpMethod.GET);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        body = JSON.parseObject(response.getBody());
+
+        Assert.assertEquals(2, body.getJSONArray("subscribers").size());
+    }
+
 }

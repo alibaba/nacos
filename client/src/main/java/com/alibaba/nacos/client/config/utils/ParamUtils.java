@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import java.util.List;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.utils.IPUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 /**
  * Param check util
@@ -43,11 +43,7 @@ public class ParamUtils {
         int length = param.length();
         for (int i = 0; i < length; i++) {
             char ch = param.charAt(i);
-            if (Character.isLetterOrDigit(ch)) {
-                continue;
-            } else if (isValidChar(ch)) {
-                continue;
-            } else {
+            if (!Character.isLetterOrDigit(ch) && !isValidChar(ch)) {
                 return false;
             }
         }

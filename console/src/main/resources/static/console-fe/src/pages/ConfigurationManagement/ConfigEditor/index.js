@@ -11,6 +11,6 @@
  * limitations under the License.
  */
 
-import ConfigEditor from './ConfigEditor';
+import ConfigEditor from './NewConfigEditor';
 
 export default ConfigEditor;

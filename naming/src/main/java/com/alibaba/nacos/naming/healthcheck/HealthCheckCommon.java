@@ -88,8 +88,8 @@ public class HealthCheckCommon {
                     }
                     Map<String, String> params = new HashMap<>(10);
                     params.put("result", JSON.toJSONString(list));
-                    if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                        Loggers.DEBUG_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
+                    if (Loggers.SRV_LOG.isDebugEnabled()) {
+                        Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
                             server, JSON.toJSONString(list));
                     }
 
@@ -142,11 +142,10 @@ public class HealthCheckCommon {
                         ip.setHealthy(true);
                         ip.setMockValid(true);
 
-                        Service vDom = cluster.getService();
-                        vDom.setLastModifiedMillis(System.currentTimeMillis());
-
-                        pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
-                        addResult(new HealthCheckResult(vDom.getName(), ip));
+                        Service service = cluster.getService();
+                        service.setLastModifiedMillis(System.currentTimeMillis());
+                        pushService.serviceChanged(service);
+                        addResult(new HealthCheckResult(service.getName(), ip));
 
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
@@ -180,11 +179,11 @@ public class HealthCheckCommon {
                         ip.setHealthy(false);
                         ip.setMockValid(false);
 
-                        Service vDom = cluster.getService();
-                        vDom.setLastModifiedMillis(System.currentTimeMillis());
-                        addResult(new HealthCheckResult(vDom.getName(), ip));
+                        Service service = cluster.getService();
+                        service.setLastModifiedMillis(System.currentTimeMillis());
+                        addResult(new HealthCheckResult(service.getName(), ip));
 
-                        pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
+                        pushService.serviceChanged(service);
 
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
@@ -215,11 +214,11 @@ public class HealthCheckCommon {
                     ip.setHealthy(false);
                     ip.setMockValid(false);
 
-                    Service vDom = cluster.getService();
-                    vDom.setLastModifiedMillis(System.currentTimeMillis());
+                    Service service = cluster.getService();
+                    service.setLastModifiedMillis(System.currentTimeMillis());
 
-                    pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
-                    addResult(new HealthCheckResult(vDom.getName(), ip));
+                    pushService.serviceChanged(service);
+                    addResult(new HealthCheckResult(service.getName(), ip));
 
                     Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);

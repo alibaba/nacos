@@ -31,6 +31,8 @@ public class BeatInfo {
     private String cluster;
     private Map<String, String> metadata;
     private volatile boolean scheduled;
+    private volatile long period;
+    private volatile boolean stopped;
 
     @Override
     public String toString() {
@@ -91,5 +93,21 @@ public class BeatInfo {
 
     public void setScheduled(boolean scheduled) {
         this.scheduled = scheduled;
+    }
+
+    public long getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(long period) {
+        this.period = period;
+    }
+
+    public boolean isStopped() {
+        return stopped;
+    }
+
+    public void setStopped(boolean stopped) {
+        this.stopped = stopped;
     }
 }

@@ -15,11 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Time Service
@@ -36,6 +32,7 @@ public class TimerService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     static ScheduledExecutorService scheduledExecutor = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactory() {
+            @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setName("com.alibaba.nacos.client.Timer");

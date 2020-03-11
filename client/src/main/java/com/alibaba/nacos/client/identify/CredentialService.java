@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,7 +53,7 @@ public final class CredentialService implements SpasCredentialLoader {
     }
 
     public static CredentialService getInstance(String appName) {
-        String key = appName != null ? appName : Constants.NO_APP_NAME;
+        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         CredentialService instance = instances.get(key);
         if (instance == null) {
             instance = new CredentialService(appName);
@@ -70,7 +70,7 @@ public final class CredentialService implements SpasCredentialLoader {
     }
 
     public static CredentialService freeInstance(String appName) {
-        String key = appName != null ? appName : Constants.NO_APP_NAME;
+        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         CredentialService instance = instances.remove(key);
         if (instance != null) {
             instance.free();
@@ -85,6 +85,7 @@ public final class CredentialService implements SpasCredentialLoader {
         LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
     }
 
+    @Override
     public Credentials getCredential() {
         Credentials localCredential = credentials;
         if (localCredential.valid()) {

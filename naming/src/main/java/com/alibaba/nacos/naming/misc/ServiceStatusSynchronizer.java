@@ -79,7 +79,9 @@ public class ServiceStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
+            }
             result = NamingProxy.reqAPI(RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "statuses", params, serverIP);
         } catch (Exception e) {

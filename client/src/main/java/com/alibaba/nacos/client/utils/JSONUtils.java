@@ -15,10 +15,11 @@
  */
 package com.alibaba.nacos.client.utils;
 
-import java.io.IOException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 
 /**
  * Json tool
@@ -28,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JSONUtils {
 
-    static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -42,7 +43,7 @@ public class JSONUtils {
         return mapper.readValue(s, clazz);
     }
 
-    public static Object deserializeObject(String s, TypeReference<?> typeReference)
+    public static <T> T deserializeObject(String s, TypeReference<T> typeReference)
         throws IOException {
         return mapper.readValue(s, typeReference);
     }

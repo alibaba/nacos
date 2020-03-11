@@ -22,16 +22,19 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -41,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 
 /**
  * Server Agent
@@ -51,6 +54,12 @@ import java.util.concurrent.Callable;
 public class ServerHttpAgent implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
+
+    private SecurityProxy securityProxy;
+
+    private String namespaceId;
+
+    private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -65,8 +74,10 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-
-        boolean isSSL = false;
+        final boolean isSSL = false;
+        injectSecurityInfo(paramValues);
+        String currentServerAddr = serverListMgr.getCurrentServerAddr();
+        int maxRetry = this.maxRetry;
 
         do {
             try {
@@ -75,7 +86,7 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpGet(
-                    getUrl(serverListMgr.getCurrentServerAddr(), path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -83,18 +94,29 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                         serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
+                LOGGER.error("[NACOS IOException httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
+
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException("[NACOS HTTP-GET] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServerAddr();
+            }
+
         } while (System.currentTimeMillis() <= endTime);
 
         LOGGER.error("no available server");
@@ -106,39 +128,54 @@ public class ServerHttpAgent implements HttpAgent {
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
+        injectSecurityInfo(paramValues);
+        String currentServerAddr = serverListMgr.getCurrentServerAddr();
+        int maxRetry = this.maxRetry;
+
         do {
+
             try {
                 List<String> newHeaders = getSpasHeaders(paramValues);
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
+
                 HttpResult result = HttpSimpleClient.httpPost(
-                    getUrl(serverListMgr.getCurrentServerAddr(), path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
-                        serverListMgr.getCurrentServerAddr(), result.code);
+                        currentServerAddr, result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr: {}", serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, err : {}", currentServerAddr, ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException]", "currentServerAddr: {}",
-                    serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}", currentServerAddr, stoe.getMessage());
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
+                LOGGER.error("[NACOS IOException httpPost] currentServerAddr: " + currentServerAddr, ioe);
                 throw ioe;
+            }
+
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException("[NACOS HTTP-POST] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServerAddr();
             }
 
         } while (System.currentTimeMillis() <= endTime);
 
-        LOGGER.error("no available server");
-        throw new ConnectException("no available server");
+        LOGGER.error("no available server, currentServerAddr : {}", currentServerAddr);
+        throw new ConnectException("no available server, currentServerAddr : " + currentServerAddr);
     }
 
     @Override
@@ -146,6 +183,10 @@ public class ServerHttpAgent implements HttpAgent {
                                  long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
+        injectSecurityInfo(paramValues);
+        String currentServerAddr = serverListMgr.getCurrentServerAddr();
+        int maxRetry = this.maxRetry;
+
         do {
             try {
                 List<String> newHeaders = getSpasHeaders(paramValues);
@@ -153,7 +194,7 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpDelete(
-                    getUrl(serverListMgr.getCurrentServerAddr(), path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -161,17 +202,27 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                         serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
-                serverListMgr.refreshCurrentServerAddr();
+                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
+                LOGGER.error("[NACOS IOException httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
+            }
+
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
+            } else {
+                maxRetry--;
+                if (maxRetry < 0) {
+                    throw new ConnectException("[NACOS HTTP-DELETE] The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServerAddr();
             }
 
         } while (System.currentTimeMillis() <= endTime);
@@ -180,12 +231,10 @@ public class ServerHttpAgent implements HttpAgent {
         throw new ConnectException("no available server");
     }
 
-    private String getUrl(String serverAddr, String relativePath, boolean isSSL) {
-        String httpPrefix = "http://";
-        if (isSSL) {
-            httpPrefix = "https://";
-        }
-        return httpPrefix + serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+    private String getUrl(String serverAddr, String relativePath) {
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     public static String getAppname() {
@@ -203,12 +252,44 @@ public class ServerHttpAgent implements HttpAgent {
 
     public ServerHttpAgent(Properties properties) throws NacosException {
         serverListMgr = new ServerListManager(properties);
+        securityProxy = new SecurityProxy(properties);
+        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
+        securityProxy.login(serverListMgr.getServerUrls());
+
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+    }
+
+    private void injectSecurityInfo(List<String> params) {
+        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
+            params.add(Constants.ACCESS_TOKEN);
+            params.add(securityProxy.getAccessToken());
+        }
+        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
+            params.add(SpasAdapter.TENANT_KEY);
+            params.add(namespaceId);
+        }
     }
 
     private void init(Properties properties) {
         initEncode(properties);
         initAkSk(properties);
+        initMaxRetry(properties);
     }
 
     private void initEncode(Properties properties) {
@@ -239,6 +320,10 @@ public class ServerHttpAgent implements HttpAgent {
         } else {
             secretKey = sk;
         }
+    }
+
+    private void initMaxRetry(Properties properties) {
+        maxRetry = NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
     }
 
     @Override
@@ -279,7 +364,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = (STSCredential) JSONUtils.deserializeObject(stsResponse,
+        STSCredential stsCredentialTmp = JSONUtils.deserializeObject(stsResponse,
             new TypeReference<STSCredential>() {
             });
         sTSCredential = stsCredentialTmp;
@@ -305,17 +390,15 @@ public class ServerHttpAgent implements HttpAgent {
             conn.connect();
             respCode = conn.getResponseCode();
             if (HttpURLConnection.HTTP_OK == respCode) {
-                response = IOUtils.toString(conn.getInputStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getInputStream(), Constants.ENCODE);
             } else {
-                response = IOUtils.toString(conn.getErrorStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getErrorStream(), Constants.ENCODE);
             }
         } catch (IOException e) {
             LOGGER.error("can not get security credentials", e);
             throw e;
         } finally {
-            if (null != conn) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
         if (HttpURLConnection.HTTP_OK == respCode) {
             return response;
@@ -377,6 +460,7 @@ public class ServerHttpAgent implements HttpAgent {
             return code;
         }
 
+        @Override
         public String toString() {
             return "STSCredential{" +
                 "accessKeyId='" + accessKeyId + '\'' +
@@ -392,6 +476,7 @@ public class ServerHttpAgent implements HttpAgent {
     private String accessKey;
     private String secretKey;
     private String encode;
+    private int maxRetry = 3;
     private volatile STSCredential sTSCredential;
     final ServerListManager serverListMgr;
 

@@ -27,6 +27,7 @@ public class ServiceView {
     private int clusterCount;
     private int ipCount;
     private int healthyInstanceCount;
+    private String triggerFlag;
 
     public String getName() {
         return name;
@@ -66,6 +67,14 @@ public class ServiceView {
 
     public void setHealthyInstanceCount(int healthyInstanceCount) {
         this.healthyInstanceCount = healthyInstanceCount;
+    }
+
+    public String getTriggerFlag() {
+        return triggerFlag;
+    }
+
+    public void setTriggerFlag(String triggerFlag) {
+        this.triggerFlag = triggerFlag;
     }
 
     @Override

@@ -37,13 +37,13 @@ public class GlobalExecutor {
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
 
     private static ScheduledExecutorService executorService =
-        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
 
                 t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.raft.timer");
+                t.setName("com.alibaba.nacos.naming.timer");
 
                 return t;
             }
@@ -61,7 +61,6 @@ public class GlobalExecutor {
                 return t;
             }
         });
-
 
     private static ScheduledExecutorService dataSyncExecutor =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -114,6 +113,30 @@ public class GlobalExecutor {
         }
     });
 
+    private static ScheduledExecutorService emptyServiceAutoCleanExecutor = Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r);
+                    t.setName("com.alibaba.nacos.naming.service.empty.auto-clean");
+                    t.setDaemon(true);
+                    return t;
+                }
+            }
+    );
+
+    private static ScheduledExecutorService distroNotifyExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+
+            t.setDaemon(true);
+            t.setName("com.alibaba.nacos.naming.distro.notifier");
+
+            return t;
+        }
+    });
+
     public static void submitDataSync(Runnable runnable, long delay) {
         dataSyncExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
@@ -147,6 +170,10 @@ public class GlobalExecutor {
         executorService.scheduleAtFixedRate(runnable, 0, period, TimeUnit.MILLISECONDS);
     }
 
+    public static void schedule(Runnable runnable, long initialDelay, long period) {
+        executorService.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
+    }
+
     public static void notifyServerListChange(Runnable runnable) {
         notifyServerListExecutor.submit(runnable);
     }
@@ -159,7 +186,19 @@ public class GlobalExecutor {
         executorService.submit(runnable);
     }
 
+    public static void submit(Runnable runnable, long delay) {
+        executorService.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void submitDistroNotifyTask(Runnable runnable) {
+        distroNotifyExecutor.submit(runnable);
+    }
+
     public static void submitServiceUpdate(Runnable runnable) {
         serviceUpdateExecutor.execute(runnable);
+    }
+
+    public static void scheduleServiceAutoClean(Runnable runnable, long initialDelay, long period) {
+        emptyServiceAutoCleanExecutor.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 }

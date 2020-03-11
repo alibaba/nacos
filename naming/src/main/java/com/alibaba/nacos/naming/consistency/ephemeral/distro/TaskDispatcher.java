@@ -46,9 +46,11 @@ public class TaskDispatcher {
 
     private List<TaskScheduler> taskSchedulerList = new ArrayList<>();
 
+    private final int cpuCoreCount = Runtime.getRuntime().availableProcessors();
+
     @PostConstruct
     public void init() {
-        for (int i = 0; i < partitionConfig.getTaskDispatchThreadCount(); i++) {
+        for (int i = 0; i < cpuCoreCount; i++) {
             TaskScheduler taskScheduler = new TaskScheduler(i);
             taskSchedulerList.add(taskScheduler);
             GlobalExecutor.submitTaskDispatch(taskScheduler);
@@ -56,7 +58,7 @@ public class TaskDispatcher {
     }
 
     public void addTask(String key) {
-        taskSchedulerList.get(UtilsAndCommons.shakeUp(key, partitionConfig.getTaskDispatchThreadCount())).addTask(key);
+        taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 
     public class TaskScheduler implements Runnable {
@@ -92,8 +94,8 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                        Loggers.EPHEMERAL.debug("got key: {}", key);
+                    if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                        Loggers.DISTRO.debug("got key: {}", key);
                     }
 
                     if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
@@ -122,8 +124,8 @@ public class TaskDispatcher {
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());
 
-                            if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                                Loggers.EPHEMERAL.debug("add sync task: {}", JSON.toJSONString(syncTask));
+                            if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                                Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));
                             }
 
                             dataSyncer.submit(syncTask, 0);
@@ -133,7 +135,7 @@ public class TaskDispatcher {
                     }
 
                 } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("dispatch sync task failed.", e);
+                    Loggers.DISTRO.error("dispatch sync task failed.", e);
                 }
             }
         }

@@ -12,8 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cd `dirname $0`/../target
+target_dir=`pwd`
 
-pid=`ps ax | grep -i 'nacos.nacos' |grep java | grep -v grep | awk '{print $1}'`
+pid=`ps ax | grep -i 'nacos.nacos' | grep ${target_dir} | grep java | grep -v grep | awk '{print $1}'`
 if [ -z "$pid" ] ; then
         echo "No nacosServer running."
         exit -1;

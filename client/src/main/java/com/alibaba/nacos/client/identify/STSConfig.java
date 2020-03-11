@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.identify;
 
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Sts config
@@ -71,7 +71,7 @@ public class STSConfig {
 
         String cacheSecurityCredentials = System.getProperty("cache.security.credentials");
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
-            setCacheSecurityCredentials(Boolean.valueOf(cacheSecurityCredentials));
+            setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
     }
 

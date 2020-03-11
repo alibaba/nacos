@@ -15,11 +15,16 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 /**
  * manage param tool
@@ -27,9 +32,13 @@ import java.util.Properties;
  * @author nacos
  */
 public class ParamUtil {
+
     private final static Logger LOGGER = LogUtils.logger(ParamUtil.class);
 
-    private static String defaultContextPath = "nacos";
+    public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
+
+    private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
+    private static String defaultContextPath;
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
     private static String appName;
@@ -41,6 +50,8 @@ public class ParamUtil {
     static {
         // 客户端身份信息
         appKey = System.getProperty("nacos.client.appKey", "");
+
+        defaultContextPath = System.getProperty("nacos.client.contextPath", "nacos");
 
         appName = AppNameUtils.getAppName();
 
@@ -143,4 +154,76 @@ public class ParamUtil {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
 
+    public static String parseNamespace(Properties properties) {
+        String namespaceTmp = null;
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    return TenantUtil.getUserTenantForAcm();
+                }
+            });
+
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    return org.apache.commons.lang3.StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
+                }
+            });
+        }
+
+        if (org.apache.commons.lang3.StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
+        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
+    }
+
+    public static String parsingEndpointRule(String endpointUrl) {
+        // 配置文件中输入的话，以 ENV 中的优先，
+        if (endpointUrl == null
+            || !PATTERN.matcher(endpointUrl).find()) {
+            // skip retrieve from system property and retrieve directly from system env
+            String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            if (StringUtils.isNotBlank(endpointUrlSource)) {
+                endpointUrl = endpointUrlSource;
+            }
+
+            return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+        }
+
+        endpointUrl = endpointUrl.substring(endpointUrl.indexOf("${") + 2,
+            endpointUrl.lastIndexOf("}"));
+        int defStartOf = endpointUrl.indexOf(":");
+        String defaultEndpointUrl = null;
+        if (defStartOf != -1) {
+            defaultEndpointUrl = endpointUrl.substring(defStartOf + 1);
+            endpointUrl = endpointUrl.substring(0, defStartOf);
+        }
+
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(System.getProperty(endpointUrl,
+            System.getenv(endpointUrl)), new Callable<String>() {
+            @Override
+            public String call() {
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            }
+        });
+
+
+        if (StringUtils.isBlank(endpointUrlSource)) {
+            if (StringUtils.isNotBlank(defaultEndpointUrl)) {
+                endpointUrl = defaultEndpointUrl;
+            }
+        } else {
+            endpointUrl = endpointUrlSource;
+        }
+
+        return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+    }
 }

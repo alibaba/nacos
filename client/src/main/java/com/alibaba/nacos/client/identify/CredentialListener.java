@@ -24,5 +24,5 @@ public interface CredentialListener {
     /**
      * update Credential
      */
-    public void onUpdateCredential();
+    void onUpdateCredential();
 }

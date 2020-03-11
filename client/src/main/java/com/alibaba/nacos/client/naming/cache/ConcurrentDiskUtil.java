@@ -211,6 +211,6 @@ public class ConcurrentDiskUtil {
         }
     }
 
-    static final int RETRY_COUNT = 10;
-    static final int SLEEP_BASETIME = 10;
+    private static final int RETRY_COUNT = 10;
+    private static final int SLEEP_BASETIME = 10;
 }

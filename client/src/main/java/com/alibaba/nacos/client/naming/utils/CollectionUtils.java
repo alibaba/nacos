@@ -46,7 +46,7 @@ public class CollectionUtils {
     /**
      * Constant to avoid repeated object creation
      */
-    private static Integer INTEGER_ONE = 1;
+    private static final Integer INTEGER_ONE = 1;
 
     /**
      * <code>CollectionUtils</code> should not normally be instantiated.
@@ -142,7 +142,7 @@ public class CollectionUtils {
         return (coll == null || coll.isEmpty());
     }
 
-    private static final int getFreq(final Object obj, final Map freqMap) {
+    private static int getFreq(final Object obj, final Map freqMap) {
         Integer count = (Integer)freqMap.get(obj);
         if (count != null) {
             return count.intValue();

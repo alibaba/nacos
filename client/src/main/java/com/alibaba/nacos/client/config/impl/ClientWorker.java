@@ -15,7 +15,9 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
@@ -24,25 +26,19 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -51,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 
 /**
  * Longpolling
@@ -80,10 +77,20 @@ public class ClientWorker {
         }
     }
 
-    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) {
+    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        for (Listener listener : listeners) {
+            cache.addListener(listener);
+        }
+    }
+
+    public void addTenantListenersWithContent(String dataId, String group, String content, List<? extends Listener> listeners) throws NacosException {
+        group = null2defaultGroup(group);
+        String tenant = agent.getTenant();
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        cache.setContent(content);
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
@@ -143,7 +150,7 @@ public class ClientWorker {
                 //reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                int taskId = cacheMap.get().size() / (int)ParamUtil.getPerTaskConfigSize();
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
                 cache.setTaskId(taskId);
             }
 
@@ -159,13 +166,12 @@ public class ClientWorker {
         return cache;
     }
 
-    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) {
+    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
             return cache;
         }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         synchronized (cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group, tenant);
             // multiple listeners on the same dataid+group and race condition,so
@@ -175,6 +181,13 @@ public class ClientWorker {
                 cache = cacheFromMap;
                 // reset so that server not hang this check
                 cache.setInitializing(true);
+            } else {
+                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                // fix issue # 1317
+                if (enableRemoteSyncConfig) {
+                    String[] ct = getServerConfig(dataId, group, tenant, 3000L);
+                    cache.setContent(ct[0]);
+                }
             }
 
             Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
@@ -189,7 +202,7 @@ public class ClientWorker {
     }
 
     public CacheData getCache(String dataId, String group) {
-        return getCache(dataId, group, TenantUtil.getUserTenant());
+        return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
     }
 
     public CacheData getCache(String dataId, String group, String tenant) {
@@ -199,8 +212,9 @@ public class ClientWorker {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
-    public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
+    public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
         throws NacosException {
+        String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -209,9 +223,9 @@ public class ClientWorker {
         try {
             List<String> params = null;
             if (StringUtils.isBlank(tenant)) {
-                params = Arrays.asList("dataId", dataId, "group", group);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group));
             } else {
-                params = Arrays.asList("dataId", dataId, "group", group, "tenant", tenant);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group, "tenant", tenant));
             }
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
@@ -219,16 +233,22 @@ public class ClientWorker {
                 "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
                 dataId, group, tenant);
             LOGGER.error(message, e);
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(NacosException.SERVER_ERROR, e);
         }
 
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);
-                return result.content;
+                ct[0] = result.content;
+                if (result.headers.containsKey(CONFIG_TYPE)) {
+                    ct[1] = result.headers.get(CONFIG_TYPE).get(0);
+                } else {
+                    ct[1] = ConfigType.TEXT.getType();
+                }
+                return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return null;
+                return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
                     "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
@@ -287,7 +307,6 @@ public class ClientWorker {
             cacheData.setContent(content);
             LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                 agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-            return;
         }
     }
 
@@ -299,9 +318,9 @@ public class ClientWorker {
         // 分任务
         int listenerSize = cacheMap.get().size();
         // 向上取整为批数
-        int longingTaskCount = (int)Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
+            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
                 executorService.execute(new LongPollingRunnable(i));
             }
@@ -312,7 +331,7 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) {
+    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             if (!cacheData.isUseLocalConfigInfo()) {
@@ -338,10 +357,12 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
+    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
-        List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
-        long timeout = TimeUnit.SECONDS.toMillis(30L);
+
+        List<String> params = new ArrayList<String>(2);
+        params.add(Constants.PROBE_MODIFY_REQUEST);
+        params.add(probeUpdateString);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -358,8 +379,12 @@ public class ClientWorker {
         }
 
         try {
+            // In order to prevent the server from handling the delay of the client's long task,
+            // increase the client's read timeout to avoid this problem.
+
+            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), timeout);
+                agent.getEncode(), readTimeoutMs);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
@@ -371,6 +396,7 @@ public class ClientWorker {
         } catch (IOException e) {
             setHealthServer(false);
             LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
+            throw e;
         }
         return Collections.emptyList();
     }
@@ -413,9 +439,13 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
+
+        // Initialize the timeout parameter
+
+        init(properties);
 
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
@@ -427,17 +457,18 @@ public class ClientWorker {
             }
         });
 
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
+                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
                 t.setDaemon(true);
                 return t;
             }
         });
 
         executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
             public void run() {
                 try {
                     checkConfigInfo();
@@ -448,6 +479,16 @@ public class ClientWorker {
         }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
 
+    private void init(Properties properties) {
+
+        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+    }
+
     class LongPollingRunnable implements Runnable {
         private int taskId;
 
@@ -455,9 +496,12 @@ public class ClientWorker {
             this.taskId = taskId;
         }
 
+        @Override
         public void run() {
+
+            List<CacheData> cacheDatas = new ArrayList<CacheData>();
+            List<String> inInitializingCacheList = new ArrayList<String>();
             try {
-                List<CacheData> cacheDatas = new ArrayList<CacheData>();
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
                     if (cacheData.getTaskId() == taskId) {
@@ -473,9 +517,9 @@ public class ClientWorker {
                     }
                 }
 
-                List<String> inInitializingCacheList = new ArrayList<String>();
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
+                LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
 
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);
@@ -486,12 +530,15 @@ public class ClientWorker {
                         tenant = key[2];
                     }
                     try {
-                        String content = getServerConfig(dataId, group, tenant, 3000L);
+                        String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(content);
-                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
+                        cache.setContent(ct[0]);
+                        if (null != ct[1]) {
+                            cache.setType(ct[1]);
+                        }
+                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
                             agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(content));
+                            ContentUtils.truncateContent(ct[0]), ct[1]);
                     } catch (NacosException ioe) {
                         String message = String.format(
                             "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
@@ -507,15 +554,17 @@ public class ClientWorker {
                     }
                 }
                 inInitializingCacheList.clear();
-            } catch (Throwable e) {
-                LOGGER.error("longPolling error", e);
-            } finally {
+
                 executorService.execute(this);
+
+            } catch (Throwable e) {
+
+                // If the rotation training task is abnormal, the next execution time of the task will be punished
+                LOGGER.error("longPolling error : ", e);
+                executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
     }
-
-    // =================
 
     public boolean isHealthServer() {
         return isHealthServer;
@@ -526,15 +575,19 @@ public class ClientWorker {
     }
 
     final ScheduledExecutorService executor;
-    final ExecutorService executorService;
+    final ScheduledExecutorService executorService;
+
     /**
      * groupKey -> cacheData
      */
-    AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
 
-    HttpAgent agent;
-    ConfigFilterChainManager configFilterChainManager;
+    private final HttpAgent agent;
+    private final ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
+    private long timeout;
     private double currentLongingTaskCount = 0;
+    private int taskPenaltyTime;
+    private boolean enableRemoteSyncConfig = false;
 }

@@ -37,7 +37,7 @@ public class RegexParser {
         if (regex == null) {
             throw new NullPointerException("regex string can't be null");
         }
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append("^");
         for (int i = 0; i < regex.length(); i++) {
             char ch = regex.charAt(i);

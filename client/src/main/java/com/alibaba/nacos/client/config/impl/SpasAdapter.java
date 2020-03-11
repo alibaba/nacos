@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.identify.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -100,6 +100,6 @@ public class SpasAdapter {
         }
     }
 
-    private static String GROUP_KEY = "group";
-    private static String TENANT_KEY = "tenant";
+    private static final String GROUP_KEY = "group";
+    public static final String TENANT_KEY = "tenant";
 }

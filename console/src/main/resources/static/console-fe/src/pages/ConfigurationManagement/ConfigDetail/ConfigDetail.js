@@ -14,6 +14,7 @@
 import React from 'react';
 import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
 import { getParams, request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 
 import './index.scss';
 import PropTypes from 'prop-types';
@@ -140,9 +141,12 @@ class ConfigDetail extends React.Component {
 
   goList() {
     this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
+      generateUrl('/configurationManagement', {
+        serverId: this.serverId,
+        group: this.searchGroup,
+        dataId: this.searchDataId,
+        namespace: this.tenant,
+      })
     );
   }
 

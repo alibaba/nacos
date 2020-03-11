@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Nacos
  */
 public class ResponseMonitor {
-    static AtomicLong[] getConfigCountDetail = new AtomicLong[8];
-    static AtomicLong getConfigCount = new AtomicLong();
+    private static AtomicLong[] getConfigCountDetail = new AtomicLong[8];
+    private static AtomicLong getConfigCount = new AtomicLong();
     private static final int MS_50 = 50;
     private static final int MS_100 = 100;
     private static final int MS_200 = 200;

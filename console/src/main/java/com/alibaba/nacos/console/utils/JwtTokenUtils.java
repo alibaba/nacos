@@ -16,8 +16,10 @@
 package com.alibaba.nacos.console.utils;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,6 +28,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
 
@@ -43,9 +46,25 @@ public class JwtTokenUtils {
     private static final String AUTHORITIES_KEY = "auth";
 
     /**
+     * minimum SHA_256 secretKey string length
+     */
+    private static final int SHA_256_SECRET_CHAR_SIZE = 256 / 8;
+
+    /**
+     * default SHA_256 secretKey flag
+     */
+    private static final String DEFAULT_SECRET_FLAG = "default";
+
+    /**
+     * custom SHA_256 secretKey from config property
+     */
+    @Value("${nacos.security.token.secret-key:default}")
+    private String customSecretKeyStr;
+
+    /**
      * secret key
      */
-    private String secretKey;
+    private SecretKey secretKey;
 
     /**
      * Token validity time(ms)
@@ -54,7 +73,24 @@ public class JwtTokenUtils {
 
     @PostConstruct
     public void init() {
-        this.secretKey = "SecretKey012345678901234567890123456789012345678901234567890123456789";
+        //use default secretKey for SHA-256
+        if (customSecretKeyStr == null || DEFAULT_SECRET_FLAG.equals(customSecretKeyStr)) {
+            this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        } else {
+            //use custom secretKey
+            int size = customSecretKeyStr.length();
+            int left = SHA_256_SECRET_CHAR_SIZE - size;
+            if (left > 0) {
+                //character for padding
+                StringBuilder stringBuilder = new StringBuilder(customSecretKeyStr);
+                for (int i = 0 ;i < left ; i ++){
+                    stringBuilder.append(i%10);
+                }
+                this.secretKey = Keys.hmacShaKeyFor(stringBuilder.toString().getBytes());
+            }else {
+                this.secretKey = Keys.hmacShaKeyFor(customSecretKeyStr.getBytes());
+            }
+        }
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
 
@@ -82,7 +118,7 @@ public class JwtTokenUtils {
             .setSubject(authentication.getName())
             .claim(AUTHORITIES_KEY, "")
             .setExpiration(validity)
-            .signWith(SignatureAlgorithm.HS256, secretKey)
+            .signWith(secretKey, SignatureAlgorithm.HS256)
             .compact();
     }
 

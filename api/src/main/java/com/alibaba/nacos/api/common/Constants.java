@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.common;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Constant
  *
@@ -60,6 +62,8 @@ public class Constants {
 
     public static final String CONFIG_VERSION = "Config-Version";
 
+    public static final String CONFIG_TYPE = "Config-Type";
+
     public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
     public static final String SPACING_INTERVAL = "client-spacing-interval";
@@ -67,6 +71,16 @@ public class Constants {
     public static final String BASE_PATH = "/v1/cs";
 
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
+
+    public static final String TOKEN = "token";
+
+    public static final String ACCESS_TOKEN = "accessToken";
+
+    public static final String TOKEN_TTL = "tokenTtl";
+
+    public static final String GLOBAL_ADMIN = "globalAdmin";
+
+    public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
 
     /**
      * second
@@ -91,6 +105,26 @@ public class Constants {
     /**
      * millisecond
      */
+    public static final int CONFIG_LONG_POLL_TIMEOUT = 30000;
+
+    /**
+     * millisecond
+     */
+    public static final int MIN_CONFIG_LONG_POLL_TIMEOUT = 10000;
+
+    /**
+     * millisecond
+     */
+    public static final int CONFIG_RETRY_TIME = 2000;
+
+    /**
+     * Maximum number of retries
+     */
+    public static final int MAX_RETRY = 3;
+
+    /**
+     * millisecond
+     */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
 
     public static final String ENCODE = "UTF-8";
@@ -103,9 +137,11 @@ public class Constants {
 
     public static final int FLOW_CONTROL_INTERVAL = 1000;
 
-    public static final String LINE_SEPARATOR = Character.toString((char)1);
+    public static final float DEFAULT_PROTECT_THRESHOLD = 0.0F;
 
-    public static final String WORD_SEPARATOR = Character.toString((char)2);
+    public static final String LINE_SEPARATOR = Character.toString((char) 1);
+
+    public static final String WORD_SEPARATOR = Character.toString((char) 2);
 
     public static final String LONGPOLLING_LINE_SEPARATOR = "\r\n";
 
@@ -121,11 +157,30 @@ public class Constants {
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
+    public static final long DEFAULT_HEART_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
+
+    public static final long DEFAULT_IP_DELETE_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
+
+    public static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
+
     public static final String DEFAULT_NAMESPACE_ID = "public";
+
+    public static final boolean DEFAULT_USE_CLOUD_NAMESPACE_PARSING = true;
 
     public static final int WRITE_REDIRECT_CODE = 307;
 
     public static final String SERVICE_INFO_SPLITER = "@@";
 
     public static final String NULL_STRING = "null";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
+
+    public static final String ANY_PATTERN = ".*";
+
+    public static final String DEFAULT_INSTANCE_ID_GENERATOR = "simple";
+
+    public static final String SNOWFLAKE_INSTANCE_ID_GENERATOR = "snowflake";
+
+    public static final String HTTP_PREFIX = "http";
+
 }

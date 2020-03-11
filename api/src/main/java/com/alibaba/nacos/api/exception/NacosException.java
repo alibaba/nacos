@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.api.exception;
 
+import com.alibaba.nacos.api.common.Constants;
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Nacos Exception
  *
@@ -31,6 +34,8 @@ public class NacosException extends Exception {
 
     private String errMsg;
 
+    private Throwable causeThrowable;
+
     public NacosException() {
     }
 
@@ -40,12 +45,31 @@ public class NacosException extends Exception {
         this.errMsg = errMsg;
     }
 
+    public NacosException(int errCode, Throwable throwable) {
+        super(throwable);
+        this.errCode = errCode;
+        setCauseThrowable(throwable);
+    }
+
+    public NacosException(int errCode, String errMsg, Throwable throwable) {
+        super(errMsg, throwable);
+        this.errCode = errCode;
+        this.errMsg = errMsg;
+        setCauseThrowable(throwable);
+    }
+
     public int getErrCode() {
         return errCode;
     }
 
     public String getErrMsg() {
-        return errMsg;
+        if (!StringUtils.isBlank(this.errMsg)) {
+            return errMsg;
+        }
+        if (this.causeThrowable != null) {
+            return causeThrowable.getMessage();
+        }
+        return Constants.NULL;
     }
 
     public void setErrCode(int errCode) {
@@ -56,9 +80,20 @@ public class NacosException extends Exception {
         this.errMsg = errMsg;
     }
 
+    public void setCauseThrowable(Throwable throwable) {
+        this.causeThrowable = getCauseThrowable(throwable);
+    }
+
+    private Throwable getCauseThrowable(Throwable t) {
+        if (t.getCause() == null) {
+            return t;
+        }
+        return getCauseThrowable(t.getCause());
+    }
+
     @Override
     public String toString() {
-        return "ErrCode:" + errCode + ",ErrMsg:" + errMsg;
+        return "ErrCode:" + getErrCode() + ", ErrMsg:" + getErrMsg();
     }
 
     /**
@@ -89,6 +124,10 @@ public class NacosException extends Exception {
      */
     public static final int NO_RIGHT = 403;
     /**
+     *  not found
+     */
+    public static final int NOT_FOUND = 404;
+    /**
      * conflict（写并发冲突）
      */
     public static final int CONFLICT = 409;
@@ -104,5 +143,7 @@ public class NacosException extends Exception {
      * over threshold（超过server端的限流阈值）
      */
     public static final int OVER_THRESHOLD = 503;
+
+    public static final int RESOURCE_NOT_FOUND = -404;
 
 }

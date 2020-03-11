@@ -123,7 +123,6 @@ public class NotifySingleService {
 
             if (null == executors.putIfAbsent(ip, executor)) {
                 logger.warn("[notify-thread-pool] setup thread target ip {} ok.", ip);
-                continue;
             }
         }
 

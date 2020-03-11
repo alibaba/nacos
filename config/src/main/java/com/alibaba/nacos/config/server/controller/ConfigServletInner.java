@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,8 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * ConfigServlet inner for aop
@@ -67,7 +68,7 @@ public class ConfigServletInner {
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
                                   Map<String, String> clientMd5Map, int probeRequestSize)
-        throws IOException, ServletException {
+        throws IOException {
 
         // 长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
@@ -98,6 +99,8 @@ public class ConfigServletInner {
             request.setAttribute("content", newResult);
         }
 
+        Loggers.AUTH.info("new content:" + newResult);
+
         // 禁用缓存
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -114,7 +117,7 @@ public class ConfigServletInner {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
-        int lockResult = tryConfigReadLock(request, response, groupKey);
+        int lockResult = tryConfigReadLock(groupKey);
 
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
@@ -130,6 +133,8 @@ public class ConfigServletInner {
                             isBeta = true;
                         }
                     }
+                    String configType = cacheItem.getType();
+                    response.setHeader("Config-Type", (null != configType) ? configType : "text");
                 }
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
@@ -287,8 +292,7 @@ public class ConfigServletInner {
         ConfigService.releaseReadLock(groupKey);
     }
 
-    private static int tryConfigReadLock(HttpServletRequest request, HttpServletResponse response, String groupKey)
-        throws IOException, ServletException {
+    private static int tryConfigReadLock(String groupKey) {
         /**
          *  默认加锁失败
          */

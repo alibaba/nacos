@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.cmdb.controllers;
 
-import com.alibaba.nacos.cmdb.core.SwitchAndOptions;
 import com.alibaba.nacos.cmdb.memory.CmdbProvider;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -35,34 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 public class OperationController {
 
     @Autowired
-    private SwitchAndOptions switches;
-
-    @Autowired
     private CmdbProvider cmdbProvider;
-
-    @RequestMapping(value = "/switch", method = RequestMethod.PUT)
-    public String updateSwitch(HttpServletRequest request) throws Exception {
-
-        String entry = WebUtils.required(request, "entry");
-        String value = WebUtils.required(request, "value");
-
-        switch (entry) {
-            case "dumpTaskInterval":
-                switches.setDumpTaskInterval(Integer.parseInt(value));
-                break;
-            case "eventTaskInterval":
-                switches.setEventTaskInterval(Integer.parseInt(value));
-                break;
-            case "loadDataAtStart":
-                switches.setLoadDataAtStart(Boolean.parseBoolean(value));
-                break;
-            case "labelTaskInterval":
-                switches.setLabelTaskInterval(Integer.parseInt(value));
-            default:
-                break;
-        }
-        return "ok";
-    }
 
     @RequestMapping(value = "/label", method = RequestMethod.GET)
     public String queryLabel(HttpServletRequest request) throws Exception {

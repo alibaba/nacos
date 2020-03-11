@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.naming.NamingApp;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,10 +27,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
@@ -41,7 +40,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SelectOneHealthyInstance_ITCase {
 
@@ -89,7 +88,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -108,7 +107,7 @@ public class SelectOneHealthyInstance_ITCase {
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
 
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
         Assert.assertTrue(instance.getPort() != 60002);
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
@@ -122,7 +121,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -139,7 +138,7 @@ public class SelectOneHealthyInstance_ITCase {
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1", "c2"));
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
@@ -152,6 +151,6 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 }
