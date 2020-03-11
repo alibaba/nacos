@@ -20,8 +20,8 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpResResult;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -42,27 +42,27 @@ import java.net.URI;
  */
 public abstract class BaseHttpClient {
 
-    protected <T> HttpResResult<T> execute(CloseableHttpClient httpClient,
-                                           final TypeReference<ResResult<T>> reference,
-                                           HttpUriRequest request)
+    protected <T> HttpRestResult<T> execute(CloseableHttpClient httpClient,
+                                            final TypeReference<RestResult<T>> reference,
+                                            HttpUriRequest request)
             throws Exception {
         CloseableHttpResponse response = httpClient.execute(request);
         try {
             final String body = EntityUtils.toString(response.getEntity());
-            HttpResResult<T> resResult = new HttpResResult<T>();
+            HttpRestResult<T> resResult = new HttpRestResult<T>();
             resResult.setHttpCode(response.getStatusLine().getStatusCode());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                ResResult<T> data = ResponseHandler.convert(body, reference);
+                RestResult<T> data = ResponseHandler.convert(body, reference);
                 if (data != null && data.getCode() == HttpStatus.SC_OK) {
                     resResult.setCode(data.getCode());
                     resResult.setData(data.getData());
                     return resResult;
                 } else {
                     resResult.setCode(response.getStatusLine().getStatusCode());
-                    resResult.setErrMsg(data != null ? data.getErrMsg() : "");
+                    resResult.setMessage(data != null ? data.getMessage() : "");
                 }
             } else {
-                resResult.setErrMsg(body);
+                resResult.setMessage(body);
             }
             resResult.setHeader(convertHeader(response.getAllHeaders()));
             return resResult;
@@ -72,7 +72,7 @@ public abstract class BaseHttpClient {
     }
 
     protected <T> void execute(CloseableHttpAsyncClient httpAsyncClient,
-                               final TypeReference<ResResult<T>> reference,
+                               final TypeReference<RestResult<T>> reference,
                                final Callback<T> callback,
                                final HttpUriRequest request) {
         httpAsyncClient.execute(request, new FutureCallback<HttpResponse>() {
@@ -81,19 +81,19 @@ public abstract class BaseHttpClient {
             public void completed(HttpResponse response) {
                 try {
                     final String body = EntityUtils.toString(response.getEntity());
-                    HttpResResult<T> resResult = new HttpResResult<T>();
+                    HttpRestResult<T> resResult = new HttpRestResult<T>();
                     resResult.setHttpCode(response.getStatusLine().getStatusCode());
                     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                        ResResult<T> data = ResponseHandler.convert(body, reference);
+                        RestResult<T> data = ResponseHandler.convert(body, reference);
                         if (data != null && data.getCode() == HttpStatus.SC_OK) {
                             resResult.setCode(200);
                             resResult.setData(data.getData());
                         } else {
                             resResult.setCode(response.getStatusLine().getStatusCode());
-                            resResult.setErrMsg(data != null ? data.getErrMsg() : "");
+                            resResult.setMessage(data != null ? data.getMessage() : "");
                         }
                     } else {
-                        resResult.setErrMsg(body);
+                        resResult.setMessage(body);
                     }
                     resResult.setHeader(convertHeader(response.getAllHeaders()));
                     callback.onReceive(resResult);
@@ -115,14 +115,15 @@ public abstract class BaseHttpClient {
     }
 
     protected String buildUrl(String baseUrl, Query query) {
-        return baseUrl + "?" + query.toQueryUrl();
+        String url = baseUrl + "?" + query.toQueryUrl();
+        return url;
     }
 
     protected HttpRequestBase build(String url, Header header, String method) {
         return build(url, header, null, method);
     }
 
-    protected HttpRequestBase build(String url, Header header, ResResult body,
+    protected HttpRequestBase build(String url, Header header, RestResult body,
                                     String method) {
 
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);

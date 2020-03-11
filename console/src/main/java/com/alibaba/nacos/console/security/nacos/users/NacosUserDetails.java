@@ -29,6 +29,7 @@ import java.util.Collection;
  */
 public class NacosUserDetails implements UserDetails {
 
+    private static final long serialVersionUID = -3595589356940452439L;
     private User user;
 
     public NacosUserDetails(User user) {

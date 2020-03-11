@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
@@ -54,15 +54,16 @@ public class NacosClusterRouter {
     private IdGeneratorManager idGeneratorManager;
 
     @GetMapping(value = "/self")
-    public ResResult<Member> self() {
+    public RestResult<Member> self() {
         return ResResultUtils.success(memberManager.self());
     }
 
     @GetMapping(value = "/nodes")
-    public ResResult<Collection<Member>> listAllNode(HttpServletRequest request) {
+    public RestResult<Collection<Member>> listAllNode(HttpServletRequest request) {
         final String json = request.getParameter("self");
         if (StringUtils.isNotBlank(json)) {
             Member remoteMember = JSON.parseObject(json, Member.class);
+            Loggers.CORE.debug("remote member sync local member cluster info : {}", remoteMember);
             memberManager.update(remoteMember);
         }
         return ResResultUtils.success(memberManager.allMembers());
@@ -72,7 +73,7 @@ public class NacosClusterRouter {
     // cluster according to this interface
 
     @GetMapping(value = "/simple/nodes")
-    public ResResult<Collection<String>> listSimpleNodes() {
+    public RestResult<Collection<String>> listSimpleNodes() {
         List<String> ips = memberManager.allMembers().stream()
                 .map(Member::address)
                 .collect(Collectors.toList());
@@ -80,14 +81,14 @@ public class NacosClusterRouter {
     }
 
     @GetMapping("/server/health")
-    public ResResult<String> getHealth() {
+    public RestResult<String> getHealth() {
         return ResResultUtils.success("");
     }
 
     @PostMapping("/server/report")
-    public ResResult<Boolean> report(@RequestBody ResResult<Member> resResult) {
+    public RestResult<Boolean> report(@RequestBody RestResult<Member> restResult) {
 
-        final Member node = resResult.getData();
+        final Member node = restResult.getData();
 
         if (!node.check()) {
             return ResResultUtils.failed("Node information is illegal");
@@ -99,7 +100,7 @@ public class NacosClusterRouter {
     }
 
     @DeleteMapping("/server/leave")
-    public ResResult<Boolean> memberLeave(@RequestParam(value = "member") String address) {
+    public RestResult<Boolean> memberLeave(@RequestParam(value = "member") String address) {
 
         Member member = new Member();
 
@@ -117,7 +118,7 @@ public class NacosClusterRouter {
     }
 
     @GetMapping("/sys/idGeneratorInfo")
-    public ResResult<Map<String, Map<Object, Object>>> idGeneratorInfo() {
+    public RestResult<Map<String, Map<Object, Object>>> idGeneratorInfo() {
         return ResResultUtils.success(idGeneratorManager.idGeneratorInfo());
     }
 

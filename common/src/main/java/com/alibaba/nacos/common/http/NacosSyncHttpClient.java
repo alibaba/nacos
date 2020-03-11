@@ -19,7 +19,7 @@ package com.alibaba.nacos.common.http;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -38,45 +38,45 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     }
 
     @Override
-    public <T> ResResult<T> get(final String url,
-                                final Header header,
-                                final Query query,
-                                final TypeReference<ResResult<T>> token) throws Exception {
+    public <T> RestResult<T> get(final String url,
+                                 final Header header,
+                                 final Query query,
+                                 final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.GET);
         return execute(client, token, requestBase);
     }
 
     @Override
-    public <T> ResResult<T> getLarge(String url, Header header, Query query, ResResult body, TypeReference<ResResult<T>> token) throws Exception {
+    public <T> RestResult<T> getLarge(String url, Header header, Query query, RestResult body, TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         return execute(client, token, requestBase);
     }
 
     @Override
-    public <T> ResResult<T> delete(final String url,
-                                   final Header header,
-                                   final Query query,
-                                   final TypeReference<ResResult<T>> token) throws Exception {
+    public <T> RestResult<T> delete(final String url,
+                                    final Header header,
+                                    final Query query,
+                                    final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.DELETE);
         return execute(client, token, requestBase);
     }
 
     @Override
-    public <T> ResResult<T> put(final String url,
-                                final Header header,
-                                final Query query,
-                                final ResResult body,
-                                final TypeReference<ResResult<T>> token) throws Exception {
+    public <T> RestResult<T> put(final String url,
+                                 final Header header,
+                                 final Query query,
+                                 final RestResult body,
+                                 final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         return execute(client, token, requestBase);
     }
 
     @Override
-    public <T> ResResult<T> post(final String url,
-                                 final Header header,
-                                 final Query query,
-                                 final ResResult body,
-                                 final TypeReference<ResResult<T>> token) throws Exception {
+    public <T> RestResult<T> post(final String url,
+                                  final Header header,
+                                  final Query query,
+                                  final RestResult body,
+                                  final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         return execute(client, token, requestBase);
     }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import java.util.List;
@@ -120,10 +120,10 @@ public interface ConsistencyProtocol<T extends Config> {
      * Operation and maintenance interface of consistent protocol
      *
      * @param argv command
-     * @return {@link ResResult<String>}
+     * @return {@link RestResult <String>}
      */
-    default ResResult<String> maintenance(String[] argv) {
-        return ResResult.<String>builder().build();
+    default RestResult<String> maintenance(String[] argv) {
+        return RestResult.<String>builder().build();
     }
 
     /**

@@ -17,6 +17,7 @@ package com.alibaba.nacos.core.auth;
 
 
 import com.alibaba.fastjson.JSON;
+import java.io.Serializable;
 
 /**
  * Resource used in authorization.
@@ -24,7 +25,9 @@ import com.alibaba.fastjson.JSON;
  * @author nkorange
  * @since 1.2.0
  */
-public class Resource {
+public class Resource implements Serializable {
+
+    private static final long serialVersionUID = 8427760399934329229L;
 
     public static final String SPLITTER = ":";
     public static final String ANY = "*";

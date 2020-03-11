@@ -19,7 +19,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +30,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -62,7 +62,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     private volatile JdbcTemplate jt;
     private volatile TransactionTemplate tjt;
 
-    private volatile boolean initialize = false;
+    private boolean initialize = false;
+    private boolean jdbcTemplateInit = false;
 
     @PostConstruct
     @Override
@@ -91,14 +92,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (LogUtil.defaultLog.isErrorEnabled()) {
                 LogUtil.defaultLog.error(e.getMessage(), e);
             }
-            throw new RuntimeException("load schema.sql error." + ExceptionUtil.getAllExceptionMsg(e));
+            throw new RuntimeException("load schema.sql error.", e);
         }
     }
 
-    public void reopenDerby(String jdbcUrl) throws Exception {
+    public void reopenDerby(String jdbcUrl, Callable<Void> callable) throws Exception {
         if (!PropertyUtil.isUseMysql()) {
 
-            LogUtil.defaultLog.info("use local db service for reopenDerby");
+            LogUtil.defaultLog.warn("use local db service for reopenDerby");
             try {
                 DriverManager.getConnection("jdbc:derby:;shutdown=true");
             } catch (Exception e) {
@@ -110,6 +111,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 }
             }
             DiskUtils.deleteDirectory(Paths.get(NACOS_HOME, DERBY_BASE_DIR).toString());
+            callable.call();
             initialize(jdbcUrl);
         }
     }
@@ -122,15 +124,21 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         ds.setPassword(PASSWORD);
         ds.setMaximumPoolSize(80);
         ds.setConnectionTimeout(10000L);
-
-        jt = new JdbcTemplate();
-        jt.setMaxRows(50000);
-        jt.setQueryTimeout(5000);
-        jt.setDataSource(ds);
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
-        tjt = new TransactionTemplate(tm);
         tm.setDataSource(ds);
-        tjt.setTimeout(5000);
+
+        if (jdbcTemplateInit) {
+            jt.setDataSource(ds);
+            tjt.setTransactionManager(tm);
+        } else {
+            jt = new JdbcTemplate();
+            jt.setMaxRows(50000);
+            jt.setQueryTimeout(5000);
+            jt.setDataSource(ds);
+            tjt = new TransactionTemplate(tm);
+            tjt.setTimeout(5000);
+            jdbcTemplateInit = true;
+        }
         reload();
     }
 

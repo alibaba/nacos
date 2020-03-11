@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
@@ -80,7 +80,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
             String urlString = MessageFormat.format(URL_PATTERN, serverIp, RunningConfigUtils.getContextPath(), dataId,
                     group);
 
-            ResResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE, new TypeReference<ResResult<String>>() {
+            RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE, new TypeReference<RestResult<String>>() {
             });
             if (result.getCode() == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,

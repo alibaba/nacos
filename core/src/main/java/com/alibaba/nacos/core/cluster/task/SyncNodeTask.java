@@ -24,8 +24,8 @@ import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpResResult;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.Task;
@@ -59,10 +59,10 @@ import org.apache.http.client.config.RequestConfig;
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class SyncNodeTask extends Task {
 
-    private static final TypeReference<ResResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<ResResult<Collection<Member>>>() {
+    private static final TypeReference<RestResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<RestResult<Collection<Member>>>() {
     };
 
-    private static final TypeReference<ResResult<String>> REFERENCE = new TypeReference<ResResult<String>>() {
+    private static final TypeReference<RestResult<String>> REFERENCE = new TypeReference<RestResult<String>>() {
     };
     private final ServletContext context;
     private int addressServerFailCount = 0;
@@ -116,6 +116,7 @@ public class SyncNodeTask extends Task {
 
         if (SystemUtils.STANDALONE_MODE) {
             standaloneJob.run();
+            GlobalExecutor.scheduleSyncJob(this::executeBody, 10_000L);
             return;
         }
 
@@ -123,13 +124,15 @@ public class SyncNodeTask extends Task {
         // The reason why instance properties are not used here is so that
         // the hot update mechanism can be implemented later
 
-        if (SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false)) {
+        boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
+
+        if (discovery) {
             syncBySelfDiscovery();
         } else {
             syncFromAddressUrl();
         }
 
-        GlobalExecutor.scheduleSyncJob(this::executeBody, 10_000L);
+        GlobalExecutor.scheduleSyncJob(this::executeBody, 5_000L);
     }
 
     private void syncBySelfDiscovery() {
@@ -148,7 +151,7 @@ public class SyncNodeTask extends Task {
 
             httpclient.get(url, Header.EMPTY, selfInfo, TYPE_REFERENCE, new Callback<Collection<Member>>() {
                 @Override
-                public void onReceive(HttpResResult<Collection<Member>> result) {
+                public void onReceive(HttpRestResult<Collection<Member>> result) {
                     if (result.ok()) {
 
                         Collection<Member> remoteMembers = result.getData();
@@ -159,12 +162,15 @@ public class SyncNodeTask extends Task {
                     } else {
                         Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", member.address(), result);
                     }
+                    member.setState(NodeState.UP);
                     memberManager.getServerListUnHealth().remove(member);
                     memberManager.getLastRefreshTimeRecord().put(member.address(), System.currentTimeMillis());
                 }
 
                 @Override
                 public void onError(Throwable e) {
+                    member.setState(NodeState.SUSPICIOUS);
+                    memberManager.getServerListUnHealth().add(member);
                     Loggers.CORE.error("[serverlist] exception : {}, node : {}", e, member.address());
                 }
             });
@@ -175,7 +181,7 @@ public class SyncNodeTask extends Task {
         if (!alreadyLoadServer && memberManager.getUseAddressServer()) {
             httpclient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, REFERENCE, new Callback<String>() {
                 @Override
-                public void onReceive(HttpResResult<String> result) {
+                public void onReceive(HttpRestResult<String> result) {
                     if (HttpServletResponse.SC_OK == result.getCode()) {
                         memberManager.setAddressServerHealth(true);
                         Reader reader = new StringReader(result.getData());

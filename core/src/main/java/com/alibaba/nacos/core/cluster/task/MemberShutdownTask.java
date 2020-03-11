@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
 
@@ -32,7 +32,7 @@ public class MemberShutdownTask extends Task {
 
     private NSyncHttpClient httpClient;
 
-    private final TypeReference<ResResult<String>> typeReference = new TypeReference<ResResult<String>>(){};
+    private final TypeReference<RestResult<String>> typeReference = new TypeReference<RestResult<String>>(){};
 
     public MemberShutdownTask() {
         this.httpClient = HttpClientManager.newHttpClient(MemberShutdownTask.class.getCanonicalName());

@@ -22,6 +22,7 @@ package com.alibaba.nacos.console.model;
  */
 public class NamespaceAllInfo extends Namespace {
 
+    private static final long serialVersionUID = -1684059319205515989L;
     private String namespaceDesc;
 
     public String getNamespaceDesc() {

@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import java.util.List;
@@ -61,10 +61,10 @@ public class NotifyService {
         notifyTaskManager.setDefaultTaskProcessor(new NotifyTaskProcessor(memberManager));
     }
 
-    static public <T> ResResult<T> invokeURL(final String url,
-                                             final List<String> headers,
-                                             final String encoding,
-                                             final TypeReference<ResResult<T>> reference) throws Exception {
+    static public <T> RestResult<T> invokeURL(final String url,
+                                              final List<String> headers,
+                                              final String encoding,
+                                              final TypeReference<RestResult<T>> reference) throws Exception {
         final Header header = Header.newInstance();
         header.addAll(headers);
         header.addParam("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);

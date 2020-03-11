@@ -25,6 +25,7 @@ import com.alibaba.nacos.core.auth.User;
  */
 public class NacosUser extends User {
 
+    private static final long serialVersionUID = -8078941066370832149L;
     private String token;
 
     private boolean globalAdmin = false;

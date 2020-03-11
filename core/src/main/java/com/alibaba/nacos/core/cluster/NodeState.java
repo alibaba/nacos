@@ -27,6 +27,11 @@ public enum NodeState {
     UP,
 
     /**
+     * Node may Crash
+     */
+    SUSPICIOUS,
+
+    /**
      * node is out of service, something abnormal happened
      */
     DOWN,

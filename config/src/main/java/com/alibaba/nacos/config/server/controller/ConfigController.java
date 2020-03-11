@@ -25,7 +25,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.result.ResultBuilder;

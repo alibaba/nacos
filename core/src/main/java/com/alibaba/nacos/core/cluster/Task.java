@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.core.utils.Loggers;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -30,7 +32,11 @@ public abstract class Task implements Runnable {
 
     @Override
     public void run() {
-        executeBody();
+        try {
+            executeBody();
+        } catch (Throwable t) {
+            Loggers.CORE.error("this task execute has error : {}", t);
+        }
     }
 
     // init some resource

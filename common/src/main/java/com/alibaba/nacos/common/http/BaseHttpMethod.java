@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -155,7 +155,7 @@ public enum BaseHttpMethod {
         }
     }
 
-    public void initEntity(ResResult body, String mediaType) {
+    public void initEntity(RestResult body, String mediaType) {
         if (body == null) {
             return;
         }

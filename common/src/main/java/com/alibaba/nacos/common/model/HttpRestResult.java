@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.http.param.Header;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class HttpResResult<T> extends ResResult<T> {
+public class HttpRestResult<T> extends RestResult<T> {
 
     private static final long serialVersionUID = 143520334044543925L;
 

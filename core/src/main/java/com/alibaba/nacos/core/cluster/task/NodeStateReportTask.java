@@ -22,9 +22,10 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpResResult;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
@@ -41,8 +42,8 @@ import org.apache.http.client.config.RequestConfig;
  */
 public class NodeStateReportTask extends Task {
 
-    private final TypeReference<ResResult<String>> reference
-            = new TypeReference<ResResult<String>>() {
+    private final TypeReference<RestResult<String>> reference
+            = new TypeReference<RestResult<String>>() {
     };
 
     private NAsyncHttpClient httpClient;
@@ -106,21 +107,24 @@ public class NodeStateReportTask extends Task {
                 httpClient.post(url, Header.EMPTY, Query.EMPTY
                         , ResResultUtils.success(self), reference, new Callback<String>() {
                             @Override
-                            public void onReceive(HttpResResult<String> result) {
+                            public void onReceive(HttpRestResult<String> result) {
                                 if (result.ok()) {
                                     Loggers.CORE.debug("Successfully synchronizing information to node : {}," +
                                             " result : {}", member, result);
 
                                 } else {
                                     Loggers.CORE.warn("An exception occurred while reporting their " +
-                                            "information to the node : {}, error : {}", member.address(), result.getErrMsg());
+                                            "information to the node : {}, error : {}", member.address(), result.getMessage());
                                 }
+                                member.setState(NodeState.UP);
                                 memberManager.getServerListUnHealth().remove(member);
                                 memberManager.getLastRefreshTimeRecord().put(member.address(), System.currentTimeMillis());
                             }
 
                             @Override
                             public void onError(Throwable e) {
+                                member.setState(NodeState.SUSPICIOUS);
+                                memberManager.getServerListUnHealth().add(member);
                                 Loggers.CORE.error("An exception occurred while reporting their " +
                                         "information to the node : {}, error : {}", member.address(), e);
                             }

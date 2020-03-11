@@ -107,8 +107,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         SyncNodeTask task = new SyncNodeTask(servletContext);
         task.setMemberManager(this);
         task.init();
-
-        GlobalExecutor.scheduleSyncJob(task, 10_000L);
+        GlobalExecutor.scheduleSyncJob(task, 5_000L);
 
         // Consistency protocol module initialization
 
@@ -119,9 +118,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public void update(Member newMember) {
 
-        String address = newMember.address();
-
         long nowTime = System.currentTimeMillis();
+
+        serverListUnHealth.remove(newMember);
+        String address = newMember.address();
 
         if (!serverListHealth.containsKey(address)) {
             memberJoin(new ArrayList<>(Arrays.asList(newMember)));
@@ -133,9 +133,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             public Member apply(String s, Member member) {
                 // If this member updates itself, ignore the health judgment
                 if (!isSelf(newMember)) {
-                    serverListUnHealth.remove(newMember);
                     lastRefreshTimeRecord.put(address, nowTime);
                 }
+                member.setState(NodeState.UP);
                 MemberUtils.copy(newMember, member);
                 return member;
             }
@@ -191,10 +191,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             final Member newMember = iterator.next();
             final String address = newMember.address();
 
-            if (serverListHealth.containsKey(address)) {
+            if (serverListHealth.containsKey(address) && serverListUnHealth.contains(newMember)) {
                 iterator.remove();
                 continue;
             }
+
+            NodeState state = newMember.state();
+
+            if (state == NodeState.DOWN || state == NodeState.SUSPICIOUS) {
+                iterator.remove();
+                continue;
+            }
+
+            newMember.setState(NodeState.UP);
 
             // Ensure that the node is created only once
             serverListHealth.computeIfAbsent(address, s -> newMember);
@@ -212,7 +221,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             return;
         }
 
-        Loggers.CORE.warn("New node join : {}", members);
+        Loggers.CORE.warn("have new node join : {}", members);
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
@@ -407,9 +416,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         reportTask.init();
         clearInvalidNodeTask.init();
+        shutdownTask.init();
 
-        GlobalExecutor.scheduleCleanJob(clearInvalidNodeTask, 30_000L);
         GlobalExecutor.scheduleReportJob(reportTask, 20_000L);
+        GlobalExecutor.scheduleCleanJob(clearInvalidNodeTask, 30_000L);
 
         shutdownTask.run();
 

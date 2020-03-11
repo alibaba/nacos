@@ -17,9 +17,11 @@
 package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -31,18 +33,18 @@ public class ClearInvalidNodeTask extends Task {
 
     // 10 second
 
-    private static final long EXPIRE_TIME = 10_000L;
+    private static final long EXPIRE_TIME = 15_000L;
 
     // 20 second
 
-    private static final long REMOVAL_TIME = 20_000L;
+    private static final long REMOVAL_TIME = 30_000L;
     private static final int MAX_CLEAN_CNT = 3;
     private int cleanCnt = 0;
 
     @Override
     public void executeBody() {
         Map<String, Long> lastRefreshRecord = memberManager.getLastRefreshTimeRecord();
-        Map<String, Member> nodeMap = memberManager.getServerListHealth();
+        Map<String, Member> memberMap = memberManager.getServerListHealth();
         Set<Member> unHealthMembers = memberManager.getServerListUnHealth();
 
         long currentTime = System.currentTimeMillis();
@@ -51,39 +53,54 @@ public class ClearInvalidNodeTask extends Task {
 
         lastRefreshRecord.forEach((address, lastRefresh) -> {
 
+            Member member = memberMap.get(address);
+
             if (Objects.equals(self, address)) {
+                member.setState(NodeState.UP);
+                unHealthMembers.remove(member);
                 return;
             }
 
-            if (lastRefresh + EXPIRE_TIME < currentTime) {
-                Member member = nodeMap.get(address);
-                if (member != null) {
-                    unHealthMembers.add(member);
+            if (member != null) {
+                if (lastRefresh + EXPIRE_TIME >= currentTime) {
+                    member.setState(NodeState.UP);
+                    unHealthMembers.remove(member);
+                    return;
                 }
-            }
-            if (lastRefresh + REMOVAL_TIME < currentTime) {
-                Member old = nodeMap.remove(address);
 
-                if (old != null) {
-                    if (lastRefreshRecord.get(old.address()) + EXPIRE_TIME > currentTime) {
-                        nodeMap.put(address, old);
+                if (lastRefresh + EXPIRE_TIME < currentTime) {
+                    member.setState(NodeState.SUSPICIOUS);
+                    unHealthMembers.add(member);
+                    return;
+                }
+                if (lastRefresh + REMOVAL_TIME < currentTime) {
+                    Member old = memberMap.remove(address);
+                    if (old != null) {
+                        if (lastRefreshRecord.get(old.address()) + EXPIRE_TIME > currentTime) {
+                            old.setState(NodeState.UP);
+                            memberMap.put(address, old);
+                            unHealthMembers.remove(old);
+                        }
                     }
+                } else {
+                    member.setState(NodeState.UP);
+                    unHealthMembers.remove(member);
                 }
             }
+
         });
 
         cleanCnt++;
 
         if (cleanCnt > MAX_CLEAN_CNT) {
             if (!unHealthMembers.isEmpty()) {
-                Loggers.CORE.warn("Node to leave : {}", unHealthMembers);
-
-                memberManager.memberLeave(unHealthMembers);
-                cleanCnt = 0;
+                Loggers.CORE.warn("clean job lead some member leave : {}", unHealthMembers);
+                memberManager.memberLeave(new HashSet<>(unHealthMembers));
             }
+            cleanCnt = 0;
         }
 
-        GlobalExecutor.scheduleCleanJob(this::executeBody, REMOVAL_TIME);
+        GlobalExecutor.scheduleCleanJob(this, 10_000L);
 
     }
 

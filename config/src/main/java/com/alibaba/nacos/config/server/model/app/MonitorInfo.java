@@ -15,12 +15,15 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
+import java.io.Serializable;
+
 /**
  * Created by qingliang on 2017/7/20.
  *
  * @author Nacos
  */
-public class MonitorInfo {
+public class MonitorInfo implements Serializable {
+    private static final long serialVersionUID = -656446995906346935L;
     /**
      * 可使用内存.
      */

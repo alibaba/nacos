@@ -21,15 +21,35 @@ import java.io.Serializable;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ResResult<T> implements Serializable {
+public class RestResult<T> implements Serializable {
 
-    private static final long serialVersionUID = 4438822771228629459L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 6095433538316185017L;
 
     private int code;
-
+    private String message;
     private T data;
 
-    private String errMsg;
+    public RestResult() {
+    }
+
+    public RestResult(int code, String message, T data) {
+        this.code = code;
+        this.setMessage(message);
+        this.data = data;
+    }
+
+    public RestResult(int code, T data) {
+        this.code = code;
+        this.data = data;
+    }
+
+    public RestResult(int code, String message) {
+        this.code = code;
+        this.setMessage(message);
+    }
 
     public int getCode() {
         return code;
@@ -39,12 +59,12 @@ public class ResResult<T> implements Serializable {
         this.code = code;
     }
 
-    public String getErrMsg() {
-        return errMsg;
+    public String getMessage() {
+        return message;
     }
 
-    public void setErrMsg(String errMsg) {
-        this.errMsg = errMsg;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public T getData() {
@@ -61,11 +81,11 @@ public class ResResult<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "ResResult{" +
-            "code=" + code +
-            ", errMsg='" + errMsg + '\'' +
-            ", data=" + data +
-            '}';
+        return "RestResult{" +
+                "code=" + code +
+                ", message='" + message + '\'' +
+                ", data=" + data +
+                '}';
     }
 
     public static <T> ResResultBuilder<T> builder() {
@@ -85,7 +105,7 @@ public class ResResult<T> implements Serializable {
             return this;
         }
 
-        public ResResultBuilder<T> withErrMsg(String errMsg) {
+        public ResResultBuilder<T> withMsg(String errMsg) {
             this.errMsg = errMsg;
             return this;
         }
@@ -95,12 +115,12 @@ public class ResResult<T> implements Serializable {
             return this;
         }
 
-        public ResResult<T> build() {
-            ResResult<T> resResult = new ResResult<T>();
-            resResult.setCode(code);
-            resResult.setErrMsg(errMsg);
-            resResult.setData(data);
-            return resResult;
+        public RestResult<T> build() {
+            RestResult<T> restResult = new RestResult<T>();
+            restResult.setCode(code);
+            restResult.setMessage(errMsg);
+            restResult.setData(data);
+            return restResult;
         }
     }
 }

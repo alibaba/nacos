@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpResResult;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.cluster.MemberManager;
@@ -51,7 +51,7 @@ class DistroClient {
     private static final String DATA_GET_URL = "/distro/items";
     private static final String ALL_DATA_GET_URL = "/distro/all/items";
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
-    private final TypeReference<ResResult<String>> reference = new TypeReference<ResResult<String>>() {
+    private final TypeReference<RestResult<String>> reference = new TypeReference<RestResult<String>>() {
     };
     private final MemberManager memberManager;
     private final NSyncHttpClient httpClient;
@@ -74,14 +74,14 @@ class DistroClient {
                     .addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:" + VersionUtils.VERSION)
                     .addParam("Connection", "Keep-Alive");
 
-            final ResResult body = ResResultUtils.success(checksumMap);
+            final RestResult body = ResResultUtils.success(checksumMap);
 
             final Query query = Query.newInstance()
                     .addParam("source", memberManager.self().address());
 
             DistroExecutor.executeByGlobal(() -> {
                 try {
-                    HttpResResult<String> result = (HttpResResult<String>) httpClient.put(url, header, query, body, reference);
+                    HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, query, body, reference);
 
                     if (!result.ok()) {
                         Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
@@ -101,7 +101,7 @@ class DistroClient {
     byte[] getAllData(final String serverAddr) throws Exception {
         final String url = buildUrl(ALL_DATA_GET_URL, serverAddr);
 
-        HttpResResult<String> result = (HttpResResult<String>) httpClient.get(url, Header.EMPTY, Query.EMPTY, reference);
+        HttpRestResult<String> result = (HttpRestResult<String>) httpClient.get(url, Header.EMPTY, Query.EMPTY, reference);
 
         Loggers.DISTRO.info("get all data from server-addr : {} is : {}", serverAddr, result);
 
@@ -121,9 +121,9 @@ class DistroClient {
 
         final String url = buildUrl(DATA_GET_URL, server);
 
-        final ResResult body = ResResultUtils.success(params);
+        final RestResult body = ResResultUtils.success(params);
 
-        HttpResResult<String> result = (HttpResResult<String>) httpClient.getLarge(url, Header.EMPTY, Query.EMPTY, body, reference);
+        HttpRestResult<String> result = (HttpRestResult<String>) httpClient.getLarge(url, Header.EMPTY, Query.EMPTY, body, reference);
 
         if (result.ok()) {
             return result.getData().getBytes();
@@ -143,7 +143,7 @@ class DistroClient {
 
         try {
             final String url = buildUrl(DATA_ON_SYNC_URL, curServer);
-            HttpResResult<String> result = (HttpResResult<String>) httpClient.put(url, header, Query.EMPTY,
+            HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, Query.EMPTY,
                     ResResultUtils.success(data), reference);
             if (HttpURLConnection.HTTP_OK == result.getHttpCode()) {
                 return true;

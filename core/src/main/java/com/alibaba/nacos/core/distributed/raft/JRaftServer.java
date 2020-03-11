@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
@@ -502,7 +502,7 @@ public class JRaftServer implements MemberChangeListener {
             cliClientService.getRpcClient().invokeWithCallback(leaderIp, request, new InvokeCallback() {
                 @Override
                 public void onResponse(Object o) {
-                    ResResult result = (ResResult) o;
+                    RestResult result = (RestResult) o;
                     closure.setData(result.getData());
                     closure.run(Status.OK());
                 }

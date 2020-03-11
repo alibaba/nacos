@@ -32,6 +32,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.util.concurrent.Callable;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import javax.sql.DataSource;
@@ -48,7 +49,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
 
     private static final String DERBY_BASE_DIR = Paths.get(NACOS_HOME, "data", "derby-data").toString();
 
-    private final String restoreDB = "jdbc:derby:restoreFrom=" + DERBY_BASE_DIR;
+    private final String restoreDB = "jdbc:derby:" + DERBY_BASE_DIR;
 
     @Override
     public void onSnapshotSave(Writer writer, CallFinally callFinally) {
@@ -87,19 +88,17 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             final Checksum checksum = new CRC32();
             DiskUtils.decompress(sourceFile, readerPath, checksum);
 
-            final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
+            final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR, "derby-data").toString();
             LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath, DERBY_BASE_DIR);
 
-            final File srcDir = new File(loadPath);
-            final File destDir = new File(DERBY_BASE_DIR);
+            doDerbyRestoreFromBackup(() -> {
+                final File srcDir = new File(loadPath);
+                final File destDir = new File(DERBY_BASE_DIR);
 
-            DiskUtils.copyDirectory(srcDir, destDir);
-
-            System.out.println(destDir.listFiles().length);
-
-            doDerbyRestoreFromBackup();
+                DiskUtils.copyDirectory(srcDir, destDir);
+                return null;
+            });
             DiskUtils.deleteDirectory(loadPath);
-            DiskUtils.deleteFile(readerPath, SNAPSHOT_ARCHIVE);
 
             return true;
         } catch (final Throwable t) {
@@ -119,10 +118,10 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         }
     }
 
-    private void doDerbyRestoreFromBackup() throws Exception {
+    private void doDerbyRestoreFromBackup(Callable<Void> callable) throws Exception {
         DataSourceService sourceService = SpringUtils.getBean(DynamicDataSource.class).getDataSource();
         LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
-        localDataSourceService.reopenDerby(restoreDB);
+        localDataSourceService.reopenDerby(restoreDB, callable);
     }
 
 }

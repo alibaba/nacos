@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.ResResultUtils;
@@ -58,9 +58,9 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
                     asyncCtx.sendResponse(ResResultUtils.success(result));
                 } else {
                     asyncCtx.sendResponse(
-                            ResResult.builder()
+                            RestResult.builder()
                                     .withData(false)
-                                    .withErrMsg(t.getMessage())
+                                    .withMsg(t.getMessage())
                                     .build());
                 }
             });

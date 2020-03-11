@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -241,8 +241,8 @@ public class ConfigSubService {
                 }
 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                ResResult<String> result = NotifyService
-                        .invokeURL(urlAll, null, Constants.ENCODE, new TypeReference<ResResult<String>>() {
+                RestResult<String> result = NotifyService
+                        .invokeURL(urlAll, null, Constants.ENCODE, new TypeReference<RestResult<String>>() {
                         });
                 /**
                  *  http code 200

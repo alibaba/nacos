@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.controller;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
@@ -65,7 +65,7 @@ public class DistroController extends BaseController {
     }
 
     @PutMapping("/items")
-    public ResponseEntity<String> onSyncDatum(@RequestBody ResResult<Map<String, Map<String, KVStore.Item>>> result) throws Exception {
+    public ResponseEntity<String> onSyncDatum(@RequestBody RestResult<Map<String, Map<String, KVStore.Item>>> result) throws Exception {
         Map<String, Map<String, KVStore.Item>> dataMap = result.getData();
         if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
@@ -87,7 +87,7 @@ public class DistroController extends BaseController {
     }
 
     @GetMapping("/items")
-    public ResponseEntity<String> get(@RequestBody ResResult<Map<String, String>> result) throws Exception {
+    public ResponseEntity<String> get(@RequestBody RestResult<Map<String, String>> result) throws Exception {
         Map<String, String> body = result.getData();
         String storeName = body.get("storeName");
         String keys = body.get("keys");

@@ -16,42 +16,42 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.common.model.RestResult;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ResResultUtils {
 
-    public static <T> ResResult<T> success() {
-        return ResResult.<T>builder()
+    public static <T> RestResult<T> success() {
+        return RestResult.<T>builder()
                 .withCode(200)
                 .build();
     }
 
-    public static <T> ResResult<T> success(T data) {
-        return ResResult.<T>builder()
+    public static <T> RestResult<T> success(T data) {
+        return RestResult.<T>builder()
                 .withCode(200)
                 .withData(data)
                 .build();
     }
 
-    public static ResResult<Boolean> failed(String errMsg) {
-        return ResResult.<Boolean>builder()
+    public static RestResult<Boolean> failed(String errMsg) {
+        return RestResult.<Boolean>builder()
                 .withCode(200)
                 .withData(false)
-                .withErrMsg(errMsg)
+                .withMsg(errMsg)
                 .build();
     }
 
-    public static <T> ResResult<T> failed() {
-        return ResResult.<T>builder()
+    public static <T> RestResult<T> failed() {
+        return RestResult.<T>builder()
                 .withCode(200)
                 .build();
     }
 
-    public static <T> ResResult<T> failed(T data) {
-        return ResResult.<T>builder()
+    public static <T> RestResult<T> failed(T data) {
+        return RestResult.<T>builder()
                 .withCode(200)
                 .withData(data)
                 .build();

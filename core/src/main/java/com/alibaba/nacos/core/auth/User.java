@@ -16,14 +16,17 @@
 package com.alibaba.nacos.core.auth;
 
 
+import java.io.Serializable;
+
 /**
  * User information in authorization.
  *
  * @author nkorange
  * @since 1.2.0
  */
-public class User {
+public class User implements Serializable {
 
+    private static final long serialVersionUID = -8002966873087151367L;
     /**
      * Unique string representing user
      */

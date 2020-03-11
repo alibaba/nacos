@@ -15,13 +15,16 @@
  */
 package com.alibaba.nacos.console.model;
 
+import java.io.Serializable;
+
 /**
  * Namespace
  *
  * @author diamond
  */
-public class Namespace {
+public class Namespace implements Serializable {
 
+    private static final long serialVersionUID = -1455346014365475550L;
     private String namespace;
 
     private String namespaceShowName;

@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.model;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.config.server.utils.SingletonRepository.DataIdGroupIdCache;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -26,8 +27,9 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public class CacheItem {
+public class CacheItem implements Serializable {
 
+    private static final long serialVersionUID = -7011169849516003549L;
     final String groupKey;
     public volatile String md5 = Constants.NULL;
     public volatile long lastModifiedTs;
