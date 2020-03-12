@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -28,12 +26,12 @@ import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -41,7 +39,6 @@ import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,31 +54,27 @@ import org.apache.http.client.config.RequestConfig;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
-public class SyncNodeTask extends Task {
+public class MemberSyncTask extends Task {
 
-    private static final TypeReference<RestResult<Collection<Member>>> TYPE_REFERENCE = new TypeReference<RestResult<Collection<Member>>>() {
-    };
-
-    private static final TypeReference<RestResult<String>> REFERENCE = new TypeReference<RestResult<String>>() {
+    private static final TypeReference<RestResult<String>> STRING_REFERENCE = new TypeReference<RestResult<String>>() {
     };
     private final ServletContext context;
     private int addressServerFailCount = 0;
     private int maxFailCount = 12;
-    private NAsyncHttpClient httpclient;
+    private NAsyncHttpClient httpClient;
     private volatile boolean alreadyLoadServer = false;
 
-    private Runnable standaloneJob = () -> {
-        final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
-        readServerConf(Collections.singletonList(url));
-    };
+    private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
 
-    public SyncNodeTask(final ServletContext context) {
+    private Runnable standaloneJob = () -> readServerConf(Collections.singletonList(url));
+
+    public MemberSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
+        super(memberManager);
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
                 .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "200"))).build();
-        this.httpclient = HttpClientManager.newAsyncHttpClient(getClass().getCanonicalName(), requestConfig);
+        this.httpClient = HttpClientManager.newAsyncHttpClient(getClass().getCanonicalName(), requestConfig);
         this.maxFailCount = Integer.parseInt(SpringUtils.getProperty("maxHealthCheckFailCount", "12"));
-
         this.context = context;
     }
 
@@ -116,7 +109,6 @@ public class SyncNodeTask extends Task {
 
         if (SystemUtils.STANDALONE_MODE) {
             standaloneJob.run();
-            GlobalExecutor.scheduleSyncJob(this::executeBody, 10_000L);
             return;
         }
 
@@ -126,60 +118,21 @@ public class SyncNodeTask extends Task {
 
         boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
-        if (discovery) {
-            syncBySelfDiscovery();
-        } else {
+        if (!discovery) {
             syncFromAddressUrl();
         }
-
-        GlobalExecutor.scheduleSyncJob(this::executeBody, 5_000L);
     }
 
-    private void syncBySelfDiscovery() {
-        Collection<Member> members = memberManager.allMembers();
-
-        final Query selfInfo = Query.newInstance()
-                .addParam("self", JSON.toJSONString(memberManager.self()));
-
-        for (Member member : members) {
-
-            if (memberManager.isSelf(member)) {
-                continue;
-            }
-
-            final String url = HttpUtils.buildUrl(false, member.address(), context.getContextPath(), Commons.NACOS_CORE_CONTEXT, "/cluster/nodes");
-
-            httpclient.get(url, Header.EMPTY, selfInfo, TYPE_REFERENCE, new Callback<Collection<Member>>() {
-                @Override
-                public void onReceive(HttpRestResult<Collection<Member>> result) {
-                    if (result.ok()) {
-
-                        Collection<Member> remoteMembers = result.getData();
-                        if (remoteMembers != null) {
-                            updateCluster(remoteMembers);
-                        }
-
-                    } else {
-                        Loggers.CORE.error("[serverlist] failed to get serverlist from server : {}, error : {}", member.address(), result);
-                    }
-                    member.setState(NodeState.UP);
-                    memberManager.getServerListUnHealth().remove(member);
-                    memberManager.getLastRefreshTimeRecord().put(member.address(), System.currentTimeMillis());
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    member.setState(NodeState.SUSPICIOUS);
-                    memberManager.getServerListUnHealth().add(member);
-                    Loggers.CORE.error("[serverlist] exception : {}, node : {}", e, member.address());
-                }
-            });
+    @Override
+    protected void after() {
+        if (!SystemUtils.STANDALONE_MODE) {
+            GlobalExecutor.scheduleSyncJob(this, 5_000L);
         }
     }
 
     private void syncFromAddressUrl() {
         if (!alreadyLoadServer && memberManager.getUseAddressServer()) {
-            httpclient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, REFERENCE, new Callback<String>() {
+            httpClient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, STRING_REFERENCE, new Callback<String>() {
                 @Override
                 public void onReceive(HttpRestResult<String> result) {
                     if (HttpServletResponse.SC_OK == result.getCode()) {
@@ -188,15 +141,16 @@ public class SyncNodeTask extends Task {
                         try {
                             readServerConf(SystemUtils.analyzeClusterConf(reader));
                         } catch (Exception e) {
-                            Loggers.CORE.error("[serverlist] exception for analyzeClusterConf, error : {}", e);
+                            Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}", e);
                         }
                         addressServerFailCount = 0;
+                        memberManager.setAddressServerHealth(true);
                     } else {
                         addressServerFailCount++;
                         if (addressServerFailCount >= maxFailCount) {
                             memberManager.setAddressServerHealth(false);
                         }
-                        Loggers.CORE.error("[serverlist] failed to get serverlist, error code {}", result.getCode());
+                        Loggers.CLUSTER.error("[serverlist] failed to get serverlist, error code {}", result.getCode());
                     }
                 }
 
@@ -206,7 +160,7 @@ public class SyncNodeTask extends Task {
                     if (addressServerFailCount >= maxFailCount) {
                         memberManager.setAddressServerHealth(false);
                     }
-                    Loggers.CORE.error("[serverlist] exception, error : {}", e);
+                    Loggers.CLUSTER.error("[serverlist] exception, error : {}", e);
                 }
             });
         }
@@ -218,13 +172,12 @@ public class SyncNodeTask extends Task {
             readServerConf(members);
             alreadyLoadServer = true;
         } catch (Exception e) {
-            Loggers.CORE.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e);
+            Loggers.CLUSTER.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e);
             alreadyLoadServer = false;
         }
     }
 
     // 默认配置格式解析，只有nacos-server的ip:port or hostname:port 信息
-
     // example 192.168.16.1:8848?raft_port=8849&key=value
 
     private void readServerConf(List<String> members) {
@@ -275,13 +228,9 @@ public class SyncNodeTask extends Task {
 
         }
 
-        Loggers.CORE.info("init node cluster : {}", nodes);
+        Loggers.CLUSTER.info("have member join the cluster : {}", nodes);
 
-        updateCluster(nodes);
+        memberManager.memberJoin(nodes);
+
     }
-
-    private void updateCluster(Collection<Member> members) {
-        memberManager.memberJoin(members);
-    }
-
 }

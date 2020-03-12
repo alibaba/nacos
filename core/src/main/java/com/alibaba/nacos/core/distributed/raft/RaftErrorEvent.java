@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.core.distributed.raft;
+
+import com.alibaba.nacos.core.notify.Event;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ClusterConfConstants {
+public class RaftErrorEvent implements Event {
+    private static final long serialVersionUID = 3016514657754158167L;
 
-    // example : nacos.node.0.address=127.0.0.1:8848
-
-    public static final String NODE_ADDRESS = "nacos.node.%d.address";
-
-    // example : nacos.node.0.extend-info.raft_node=8000
-
-    public static final String NODE_EXTEND_DATA = "nacos.node.%d.extend-info.(\\w+)";
-
+    @Override
+    public Class<? extends Event> eventType() {
+        return RaftErrorEvent.class;
+    }
 }

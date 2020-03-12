@@ -17,8 +17,8 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +40,13 @@ public class MemoryMonitor {
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
-        TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
+        GlobalExecutor.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
                 DELAY_SECONDS, TimeUnit.SECONDS);
 
-        TimerTaskService.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
+        GlobalExecutor.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
                 DELAY_SECONDS, TimeUnit.SECONDS);
 
-        TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
+        GlobalExecutor.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
                 DELAY_SECONDS, TimeUnit.SECONDS);
 
     }

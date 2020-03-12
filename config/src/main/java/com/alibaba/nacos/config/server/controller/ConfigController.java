@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.config.server.annonation.Circuit;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -115,6 +116,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @PostMapping
+    @Circuit
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
                                  @RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -230,6 +232,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @DeleteMapping
+    @Circuit
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("dataId") String dataId, //
@@ -260,6 +263,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
+    @Circuit
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
                                              @RequestParam(value = "ids") List<Long> ids) {
@@ -402,6 +406,7 @@ public class ConfigController {
     }
 
     @DeleteMapping(params = "beta=true")
+    @Circuit
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,

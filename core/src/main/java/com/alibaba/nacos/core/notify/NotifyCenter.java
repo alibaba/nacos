@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -38,6 +39,19 @@ import java.util.function.Supplier;
 public class NotifyCenter {
 
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
+
+    static {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
+                @Override
+                public void accept(String s, Publisher publisher) {
+                    publisher.shutdown();
+                }
+            });
+        }));
+
+    }
 
     /**
      * Register a Subscriber. If the Publisher concerned by the
@@ -199,6 +213,10 @@ public class NotifyCenter {
             if (!initialized.get()) {
                 throw new IllegalStateException("Publisher does not start");
             }
+        }
+
+        void shutdown() {
+            disruptor.shutdown();
         }
 
     }

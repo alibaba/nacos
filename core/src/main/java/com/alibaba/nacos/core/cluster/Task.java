@@ -26,16 +26,18 @@ public abstract class Task implements Runnable {
 
     protected ServerMemberManager memberManager;
 
-    public void setMemberManager(ServerMemberManager memberManager) {
+    public Task(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
 
     @Override
-    public void run() {
+    public final void run() {
         try {
             executeBody();
         } catch (Throwable t) {
             Loggers.CORE.error("this task execute has error : {}", t);
+        } finally {
+            after();
         }
     }
 
@@ -49,5 +51,12 @@ public abstract class Task implements Runnable {
      * Task executive
      */
     protected abstract void executeBody();
+
+    /**
+     * after executeBody should do
+     */
+    protected void after() {
+
+    }
 
 }

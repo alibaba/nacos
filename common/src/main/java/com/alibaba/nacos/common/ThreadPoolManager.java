@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -132,7 +131,7 @@ public final class ThreadPoolManager {
 	                while (retry > 0) {
 	                    retry --;
 	                    try {
-	                        if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+	                        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
 	                            executor.shutdownNow();
                             }
                         } catch (Exception e) {

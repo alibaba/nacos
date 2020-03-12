@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
@@ -26,7 +26,6 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
-import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
@@ -75,14 +74,13 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             this.selfAddress = memberManager.self().address();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
+            NotifyCenter.registerPublisher(RaftErrorEvent::new, RaftErrorEvent.class);
 
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 
             this.raftServer = new JRaftServer(this.memberManager, failoverRetries);
             this.raftServer.init(config, config.listLogProcessor());
             this.raftServer.start();
-
-            updateSelfNodeExtendInfo();
 
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
@@ -107,8 +105,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
                     value.put(groupId, properties);
                     metaData.load(value);
-
-                    updateSelfNodeExtendInfo();
                 }
 
                 @Override
@@ -180,12 +176,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
         this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
         return kvStore;
-    }
-
-    void updateSelfNodeExtendInfo() {
-        Member member = memberManager.self();
-        member.setExtendVal("raft", metaData);
-        memberManager.update(member);
     }
 
 }

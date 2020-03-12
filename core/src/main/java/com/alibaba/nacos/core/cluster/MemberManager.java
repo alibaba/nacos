@@ -69,6 +69,14 @@ public interface MemberManager {
     boolean isFirstIp();
 
     /**
+     * Determine if the node is healthy
+     *
+     * @param address member address, ip:port
+     * @return is health
+     */
+    boolean isUnHealth(String address);
+
+    /**
      * list all nodes which status is health
      *
      * @return {@link Collection< Member >}

@@ -23,16 +23,12 @@ import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.ResResultUtils;
+import com.alibaba.nacos.core.utils.RestResultUtils;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -55,18 +51,12 @@ public class NacosClusterRouter {
 
     @GetMapping(value = "/self")
     public RestResult<Member> self() {
-        return ResResultUtils.success(memberManager.self());
+        return RestResultUtils.success(memberManager.self());
     }
 
     @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listAllNode(HttpServletRequest request) {
-        final String json = request.getParameter("self");
-        if (StringUtils.isNotBlank(json)) {
-            Member remoteMember = JSON.parseObject(json, Member.class);
-            Loggers.CORE.debug("remote member sync local member cluster info : {}", remoteMember);
-            memberManager.update(remoteMember);
-        }
-        return ResResultUtils.success(memberManager.allMembers());
+    public RestResult<Collection<Member>> listAllNode() {
+        return RestResultUtils.success(memberManager.allMembers());
     }
 
     // The client can get all the nacos node information in the current
@@ -77,49 +67,44 @@ public class NacosClusterRouter {
         List<String> ips = memberManager.allMembers().stream()
                 .map(Member::address)
                 .collect(Collectors.toList());
-        return ResResultUtils.success(ips);
+        return RestResultUtils.success(ips);
     }
 
     @GetMapping("/server/health")
     public RestResult<String> getHealth() {
-        return ResResultUtils.success("");
+        return RestResultUtils.success("");
     }
 
     @PostMapping("/server/report")
-    public RestResult<Boolean> report(@RequestBody RestResult<Member> restResult) {
+    public RestResult<String> report(@RequestBody RestResult<Member> restResult, @RequestParam(value = "sync") boolean sync) {
 
         final Member node = restResult.getData();
 
         if (!node.check()) {
-            return ResResultUtils.failed("Node information is illegal");
+            return RestResultUtils.failedWithData("Node information is illegal");
         }
 
-        Loggers.CORE.debug("node state report, receive info : {}", node);
+        Loggers.CLUSTER.debug("node state report, receive info : {}", node);
         memberManager.update(node);
-        return ResResultUtils.success(true);
+
+        String data = "";
+
+        if (sync) {
+            data = JSON.toJSONString(memberManager.allMembers());
+        }
+
+        return RestResultUtils.success(data);
     }
 
-    @DeleteMapping("/server/leave")
-    public RestResult<Boolean> memberLeave(@RequestParam(value = "member") String address) {
-
-        Member member = new Member();
-
-        if (!address.contains(":")) {
-            member.setIp(address);
-            member.setPort(8848);
-        } else {
-            String[] info = address.split(":");
-            member.setIp(info[0]);
-            member.setPort(Integer.parseInt(info[1]));
-        }
-
-        memberManager.memberLeave(Collections.singletonList(member));
-        return ResResultUtils.success();
+    @PostMapping("/server/leave")
+    public RestResult<Boolean> memberLeave(@RequestBody RestResult<Collection<Member>> params) {
+        memberManager.memberLeave(params.getData());
+        return RestResultUtils.success();
     }
 
     @GetMapping("/sys/idGeneratorInfo")
     public RestResult<Map<String, Map<Object, Object>>> idGeneratorInfo() {
-        return ResResultUtils.success(idGeneratorManager.idGeneratorInfo());
+        return RestResultUtils.success(idGeneratorManager.idGeneratorInfo());
     }
 
 }

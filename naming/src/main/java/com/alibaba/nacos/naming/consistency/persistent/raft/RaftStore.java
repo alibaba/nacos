@@ -29,13 +29,13 @@ import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.consistency.store.StartHook;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -284,7 +284,7 @@ public class RaftStore {
 
         @Override
         public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-            GlobalExecutor.execute(() -> {
+            RaftExecutor.doSnapshot(() -> {
 
                 boolean result = false;
                 Throwable throwable = null;

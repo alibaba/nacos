@@ -13,29 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.cluster.servers;
 
-import java.util.List;
+package com.alibaba.nacos.config.server.service.dump;
 
 /**
- * Nacos cluster member change event listener
- *
- * @author nkorange
- * @since 1.0.0
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ServerChangeListener {
+public interface ClearJudgment {
 
     /**
-     * If member list changed, this method is invoked.
+     * Can I clean by myself
      *
-     * @param servers servers after change
+     * @return Can I clean by myself
      */
-    void onChangeServerList(List<Server> servers);
+    boolean canExecute();
 
-    /**
-     * If reachable member list changed, this method is invoked.
-     *
-     * @param healthyServer reachable servers after change
-     */
-    void onChangeHealthyServerList(List<Server> healthyServer);
 }

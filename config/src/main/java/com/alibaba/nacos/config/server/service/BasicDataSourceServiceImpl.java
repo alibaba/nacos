@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -129,9 +130,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 
-            TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
+            GlobalExecutor.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
                     TimeUnit.SECONDS);
-            TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
+            GlobalExecutor.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
                     TimeUnit.SECONDS);
         }
     }

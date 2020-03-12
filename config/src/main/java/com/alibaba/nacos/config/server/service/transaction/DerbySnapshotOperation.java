@@ -19,13 +19,13 @@ package com.alibaba.nacos.config.server.service.transaction;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import java.io.File;
@@ -53,7 +53,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
 
     @Override
     public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-        GlobalExecutor.executeOnSnapshot(() -> {
+        RaftExecutor.doSnapshot(() -> {
             try {
                 final String writePath = writer.getPath();
                 final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();

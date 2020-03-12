@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ConvertUtils;
+import com.alibaba.nacos.core.utils.Loggers;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ public final class RaftExecutor {
     private static ExecutorService raftCoreExecutor;
     private static ExecutorService raftCliServiceExecutor;
     private static ScheduledExecutorService raftMemberRefreshExecutor;
+    private static ExecutorService snapshotExecutor;
 
     private RaftExecutor() {
     }
@@ -59,6 +61,10 @@ public final class RaftExecutor {
                 new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-member-refresh")
         );
 
+        snapshotExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
+                8,
+                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-snapshot"));
+
     }
 
     public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
@@ -81,6 +87,28 @@ public final class RaftExecutor {
 
     public static void executeByRaftCore(Runnable runnable) {
         raftCoreExecutor.execute(runnable);
+    }
+
+    public static void doSnapshot(Runnable runnable) {
+        raftCoreExecutor.execute(new InterruptAcknowledgeWorker(runnable));
+    }
+
+    private static class InterruptAcknowledgeWorker implements Runnable {
+
+        private final Runnable proxy;
+
+        public InterruptAcknowledgeWorker(Runnable proxy) {
+            this.proxy = proxy;
+        }
+
+        @Override
+        public void run() {
+            if (!Thread.interrupted()) {
+                Loggers.RAFT.warn("The current thread is interrupted and this task is ignored");
+                return;
+            }
+            proxy.run();
+        }
     }
 
 }

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -40,19 +40,21 @@ public class CleanConfigHistoryExecutor {
     private PersistService persistService;
     private MemberManager memberManager;
     private int retentionDays = 30;
+    private ClearJudgment clearJudgment;
 
     public CleanConfigHistoryExecutor(DumpService dumpService, MemberManager memberManager) {
         this.persistService = dumpService.getPersistService();
         this.memberManager = memberManager;
+        this.clearJudgment = SpringUtils.getBean(ClearJudgment.class);
     }
 
     public void start() {
-        TimerTaskService.scheduleWithFixedDelay(this::execute, 10, 10, TimeUnit.MINUTES);
+        GlobalExecutor.scheduleWithFixedDelay(this::execute, 10, 10, TimeUnit.MINUTES);
     }
 
     private void execute() {
         log.warn("clearConfigHistory start");
-        if (memberManager.isFirstIp()) {
+        if (clearJudgment.canExecute()) {
             try {
                 Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                 int totalCount = persistService.findConfigHistoryCountByTime(startTime);

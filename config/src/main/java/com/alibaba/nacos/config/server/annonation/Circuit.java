@@ -14,31 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.config.server.annonation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public enum NodeState {
-
-    /**
-     * node is up and ready for request
-     */
-    UP,
-
-    /**
-     * Node may Crash
-     */
-    SUSPICIOUS,
-
-    /**
-     * node is out of service, something abnormal happened
-     */
-    DOWN,
-
-    /**
-     * node is preparing itself for request, usually 'UP' is the next status
-     */
-    STARTING,
-
+@Target(value = {
+        ElementType.METHOD
+})
+@Retention(value = RetentionPolicy.RUNTIME)
+public @interface Circuit {
 }

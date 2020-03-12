@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ResResultUtils {
+public class RestResultUtils {
 
     public static <T> RestResult<T> success() {
         return RestResult.<T>builder()
@@ -38,21 +38,20 @@ public class ResResultUtils {
 
     public static RestResult<Boolean> failed(String errMsg) {
         return RestResult.<Boolean>builder()
-                .withCode(200)
-                .withData(false)
+                .withCode(500)
                 .withMsg(errMsg)
                 .build();
     }
 
     public static <T> RestResult<T> failed() {
         return RestResult.<T>builder()
-                .withCode(200)
+                .withCode(500)
                 .build();
     }
 
-    public static <T> RestResult<T> failed(T data) {
+    public static <T> RestResult<T> failedWithData(T data) {
         return RestResult.<T>builder()
-                .withCode(200)
+                .withCode(500)
                 .withData(data)
                 .build();
     }

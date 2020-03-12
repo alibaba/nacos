@@ -14,15 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.consistency.exception;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberUtils {
+public class ConsistencyException extends RuntimeException {
+    private static final long serialVersionUID = 1935132712388069418L;
 
-    public static void copy(Member newMember, Member oldMember) {
-        oldMember.extendInfo().putAll(newMember.extendInfo());
+    public ConsistencyException() {
+        super();
     }
 
+    public ConsistencyException(String message) {
+        super(message);
+    }
+
+    public ConsistencyException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ConsistencyException(Throwable cause) {
+        super(cause);
+    }
+
+    protected ConsistencyException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

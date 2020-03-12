@@ -18,20 +18,16 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.distributed.Mapper;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
@@ -66,19 +62,10 @@ public class OperatorController {
     private ServiceManager serviceManager;
 
     @Autowired
-    private ServerListManager serverListManager;
-
-    @Autowired
     private ServerStatusManager serverStatusManager;
 
     @Autowired
     private SwitchDomain switchDomain;
-
-    @Autowired
-    private APProtocol apProtocol;
-
-    @Autowired
-    private CPProtocol cpProtocol;
 
     @Autowired
     private RaftConsistencyServiceImpl raftConsistencyService;
@@ -178,43 +165,6 @@ public class OperatorController {
         result.put("responsibleServer", mapper.mapSrv(serviceName));
 
         return result;
-    }
-
-    @GetMapping("/distro/status")
-    public JSONObject distroStatus(@RequestParam(defaultValue = "view") String action) {
-
-        JSONObject result = new JSONObject();
-
-        if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
-            result.put("status", serverListManager.getDistroConfig());
-            return result;
-        }
-
-        if (StringUtils.equals(SwitchEntry.ACTION_CLEAN, action)) {
-            serverListManager.clean();
-            return result;
-        }
-
-        return result;
-    }
-
-    @GetMapping("/servers")
-    public JSONObject getHealthyServerList(@RequestParam(required = false) boolean healthy) {
-
-        JSONObject result = new JSONObject();
-        if (healthy) {
-            result.put("servers", serverListManager.getHealthyServers());
-        } else {
-            result.put("servers", serverListManager.getServers());
-        }
-
-        return result;
-    }
-
-    @RequestMapping("/server/status")
-    public String serverStatus(@RequestParam String serverStatus) {
-        serverListManager.onReceiveServerStatus(serverStatus);
-        return "ok";
     }
 
     @PutMapping("/log")

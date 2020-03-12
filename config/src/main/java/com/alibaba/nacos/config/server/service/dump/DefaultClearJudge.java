@@ -14,31 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.config.server.service.dump;
+
+import com.alibaba.nacos.config.server.service.transaction.ConditionOnDefaultStoreType;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public enum NodeState {
+@Component
+@Conditional(ConditionOnDefaultStoreType.class)
+public class DefaultClearJudge implements ClearJudgment {
 
-    /**
-     * node is up and ready for request
-     */
-    UP,
-
-    /**
-     * Node may Crash
-     */
-    SUSPICIOUS,
-
-    /**
-     * node is out of service, something abnormal happened
-     */
-    DOWN,
-
-    /**
-     * node is preparing itself for request, usually 'UP' is the next status
-     */
-    STARTING,
-
+    @Override
+    public boolean canExecute() {
+        return true;
+    }
 }

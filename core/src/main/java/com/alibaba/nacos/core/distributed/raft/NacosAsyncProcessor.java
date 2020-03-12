@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.utils.ConvertUtils;
-import com.alibaba.nacos.core.utils.ResResultUtils;
+import com.alibaba.nacos.core.utils.RestResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
@@ -46,7 +46,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
         final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getBiz());
 
         if (Objects.isNull(tuple)) {
-            asyncCtx.sendResponse(ResResultUtils.failed("Could not find the corresponding Raft Group : " + log.getBiz()));
+            asyncCtx.sendResponse(RestResultUtils.failed("Could not find the corresponding Raft Group : " + log.getBiz()));
             return;
         }
 
@@ -55,7 +55,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
             CompletableFuture<Object> future = new CompletableFuture<>();
             server.commit(log, future, retryCnt).whenComplete((result, t) -> {
                 if (t == null) {
-                    asyncCtx.sendResponse(ResResultUtils.success(result));
+                    asyncCtx.sendResponse(RestResultUtils.success(result));
                 } else {
                     asyncCtx.sendResponse(
                             RestResult.builder()
@@ -65,7 +65,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
                 }
             });
         } else {
-            asyncCtx.sendResponse(ResResultUtils.failed("Not leader"));
+            asyncCtx.sendResponse(RestResultUtils.failed("Not leader"));
         }
     }
 

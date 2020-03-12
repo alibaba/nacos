@@ -95,23 +95,31 @@ import org.springframework.util.CollectionUtils;
 @SuppressWarnings("all")
 public class JRaftServer implements MemberChangeListener {
 
-    private final MemberManager memberManager;
-    private final AtomicBoolean isStarted = new AtomicBoolean(false);
-    private Configuration conf;
+    // Existential life cycle
+
     private RpcServer rpcServer;
     private BoltCliClientService cliClientService;
     private CliService cliService;
+    private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
+
+    // Ordinary member variable
+
+    private final MemberManager memberManager;
+    private final AtomicBoolean isStarted = new AtomicBoolean(false);
+    private Configuration conf;
+
     private AsyncUserProcessor userProcessor;
     private NodeOptions nodeOptions;
     private Set<String> alreadyRegisterBiz = new HashSet<>();
     private Serializer serializer;
-    private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
     private Collection<LogProcessor4CP> processors;
-    private int failoverRetries;
+
     private String selfIp;
     private int selfPort;
+
     private RaftConfig raftConfig;
     private PeerId localPeerId;
+    private int failoverRetries;
     private int rpcRequestTimeoutMs;
 
     public JRaftServer(final MemberManager memberManager, final int failoverRetries) {
@@ -368,7 +376,7 @@ public class JRaftServer implements MemberChangeListener {
             }
 
             RaftExecutor.executeByRaftCore(() -> {
-                for (int i = 0; i < retryCnt; i ++) {
+                for (int i = 0; i < retryCnt && !Thread.interrupted(); i ++) {
 
                     Status status = cliService.addPeer(groupId, conf, peerId);
                     if (status.isOk()) {
@@ -402,7 +410,7 @@ public class JRaftServer implements MemberChangeListener {
             }
 
             RaftExecutor.executeByRaftCore(() -> {
-                for (int i = 0; i < retryCnt; i ++) {
+                for (int i = 0; i < retryCnt && !Thread.interrupted(); i ++) {
                     Status status = cliService.removePeer(groupId, conf, peerId);
                     if (status.isOk()) {
                         refreshRouteTable(groupId);
@@ -468,15 +476,22 @@ public class JRaftServer implements MemberChangeListener {
 
     void shutdown() {
 
+        Loggers.RAFT.warn("========= The raft protocol is about to close =========");
+
         NotifyCenter.deregisterSubscribe(this);
 
         for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
             final RaftGroupTuple tuple = entry.getValue();
+            tuple.node.shutdown();
             tuple.raftGroupService.shutdown();
+            tuple.regionMetricsReporter.close();
         }
 
+        cliService.shutdown();
         cliClientService.shutdown();
         rpcServer.stop();
+
+        Loggers.RAFT.warn("========= The raft protocol has been closed =========");
     }
 
     private void applyOperation(Node node, JLog data, FailoverClosure closure) {
@@ -525,6 +540,11 @@ public class JRaftServer implements MemberChangeListener {
     }
 
     private void refreshRouteTable(String group) {
+
+        if (!Thread.interrupted()) {
+            return;
+        }
+
         int timeoutMs = 5000;
         try {
             RouteTable.getInstance().refreshConfiguration(this.cliClientService, group, 5000);
@@ -556,8 +576,8 @@ public class JRaftServer implements MemberChangeListener {
 
     static class RaftGroupTuple {
 
-        private final Node node;
         private final LogProcessor processor;
+        private final Node node;
         private final RaftGroupService raftGroupService;
         private ScheduledReporter regionMetricsReporter;
 

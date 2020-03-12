@@ -69,7 +69,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     private static int MIN_RETRY_INTERVAL = 500;
     private static int INCREASE_STEPS = 1000;
     private static int MAX_COUNT = 6;
-    private ServerMemberManager serverNodeManager;
+    private ServerMemberManager memberManager;
     private RequestConfig requestConfig = RequestConfig.custom()
             .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
             .setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
@@ -78,8 +78,8 @@ public class AsyncNotifyService extends AbstractEventListener {
             .setDefaultRequestConfig(requestConfig).build();
 
     @Autowired
-    public AsyncNotifyService(ServerMemberManager serverNodeManager) {
-        this.serverNodeManager = serverNodeManager;
+    public AsyncNotifyService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
         httpclient.start();
     }
 
@@ -117,7 +117,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             String group = evt.group;
             String tenant = evt.tenant;
             String tag = evt.tag;
-            Collection<Member> ipList = serverNodeManager.allMembers();
+            Collection<Member> ipList = memberManager.allMembers();
 
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
@@ -231,10 +231,10 @@ public class AsyncNotifyService extends AbstractEventListener {
             while (!queue.isEmpty()) {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
-                if (serverNodeManager.hasMember(targetIp)) {
+                if (memberManager.hasMember(targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
-                    if (serverNodeManager.isHealthCheck()
-                            && serverNodeManager.getServerListUnHealth().contains(targetIp)) {
+                    if (memberManager.isHealthCheck()
+                            && memberManager.isUnHealth(targetIp)) {
                         // target ip 不健康，则放入通知列表中
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                                 task.getLastModified(),

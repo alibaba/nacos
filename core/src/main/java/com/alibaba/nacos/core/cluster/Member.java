@@ -40,11 +40,13 @@ public class Member {
 
     private int port = -1;
 
-    private NodeState state;
+    private NodeState state = NodeState.UP;
 
     private Map<String, Object> extendInfo = new HashMap<>();
 
     private String address = "";
+
+    private transient long lastRefreshTime;
 
     public Member() {
         extendInfo.put(SITE_KEY, "unknown");
@@ -131,6 +133,14 @@ public class Member {
 
     public boolean check() {
         return StringUtils.isNoneBlank(ip, address) && port != -1;
+    }
+
+    public long getLastRefreshTime() {
+        return lastRefreshTime;
+    }
+
+    public void setLastRefreshTime(long lastRefreshTime) {
+        this.lastRefreshTime = lastRefreshTime;
     }
 
     @Override

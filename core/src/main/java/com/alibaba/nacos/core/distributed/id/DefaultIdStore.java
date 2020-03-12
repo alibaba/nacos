@@ -29,6 +29,7 @@ import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.ByteUtils;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
@@ -142,7 +143,6 @@ public class DefaultIdStore implements LogProcessor4CP {
                 .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
                     @Override
                     public void update(Observable o, Object arg) {
-                        System.out.println(arg);
                         hasLeader = true;
                     }
                 });
@@ -246,11 +246,11 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     }
 
-    class IdSnapshotOperation implements SnapshotOperation {
+    static class IdSnapshotOperation implements SnapshotOperation {
 
         @Override
         public void onSnapshotSave(Writer writer, CallFinally callFinally) {
-            GlobalExecutor.executeByCommon(() -> {
+            RaftExecutor.doSnapshot(() -> {
 
                 boolean result = false;
                 Throwable throwable = null;

@@ -24,16 +24,14 @@ import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -45,12 +43,6 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 class MergeAllDataWorker implements Runnable {
-
-    private static final Executor EXECUTOR = ExecutorFactory.newFixExecutorService(
-            MergeAllDataWorker.class.getCanonicalName(),
-            8,
-            new NameThreadFactory("com.alibaba.nacos.config.config-merge")
-    );
 
     private static final AtomicInteger FINISHED = new AtomicInteger();
 
@@ -70,7 +62,7 @@ class MergeAllDataWorker implements Runnable {
     }
 
     public void start() {
-        EXECUTOR.execute(this);
+        GlobalExecutor.executeOnMerge(this);
     }
 
     @Override

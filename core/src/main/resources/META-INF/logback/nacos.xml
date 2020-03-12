@@ -120,6 +120,23 @@
         </encoder>
     </appender>
 
+    <appender name="nacos-cluster"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/nacos-cluster.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/nacos-cluster.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <MaxHistory>7</MaxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <root>
         <level value="INFO"/>
         <appender-ref ref="rootFile"/>
@@ -153,6 +170,11 @@
     <logger name="com.alibaba.nacos.core.id-generator" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="id-generator"/>
+    </logger>
+
+    <logger name="com.alibaba.nacos.core.cluster" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="nacos-cluster"/>
     </logger>
 
     <springProfile name="standalone">

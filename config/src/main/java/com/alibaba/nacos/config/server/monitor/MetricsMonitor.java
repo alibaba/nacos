@@ -104,6 +104,11 @@ public class MetricsMonitor {
                 "module", "config", "name", "illegalArgument");
     }
 
+    public static Counter getCircuitException() {
+        return Metrics.counter("nacos_exception",
+                "module", "config", "name", "circuit");
+    }
+
     public static Counter getNacosException() {
         return Metrics.counter("nacos_exception",
                 "module", "config", "name", "nacos");

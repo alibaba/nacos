@@ -32,7 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.ResResultUtils;
+import com.alibaba.nacos.core.utils.RestResultUtils;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -74,7 +74,7 @@ class DistroClient {
                     .addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:" + VersionUtils.VERSION)
                     .addParam("Connection", "Keep-Alive");
 
-            final RestResult body = ResResultUtils.success(checksumMap);
+            final RestResult body = RestResultUtils.success(checksumMap);
 
             final Query query = Query.newInstance()
                     .addParam("source", memberManager.self().address());
@@ -121,7 +121,7 @@ class DistroClient {
 
         final String url = buildUrl(DATA_GET_URL, server);
 
-        final RestResult body = ResResultUtils.success(params);
+        final RestResult body = RestResultUtils.success(params);
 
         HttpRestResult<String> result = (HttpRestResult<String>) httpClient.getLarge(url, Header.EMPTY, Query.EMPTY, body, reference);
 
@@ -144,7 +144,7 @@ class DistroClient {
         try {
             final String url = buildUrl(DATA_ON_SYNC_URL, curServer);
             HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, Query.EMPTY,
-                    ResResultUtils.success(data), reference);
+                    RestResultUtils.success(data), reference);
             if (HttpURLConnection.HTTP_OK == result.getHttpCode()) {
                 return true;
             }

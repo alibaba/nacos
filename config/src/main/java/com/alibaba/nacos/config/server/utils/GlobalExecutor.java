@@ -16,20 +16,36 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.service.transaction.DerbySnapshotOperation;
+import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
+import com.alibaba.nacos.core.executor.NameThreadFactory;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class GlobalExecutor {
 
-    private static final Executor EXECUTOR =
-            ExecutorFactory.newSingleExecutorService(DerbySnapshotOperation.class.getCanonicalName());
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    private static ScheduledExecutorService scheduledExecutorService = ExecutorFactory
+            .newScheduledExecutorService(Config.class.getCanonicalName(), 10,
+            new NameThreadFactory("com.alibaba.nacos.server.Timer-"));
 
-    public static void executeOnSnapshot(Runnable runnable) {
-        EXECUTOR.execute(runnable);
+    private static final Executor mergeExecutor = ExecutorFactory.newFixExecutorService(
+            "com.alibaba.nacos.config.server.service.dump.MergeAllDataWorker",
+            8,
+            new NameThreadFactory("com.alibaba.nacos.config.config-merge")
+    );
+
+    public static void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
+                                              TimeUnit unit) {
+        scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+
+    public static void executeOnMerge(Runnable runnable) {
+        mergeExecutor.execute(runnable);
     }
 
 }

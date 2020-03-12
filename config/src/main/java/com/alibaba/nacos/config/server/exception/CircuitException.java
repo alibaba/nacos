@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.config.server.exception;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public enum NodeState {
+public class CircuitException extends RuntimeException {
+    private static final long serialVersionUID = 8469672506678120188L;
 
-    /**
-     * node is up and ready for request
-     */
-    UP,
+    public CircuitException() {
+        super();
+    }
 
-    /**
-     * Node may Crash
-     */
-    SUSPICIOUS,
+    public CircuitException(String message) {
+        super(message);
+    }
 
-    /**
-     * node is out of service, something abnormal happened
-     */
-    DOWN,
+    public CircuitException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    /**
-     * node is preparing itself for request, usually 'UP' is the next status
-     */
-    STARTING,
+    public CircuitException(Throwable cause) {
+        super(cause);
+    }
 
+    protected CircuitException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

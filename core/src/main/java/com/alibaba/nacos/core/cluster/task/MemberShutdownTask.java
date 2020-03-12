@@ -22,8 +22,14 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.RestResultUtils;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -32,31 +38,37 @@ public class MemberShutdownTask extends Task {
 
     private NSyncHttpClient httpClient;
 
-    private final TypeReference<RestResult<String>> typeReference = new TypeReference<RestResult<String>>(){};
+    private final TypeReference<RestResult<String>> typeReference = new TypeReference<RestResult<String>>() {
+    };
 
-    public MemberShutdownTask() {
+    public MemberShutdownTask(ServerMemberManager memberManager) {
+        super(memberManager);
         this.httpClient = HttpClientManager.newHttpClient(MemberShutdownTask.class.getCanonicalName());
     }
 
     @Override
     public void executeBody() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        final RestResult<Collection<Member>> body = RestResultUtils.success(Collections.singletonList(memberManager.self()));
 
-            final Query query = Query.newInstance()
-                    .addParam("member", memberManager.self().address());
+        memberManager.allMembers().forEach(member -> {
 
-            memberManager.allMembers().forEach(member -> {
+            final String url = "http://" + member.address() + memberManager.getContextPath() +
+                    Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
 
-                final String url = "http://" + member.address() + memberManager.getContextPath() +
-                        Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
+            try {
+                httpClient.post(url, Header.EMPTY, Query.EMPTY, body, typeReference);
+            } catch (Exception e) {
+                Loggers.CLUSTER.error("shutdown execute has error : {}", e);
+            }
+        });
+    }
 
-                try {
-                    httpClient.delete(url, Header.EMPTY, query, typeReference);
-                } catch (Exception ignore) {
+    @Override
+    protected void after() {
+        try {
+            httpClient.close();
+        } catch (Exception ignore) {
 
-                }
-            });
-
-        }));
+        }
     }
 }

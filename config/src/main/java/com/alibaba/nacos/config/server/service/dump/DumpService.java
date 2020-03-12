@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -197,15 +197,15 @@ public class DumpService {
                 }
             };
 
-            TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
+            GlobalExecutor.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 
             long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
             LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
-            TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+            GlobalExecutor.scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                     TimeUnit.MINUTES);
 
-            TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+            GlobalExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                     TimeUnit.MINUTES);
         }
 
@@ -257,7 +257,7 @@ public class DumpService {
                     }
                     LogUtil.defaultLog.error("end checkMd5Task");
                 };
-                TimerTaskService.scheduleWithFixedDelay(checkMd5Task, 0, 12,
+                GlobalExecutor.scheduleWithFixedDelay(checkMd5Task, 0, 12,
                         TimeUnit.HOURS);
             }
         } catch (IOException e) {

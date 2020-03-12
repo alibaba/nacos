@@ -49,6 +49,17 @@ public class GlobalExceptionHandler {
         }
     }
 
+    @ExceptionHandler(CircuitException.class)
+    public void handlerCircuitException(HttpServletResponse response, NacosException ex) throws Exception {
+        MetricsMonitor.getCircuitException().increment();
+        response.setStatus(503);
+        if (ex.getMessage() != null) {
+            response.getWriter().println(ex.getMessage());
+        } else {
+            response.getWriter().println("Service Unavailable");
+        }
+    }
+
     /**
      * For NacosException
      *

@@ -37,4 +37,6 @@ public class Loggers {
     public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.distro");
 
     public static final Logger ID_GENERATOR = LoggerFactory.getLogger("com.alibaba.nacos.core.id-generator");
+
+    public static final Logger CLUSTER = LoggerFactory.getLogger("com.alibaba.nacos.core.cluster");
 }

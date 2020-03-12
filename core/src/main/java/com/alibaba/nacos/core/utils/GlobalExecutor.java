@@ -49,6 +49,9 @@ public class GlobalExecutor {
             new NameThreadFactory("com.alibaba.nacos.core.sync-member")
     );
 
+    public static void runWithoutThread(Runnable runnable) {
+        runnable.run();
+    }
 
     public static void executeByCommon(Runnable runnable) {
         COMMON_EXECUTOR.execute(runnable);

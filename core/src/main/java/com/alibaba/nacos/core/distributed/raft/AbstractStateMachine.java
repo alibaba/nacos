@@ -34,6 +34,7 @@ import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
 import com.alipay.sofa.jraft.error.RaftError;
+import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import java.util.ArrayList;
@@ -185,6 +186,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
                 .term(ctx.getTerm())
                 .raftClusterInfo(allPeers())
                 .build());
+    }
+
+    @Override
+    public void onError(RaftException e) {
+        super.onError(e);
+
     }
 
     public boolean isLeader() {

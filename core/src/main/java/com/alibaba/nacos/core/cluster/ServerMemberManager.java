@@ -24,10 +24,10 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.core.cluster.task.ClearInvalidNodeTask;
+import com.alibaba.nacos.core.cluster.task.MemberCleanTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
-import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
-import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
+import com.alibaba.nacos.core.cluster.task.MemberStateReportTask;
+import com.alibaba.nacos.core.cluster.task.MemberSyncTask;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -38,16 +38,12 @@ import com.alibaba.nacos.core.utils.SpringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -55,6 +51,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -65,7 +62,7 @@ import org.springframework.stereotype.Component;
  */
 @Component(value = "serverMemberManager")
 @SuppressWarnings("all")
-public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, MemberManager {
+public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, DisposableBean, MemberManager {
 
     private final ServletContext servletContext;
     public String domainName;
@@ -73,9 +70,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public String addressUrl;
     public String envIdUrl;
     public String addressServerUrl;
-    private Map<String, Member> serverListHealth = new ConcurrentSkipListMap<>();
-    private Map<String, Long> lastRefreshTimeRecord = new ConcurrentHashMap<>();
-    private Set<Member> serverListUnHealth = Collections.synchronizedSet(new HashSet<>());
+    private Map<String, Member> serverList = new ConcurrentSkipListMap<>();
     private volatile boolean isInIpList = true;
     private volatile boolean isAddressServerHealth = true;
     private boolean isHealthCheck = true;
@@ -94,6 +89,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @PostConstruct
     @Override
     public void init() {
+
+        Loggers.CORE.info("Nacos-related cluster resource initialization");
+
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
         // register NodeChangeEvent publisher to NotifyManager
@@ -104,8 +102,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         initSys();
 
-        SyncNodeTask task = new SyncNodeTask(servletContext);
-        task.setMemberManager(this);
+        MemberSyncTask task = new MemberSyncTask(this, servletContext);
         task.init();
         GlobalExecutor.scheduleSyncJob(task, 5_000L);
 
@@ -113,28 +110,25 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         initAPProtocol();
         initCPProtocol();
+
+        Loggers.CORE.info("The cluster resource is initialized");
     }
 
     @Override
     public void update(Member newMember) {
 
         long nowTime = System.currentTimeMillis();
-
-        serverListUnHealth.remove(newMember);
         String address = newMember.address();
 
-        if (!serverListHealth.containsKey(address)) {
+        if (!serverList.containsKey(address)) {
             memberJoin(new ArrayList<>(Arrays.asList(newMember)));
             return;
         }
 
-        serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+        serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
             @Override
             public Member apply(String s, Member member) {
-                // If this member updates itself, ignore the health judgment
-                if (!isSelf(newMember)) {
-                    lastRefreshTimeRecord.put(address, nowTime);
-                }
+                member.setLastRefreshTime(nowTime);
                 member.setState(NodeState.UP);
                 MemberUtils.copy(newMember, member);
                 return member;
@@ -145,7 +139,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public int indexOf(String address) {
         int index = 1;
-        for (Map.Entry<String, Member> entry : serverListHealth.entrySet()) {
+        for (Map.Entry<String, Member> entry : serverList.entrySet()) {
             if (Objects.equals(entry.getKey(), address)) {
                 return index;
             }
@@ -156,9 +150,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public boolean hasMember(String address) {
-        boolean result = serverListHealth.containsKey(address);
+        boolean result = serverList.containsKey(address);
         if (!result) {
-            for (Map.Entry<String, Member> entry : serverListHealth.entrySet()) {
+            for (Map.Entry<String, Member> entry : serverList.entrySet()) {
                 if (StringUtils.contains(entry.getKey(), address)) {
                     result = true;
                     break;
@@ -171,27 +165,26 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public Member self() {
         if (Objects.isNull(self)) {
-            self = serverListHealth.get(localAddress);
+            self = serverList.get(localAddress);
         }
         return self;
     }
 
     @Override
     public Collection<Member> allMembers() {
-        return serverListHealth.values();
+        return serverList.values();
     }
 
     @Override
-    public void memberJoin(Collection<Member> members) {
-
-        long lastRefreshTime = System.currentTimeMillis();
+    public synchronized void memberJoin(Collection<Member> members) {
+        long currentTimeMillis = System.currentTimeMillis();
 
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             final Member newMember = iterator.next();
             final String address = newMember.address();
 
-            if (serverListHealth.containsKey(address) && serverListUnHealth.contains(newMember)) {
+            if (serverList.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
@@ -203,16 +196,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 continue;
             }
 
-            newMember.setState(NodeState.UP);
-
             // Ensure that the node is created only once
-            serverListHealth.computeIfAbsent(address, s -> newMember);
+            serverList.computeIfAbsent(address, s -> newMember);
 
-            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+            serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
-                    lastRefreshTimeRecord.put(address, lastRefreshTime);
-                    return newMember;
+                    MemberUtils.copy(newMember, member);
+                    member.setLastRefreshTime(currentTimeMillis);
+                    return member;
                 }
             });
         }
@@ -221,7 +213,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             return;
         }
 
-        Loggers.CORE.warn("have new node join : {}", members);
+        Loggers.CLUSTER.warn("have new node join : {}", members);
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("join")
@@ -244,10 +236,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 continue;
             }
 
-            serverListHealth.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+            serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
-                    lastRefreshTimeRecord.remove(address);
                     return null;
                 }
             });
@@ -257,7 +248,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             return;
         }
 
-        Loggers.CORE.warn("have node leave : {}", members);
+        Loggers.CLUSTER.warn("have node leave : {}", members);
 
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
                 .kind("leave")
@@ -298,6 +289,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Override
     public boolean isFirstIp() {
         return 1 == indexOf(localAddress);
+    }
+
+    @Override
+    public boolean isUnHealth(String address) {
+        Member member = serverList.get(address);
+        if (member == null) {
+            return false;
+        }
+        return member.getState() == NodeState.UP;
     }
 
     @Override
@@ -406,31 +406,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
-        NodeStateReportTask reportTask = new NodeStateReportTask();
-        ClearInvalidNodeTask clearInvalidNodeTask = new ClearInvalidNodeTask();
-        MemberShutdownTask shutdownTask = new MemberShutdownTask();
-
-        reportTask.setMemberManager(this);
-        clearInvalidNodeTask.setMemberManager(this);
-        shutdownTask.setMemberManager(this);
+        MemberStateReportTask reportTask = new MemberStateReportTask(this);
+        MemberCleanTask memberCleanTask = new MemberCleanTask(this);
 
         reportTask.init();
-        clearInvalidNodeTask.init();
-        shutdownTask.init();
+        memberCleanTask.init();
 
         GlobalExecutor.scheduleReportJob(reportTask, 20_000L);
-        GlobalExecutor.scheduleCleanJob(clearInvalidNodeTask, 30_000L);
-
-        shutdownTask.run();
-
+        GlobalExecutor.scheduleCleanJob(memberCleanTask, 30_000L);
     }
 
-    public Map<String, Member> getServerListHealth() {
-        return serverListHealth;
-    }
-
-    public Set<Member> getServerListUnHealth() {
-        return serverListUnHealth;
+    public Map<String, Member> getServerList() {
+        return serverList;
     }
 
     public boolean isUseAddressServer() {
@@ -489,8 +476,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return port;
     }
 
-    public Map<String, Long> getLastRefreshTimeRecord() {
-        return lastRefreshTimeRecord;
+    @Override
+    public void destroy() throws Exception {
+        MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
+        shutdownTask.init();
+        GlobalExecutor.runWithoutThread(shutdownTask);
     }
-
 }
