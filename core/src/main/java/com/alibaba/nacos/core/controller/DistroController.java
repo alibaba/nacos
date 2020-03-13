@@ -65,8 +65,8 @@ public class DistroController extends BaseController {
     }
 
     @PutMapping("/items")
-    public ResponseEntity<String> onSyncDatum(@RequestBody RestResult<Map<String, Map<String, KVStore.Item>>> result) throws Exception {
-        Map<String, Map<String, KVStore.Item>> dataMap = result.getData();
+    public ResponseEntity<String> onSyncDatum(@RequestBody Map<String, Map<String, KVStore.Item>> result) throws Exception {
+        Map<String, Map<String, KVStore.Item>> dataMap = result;
         if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
@@ -87,8 +87,8 @@ public class DistroController extends BaseController {
     }
 
     @GetMapping("/items")
-    public ResponseEntity<String> get(@RequestBody RestResult<Map<String, String>> result) throws Exception {
-        Map<String, String> body = result.getData();
+    public ResponseEntity<String> get(@RequestBody Map<String, String> result) throws Exception {
+        Map<String, String> body = result;
         String storeName = body.get("storeName");
         String keys = body.get("keys");
         String keySplitter = ",";

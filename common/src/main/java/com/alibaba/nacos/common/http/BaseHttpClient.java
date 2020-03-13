@@ -123,7 +123,7 @@ public abstract class BaseHttpClient {
         return build(url, header, null, method);
     }
 
-    protected HttpRequestBase build(String url, Header header, RestResult body,
+    protected HttpRequestBase build(String url, Header header, Object body,
                                     String method) {
 
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);

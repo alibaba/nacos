@@ -74,14 +74,12 @@ class DistroClient {
                     .addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:" + VersionUtils.VERSION)
                     .addParam("Connection", "Keep-Alive");
 
-            final RestResult body = RestResultUtils.success(checksumMap);
-
             final Query query = Query.newInstance()
                     .addParam("source", memberManager.self().address());
 
             DistroExecutor.executeByGlobal(() -> {
                 try {
-                    HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, query, body, reference);
+                    HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, query, checksumMap, reference);
 
                     if (!result.ok()) {
                         Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
@@ -121,9 +119,7 @@ class DistroClient {
 
         final String url = buildUrl(DATA_GET_URL, server);
 
-        final RestResult body = RestResultUtils.success(params);
-
-        HttpRestResult<String> result = (HttpRestResult<String>) httpClient.getLarge(url, Header.EMPTY, Query.EMPTY, body, reference);
+        HttpRestResult<String> result = (HttpRestResult<String>) httpClient.getLarge(url, Header.EMPTY, Query.EMPTY, params, reference);
 
         if (result.ok()) {
             return result.getData().getBytes();
@@ -143,8 +139,7 @@ class DistroClient {
 
         try {
             final String url = buildUrl(DATA_ON_SYNC_URL, curServer);
-            HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, Query.EMPTY,
-                    RestResultUtils.success(data), reference);
+            HttpRestResult<String> result = (HttpRestResult<String>) httpClient.put(url, header, Query.EMPTY, data, reference);
             if (HttpURLConnection.HTTP_OK == result.getHttpCode()) {
                 return true;
             }

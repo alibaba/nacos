@@ -52,7 +52,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void getLarge(final String url,
                              final Header header,
                              final Query query,
-                             final RestResult body,
+                             final Object body,
                              final TypeReference<RestResult<T>> token,
                              final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
@@ -73,7 +73,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void put(final String url,
                         final Header header,
                         final Query query,
-                        final RestResult body,
+                        final Object body,
                         final TypeReference<RestResult<T>> token,
                         final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
@@ -84,7 +84,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void post(final String url,
                          final Header header,
                          final Query query,
-                         final RestResult body,
+                         final Object body,
                          final TypeReference<RestResult<T>> token,
                          final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);

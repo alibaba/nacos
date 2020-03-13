@@ -19,13 +19,12 @@ package com.alibaba.nacos.core.cluster.task;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
@@ -33,39 +32,28 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.RestResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.config.RequestConfig;
 
 /**
+ * This task is responsible for randomly communicating with an UP
+ * node to obtain the latest data information of the node
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberStateReportTask extends Task {
+public class MemberPingTask extends Task {
 
     private final TypeReference<RestResult<String>> reference
             = new TypeReference<RestResult<String>>() {
     };
 
-    private final TypeReference<Collection<Member>> memberReference = new TypeReference<Collection<Member>>() {
+    private final TypeReference<Collection<String>> memberReference = new TypeReference<Collection<String>>() {
     };
 
-    private NAsyncHttpClient httpClient;
-
-    public MemberStateReportTask(ServerMemberManager memberManager) {
+    public MemberPingTask(ServerMemberManager memberManager) {
         super(memberManager);
-        final RequestConfig requestConfig = RequestConfig.custom()
-                // Time in milliseconds
-                .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "10000")))
-                .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "20000")))
-                .build();
-
-        this.httpClient = HttpClientManager
-                .newAsyncHttpClient(ServerMemberManager.class.getCanonicalName(), requestConfig);
     }
 
     @Override
@@ -83,7 +71,14 @@ public class MemberStateReportTask extends Task {
                 return;
             }
 
-            for (Member member : kRandomMember()) {
+            for (Member member : MemberUtils.kRandom(memberManager, member -> {
+                // local node or node check failed will not perform task processing
+                if (memberManager.isSelf(member) || !member.check()) {
+                    return false;
+                }
+                NodeState state = member.state();
+                return !(state == NodeState.DOWN || state == NodeState.SUSPICIOUS);
+            })) {
                 final Query query = Query.newInstance().addParam("sync", discovery);
 
                 // If the cluster self-discovery is turned on, the information is synchronized with the node
@@ -91,28 +86,29 @@ public class MemberStateReportTask extends Task {
                 String url = "http://" + member.address() + memberManager.getContextPath() +
                         Commons.NACOS_CORE_CONTEXT + "/cluster/server/report";
 
-                httpClient.post(url, Header.EMPTY, query, RestResultUtils.success(self), reference, new Callback<String>() {
+                asyncHttpClient.post(url, Header.EMPTY, query, self, reference, new Callback<String>() {
                     @Override
                     public void onReceive(HttpRestResult<String> result) {
                         if (result.ok()) {
-                            Loggers.CLUSTER.debug("Successfully synchronizing information to node : {}, sync : {}," +
-                                    " result : {}", discovery, member, result);
+                            Loggers.CLUSTER.debug("success ping to node : {}, sync : {}," +
+                                    " result : {}", member, discovery, result);
 
                             final String data = result.getData();
                             if (StringUtils.isNotBlank(data)) {
                                 discovery(data);
                             }
-
                         } else {
                             Loggers.CLUSTER.warn("An exception occurred while reporting their " +
                                     "information to the node : {}, error : {}", member.address(), result.getMessage());
                         }
+                        MemberUtils.onSuccess(member, memberManager);
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         Loggers.CLUSTER.error("An exception occurred while reporting their " +
                                 "information to the node : {}, error : {}", member.address(), e);
+                        MemberUtils.onFail(member, memberManager);
                     }
                 });
             }
@@ -125,41 +121,13 @@ public class MemberStateReportTask extends Task {
 
     @Override
     protected void after() {
-        GlobalExecutor.scheduleCleanJob(this, 5_000L);
-    }
-
-    private List<Member> kRandomMember() {
-        int k = SpringUtils.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
-
-        List<Member> members = new ArrayList<>();
-        Collection<Member> have = memberManager.allMembers();
-
-        // Here thinking similar consul gossip protocols random k node
-
-        int totalSize = have.size();
-        for (int i = 0; i < 3 * totalSize && members.size() <= k; i++) {
-            for (Member member : have) {
-
-                // local node or node check failed will not perform task processing
-                if (memberManager.isSelf(member) || !member.check()) {
-                    continue;
-                }
-
-                NodeState state = member.state();
-                if (state == NodeState.DOWN || state == NodeState.SUSPICIOUS) {
-                    continue;
-                }
-                members.add(member);
-            }
-        }
-
-        return members;
+        GlobalExecutor.schedulePingJob(this, 5_000L);
     }
 
     private void discovery(String result) {
         try {
-            Collection<Member> members = JSON.parseObject(result, memberReference);
-            memberManager.memberJoin(members);
+            Collection<String> members = JSON.parseObject(result, memberReference);
+            memberManager.memberJoin(MemberUtils.stringToMembers(members));
         } catch (Exception e) {
             Loggers.CLUSTER.error("The cluster self-detects a problem");
         }

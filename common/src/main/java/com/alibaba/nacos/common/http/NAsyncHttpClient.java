@@ -50,7 +50,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param token return type
      * @param callback {@link Callback#onReceive(HttpRestResult)}
      */
-    <T> void getLarge(String url, Header header, Query query, RestResult body,
+    <T> void getLarge(String url, Header header, Query query, Object body,
                               TypeReference<RestResult<T>> token,
                               Callback<T> callback);
 
@@ -76,7 +76,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param token return type
      * @param callback {@link Callback#onReceive(HttpRestResult)}
      */
-    <T> void put(String url, Header header, Query query, RestResult body,
+    <T> void put(String url, Header header, Query query, Object body,
                  TypeReference<RestResult<T>> token, Callback<T> callback);
 
     /**
@@ -89,7 +89,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param token return type
      * @param callback {@link Callback#onReceive(HttpRestResult)}
      */
-    <T> void post(String url, Header header, Query query, RestResult body,
+    <T> void post(String url, Header header, Query query, Object body,
                   TypeReference<RestResult<T>> token, Callback<T> callback);
 
 }

@@ -46,7 +46,7 @@ public class Member {
 
     private String address = "";
 
-    private transient long lastRefreshTime;
+    private transient int failAccessCnt = 0;
 
     public Member() {
         extendInfo.put(SITE_KEY, "unknown");
@@ -135,12 +135,12 @@ public class Member {
         return StringUtils.isNoneBlank(ip, address) && port != -1;
     }
 
-    public long getLastRefreshTime() {
-        return lastRefreshTime;
+    public int getFailAccessCnt() {
+        return failAccessCnt;
     }
 
-    public void setLastRefreshTime(long lastRefreshTime) {
-        this.lastRefreshTime = lastRefreshTime;
+    public void setFailAccessCnt(int failAccessCnt) {
+        this.failAccessCnt = failAccessCnt;
     }
 
     @Override

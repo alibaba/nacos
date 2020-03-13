@@ -27,7 +27,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.RestResultUtils;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -43,12 +42,12 @@ public class MemberShutdownTask extends Task {
 
     public MemberShutdownTask(ServerMemberManager memberManager) {
         super(memberManager);
-        this.httpClient = HttpClientManager.newHttpClient(MemberShutdownTask.class.getCanonicalName());
+        this.httpClient = HttpClientManager.newHttpClient(ServerMemberManager.class.getCanonicalName());
     }
 
     @Override
     public void executeBody() {
-        final RestResult<Collection<Member>> body = RestResultUtils.success(Collections.singletonList(memberManager.self()));
+        Collection<Member> body = Collections.singletonList(memberManager.self());
 
         memberManager.allMembers().forEach(member -> {
 

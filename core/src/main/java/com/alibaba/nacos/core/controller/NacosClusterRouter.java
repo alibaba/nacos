@@ -19,15 +19,14 @@ package com.alibaba.nacos.core.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RestResultUtils;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,7 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NacosClusterRouter {
 
     @Autowired
-    private MemberManager memberManager;
+    private ServerMemberManager memberManager;
 
     @Autowired
     private IdGeneratorManager idGeneratorManager;
@@ -64,9 +63,7 @@ public class NacosClusterRouter {
 
     @GetMapping(value = "/simple/nodes")
     public RestResult<Collection<String>> listSimpleNodes() {
-        List<String> ips = memberManager.allMembers().stream()
-                .map(Member::address)
-                .collect(Collectors.toList());
+        Collection<String> ips = memberManager.getMemberAddressInfos();
         return RestResultUtils.success(ips);
     }
 
@@ -76,9 +73,7 @@ public class NacosClusterRouter {
     }
 
     @PostMapping("/server/report")
-    public RestResult<String> report(@RequestBody RestResult<Member> restResult, @RequestParam(value = "sync") boolean sync) {
-
-        final Member node = restResult.getData();
+    public RestResult<String> report(@RequestBody Member node, @RequestParam(value = "sync") boolean sync) {
 
         if (!node.check()) {
             return RestResultUtils.failedWithData("Node information is illegal");
@@ -90,15 +85,15 @@ public class NacosClusterRouter {
         String data = "";
 
         if (sync) {
-            data = JSON.toJSONString(memberManager.allMembers());
+            data = JSON.toJSONString(memberManager.getMemberAddressInfos());
         }
 
         return RestResultUtils.success(data);
     }
 
     @PostMapping("/server/leave")
-    public RestResult<Boolean> memberLeave(@RequestBody RestResult<Collection<Member>> params) {
-        memberManager.memberLeave(params.getData());
+    public RestResult<Boolean> memberLeave(@RequestBody Collection<String> params) {
+        memberManager.memberLeave(MemberUtils.stringToMembers(params));
         return RestResultUtils.success();
     }
 

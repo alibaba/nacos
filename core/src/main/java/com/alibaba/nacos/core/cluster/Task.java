@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.core.utils.Loggers;
 
 /**
@@ -24,10 +26,12 @@ import com.alibaba.nacos.core.utils.Loggers;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
 
+    protected NAsyncHttpClient asyncHttpClient;
     protected ServerMemberManager memberManager;
 
     public Task(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
+        this.asyncHttpClient = HttpClientManager.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
     }
 
     @Override

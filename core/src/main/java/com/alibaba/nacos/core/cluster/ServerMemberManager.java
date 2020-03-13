@@ -24,17 +24,20 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import com.alibaba.nacos.core.cluster.task.MemberCleanTask;
+import com.alibaba.nacos.core.cluster.task.ClusterConfSyncTask;
+import com.alibaba.nacos.core.cluster.task.MemberDeadBroadcastTask;
+import com.alibaba.nacos.core.cluster.task.MemberPingTask;
+import com.alibaba.nacos.core.cluster.task.MemberPullTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
-import com.alibaba.nacos.core.cluster.task.MemberStateReportTask;
-import com.alibaba.nacos.core.cluster.task.MemberSyncTask;
 import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -54,7 +58,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.event.ContextStartedEvent;
+import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
 
 /**
@@ -62,7 +68,7 @@ import org.springframework.stereotype.Component;
  */
 @Component(value = "serverMemberManager")
 @SuppressWarnings("all")
-public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent>, DisposableBean, MemberManager {
+public class ServerMemberManager implements SmartApplicationListener, DisposableBean, MemberManager {
 
     private final ServletContext servletContext;
     public String domainName;
@@ -81,6 +87,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     @Value("${useAddressServer:false}")
     private boolean isUseAddressServer;
     private Member self;
+
+    // The node here is always the node information of the UP state
+    private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
+    private CPProtocol cpProtocol;
+    private APProtocol apProtocol;
 
     public ServerMemberManager(ServletContext servletContext) {
         this.servletContext = servletContext;
@@ -102,7 +113,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
         initSys();
 
-        MemberSyncTask task = new MemberSyncTask(this, servletContext);
+        ClusterConfSyncTask task = new ClusterConfSyncTask(this, servletContext);
         task.init();
         GlobalExecutor.scheduleSyncJob(task, 5_000L);
 
@@ -116,8 +127,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public void update(Member newMember) {
-
-        long nowTime = System.currentTimeMillis();
         String address = newMember.address();
 
         if (!serverList.containsKey(address)) {
@@ -128,7 +137,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
             @Override
             public Member apply(String s, Member member) {
-                member.setLastRefreshTime(nowTime);
+                member.setFailAccessCnt(0);
                 member.setState(NodeState.UP);
                 MemberUtils.copy(newMember, member);
                 return member;
@@ -177,8 +186,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     @Override
     public synchronized void memberJoin(Collection<Member> members) {
-        long currentTimeMillis = System.currentTimeMillis();
-
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 
             final Member newMember = iterator.next();
@@ -199,11 +206,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             // Ensure that the node is created only once
             serverList.computeIfAbsent(address, s -> newMember);
 
+            memberAddressInfos.add(address);
+
             serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
                     MemberUtils.copy(newMember, member);
-                    member.setLastRefreshTime(currentTimeMillis);
                     return member;
                 }
             });
@@ -235,6 +243,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 iterator.remove();
                 continue;
             }
+
+            memberAddressInfos.remove(address);
 
             serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
@@ -353,6 +363,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // the information into the protocol metadata information
 
         subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
+
+        this.apProtocol = protocol;
     }
 
     private void initCPProtocol() {
@@ -364,6 +376,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         injectClusterInfo(protocol.protocolMetaData());
 
         subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
+
+        this.cpProtocol = protocol;
     }
 
     private void injectClusterInfo(ProtocolMetaData metaData) {
@@ -382,7 +396,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         sub.put(ProtocolMetaData.SELF, self().address());
 
         metaData.load(defaultMetaData);
-
     }
 
     @SuppressWarnings("all")
@@ -403,17 +416,53 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return result;
     }
 
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof WebServerInitializedEvent) {
+            if (!SystemUtils.STANDALONE_MODE) {
+                MemberPingTask pingTask = new MemberPingTask(this);
+                MemberPullTask pullTask = new MemberPullTask(this);
+                MemberDeadBroadcastTask broadcastTask = new MemberDeadBroadcastTask(this);
+
+                pingTask.init();
+                pullTask.init();
+                broadcastTask.init();
+
+                GlobalExecutor.schedulePingJob(pingTask, 10_000L);
+                GlobalExecutor.schedulePullJob(pullTask, 10_000L);
+                GlobalExecutor.scheduleBroadCastJob(broadcastTask, 10_000L);
+            }
+        }
+        if (event instanceof ContextStartedEvent) {
+
+            // For containers that have started, stop all messages from being published late
+
+            apProtocol.protocolMetaData().stopDeferPublish();
+            cpProtocol.protocolMetaData().stopDeferPublish();
+            NotifyCenter.stopDeferPublish();
+        }
+    }
 
     @Override
-    public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
-        MemberStateReportTask reportTask = new MemberStateReportTask(this);
-        MemberCleanTask memberCleanTask = new MemberCleanTask(this);
+    public boolean supportsEventType(Class<? extends ApplicationEvent> eventType) {
+        if (eventType.isAssignableFrom(WebServerInitializedEvent.class)) {
+            return true;
+        }
+        return eventType.isAssignableFrom(ContextStartedEvent.class);
+    }
 
-        reportTask.init();
-        memberCleanTask.init();
+    @Override
+    public void destroy() throws Exception {
+        MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
+        GlobalExecutor.runWithoutThread(shutdownTask);
+    }
 
-        GlobalExecutor.scheduleReportJob(reportTask, 20_000L);
-        GlobalExecutor.scheduleCleanJob(memberCleanTask, 30_000L);
+    public Set<String> getMemberAddressInfos() {
+        return memberAddressInfos;
+    }
+
+    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
+        this.memberAddressInfos = memberAddressInfos;
     }
 
     public Map<String, Member> getServerList() {
@@ -474,12 +523,5 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
 
     public int getPort() {
         return port;
-    }
-
-    @Override
-    public void destroy() throws Exception {
-        MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
-        shutdownTask.init();
-        GlobalExecutor.runWithoutThread(shutdownTask);
     }
 }

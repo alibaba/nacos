@@ -50,6 +50,8 @@ public final class ProtocolMetaData {
 
     public static final String SELF = "self";
 
+    private volatile boolean stopDefer = false;
+
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 
     public Map<String, MetaData> getMetaDataMap() {
@@ -87,8 +89,12 @@ public final class ProtocolMetaData {
                 .subscribe(key, observer);
     }
 
+    public void stopDeferPublish() {
+        stopDefer = true;
+    }
+
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public static final class MetaData {
+    public final class MetaData {
 
         // Each biz does not affect each other
 
@@ -140,7 +146,7 @@ public final class ProtocolMetaData {
 
     }
 
-    public static final class ValueItem extends Observable {
+    public final class ValueItem extends Observable {
 
         private transient final MetaData holder;
         private transient final String path;
@@ -153,7 +159,6 @@ public final class ProtocolMetaData {
         public ValueItem(MetaData holder, String path) {
             this.holder = holder;
             this.path = path;
-            notifySubscriber();
         }
 
         public Object getData() {
@@ -169,27 +174,31 @@ public final class ProtocolMetaData {
             writeLock.lock();
             try {
                 this.data = data;
-                setChanged();
                 deferObject.offer(data);
+                setChanged();
+
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (countObservers() == 0 && !stopDefer) {
+                            holder.executor.submit(this);
+                            return;
+                        }
+                        try {
+                            notifyObservers(deferObject.take());
+                        } catch (InterruptedException ignore) {
+                            Thread.interrupted();
+                        }
+                    }
+                };
+                notifySubscriber(runnable);
             } finally {
                 writeLock.unlock();
             }
         }
 
-        private void notifySubscriber() {
-            holder.executor.submit(() -> {
-                if (countObservers() == 0) {
-                    holder.executor.submit(this::notifySubscriber);
-                    return;
-                }
-                try {
-                    Object data = deferObject.take();
-                    notifyObservers(data);
-                } catch (InterruptedException ignore) {
-
-                }
-                holder.executor.submit(this::notifySubscriber);
-            });
+        private void notifySubscriber(Runnable runnable) {
+            holder.executor.submit(runnable);
         }
     }
 }

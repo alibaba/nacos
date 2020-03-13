@@ -18,8 +18,9 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import java.util.Iterator;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
@@ -33,9 +34,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -155,7 +153,7 @@ public enum BaseHttpMethod {
         }
     }
 
-    public void initEntity(RestResult body, String mediaType) {
+    public void initEntity(Object body, String mediaType) {
         if (body == null) {
             return;
         }

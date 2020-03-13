@@ -47,7 +47,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     }
 
     @Override
-    public <T> RestResult<T> getLarge(String url, Header header, Query query, RestResult body, TypeReference<RestResult<T>> token) throws Exception {
+    public <T> RestResult<T> getLarge(String url, Header header, Query query, Object body, TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         return execute(client, token, requestBase);
     }
@@ -65,7 +65,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> RestResult<T> put(final String url,
                                  final Header header,
                                  final Query query,
-                                 final RestResult body,
+                                 final Object body,
                                  final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         return execute(client, token, requestBase);
@@ -75,7 +75,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> RestResult<T> post(final String url,
                                   final Header header,
                                   final Query query,
-                                  final RestResult body,
+                                  final Object body,
                                   final TypeReference<RestResult<T>> token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         return execute(client, token, requestBase);

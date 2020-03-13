@@ -40,6 +40,8 @@ public class NotifyCenter {
 
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
 
+    private static boolean stopDeferPublish = false;
+
     static {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -51,6 +53,10 @@ public class NotifyCenter {
             });
         }));
 
+    }
+
+    public static void stopDeferPublish() {
+        stopDeferPublish = true;
     }
 
     /**
@@ -167,7 +173,7 @@ public class NotifyCenter {
                     // waiting for the first Subscriber to register
 
                     for (; ; ) {
-                        if (canOpen) {
+                        if (canOpen || !stopDeferPublish) {
                             break;
                         }
                         try {

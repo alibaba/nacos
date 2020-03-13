@@ -49,6 +49,11 @@ public class GlobalExecutor {
             new NameThreadFactory("com.alibaba.nacos.core.sync-member")
     );
 
+    private static final ScheduledExecutorService pingMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+            MemberManager.class.getCanonicalName(),
+            new NameThreadFactory("com.alibaba.nacos.core.ping-member")
+    );
+
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();
     }
@@ -61,12 +66,16 @@ public class GlobalExecutor {
         syncMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
-    public static void scheduleCleanJob(Runnable runnable, long delay) {
+    public static void scheduleBroadCastJob(Runnable runnable, long delay) {
         cleanMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
-    public static void scheduleReportJob(Runnable runnable, long delay) {
+    public static void schedulePullJob(Runnable runnable, long delay) {
         reportStateExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void schedulePingJob(Runnable runnable, long delay) {
+        pingMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
 }

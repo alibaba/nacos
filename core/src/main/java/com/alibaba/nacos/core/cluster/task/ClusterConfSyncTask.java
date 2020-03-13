@@ -54,7 +54,7 @@ import org.apache.http.client.config.RequestConfig;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
-public class MemberSyncTask extends Task {
+public class ClusterConfSyncTask extends Task {
 
     private static final TypeReference<RestResult<String>> STRING_REFERENCE = new TypeReference<RestResult<String>>() {
     };
@@ -68,7 +68,7 @@ public class MemberSyncTask extends Task {
 
     private Runnable standaloneJob = () -> readServerConf(Collections.singletonList(url));
 
-    public MemberSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
+    public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
         super(memberManager);
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))

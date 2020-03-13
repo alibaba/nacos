@@ -51,7 +51,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @return {@link RestResult <T>}
      * @throws Exception
      */
-    <T> RestResult<T> getLarge(String url, Header header, Query query, RestResult body,
+    <T> RestResult<T> getLarge(String url, Header header, Query query, Object body,
                                TypeReference<RestResult<T>> token) throws Exception;
 
     /**
@@ -78,7 +78,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @return {@link RestResult}
      * @throws Exception
      */
-    <T> RestResult<T> put(String url, Header header, Query query, RestResult body,
+    <T> RestResult<T> put(String url, Header header, Query query, Object body,
                           TypeReference<RestResult<T>> token) throws Exception;
 
     /**
@@ -92,7 +92,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @return {@link RestResult}
      * @throws Exception
      */
-    <T> RestResult<T> post(String url, Header header, Query query, RestResult body,
+    <T> RestResult<T> post(String url, Header header, Query query, Object body,
                            TypeReference<RestResult<T>> token) throws Exception;
 
 }
