@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.lang3.StringUtils;
@@ -70,7 +70,8 @@ public class ConfigService {
         }
 
         try {
-            final String md5 = MD5.getInstance().getMD5String(content);
+            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
+
             if (md5.equals(ConfigService.getContentMd5(groupKey))) {
                 dumpLog.warn(
                     "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
@@ -115,7 +116,7 @@ public class ConfigService {
         }
 
         try {
-            final String md5 = MD5.getInstance().getMD5String(content);
+            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
             if (md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
                 dumpLog.warn(
                     "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
@@ -154,7 +155,7 @@ public class ConfigService {
         }
 
         try {
-            final String md5 = MD5.getInstance().getMD5String(content);
+            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
             if (md5.equals(ConfigService.getContentTagMd5(groupKey, tag))) {
                 dumpLog.warn(
                     "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
@@ -191,7 +192,7 @@ public class ConfigService {
         }
 
         try {
-            final String md5 = MD5.getInstance().getMD5String(content);
+            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
             if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {
