@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.notify;
 
+import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.DisruptorFactory;
 import com.lmax.disruptor.EventFactory;
@@ -44,13 +45,15 @@ public class NotifyCenter {
 
     static {
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        ShutdownUtils.addShutdownHook(new Thread(() -> {
+            System.out.println("Start destroying Publisher");
             PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
                 @Override
                 public void accept(String s, Publisher publisher) {
                     publisher.shutdown();
                 }
             });
+            System.out.println("Destruction of the end");
         }));
 
     }

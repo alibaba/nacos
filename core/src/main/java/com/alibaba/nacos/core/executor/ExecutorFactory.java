@@ -37,12 +37,6 @@ public class ExecutorFactory {
 
     private static final String DEFAULT_BIZ = "nacos";
 
-    static {
-        ShutdownUtils.addShutdownHook(() -> {
-            THREAD_POOL_MANAGER.destroy(DEFAULT_BIZ);
-        });
-    }
-
     public static ForkJoinPool newForkJoinPool(final String owner) {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, forkJoinPool);

@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common;
 
 
+import com.alibaba.nacos.common.utils.ShutdownUtils;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,10 +46,12 @@ public final class ThreadPoolManager {
 
     static {
         INSTANCE.init();
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
+            	System.out.println("Start executing thread pool consumption");
                 INSTANCE.destroyAll();
+				System.out.println("Thread pool consumption ends");
             }
         }));
     }

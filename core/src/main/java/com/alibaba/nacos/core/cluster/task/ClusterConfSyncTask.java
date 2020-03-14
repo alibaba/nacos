@@ -61,7 +61,6 @@ public class ClusterConfSyncTask extends Task {
     private final ServletContext context;
     private int addressServerFailCount = 0;
     private int maxFailCount = 12;
-    private NAsyncHttpClient httpClient;
     private volatile boolean alreadyLoadServer = false;
 
     private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
@@ -70,10 +69,6 @@ public class ClusterConfSyncTask extends Task {
 
     public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
         super(memberManager);
-        final RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
-                .setSocketTimeout(Integer.parseInt(SpringUtils.getProperty("notifySocketTimeout", "200"))).build();
-        this.httpClient = HttpClientManager.newAsyncHttpClient(getClass().getCanonicalName(), requestConfig);
         this.maxFailCount = Integer.parseInt(SpringUtils.getProperty("maxHealthCheckFailCount", "12"));
         this.context = context;
     }
@@ -132,7 +127,7 @@ public class ClusterConfSyncTask extends Task {
 
     private void syncFromAddressUrl() {
         if (!alreadyLoadServer && memberManager.getUseAddressServer()) {
-            httpClient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, STRING_REFERENCE, new Callback<String>() {
+            asyncHttpClient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, STRING_REFERENCE, new Callback<String>() {
                 @Override
                 public void onReceive(HttpRestResult<String> result) {
                     if (HttpServletResponse.SC_OK == result.getCode()) {

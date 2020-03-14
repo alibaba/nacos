@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientManager;
@@ -155,6 +156,6 @@ class DistroClient {
     }
 
     private String buildUrl(String path, String server) {
-        return "http://" + server + memberManager.getContextPath() + Commons.NACOS_CORE_CONTEXT + path;
+        return HttpUtils.buildUrl(false, server, memberManager.getContextPath(), Commons.NACOS_CORE_CONTEXT, path);
     }
 }

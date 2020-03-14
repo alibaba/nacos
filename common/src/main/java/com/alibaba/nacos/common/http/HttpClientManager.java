@@ -18,117 +18,137 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class HttpClientManager {
 
-    private static final Object MONITOR = new Object();
+	private static final Object SYNC_MONITOR = new Object();
 
-    private static final Object ASYNC_MONITOR = new Object();
+	private static final Object ASYNC_MONITOR = new Object();
 
-    private static final int TIMEOUT = 5000;
+	private static final int TIMEOUT = 5000;
 
-    private static final Map<String, Set<NSyncHttpClient>> HTTP_CLIENT_MAP = new ConcurrentHashMap<String, Set<NSyncHttpClient>>(8);
+	private static final Map<String, NSyncHttpClient> HTTP_CLIENT_MAP = new HashMap<String, NSyncHttpClient>(
+			8);
 
-    private static final Map<String, Set<NAsyncHttpClient>> HTTP_ASYNC_CLIENT_MAP = new ConcurrentHashMap<String, Set<NAsyncHttpClient>>(8);
+	private static final Map<String, NAsyncHttpClient> HTTP_ASYNC_CLIENT_MAP = new HashMap<String, NAsyncHttpClient>(
+			8);
 
-    static {
-        ShutdownUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<String, Set<NSyncHttpClient>> entry : HTTP_CLIENT_MAP.entrySet()) {
-                    for (NSyncHttpClient httpClient : entry.getValue()) {
-                        try {
-                            httpClient.close();
-                        } catch (Exception ignore) {
+	static {
+		ShutdownUtils.addShutdownHook(new Runnable() {
+			@Override public void run() {
 
-                        }
-                    }
-                }
-            }
-        });
+				System.out.println("[NSyncHttpClient] Start destroying HttpClient");
 
-        ShutdownUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<String, Set<NAsyncHttpClient>> entry : HTTP_ASYNC_CLIENT_MAP.entrySet()) {
-                    for (NAsyncHttpClient httpClient : entry.getValue()) {
-                        try {
-                            httpClient.close();
-                        } catch (Exception ignore) {
-                        }
-                    }
-                }
-            }
-        });
+				for (Map.Entry<String, NSyncHttpClient> entry : HTTP_CLIENT_MAP
+						.entrySet()) {
+					try {
+						entry.getValue().close();
+					}
+					catch (Exception ignore) {
 
-    }
+					}
+				}
 
-    private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
-        .setConnectTimeout(TIMEOUT)
-        .setSocketTimeout(TIMEOUT << 1)
-        .build();
+				System.out.println("Destruction of the end");
+			}
+		});
 
-    public static NSyncHttpClient newHttpClient(String owner) {
-        checkExist(owner, false);
-        CloseableHttpClient client = HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG)
-            .build();
-        NSyncHttpClient nSyncHttpClient = new NacosSyncHttpClient(client);
-        HTTP_CLIENT_MAP.get(owner).add(nSyncHttpClient);
-        return nSyncHttpClient;
-    }
+		ShutdownUtils.addShutdownHook(new Runnable() {
+			@Override public void run() {
 
-    public static NAsyncHttpClient newAsyncHttpClient(String owner) {
-        checkExist(owner, true);
-        CloseableHttpAsyncClient asyncClient = HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG)
-            .build();
-        NAsyncHttpClient nAsyncHttpClient = new NacosAsyncHttpClient(asyncClient);
-        HTTP_ASYNC_CLIENT_MAP.get(owner).add(nAsyncHttpClient);
-        return nAsyncHttpClient;
-    }
+				System.out.println("[NAsyncHttpClient] Start destroying HttpClient");
 
-    public static NSyncHttpClient newHttpClient(String owner, RequestConfig requestConfig) {
-        checkExist(owner, false);
-        CloseableHttpClient client = HttpClients.custom().setDefaultRequestConfig(requestConfig)
-            .build();
-        NSyncHttpClient nSyncHttpClient = new NacosSyncHttpClient(client);
-        HTTP_CLIENT_MAP.get(owner).add(nSyncHttpClient);
-        return nSyncHttpClient;
-    }
+				for (Map.Entry<String, NAsyncHttpClient> entry : HTTP_ASYNC_CLIENT_MAP
+						.entrySet()) {
+					try {
+						entry.getValue().close();
+					}
+					catch (Exception ignore) {
+					}
+				}
 
-    public static NAsyncHttpClient newAsyncHttpClient(String owner, RequestConfig requestConfig) {
-        checkExist(owner, true);
-        CloseableHttpAsyncClient asyncClient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
-            .build();
-        NAsyncHttpClient nAsyncHttpClient = new NacosAsyncHttpClient(asyncClient);
-        HTTP_ASYNC_CLIENT_MAP.get(owner).add(nAsyncHttpClient);
-        return nAsyncHttpClient;
-    }
+				System.out.println("Destruction of the end");
+			}
+		});
 
-    private static void checkExist(String owner, boolean async) {
-        if (async) {
-            synchronized (ASYNC_MONITOR) {
-                if (!HTTP_ASYNC_CLIENT_MAP.containsKey(owner)) {
-                    HTTP_ASYNC_CLIENT_MAP.put(owner, new CopyOnWriteArraySet<NAsyncHttpClient>());
-                }
-            }
-        } else {
-            synchronized (MONITOR) {
-                if (!HTTP_CLIENT_MAP.containsKey(owner)) {
-                    HTTP_CLIENT_MAP.put(owner, new CopyOnWriteArraySet<NSyncHttpClient>());
-                }
-            }
-        }
-    }
+	}
+
+	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
+			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();
+
+	public static NSyncHttpClient newHttpClient(String owner) {
+		synchronized (SYNC_MONITOR) {
+
+			NSyncHttpClient nSyncHttpClient = HTTP_CLIENT_MAP.get(owner);
+
+			if (nSyncHttpClient != null) {
+				return nSyncHttpClient;
+			}
+
+			nSyncHttpClient = new NacosSyncHttpClient(
+					HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
+			HTTP_CLIENT_MAP.put(owner, nSyncHttpClient);
+			return nSyncHttpClient;
+		}
+	}
+
+	public static NAsyncHttpClient newAsyncHttpClient(String owner) {
+		synchronized (ASYNC_MONITOR) {
+
+			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(owner);
+
+			if (nAsyncHttpClient != null) {
+				return nAsyncHttpClient;
+			}
+
+			nAsyncHttpClient = new NacosAsyncHttpClient(
+					HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG)
+							.build());
+			HTTP_ASYNC_CLIENT_MAP.put(owner, nAsyncHttpClient);
+			return nAsyncHttpClient;
+		}
+	}
+
+	public static NSyncHttpClient newHttpClient(String owner,
+			RequestConfig requestConfig) {
+		synchronized (SYNC_MONITOR) {
+
+			NSyncHttpClient nSyncHttpClient = HTTP_CLIENT_MAP.get(owner);
+
+			if (nSyncHttpClient != null) {
+				return nSyncHttpClient;
+			}
+
+			nSyncHttpClient = new NacosSyncHttpClient(
+					HttpClients.custom().setDefaultRequestConfig(requestConfig).build());
+			HTTP_CLIENT_MAP.put(owner, nSyncHttpClient);
+			return nSyncHttpClient;
+		}
+	}
+
+	public static NAsyncHttpClient newAsyncHttpClient(String owner,
+			RequestConfig requestConfig) {
+		synchronized (ASYNC_MONITOR) {
+			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(owner);
+
+			if (nAsyncHttpClient != null) {
+				return nAsyncHttpClient;
+			}
+
+			nAsyncHttpClient = new NacosAsyncHttpClient(
+					HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
+							.build());
+			HTTP_ASYNC_CLIENT_MAP.put(owner, nAsyncHttpClient);
+			return nAsyncHttpClient;
+		}
+	}
 }
