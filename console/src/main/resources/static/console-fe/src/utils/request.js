@@ -71,9 +71,7 @@ const request = () => {
           [401, 403].includes(status) &&
           ['unknown user!', 'token invalid', 'token expired!'].includes(message)
         ) {
-          localStorage.removeItem('token');
-          const [baseUrl] = location.href.split('#');
-          location.href = `${baseUrl}#/login`;
+          goLogin();
         }
         return Promise.reject(error.response);
       }
