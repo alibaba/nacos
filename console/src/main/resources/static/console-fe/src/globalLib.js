@@ -15,6 +15,14 @@ import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
 
+function goLogin() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  console.log('base_url', base_url);
+  window.location = `${base_url}#/login`;
+}
+
 const global = window;
 
 /**
@@ -484,9 +492,10 @@ const request = (function(_global) {
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
     let token = {};
     try {
-      token = JSON.parse(localStorage.token || '{}');
+      token = JSON.parse(localStorage.token);
     } catch (e) {
-      console.log(e);
+      console.log('Token Erro', localStorage.token, e);
+      goLogin();
     }
     const { accessToken = '' } = token;
     const [url, paramsStr = ''] = config.url.split('?');
