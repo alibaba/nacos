@@ -48,11 +48,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.javatuples.Pair;
+import org.javatuples.Tuple;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
@@ -952,5 +965,64 @@ public class ServiceManager implements RecordListener<Service> {
         public String toString() {
             return JSON.toJSONString(this);
         }
+    }
+
+    /**
+     * get apps from service map
+     * @param namespaceId namespace id
+     * @param applicationIp
+     * @param applicationPort
+     * @return
+     */
+    public List<Application> getApplications(String namespaceId,String applicationIp,Integer applicationPort){
+        Map<String, Service> groupServiceMap = chooseServiceMap(namespaceId);
+        Map<Pair<String, Integer>, List<Instance>> appInstanceListMap = new HashMap<>(16);
+        if (groupServiceMap == null) {
+            return Collections.emptyList();
+        }
+        groupServiceMap.values().forEach(
+            service -> service.allIPs().parallelStream()
+            .filter(StringUtils.isEmpty(applicationIp) ? instance -> true : instance -> instance.getIp().contains(applicationIp))
+            .filter(applicationPort == null ? instance -> true : instance -> instance.getPort() == applicationPort)
+            .forEach(
+                instance -> {
+                    Pair<String, Integer> key = Pair.with(instance.getIp(), instance.getPort());
+                    List<Instance> existInstanceList = Optional.ofNullable(appInstanceListMap.get(key)).orElse(new ArrayList<>());
+                    existInstanceList.add(instance);
+                    appInstanceListMap.put(key, existInstanceList);
+                }
+            )
+        );
+        return appInstanceListMap.entrySet().stream().map(
+            entry -> {
+                Application application = new Application(entry.getKey().getValue0(), entry.getKey().getValue1());
+                application.setInstanceCount(entry.getValue() == null ? 0 : entry.getValue().size());
+                return application;
+            }
+        ).collect(Collectors.toList());
+    }
+
+    /**
+     * query instances for app
+     *
+     * @param namespaceId     Namespace ID
+     * @param applicationIp   App IP
+     * @param applicationPort App Port
+     * @return instance list
+     */
+    public List<Instance> getInstancesForApp(String namespaceId, String applicationIp, Integer applicationPort) {
+        Map<String, Service> groupServiceMap = serviceMap.get(namespaceId);
+        if (groupServiceMap == null) {
+            return Collections.emptyList();
+        }
+        List<Instance> result = new ArrayList<>();
+        groupServiceMap.values().forEach(
+            service -> result.addAll(service.allIPs().parallelStream()
+                .filter(StringUtils.isBlank(applicationIp) ? instance -> true : instance -> instance.getIp().equals(applicationIp))
+                .filter(applicationPort == null ? instance -> true : instance -> instance.getPort() == applicationPort)
+                .collect(Collectors.toList()))
+        );
+
+        return result;
     }
 }

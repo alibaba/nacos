@@ -55,6 +55,10 @@ export default function(model) {
           key: 'subscriberList',
           url: '/subscriberList',
         },
+        {
+          key: 'applicationList',
+          url: '/applicationList',
+        },
       ],
     },
     {

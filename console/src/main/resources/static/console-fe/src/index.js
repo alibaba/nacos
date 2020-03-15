@@ -42,6 +42,8 @@ import ConfigurationManagement from './pages/ConfigurationManagement/Configurati
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 import SubscriberList from './pages/ServiceManagement/SubscriberList';
+import ApplicationList from './pages/ServiceManagement/ApplicationList';
+import ApplicationDetail from './pages/ServiceManagement/ApplicationDetail';
 import ClusterNodeList from './pages/ClusterManagement/ClusterNodeList';
 import UserManagement from './pages/AuthorityControl/UserManagement';
 import PermissionsManagement from './pages/AuthorityControl/PermissionsManagement';
@@ -87,6 +89,8 @@ const MENU = [
   { path: '/serviceDetail', component: ServiceDetail },
   { path: '/subscriberList', component: SubscriberList },
   { path: '/clusterManagement', component: ClusterNodeList },
+  { path: '/applicationList', component: ApplicationList },
+  { path: '/applicationDetail', component: ApplicationDetail },
   { path: '/userManagement', component: UserManagement },
   { path: '/rolesManagement', component: RolesManagement },
   { path: '/permissionsManagement', component: PermissionsManagement },

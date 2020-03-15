@@ -30,6 +30,8 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -113,4 +115,78 @@ public class ServiceManagerTest extends BaseTest {
         int instanceId2 = Integer.parseInt(instance2.getInstanceId());
         Assert.assertNotEquals(instanceId1, instanceId2);
     }
+
+    @Test
+    public void testBasicQueryApplication() throws Exception {
+        prepareAppData();
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, null, null);
+        Assert.assertEquals(20,applicationList.size());
+        for (Application application : applicationList) {
+            Assert.assertEquals(application.getInstanceCount(),1);
+        }
+    }
+
+    @Test
+    public void testQueryAppNsNotExist() throws Exception {
+        prepareAppData();
+        List<Application> applicationList = serviceManager.getApplications("NotExistNamespaceId", null, null);
+        Assert.assertEquals(0,applicationList.size());
+    }
+
+    @Test
+    public void testQueryAppByIp() throws Exception {
+        prepareAppData();
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", null);
+        Assert.assertEquals(11,applicationList.size());
+    }
+
+    @Test
+    public void testQueryAppByPort() throws Exception {
+        prepareAppData();
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", 20);
+        Assert.assertEquals(0,applicationList.size());
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 20);
+        Assert.assertEquals(1,applicationList.size());
+        Assert.assertEquals(IP_PREFIX + "20",applicationList.get(0).getIp() );
+        Assert.assertEquals(20,applicationList.get(0).getPort());
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 21);
+        Assert.assertEquals(0,applicationList.size());
+    }
+
+    @Test
+    public void testQueryInstanceListForApp() throws Exception {
+        prepareAppData();
+        List<Instance> instanceList = serviceManager.getInstancesForApp(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", 1);
+        Assert.assertEquals(1,instanceList.size());
+        Assert.assertEquals(IP_PREFIX + "1", instanceList.get(0).getIp() );
+        Assert.assertEquals(1, instanceList.get(0).getPort());
+    }
+
+    private void prepareAppData() throws Exception {
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
+        Cluster cluster = new Cluster(TEST_CLUSTER_NAME,service);
+        service.addCluster(cluster);
+        ReflectionTestUtils.setField(serviceManager, "consistencyService", consistencyService);
+
+        List<Instance> instances = new ArrayList<>();
+        for (int j = 1; j <= 20; j++) {
+            Instance instance = new Instance();
+            instance.setIp(IP_PREFIX + j);
+            instance.setPort(j);
+            instance.setServiceName(TEST_SERVICE_NAME);
+            instances.add(instance);
+            instance.setClusterName(TEST_CLUSTER_NAME);
+            instance.setWeight(j);
+            instance.setHealthy(true);
+        }
+        cluster.updateIPs(instances, false);
+        // build cluster map
+        Map<String, Service> groupServiceMap = new HashMap<>();
+        groupServiceMap.put(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME, service);
+        Map<String, Map<String, Service>> serviceMap = new HashMap<>();
+        serviceMap.put(Constants.DEFAULT_NAMESPACE_ID, groupServiceMap);
+        ReflectionTestUtils.setField(serviceManager,"serviceMap",serviceMap);
+    }
+    private static final String IP_PREFIX = "192.168.1.";
 }
