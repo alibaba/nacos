@@ -201,25 +201,6 @@ class ConfigurationManagement extends React.Component {
     }
   }
 
-  /**
-   * 回车事件
-   */
-  keyDownSearch(e) {
-    const theEvent = e || window.event;
-    const code = theEvent.keyCode || theEvent.which || theEvent.charCode;
-    if (this.state.isPageEnter) {
-      this.setState({
-        isPageEnter: false,
-      });
-      return false;
-    }
-    if (code === 13) {
-      this.getData();
-      return false;
-    }
-    return true;
-  }
-
   navTo(url, record) {
     this.serverId = getParams('serverId') || '';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
@@ -242,18 +223,6 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  UNSAFE_componentWillMount() {
-    window.addEventListener('keydown', this.keyDownSearch.bind(this), false);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.keyDownSearch.bind(this));
-  }
-
-  onSearch() {}
-
-  onChange() {}
-
   cleanAndGetData(needclean = false) {
     if (needclean) {
       this.dataId = '';
@@ -275,7 +244,9 @@ class ConfigurationManagement extends React.Component {
   }
 
   getData(pageNo = 1, clearSelect = true) {
-    const self = this;
+    if (this.state.loading) {
+      return;
+    }
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
     const params = {
@@ -286,47 +257,20 @@ class ConfigurationManagement extends React.Component {
       pageNo,
       pageSize: this.state.pageSize,
     };
-    let urlPrefix = '';
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
       params.search = 'blur';
     } else {
       params.search = 'accurate';
     }
     this.setState({ loading: true });
-    this.props.getConfigs(params).then(() => this.setState({ loading: false }));
-
-    request({
-      url: `${urlPrefix}&dataId=${this.dataId}&group=${this.group}&appName=${
-        this.appName
-      }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
-        this.state.pageSize
-      }`,
-      success(data) {
-        if (data != null) {
-          self.setState({
-            dataSource: data.pageItems,
-            total: data.totalCount,
-            currentPage: data.pageNumber,
-          });
-          if (clearSelect) {
-            self.setState({
-              selectedRecord: [],
-              selectedKeys: [],
-            });
-          }
-        }
-        self.setState({
-          tenant: self.tenant,
-        });
-      },
-      error(data) {
-        self.setState({
-          dataSource: [],
-          total: 0,
-          currentPage: 0,
-        });
-      },
-    });
+    this.props.getConfigs(params).then(() =>
+      this.setState({
+        loading: false,
+        selectedRecord: [],
+        selectedKeys: [],
+        tenant: this.tenant,
+      })
+    );
   }
 
   showMore() {}
@@ -456,8 +400,6 @@ class ConfigurationManagement extends React.Component {
     this.setState({ pageSize }, () => this.changePage(1));
   }
 
-  onInputUpdate() {}
-
   chooseFieldChange(fieldValue) {
     this.setState({
       fieldValue,
@@ -503,16 +445,9 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  getDataId(value) {
-    this.dataId = value;
-    this.setState({
-      dataId: value,
-    });
-  }
-
   setConfigTags(value) {
     this.setState({
-      config_tags: value,
+      config_tags: value || [],
       tagLst: value,
     });
   }
@@ -619,8 +554,6 @@ class ConfigurationManagement extends React.Component {
       isCheckAll: record.length > 0 && record.length === this.state.dataSource.length,
     });
   }
-
-  onPageSelectAll(selected, records) {}
 
   getBatchFailedContent(res) {
     const { locale = {} } = this.props;
@@ -1241,17 +1174,20 @@ class ConfigurationManagement extends React.Component {
               }}
             >
               <Form inline>
-                <Form.Item label={'Data ID:'}>
+                <Form.Item label="Data ID:">
                   <Input
-                    htmlType={'text'}
+                    htmlType="text"
                     placeholder={locale.fuzzyd}
                     style={{ width: 200 }}
-                    value={this.state.dataId}
-                    onChange={this.getDataId.bind(this)}
+                    onChange={dataId => {
+                      this.dataId = dataId;
+                      this.setState({ dataId });
+                    }}
+                    onPressEnter={() => this.getData()}
                   />
                 </Form.Item>
 
-                <Form.Item label={'Group:'}>
+                <Form.Item label="Group:">
                   <Select.AutoComplete
                     style={{ width: 200 }}
                     size={'medium'}
@@ -1259,6 +1195,7 @@ class ConfigurationManagement extends React.Component {
                     dataSource={this.state.groups}
                     value={this.state.group}
                     onChange={this.setGroup.bind(this)}
+                    onPressEnter={() => this.getData()}
                     hasClear
                   />
                 </Form.Item>
@@ -1323,6 +1260,7 @@ class ConfigurationManagement extends React.Component {
                     style={{ width: 200 }}
                     value={this.state.appName}
                     onChange={this.setAppName.bind(this)}
+                    onPressEnter={() => this.getData()}
                   />
                 </Form.Item>
                 <Form.Item label={locale.tags}>
@@ -1379,31 +1317,34 @@ class ConfigurationManagement extends React.Component {
             {configurations.totalCount && (
               <>
                 <div style={{ float: 'left' }}>
-                  <Button
-                    type={'primary'}
-                    warning
-                    style={{ marginRight: 10 }}
-                    onClick={this.multipleSelectionDeletion.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsDelete'}
-                  >
-                    {locale.deleteAction}
-                  </Button>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.exportSelectedData.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                  >
-                    {locale.exportSelected}
-                  </Button>
-                  <Button
-                    type={'primary'}
-                    style={{ marginRight: 10 }}
-                    onClick={this.cloneSelectedDataConfirm.bind(this)}
-                    data-spm-click={'gostr=/aliyun;locaid=configsClone'}
-                  >
-                    {locale.clone}
-                  </Button>
+                  {[
+                    {
+                      warning: true,
+                      text: locale.deleteAction,
+                      locaid: 'configsDelete',
+                      onClick: () => this.multipleSelectionDeletion(),
+                    },
+                    {
+                      text: locale.exportSelected,
+                      locaid: 'configsExport',
+                      onClick: () => this.exportSelectedData(),
+                    },
+                    {
+                      text: locale.clone,
+                      locaid: 'configsDelete',
+                      onClick: () => this.cloneSelectedDataConfirm(),
+                    },
+                  ].map(item => (
+                    <Button
+                      warning={item.warning}
+                      type="primary"
+                      style={{ marginRight: 10 }}
+                      onClick={item.onClick}
+                      data-spm-click={`gostr=/aliyun;locaid=${item.locaid}`}
+                    >
+                      {item.text}
+                    </Button>
+                  ))}
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
@@ -1412,7 +1353,7 @@ class ConfigurationManagement extends React.Component {
                   pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}
                   onPageSizeChange={val => this.handlePageSizeChange(val)}
-                  current={this.state.currentPage}
+                  current={configurations.pageNumber}
                   total={configurations.totalCount}
                   pageSize={this.state.pageSize}
                   onChange={this.changePage.bind(this)}
