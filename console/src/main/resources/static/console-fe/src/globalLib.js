@@ -15,6 +15,14 @@ import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
 
+function goLogin() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  console.log('base_url', base_url);
+  window.location = `${base_url}#/login`;
+}
+
 const global = window;
 
 /**
@@ -482,8 +490,14 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
-
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token);
+    } catch (e) {
+      console.log('Token Erro', localStorage.token, e);
+      goLogin();
+    }
+    const { accessToken = '' } = token;
     const [url, paramsStr = ''] = config.url.split('?');
     const params = paramsStr.split('&');
     params.push(`accessToken=${accessToken}`);
@@ -513,16 +527,7 @@ const request = (function(_global) {
           [401, 403].includes(status) &&
           ['unknown user!', 'token invalid', 'token expired!'].includes(responseJSON.message)
         ) {
-          // 跳转至login页
-          // TODO: 用 react-router 重写，改造成本比较高，这里先hack
-          const url = window.location.href;
-          // TODO: 后端返回细致的错误码，如果原始密码不对 不应该直接跳到登陆页
-          if (url.includes('password')) {
-            return error;
-          }
-          localStorage.removeItem('token');
-          const base_url = url.split('#')[0];
-          window.location = `${base_url}#/login`;
+          goLogin();
         }
         return error;
       }
