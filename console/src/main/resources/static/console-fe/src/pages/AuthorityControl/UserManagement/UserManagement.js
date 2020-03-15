@@ -13,7 +13,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Field, Form, Input, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import { Button, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
 import { connect } from 'react-redux';
 import { getUsers, createUser, deleteUser, passwordReset } from '../../../reducers/authority';
 import RegionGroup from '../../../components/RegionGroup';

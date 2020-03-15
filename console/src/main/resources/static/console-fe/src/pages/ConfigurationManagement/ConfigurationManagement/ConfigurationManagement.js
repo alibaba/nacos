@@ -1314,7 +1314,7 @@ class ConfigurationManagement extends React.Component {
               {!this.inApp && <Table.Column title={locale.application} dataIndex="appName" />}
               <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
             </Table>
-            {configurations.totalCount && (
+            {configurations.totalCount > 0 && (
               <>
                 <div style={{ float: 'left' }}>
                   {[
