@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.auth.AuthSystemTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -36,6 +37,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.cors.CorsUtils;
 
 /**
@@ -139,6 +141,15 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public FilterRegistrationBean<SecurityContextPersistenceFilter> securityContextPersistenceFilter() {
+        SecurityContextPersistenceFilter securityContextPersistenceFilter = new SecurityContextPersistenceFilter();
+        FilterRegistrationBean<SecurityContextPersistenceFilter> bean = new FilterRegistrationBean<>(securityContextPersistenceFilter);
+        bean.addUrlPatterns("/*");
+        bean.setOrder(1);
+        return bean;
     }
 
 }
