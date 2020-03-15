@@ -11,9 +11,25 @@
  * limitations under the License.
  */
 
-.next-pagination-size-selector {
-  position: static !important;
-}
-.configuration-table {
-  margin-bottom: 20px;
-}
+import request from '../utils/request';
+import { GET_CONFIGURATION } from '../constants';
+
+const initialState = {
+  configurations: [],
+};
+
+const getConfigs = params => dispatch =>
+  request
+    .get('v1/cs/configs', { params })
+    .then(data => dispatch({ type: GET_CONFIGURATION, data }));
+
+export default (state = initialState, action) => {
+  switch (action.type) {
+    case GET_CONFIGURATION:
+      return { ...state, configurations: action.data };
+    default:
+      return state;
+  }
+};
+
+export { getConfigs };
