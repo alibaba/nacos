@@ -17,7 +17,13 @@ const request = () => {
         config.params = {};
       }
       if (!url.includes('auth/users/login')) {
-        const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+        let token = {};
+        try {
+          token = JSON.parse(localStorage.token || '{}');
+        } catch (e) {
+          console.log(e);
+        }
+        const { accessToken = '' } = token;
         config.params.accessToken = accessToken;
         config.headers = Object.assign({}, headers, { accessToken });
       }
