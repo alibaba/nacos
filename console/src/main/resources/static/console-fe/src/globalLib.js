@@ -482,8 +482,13 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
-
-    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token || '{}');
+    } catch (e) {
+      console.log(e);
+    }
+    const { accessToken = '' } = token;
     const [url, paramsStr = ''] = config.url.split('?');
     const params = paramsStr.split('&');
     params.push(`accessToken=${accessToken}`);
