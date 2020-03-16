@@ -58,7 +58,7 @@ public class HttpClientManager {
 					}
 				}
 
-				System.out.println("Destruction of the end");
+				System.out.println("[NSyncHttpClient] Destruction of the end");
 			}
 		});
 
@@ -76,7 +76,7 @@ public class HttpClientManager {
 					}
 				}
 
-				System.out.println("Destruction of the end");
+				System.out.println("[NAsyncHttpClient] Destruction of the end");
 			}
 		});
 

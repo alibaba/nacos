@@ -24,19 +24,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class NameThreadFactory implements ThreadFactory {
 
-    private final AtomicInteger id = new AtomicInteger(0);
+	private final AtomicInteger id = new AtomicInteger(0);
 
-    private String name;
+	private String name;
 
-    public NameThreadFactory(String name) {
-        this.name = name;
-    }
+	public NameThreadFactory(String name) {
+		this.name = name;
+	}
 
-    @Override
+	@Override
     public Thread newThread(Runnable r) {
-        String threadName = name + id.getAndDecrement();
-        Thread thread = new Thread(r, threadName);
-        thread.setDaemon(true);
-        return thread;
-    }
+		String threadName = name + id.getAndDecrement();
+		Thread thread = new Thread(r, threadName);
+		thread.setDaemon(true);
+		return thread;
+	}
 }

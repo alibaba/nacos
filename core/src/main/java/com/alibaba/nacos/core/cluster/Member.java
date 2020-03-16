@@ -26,16 +26,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class Member {
 
-    public static final String SITE_KEY = "site";
-
-    public static final String AD_WEIGHT = "adweight";
-
-    public static final String LAST_REF_TIME = "lastRefTime";
-
-    public static final String WEIGHT = "weight";
-
-    public static final String DISTRO_BEATS = "distroBeats";
-
     private String ip;
 
     private int port = -1;
@@ -49,11 +39,10 @@ public class Member {
     private transient int failAccessCnt = 0;
 
     public Member() {
-        extendInfo.put(SITE_KEY, "unknown");
-        extendInfo.put(AD_WEIGHT, "0");
-        extendInfo.put(LAST_REF_TIME, "0");
-        extendInfo.put(WEIGHT, "1");
-        extendInfo.put(DISTRO_BEATS, null);
+        extendInfo.put(MemberMetaDataConstants.SITE_KEY, "unknown");
+        extendInfo.put(MemberMetaDataConstants.AD_WEIGHT, "0");
+        extendInfo.put(MemberMetaDataConstants.WEIGHT, "1");
+        extendInfo.put(MemberMetaDataConstants.DISTRO_BEATS, null);
     }
 
     public static ServerNodeBuilder builder() {

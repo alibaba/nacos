@@ -41,11 +41,6 @@ public final class RaftSysConstants {
     public static final int DEFAULT_RAFT_CLI_SERVICE_THREAD_NUM = 8;
 
     /**
-     * {@link RaftSysConstants#RAFT_ROUTE_REFRESH_PERIOD_MS}
-     */
-    public static final long DEFAULT_RAFT_ROUTE_REFRESH_PERIOD = Duration.ofMinutes(3).toMillis();
-
-    /**
      * {@link RaftSysConstants#RAFT_READ_INDEX_TYPE}
      */
     public static final String DEFAULT_READ_INDEX_TYPE = "ReadOnlySafe";
@@ -113,11 +108,6 @@ public final class RaftSysConstants {
     // ========= setting key ========= //
 
     /**
-     * Raft port
-     */
-    public static final String RAFT_PORT = "raft_port";
-
-    /**
      * Election timeout in milliseconds
      */
     public static final String RAFT_ELECTION_TIMEOUT_MS = "election_timeout_ms";
@@ -141,11 +131,6 @@ public final class RaftSysConstants {
      * Number of threads required for raft business request processing
      */
     public static final String RAFT_CLI_SERVICE_THREAD_NUM = "cli_service_thread_num";
-
-    /**
-     * raft group routing table information refresh interval
-     */
-    public static final String RAFT_ROUTE_REFRESH_PERIOD_MS = "route_refresh_period_ms";
 
     /**
      * raft linear read strategy, defaults to index

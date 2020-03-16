@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.core.distributed.raft.processor;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.core.distributed.raft.JRaftServer;
+import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.RestResultUtils;

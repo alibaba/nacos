@@ -31,7 +31,7 @@ public class RaftEvent implements Event {
 
     private String leader;
 
-    private long term;
+    private Long term = null;
 
     private List<String> raftClusterInfo = Collections.emptyList();
 
@@ -55,11 +55,11 @@ public class RaftEvent implements Event {
         this.leader = leader;
     }
 
-    public long getTerm() {
+    public Long getTerm() {
         return term;
     }
 
-    public void setTerm(long term) {
+    public void setTerm(Long term) {
         this.term = term;
     }
 
@@ -79,7 +79,7 @@ public class RaftEvent implements Event {
     public static final class RaftEventBuilder {
         private String groupId;
         private String leader;
-        private long term;
+        private Long term = null;
         private List<String> raftClusterInfo = Collections.emptyList();
 
         private RaftEventBuilder() {

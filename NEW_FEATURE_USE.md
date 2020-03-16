@@ -1,17 +1,13 @@
-#*************** Spring Boot Related Configurations ***************#
-### Default web context path:
-server.servlet.contextPath=/nacos
-### Default web server port:
-server.port=8848
+#### 命令行参数
 
-#*************** Network Related Configurations ***************#
-### If prefer hostname over ip for Nacos server addresses in cluster.conf:
-# nacos.inetutils.prefer-hostname-over-ip=false
+```shell script
+-Dnacos.serializer-type=kryo
+# -Dnacos.serializer-type=protostuff
+```
 
-### Specify local server's IP:
-# nacos.inetutils.ip-address=
+#### application.properties
 
-
+```properties
 #*************** Core Related Configurations ***************#
 
 ### Whether to turn on inter-member discovery, If this configuration is enabled, the cluster.conf configuration
@@ -29,113 +25,8 @@ nacos.core.idGenerator.default.acquire.step=100
 ### If nacos.core.idGenerator.type=snakeflower, You need to set the WorkerID manually
 #nacos.core.snowflake.worker-id=
 
-#*************** Config Module Related Configurations ***************#
-### If user MySQL as datasource:
-# spring.datasource.platform=mysql
-
-### Open circuit
-# nacos.config.open-circuit=false
-
-### Count of DB:
-# db.num=1
-
-### Connect URL of DB:
-# db.url.0=jdbc:mysql://1.1.1.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true
-# db.user=user
-# db.password=password
-
-
-#*************** Naming Module Related Configurations ***************#
-### Data dispatch task execution period in milliseconds:
-# nacos.naming.distro.taskDispatchPeriod=200
-
-### Data count of batch sync task:
-# nacos.naming.distro.batchSyncKeyCount=1000
-
-### Retry delay in milliseconds if sync task failed:
-# nacos.naming.distro.syncRetryDelay=5000
-
-### If enable data warmup. If set to false, the server would accept request without local data preparation:
-# nacos.naming.data.warmup=true
-
-### If enable the instance auto expiration, kind like of health check of instance:
-# nacos.naming.expireInstance=true
-
-nacos.naming.empty-service.auto-clean=true
-nacos.naming.empty-service.clean.initial-delay-ms=50000
-nacos.naming.empty-service.clean.period-time-ms=30000
-
-
-#*************** CMDB Module Related Configurations ***************#
-### The interval to dump external CMDB in seconds:
-# nacos.cmdb.dumpTaskInterval=3600
-
-### The interval of polling data change event in seconds:
-# nacos.cmdb.eventTaskInterval=10
-
-### The interval of loading labels in seconds:
-# nacos.cmdb.labelTaskInterval=300
-
-### If turn on data loading task:
-# nacos.cmdb.loadDataAtStart=false
-
-
-#*************** Metrics Related Configurations ***************#
-### Metrics for prometheus
-#management.endpoints.web.exposure.include=*
-
-### Metrics for elastic search
-management.metrics.export.elastic.enabled=false
-#management.metrics.export.elastic.host=http://localhost:9200
-
-### Metrics for influx
-management.metrics.export.influx.enabled=false
-#management.metrics.export.influx.db=springboot
-#management.metrics.export.influx.uri=http://localhost:8086
-#management.metrics.export.influx.auto-create-db=true
-#management.metrics.export.influx.consistency=one
-#management.metrics.export.influx.compressed=true
-
-
-#*************** Access Log Related Configurations ***************#
-### If turn on the access log:
-server.tomcat.accesslog.enabled=true
-
-### The access log pattern:
-server.tomcat.accesslog.pattern=%h %l %u %t "%r" %s %b %D %{User-Agent}i
-
-### The directory of access log:
-server.tomcat.basedir=
-
-
-#*************** Access Control Related Configurations ***************#
-### If enable spring security, this option is deprecated in 1.2.0:
-#spring.security.enabled=false
-
-### The ignore urls of auth, is deprecated in 1.2.0:
-nacos.security.ignore.urls=/,/error,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/v1/auth/**,/v1/console/health/**,/actuator/**,/v1/console/server/**
-
-### The auth system to use, currently only 'nacos' is supported:
-nacos.core.auth.system.type=nacos
-
-### If turn on auth system:
-nacos.core.auth.enabled=true
-
-### The token expiration in seconds:
-nacos.core.auth.default.token.expire.seconds=18000
-
-### The default token:
-nacos.core.auth.default.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789
-
-### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.
-nacos.core.auth.caching.enabled=true
-
-
-#*************** Istio Related Configurations ***************#
-### If turn on the MCP server:
-nacos.istio.mcp.server.enabled=false
-
 #*************** Embed Storage Related Configurations ***************#
+
 ### Whether to open embedded distributed storage in nacos cluster mode
 embeddedDistributedStorage=true
 
@@ -197,3 +88,4 @@ nacos.core.protocol.distro.data.sync_retry_delay_ms=5000
 nacos.core.protocol.distro.data.distro_enabled=true
 ### Data synchronization retry strategy
 nacos.core.protocol.distro.data.retry_policy=simple
+```

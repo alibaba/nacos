@@ -156,6 +156,11 @@ public final class DiskUtils {
         FileUtils.forceMkdir(new File(path));
     }
 
+    public static void forceMkdir(File file) throws IOException {
+        FileUtils.forceMkdir(file);
+    }
+
+
     public static void copyDirectory(File srcDir, File destDir) throws IOException {
         FileUtils.copyDirectory(srcDir, destDir);
     }

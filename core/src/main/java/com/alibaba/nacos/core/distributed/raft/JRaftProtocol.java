@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -26,10 +27,11 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
-import com.alibaba.nacos.core.distributed.raft.utils.JLogUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -44,6 +46,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -92,7 +96,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     Map<String, Map<String, Object>> value = new HashMap<>();
                     Map<String, Object> properties = new HashMap<>();
                     final String leader = event.getLeader();
-                    final long term = event.getTerm();
+                    final Long term = event.getTerm();
                     final List<String> raftClusterInfo = event.getRaftClusterInfo();
 
                     // Leader information needs to be selectively updated. If it is valid data,
@@ -101,10 +105,18 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     if (StringUtils.isNotBlank(leader)) {
                         properties.put(Constants.LEADER_META_DATA, leader);
                     }
-                    properties.put(Constants.TERM_META_DATA, term);
-                    properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    if (Objects.nonNull(term)) {
+                        properties.put(Constants.TERM_META_DATA, term);
+                    }
+                    if (CollectionUtils.isNotEmpty(raftClusterInfo)) {
+                        properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
+                    }
                     value.put(groupId, properties);
                     metaData.load(value);
+
+                    // The metadata information is injected into the metadata information of the node
+
+                    injectProtocolMetaData(metaData);
                 }
 
                 @Override
@@ -142,7 +154,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
         final Throwable[] throwable = new Throwable[]{null};
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
-            raftServer.commit(JLogUtils.toJLog(data, JLog.JLogOperaton.MODIFY_OPERATION), future, retryCnt);
+            raftServer.commit(JRaftUtils.toJLog(data, JLog.JLogOperaton.MODIFY_OPERATION), future, retryCnt);
         } catch (Throwable e) {
             throwable[0] = e;
         }
@@ -176,6 +188,11 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
         this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
         return kvStore;
+    }
+
+    private void injectProtocolMetaData(ProtocolMetaData metaData) {
+        Member member = memberManager.self();
+        member.setExtendVal("RaftMetaData", metaData);
     }
 
 }

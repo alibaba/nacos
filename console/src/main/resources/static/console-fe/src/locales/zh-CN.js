@@ -134,10 +134,7 @@ const I18N_CONF = {
     query: '查询',
     pubNoData: '没有数据',
     nodeState: '节点状态',
-    clusterTerm: '集群任期',
-    leaderDueMs: 'Leader止时(ms)',
-    heartbeatDueMs: '心跳止时(ms)',
-    voteFor: '投票对象',
+    extendInfo: '节点元数据',
   },
   EditClusterDialog: {
     updateCluster: '更新集群',

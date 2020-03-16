@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.exception.CircuitException;
+import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.distributed.raft.RaftErrorEvent;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -45,9 +45,9 @@ public class CircuitAspect {
 
         openFusing.set(SpringUtils.getProperty("nacos.config.open-circuit", Boolean.class, false));
 
-        NotifyCenter.registerSubscribe(new Subscribe<RaftErrorEvent>() {
+        NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
             @Override
-            public void onEvent(RaftErrorEvent event) {
+            public void onEvent(RaftDBErrorEvent event) {
 
                 // If distributed storage is enabled internally, circuit breakers are forced to be turned on
 
@@ -56,7 +56,7 @@ public class CircuitAspect {
 
             @Override
             public Class<? extends Event> subscribeType() {
-                return RaftErrorEvent.class;
+                return RaftDBErrorEvent.class;
             }
         });
     }

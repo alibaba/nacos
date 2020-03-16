@@ -49,9 +49,9 @@ public final class ThreadPoolManager {
 		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-            	System.out.println("Start executing thread pool consumption");
+            	System.out.println("[ThreadPoolManager] Start destroying ThreadPool");
                 INSTANCE.destroyAll();
-				System.out.println("Thread pool consumption ends");
+				System.out.println("[ThreadPoolManager] Destruction of the end");
             }
         }));
     }

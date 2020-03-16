@@ -420,6 +420,9 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof WebServerInitializedEvent) {
             if (!SystemUtils.STANDALONE_MODE) {
+
+                Loggers.CLUSTER.info("execute cluster tasks");
+
                 MemberPingTask pingTask = new MemberPingTask(this);
                 MemberPullTask pullTask = new MemberPullTask(this);
                 MemberDeadBroadcastTask broadcastTask = new MemberDeadBroadcastTask(this);
@@ -437,6 +440,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
             // For containers that have started, stop all messages from being published late
 
+            Loggers.CORE.info("Terminates delayed publication of all messages");
+
             apProtocol.protocolMetaData().stopDeferPublish();
             cpProtocol.protocolMetaData().stopDeferPublish();
             NotifyCenter.stopDeferPublish();
@@ -445,10 +450,9 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     @Override
     public boolean supportsEventType(Class<? extends ApplicationEvent> eventType) {
-        if (eventType.isAssignableFrom(WebServerInitializedEvent.class)) {
-            return true;
-        }
-        return eventType.isAssignableFrom(ContextStartedEvent.class);
+        boolean initializedEvent = WebServerInitializedEvent.class.isAssignableFrom(eventType);
+        boolean contextStartedEvent = ContextStartedEvent.class.isAssignableFrom(eventType);
+        return initializedEvent || contextStartedEvent;
     }
 
     @Override

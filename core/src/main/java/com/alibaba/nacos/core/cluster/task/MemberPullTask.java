@@ -46,6 +46,8 @@ public class MemberPullTask extends Task {
     private final TypeReference<RestResult<Member>> reference = new TypeReference<RestResult<Member>>(){};
     private Random random = new Random();
 
+    private int cursor = 0;
+
     public MemberPullTask(ServerMemberManager memberManager) {
         super(memberManager);
     }
@@ -53,24 +55,24 @@ public class MemberPullTask extends Task {
     @Override
     protected void executeBody() {
 
-        String discovery = SpringUtils.getProperty("nacos.core.member.self-discovery");
+        boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
-        if (!StringUtils.equals(discovery, "true")) {
+        if (!discovery) {
             return;
         }
 
         Set<String> members = memberManager.getMemberAddressInfos();
-        int index = random.nextInt(members.size());
+        this.cursor = (this.cursor + 1) % members.size();
         String[] ss = members.toArray(new String[0]);
-        String target = ss[index];
+        String target = ss[cursor];
 
-        final String url = HttpUtils.buildUrl(false, target, memberManager.getContextPath(), Commons.NACOS_CORE_CONTEXT + "/cluster/self");
+        final String url = HttpUtils.buildUrl(false, target, memberManager.getContextPath(), Commons.NACOS_CORE_CONTEXT, "/cluster/self");
 
         asyncHttpClient.get(url, Header.EMPTY, Query.EMPTY, reference, new Callback<Member>() {
             @Override
             public void onReceive(HttpRestResult<Member> result) {
                 if (result.ok()) {
-                    Loggers.CLUSTER.debug("success pull from node : {}, result : {}", target, result);
+                    Loggers.CLUSTER.info("success pull from node : {}, result : {}", target, result);
                     memberManager.update(result.getData());
                 } else {
                     Loggers.CLUSTER.warn("failed to pull new info from target node : {}, result : {}", target, result);
@@ -79,7 +81,7 @@ public class MemberPullTask extends Task {
 
             @Override
             public void onError(Throwable throwable) {
-                Loggers.CLUSTER.warn("failed to pull new info from target node : {}, error : {}", target, throwable);
+                Loggers.CLUSTER.error("failed to pull new info from target node : {}, error : {}", target, throwable);
                 MemberUtils.onFail(MemberUtils.parse(target), memberManager);
             }
         });

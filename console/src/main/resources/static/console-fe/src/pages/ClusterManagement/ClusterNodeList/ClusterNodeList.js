@@ -77,7 +77,7 @@ class ClusterNodeList extends React.Component {
       `keyword=${keyword}`,
     ];
     request({
-      url: `v1/ns/operator/cluster/states?${parameter.join('&')}`,
+      url: `v1/core/cluster/nodes?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, clusterStateList = [] } = {}) => {
         this.setState({
@@ -171,11 +171,9 @@ class ClusterNodeList extends React.Component {
                 locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
-                <Column title={locale.nodeIp} dataIndex="nodeIp" />
-                <Column title={locale.nodeState} dataIndex="nodeState" />
-                <Column title={locale.clusterTerm} dataIndex="clusterTerm" />
-                <Column title={locale.leaderDueMs} dataIndex="leaderDueMs" />
-                <Column title={locale.heartbeatDueMs} dataIndex="heartbeatDueMs" />
+                <Column title={locale.nodeIp} dataIndex="address" />
+                <Column title={locale.nodeState} dataIndex="state" />
+                <Column title={locale.clusterTerm} dataIndex="extendInfo" />
               </Table>
             </Col>
           </Row>

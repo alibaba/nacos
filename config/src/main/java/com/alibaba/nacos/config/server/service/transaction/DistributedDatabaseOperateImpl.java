@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.transaction;
 
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.utils.ClassUtils;
@@ -39,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
+
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +89,9 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
         selfIp = memberManager.self().address();
+
+        NotifyCenter.registerPublisher(RaftDBErrorEvent::new, RaftDBErrorEvent.class);
+
         defaultLog.info("use DistributedTransactionServicesImpl");
     }
 
@@ -312,6 +318,14 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     public boolean onApply(Log log) {
         List<SQL> sqlContext = serializer.deSerialize(log.getData(), List.class);
         return onUpdate(sqlContext);
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+
+        // Trigger reversion strategy
+
+        NotifyCenter.publishEvent(new RaftDBErrorEvent());
     }
 
     @Override

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.consistency;
 
+import org.javatuples.Pair;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
@@ -54,8 +57,15 @@ public final class ProtocolMetaData {
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 
-    public Map<String, MetaData> getMetaDataMap() {
-        return metaDataMap;
+    public Map<String, Map<Object, Object>> getMetaDataMap() {
+        return metaDataMap.entrySet()
+                .stream()
+                .map(entry -> {
+                    return Pair.with(entry.getKey(), entry.getValue().getItemMap()
+                            .entrySet().stream()
+                            .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), HashMap::putAll));
+                })
+                .collect(HashMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), HashMap::putAll);
     }
 
     // Does not guarantee thread safety, there may be two updates of

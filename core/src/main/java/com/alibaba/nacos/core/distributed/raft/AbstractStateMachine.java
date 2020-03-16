@@ -24,15 +24,18 @@ import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
+import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
+import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
@@ -59,6 +62,8 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     private final String groupId;
     private final Collection<JSnapshotOperation> operations;
     private Node node;
+    private volatile long term = -1;
+    private volatile String leaderIp = "unknown";
 
     public AbstractStateMachine(JRaftServer server, LogProcessor4CP processor) {
         this.server = server;
@@ -163,10 +168,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     @Override
     public void onLeaderStart(final long term) {
         super.onLeaderStart(term);
+        this.term = term;
         this.isLeader.set(true);
+        this.leaderIp = node.getNodeId().getPeerId().getEndpoint().toString();
         NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
-                .leader(node.getNodeId().getPeerId().getEndpoint().toString())
+                .leader(leaderIp)
                 .term(term)
                 .raftClusterInfo(allPeers())
                 .build());
@@ -180,18 +187,30 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onStartFollowing(LeaderChangeContext ctx) {
+        this.term = ctx.getTerm();
+        this.leaderIp = ctx.getLeaderId().getEndpoint().toString();
         NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
                 .groupId(groupId)
-                .leader(ctx.getLeaderId().getEndpoint().toString())
+                .leader(leaderIp)
                 .term(ctx.getTerm())
                 .raftClusterInfo(allPeers())
                 .build());
     }
 
     @Override
-    public void onError(RaftException e) {
-        super.onError(e);
+    public void onConfigurationCommitted(Configuration conf) {
+        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
+                .groupId(groupId)
+                .leader(leaderIp)
+                .term(term)
+                .raftClusterInfo(JRaftUtils.toStrings(conf.getPeers()))
+                .build());
+    }
 
+    @Override
+    public void onError(RaftException e) {
+        processor.onError(e);
+        super.onError(e);
     }
 
     public boolean isLeader() {
@@ -204,17 +223,12 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         }
 
         if (node.isLeader()) {
-            return node.listPeers()
-                    .stream()
-                    .map(peerId -> peerId.getEndpoint().toString())
-                    .collect(Collectors.toList());
+            return JRaftUtils.toStrings(node.listPeers());
         }
 
-        return RouteTable.getInstance()
+        return JRaftUtils.toStrings(RouteTable.getInstance()
                 .getConfiguration(node.getGroupId())
-                .getPeers()
-                .stream().map(peerId -> peerId.getEndpoint().toString())
-                .collect(Collectors.toList());
+                .getPeers());
     }
 
 }

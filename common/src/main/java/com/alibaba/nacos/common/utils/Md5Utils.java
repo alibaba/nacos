@@ -48,6 +48,8 @@ public class Md5Utils {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            MESSAGE_DIGEST_THREAD_LOCAL.remove();
         }
         return new String(str);
     }

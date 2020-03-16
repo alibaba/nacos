@@ -18,15 +18,24 @@ package com.alibaba.nacos.core.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RestResultUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,8 +63,23 @@ public class NacosClusterRouter {
     }
 
     @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listAllNode() {
-        return RestResultUtils.success(memberManager.allMembers());
+    @Secured
+    public RestResult<Collection<Member>> listAllNode(@RequestParam(value = "keyword", required = false) String ipKeyWord) {
+        Collection<Member> members = memberManager.allMembers();
+        Collection<Member> result = new ArrayList<>();
+
+        members.forEach(member -> {
+            if (StringUtils.isBlank(ipKeyWord)) {
+                result.add(member);
+                return;
+            }
+            final String address = member.address();
+            if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
+                result.add(member);
+            }
+        });
+
+        return RestResultUtils.success(result);
     }
 
     // The client can get all the nacos node information in the current
@@ -63,8 +87,7 @@ public class NacosClusterRouter {
 
     @GetMapping(value = "/simple/nodes")
     public RestResult<Collection<String>> listSimpleNodes() {
-        Collection<String> ips = memberManager.getMemberAddressInfos();
-        return RestResultUtils.success(ips);
+        return RestResultUtils.success(MemberUtils.simpleMembers(memberManager));
     }
 
     @GetMapping("/server/health")
@@ -85,7 +108,7 @@ public class NacosClusterRouter {
         String data = "";
 
         if (sync) {
-            data = JSON.toJSONString(memberManager.getMemberAddressInfos());
+            data = JSON.toJSONString(MemberUtils.simpleMembers(memberManager));
         }
 
         return RestResultUtils.success(data);

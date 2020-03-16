@@ -46,14 +46,14 @@ public class NotifyCenter {
     static {
 
         ShutdownUtils.addShutdownHook(new Thread(() -> {
-            System.out.println("Start destroying Publisher");
+            System.out.println("[NotifyCenter] Start destroying Publisher");
             PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
                 @Override
                 public void accept(String s, Publisher publisher) {
                     publisher.shutdown();
                 }
             });
-            System.out.println("Destruction of the end");
+            System.out.println("[NotifyCenter] Destruction of the end");
         }));
 
     }
@@ -96,6 +96,7 @@ public class NotifyCenter {
 
     /**
      * request publisher publish event
+     * Publishers load lazily, calling publisher. Start () only when the event is actually published
      *
      * @param event
      */
@@ -105,6 +106,7 @@ public class NotifyCenter {
 
     /**
      * request publisher publish event
+     * Publishers load lazily, calling publisher. Start () only when the event is actually published
      *
      * @param eventType
      * @param event
@@ -114,6 +116,9 @@ public class NotifyCenter {
         final String topic = eventType.getCanonicalName();
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
+            if (!publisher.isInitialized()) {
+                publisher.start();
+            }
             publisher.publish(event);
             return;
         }
@@ -136,7 +141,6 @@ public class NotifyCenter {
         });
         Publisher publisher = PUBLISHER_MAP.get(topic);
         publisher.setSupplier(supplier);
-        publisher.start();
         return publisher;
     }
 
@@ -144,7 +148,7 @@ public class NotifyCenter {
 
         private final Class<? extends Event> eventType;
         private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
-        private final AtomicBoolean initialized = new AtomicBoolean(false);
+        private volatile boolean initialized = false;
         private Disruptor<EventHandle> disruptor;
         private Supplier<? extends Event> supplier;
         private volatile boolean canOpen = false;
@@ -157,13 +161,14 @@ public class NotifyCenter {
             this.supplier = supplier;
         }
 
-        void start() {
-            if (initialized.compareAndSet(false, true)) {
+        synchronized void start() {
+            if (!initialized) {
                 this.disruptor = DisruptorFactory.build((EventFactory) () -> {
                     return new EventHandle(supplier.get());
                 }, eventType);
                 openEventHandler();
                 this.disruptor.start();
+                initialized = true;
             }
         }
 
@@ -176,7 +181,7 @@ public class NotifyCenter {
                     // waiting for the first Subscriber to register
 
                     for (; ; ) {
-                        if (canOpen || !stopDeferPublish) {
+                        if (canOpen || stopDeferPublish) {
                             break;
                         }
                         try {
@@ -219,15 +224,20 @@ public class NotifyCenter {
         }
 
         void checkIsStart() {
-            if (!initialized.get()) {
+            if (!initialized) {
                 throw new IllegalStateException("Publisher does not start");
             }
         }
 
         void shutdown() {
-            disruptor.shutdown();
+            if (disruptor != null) {
+                disruptor.shutdown();
+            }
         }
 
+        public boolean isInitialized() {
+            return initialized;
+        }
     }
 
 }

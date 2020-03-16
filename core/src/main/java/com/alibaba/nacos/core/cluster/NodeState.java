@@ -36,9 +36,4 @@ public enum NodeState {
      */
     DOWN,
 
-    /**
-     * node is preparing itself for request, usually 'UP' is the next status
-     */
-    STARTING,
-
 }

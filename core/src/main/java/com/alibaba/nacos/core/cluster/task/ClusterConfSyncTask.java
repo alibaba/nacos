@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
@@ -65,7 +66,7 @@ public class ClusterConfSyncTask extends Task {
 
     private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
 
-    private Runnable standaloneJob = () -> readServerConf(Collections.singletonList(url));
+    private Runnable standaloneJob = () -> MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
 
     public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
         super(memberManager);
@@ -134,7 +135,7 @@ public class ClusterConfSyncTask extends Task {
                         memberManager.setAddressServerHealth(true);
                         Reader reader = new StringReader(result.getData());
                         try {
-                            readServerConf(SystemUtils.analyzeClusterConf(reader));
+                            MemberUtils.readServerConf(SystemUtils.analyzeClusterConf(reader), memberManager);
                         } catch (Exception e) {
                             Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}", e);
                         }
@@ -164,7 +165,7 @@ public class ClusterConfSyncTask extends Task {
     private void readServerConfFromDisk() {
         try {
             List<String> members = SystemUtils.readClusterConf();
-            readServerConf(members);
+            MemberUtils.readServerConf(members, memberManager);
             alreadyLoadServer = true;
         } catch (Exception e) {
             Loggers.CLUSTER.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e);
@@ -172,60 +173,4 @@ public class ClusterConfSyncTask extends Task {
         }
     }
 
-    // 默认配置格式解析，只有nacos-server的ip:port or hostname:port 信息
-    // example 192.168.16.1:8848?raft_port=8849&key=value
-
-    private void readServerConf(List<String> members) {
-        Set<Member> nodes = new HashSet<>();
-        int selfPort = memberManager.getPort();
-
-        // Nacos default port is 8848
-
-        int defaultPort = 8848;
-
-        // Set the default Raft port information for security
-
-        int defaultRaftPort = selfPort + 1000 >= 65535 ? selfPort + 1 : selfPort + 1000;
-
-        for (String member : members) {
-            String[] memberDetails = member.split("\\?");
-            String address = memberDetails[0];
-            int port = defaultPort;
-            if (address.contains(":")) {
-                String[] info = address.split(":");
-                address = info[0];
-                port = Integer.parseInt(info[1]);
-            }
-
-            // example ip:port?raft_port=&node_name=
-
-            Map<String, String> extendInfo = new HashMap<>(4);
-
-            if (memberDetails.length == 2) {
-                String[] parameters = memberDetails[1].split("&");
-                for (String parameter : parameters) {
-                    String[] info = parameter.split("=");
-                    extendInfo.put(info[0].trim(), info[1].trim());
-                }
-            } else {
-
-                // The Raft Port information needs to be set by default
-                extendInfo.put(RaftSysConstants.RAFT_PORT, String.valueOf(defaultRaftPort));
-
-            }
-
-            nodes.add(Member.builder()
-                    .ip(address)
-                    .port(port)
-                    .extendInfo(extendInfo)
-                    .state(NodeState.UP)
-                    .build());
-
-        }
-
-        Loggers.CLUSTER.info("have member join the cluster : {}", nodes);
-
-        memberManager.memberJoin(nodes);
-
-    }
 }

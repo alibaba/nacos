@@ -24,6 +24,9 @@ import org.apache.commons.lang3.StringUtils;
 public final class ConvertUtils {
 
     public static int toInt(String val, int defaultValue) {
+        if (StringUtils.equalsIgnoreCase(val, "null")) {
+            return defaultValue;
+        }
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }

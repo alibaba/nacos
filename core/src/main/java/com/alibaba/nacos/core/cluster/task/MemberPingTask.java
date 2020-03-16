@@ -63,7 +63,7 @@ public class MemberPingTask extends Task {
 
         boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
-        TimerContext.start("MemberStateReportTask");
+        TimerContext.start("MemberPingTask");
         try {
             final Member self = memberManager.self();
             // self node information is not ready
@@ -127,7 +127,7 @@ public class MemberPingTask extends Task {
     private void discovery(String result) {
         try {
             Collection<String> members = JSON.parseObject(result, memberReference);
-            memberManager.memberJoin(MemberUtils.stringToMembers(members));
+            MemberUtils.readServerConf(members, memberManager);
         } catch (Exception e) {
             Loggers.CLUSTER.error("The cluster self-detects a problem");
         }

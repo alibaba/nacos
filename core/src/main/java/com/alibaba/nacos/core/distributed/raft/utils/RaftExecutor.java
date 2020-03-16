@@ -90,25 +90,7 @@ public final class RaftExecutor {
     }
 
     public static void doSnapshot(Runnable runnable) {
-        raftCoreExecutor.execute(new InterruptAcknowledgeWorker(runnable));
-    }
-
-    private static class InterruptAcknowledgeWorker implements Runnable {
-
-        private final Runnable proxy;
-
-        public InterruptAcknowledgeWorker(Runnable proxy) {
-            this.proxy = proxy;
-        }
-
-        @Override
-        public void run() {
-            if (!Thread.interrupted()) {
-                Loggers.RAFT.warn("The current thread is interrupted and this task is ignored");
-                return;
-            }
-            proxy.run();
-        }
+        raftCoreExecutor.execute(runnable);
     }
 
 }
