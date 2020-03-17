@@ -32,6 +32,8 @@ import java.util.function.Predicate;
  */
 public class MemberUtils {
 
+	private static final String SEMICOLON = ":";
+
 	public static void copy(Member newMember, Member oldMember) {
 		oldMember.extendInfo().putAll(newMember.extendInfo());
 	}
@@ -45,8 +47,8 @@ public class MemberUtils {
 
 	public static Member parse(String address) {
 		Member member = new Member();
-		if (address.contains(":")) {
-			String[] s = address.split(":");
+		if (address.contains(SEMICOLON)) {
+			String[] s = address.split(SEMICOLON);
 			member.setIp(s[0].trim());
 			member.setPort(Integer.parseInt(s[1].trim()));
 		}
@@ -63,6 +65,7 @@ public class MemberUtils {
 		member.setFailAccessCnt(0);
 	}
 
+	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static void onFail(Member member, ServerMemberManager manager) {
 		manager.getMemberAddressInfos().remove(member.address());
 		member.setState(NodeState.SUSPICIOUS);
@@ -81,6 +84,7 @@ public class MemberUtils {
 		return members;
 	}
 
+	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static List<Member> kRandom(ServerMemberManager memberManager,
 			Predicate<Member> filter) {
 		int k = SpringUtils

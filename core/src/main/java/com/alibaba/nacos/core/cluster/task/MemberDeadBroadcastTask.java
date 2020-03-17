@@ -38,6 +38,8 @@ import java.util.Collection;
  */
 public class MemberDeadBroadcastTask extends Task {
 
+    private static final int MAX_FAIL_CNT = 6;
+
     private final TypeReference<RestResult<String>> reference
             = new TypeReference<RestResult<String>>() {
     };
@@ -53,7 +55,7 @@ public class MemberDeadBroadcastTask extends Task {
         Collection<Member> waitRemove = new ArrayList<>();
 
         members.forEach(member -> {
-            if (member.getState() == NodeState.DOWN && member.getFailAccessCnt() > 6) {
+            if (member.getState() == NodeState.DOWN && member.getFailAccessCnt() > MAX_FAIL_CNT) {
                 waitRemove.add(member);
             }
         });

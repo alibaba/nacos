@@ -47,6 +47,7 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  * @author nacos
  */
 @Component
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
     public static final String TYPE = "MYSQL";

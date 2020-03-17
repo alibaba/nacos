@@ -30,8 +30,10 @@ public class DefaultIdGenerator implements IdGenerator {
 
     private static final double SWAP_CRITICAL_VALUE = 0.1D;
 
-    // tow buffer
     private DefaultIdStore idStore;
+
+    // tow buffer
+
     private volatile long[] bufferOne = new long[]{-1L, -1L};
     private volatile long[] bufferTwo = new long[]{-1L, -1L};
 
@@ -98,7 +100,7 @@ public class DefaultIdGenerator implements IdGenerator {
 
     @Override
     public Map<Object, Object> info() {
-        Map<Object, Object> info = new HashMap<>();
+        Map<Object, Object> info = new HashMap<>(8);
         info.put("currentId", currentId);
         info.put("bufferOneStart", current()[0]);
         info.put("bufferOneEnd", current()[1]);

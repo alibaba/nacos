@@ -23,8 +23,10 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class ConvertUtils {
 
+    private static final String NULL_STR = "null";
+
     public static int toInt(String val, int defaultValue) {
-        if (StringUtils.equalsIgnoreCase(val, "null")) {
+        if (StringUtils.equalsIgnoreCase(val, NULL_STR)) {
             return defaultValue;
         }
         if (StringUtils.isBlank(val)) {

@@ -42,6 +42,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author xuanyin
  */
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class EventDispatcher {
 
     private ExecutorService executor = null;

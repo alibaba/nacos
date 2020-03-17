@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author nacos
  */
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckReactor {
 
     private static final ScheduledExecutorService EXECUTOR;

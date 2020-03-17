@@ -402,8 +402,6 @@ public class LongPollingService extends AbstractEventListener {
         final Map<String, String> clientMd5Map;
         final long createTime;
         final String ip;
-
-        // =================
         final String appName;
         final String tag;
         final int probeRequestSize;

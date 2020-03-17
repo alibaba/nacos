@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 @Component
 public class IdGeneratorManager {
 

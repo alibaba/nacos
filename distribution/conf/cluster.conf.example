@@ -1,5 +1,7 @@
 #it is ip
 #example
-10.10.109.214
-11.16.128.34
-11.16.128.36
+192.168.16.101:8847?raft_port=8807
+# If raft_port information is not set, the default is server.port+1000,
+# and if server.port+1000>= 65535, the port number is server.port+1
+192.168.16.101
+192.168.16.101:8849?raft_port=8809

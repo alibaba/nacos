@@ -20,7 +20,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
@@ -29,11 +28,8 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RestResultUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

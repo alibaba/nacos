@@ -34,22 +34,22 @@ public class GlobalExecutor {
             new NameThreadFactory("com.alibaba.nacos.core.common")
     );
 
-    private static final ScheduledExecutorService syncMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+    private static final ScheduledExecutorService SYNC_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
             MemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.sync-member")
             );
 
-    private static final ScheduledExecutorService cleanMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+    private static final ScheduledExecutorService CLEAN_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
             MemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
+            new NameThreadFactory("com.alibaba.nacos.core.clean-member")
     );
 
-    private static final ScheduledExecutorService reportStateExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+    private static final ScheduledExecutorService PULL_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
             MemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
+            new NameThreadFactory("com.alibaba.nacos.core.pull-member")
     );
 
-    private static final ScheduledExecutorService pingMemberExecutor = ExecutorFactory.newSingleScheduledExecutorService(
+    private static final ScheduledExecutorService PING_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
             MemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.ping-member")
     );
@@ -63,19 +63,19 @@ public class GlobalExecutor {
     }
 
     public static void scheduleSyncJob(Runnable runnable, long delay) {
-        syncMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+        SYNC_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void scheduleBroadCastJob(Runnable runnable, long delay) {
-        cleanMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+        CLEAN_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void schedulePullJob(Runnable runnable, long delay) {
-        reportStateExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+        PULL_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void schedulePingJob(Runnable runnable, long delay) {
-        pingMemberExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+        PING_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
 }

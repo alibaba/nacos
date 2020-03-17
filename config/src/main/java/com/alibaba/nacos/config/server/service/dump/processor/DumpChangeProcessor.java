@@ -36,10 +36,9 @@ public class DumpChangeProcessor implements TaskProcessor {
 
     final DumpService dumpService;
     final PersistService persistService;
-
-    // =====================
     final Timestamp startTime;
     final Timestamp endTime;
+
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime,
                                Timestamp endTime) {
         this.dumpService = dumpService;

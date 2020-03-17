@@ -21,5 +21,6 @@ import com.alibaba.nacos.core.distributed.raft.RaftErrorEvent;
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class RaftDBErrorEvent extends RaftErrorEvent {
 }

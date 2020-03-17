@@ -42,6 +42,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
  * @author nacos
  * @author jifengnan
  */
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class UtilsAndCommons {
 
     // ********************** Nacos HTTP Context ************************ \\

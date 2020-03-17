@@ -58,6 +58,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     private static final String USER_NAME = "nacos";
     private static final String PASSWORD = "nacos";
     private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
+    private static final String DERBY_SHUTDOWN_ERR_MSG = "Derby system shutdown.";
 
     private volatile JdbcTemplate jt;
     private volatile TransactionTemplate tjt;
@@ -106,7 +107,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
                 // An error is thrown when the Derby shutdown is executed, which should be ignored
 
-                if (!StringUtils.contains(e.getMessage().toLowerCase(), "Derby system shutdown.".toLowerCase())) {
+                if (!StringUtils.contains(e.getMessage().toLowerCase(), DERBY_SHUTDOWN_ERR_MSG.toLowerCase())) {
                     throw e;
                 }
             }

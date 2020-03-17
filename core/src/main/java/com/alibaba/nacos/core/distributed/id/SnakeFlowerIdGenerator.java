@@ -22,69 +22,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * copy from https://blog.csdn.net/qq_38366063/article/details/83691424
+ *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 public class SnakeFlowerIdGenerator implements IdGenerator {
 
     /**
-     * 开始时间截 (2015-01-01)
+     * Start time intercept (2018-08-05 08:34)
      */
-    private final long twepoch = 852048000000L;
-    /**
-     * 机器id所占的位数
-     */
+    private final long twepoch = 1533429269000L;
     private final long workerIdBits = 5L;
-    /**
-     * 数据标识id所占的位数
-     */
     private final long datacenterIdBits = 5L;
-    /**
-     * 支持的最大机器id，结果是31 (这个移位算法可以很快的计算出几位二进制数所能表示的最大十进制数)
-     */
     private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
-    /**
-     * 支持的最大数据标识id，结果是31
-     */
     private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
 
-    // ==============================Fields===========================================
-    /**
-     * 序列在id中占的位数
-     */
     private final long sequenceBits = 12L;
-    /**
-     * 机器ID向左移12位
-     */
     private final long workerIdShift = sequenceBits;
-    /**
-     * 数据标识id向左移17位(12+5)
-     */
     private final long datacenterIdShift = sequenceBits + workerIdBits;
-    /**
-     * 时间截向左移22位(5+5+12)
-     */
     private final long timestampLeftShift = sequenceBits + workerIdBits
             + datacenterIdBits;
-    /**
-     * 生成序列的掩码，这里为4095 (0b111111111111=0xfff=4095)
-     */
     private final long sequenceMask = -1L ^ (-1L << sequenceBits);
     private volatile long currentId;
-    /**
-     * 工作机器ID(0~31)
-     */
     private long workerId;
-    /**
-     * 数据中心ID(0~31)
-     */
     private long datacenterId;
-    /**
-     * 毫秒内序列(0~4095)
-     */
     private long sequence = 0L;
-    /**
-     * 上次生成ID的时间截
-     */
     private long lastTimestamp = -1L;
 
     @Override
@@ -107,41 +69,34 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
     public synchronized long nextId() {
         long timestamp = timeGen();
 
-        // 如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
         if (timestamp < lastTimestamp) {
             throw new SnakflowerException(String.format(
                     "Clock moved backwards.  Refusing to generate id for %d milliseconds",
                     lastTimestamp - timestamp));
         }
 
-        // 如果是同一时间生成的，则进行毫秒内序列
         if (lastTimestamp == timestamp) {
             sequence = (sequence + 1) & sequenceMask;
-            // 毫秒内序列溢出
             if (sequence == 0) {
-                // 阻塞到下一个毫秒,获得新的时间戳
                 timestamp = tilNextMillis(lastTimestamp);
             }
         }
-        // 时间戳改变，毫秒内序列重置
         else {
             sequence = 0L;
         }
 
-        // 上次生成ID的时间截
         lastTimestamp = timestamp;
 
-        // 移位并通过或运算拼到一起组成64位的ID
-        currentId = ((timestamp - twepoch) << timestampLeftShift) //
-                | (datacenterId << datacenterIdShift) //
-                | (workerId << workerIdShift) //
+        currentId = ((timestamp - twepoch) << timestampLeftShift)
+                | (datacenterId << datacenterIdShift)
+                | (workerId << workerIdShift)
                 | sequence;
         return currentId;
     }
 
     @Override
     public Map<Object, Object> info() {
-        Map<Object, Object> info = new HashMap<>();
+        Map<Object, Object> info = new HashMap<>(4);
         info.put("currentId", currentId);
         info.put("dataCenterId", datacenterId);
         info.put("workerId", workerId);
@@ -151,10 +106,10 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
     // ==============================Constructors=====================================
 
     /**
-     * 构造函数
+     * init
      *
-     * @param workerId     工作ID (0~31)
-     * @param datacenterId 数据中心ID (0~31)
+     * @param workerId     worker id (0~31)
+     * @param datacenterId data center id (0~31)
      */
     public void initialize(long workerId, long datacenterId) {
         if (workerId > maxWorkerId || workerId < 0) {
@@ -171,7 +126,7 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
     }
 
     /**
-     * 阻塞到下一个毫秒，直到获得新的时间戳
+     * Block to the next millisecond until a new timestamp is obtained
      *
      * @param lastTimestamp 上次生成ID的时间截
      * @return 当前时间戳
@@ -185,7 +140,7 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
     }
 
     /**
-     * 返回以毫秒为单位的当前时间
+     * Returns the current time in milliseconds
      *
      * @return 当前时间(毫秒)
      */

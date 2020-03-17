@@ -57,6 +57,7 @@ import org.springframework.stereotype.Component;
  * @author nacos
  */
 @Component
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
 
     private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);

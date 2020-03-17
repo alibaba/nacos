@@ -54,6 +54,7 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  * @author nacos
  */
 @Component
+@SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
     public static final String TYPE = "TCP";

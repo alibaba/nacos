@@ -28,12 +28,11 @@ import java.util.concurrent.TimeUnit;
  */
 public final class GlobalExecutor {
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static ScheduledExecutorService scheduledExecutorService = ExecutorFactory
+    private static ScheduledExecutorService TIME_EXECUTOR = ExecutorFactory
             .newScheduledExecutorService(Config.class.getCanonicalName(), 10,
             new NameThreadFactory("com.alibaba.nacos.server.Timer-"));
 
-    private static final Executor mergeExecutor = ExecutorFactory.newFixExecutorService(
+    private static final Executor MERGE_EXECUTOR = ExecutorFactory.newFixExecutorService(
             "com.alibaba.nacos.config.server.service.dump.MergeAllDataWorker",
             8,
             new NameThreadFactory("com.alibaba.nacos.config.config-merge")
@@ -41,11 +40,11 @@ public final class GlobalExecutor {
 
     public static void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
                                               TimeUnit unit) {
-        scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        TIME_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     public static void executeOnMerge(Runnable runnable) {
-        mergeExecutor.execute(runnable);
+        MERGE_EXECUTOR.execute(runnable);
     }
 
 }

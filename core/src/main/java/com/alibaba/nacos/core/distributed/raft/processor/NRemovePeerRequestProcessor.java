@@ -29,6 +29,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class NRemovePeerRequestProcessor extends RemovePeerRequestProcessor {
 
 	public NRemovePeerRequestProcessor(Executor executor) {
