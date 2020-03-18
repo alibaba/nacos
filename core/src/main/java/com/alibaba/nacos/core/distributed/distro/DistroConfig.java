@@ -68,7 +68,7 @@ public class DistroConfig implements Config<LogProcessor4AP> {
 
     @Override
     public List<LogProcessor4AP> listLogProcessor() {
-        return Collections.unmodifiableList(processors);
+        return processors;
     }
 
     @Override

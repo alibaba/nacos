@@ -20,14 +20,14 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * 数据聚合服务。
@@ -49,7 +49,7 @@ public class MergeDatumService {
     @Autowired
     public MergeDatumService(PersistService persistService) {
         this.persistService = persistService;
-        this.memberManager = SpringUtils.getBean(MemberManager.class);
+        this.memberManager = ApplicationUtils.getBean(MemberManager.class);
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
         mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
     }

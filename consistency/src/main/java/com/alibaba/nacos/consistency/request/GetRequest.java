@@ -129,6 +129,7 @@ public class GetRequest implements Serializable {
             GetRequest getRequest = new GetRequest();
             getRequest.setBiz(biz);
             getRequest.setCtx(ctx);
+            getRequest.setInfo(info);
             return getRequest;
         }
     }

@@ -30,10 +30,9 @@ import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.Random;
 import java.util.Set;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * This task is only responsible for synchronizing the entire cluster's node
@@ -55,7 +54,8 @@ public class MemberPullTask extends Task {
     @Override
     protected void executeBody() {
 
-        boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
+        boolean discovery = ApplicationUtils
+				.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
         if (!discovery) {
             return;

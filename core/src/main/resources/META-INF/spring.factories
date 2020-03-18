@@ -4,7 +4,7 @@ org.springframework.boot.env.PropertySourceLoader=\
 
 # ApplicationContextInitializer
 org.springframework.context.ApplicationContextInitializer=\
-  com.alibaba.nacos.core.utils.SpringUtils
+  com.alibaba.nacos.core.utils.ApplicationUtils
 
 # ApplicationListener
 org.springframework.context.ApplicationListener=\

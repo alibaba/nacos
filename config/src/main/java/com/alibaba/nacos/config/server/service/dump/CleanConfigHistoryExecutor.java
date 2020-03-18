@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -45,7 +45,7 @@ public class CleanConfigHistoryExecutor {
     public CleanConfigHistoryExecutor(DumpService dumpService, MemberManager memberManager) {
         this.persistService = dumpService.getPersistService();
         this.memberManager = memberManager;
-        this.clearJudgment = SpringUtils.getBean(ClearJudgment.class);
+        this.clearJudgment = ApplicationUtils.getBean(ClearJudgment.class);
     }
 
     public void start() {
@@ -90,7 +90,7 @@ public class CleanConfigHistoryExecutor {
     }
 
     private int getRetentionDays() {
-        String val = SpringUtils.getProperty("nacos.config.retention.days");
+        String val = ApplicationUtils.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,7 +87,7 @@ public class MemberUtils {
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static List<Member> kRandom(ServerMemberManager memberManager,
 			Predicate<Member> filter) {
-		int k = SpringUtils
+		int k = ApplicationUtils
 				.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
 
 		List<Member> members = new ArrayList<>();

@@ -20,9 +20,9 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import org.junit.Test;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -38,7 +38,8 @@ public class DerbyTest {
     public void test_connect_derby() throws SQLException, ClassNotFoundException {
         Class.forName(JDBC_DRIVER_NAME);
 
-        Connection connection = DriverManager.getConnection("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true",
+        Connection connection = DriverManager.getConnection("jdbc:derby:" + ApplicationUtils
+                        .getNacosHome() + File.separator + DERBY_BASE_DIR + ";create=true",
                 USER_NAME, PASSWORD);
 
         connection.prepareStatement("INSERT INTO users (username, password, enabled) VALUES ('qwasdasdqwq', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE)").executeUpdate();

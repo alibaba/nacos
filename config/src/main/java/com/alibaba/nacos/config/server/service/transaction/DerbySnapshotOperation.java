@@ -27,17 +27,16 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alipay.sofa.jraft.util.CRC64;
+
 import java.io.File;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.util.concurrent.Callable;
-import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import javax.sql.DataSource;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -46,9 +45,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
 
     private final String SNAPSHOT_DIR = "derby_data";
     private final String SNAPSHOT_ARCHIVE = "derby_data.zip";
-
-    private static final String DERBY_BASE_DIR = Paths.get(NACOS_HOME, "data", "derby-data").toString();
-
+    private final String DERBY_BASE_DIR = Paths.get(ApplicationUtils.getNacosHome(), "data", "derby-data").toString();
     private final String restoreDB = "jdbc:derby:" + DERBY_BASE_DIR;
 
     @Override
@@ -63,7 +60,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 doDerbyBackup(parentPath);
 
                 final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-                final Checksum checksum = new CRC32();
+                final Checksum checksum = new CRC64();
                 DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, checksum);
                 DiskUtils.deleteDirectory(parentPath);
 
@@ -85,7 +82,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
         final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
         try {
 
-            final Checksum checksum = new CRC32();
+            final Checksum checksum = new CRC64();
             DiskUtils.decompress(sourceFile, readerPath, checksum);
 
             final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR, "derby-data").toString();
@@ -109,7 +106,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     private void doDerbyBackup(String backupDirectory) throws Exception {
-        DataSourceService sourceService = SpringUtils.getBean(DynamicDataSource.class).getDataSource();
+        DataSourceService sourceService = ApplicationUtils.getBean(DynamicDataSource.class).getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
         try (Connection holder = dataSource.getConnection()) {
             CallableStatement cs = holder.prepareCall("CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)");
@@ -119,7 +116,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     private void doDerbyRestoreFromBackup(Callable<Void> callable) throws Exception {
-        DataSourceService sourceService = SpringUtils.getBean(DynamicDataSource.class).getDataSource();
+        DataSourceService sourceService = ApplicationUtils.getBean(DynamicDataSource.class).getDataSource();
         LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
         localDataSourceService.reopenDerby(restoreDB, callable);
     }

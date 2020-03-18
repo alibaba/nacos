@@ -19,6 +19,8 @@ package com.alibaba.nacos.consistency;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
+import com.alibaba.nacos.shell.OperationalCommand;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ConsistencyProtocol<T extends Config> {
+public interface ConsistencyProtocol<T extends Config> extends OperationalCommand {
 
     /**
      * Consistency protocol initialization: perform initialization operations based on the incoming Config
@@ -114,16 +116,6 @@ public interface ConsistencyProtocol<T extends Config> {
      */
     default boolean batchSubmit(Map<String, List<Log>> datums) {
         throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    /**
-     * Operation and maintenance interface of consistent protocol
-     *
-     * @param argv command
-     * @return {@link RestResult <String>}
-     */
-    default RestResult<String> maintenance(String[] argv) {
-        return RestResult.<String>builder().build();
     }
 
     /**

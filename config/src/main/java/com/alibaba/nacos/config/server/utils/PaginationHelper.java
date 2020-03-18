@@ -19,9 +19,10 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import java.util.List;
+
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.jdbc.core.RowMapper;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * 分页辅助类
@@ -214,7 +215,7 @@ public class PaginationHelper<E> {
     }
 
     private boolean isDerby() {
-        return (STANDALONE_MODE && !PropertyUtil.isUseMysql()) ||
+        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) ||
                 PropertyUtil.isEmbeddedDistributedStorage();
     }
 }

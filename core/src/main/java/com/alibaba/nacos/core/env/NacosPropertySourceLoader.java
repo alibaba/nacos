@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -67,7 +67,7 @@ public class NacosPropertySourceLoader implements PropertySourceLoader, Ordered 
 
         NotifyCenter.registerPublisher(RefreshEvent::new, RefreshEvent.class);
 
-        WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(), new FileWatcher() {
+        WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 try {

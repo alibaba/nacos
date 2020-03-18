@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.controller;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
@@ -28,7 +27,7 @@ import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +58,7 @@ public class DistroController extends BaseController {
     @PostConstruct
     protected void init() {
         serializer = SerializeFactory.getDefault();
-        protocol = (DistroProtocol) SpringUtils.getBean(APProtocol.class);
+        protocol = (DistroProtocol) ApplicationUtils.getBean(APProtocol.class);
         distroServer = protocol.getDistroServer();
         kvManager = distroServer.getKvManager();
     }

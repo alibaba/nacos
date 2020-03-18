@@ -18,38 +18,30 @@ package com.alibaba.nacos.core.cluster.task;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
-import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+
+import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.config.RequestConfig;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -64,20 +56,22 @@ public class ClusterConfSyncTask extends Task {
     private int maxFailCount = 12;
     private volatile boolean alreadyLoadServer = false;
 
-    private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + SpringUtils.getProperty("nacos.standalone.params");
+    private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + ApplicationUtils
+            .getProperty("nacos.standalone.params", "");
 
     private Runnable standaloneJob = () -> MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
 
     public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
         super(memberManager);
-        this.maxFailCount = Integer.parseInt(SpringUtils.getProperty("maxHealthCheckFailCount", "12"));
+        this.maxFailCount = Integer.parseInt(
+                ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
         this.context = context;
     }
 
     @Override
     public void init() {
 
-        if (SystemUtils.STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             standaloneJob.run();
         } else {
 
@@ -85,7 +79,7 @@ public class ClusterConfSyncTask extends Task {
 
             // Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
 
-            WatchFileCenter.registerWatcher(SystemUtils.getConfFilePath(),
+            WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(),
                     new FileWatcher() {
                         @Override
                         public void onChange(FileChangeEvent event) {
@@ -103,7 +97,7 @@ public class ClusterConfSyncTask extends Task {
     @Override
     protected void executeBody() {
 
-        if (SystemUtils.STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             standaloneJob.run();
             return;
         }
@@ -112,7 +106,8 @@ public class ClusterConfSyncTask extends Task {
         // The reason why instance properties are not used here is so that
         // the hot update mechanism can be implemented later
 
-        boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
+        boolean discovery = ApplicationUtils
+                .getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
         if (!discovery) {
             syncFromAddressUrl();
@@ -121,7 +116,7 @@ public class ClusterConfSyncTask extends Task {
 
     @Override
     protected void after() {
-        if (!SystemUtils.STANDALONE_MODE) {
+        if (!ApplicationUtils.getStandaloneMode()) {
             GlobalExecutor.scheduleSyncJob(this, 5_000L);
         }
     }
@@ -135,7 +130,7 @@ public class ClusterConfSyncTask extends Task {
                         memberManager.setAddressServerHealth(true);
                         Reader reader = new StringReader(result.getData());
                         try {
-                            MemberUtils.readServerConf(SystemUtils.analyzeClusterConf(reader), memberManager);
+                            MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(reader), memberManager);
                         } catch (Exception e) {
                             Loggers.CLUSTER.error("[serverlist] exception for analyzeClusterConf, error : {}", e);
                         }
@@ -164,9 +159,23 @@ public class ClusterConfSyncTask extends Task {
 
     private void readServerConfFromDisk() {
         try {
-            List<String> members = SystemUtils.readClusterConf();
+            List<String> members = ApplicationUtils.readClusterConf();
             MemberUtils.readServerConf(members, memberManager);
             alreadyLoadServer = true;
+        } catch (FileNotFoundException e) {
+
+            // Just to test
+
+            String clusters = ApplicationUtils.getProperty("nacos.cluster");
+            if (StringUtils.isNotBlank(clusters)) {
+                String[] details = clusters.split(",");
+                List<String> members = new ArrayList<>();
+                for (String item : details) {
+                    members.add(item.trim());
+                }
+                MemberUtils.readServerConf(members, memberManager);
+                alreadyLoadServer = true;
+            }
         } catch (Exception e) {
             Loggers.CLUSTER.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e);
             alreadyLoadServer = false;

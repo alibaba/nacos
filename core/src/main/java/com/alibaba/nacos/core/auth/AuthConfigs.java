@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,11 +70,13 @@ public class AuthConfigs {
         if (StringUtils.isNotBlank(enabled)) {
             return BooleanUtils.toBoolean(enabled);
         }
-        return BooleanUtils.toBoolean(SpringUtils.getProperty("nacos.core.auth.enabled", "false"));
+        return BooleanUtils.toBoolean(
+				ApplicationUtils.getProperty("nacos.core.auth.enabled", "false"));
     }
 
     public boolean isCachingEnabled() {
-        return BooleanUtils.toBoolean(SpringUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
+        return BooleanUtils.toBoolean(
+				ApplicationUtils.getProperty("nacos.core.auth.caching.enabled", "true"));
     }
 
     @Bean

@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-common</artifactId>
+            <artifactId>nacos-shell</artifactId>
         </dependency>
         <dependency>
             <groupId>org.javatuples</groupId>

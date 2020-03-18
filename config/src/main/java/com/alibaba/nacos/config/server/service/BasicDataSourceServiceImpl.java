@@ -19,7 +19,7 @@ import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -142,7 +142,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
         try {
             String val = null;
-            val = SpringUtils.getProperty("db.num");
+            val = ApplicationUtils.getProperty("db.num");
             if (null == val) {
                 throw new IllegalArgumentException("db.num is null");
             }
@@ -152,34 +152,35 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 BasicDataSource ds = new BasicDataSource();
                 ds.setDriverClassName(JDBC_DRIVER_NAME);
 
-                val = SpringUtils.getProperty("db.url." + i);
+                val = ApplicationUtils.getProperty("db.url." + i);
                 if (null == val) {
                     fatalLog.error("db.url." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setUrl(val.trim());
 
-                val = SpringUtils.getProperty("db.user." + i, SpringUtils.getProperty("db.user"));
+                val = ApplicationUtils.getProperty("db.user." + i, ApplicationUtils.getProperty("db.user"));
                 if (null == val) {
                     fatalLog.error("db.user." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setUsername(val.trim());
 
-                val = SpringUtils.getProperty("db.password." + i, SpringUtils.getProperty("db.password"));
+                val = ApplicationUtils.getProperty("db.password." + i, ApplicationUtils.getProperty("db.password"));
                 if (null == val) {
                     fatalLog.error("db.password." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setPassword(val.trim());
 
-                val = SpringUtils.getProperty("db.initialSize." + i, SpringUtils.getProperty("db.initialSize"));
+                val = ApplicationUtils
+						.getProperty("db.initialSize." + i, ApplicationUtils.getProperty("db.initialSize"));
                 ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
 
-                val = SpringUtils.getProperty("db.maxActive." + i, SpringUtils.getProperty("db.maxActive"));
+                val = ApplicationUtils.getProperty("db.maxActive." + i, ApplicationUtils.getProperty("db.maxActive"));
                 ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
 
-                val = SpringUtils.getProperty("db.maxIdle." + i, SpringUtils.getProperty("db.maxIdle"));
+                val = ApplicationUtils.getProperty("db.maxIdle." + i, ApplicationUtils.getProperty("db.maxIdle"));
                 ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
                 ds.setMaxWait(3000L);

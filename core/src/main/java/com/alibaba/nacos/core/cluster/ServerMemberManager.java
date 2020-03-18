@@ -36,8 +36,7 @@ import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,6 +53,8 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
+
+import com.alibaba.nacos.shell.OperationalCommand;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,7 +69,8 @@ import org.springframework.stereotype.Component;
  */
 @Component(value = "serverMemberManager")
 @SuppressWarnings("all")
-public class ServerMemberManager implements SmartApplicationListener, DisposableBean, MemberManager {
+public class ServerMemberManager implements SmartApplicationListener, DisposableBean, MemberManager,
+        OperationalCommand {
 
     private final ServletContext servletContext;
     public String domainName;
@@ -285,7 +287,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
             // If you can't find it, check it from Sping Environment
 
             if (StringUtils.isBlank(contextPath)) {
-                contextPath = SpringUtils.getProperty(Constants.WEB_CONTEXT_PATH);
+                contextPath = ApplicationUtils.getProperty(Constants.WEB_CONTEXT_PATH);
             }
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
                 return StringUtils.EMPTY;
@@ -317,7 +319,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     @PreDestroy
     @Override
     public void shutdown() {
-        Map<String, ConsistencyProtocol> protocolMap = SpringUtils.getBeansOfType(ConsistencyProtocol.class);
+        Map<String, ConsistencyProtocol> protocolMap = ApplicationUtils.getBeansOfType(ConsistencyProtocol.class);
         for (ConsistencyProtocol protocol : protocolMap.values()) {
             protocol.shutdown();
         }
@@ -348,12 +350,13 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         Loggers.CORE.info("ServerListService address-server port:" + addressPort);
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
 
-        isHealthCheck = Boolean.parseBoolean(SpringUtils.getProperty("isHealthCheck", "true"));
+        isHealthCheck = Boolean.parseBoolean(
+                ApplicationUtils.getProperty("isHealthCheck", "true"));
     }
 
     private void initAPProtocol() {
-        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
-        Config config = (Config) SpringUtils.getBean(protocol.configType());
+        APProtocol protocol = ApplicationUtils.getBean(APProtocol.class);
+        Config config = (Config) ApplicationUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol));
         protocol.init((config));
 
@@ -368,8 +371,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     }
 
     private void initCPProtocol() {
-        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
-        Config config = (Config) SpringUtils.getBean(protocol.configType());
+        CPProtocol protocol = ApplicationUtils.getBean(CPProtocol.class);
+        Config config = (Config) ApplicationUtils.getBean(protocol.configType());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol));
         protocol.init((config));
 
@@ -400,7 +403,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     @SuppressWarnings("all")
     private List<LogProcessor> loadProcessorAndInjectProtocol(Class cls, ConsistencyProtocol protocol) {
-        Map<String, LogProcessor> beans = (Map<String, LogProcessor>) SpringUtils.getBeansOfType(cls);
+        Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils.getBeansOfType(cls);
 
         final List<LogProcessor> result = new ArrayList<>(beans.values());
 
@@ -419,7 +422,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof WebServerInitializedEvent) {
-            if (!SystemUtils.STANDALONE_MODE) {
+            if (!ApplicationUtils.getStandaloneMode()) {
 
                 Loggers.CLUSTER.info("execute cluster tasks");
 

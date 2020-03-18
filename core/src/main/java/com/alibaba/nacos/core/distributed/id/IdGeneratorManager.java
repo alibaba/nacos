@@ -34,18 +34,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class IdGeneratorManager {
 
-    private static final Map<String, IdGenerator> ID_GENERATOR_MAP = new ConcurrentHashMap<>();
+    private final Map<String, IdGenerator> generatorMap = new ConcurrentHashMap<>();
 
-    private static final String ID_TYPE = System.getProperty("nacos.core.idGenerator.type", "default");
+    private final String idType = System.getProperty("nacos.core.idGenerator.type", "default");
 
-    private static final Function<String, IdGenerator> SUPPLIER = s -> {
+    private final Function<String, IdGenerator> SUPPLIER = s -> {
         IdGenerator generator;
         ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
         Iterator<IdGenerator> iterator = loader.iterator();
         if (iterator.hasNext()) {
             generator = iterator.next();
         } else {
-            if (Objects.equals(ID_TYPE, "snakeflower")) {
+            if (Objects.equals(idType, "snakeflower")) {
                 generator = new SnakeFlowerIdGenerator();
             } else {
                 generator = new DefaultIdGenerator(s);
@@ -56,23 +56,23 @@ public class IdGeneratorManager {
     };
 
     public Map<String, Map<Object, Object>> idGeneratorInfo() {
-        return ID_GENERATOR_MAP.entrySet().stream()
+        return generatorMap.entrySet().stream()
                 .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().info()), HashMap::putAll);
     }
 
     public void register(String resource) {
-        ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
+        generatorMap.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
     }
 
     public void register(String... resources) {
         for (String resource : resources) {
-            ID_GENERATOR_MAP.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
+            generatorMap.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
         }
     }
 
     public long nextId(String resource) {
-        if (ID_GENERATOR_MAP.containsKey(resource)) {
-            return ID_GENERATOR_MAP.get(resource).nextId();
+        if (generatorMap.containsKey(resource)) {
+            return generatorMap.get(resource).nextId();
         }
         throw new NoSuchElementException("The resource is not registered with the distributed " +
                 "ID resource for the time being.");

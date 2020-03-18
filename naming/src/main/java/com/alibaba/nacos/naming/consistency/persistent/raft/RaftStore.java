@@ -29,7 +29,9 @@ import com.alibaba.nacos.consistency.store.AfterHook;
 import com.alibaba.nacos.consistency.store.BeforeHook;
 import com.alibaba.nacos.consistency.store.KVStore;
 import com.alibaba.nacos.consistency.store.StartHook;
+import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
+import com.alibaba.nacos.core.utils.ByteUtils;
 import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
@@ -49,7 +51,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 import javax.annotation.PostConstruct;
+
+import com.alipay.sofa.jraft.util.CRC64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -71,15 +76,18 @@ public class RaftStore {
     private final String SNAPSHOT_ARCHIVE = "nacos_naming.zip";
     private final String cacheDir = Paths.get(UtilsAndCommons.DATA_BASE_DIR,"data").toString();
     private final Map<String, Set<RecordListener>> listMap = new ConcurrentHashMap<>();
+    private KVStore<Record> kvStore;
+    private Serializer serializer;
+    private boolean initialized = false;
+
+    @Autowired
+    private MemberManager memberManager;
+
     @Autowired
     private CPProtocol protocol;
+
     @Autowired
     private RaftConsistencyServiceImpl.Notifier notifier;
-    private KVStore<Record> kvStore;
-
-    private Serializer serializer;
-
-    private boolean initialized = false;
 
     private static String encodeFileName(String fileName) {
         return fileName.replace(':', '#');
@@ -198,6 +206,11 @@ public class RaftStore {
         }
 
         byte[] data = DiskUtils.readFileBytes(cacheFile);
+
+        if (ByteUtils.isEmpty(data)) {
+            return;
+        }
+
         KVStore.Item item = JSON.parseObject(data, KVStore.Item.class);
         Record record = serializer.deSerialize(item.getBytes(), item.getClassName());
         kvStore.put(key, record);
@@ -299,7 +312,10 @@ public class RaftStore {
                     DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
 
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-                    DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, new CRC32());
+
+                    final Checksum checksum = new CRC64();
+
+                    DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, checksum);
                     DiskUtils.deleteDirectory(parentPath);
                     writer.addFile(SNAPSHOT_ARCHIVE);
                     result = true;
@@ -319,7 +335,10 @@ public class RaftStore {
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
             TimerContext.start("[Naming] RaftStore snapshot load job");
             try {
-                DiskUtils.decompress(sourceFile, readerPath, new CRC32());
+
+                final Checksum checksum = new CRC64();
+
+                DiskUtils.decompress(sourceFile, readerPath, checksum);
                 final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
                 Loggers.RAFT.info("snapshot load from : {}", loadPath);
                 File loadDir = new File(loadPath);

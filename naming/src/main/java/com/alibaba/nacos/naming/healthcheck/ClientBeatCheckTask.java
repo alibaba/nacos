@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.distributed.Mapper;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -59,7 +59,7 @@ public class ClientBeatCheckTask implements Runnable {
 
     @JSONField(serialize = false)
     public Mapper getDistroMapper() {
-        return SpringUtils.getBean(DistroMapper.class);
+        return ApplicationUtils.getBean(DistroMapper.class);
     }
 
     public GlobalConfig getGlobalConfig() {

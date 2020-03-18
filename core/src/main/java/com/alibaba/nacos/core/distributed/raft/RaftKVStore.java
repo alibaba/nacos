@@ -47,7 +47,7 @@ import org.javatuples.Pair;
 @SuppressWarnings("all")
 class RaftKVStore<T> extends CPKvStore<T> {
 
-    private static final TypeReference<Collection<String>> reference = new TypeReference<Collection<String>>() {
+    private final TypeReference<Collection<String>> reference = new TypeReference<Collection<String>>() {
     };
 
     private KVLogProcessor logProcessor;
@@ -104,73 +104,73 @@ class RaftKVStore<T> extends CPKvStore<T> {
     @Override
     public boolean contains(String key) {
         GetResponse<Boolean> response = request(key, "contains");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public byte[] getByKey(String key) {
         GetResponse<byte[]> response = request(key, "getByKey");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public T getByKeyAutoConvert(String key) {
         GetResponse<T> response = request(key, "getByKeyAutoConvert");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public Item getItemByKey(String key) {
         GetResponse<Item> response = request(key, "getItemByKey");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public Map<String, T> batchGetAutoConvert(Collection<String> keys) {
         GetResponse<Map<String, T>> response = request(keys, "batchGetAutoConvert");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public Map<String, Item> getItemByBatch(Collection<String> keys) {
         GetResponse<Map<String, Item>> response = request(keys, "getItemByBatch");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public String getCheckSum(String key) {
         GetResponse<String> response = request(key, "getCheckSum");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     @Override
     public Collection<String> allKeys() {
         GetResponse<Collection<String>> response = request(null, "allKeys");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     // This operation does not guarantee read consistency, and is only used for Raft snapshots
@@ -183,10 +183,10 @@ class RaftKVStore<T> extends CPKvStore<T> {
     @Override
     public Map<String, byte[]> batchGet(Collection keys) {
         GetResponse<Map<String, byte[]>> response = request(keys, "batchGet");
-        if (response.getData() != null) {
-            return response.getData();
+        if (StringUtils.isNotEmpty(response.getErrMsg())) {
+            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
-        throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
+        return response.getData();
     }
 
     // This operation is limited to the Snapshot operation of Raft to
@@ -239,11 +239,10 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
         @Override
         public <D> GetResponse<D> getData(GetRequest request) {
-            final Collection<String> keys = serializer.deSerialize(request.getCtx(), Collection.class);
             final String type = request.getValue("type");
             try {
                 return GetResponse.<D>builder()
-                        .data((D) funcCaller.execute(type, new ArrayList<>(keys)))
+                        .data((D) funcCaller.execute(type, request.getCtx()))
                         .build();
             } catch (Exception e) {
                 return GetResponse.<D>builder()
@@ -313,28 +312,37 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
         // Leave it to the KvStore implementation method to handle
 
-        Object execute(String type, List<String> keys) {
-
+        Object execute(String type, byte[] requestBody) {
+            String key = null;
+            Collection<String> keys = Collections.emptyList();
             switch (type) {
                 case contains:
-                    return RaftKVStore.super.contains(keys.get(0));
+                    key = serializer.deSerialize(requestBody, String.class);
+                    return RaftKVStore.super.contains(key);
                 case getByKey:
-                    return RaftKVStore.super.getByKey(keys.get(0));
+                    key = serializer.deSerialize(requestBody, String.class);
+                    return RaftKVStore.super.getByKey(key);
                 case getByKeyAutoConvert:
-                    return RaftKVStore.super.getByKeyAutoConvert(keys.get(0));
+                    key = serializer.deSerialize(requestBody, String.class);
+                    return RaftKVStore.super.getByKeyAutoConvert(key);
                 case getItemByKey:
-                    return RaftKVStore.super.getItemByKey(keys.get(0));
+                    key = serializer.deSerialize(requestBody, String.class);
+                    return RaftKVStore.super.getItemByKey(key);
                 case batchGetAutoConvert:
+                    keys = serializer.deSerialize(requestBody, Collection.class);
                     return RaftKVStore.super.batchGetAutoConvert(keys);
                 case getItemByBatch:
+                    keys = serializer.deSerialize(requestBody, Collection.class);
                     return RaftKVStore.super.getItemByBatch(keys);
                 case getCheckSum:
-                    return RaftKVStore.super.getCheckSum(keys.get(0));
+                    key = serializer.deSerialize(requestBody, String.class);
+                    return RaftKVStore.super.getCheckSum(key);
                 case allKeys:
                     return RaftKVStore.super.allKeys();
                 case getAll:
                     return RaftKVStore.super.getAll();
                 case batchGet:
+                    keys = serializer.deSerialize(requestBody, Collection.class);
                     return RaftKVStore.super.batchGet(keys);
                 default:
                     throw new UnsupportedOperationException();

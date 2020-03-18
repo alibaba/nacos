@@ -30,8 +30,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +67,7 @@ public class DistroServer {
         this.config = config;
         this.serializer = SerializeFactory.getDefault();
         this.kvManager = kvManager;
-        this.distroMapper = SpringUtils.getBean(DistroMapper.class);
+        this.distroMapper = ApplicationUtils.getBean(DistroMapper.class);
     }
 
     public void start() {
@@ -89,7 +88,7 @@ public class DistroServer {
 
             this.dataSyncer = new DataSyncer(
                     config,
-                    SpringUtils.getBean(MemberManager.class),
+                    ApplicationUtils.getBean(MemberManager.class),
                     this.kvManager,
                     this.distroClient);
 
@@ -115,7 +114,7 @@ public class DistroServer {
     }
 
     private void load() throws Exception {
-        if (SystemUtils.STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             initialized = true;
             return;
         }
@@ -125,9 +124,9 @@ public class DistroServer {
         }
 
         // Until one node is successfully synchronized, 5 maximum retries
-        int retryCnr = 5;
+        int retryCnt = 5;
 
-        for (int i = 0; i < retryCnr || !initialized; i++) {
+        for (int i = 0; i < retryCnt && !initialized; i++) {
             for (Member server : memberManager.allMembers()) {
                 if (Objects.equals(memberManager.self().address(), server.address())) {
                     continue;

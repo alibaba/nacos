@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,7 +40,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Group Capacity Service
@@ -266,7 +266,7 @@ public class GroupCapacityPersistService {
     public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?";
 
-        if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
+        if (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) {
             sql = "SELECT id, group_id FROM group_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         }
         try {

@@ -15,7 +15,8 @@
  */
 package com.alibaba.nacos.core.listener;
 
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -24,7 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -34,11 +34,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.FUNCTION_MODE;
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * Logging starting message {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution
@@ -71,17 +67,18 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
-        if (STANDALONE_MODE) {
+        ApplicationUtils.injectEnvironment(environment);
+        if (ApplicationUtils.getStandaloneMode()) {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
         } else {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "cluster");
         }
-        if (FUNCTION_MODE == null) {
+        if (ApplicationUtils.getFunctionMode() == null) {
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, "All");
-        } else if (SystemUtils.FUNCTION_MODE_CONFIG.equals(FUNCTION_MODE)) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, SystemUtils.FUNCTION_MODE_CONFIG);
-        } else if (SystemUtils.FUNCTION_MODE_NAMING.equals(FUNCTION_MODE)) {
-            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, SystemUtils.FUNCTION_MODE_NAMING);
+        } else if (ApplicationUtils.FUNCTION_MODE_CONFIG.equals(ApplicationUtils.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_CONFIG);
+        } else if (ApplicationUtils.FUNCTION_MODE_NAMING.equals(ApplicationUtils.getFunctionMode())) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, ApplicationUtils.FUNCTION_MODE_NAMING);
         }
 
 
@@ -91,7 +88,6 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
         logClusterConf();
-
         logStarting();
     }
 
@@ -126,7 +122,8 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
         LOGGER.error("Startup errors : {}", exception);
 
-        LOGGER.error("Nacos failed to start, please see {}logs/nacos.log for more details.", NACOS_HOME);
+        LOGGER.error("Nacos failed to start, please see {}logs/nacos.log for more details.",
+                ApplicationUtils.getNacosHome());
     }
 
     /**
@@ -140,9 +137,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     }
 
     private void logClusterConf() {
-        if (!STANDALONE_MODE) {
+        if (!ApplicationUtils.getStandaloneMode()) {
             try {
-                List<String> clusterConf = readClusterConf();
+                List<String> clusterConf = ApplicationUtils.readClusterConf();
                 LOGGER.info("The server IP list of Nacos is {}", clusterConf);
             } catch (IOException e) {
                 LOGGER.error("read cluster conf fail", e);
@@ -153,9 +150,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     private void logFilePath() {
         String[] dirNames = new String[]{"logs", "conf", "data"};
         for (String dirName : dirNames) {
-            LOGGER.info("Nacos Log files: {}", Paths.get(NACOS_HOME, dirName).toString());
+            LOGGER.info("Nacos Log files: {}", Paths.get(ApplicationUtils.getNacosHome(), dirName).toString());
             try {
-                FileUtils.forceMkdir(new File(NACOS_HOME + File.separatorChar + dirName + File.separatorChar));
+                DiskUtils.forceMkdir(new File(Paths.get(ApplicationUtils.getNacosHome(), dirName).toUri()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -163,7 +160,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     }
 
     private void logStarting() {
-        if (!STANDALONE_MODE) {
+        if (!ApplicationUtils.getStandaloneMode()) {
 
             scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override

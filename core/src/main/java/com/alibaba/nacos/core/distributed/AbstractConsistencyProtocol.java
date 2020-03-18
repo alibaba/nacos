@@ -47,14 +47,4 @@ public abstract class AbstractConsistencyProtocol<T extends Config, L extends Lo
         return this.metaData;
     }
 
-    protected Object getVIfMapByRecursive(Object o, int index, String... keys) {
-        if (index >= keys.length) {
-            return o;
-        }
-        if (o.getClass().isAssignableFrom(Map.class)) {
-            return getVIfMapByRecursive(((Map) o).get(keys[index]), index + 1, keys);
-        }
-        return null;
-    }
-
 }

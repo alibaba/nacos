@@ -17,7 +17,7 @@ package com.alibaba.nacos.config.server.model.app;
 
 import java.io.Serializable;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * app info

@@ -16,10 +16,9 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * datasource adapter
@@ -33,9 +32,11 @@ public class DynamicDataSource {
         DataSourceService dataSourceService = null;
 
         if (useMemoryDB()) {
-            dataSourceService = SpringUtils.getBean("localDataSourceService", DataSourceService.class);
+            dataSourceService = ApplicationUtils
+					.getBean("localDataSourceService", DataSourceService.class);
         } else {
-            dataSourceService = SpringUtils.getBean("basicDataSourceService", DataSourceService.class);
+            dataSourceService = ApplicationUtils
+					.getBean("basicDataSourceService", DataSourceService.class);
         }
 
         return dataSourceService;
@@ -51,7 +52,7 @@ public class DynamicDataSource {
      * @return Whether to use derby storage
      */
     private boolean useMemoryDB() {
-        return (STANDALONE_MODE && !PropertyUtil.isUseMysql())
+        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql())
                 || PropertyUtil.isEmbeddedDistributedStorage();
     }
 

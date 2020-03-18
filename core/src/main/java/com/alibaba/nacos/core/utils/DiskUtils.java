@@ -160,6 +160,10 @@ public final class DiskUtils {
         FileUtils.forceMkdir(file);
     }
 
+    public static void deleteDirThenMkdir(String path) throws IOException {
+        deleteDirectory(path);
+        forceMkdir(path);
+    }
 
     public static void copyDirectory(File srcDir, File destDir) throws IOException {
         FileUtils.copyDirectory(srcDir, destDir);

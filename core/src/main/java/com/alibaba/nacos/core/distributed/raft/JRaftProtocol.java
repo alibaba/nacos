@@ -37,7 +37,6 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +61,12 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     private Node raftNode;
     private MemberManager memberManager;
     private String selfAddress = InetUtils.getSelfIp();
-    private int failoverRetries;
+    private int failoverRetries = 1;
+
+    public JRaftProtocol(MemberManager memberManager) {
+        this.memberManager = memberManager;
+        this.raftServer = new JRaftServer(this.memberManager, failoverRetries);
+    }
 
     @Override
     public void init(RaftConfig config) {
@@ -73,8 +77,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
             loadLogDispatcher(config.listLogProcessor());
 
-            this.memberManager = SpringUtils.getBean(MemberManager.class);
-
             this.selfAddress = memberManager.self().address();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
@@ -82,7 +84,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 
-            this.raftServer = new JRaftServer(this.memberManager, failoverRetries);
+            this.raftServer.setFailoverRetries(failoverRetries);
             this.raftServer.init(config, config.listLogProcessor());
             this.raftServer.start();
 
@@ -178,6 +180,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     @Override
     public <D> CPKvStore<D> createKVStore(String storeName, Serializer serializer, SnapshotOperation snapshotOperation) {
+        Objects.requireNonNull(raftServer, "The RaftServer needs to be initialized");
         RaftKVStore<D> kvStore = new RaftKVStore<D>(storeName, serializer, snapshotOperation);
 
         // Because Raft uses RaftProtocol internally, so LogProcessor is implemented, need to add

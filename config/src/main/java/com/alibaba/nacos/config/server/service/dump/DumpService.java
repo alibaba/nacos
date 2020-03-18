@@ -42,7 +42,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -61,7 +61,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Dump data service
@@ -186,7 +185,7 @@ public class DumpService {
             throw new RuntimeException(
                     "Nacos Server did not start because dumpservice bean construction failure :\n" + ExceptionUtil.getAllExceptionMsg(e));
         }
-        if (!STANDALONE_MODE) {
+        if (!ApplicationUtils.getStandaloneMode()) {
             Runnable heartbeat = () -> {
                 String heartBeatTime = TimeUtils.getCurrentTime().toString();
                 // write disk
@@ -291,7 +290,7 @@ public class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = SpringUtils.getProperty("isQuickStart");
+            val = ApplicationUtils.getProperty("isQuickStart");
             if (TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }

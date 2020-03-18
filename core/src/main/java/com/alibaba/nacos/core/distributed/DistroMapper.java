@@ -21,30 +21,39 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+
+import javax.annotation.PostConstruct;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "distroMapper")
+@DependsOn("serverMemberManager")
 @SuppressWarnings("all")
 public class DistroMapper implements Mapper, MemberChangeListener {
 
-    private final MemberManager memberManager;
-    private final List<KeyAnalysis> keyAnalyses;
+    private MemberManager memberManager;
+    private List<KeyAnalysis> keyAnalyses;
     private volatile List<Member> healthyList = new ArrayList<>();
 
-    public DistroMapper(MemberManager memberManager) {
-        this.memberManager = memberManager;
+    public DistroMapper() {
+    }
+
+    @PostConstruct
+    protected void init() {
+
+        this.memberManager = ApplicationUtils.getBean(MemberManager.class);
+
         List<KeyAnalysis> tmp = new ArrayList<>();
 
         // discovery by java spi
@@ -58,7 +67,7 @@ public class DistroMapper implements Mapper, MemberChangeListener {
         // discovery by spring ioc
 
         try {
-            tmp.addAll(SpringUtils.getBeansOfType(KeyAnalysis.class).values());
+            tmp.addAll(ApplicationUtils.getBeansOfType(KeyAnalysis.class).values());
         } catch (Exception ignore) {
         }
 
@@ -67,7 +76,6 @@ public class DistroMapper implements Mapper, MemberChangeListener {
         // end
 
         this.memberManager.subscribe(this);
-
     }
 
     @Override
@@ -99,8 +107,8 @@ public class DistroMapper implements Mapper, MemberChangeListener {
 
         final Member self = memberManager.self();
 
-        if (!SpringUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)
-                || SystemUtils.STANDALONE_MODE) {
+        if (!ApplicationUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)
+                || ApplicationUtils.getStandaloneMode()) {
             return true;
         }
 
@@ -125,7 +133,8 @@ public class DistroMapper implements Mapper, MemberChangeListener {
         final Member self = memberManager.self();
 
         if (CollectionUtils.isEmpty(healthyList) ||
-                !SpringUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)) {
+                !ApplicationUtils
+                        .getProperty("nacos.core.distro.enable", Boolean.class, true)) {
             return self.address();
         }
 

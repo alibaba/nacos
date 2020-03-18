@@ -178,6 +178,8 @@ public class NamingBase extends HttpClient4Test {
         HttpClient.HttpResult result =
             HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
 
+        System.out.println(result);
+
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
 
 

@@ -32,7 +32,7 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
@@ -61,7 +61,8 @@ public class MemberPingTask extends Task {
 
         // If the cluster is self-discovering, there is no need to broadcast self-information
 
-        boolean discovery = SpringUtils.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
+        boolean discovery = ApplicationUtils
+				.getProperty("nacos.core.member.self-discovery", Boolean.class, false);
 
         TimerContext.start("MemberPingTask");
         try {

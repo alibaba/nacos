@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.id;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ThreadUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class DefaultIdGenerator implements IdGenerator {
 
-    private static final double SWAP_CRITICAL_VALUE = 0.1D;
+    private static final double SWAP_CRITICAL_VALUE = 0.2D;
 
     private DefaultIdStore idStore;
 
@@ -49,7 +49,7 @@ public class DefaultIdGenerator implements IdGenerator {
 
     @Override
     public void init() {
-        idStore = SpringUtils.getBean(DefaultIdStore.class);
+        idStore = ApplicationUtils.getBean(DefaultIdStore.class);
 
         // The first request requires an asynchronous request
 

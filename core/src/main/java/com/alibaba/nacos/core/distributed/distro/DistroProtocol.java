@@ -30,7 +30,7 @@ import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SpringUtils;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +48,14 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     private DistroServer distroServer;
     private MemberManager memberManager;
 
+    public DistroProtocol(MemberManager memberManager) {
+        this.memberManager = memberManager;
+        this.kvManager = new KVManager();
+    }
+
     @Override
     public void init(DistroConfig config) {
         if (initialize.compareAndSet(false, true)) {
-            this.memberManager = SpringUtils.getBean(MemberManager.class);
-            this.kvManager = new KVManager();
             this.distroServer = new DistroServer(memberManager, kvManager, config);
 
             loadLogDispatcher(config.listLogProcessor());
@@ -128,7 +131,9 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
 
     @Override
     public void shutdown() {
-        distroServer.shutdown();
+        if (distroServer != null) {
+            distroServer.shutdown();
+        }
     }
 
     @Override

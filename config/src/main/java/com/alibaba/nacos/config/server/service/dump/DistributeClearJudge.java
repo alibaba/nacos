@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.transaction.ConditionOnEmbedStoreType;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
@@ -40,9 +40,9 @@ public class DistributeClearJudge implements ClearJudgment {
     @PostConstruct
     protected void init() {
 
-        final MemberManager memberManager = SpringUtils.getBean(MemberManager.class);
+        final MemberManager memberManager = ApplicationUtils.getBean(MemberManager.class);
 
-        SpringUtils.getBean(CPProtocol.class)
+        ApplicationUtils.getBean(CPProtocol.class)
                 .protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA, new Observer() {
             @Override
             public void update(Observable o, Object arg) {

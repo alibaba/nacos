@@ -16,7 +16,7 @@
 package com.alibaba.nacos.core.util;
 
 
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +30,7 @@ import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PRO
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
 
 /**
- * {@link SystemUtils} Test
+ * {@link ApplicationUtils} Test
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
@@ -80,7 +80,7 @@ public class SystemUtilsTest {
 
     @Test
     public void testReadClusterConf() throws IOException {
-        FileUtils.forceMkdir(new File(SystemUtils.getConfFilePath()));
+        FileUtils.forceMkdir(new File(ApplicationUtils.getConfFilePath()));
 
         String lineSeparator = System.getProperty("line.separator");
 
@@ -89,8 +89,8 @@ public class SystemUtilsTest {
          * #example
          * 192.168.1.1:8848
          */
-        SystemUtils.writeClusterConf("#it is ip" + lineSeparator + "#example" + lineSeparator + "192.168.1.1:8848");
-        Assert.assertEquals(SystemUtils.readClusterConf().get(0), "192.168.1.1:8848");
+        ApplicationUtils.writeClusterConf("#it is ip" + lineSeparator + "#example" + lineSeparator + "192.168.1.1:8848");
+        Assert.assertEquals(ApplicationUtils.readClusterConf().get(0), "192.168.1.1:8848");
 
         /*
          * #it is ip
@@ -98,10 +98,10 @@ public class SystemUtilsTest {
          *   # 192.168.1.1:8848
          *   192.168.1.2:8848 # Instance A
          */
-        SystemUtils.writeClusterConf(
+        ApplicationUtils.writeClusterConf(
                 "#it is ip" + lineSeparator + "  #example" + lineSeparator + "  # 192.168.1.1:8848" + lineSeparator
                         + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
-        List<String> instanceList = SystemUtils.readClusterConf();
+        List<String> instanceList = ApplicationUtils.readClusterConf();
         Assert.assertEquals(instanceList.get(0), "192.168.1.2:8848");
         Assert.assertEquals(instanceList.get(1), "192.168.1.3");
     }

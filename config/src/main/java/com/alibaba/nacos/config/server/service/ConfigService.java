@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * config service
@@ -105,7 +106,7 @@ public class ConfigService {
                         "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}",
                         groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            } else if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
             updateMd5(groupKey, md5, lastModifiedTs);
@@ -150,7 +151,7 @@ public class ConfigService {
                         "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}",
                         groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            } else if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
             String[] betaIpsArr = betaIps.split(",");
@@ -189,7 +190,7 @@ public class ConfigService {
                         "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}",
                         groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            } else if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
 
@@ -221,7 +222,7 @@ public class ConfigService {
 
         try {
             final String md5 = MD5.getInstance().getMD5String(content);
-            if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {
                     dumpLog.warn(
@@ -246,7 +247,7 @@ public class ConfigService {
     static public void reloadConfig() {
         String aggreds = null;
         try {
-            if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
+            if (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
                         "DEFAULT_GROUP");
                 if (config != null) {
@@ -265,7 +266,7 @@ public class ConfigService {
 
         String clientIpWhitelist = null;
         try {
-            if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
+            if (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(
                         ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
@@ -285,7 +286,7 @@ public class ConfigService {
 
         String switchContent = null;
         try {
-            if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
+            if (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) {
                 ConfigInfoBase config = persistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
                         "DEFAULT_GROUP");
                 if (config != null) {
@@ -353,7 +354,7 @@ public class ConfigService {
         }
 
         try {
-            if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
             }
             CACHE.remove(groupKey);
@@ -387,7 +388,7 @@ public class ConfigService {
         }
 
         try {
-            if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.removeConfigInfo4Beta(dataId, group, tenant);
             }
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
@@ -422,7 +423,7 @@ public class ConfigService {
         }
 
         try {
-            if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+            if (!ApplicationUtils.getStandaloneMode() || PropertyUtil.isUseMysql()) {
                 DiskUtil.removeConfigInfo4Tag(dataId, group, tenant, tag);
             }
 

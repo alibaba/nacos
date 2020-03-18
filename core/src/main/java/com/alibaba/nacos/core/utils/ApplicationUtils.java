@@ -16,10 +16,24 @@
 
 package com.alibaba.nacos.core.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.annotation.Annotation;
+import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.sun.management.OperatingSystemMXBean;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -35,10 +49,14 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Profiles;
 import org.springframework.core.io.Resource;
 
+import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
+import static org.apache.commons.lang3.CharEncoding.UTF_8;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class SpringUtils implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+public class ApplicationUtils implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     private static ApplicationContext applicationContext;
     private static ConfigurableEnvironment environment;
@@ -242,46 +260,162 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
         return environment.acceptsProfiles(profiles);
     }
 
-    public static boolean containsProperty(String s) {
-        return environment.containsProperty(s);
+    public static boolean containsProperty(String key) {
+        return environment.containsProperty(key);
     }
 
-    public static String getProperty(String s) {
-        return environment.getProperty(s);
+    public static String getProperty(String key) {
+        return environment.getProperty(key);
     }
 
-    public static String getProperty(String s, String s1) {
-        return environment.getProperty(s, s1);
+    public static String getProperty(String key, String defaultValue) {
+        return environment.getProperty(key, defaultValue);
     }
 
-    public static <T> T getProperty(String s, Class<T> aClass) {
-        return environment.getProperty(s, aClass);
+    public static <T> T getProperty(String key, Class<T> targetType) {
+        return environment.getProperty(key, targetType);
     }
 
-    public static <T> T getProperty(String s, Class<T> aClass, T t) {
-        return environment.getProperty(s, aClass, t);
+    public static <T> T getProperty(String key, Class<T> targetType, T defaultValue) {
+        return environment.getProperty(key, targetType, defaultValue);
     }
 
-    public static String getRequiredProperty(String s) throws IllegalStateException {
-        return environment.getRequiredProperty(s);
+    public static String getRequiredProperty(String key) throws IllegalStateException {
+        return environment.getRequiredProperty(key);
     }
 
-    public static <T> T getRequiredProperty(String s, Class<T> aClass) throws IllegalStateException {
-        return environment.getRequiredProperty(s, aClass);
+    public static <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+        return environment.getRequiredProperty(key, targetType);
     }
 
-    public static String resolvePlaceholders(String s) {
-        return environment.resolvePlaceholders(s);
+    public static String resolvePlaceholders(String text) {
+        return environment.resolvePlaceholders(text);
     }
 
-    public static String resolveRequiredPlaceholders(String s) throws IllegalArgumentException {
-        return environment.resolveRequiredPlaceholders(s);
+    public static String resolveRequiredPlaceholders(String text) throws IllegalArgumentException {
+        return environment.resolveRequiredPlaceholders(text);
+    }
+
+    public static final String STANDALONE_MODE_ALONE = "standalone";
+    public static final String STANDALONE_MODE_CLUSTER = "cluster";
+
+    public static final String FUNCTION_MODE_CONFIG = "config";
+    public static final String FUNCTION_MODE_NAMING = "naming";
+
+    /**
+     * The key of nacos home.
+     */
+    public static final String NACOS_HOME_KEY = "nacos.home";
+
+    /**
+     * nacos local ip
+     */
+    public static final String LOCAL_IP = InetUtils.getSelfIp();
+    /**
+     * Standalone mode or not
+     */
+    public static boolean getStandaloneMode() {
+        return getProperty(STANDALONE_MODE_PROPERTY_NAME, Boolean.class, false);
+    }
+
+    /**
+     * server
+     */
+    public static String getFunctionMode() {
+        return getProperty(FUNCTION_MODE_PROPERTY_NAME);
+    }
+
+    public static String getNacosHome() {
+        String nacosHome = getProperty(NACOS_HOME_KEY);
+        if (StringUtils.isBlank(nacosHome)) {
+            nacosHome = System.getProperty("user.home") + File.separator + "nacos";
+        }
+        return nacosHome;
+    }
+
+    private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
+            .getOperatingSystemMXBean();
+
+    public static List<String> getIPsBySystemEnv(String key) {
+        String env = getSystemEnv(key);
+        List<String> ips = new ArrayList<>();
+        if (StringUtils.isNotEmpty(env)) {
+            ips = Arrays.asList(env.split(","));
+        }
+        return ips;
+    }
+
+    public static String getSystemEnv(String key) {
+        return System.getenv(key);
+    }
+
+    public static float getLoad() {
+        return (float) operatingSystemMXBean.getSystemLoadAverage();
+    }
+
+    public static float getCPU() {
+        return (float) operatingSystemMXBean.getSystemCpuLoad();
+    }
+
+    public static float getMem() {
+        return (float) (1 - (double) operatingSystemMXBean.getFreePhysicalMemorySize() / (double) operatingSystemMXBean
+                .getTotalPhysicalMemorySize());
+    }
+
+    public static String getConfFilePath() {
+        return Paths.get(getNacosHome(), "conf").toString();
+    }
+
+    private static String getClusterConfFilePath() {
+        return Paths.get(getNacosHome(), "conf", "cluster.conf").toString();
+    }
+
+    public static List<String> readClusterConf() throws IOException {
+        try (Reader reader = new InputStreamReader(new FileInputStream(new File(getClusterConfFilePath())),
+                StandardCharsets.UTF_8)) {
+            return analyzeClusterConf(reader);
+        }
+    }
+
+    public static List<String> analyzeClusterConf(Reader reader) throws IOException {
+        List<String> instanceList = new ArrayList<String>();
+        List<String> lines = IoUtils.readLines(reader);
+        String comment = "#";
+        for (String line : lines) {
+            String instance = line.trim();
+            if (instance.startsWith(comment)) {
+                // # it is ip
+                continue;
+            }
+            if (instance.contains(comment)) {
+                // 192.168.71.52:8848 # Instance A
+                instance = instance.substring(0, instance.indexOf(comment));
+                instance = instance.trim();
+            }
+            int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
+            if (multiIndex > 0) {
+                // support the format: ip1:port,ip2:port  # multi inline
+                instanceList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
+            } else {
+                //support the format: 192.168.71.52:8848
+                instanceList.add(instance);
+            }
+        }
+        return instanceList;
+    }
+
+    public static void writeClusterConf(String content) throws IOException {
+        IoUtils.writeStringToFile(new File(getClusterConfFilePath()), content, UTF_8);
     }
 
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         applicationContext = context;
         environment = context.getEnvironment();
+    }
+
+    public static void injectEnvironment(ConfigurableEnvironment environment) {
+        ApplicationUtils.environment = environment;
     }
 }
 

@@ -66,7 +66,7 @@ public class RaftConfig implements Config<LogProcessor4CP> {
 
     @Override
     public List<LogProcessor4CP> listLogProcessor() {
-        return Collections.unmodifiableList(processors);
+        return processors;
     }
 
     @Override

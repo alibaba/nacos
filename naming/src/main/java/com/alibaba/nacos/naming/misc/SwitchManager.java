@@ -74,13 +74,15 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
                         || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
 
-                    throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
+                    throw new IllegalArgumentException(
+                            "min check time for http or tcp is too small(<500)");
                 }
 
                 if (dom.getHttpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
                         || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
 
-                    throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
+                    throw new IllegalArgumentException(
+                            "max check time for http or tcp is too small(<3000)");
                 }
 
                 if (dom.getHttpHealthParams().getFactor() < 0
@@ -97,7 +99,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
                 float threshold = Float.parseFloat(value);
                 if (threshold <= 0) {
-                    throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
+                    throw new IllegalArgumentException(
+                            "distroThreshold can not be zero or negative: " + threshold);
                 }
                 switchDomain.setDistroThreshold(threshold);
             }
@@ -118,13 +121,17 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
                 if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
                     switchDomain.setPushJavaVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_PYTHON, type)) {
+                }
+                else if (StringUtils.equals(SwitchEntry.CLIENT_PYTHON, type)) {
                     switchDomain.setPushPythonVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
+                }
+                else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
                     switchDomain.setPushCVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
+                }
+                else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
                     switchDomain.setPushGoVersion(version);
-                } else {
+                }
+                else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
             }
@@ -133,7 +140,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
+                    throw new IllegalArgumentException(
+                            "min cache time for http or tcp is too small(<10000)");
                 }
 
                 switchDomain.setDefaultPushCacheMillis(cacheMillis);
@@ -144,7 +152,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 long cacheMillis = Long.parseLong(value);
 
                 if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min default cache time  is too small(<1000)");
+                    throw new IllegalArgumentException(
+                            "min default cache time  is too small(<1000)");
                 }
 
                 switchDomain.setDefaultCacheMillis(cacheMillis);
@@ -174,7 +183,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 Long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_SERVICE_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
+                    throw new IllegalArgumentException(
+                            "serviceStatusSynchronizationPeriodMillis is too small(<5000)");
                 }
 
                 switchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
@@ -184,7 +194,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
+                    throw new IllegalArgumentException(
+                            "serverStatusSynchronizationPeriodMillis is too small(<15000)");
                 }
 
                 switchDomain.setServerStatusSynchronizationPeriodMillis(millis);
@@ -217,17 +228,20 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     for (int i = 0; i < entries.length; i++) {
                         String[] parts = entries[i].split(":");
                         if (parts.length < 2) {
-                            throw new IllegalArgumentException("invalid input for limited urls");
+                            throw new IllegalArgumentException(
+                                    "invalid input for limited urls");
                         }
 
                         String limitedUrl = parts[0];
                         if (StringUtils.isEmpty(limitedUrl)) {
-                            throw new IllegalArgumentException("url can not be empty, url: " + limitedUrl);
+                            throw new IllegalArgumentException(
+                                    "url can not be empty, url: " + limitedUrl);
                         }
 
                         int statusCode = Integer.parseInt(parts[1]);
                         if (statusCode <= 0) {
-                            throw new IllegalArgumentException("illegal normal status code: " + statusCode);
+                            throw new IllegalArgumentException(
+                                    "illegal normal status code: " + statusCode);
                         }
 
                         limitedUrlMap.put(limitedUrl, statusCode);
@@ -276,10 +290,12 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             if (debug) {
                 update(switchDomain);
-            } else {
+            }
+            else {
                 consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
             }
-
+        } catch (Throwable e) {
+            Loggers.SRV_LOG.error("Error retrieving data of SwitchDomain : {}", e);
         } finally {
             lock.unlock();
         }

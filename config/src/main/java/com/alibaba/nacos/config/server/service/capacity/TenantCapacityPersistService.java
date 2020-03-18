@@ -20,6 +20,7 @@ import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,7 +39,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Tenant Capacity Service
@@ -216,7 +216,7 @@ public class TenantCapacityPersistService {
     public List<TenantCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
 
-        if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
+        if (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) {
             sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         }
 

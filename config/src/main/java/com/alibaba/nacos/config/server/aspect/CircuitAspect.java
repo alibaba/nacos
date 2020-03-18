@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.PostConstruct;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -43,7 +43,8 @@ public class CircuitAspect {
     @PostConstruct
     protected void init() {
 
-        openFusing.set(SpringUtils.getProperty("nacos.config.open-circuit", Boolean.class, false));
+        openFusing.set(ApplicationUtils
+				.getProperty("nacos.config.open-circuit", Boolean.class, false));
 
         NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
             @Override

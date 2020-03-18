@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -62,7 +62,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     // If it is in stand-alone mode, it succeeds directly
 
-    private volatile boolean isOk = SystemUtils.STANDALONE_MODE;
+    private volatile boolean isOk = ApplicationUtils.getStandaloneMode();
 
     @PostConstruct
     protected void init() {

@@ -36,7 +36,7 @@ public class NamingTest {
     public void testServiceList() throws Exception {
 
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "http://127.0.0.1:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "http://127.0.0.1:9100");
         properties.put(PropertyKeyConst.USERNAME, "nacos");
         properties.put(PropertyKeyConst.PASSWORD, "nacos");
         properties.put(PropertyKeyConst.NAMESPACE, "");

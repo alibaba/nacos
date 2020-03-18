@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.distributed.Mapper;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
@@ -143,9 +143,9 @@ public class OperatorController {
         result.put("raftNotifyTaskCount", raftConsistencyService.getTaskSize());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIPCount);
-        result.put("cpu", SystemUtils.getCPU());
-        result.put("load", SystemUtils.getLoad());
-        result.put("mem", SystemUtils.getMem());
+        result.put("cpu", ApplicationUtils.getCPU());
+        result.put("load", ApplicationUtils.getLoad());
+        result.put("mem", ApplicationUtils.getMem());
 
         return result;
     }

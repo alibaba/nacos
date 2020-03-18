@@ -32,7 +32,6 @@ import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.RouteTableException;
-import com.alibaba.nacos.core.distributed.raft.processor.NAddPeerRequestProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosAsyncProcessor;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
@@ -45,7 +44,7 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ThreadUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.remoting.rpc.RpcServer;
@@ -64,7 +63,6 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
-import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
@@ -73,6 +71,7 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +84,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -110,14 +107,14 @@ public class JRaftServer implements MemberChangeListener {
     // Ordinary member variable
 
     private final MemberManager memberManager;
-    private final AtomicBoolean isStarted = new AtomicBoolean(false);
+    private volatile boolean isStarted = false;
     private Configuration conf;
 
     private AsyncUserProcessor userProcessor;
     private NodeOptions nodeOptions;
     private Set<String> alreadyRegisterBiz = new HashSet<>();
     private Serializer serializer;
-    private Collection<LogProcessor4CP> processors;
+    private Collection<LogProcessor4CP> processors = Collections.synchronizedSet(new HashSet<>());
 
     private String selfIp;
     private int selfPort;
@@ -131,6 +128,10 @@ public class JRaftServer implements MemberChangeListener {
         this.memberManager = memberManager;
         this.failoverRetries = failoverRetries;
         this.conf = new Configuration();
+    }
+
+    public void setFailoverRetries(int failoverRetries) {
+        this.failoverRetries = failoverRetries;
     }
 
     void init(RaftConfig config, Collection<LogProcessor4CP> processors) {
@@ -159,12 +160,17 @@ public class JRaftServer implements MemberChangeListener {
         RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 
         nodeOptions.setRaftOptions(raftOptions);
-        this.processors = processors;
+
+        this.cliClientService = new BoltCliClientService();
+        cliClientService.init(new CliOptions());
+        this.cliService = RaftServiceFactory.createAndInitCliService(new CliOptions());
+
+        this.processors.addAll(processors);
     }
 
-    void start() {
+    synchronized void start() {
 
-        if (isStarted.compareAndSet(false, true)) {
+        if (!isStarted) {
 
             try {
                 // init raft group node
@@ -198,25 +204,27 @@ public class JRaftServer implements MemberChangeListener {
 
                 // Initialize multi raft group service framework
 
+                isStarted = true;
+
                 createMultiRaftGroup(processors);
-
-                this.cliClientService = new BoltCliClientService();
-                cliClientService.init(new CliOptions());
-
-                this.cliService = RaftServiceFactory.createAndInitCliService(new CliOptions());
+                NotifyCenter.registerSubscribe(this);
             } catch (Exception e) {
                 Loggers.RAFT.error("raft protocol start failure, error : {}", e);
                 throw new RuntimeException(e);
             }
-
-            NotifyCenter.registerSubscribe(this);
         }
     }
 
     // Does not guarantee thread safety
 
     synchronized void createMultiRaftGroup(Collection<LogProcessor4CP> processors) {
-        final String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
+
+        if (!this.isStarted) {
+            this.processors.addAll(processors);
+            return;
+        }
+
+        final String parentPath = Paths.get(ApplicationUtils.getNacosHome(), "protocol/raft").toString();
 
         for (LogProcessor4CP processor : processors) {
 

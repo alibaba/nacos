@@ -65,4 +65,12 @@ public final class ByteUtils {
         return target;
     }
 
+    public static boolean isEmpty(byte[] data) {
+        return data == null || data.length == 0;
+    }
+
+    public static boolean isNotEmpty(byte[] data) {
+        return !isEmpty(data);
+    }
+
 }

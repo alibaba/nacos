@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * properties utils
@@ -209,7 +209,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     public static boolean isStandaloneMode() {
-        return STANDALONE_MODE;
+        return ApplicationUtils.getStandaloneMode();
     }
 
     public static boolean isUseMysql() {
@@ -229,7 +229,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     public static boolean isEnableDistributedID() {
-        return !STANDALONE_MODE && isEmbeddedDistributedStorage();
+        return !ApplicationUtils.getStandaloneMode() && isEmbeddedDistributedStorage();
     }
 
     private void loadSetting() {

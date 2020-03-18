@@ -21,7 +21,7 @@ import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.Mapper;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
@@ -80,7 +80,7 @@ public class HealthCheckCommon {
     @PostConstruct
     public void init() {
 
-        this.protocol = SpringUtils.getBean(APProtocol.class);
+        this.protocol = ApplicationUtils.getBean(APProtocol.class);
 
         executorService.schedule(() -> {
             List list = Arrays.asList(healthCheckResults.toArray());

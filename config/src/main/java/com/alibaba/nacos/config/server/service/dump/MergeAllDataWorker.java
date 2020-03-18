@@ -28,7 +28,7 @@ import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -58,7 +58,7 @@ class MergeAllDataWorker implements Runnable {
 
     public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
         this.configInfoList = configInfoList;
-        this.persistService = SpringUtils.getBean(PersistService.class);
+        this.persistService = ApplicationUtils.getBean(PersistService.class);
     }
 
     public void start() {

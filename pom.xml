@@ -445,6 +445,7 @@
         <module>cmdb</module>
         <module>istio</module>
         <module>consistency</module>
+        <module>shell</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -541,6 +542,12 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-consistency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-shell</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
