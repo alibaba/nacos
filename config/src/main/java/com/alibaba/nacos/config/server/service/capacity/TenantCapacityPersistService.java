@@ -53,13 +53,11 @@ public class TenantCapacityPersistService {
             TENANT_CAPACITY_ROW_MAPPER = new TenantCapacityRowMapper();
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
     @PostConstruct
     public void init() {
-        this.dataSourceService = dynamicDataSource.getDataSource();
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
     }
 

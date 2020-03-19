@@ -48,9 +48,6 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * @author Nacos
  */
-@Conditional(ConditionOnUseDerby.class)
-@DependsOn(value = "serverMemberManager")
-@Component("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
 
     private final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";

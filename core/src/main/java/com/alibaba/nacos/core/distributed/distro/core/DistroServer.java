@@ -247,6 +247,9 @@ public class DistroServer {
 
     public void shutdown() {
         if (shutdowned.compareAndSet(false, true)) {
+
+            Loggers.DISTRO.warn("========= The distro protocol is start to close =========");
+
             if (Objects.nonNull(timedSync)) {
                 timedSync.shutdown();
             }
@@ -256,6 +259,8 @@ public class DistroServer {
             if (Objects.nonNull(taskCenter)) {
                 taskCenter.shutdown();
             }
+
+            Loggers.RAFT.warn("========= The distro protocol has been closed =========");
         }
     }
 

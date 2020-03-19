@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -39,6 +40,8 @@ public class PartitionDataTimedSync {
     private final DistroMapper distroMapper;
     private final MemberManager memberManager;
     private final DistroClient distroClient;
+
+    private volatile boolean shutdown = false;
 
     private Worker worker;
 
@@ -53,11 +56,11 @@ public class PartitionDataTimedSync {
 
     public void start() {
         this.worker = new Worker();
-        DistroExecutor.schedulePartitionDataTimedSync(worker);
+        DistroExecutor.schedulePartitionDataTimedSync(worker, TimeUnit.SECONDS.toMillis(5));
     }
 
     public void shutdown() {
-
+        shutdown = true;
     }
 
     public Collection<Member> getServers() {
@@ -72,20 +75,20 @@ public class PartitionDataTimedSync {
 
         @Override
         public void run() {
+
+            if (shutdown) {
+                Loggers.DISTRO.warn("Closing task...");
+                return;
+            }
+
             try {
-
                 final Collection<Member> members = getServers();
-
                 Loggers.DISTRO.debug("server list is: {}", members);
-
                 final Map<String, DistroKVStore> kvStoreMap = kvManager.list();
-
                 kvStoreMap.forEach(new BiConsumer<String, DistroKVStore>() {
                     @Override
                     public void accept(String biz, DistroKVStore dataStore) {
-
                         final Map<String, Map<String, String>> keyChecksums = new HashMap<>(kvStoreMap.size());
-
                         Map<String, String> subKeyChecksums = new HashMap<>(64);
 
                         // send local timestamps to other servers:
@@ -122,9 +125,10 @@ public class PartitionDataTimedSync {
                         }
                     }
                 });
-
             } catch (Exception e) {
                 Loggers.DISTRO.error("timed sync task failed.", e);
+            } finally {
+                DistroExecutor.schedulePartitionDataTimedSync(worker, TimeUnit.SECONDS.toMillis(5));
             }
         }
     }

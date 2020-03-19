@@ -28,19 +28,6 @@ public abstract class CPKvStore<T> extends KVStore<T> {
 
     protected SnapshotOperation snapshotOperation;
 
-    public CPKvStore(String name) {
-        super(name);
-    }
-
-    public CPKvStore(String name, Serializer serializer) {
-        super(name, serializer);
-    }
-
-    public CPKvStore(String name, SnapshotOperation snapshotOperation) {
-        super(name);
-        this.snapshotOperation = snapshotOperation;
-    }
-
     public CPKvStore(String name, Serializer serializer, SnapshotOperation snapshotOperation) {
         super(name, serializer);
         this.snapshotOperation = snapshotOperation;

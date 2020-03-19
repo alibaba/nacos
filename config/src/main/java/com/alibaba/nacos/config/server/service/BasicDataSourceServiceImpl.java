@@ -48,9 +48,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@Conditional(ConditionOnUseMySql.class)
-@DependsOn(value = "serverMemberManager")
-@Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
     private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";

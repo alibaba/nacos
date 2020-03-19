@@ -119,14 +119,12 @@ public class PersistService {
     @Autowired
     private DatabaseOperate databaseOperate;
     @Autowired
-    private DynamicDataSource dynamicDataSource;
-    @Autowired
     private IdGeneratorManager idGeneratorManager;
     private DataSourceService dataSourceService;
 
     @PostConstruct
     public void init() {
-        dataSourceService = dynamicDataSource.getDataSource();
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
 
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();

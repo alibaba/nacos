@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.Collections;
@@ -61,8 +62,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
             loadLogDispatcher(config.listLogProcessor());
 
             // distro server start
-
-            distroServer.start();
+            this.distroServer.start();
         }
     }
 
@@ -141,13 +141,13 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
         DistroKVStore<D> kvStore = new DistroKVStore<>(storeName);
         this.kvManager.addKVStore(kvStore);
 
-        // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
+        DistroExecutor.executeByGlobal(() -> {
+            // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
+            LogProcessor4AP processor = kvStore.getKVLogProcessor();
+            processor.injectProtocol(this);
+            loadLogDispatcher(Collections.singletonList(processor));
+        });
 
-        LogProcessor4AP processor = kvStore.getKVLogProcessor();
-
-        processor.injectProtocol(this);
-
-        loadLogDispatcher(Collections.singletonList(processor));
         return kvStore;
     }
 

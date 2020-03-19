@@ -39,9 +39,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 @Component
 public class LocalDatabaseOperateImpl extends BaseDatabaseOperate implements DatabaseOperate {
 
-    @Autowired
-    private DynamicDataSource dynamicDataSource;
-
     private DataSourceService dataSourceService;
 
     private JdbcTemplate jdbcTemplate;
@@ -49,7 +46,7 @@ public class LocalDatabaseOperateImpl extends BaseDatabaseOperate implements Dat
 
     @PostConstruct
     protected void init() {
-        dataSourceService = dynamicDataSource.getDataSource();
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
         defaultLog.info("use LocalTransactionServiceImpl");

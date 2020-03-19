@@ -16,6 +16,7 @@
 package com.alibaba.nacos.console.shell;
 
 import com.alibaba.nacos.shell.OperationalCommand;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketHandler;
@@ -34,6 +35,7 @@ public class NacosShellHandler implements WebSocketHandler {
 	private static final Map<String, WebSocketSession> SESSIONS = new ConcurrentHashMap<>();
 
 	@Lazy
+	@Autowired
 	private List<OperationalCommand> commands;
 
 	@Override

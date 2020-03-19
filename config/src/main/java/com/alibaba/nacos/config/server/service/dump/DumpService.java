@@ -67,6 +67,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
+@SuppressWarnings("all")
 @DependsOn("serverMemberManager")
 @Service
 public class DumpService {
@@ -95,18 +96,6 @@ public class DumpService {
     private TaskManager dumpTaskMgr;
     private TaskManager dumpAllTaskMgr;
 
-    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
-        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
-        for (int i = 0; i < count; i++) {
-            result.add(new ArrayList<ConfigInfoChanged>());
-        }
-        for (int i = 0; i < list.size(); i++) {
-            ConfigInfoChanged config = list.get(i);
-            result.get(i % count).add(config);
-        }
-        return result;
-    }
-
     @PostConstruct
     public void init() {
 
@@ -123,7 +112,7 @@ public class DumpService {
             protocol.protocolMetaData()
                     .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
                             com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-                            (o, arg) -> dumpOperate());
+                            (o, arg) -> GlobalExecutor.executeByCommon(() -> dumpOperate()));
         } else {
             dumpOperate();
         }
@@ -322,6 +311,18 @@ public class DumpService {
 
     public void dumpAll() {
         dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
+    }
+
+    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
+        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(new ArrayList<ConfigInfoChanged>());
+        }
+        for (int i = 0; i < list.size(); i++) {
+            ConfigInfoChanged config = list.get(i);
+            result.get(i % count).add(config);
+        }
+        return result;
     }
 
     public PersistService getPersistService() {

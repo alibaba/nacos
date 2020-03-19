@@ -134,14 +134,16 @@ public final class ThreadPoolManager {
 	                while (retry > 0) {
 	                    retry --;
 	                    try {
-	                        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-	                            executor.shutdownNow();
+	                        if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+	                        	return;
                             }
-                        } catch (Exception e) {
+						} catch (InterruptedException e) {
                             executor.shutdownNow();
-                        }
+							Thread.interrupted();
+						}
                     }
-                }
+					executor.shutdownNow();
+				}
             }
 
             resourcesManager.get(biz).clear();

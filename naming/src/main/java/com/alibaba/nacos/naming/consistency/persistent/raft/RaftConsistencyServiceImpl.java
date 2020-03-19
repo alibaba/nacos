@@ -177,8 +177,10 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                                     if (action == ApplyAction.DELETE) {
                                         listener.onDelete(key);
                                     }
-                                } catch (Throwable e) {
-                                    Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);
+                                }
+                                catch (Throwable e) {
+                                    Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}",
+                                            key, e);
                                 }
                             }
                         }
@@ -201,14 +203,20 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                             if (action == ApplyAction.DELETE) {
                                 listener.onDelete(key);
                             }
-                        } catch (Throwable e) {
-                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);
+                        }
+                        catch (Throwable e) {
+                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}",
+                                    key, e);
                         }
                     }
 
                     if (Loggers.RAFT.isDebugEnabled()) {
-                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}", key, count);
+                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}",
+                                key, count);
                     }
+                } catch (InterruptedException ignore) {
+                    Thread.interrupted();
+                    Loggers.RAFT.error("[NACOS-RAFT] Thread interrupted");
                 } catch (Throwable e) {
                     Loggers.RAFT.error("[NACOS-RAFT] Error while handling notifying task", e);
                 }

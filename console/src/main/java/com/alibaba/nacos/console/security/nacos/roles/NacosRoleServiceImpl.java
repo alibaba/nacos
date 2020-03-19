@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.auth.RoleChangeEvent;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.core.auth.AuthConfigs;
@@ -73,26 +74,30 @@ public class NacosRoleServiceImpl {
 
     private Set<String> roleSet = new ConcurrentHashSet<>();
 
-    private Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
+    private Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>(4);
 
-    private Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    private Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>(4);
 
     private ScheduledExecutorService refreshRoleInfoExecutor = ExecutorFactory.newSingleScheduledExecutorService(getClass().getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.console.role-info-refresh"));
 
     @PostConstruct
     protected void init() {
-        NotifyCenter.registerSubscribe(new Subscribe<RoleChangeEvent>() {
-            @Override
-            public void onEvent(RoleChangeEvent event) {
-                reload();
-            }
+        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+            NotifyCenter.registerSubscribe(new Subscribe<RoleChangeEvent>() {
+                @Override
+                public void onEvent(RoleChangeEvent event) {
+                    reload();
+                }
 
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RoleChangeEvent.class;
-            }
-        });
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return RoleChangeEvent.class;
+                }
+            });
+        } else {
+            reload();
+        }
 
         refreshRoleInfoExecutor.schedule(this::reload, 5, TimeUnit.SECONDS);
     }

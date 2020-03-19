@@ -20,10 +20,13 @@ import com.alibaba.nacos.console.shell.NacosShellHandler;
 import com.alibaba.nacos.core.auth.AccessException;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -43,6 +46,16 @@ public class NacosShellConfig implements WebSocketConfigurer {
 
 	@Autowired
 	private JwtTokenManager tokenManager;
+
+	// The introduction of websockets requires a TaskScheduler
+
+	@Bean
+	public TaskScheduler taskScheduler(){
+		ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+		taskScheduler.setPoolSize(10);
+		taskScheduler.initialize();
+		return taskScheduler;
+	}
 
 	@Override
 	public void registerWebSocketHandlers(

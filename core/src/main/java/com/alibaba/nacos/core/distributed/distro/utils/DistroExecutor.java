@@ -29,8 +29,6 @@ import java.util.concurrent.TimeUnit;
  */
 public final class DistroExecutor {
 
-    private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
-
     private static final ExecutorService DISTRO_GLOBAL = ExecutorFactory.newForkJoinPool(
             DistroProtocol.class.getCanonicalName(),
             8);
@@ -57,8 +55,7 @@ public final class DistroExecutor {
         DATA_SYNC_EXECUTOR.schedule(runnable, delay, unit);
     }
 
-    public static void schedulePartitionDataTimedSync(Runnable runnable) {
-        DISTRO_TASK_WORKER.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
-                PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
+    public static void schedulePartitionDataTimedSync(Runnable runnable, long delay) {
+        DISTRO_TASK_WORKER.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 }

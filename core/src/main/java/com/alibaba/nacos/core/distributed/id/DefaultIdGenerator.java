@@ -53,7 +53,7 @@ public class DefaultIdGenerator implements IdGenerator {
 
         // The first request requires an asynchronous request
 
-        idStore.firstAcquire(resource, Integer.MAX_VALUE, this);
+        idStore.firstAcquire(resource, Integer.MAX_VALUE, this, bufferIndex);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class DefaultIdGenerator implements IdGenerator {
 
     private void doAcquire() {
         GlobalExecutor.executeByCommon(() -> {
-            idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this);
+            idStore.acquireNewIdSequence(resource, Integer.MAX_VALUE, this, bufferIndex);
             inAcquire = false;
         });
     }

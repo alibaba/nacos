@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class GlobalExecutor {
 
-    private static final ExecutorService COMMON_EXECUTOR = ExecutorFactory.newFixExecutorService(
+    private static final ScheduledExecutorService COMMON_EXECUTOR = ExecutorFactory.newScheduledExecutorService(
             GlobalExecutor.class.getCanonicalName(),
             4,
             new NameThreadFactory("com.alibaba.nacos.core.common")
@@ -60,6 +60,10 @@ public class GlobalExecutor {
 
     public static void executeByCommon(Runnable runnable) {
         COMMON_EXECUTOR.execute(runnable);
+    }
+
+    public static void scheduleByCommon(Runnable runnable, long delayMs) {
+        COMMON_EXECUTOR.schedule(runnable, delayMs, TimeUnit.MILLISECONDS);
     }
 
     public static void scheduleSyncJob(Runnable runnable, long delay) {

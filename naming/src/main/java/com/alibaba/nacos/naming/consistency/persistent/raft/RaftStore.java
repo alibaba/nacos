@@ -80,11 +80,9 @@ public class RaftStore {
     private Serializer serializer;
     private boolean initialized = false;
 
-    @Autowired
-    private MemberManager memberManager;
+    private final MemberManager memberManager;
 
-    @Autowired
-    private CPProtocol protocol;
+    private final CPProtocol protocol;
 
     @Autowired
     private RaftConsistencyServiceImpl.Notifier notifier;
@@ -97,10 +95,16 @@ public class RaftStore {
         return fileName.replace("#", ":");
     }
 
-    @PostConstruct
-    protected void init() throws Exception {
+    public RaftStore(final MemberManager memberManager,
+            final CPProtocol protocol) {
+        this.memberManager = memberManager;
+        this.protocol = protocol;
         serializer = SerializeFactory.getDefault();
         kvStore = protocol.createKVStore(STORE_NAME, serializer, new NSnapshotOperation());
+    }
+
+    @PostConstruct
+    protected void init() throws Exception {
         kvStore.registerHook(new StartHook() {
             @Override
             public void hook(Map dataStore, KVStore kvStore) throws Exception {
@@ -305,16 +309,10 @@ public class RaftStore {
                 try {
                     final String writePath = writer.getPath();
                     final String parentPath = Paths.get(writePath, SNAPSHOT_DIR).toString();
-                    final File file = new File(parentPath);
-                    DiskUtils.deleteDirectory(parentPath);
-                    DiskUtils.forceMkdir(parentPath);
-
+                    DiskUtils.deleteDirThenMkdir(parentPath);
                     DiskUtils.copyDirectory(new File(cacheDir), new File(parentPath));
-
                     final String outputFile = Paths.get(writePath, SNAPSHOT_ARCHIVE).toString();
-
                     final Checksum checksum = new CRC64();
-
                     DiskUtils.compress(writePath, SNAPSHOT_DIR, outputFile, checksum);
                     DiskUtils.deleteDirectory(parentPath);
                     writer.addFile(SNAPSHOT_ARCHIVE);
@@ -335,9 +333,7 @@ public class RaftStore {
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
             TimerContext.start("[Naming] RaftStore snapshot load job");
             try {
-
                 final Checksum checksum = new CRC64();
-
                 DiskUtils.decompress(sourceFile, readerPath, checksum);
                 final String loadPath = Paths.get(readerPath, SNAPSHOT_DIR).toString();
                 Loggers.RAFT.info("snapshot load from : {}", loadPath);

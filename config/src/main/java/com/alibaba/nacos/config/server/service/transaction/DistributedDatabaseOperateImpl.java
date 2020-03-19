@@ -67,9 +67,6 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
     };
 
     @Autowired
-    private DynamicDataSource dynamicDataSource;
-
-    @Autowired
     private MemberManager memberManager;
 
     private DataSourceService dataSourceService;
@@ -85,7 +82,7 @@ public class DistributedDatabaseOperateImpl extends BaseDatabaseOperate implemen
 
     @PostConstruct
     protected void init() throws Exception {
-        dataSourceService = dynamicDataSource.getDataSource();
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
         selfIp = memberManager.self().address();

@@ -25,21 +25,36 @@ import org.springframework.stereotype.Component;
  *
  * @author Nacos
  */
-@Component
 public class DynamicDataSource {
 
-    public DataSourceService getDataSource() {
-        DataSourceService dataSourceService = null;
+    private volatile DataSourceService localDataSourceService = null;
+    private volatile DataSourceService basicDataSourceService = null;
 
-        if (useMemoryDB()) {
-            dataSourceService = ApplicationUtils
-					.getBean("localDataSourceService", DataSourceService.class);
-        } else {
-            dataSourceService = ApplicationUtils
-					.getBean("basicDataSourceService", DataSourceService.class);
+    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
+
+    public static DynamicDataSource getInstance() {
+        return INSTANCE;
+    }
+
+    public synchronized DataSourceService getDataSource() {
+        try {
+            if (useMemoryDB()) {
+                if (localDataSourceService == null) {
+                    localDataSourceService = new LocalDataSourceServiceImpl();
+                    localDataSourceService.init();
+                }
+                return localDataSourceService;
+            }
+            else {
+                if (basicDataSourceService == null) {
+                    basicDataSourceService = new BasicDataSourceServiceImpl();
+                    basicDataSourceService.init();
+                }
+                return basicDataSourceService;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return dataSourceService;
     }
 
     /**

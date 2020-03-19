@@ -19,8 +19,12 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,6 +42,14 @@ public final class GlobalExecutor {
             new NameThreadFactory("com.alibaba.nacos.config.config-merge")
     );
 
+    private static final ScheduledExecutorService CAPACITY_EXECUTOR = ExecutorFactory
+            .newSingleScheduledExecutorService(Config.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.nacos.CapacityManagement-"));
+
+    public static void executeByCommon(Runnable runnable) {
+        TIME_EXECUTOR.execute(runnable);
+    }
+
     public static void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
                                               TimeUnit unit) {
         TIME_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
@@ -45,6 +57,11 @@ public final class GlobalExecutor {
 
     public static void executeOnMerge(Runnable runnable) {
         MERGE_EXECUTOR.execute(runnable);
+    }
+
+    public static void scheduleCapacityJob(Runnable command, long initialDelay, long delay,
+            TimeUnit unit) {
+        CAPACITY_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
 }

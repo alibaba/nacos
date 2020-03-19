@@ -36,6 +36,7 @@ import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.ThreadUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import java.io.File;
 import java.io.IOException;
@@ -96,17 +97,17 @@ public class DefaultIdStore implements LogProcessor4CP {
         return hasLeader;
     }
 
-    public void firstAcquire(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
+    public void firstAcquire(String resource, int maxRetryCnt, DefaultIdGenerator generator, boolean bufferIndex) {
         this.protocol.protocolMetaData()
                 .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
                     @Override
                     public void update(Observable o, Object arg) {
-                        GlobalExecutor.executeByCommon(() -> acquireNewIdSequence(resource, maxRetryCnt, generator));
+                        GlobalExecutor.executeByCommon(() -> acquireNewIdSequence(resource, maxRetryCnt, generator, bufferIndex));
                     }
                 });
     }
 
-    public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator) {
+    public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator, boolean bufferIndex) {
         storeFileMap.computeIfAbsent(resource, s -> new IdStoreFile(resource));
         for (int i = 0; i < maxRetryCnt; i++) {
             // need read maxId from raft-leader
@@ -126,12 +127,14 @@ public class DefaultIdStore implements LogProcessor4CP {
                         .data(serializer.serialize(acquireId))
                         .build())) {
                     generator.update(new long[]{minId, maxId});
-                    Loggers.ID_GENERATOR.info("[{}] ID application successful, startId : {}, endId : {}", resource, minId, maxId);
+                    Loggers.ID_GENERATOR.info("[{}] ID application successful, bufferIndex : {}, startId : {}, endId : {}",
+                            resource, bufferIndex ? "bufferTwo" : "bufferOne", minId, maxId);
                     return;
                 }
             } catch (Exception e) {
                 Loggers.ID_GENERATOR.error("[{}] An error occurred while applying for ID, error : {}", resource, e);
             }
+            ThreadUtils.sleep(100);
         }
         throw new AcquireIdException("[" + resource + "] The maximum number of retries exceeded");
     }

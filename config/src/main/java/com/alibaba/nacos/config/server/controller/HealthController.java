@@ -19,7 +19,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,23 +39,17 @@ public class HealthController {
     private static final String HEATH_DOWN_STR = "DOWN";
     private static final String HEATH_WARN_STR = "WARN";
     private final ServerMemberManager serverNodeManager;
-    private final DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
     @Autowired
-    public HealthController(ServerMemberManager serverNodeManager,
-                            DynamicDataSource dynamicDataSource) {
+    public HealthController(ServerMemberManager serverNodeManager) {
         this.serverNodeManager = serverNodeManager;
-        this.dynamicDataSource = dynamicDataSource;
-    }
-
-    @PostConstruct
-    public void init() {
-        dataSourceService = dynamicDataSource.getDataSource();
     }
 
     @GetMapping
     public String getHealth() {
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
+
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();

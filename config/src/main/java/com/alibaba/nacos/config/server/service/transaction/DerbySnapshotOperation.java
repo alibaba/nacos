@@ -89,10 +89,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath, DERBY_BASE_DIR);
 
             doDerbyRestoreFromBackup(() -> {
-                final File srcDir = new File(loadPath);
+                final File srcDir = new File("/Volumes/resources/LogDir/test_zip/backup/derby-data");
                 final File destDir = new File(DERBY_BASE_DIR);
 
                 DiskUtils.copyDirectory(srcDir, destDir);
+                LogUtil.fatalLog.info("Complete database recovery");
                 return null;
             });
             DiskUtils.deleteDirectory(loadPath);
@@ -106,7 +107,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     private void doDerbyBackup(String backupDirectory) throws Exception {
-        DataSourceService sourceService = ApplicationUtils.getBean(DynamicDataSource.class).getDataSource();
+        DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
         try (Connection holder = dataSource.getConnection()) {
             CallableStatement cs = holder.prepareCall("CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)");
@@ -116,9 +117,13 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     private void doDerbyRestoreFromBackup(Callable<Void> callable) throws Exception {
-        DataSourceService sourceService = ApplicationUtils.getBean(DynamicDataSource.class).getDataSource();
+        DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
         localDataSourceService.reopenDerby(restoreDB, callable);
+    }
+
+    private void testDerbyCustomerSnapshot() {
+
     }
 
 }

@@ -129,13 +129,12 @@ const I18N_CONF = {
   },
   ClusterNodeList: {
     clusterNodeList: 'Node List',
-    address: 'NodeIp',
+    nodeIp: 'NodeIp',
     nodeIpPlaceholder: 'Please enter node Ip',
     query: 'Search',
     pubNoData: 'No results found.',
-    state: 'NodeState',
+    nodeState: 'NodeState',
     extendInfo: 'NodeMetaData',
-    voteFor: 'VoteFor',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',

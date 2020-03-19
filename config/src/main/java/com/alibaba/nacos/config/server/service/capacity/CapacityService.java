@@ -20,9 +20,14 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.utils.GlobalExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.distributed.raft.RaftEvent;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.sql.Timestamp;
@@ -60,30 +65,38 @@ public class CapacityService {
     @Autowired
     private PersistService persistService;
 
-    private ScheduledExecutorService scheduledExecutorService;
-
     @PostConstruct
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // 每个Server都有修正usage的Job在跑，幂等
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
-                "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
+
+        Runnable job = () -> {
+            GlobalExecutor.scheduleCapacityJob(() -> {
                 LOGGER.info("[capacityManagement] start correct usage");
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 correctUsage();
                 LOGGER.info("[capacityManagement] end correct usage, cost: {}s", stopwatch.elapsed(TimeUnit.SECONDS));
 
-            }
-        }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
-    }
+            }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
+        };
 
-    @PreDestroy
-    public void destroy() {
-        scheduledExecutorService.shutdown();
+        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+            NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
+
+                @Override
+                public void onEvent(RaftEvent event) {
+                    job.run();
+                }
+
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return RaftEvent.class;
+                }
+            });
+        } else {
+            job.run();
+        }
+
     }
 
     public void correctUsage() {

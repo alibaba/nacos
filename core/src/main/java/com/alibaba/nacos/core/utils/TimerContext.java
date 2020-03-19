@@ -34,7 +34,7 @@ public class TimerContext {
     public static void end(Logger logger) {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        logger.debug("【{}】 cost time : [{}] ms", record.getValue0(), (endTime - record.getValue1()));
+        logger.info("{} cost time : {} ms", record.getValue0(), (endTime - record.getValue1()));
         TIME_RECORD.remove();
     }
 

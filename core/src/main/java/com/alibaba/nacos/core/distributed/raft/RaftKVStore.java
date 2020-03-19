@@ -56,18 +56,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     private KvSuperFuncCaller funcCaller;
 
-    public RaftKVStore(String name) {
-        super(name, SerializeFactory.getDefault());
-        this.logProcessor = new KVLogProcessor();
-        this.funcCaller = new KvSuperFuncCaller();
-    }
-
-    public RaftKVStore(String name, SnapshotOperation snapshotOperation) {
-        super(name, snapshotOperation);
-        this.logProcessor = new KVLogProcessor();
-        this.funcCaller = new KvSuperFuncCaller();
-    }
-
     public RaftKVStore(String name, Serializer serializer, SnapshotOperation snapshotOperation) {
         super(name, serializer, snapshotOperation);
         this.logProcessor = new KVLogProcessor();

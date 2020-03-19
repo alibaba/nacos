@@ -32,10 +32,12 @@ import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.utils.JLog;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ConvertUtils;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alipay.sofa.jraft.Node;
 import java.util.Collections;
@@ -189,7 +191,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
         processor.injectProtocol(this);
 
-        this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
+        RaftExecutor.executeByRaftCore(() -> {
+            this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
+        });
         return kvStore;
     }
 
