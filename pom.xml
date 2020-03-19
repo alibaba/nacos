@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -30,7 +30,6 @@
     <prerequisites>
         <maven>3.2.5</maven>
     </prerequisites>
-
 
     <scm>
         <url>git@github.com:alibaba/nacos.git</url>
@@ -692,7 +691,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.10.1</version>
+                <version>2.9.10.3</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>

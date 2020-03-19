@@ -232,7 +232,9 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     public static String getAppname() {
@@ -274,14 +276,13 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void injectSecurityInfo(List<String> params) {
-        ArrayList<String> list = (ArrayList) params;
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            list.add(Constants.ACCESS_TOKEN);
-            list.add(securityProxy.getAccessToken());
+            params.add(Constants.ACCESS_TOKEN);
+            params.add(securityProxy.getAccessToken());
         }
-        if (StringUtils.isNotBlank(namespaceId)) {
-            list.add("tenant");
-            list.add(namespaceId);
+        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
+            params.add(SpasAdapter.TENANT_KEY);
+            params.add(namespaceId);
         }
     }
 

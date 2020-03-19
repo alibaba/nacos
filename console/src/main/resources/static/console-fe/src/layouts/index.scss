@@ -11,14 +11,6 @@
  * limitations under the License.
  */
 
-.header-container {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  z-index: 1000;
-  background-color: #fff;
-}
 .header-container-primary {
   background: #252a2f;
 }
@@ -1396,5 +1388,63 @@ h6 {
 }
 
 .product-nav-list li.selected a {
-  background-color: #F4F6F8;
+  background-color: #f4f6f8;
+}
+
+.main-container {
+  height: calc(100vh - 66px);
+  .left-panel,
+  .right-panel {
+    float: left;
+    height: 100%;
+  }
+  .left-panel {
+    width: 180px;
+    background-color: #eaedf1;
+  }
+  .right-panel {
+    width: calc(100% - 180px);
+    padding: 10px;
+    overflow: scroll;
+  }
+  .nav-title {
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 70px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: #d9dee4;
+    span {
+      margin-left: 5px;
+    }
+  }
+  .nav-menu {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    line-height: 40px;
+    div.next-menu-item,
+    .first-menu > .next-menu-item-inner {
+      color: #333;
+    }
+    .next-menu-item-inner {
+      height: 40px;
+      color: #666;
+    }
+    .current-path {
+      background-color: #f2f3f7;
+    }
+  }
+  .go-back {
+    text-align: center;
+    color: rgb(84, 100, 120);
+    font-size: 20px;
+    font-weight: bold;
+    padding: 10px 0;
+    margin-top: 14px;
+    cursor: pointer;
+  }
 }

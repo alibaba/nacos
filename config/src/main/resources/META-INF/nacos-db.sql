@@ -186,7 +186,8 @@ CREATE TABLE users (
 
 CREATE TABLE roles (
 	username varchar(50) NOT NULL,
-	role varchar(50) NOT NULL
+	role varchar(50) NOT NULL,
+	constraint uk_username_role UNIQUE (username,role)
 );
 
 CREATE TABLE permissions (
@@ -198,4 +199,4 @@ CREATE TABLE permissions (
 
 INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
 
-INSERT INTO roles (username, role) VALUES ('nacos', 'GLOBAL_ADMIN');
+INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');

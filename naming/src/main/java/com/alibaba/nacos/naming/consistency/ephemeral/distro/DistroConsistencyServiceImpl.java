@@ -40,7 +40,10 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -59,18 +62,6 @@ import java.util.concurrent.*;
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
 
-    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.distro.notifier");
-
-            return t;
-        }
-    });
-
     @Autowired
     private DistroMapper distroMapper;
 
@@ -79,9 +70,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Autowired
     private TaskDispatcher taskDispatcher;
-
-    @Autowired
-    private DataSyncer dataSyncer;
 
     @Autowired
     private Serializer serializer;
@@ -97,7 +85,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     private boolean initialized = false;
 
-    public volatile Notifier notifier = new Notifier();
+    private volatile Notifier notifier = new Notifier();
+
+    private LoadDataTask loadDataTask = new LoadDataTask();
 
     private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
@@ -105,18 +95,23 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @PostConstruct
     public void init() {
-        GlobalExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    load();
-                } catch (Exception e) {
-                    Loggers.DISTRO.error("load data failed.", e);
-                }
-            }
-        });
+        GlobalExecutor.submit(loadDataTask);
+        GlobalExecutor.submitDistroNotifyTask(notifier);
+    }
 
-        executor.submit(notifier);
+    private class LoadDataTask implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                load();
+                if (!initialized) {
+                    GlobalExecutor.submit(this, globalConfig.getLoadDataRetryDelayMillis());
+                }
+            } catch (Exception e) {
+                Loggers.DISTRO.error("load data failed.", e);
+            }
+        }
     }
 
     public void load() throws Exception {
