@@ -177,6 +177,7 @@ public class ConfigController {
                               String tenant,
                           @RequestParam(value = "tag", required = false) String tag)
         throws IOException, ServletException, NacosException {
+        tenant = processTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
@@ -282,6 +283,8 @@ public class ConfigController {
             throw new IllegalArgumentException("invalid probeModify");
         }
 
+        log.info("listen config id:" + probeModify);
+
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
 
         Map<String, String> clientMd5Map;
@@ -290,6 +293,8 @@ public class ConfigController {
         } catch (Throwable e) {
             throw new IllegalArgumentException("invalid probeModify");
         }
+
+        log.info("listen config id 2:" + probeModify);
 
         // do long-polling
         inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
@@ -376,7 +381,7 @@ public class ConfigController {
     }
 
     @DeleteMapping(params = "beta=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,
                                         @RequestParam(value = "tenant", required = false,
@@ -428,6 +433,7 @@ public class ConfigController {
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
+        tenant = processTenant(tenant);
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
@@ -545,6 +551,7 @@ public class ConfigController {
     }
 
     @PostMapping(params = "clone=true")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
                                                        @RequestParam(value = "src_user", required = false) String srcUser,
                                                        @RequestParam(value = "tenant", required = true) String namespace,
@@ -613,6 +620,13 @@ public class ConfigController {
                 LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return ResultBuilder.buildSuccessResult("克隆成功", saveResult);
+    }
+
+    private String processTenant(String tenant){
+        if (StringUtils.isEmpty(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)) {
+            return "";
+        }
+        return tenant;
     }
 
 }

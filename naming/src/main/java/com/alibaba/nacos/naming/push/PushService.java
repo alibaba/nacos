@@ -317,8 +317,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         try {
             packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);
             Receiver.AckEntry ackEntry = new Receiver.AckEntry(key, packet);
-            ackEntry.data = data;
-
             // we must store the key be fore send, otherwise there will be a chance the
             // ack returns before we put in
             ackEntry.data = data;
@@ -649,7 +647,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 try {
                     udpSocket.receive(packet);
 
-                    String json = new String(packet.getData(), 0, packet.getLength(), Charset.forName("UTF-8")).trim();
+                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
                     AckPacket ackPacket = JSON.parseObject(json, AckPacket.class);
 
                     InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
@@ -669,7 +667,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                     long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
 
-                    Loggers.PUSH.info("received ack: {} from: {}:, cost: {} ms, unacked: {}, total push: {}",
+                    Loggers.PUSH.info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}",
                         json, ip, port, pushCost, ackMap.size(), totalPush);
 
                     pushCostMap.put(ackKey, pushCost);

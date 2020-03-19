@@ -11,14 +11,6 @@
  * limitations under the License.
  */
 
-module.exports = {
-  set(key, value) {
-    window.localStorage.setItem(key, value);
-  },
-  get(key) {
-    return window.localStorage.getItem(key);
-  },
-  remove(key) {
-    window.localStorage.removeItem(key);
-  },
-};
+import UserManagement from './UserManagement';
+
+export default UserManagement;

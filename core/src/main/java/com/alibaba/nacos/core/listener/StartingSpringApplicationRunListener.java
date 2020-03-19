@@ -150,7 +150,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     private void logFilePath() {
         String[] dirNames = new String[]{"logs", "conf", "data"};
         for (String dirName: dirNames) {
-            LOGGER.info("Nacos Log files: {}{}{}{}",  NACOS_HOME, File.separatorChar, dirName, File.separatorChar);
+            LOGGER.info("Nacos {} files: {}{}{}{}", dirName,  NACOS_HOME, File.separatorChar, dirName, File.separatorChar);
         }
     }
 

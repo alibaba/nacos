@@ -12,3 +12,4 @@ target
 node_modules
 test/derby.log
 derby.log
+work
