@@ -280,6 +280,7 @@ const I18N_CONF = {
     importSuccBegin: '导入成功,导入了',
     importSuccEnd: '项配置',
     importFail: '导入失败',
+    importFail403: '没有权限!',
     importDataValidationError: '未读取到合法数据，请检查导入的数据文件。',
     metadataIllegal: '导入的元数据文件非法',
     namespaceNotExist: 'namespace 不存在',

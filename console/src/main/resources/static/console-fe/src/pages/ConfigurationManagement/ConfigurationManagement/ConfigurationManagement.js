@@ -733,6 +733,7 @@ class ConfigurationManagement extends React.Component {
         self.openLoading();
       },
       success(data) {
+        self.closeLoading();
         if (!data || data.code !== 200 || !data.data) {
           Dialog.alert({
             title: locale.getNamespaceFailed,
@@ -891,6 +892,7 @@ class ConfigurationManagement extends React.Component {
                         self.openLoading();
                       },
                       success(ret) {
+                        self.closeLoading();
                         self.processImportAndCloneResult(ret, locale, cloneConfirm, false);
                       },
                       error(data) {
@@ -1019,9 +1021,18 @@ class ConfigurationManagement extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token);
+    } catch (e) {
+      console.log(e);
+      goLogin();
+    }
+    const { accessToken = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
-      action: `v1/cs/configs?import=true&namespace=${getParams('namespace')}`,
+      action: `v1/cs/configs?import=true&namespace=${getParams('namespace')}&accessToken=${accessToken}`,
+      headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
       },
@@ -1035,10 +1046,18 @@ class ConfigurationManagement extends React.Component {
         self.processImportAndCloneResult(ret.response, locale, importConfirm, true);
       },
       onError(err) {
-        Dialog.alert({
-          title: locale.importFail,
-          content: locale.importDataValidationError,
-        });
+        const { data = {}, status } = err.response;
+        if([401, 403].includes(status)){
+          Dialog.alert({
+            title: locale.importFail,
+            content: locale.importFail403,
+          });
+        } else {
+          Dialog.alert({
+            title: locale.importFail,
+            content: locale.importDataValidationError,
+          });
+        }
       },
     };
     const importConfirm = Dialog.confirm({
