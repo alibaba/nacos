@@ -281,6 +281,7 @@ const I18N_CONF = {
     importSuccBegin: 'The import was successful,with ',
     importSuccEnd: 'configuration items imported',
     importFail: 'Import failed',
+    importFail403: 'Unauthorized!',
     importDataValidationError: 'No legitimate data was read, please check the imported data file.',
     metadataIllegal: 'The imported metadata file is illegal',
     namespaceNotExist: 'namespace does not exist',
