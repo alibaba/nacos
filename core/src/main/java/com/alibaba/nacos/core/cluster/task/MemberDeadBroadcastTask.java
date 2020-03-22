@@ -61,10 +61,10 @@ public class MemberDeadBroadcastTask extends Task {
         });
 
         for (Member member : MemberUtils.kRandom(memberManager, member -> {
-            NodeState state = member.state();
+            NodeState state = member.getState();
             return state != NodeState.DOWN;
         })) {
-            final String url = "http://" + member.address() + memberManager.getContextPath() +
+            final String url = "http://" + member.getAddress() + memberManager.getContextPath() +
                     Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
             asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, waitRemove, reference, new Callback<String>() {
                 @Override

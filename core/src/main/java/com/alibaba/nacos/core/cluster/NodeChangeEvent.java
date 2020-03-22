@@ -30,7 +30,7 @@ public class NodeChangeEvent implements Event {
 
     private Collection<Member> allMembers;
 
-    private String kind;
+    private boolean join;
 
     public static NodeChangeEventBuilder builder() {
         return new NodeChangeEventBuilder();
@@ -52,12 +52,12 @@ public class NodeChangeEvent implements Event {
         this.allMembers = allMembers;
     }
 
-    public String getKind() {
-        return kind;
+    public boolean getJoin() {
+        return join;
     }
 
-    public void setKind(String kind) {
-        this.kind = kind;
+    public void setJoin(boolean join) {
+        this.join = join;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class NodeChangeEvent implements Event {
     public static final class NodeChangeEventBuilder {
         private Collection<Member> changeMembers;
         private Collection<Member> allMembers;
-        private String kind;
+        private boolean join;
 
         private NodeChangeEventBuilder() {
         }
@@ -83,15 +83,15 @@ public class NodeChangeEvent implements Event {
             return this;
         }
 
-        public NodeChangeEventBuilder kind(String kind) {
-            this.kind = kind;
+        public NodeChangeEventBuilder join(boolean join) {
+            this.join = join;
             return this;
         }
 
         public NodeChangeEvent build() {
             NodeChangeEvent nodeChangeEvent = new NodeChangeEvent();
             nodeChangeEvent.setChangeMembers(changeMembers);
-            nodeChangeEvent.setKind(kind);
+            nodeChangeEvent.setJoin(join);
             nodeChangeEvent.setAllMembers(allMembers);
             return nodeChangeEvent;
         }

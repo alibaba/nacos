@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
@@ -41,15 +39,13 @@ public class TaskCenter {
 
     private final int cpuCoreCount;
     private final DistroConfig config;
-    private MemberManager memberManager;
     private DataSyncer dataSyncer;
     private List<Worker> workers = new ArrayList<>();
     private volatile boolean shutdown = false;
     private AtomicBoolean initialize = new AtomicBoolean(false);
 
-    public TaskCenter(DistroConfig config, MemberManager memberManager, DataSyncer dataSyncer) {
+    public TaskCenter(DistroConfig config, DataSyncer dataSyncer) {
         this.config = config;
-        this.memberManager = memberManager;
         this.dataSyncer = dataSyncer;
         this.cpuCoreCount = Runtime.getRuntime().availableProcessors();
     }
@@ -123,7 +119,7 @@ public class TaskCenter {
                 try {
                     String key = queue.poll(1000, TimeUnit.MILLISECONDS);
 
-                    if (CollectionUtils.isEmpty(memberManager.allMembers())) {
+                    if (CollectionUtils.isEmpty(config.getMembers())) {
                         continue;
                     }
 
@@ -141,13 +137,15 @@ public class TaskCenter {
                     if (dataSize == batchSyncKeyCount ||
                             (System.currentTimeMillis() - lastDispatchTime) > taskDispatchPeriod) {
 
-                        for (Member member : memberManager.allMembers()) {
-                            if (Objects.equals(memberManager.self(), member)) {
+                        final String self = config.getSelfMember();
+
+                        for (String member : config.getMembers()) {
+                            if (Objects.equals(self, member)) {
                                 continue;
                             }
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
-                            syncTask.setTargetServer(member.address());
+                            syncTask.setTargetServer(member);
 
                             dataSyncer.submit(syncTask, 0);
                         }

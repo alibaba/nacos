@@ -135,15 +135,15 @@ public class DistroMapper implements Mapper, MemberChangeListener {
         if (CollectionUtils.isEmpty(healthyList) ||
                 !ApplicationUtils
                         .getProperty("nacos.core.distro.enable", Boolean.class, true)) {
-            return self.address();
+            return self.getAddress();
         }
 
         try {
-            return healthyList.get(distroHash(key) % healthyList.size()).address();
+            return healthyList.get(distroHash(key) % healthyList.size()).getAddress();
         } catch (Exception e) {
             Loggers.DISTRO.warn("distro mapper failed, return localhost: " + self, e);
 
-            return self.address();
+            return self.getAddress();
         }
     }
 

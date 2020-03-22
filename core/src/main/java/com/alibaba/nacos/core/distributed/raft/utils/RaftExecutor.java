@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ConvertUtils;
-import com.alibaba.nacos.core.utils.Loggers;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,65 +32,59 @@ import java.util.concurrent.TimeUnit;
  */
 public final class RaftExecutor {
 
-    private static ExecutorService raftCoreExecutor;
-    private static ExecutorService raftCliServiceExecutor;
-    private static ScheduledExecutorService raftMemberRefreshExecutor;
-    private static ExecutorService snapshotExecutor;
+	private static ExecutorService raftCoreExecutor;
+	private static ExecutorService raftCliServiceExecutor;
+	private static ScheduledExecutorService raftMemberRefreshExecutor;
 
-    private RaftExecutor() {
-    }
+	private static final String OWNER = JRaftServer.class.getName();
 
-    public static void init(RaftConfig config) {
+	private RaftExecutor() {
+	}
 
-        int raftCoreThreadNum = ConvertUtils.toInt(config.getVal(
-                RaftSysConstants.RAFT_CORE_THREAD_NUM), 8);
-        int raftCliServiceThreadNum = ConvertUtils.toInt(config.getVal(
-                RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM), 4);
+	public static void init(RaftConfig config) {
 
-        raftCoreExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
-                raftCoreThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
+		int raftCoreThreadNum = ConvertUtils
+				.toInt(config.getVal(RaftSysConstants.RAFT_CORE_THREAD_NUM), 8);
+		int raftCliServiceThreadNum = ConvertUtils
+				.toInt(config.getVal(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM), 4);
 
-        raftCliServiceExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
-                raftCliServiceThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
+		raftCoreExecutor = ExecutorFactory.newFixExecutorService(OWNER, raftCoreThreadNum,
+				new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
 
-        raftMemberRefreshExecutor = ExecutorFactory.newScheduledExecutorService(
-                RaftExecutor.class.getCanonicalName(),
-                8,
-                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-member-refresh")
-        );
+		raftCliServiceExecutor = ExecutorFactory
+				.newFixExecutorService(OWNER, raftCliServiceThreadNum,
+						new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
 
-        snapshotExecutor = ExecutorFactory.newFixExecutorService(JRaftServer.class.getName(),
-                8,
-                new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-snapshot"));
+		raftMemberRefreshExecutor = ExecutorFactory.newScheduledExecutorService(OWNER, 8,
+				new NameThreadFactory(
+						"com.alibaba.nacos.core.protocol.raft-member-refresh"));
 
-    }
+	}
 
-    public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
-                                                    long period,
-                                                    TimeUnit unit) {
-        raftMemberRefreshExecutor.scheduleAtFixedRate(runnable, initialDelay, period, unit);
-    }
+	public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
+			long period, TimeUnit unit) {
+		raftMemberRefreshExecutor
+				.scheduleAtFixedRate(runnable, initialDelay, period, unit);
+	}
 
-    public static ExecutorService getRaftCoreExecutor() {
-        return raftCoreExecutor;
-    }
+	public static ExecutorService getRaftCoreExecutor() {
+		return raftCoreExecutor;
+	}
 
-    public static ExecutorService getRaftCliServiceExecutor() {
-        return raftCliServiceExecutor;
-    }
+	public static ExecutorService getRaftCliServiceExecutor() {
+		return raftCliServiceExecutor;
+	}
 
-    public static ScheduledExecutorService getRaftMemberRefreshExecutor() {
-        return raftMemberRefreshExecutor;
-    }
+	public static ScheduledExecutorService getRaftMemberRefreshExecutor() {
+		return raftMemberRefreshExecutor;
+	}
 
-    public static void executeByRaftCore(Runnable runnable) {
-        raftCoreExecutor.execute(runnable);
-    }
+	public static void executeByRaftCore(Runnable runnable) {
+		raftCoreExecutor.execute(runnable);
+	}
 
-    public static void doSnapshot(Runnable runnable) {
-        raftCoreExecutor.execute(runnable);
-    }
+	public static void doSnapshot(Runnable runnable) {
+		raftCoreExecutor.execute(runnable);
+	}
 
 }

@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.pojo;
 
+import com.alibaba.nacos.core.distributed.distro.CheckSum;
+
 /**
- * Record to transfer and store in Nacos cluster
- *
- * @author nkorange
- * @since 1.0.0
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Record {
-    /**
-     * get the checksum of this record, usually for record comparison
-     *
-     * @return checksum of record
-     */
-    String getChecksum();
+public interface Record extends CheckSum {
 }

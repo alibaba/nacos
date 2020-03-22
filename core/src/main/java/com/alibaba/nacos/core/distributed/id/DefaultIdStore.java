@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.id;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.Constants;
@@ -45,12 +45,15 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
 import javax.annotation.PostConstruct;
+
+import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.DependsOn;
@@ -61,10 +64,10 @@ import org.springframework.stereotype.Component;
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-@ConditionalOnProperty(value = "nacos.core.idGenerator.type", havingValue = "default", matchIfMissing = true)
+@ConditionalOnProperty(value = "nacos.core.idGenerator.type", havingValue = "default")
 @Component
 @DependsOn("serverMemberManager")
-public class DefaultIdStore implements LogProcessor4CP {
+public class DefaultIdStore extends LogProcessor4CP {
 
     private final File[] EMPTY = new File[0];
     private final String SNAPSHOT_DIR = "id_generator";
@@ -99,7 +102,7 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     public void firstAcquire(String resource, int maxRetryCnt, DefaultIdGenerator generator, boolean bufferIndex) {
         this.protocol.protocolMetaData()
-                .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
+                .subscribe(group(), Constants.LEADER_META_DATA, new Observer() {
                     @Override
                     public void update(Observable o, Object arg) {
                         GlobalExecutor.executeByCommon(() -> acquireNewIdSequence(resource, maxRetryCnt, generator, bufferIndex));
@@ -112,7 +115,7 @@ public class DefaultIdStore implements LogProcessor4CP {
         for (int i = 0; i < maxRetryCnt; i++) {
             // need read maxId from raft-leader
             long currentMaxId = (long) getData(GetRequest.builder()
-                    .biz(bizInfo())
+                    .group(group())
                     .ctx(ByteUtils.toBytes(resource))
                     .build()).getData();
             final long minId = currentMaxId + 1;
@@ -123,13 +126,18 @@ public class DefaultIdStore implements LogProcessor4CP {
                     .applicant(resource)
                     .build();
             try {
-                if (commitAutoSetBiz(NLog.builder()
-                        .data(serializer.serialize(acquireId))
-                        .build())) {
+                Log gLog = Log.newBuilder()
+                        .data(acquireId)
+                        .build();
+
+                LogFuture future = commitAutoSetGroup(gLog);
+                if (future.isOk()) {
                     generator.update(new long[]{minId, maxId});
                     Loggers.ID_GENERATOR.info("[{}] ID application successful, bufferIndex : {}, startId : {}, endId : {}",
                             resource, bufferIndex ? "bufferTwo" : "bufferOne", minId, maxId);
                     return;
+                } else {
+                    Loggers.ID_GENERATOR.error("[{}] An error occurred while applying for ID, error : {}", resource, future.getError());
                 }
             } catch (Exception e) {
                 Loggers.ID_GENERATOR.error("[{}] An error occurred while applying for ID, error : {}", resource, e);
@@ -139,27 +147,10 @@ public class DefaultIdStore implements LogProcessor4CP {
         throw new AcquireIdException("[" + resource + "] The maximum number of retries exceeded");
     }
 
-    @Override
-    public void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
-        this.protocol = protocol;
-        this.protocol.protocolMetaData()
-                .subscribe(bizInfo(), Constants.LEADER_META_DATA, new Observer() {
-                    @Override
-                    public void update(Observable o, Object arg) {
-                        hasLeader = true;
-                    }
-                });
-    }
-
-    @Override
-    public ConsistencyProtocol<? extends Config> getProtocol() {
-        return protocol;
-    }
-
     @SuppressWarnings("all")
     @Override
     public <D> GetResponse<D> getData(GetRequest request) {
-        String resources = ByteUtils.toString(request.getCtx());
+        String resources = request.getCtx();
         IdStoreFile file = storeFileMap.get(resources);
         return GetResponse.<D>builder()
                 .data((D) file.getCurrentMaxId())
@@ -168,17 +159,16 @@ public class DefaultIdStore implements LogProcessor4CP {
 
     @SuppressWarnings("all")
     @Override
-    public boolean onApply(Log log) {
-        byte[] data = log.getData();
-        final AcquireId acquireId = serializer.deSerialize(data, AcquireId.class);
+    public LogFuture onApply(Log log) {
+        final AcquireId acquireId = log.getData();
         final String resources = acquireId.getApplicant();
         final long minId = acquireId.getMinId();
         final long maxId = acquireId.getMaxId();
         IdStoreFile storeFile = storeFileMap.get(resources);
         if (storeFile == null) {
-            return false;
+            return LogFuture.fail(new NoSuchElementException("The resource does not exist"));
         }
-        return storeFile.canAccept(maxId);
+        return LogFuture.success(storeFile.canAccept(maxId));
     }
 
     @Override
@@ -187,7 +177,7 @@ public class DefaultIdStore implements LogProcessor4CP {
     }
 
     @Override
-    public String bizInfo() {
+    public String group() {
         return "default_id_generator";
     }
 

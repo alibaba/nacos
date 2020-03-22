@@ -35,11 +35,8 @@ import java.util.concurrent.Callable;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 
@@ -68,9 +65,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         if (!PropertyUtil.isUseMysql()) {
             if (!initialize) {
                 LogUtil.defaultLog.info("use local db service for init");
-
                 final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString() + ";create=true";
-
                 initialize(jdbcUrl);
                 initialize = true;
             }
@@ -93,24 +88,31 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
     }
 
-    public void reopenDerby(String jdbcUrl, Callable<Void> callable) throws Exception {
-        if (!PropertyUtil.isUseMysql()) {
+    public void cleanAndReopenDerby() throws Exception {
+        doDerbyClean();
+        final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString() + ";create=true";
+        initialize(jdbcUrl);
+    }
 
-            LogUtil.defaultLog.warn("use local db service for reopenDerby");
-            try {
-                DriverManager.getConnection("jdbc:derby:;shutdown=true");
-            } catch (Exception e) {
+    public void restoreDerby(String jdbcUrl, Callable<Void> callable) throws Exception {
+        doDerbyClean();
+        callable.call();
+        initialize(jdbcUrl);
+    }
 
-                // An error is thrown when the Derby shutdown is executed, which should be ignored
+    private void doDerbyClean() throws Exception {
+        LogUtil.defaultLog.warn("use local db service for reopenDerby");
+        try {
+            DriverManager.getConnection("jdbc:derby:;shutdown=true");
+        } catch (Exception e) {
 
-                if (!StringUtils.contains(e.getMessage().toLowerCase(), DERBY_SHUTDOWN_ERR_MSG.toLowerCase())) {
-                    throw e;
-                }
+            // An error is thrown when the Derby shutdown is executed, which should be ignored
+
+            if (!StringUtils.contains(e.getMessage().toLowerCase(), DERBY_SHUTDOWN_ERR_MSG.toLowerCase())) {
+                throw e;
             }
-            DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString());
-            callable.call();
-            initialize(jdbcUrl);
         }
+        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString());
     }
 
     private synchronized void initialize(String jdbcUrl) {
@@ -123,7 +125,6 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         ds.setConnectionTimeout(10000L);
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
         tm.setDataSource(ds);
-
         if (jdbcTemplateInit) {
             jt.setDataSource(ds);
             tjt.setTransactionManager(tm);

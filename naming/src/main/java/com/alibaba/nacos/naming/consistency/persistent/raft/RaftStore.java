@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -41,19 +40,18 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import com.alibaba.nacos.naming.pojo.Record;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 import javax.annotation.PostConstruct;
 
+import com.alibaba.nacos.naming.pojo.Record;
 import com.alipay.sofa.jraft.util.CRC64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,11 +120,11 @@ public class RaftStore {
     }
 
     public Record get(String key) throws NacosException {
-        Record record = kvStore.getByKeyAutoConvert(key);
+        Record record = kvStore.get(key);
         if (record == null) {
             try {
                 loadByKey(key);
-                record = kvStore.getByKeyAutoConvert(key);
+                record = kvStore.get(key);
             } catch (Exception e) {
                 throw new NacosException(NacosException.SERVER_ERROR, "Failed to load data from file :" + key);
             }
@@ -164,7 +162,7 @@ public class RaftStore {
     KVStore.Item readItem(File file, String namespaceId) throws IOException {
         try {
             byte[] bytes = DiskUtils.readFileBytes(file);
-            return serializer.deSerialize(bytes, KVStore.Item.class);
+            return serializer.deserialize(bytes, KVStore.Item.class);
         } catch (Exception e) {
             Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;
@@ -215,9 +213,8 @@ public class RaftStore {
             return;
         }
 
-        KVStore.Item item = JSON.parseObject(data, KVStore.Item.class);
-        Record record = serializer.deSerialize(item.getBytes(), item.getClassName());
-        kvStore.put(key, record);
+        KVStore.Item item = serializer.deserialize(data, KVStore.Item.class);
+        kvStore.put(key, item.getData());
     }
 
     synchronized void write(String key, final KVStore.Item item) throws Exception {
@@ -239,7 +236,7 @@ public class RaftStore {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
-        byte[] data = JSON.toJSONString(item).getBytes(StandardCharsets.UTF_8);
+        byte[] data = serializer.serialize(item);
 
         try {
             DiskUtils.writeFile(cacheFile, data, false);

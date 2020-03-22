@@ -23,13 +23,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * // TODO 支持 hot-update
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -38,17 +41,43 @@ import org.springframework.stereotype.Component;
 public class DistroConfig implements Config<LogProcessor4AP> {
 
     private static final long serialVersionUID = -3073040842709279788L;
-
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>(8));
-
     private List<LogProcessor4AP> processors = Collections.synchronizedList(new ArrayList<>());
+    private String selfAddress;
+    private Set<String> members = Collections.synchronizedSet(new HashSet<>());
+
+    public void setData(Map<String, String> data) {
+        this.data = Collections.synchronizedMap(data);
+    }
 
     public Map<String, String> getData() {
         return data;
     }
 
-    public void setData(Map<String, String> data) {
-        this.data = Collections.synchronizedMap(data);
+    @Override
+    public void setMembers(String self, Set<String> members) {
+        this.selfAddress = self;
+        this.members.addAll(members);
+    }
+
+    @Override
+    public String getSelfMember() {
+        return selfAddress;
+    }
+
+    @Override
+    public Set<String> getMembers() {
+        return members;
+    }
+
+    @Override
+    public void addMembers(Set<String> members) {
+        this.members.addAll(members);
+    }
+
+    @Override
+    public void removeMembers(Set<String> members) {
+        this.members.removeAll(members);
     }
 
     @Override

@@ -311,18 +311,29 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      * nacos local ip
      */
     public static final String LOCAL_IP = InetUtils.getSelfIp();
+
+    private static Boolean isStandalone = false;
+
+    private static String functionModeType = null;
+
     /**
      * Standalone mode or not
      */
     public static boolean getStandaloneMode() {
-        return getProperty(STANDALONE_MODE_PROPERTY_NAME, Boolean.class, false);
+        if (isStandalone == null) {
+            isStandalone = getProperty(STANDALONE_MODE_PROPERTY_NAME, Boolean.class, false);
+        }
+        return isStandalone;
     }
 
     /**
      * server
      */
     public static String getFunctionMode() {
-        return getProperty(FUNCTION_MODE_PROPERTY_NAME);
+        if (StringUtils.isEmpty(functionModeType)) {
+            functionModeType = getProperty(FUNCTION_MODE_PROPERTY_NAME);
+        }
+        return functionModeType;
     }
 
     public static String getNacosHome() {

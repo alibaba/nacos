@@ -93,7 +93,7 @@ public class HealthCheckCommon {
             }
 
             for (Member server : sameSiteServers) {
-                if (server.address().equals(NetUtils.localServer())) {
+                if (server.getAddress().equals(NetUtils.localServer())) {
                     continue;
                 }
                 Map<String, String> params = new HashMap<>(10);
@@ -103,7 +103,7 @@ public class HealthCheckCommon {
                             server, JSON.toJSONString(list));
                 }
 
-                HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.address()
+                HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.getAddress()
                         + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                         + "/api/healthCheckResult", null, params);
 

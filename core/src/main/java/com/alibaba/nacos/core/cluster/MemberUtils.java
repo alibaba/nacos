@@ -34,8 +34,24 @@ public class MemberUtils {
 
 	private static final String SEMICOLON = ":";
 
+	public static Set<String> toAPMembersInfo(Collection<Member> members) {
+		Set<String> nodes = new HashSet<>();
+		members.forEach(member -> nodes.add(member.getAddress()));
+		return nodes;
+	}
+
+	public static Set<String> toCPMembersInfo(Collection<Member> members) {
+		Set<String> nodes = new HashSet<>();
+		members.forEach(member -> {
+			final String ip = member.getIp();
+			final int port = Integer.parseInt(String.valueOf(member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+			nodes.add(ip + ":" + port);
+		});
+		return nodes;
+	}
+
 	public static void copy(Member newMember, Member oldMember) {
-		oldMember.extendInfo().putAll(newMember.extendInfo());
+		oldMember.getExtendInfo().putAll(newMember.getExtendInfo());
 	}
 
 	public static Member parse(String host, int port) {
@@ -60,14 +76,14 @@ public class MemberUtils {
 	}
 
 	public static void onSuccess(Member member, ServerMemberManager manager) {
-		manager.getMemberAddressInfos().add(member.address());
+		manager.getMemberAddressInfos().add(member.getAddress());
 		member.setState(NodeState.UP);
 		member.setFailAccessCnt(0);
 	}
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static void onFail(Member member, ServerMemberManager manager) {
-		manager.getMemberAddressInfos().remove(member.address());
+		manager.getMemberAddressInfos().remove(member.getAddress());
 		member.setState(NodeState.SUSPICIOUS);
 		member.setFailAccessCnt(member.getFailAccessCnt() + 1);
 		if (member.getFailAccessCnt() > 3) {
@@ -164,12 +180,12 @@ public class MemberUtils {
 
 	public static List<String> simpleMembers(ServerMemberManager memberManager) {
 		return memberManager.allMembers().stream().map(member -> {
-			String address = member.address();
+			String address = member.getAddress();
 			StringBuilder params = new StringBuilder();
 			String[] keys = MemberMetaDataConstants.META_KEY_LIST;
 			int length = keys.length;
 			for (int i = 0; i < length; i++) {
-				params.append(keys[i]).append("=").append(member.extendVal(keys[i]));
+				params.append(keys[i]).append("=").append(member.getExtendVal(keys[i]));
 				if (i != length - 1) {
 					params.append("&");
 				}

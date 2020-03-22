@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.ShutdownUtils;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -123,33 +124,41 @@ public final class ThreadPoolManager {
     public synchronized void destroy(String biz) {
 	    final Object monitor = lockers.get(biz);
 	    if (monitor == null) {
-	        return;
+	        throw new NoSuchElementException("This module does not have any thread pool resources : " + biz);
         }
 	    synchronized (monitor) {
 	        Map<String, Set<ExecutorService>> subResource = resourcesManager.get(biz);
+			if (subResource == null) {
+				return;
+			}
 	        for (Map.Entry<String, Set<ExecutorService>> entry : subResource.entrySet()) {
 	            for (ExecutorService executor : entry.getValue()) {
-	                executor.shutdown();
-	                int retry = 3;
-	                while (retry > 0) {
-	                    retry --;
-	                    try {
-	                        if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
-	                        	return;
-                            }
-						} catch (InterruptedException e) {
-                            executor.shutdownNow();
-							Thread.interrupted();
-						}
-                    }
-					executor.shutdownNow();
+					shutdownThreadPool(executor);
 				}
             }
 
             resourcesManager.get(biz).clear();
+	        resourcesManager.remove(biz);
 
         }
     }
+
+    private void shutdownThreadPool(ExecutorService executor) {
+		executor.shutdown();
+		int retry = 3;
+		while (retry > 0) {
+			retry --;
+			try {
+				if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+					return;
+				}
+			} catch (InterruptedException e) {
+				executor.shutdownNow();
+				Thread.interrupted();
+			}
+		}
+		executor.shutdownNow();
+	}
 
     private void destroyAll() {
 	    Set<String> bizs = resourcesManager.keySet();

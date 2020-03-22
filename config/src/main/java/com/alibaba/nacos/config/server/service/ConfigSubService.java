@@ -102,7 +102,7 @@ public class ConfigSubService {
                 ipList.size());
         // 提交查询任务
         for (Member member : ipList) {
-            final String ip = member.address();
+            final String ip = member.getAddress();
             try {
                 completionService.submit(new Job(ip, url, params));
             } catch (Exception e) { // 发送请求失败
@@ -125,7 +125,7 @@ public class ConfigSubService {
                         }
                     } else {
                         LogUtil.defaultLog
-                                .warn("The task in ip: {}  did not completed in 1000ms ", member.address());
+                                .warn("The task in ip: {}  did not completed in 1000ms ", member.getAddress());
                     }
                 } catch (TimeoutException e) {
                     if (f != null) {

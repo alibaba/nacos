@@ -47,12 +47,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
 
-    public static final String GLOBAL = "global";
-
-    public static final String CLUSTER_INFO = "cluster";
-
-    public static final String SELF = "self";
-
     private volatile boolean stopDefer = false;
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);

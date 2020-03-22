@@ -18,7 +18,7 @@ package com.alibaba.nacos.consistency.store;
 
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.common.utils.Md5Utils;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
 
 /**
  * Key-value pair data storage structure abstraction
@@ -45,16 +44,14 @@ public abstract class KVStore<T> extends BaseStore {
     private StartHook startHook;
     private BeforeHook beforeHook;
     private AfterHook afterHook;
-    BiFunction<String, Pair<T, byte[]>, Boolean> put = new BiFunction<String, Pair<T, byte[]>, Boolean>() {
+    BiFunction<String, Object, Boolean> put = new BiFunction<String, Object, Boolean>() {
         @Override
-        public Boolean apply(String key, Pair<T, byte[]> pair) {
-            final T value = pair.getValue0();
-            final byte[] data = pair.getValue1();
+        public Boolean apply(String key, Object data) {
             final boolean[] isCreate = new boolean[]{false};
 
-            final Item item = new Item(data, value.getClass().getCanonicalName());
+            final Item item = new Item(data);
 
-            before(key, value, item, true);
+            before(key, data, item, true);
 
             dataStore.computeIfAbsent(key, s -> {
                 isCreate[0] = true;
@@ -67,18 +64,18 @@ public abstract class KVStore<T> extends BaseStore {
 
                 // will auto update checkSum
 
-                dataStore.get(key).setBytes(data);
+                dataStore.get(key).setData(data);
             }
 
-            after(key, value, currentItem, true);
+            after(key, data, currentItem, true);
             return true;
         }
     };
-    BiFunction<String, T, Boolean> remove = new BiFunction<String, T, Boolean>() {
+    BiFunction<String, Object, Boolean> remove = new BiFunction<String, Object, Boolean>() {
         @Override
-        public Boolean apply(String key, T data) {
+        public Boolean apply(String key, Object data) {
             before(key, null, null, false);
-            T source = getByKeyAutoConvert(key);
+            T source = get(key);
             Item item = dataStore.remove(key);
             after(key, source, item, false);
             return true;
@@ -133,7 +130,7 @@ public abstract class KVStore<T> extends BaseStore {
      * @param data  if operate == -1, the data is null
      * @param isPut is put operation
      */
-    protected void before(String key, T data, Item item, boolean isPut) {
+    protected void before(String key, Object data, Item item, boolean isPut) {
         beforeHook.hook(key, data, item, isPut);
     }
 
@@ -144,7 +141,7 @@ public abstract class KVStore<T> extends BaseStore {
      * @param data  remove source data
      * @param isPut is put operation
      */
-    protected void after(String key, T data, Item item, boolean isPut) {
+    protected void after(String key, Object data, Item item, boolean isPut) {
         afterHook.hook(key, data, item, isPut);
     }
 
@@ -159,27 +156,21 @@ public abstract class KVStore<T> extends BaseStore {
         return dataStore.containsKey(key);
     }
 
-    public Map<String, byte[]> batchGet(Collection<String> keys) {
-        Map<String, byte[]> returnData = new HashMap<>(keys.size());
+    public Map<String, Object> batchGet(Collection<String> keys) {
+        Map<String, Object> returnData = new HashMap<>(keys.size());
         for (String key : keys) {
-            returnData.put(key, dataStore.get(key).getBytes());
+            returnData.put(key, dataStore.get(key).getData());
         }
         return returnData;
     }
 
-    public T getByKeyAutoConvert(String key) {
+    public T get(String key) {
         Item item = dataStore.get(key);
         if (item == null) {
             return null;
         }
 
-        byte[] tmp = item.getBytes();
-
-        if (tmp == null || tmp.length == 0) {
-            return null;
-        }
-
-        return serializer.deSerialize(tmp, item.getClassName());
+        return item.getData();
     }
 
     public Item getItemByKey(String key) {
@@ -192,7 +183,7 @@ public abstract class KVStore<T> extends BaseStore {
         keys.forEach(new Consumer<String>() {
             @Override
             public void accept(String s) {
-                T data = getByKeyAutoConvert(s);
+                T data = get(s);
                 result.put(s, data);
             }
         });
@@ -211,13 +202,6 @@ public abstract class KVStore<T> extends BaseStore {
         return result;
     }
 
-    public String getCheckSum(String key) {
-        if (dataStore.containsKey(key)) {
-            return dataStore.get(key).getCheckSum();
-        }
-        return null;
-    }
-
     public Collection<String> allKeys() {
         return dataStore.keySet();
     }
@@ -226,42 +210,36 @@ public abstract class KVStore<T> extends BaseStore {
         return dataStore;
     }
 
-    public byte[] getByKey(String key) {
-        return dataStore.get(key).getBytes();
-    }
-
     // put operation
 
     public static class Item {
 
-        byte[] bytes;
-        String checkSum;
+        Object data;
         String className;
+        String checkSum;
 
         public Item() {
         }
 
-        public Item(byte[] bytes, String className) {
-            this.bytes = bytes;
-            this.checkSum = Md5Utils.getMD5(bytes);
+        public Item(Object data) {
+            this.data = data;
+        }
+
+        public Item(Object data, String className) {
+            this.data = data;
             this.className = className;
         }
 
-        public byte[] getBytes() {
-            return bytes;
+        public <T> T getData() {
+            return (T) data;
         }
 
-        public void setBytes(byte[] bytes) {
-            this.bytes = bytes;
-            setCheckSum(Md5Utils.getMD5(bytes));
+        public void setData(Object data) {
+            this.data = data;
         }
 
         public String getCheckSum() {
             return checkSum;
-        }
-
-        void setCheckSum(String checkSum) {
-            this.checkSum = checkSum;
         }
 
         public String getClassName() {

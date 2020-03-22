@@ -874,10 +874,10 @@ public class ServiceManager implements RecordListener<Service> {
                     }
 
                     for (Member server : sameSiteServers) {
-                        if (server.address().equals(NetUtils.localServer())) {
+                        if (server.getAddress().equals(NetUtils.localServer())) {
                             continue;
                         }
-                        synchronizer.send(server.address(), msg);
+                        synchronizer.send(server.getAddress(), msg);
                     }
                 }
             } catch (Exception e) {

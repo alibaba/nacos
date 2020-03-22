@@ -35,7 +35,7 @@ public class ExecutorFactory {
 
     private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
 
-    private static final String DEFAULT_BIZ = "nacos";
+    public static final String DEFAULT_BIZ = "nacos";
 
     public static ForkJoinPool newForkJoinPool(final String owner) {
         ForkJoinPool forkJoinPool = new ForkJoinPool();

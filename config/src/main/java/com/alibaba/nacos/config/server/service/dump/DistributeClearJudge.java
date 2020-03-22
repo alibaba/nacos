@@ -47,7 +47,7 @@ public class DistributeClearJudge implements ClearJudgment {
             @Override
             public void update(Observable o, Object arg) {
                 final String currentLeader = String.valueOf(arg);
-                can = Objects.equals(currentLeader, memberManager.self().address());
+                can = Objects.equals(currentLeader, memberManager.self().getAddress());
             }
         });
     }

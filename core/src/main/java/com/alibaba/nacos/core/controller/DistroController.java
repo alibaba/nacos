@@ -118,7 +118,7 @@ public class DistroController extends BaseController {
 
         Map<String, Map<String, KVStore.Item>> itemMap = new HashMap<>(8);
 
-        kvManager.list().forEach((s, store) -> itemMap.putAll(store.getAll()));
+        kvManager.list().forEach((s, store) -> itemMap.put(s, store.getAll()));
 
         String content = new String(serializer.serialize(itemMap), StandardCharsets.UTF_8);
 

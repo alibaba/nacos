@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.shell.OperationalCommand;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * // TODO ： 春涛：字段版本问题
+ *
  * Has nothing to do with the specific implementation of the consistency protocol
  * Initialization sequence： init(Config) => loadLogProcessor(List)
  *
@@ -33,14 +33,6 @@ import java.util.concurrent.CompletableFuture;
  *     <li>{@link Config} : Relevant configuration information required by the consistency protocol,
  *     for example, the Raft protocol needs to set the election timeout time, the location where
  *     the Log is stored, and the snapshot task execution interval</li>
- *
- *     <li>{@link LogProcessor} : The consistency protocol provides services for all businesses,
- *     but each business only cares about the transaction information belonging to that business,
- *     and the transaction processing between the various services should not block each other. Therefore,
- *     the LogProcessor is abstracted to implement the parallel processing of transactions of different services.
- *     Corresponding LogProcessor sub-interface: LogProcessor4AP or LogProcessor4CP, different consistency
- *     protocols will actively discover the corresponding LogProcessor</li>
- *
  *     <li>{@link ConsistencyProtocol#protocolMetaData()} : Returns metadata information of the consistency
  *     protocol, such as leader, term, and other metadata information in the Raft protocol</li>
  * </ul>
@@ -61,20 +53,9 @@ public interface ConsistencyProtocol<T extends Config> extends OperationalComman
      * Copy of metadata information for this consensus protocol
      * 该一致性协议的元数据信息
      *
-     * @return metaData copy
+     * @return metaData {@link ProtocolMetaData}
      */
     ProtocolMetaData protocolMetaData();
-
-    /**
-     * Get the value of the corresponding metadata information according to the key
-     * 根据 key 获取元数据信息中的某个值
-     *
-     * @param key    key
-     * @param subKey if value is key-value struct
-     * @param <R>    target type
-     * @return value
-     */
-    <R> R metaData(String key, String... subKey);
 
     /**
      * Obtain data according to the request
@@ -93,37 +74,31 @@ public interface ConsistencyProtocol<T extends Config> extends OperationalComman
      * @return submit operation result
      * @throws Exception
      */
-    boolean submit(Log data) throws Exception;
+    LogFuture submit(Log data) throws Exception;
 
     /**
      * Data submission operation, returning submission results asynchronously
      * 异步数据提交，在 Datum 中已携带相应的数据操作信息，返回一个Future，自行操作，提交发生的异常会在CompleteFuture中
      *
      * @param data {@link Log}
-     * @return {@link CompletableFuture<Boolean>} submit result
+     * @return {@link CompletableFuture<LogFuture>} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<Boolean> submitAsync(Log data);
+    CompletableFuture<LogFuture> submitAsync(Log data);
 
     /**
-     * Bulk submission of data
+     * ip:port info
      *
-     * @param datums {@link Map<String, List< Log >> },
-     *               The value of key is guaranteed to be the return value of {@link LogProcessor#bizInfo()}
-     * @return As long as one of the processing fails, an error is returned,
-     * but those that have been processed successfully will not be rolled back,
-     * and the business party will guarantee the idempotence by itself
+     * @param addresses [ip:port, ip:port, ...]
      */
-    default boolean batchSubmit(Map<String, List<Log>> datums) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
+    void addMembers(Set<String> addresses);
 
     /**
-     * Concerned Configuration Object
+     * ip:port info
      *
-     * @return which class extends {@link Config}
+     * @param addresses [ip:port, ip:port, ...]
      */
-    Class<? extends Config> configType();
+    void removeMembers(Set<String> addresses);
 
     /**
      * Consistency agreement service shut down

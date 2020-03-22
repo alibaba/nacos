@@ -33,9 +33,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class BaseDatabaseOperate {
+public interface BaseDatabaseOperate {
 
-    public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Class<R> cls) {
+    default  <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Class<R> cls) {
         try {
             return jdbcTemplate.queryForObject(sql, cls);
         } catch (IncorrectResultSizeDataAccessException e) {
@@ -49,8 +49,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-
-    public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> cls) {
+    default <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> cls) {
         try {
             return jdbcTemplate.queryForObject(sql, args, cls);
         } catch (IncorrectResultSizeDataAccessException e) {
@@ -68,7 +67,7 @@ public class BaseDatabaseOperate {
     }
 
 
-    public <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
+    default <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
         try {
             return jdbcTemplate.queryForObject(sql, args, mapper);
         } catch (IncorrectResultSizeDataAccessException e) {
@@ -86,7 +85,7 @@ public class BaseDatabaseOperate {
     }
 
 
-    public <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
+    default <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, RowMapper<R> mapper) {
         try {
             return jdbcTemplate.query(sql, args, mapper);
         } catch (CannotGetJdbcConnectionException e) {
@@ -102,7 +101,7 @@ public class BaseDatabaseOperate {
     }
 
 
-    public <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> rClass) {
+    default <R> List<R> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args, Class<R> rClass) {
         try {
             return jdbcTemplate.queryForList(sql, args, rClass);
         } catch (CannotGetJdbcConnectionException e) {
@@ -118,7 +117,7 @@ public class BaseDatabaseOperate {
     }
 
 
-    public List<Map<String, Object>> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args) {
+    default List<Map<String, Object>> queryMany(JdbcTemplate jdbcTemplate, String sql, Object[] args) {
         try {
             return jdbcTemplate.queryForList(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
@@ -133,7 +132,7 @@ public class BaseDatabaseOperate {
         }
     }
 
-    public Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<SQL> sqlContext) {
+    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<SQL> sqlContext) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[]{null};
             Object[][] args = new Object[][]{null};

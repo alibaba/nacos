@@ -25,7 +25,7 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface LogProcessor4CP extends LogProcessor {
+public abstract class LogProcessor4CP extends LogProcessor {
 
 
     /**
@@ -34,7 +34,7 @@ public interface LogProcessor4CP extends LogProcessor {
      *
      * @return {@link List <SnapshotOperate>}
      */
-    default List<SnapshotOperation> loadSnapshotOperate() {
+    public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.emptyList();
     }
 

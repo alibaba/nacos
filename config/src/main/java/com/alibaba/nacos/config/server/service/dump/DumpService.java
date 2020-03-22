@@ -38,6 +38,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.MemberManager;
@@ -52,8 +53,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
+
+import com.alibaba.nacos.core.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +106,8 @@ public class DumpService {
         // If using embedded distributed storage, you need to wait for the
         // underlying master to complete the selection
 
+        CountDownLatch latch = new CountDownLatch(1);
+
         if (PropertyUtil.isEmbeddedDistributedStorage()) {
 
             LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for " +
@@ -112,14 +118,13 @@ public class DumpService {
             protocol.protocolMetaData()
                     .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
                             com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-                            (o, arg) -> GlobalExecutor.executeByCommon(() -> dumpOperate()));
+                            (o, arg) -> GlobalExecutor.executeByCommon(() -> dumpOperate(latch)));
         } else {
-            dumpOperate();
+            dumpOperate(latch);
         }
-
     }
 
-    private void dumpOperate() {
+    private void dumpOperate(CountDownLatch latch) {
         LogUtil.defaultLog.warn("DumpService start");
         DumpProcessor processor = new DumpProcessor(this);
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
@@ -198,7 +203,6 @@ public class DumpService {
         }
 
         cleanHistoryProcessor.start();
-
     }
 
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor)

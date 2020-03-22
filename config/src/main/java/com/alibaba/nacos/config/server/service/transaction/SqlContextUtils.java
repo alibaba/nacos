@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,14 +25,17 @@ import java.util.List;
  */
 public class SqlContextUtils {
 
-    private static final ThreadLocal<LinkedList<SQL>> SQL_CONTEXT =
-            ThreadLocal.withInitial(LinkedList::new);
+    private static final ThreadLocal<ArrayList<SQL>> SQL_CONTEXT =
+            ThreadLocal.withInitial(ArrayList::new);
 
     public static void addSqlContext(String sql, Object... args) {
+        ArrayList<SQL> sqls = SQL_CONTEXT.get();
         SQL context = new SQL();
+        context.setExecuteNo(sqls.size());
         context.setSql(sql);
         context.setArgs(args);
-        SQL_CONTEXT.get().addLast(context);
+        sqls.add(context);
+        SQL_CONTEXT.set(sqls);
     }
 
     public static List<SQL> getCurrentSqlContext() {

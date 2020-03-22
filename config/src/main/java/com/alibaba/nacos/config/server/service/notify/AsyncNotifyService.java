@@ -122,7 +122,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
             for (Member member : ipList) {
-                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.address(), evt.isBeta));
+                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(), evt.isBeta));
             }
             EXECUTOR.execute(new AsyncTask(httpclient, queue));
         }

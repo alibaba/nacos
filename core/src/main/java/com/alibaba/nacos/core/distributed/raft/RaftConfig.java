@@ -23,8 +23,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -38,8 +42,35 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     private static final long serialVersionUID = 9174789390266064002L;
 
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
-
     private List<LogProcessor4CP> processors = Collections.synchronizedList(new ArrayList<>());
+    private String selfAddress;
+    private Set<String> members = Collections.synchronizedSet(new HashSet<>());
+
+    @Override
+    public void setMembers(String self, Set<String> members) {
+        this.selfAddress = self;
+        this.members.addAll(members);
+    }
+
+    @Override
+    public String getSelfMember() {
+        return selfAddress;
+    }
+
+    @Override
+    public Set<String> getMembers() {
+        return members;
+    }
+
+    @Override
+    public void addMembers(Set<String> members) {
+        this.members.addAll(members);
+    }
+
+    @Override
+    public void removeMembers(Set<String> members) {
+        this.members.removeAll(members);
+    }
 
     public Map<String, String> getData() {
         return data;

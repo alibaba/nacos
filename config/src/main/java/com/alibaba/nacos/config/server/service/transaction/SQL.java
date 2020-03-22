@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.transaction;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -26,10 +27,19 @@ public class SQL implements Serializable {
 
     private static final long serialVersionUID = 4548851816596520564L;
 
+    private int executeNo;
     private String sql;
     private Object[] args;
 
     public SQL() {
+    }
+
+    public int getExecuteNo() {
+        return executeNo;
+    }
+
+    public void setExecuteNo(int executeNo) {
+        this.executeNo = executeNo;
     }
 
     public String getSql() {
@@ -48,4 +58,8 @@ public class SQL implements Serializable {
         this.args = args;
     }
 
+    @Override public String toString() {
+        return "SQL{" + "executeNo=" + executeNo + ", sql='" + sql + '\'' + ", args="
+                + Arrays.toString(args) + '}';
+    }
 }

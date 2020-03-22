@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.distro.core;
 
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.DistroMapper;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
 import com.alibaba.nacos.core.distributed.distro.KVManager;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
@@ -38,8 +37,8 @@ public class PartitionDataTimedSync {
 
     private final KVManager kvManager;
     private final DistroMapper distroMapper;
-    private final MemberManager memberManager;
     private final DistroClient distroClient;
+    private final DistroConfig distroConfig;
 
     private volatile boolean shutdown = false;
 
@@ -47,10 +46,10 @@ public class PartitionDataTimedSync {
 
     public PartitionDataTimedSync(
             KVManager kvManager,
-            DistroMapper distroMapper, MemberManager memberManager, DistroClient distroClient) {
+            DistroMapper distroMapper, DistroConfig distroConfig, DistroClient distroClient) {
         this.kvManager = kvManager;
         this.distroMapper = distroMapper;
-        this.memberManager = memberManager;
+        this.distroConfig = distroConfig;
         this.distroClient = distroClient;
     }
 
@@ -63,8 +62,8 @@ public class PartitionDataTimedSync {
         shutdown = true;
     }
 
-    public Collection<Member> getServers() {
-        return memberManager.allMembers();
+    public Collection<String> getServers() {
+        return distroConfig.getMembers();
     }
 
     private String buildKey(String key, String targetServer) {
@@ -82,7 +81,7 @@ public class PartitionDataTimedSync {
             }
 
             try {
-                final Collection<Member> members = getServers();
+                final Collection<String> members = getServers();
                 Loggers.DISTRO.debug("server list is: {}", members);
                 final Map<String, DistroKVStore> kvStoreMap = kvManager.list();
                 kvStoreMap.forEach(new BiConsumer<String, DistroKVStore>() {
@@ -98,7 +97,7 @@ public class PartitionDataTimedSync {
                                 continue;
                             }
 
-                            String checkSum = dataStore.getCheckSum((String) key);
+                            String checkSum = dataStore.get((String) key).getChecksum();
                             if (checkSum == null) {
                                 continue;
                             }
@@ -117,11 +116,11 @@ public class PartitionDataTimedSync {
                         // biz because of an error.
 
                         keyChecksums.put(biz, subKeyChecksums);
-                        for (Member member : members) {
-                            if (Objects.equals(memberManager.self(), member)) {
+                        for (String member : members) {
+                            if (Objects.equals(distroConfig.getSelfMember(), member)) {
                                 continue;
                             }
-                            distroClient.syncCheckSums(keyChecksums, member.address());
+                            distroClient.syncCheckSums(keyChecksums, member);
                         }
                     }
                 });

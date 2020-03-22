@@ -16,37 +16,26 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class SelectRequest {
+public class SelectRequest implements Serializable {
 
-    private boolean queryOne = true;
-    private boolean useMapper = true;
+    private static final long serialVersionUID = 2212052574976898602L;
+    private QueryType queryType;
     private String sql;
     private Object[] args;
     private String className;
 
-    public static SelectRequestBuilder builder() {
-        return new SelectRequestBuilder();
+    public QueryType getQueryType() {
+        return queryType;
     }
 
-    public boolean isQueryOne() {
-        return queryOne;
-    }
-
-    public void setQueryOne(boolean queryOne) {
-        this.queryOne = queryOne;
-    }
-
-    public boolean isUseMapper() {
-        return useMapper;
-    }
-
-    public void setUseMapper(boolean useMapper) {
-        this.useMapper = useMapper;
+    public void setQueryType(QueryType queryType) {
+        this.queryType = queryType;
     }
 
     public String getSql() {
@@ -73,33 +62,27 @@ public class SelectRequest {
         this.className = className;
     }
 
-    @Override
-    public String toString() {
-        return "SelectRequest{" +
-                "queryOne=" + queryOne +
-                ", sql='" + sql + '\'' +
-                ", args=" + Arrays.toString(args) +
-                ", mapperName='" + className + '\'' +
-                '}';
+    @Override public String toString() {
+        return "SelectRequest{" + "queryType=" + queryType + ", sql='" + sql + '\''
+                + ", args=" + Arrays.toString(args) + ", className='" + className + '\''
+                + '}';
+    }
+
+    public static SelectRequestBuilder builder() {
+        return new SelectRequestBuilder();
     }
 
     public static final class SelectRequestBuilder {
-        private boolean queryOne = true;
-        private boolean useMapper = true;
+        private QueryType queryType;
         private String sql;
         private Object[] args;
-        private String className;
+        private String className = null;
 
         private SelectRequestBuilder() {
         }
 
-        public SelectRequestBuilder queryOne(boolean queryOne) {
-            this.queryOne = queryOne;
-            return this;
-        }
-
-        public SelectRequestBuilder useMapper(boolean useMapper) {
-            this.useMapper = useMapper;
+        public SelectRequestBuilder queryType(QueryType queryType) {
+            this.queryType = queryType;
             return this;
         }
 
@@ -120,8 +103,7 @@ public class SelectRequest {
 
         public SelectRequest build() {
             SelectRequest selectRequest = new SelectRequest();
-            selectRequest.setQueryOne(queryOne);
-            selectRequest.setUseMapper(useMapper);
+            selectRequest.setQueryType(queryType);
             selectRequest.setSql(sql);
             selectRequest.setArgs(args);
             selectRequest.setClassName(className);

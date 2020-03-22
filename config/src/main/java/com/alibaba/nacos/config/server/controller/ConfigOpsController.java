@@ -15,19 +15,31 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import javax.servlet.http.HttpServletResponse;
+
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.RestResultUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 管理控制器。
@@ -36,16 +48,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
-public class OpsController {
+public class ConfigOpsController {
 
-    private static final Logger log = LoggerFactory.getLogger(OpsController.class);
+    private static final Logger log = LoggerFactory.getLogger(ConfigOpsController.class);
 
     protected final PersistService persistService;
 
     private final DumpService dumpService;
 
     @Autowired
-    public OpsController(PersistService persistService, DumpService dumpService) {
+    public ConfigOpsController(PersistService persistService, DumpService dumpService) {
         this.persistService = persistService;
         this.dumpService = dumpService;
     }
@@ -65,6 +77,25 @@ public class OpsController {
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
+    }
+
+    // The interface to the Derby operations query can only run select statements
+    // and is a direct query to the native Derby database without any additional logic
+
+    // TODO In a future release, the front page should appear operable
+
+    @GetMapping(value = "/derby")
+    public RestResult<Object> derbyOps(String sql) {
+        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance().getDataSource();
+            if (StringUtils.startsWithIgnoreCase(sql, "select")) {
+                JdbcTemplate template = dataSourceService.getJdbcTemplate();
+                List<Map<String, Object>> result = template.queryForList(sql);
+                return RestResultUtils.success(result);
+            }
+            return RestResultUtils.failedWithData("Only query statements are allowed to be executed");
+        }
+        return RestResultUtils.failedWithData("The current storage mode is not Derby");
     }
 
 }

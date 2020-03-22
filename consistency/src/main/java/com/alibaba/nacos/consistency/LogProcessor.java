@@ -27,21 +27,27 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogProcessor {
+public abstract class LogProcessor {
+
+    protected ConsistencyProtocol<? extends Config> protocol;
 
     /**
      * Pass the consistency protocol implementer to LogProcessor
      *
      * @param protocol {@link ConsistencyProtocol<? extends Config>} Consistent protocol implementers
      */
-    void injectProtocol(ConsistencyProtocol<? extends Config> protocol);
+    public final void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
+        this.protocol = protocol;
+        afterInject(protocol);
+    }
 
     /**
-     * Returns the Protocol implementation held by this LogProcessor
+     * Something is done after the ConsistencyProtocol injection
      *
-     * @return {@link ConsistencyProtocol<? extends Config>}
+     * @param protocol {@link ConsistencyProtocol<? extends Config>} Consistent protocol implementers
      */
-    ConsistencyProtocol<? extends Config> getProtocol();
+    protected void afterInject(ConsistencyProtocol<? extends Config> protocol) {
+    }
 
     /**
      * get data by key
@@ -49,7 +55,7 @@ public interface LogProcessor {
      * @param request request {@link GetRequest}
      * @return target type data
      */
-    <D> GetResponse<D> getData(GetRequest request);
+    public abstract <D> GetResponse<D> getData(GetRequest request);
 
     /**
      * Commit transaction and auto inject biz info
@@ -58,9 +64,9 @@ public interface LogProcessor {
      * @return is success
      * @throws Exception
      */
-    default boolean commitAutoSetBiz(Log log) throws Exception {
-        log.setBiz(bizInfo());
-        return getProtocol().submit(log);
+    public final LogFuture commitAutoSetGroup(Log log) throws Exception {
+        log.setGroup(group());
+        return this.protocol.submit(log);
     }
 
     /**
@@ -69,9 +75,9 @@ public interface LogProcessor {
      * @param log {@link Log}
      * @return {@link CompletableFuture<Boolean>}
      */
-    default CompletableFuture<Boolean> commitAsyncAutoSetBiz(Log log) {
-        log.setBiz(bizInfo());
-        return getProtocol().submitAsync(log);
+    public final CompletableFuture<LogFuture> commitAsyncAutoSetGroup(Log log) {
+        log.setGroup(group());
+        return this.protocol.submitAsync(log);
     }
 
     /**
@@ -80,32 +86,23 @@ public interface LogProcessor {
      * @param log {@link Log}
      * @return {@link boolean}
      */
-    boolean onApply(Log log);
+    public abstract LogFuture onApply(Log log);
 
     /**
-     * Callback triggered when a state machine error occurs
+     * Irremediable errors that need to trigger business price cuts
      *
-     * @param throwable {@link Throwable}
+     * @param error {@link Throwable}
      */
-    default void onError(Throwable throwable) {
-        throw new RuntimeException(throwable);
+    public void onError(Throwable error) {
     }
 
     /**
-     * this BizProcessor which interest biz
+     * In order for the state machine that handles the transaction to be able to route
+     * the Log to the correct LogProcessor, the LogProcessor needs to have an identity
+     * information
      *
-     * @return biz name
+     * @return Business unique identification name
      */
-    String bizInfo();
-
-    /**
-     * Determine whether the key is within the business you are following
-     *
-     * @param key datum-key
-     * @return interest result
-     */
-    default boolean interest(String key) {
-        return key != null && key.startsWith(bizInfo());
-    }
+    public abstract String group();
 
 }

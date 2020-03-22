@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.core.distributed.raft.utils.JLog;
+import com.alibaba.nacos.consistency.Log;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
 
@@ -25,12 +25,12 @@ import com.alipay.sofa.jraft.Status;
  */
 public class NacosClosure implements Closure {
 
-    private final JLog log;
+    private final Log log;
     private final Closure closure;
     private Throwable throwable;
     private Object object;
 
-    public NacosClosure(JLog log, Closure closure) {
+    public NacosClosure(Log log, Closure closure) {
         this.log = log;
         this.closure = closure;
     }
@@ -60,7 +60,7 @@ public class NacosClosure implements Closure {
         return closure;
     }
 
-    public JLog getLog() {
+    public Log getLog() {
         return log;
     }
 

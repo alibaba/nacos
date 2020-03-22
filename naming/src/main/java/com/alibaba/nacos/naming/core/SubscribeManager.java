@@ -90,12 +90,12 @@ public class SubscribeManager {
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
-                if (NetUtils.localServer().equals(server.address())) {
+                if (NetUtils.localServer().equals(server.getAddress())) {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
                 }
 
-                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.address() + RunningConfig.getContextPath()
+                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getAddress() + RunningConfig.getContextPath()
                         + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {

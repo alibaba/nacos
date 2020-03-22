@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
@@ -29,12 +29,9 @@ import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.distro.core.DistroServer;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
-import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -48,6 +45,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     private KVManager kvManager;
     private DistroServer distroServer;
     private MemberManager memberManager;
+    private DistroConfig distroConfig;
 
     public DistroProtocol(MemberManager memberManager) {
         this.memberManager = memberManager;
@@ -57,9 +55,10 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     @Override
     public void init(DistroConfig config) {
         if (initialize.compareAndSet(false, true)) {
-            this.distroServer = new DistroServer(memberManager, kvManager, config);
+            this.distroConfig = config;
+            this.distroServer = new DistroServer(kvManager, this.distroConfig);
 
-            loadLogDispatcher(config.listLogProcessor());
+            loadLogProcessor(config.listLogProcessor());
 
             // distro server start
             this.distroServer.start();
@@ -67,34 +66,29 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     }
 
     @Override
-    public <R> R metaData(String key, String... subKey) {
-        return (R) metaData.get(key, subKey);
-    }
-
-    @Override
     public <D> GetResponse<D> getData(GetRequest request) throws Exception {
-        final String biz = request.getBiz();
-        LogProcessor processor = allProcessor().get(biz);
+        final String group = request.getGroup();
+        LogProcessor processor = allProcessor().get(group);
         if (processor != null) {
             return processor.getData(request);
         }
-        throw new NoSuchLogProcessorException(biz);
+        throw new NoSuchLogProcessorException(group);
     }
 
     @Override
-    public boolean submit(Log data) throws Exception {
-        final String biz = data.getBiz();
-        LogProcessor processor = allProcessor().get(biz);
+    public LogFuture submit(Log data) throws Exception {
+        final String group = data.getGroup();
+        LogProcessor processor = allProcessor().get(group);
         if (processor != null) {
             processor.onApply(data);
             return distroServer.submit(data);
         }
-        throw new NoSuchLogProcessorException(biz);
+        throw new NoSuchLogProcessorException(group);
     }
 
     @Override
-    public CompletableFuture<Boolean> submitAsync(Log data) {
-        final CompletableFuture<Boolean> future = new CompletableFuture<>();
+    public CompletableFuture<LogFuture> submitAsync(Log data) {
+        final CompletableFuture<LogFuture> future = new CompletableFuture<>();
         DistroExecutor.executeByGlobal(() -> {
             try {
                 future.complete(submit(data));
@@ -106,27 +100,13 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     }
 
     @Override
-    public boolean batchSubmit(Map<String, List<Log>> datums) {
-        for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
-            final LogProcessor processor = allProcessor().get(entry.getKey());
-            DistroExecutor.executeByGlobal(() -> {
-                for (Log log : entry.getValue()) {
-                    try {
-                        processor.onApply(log);
-                    } catch (Exception e) {
-                        Loggers.DISTRO.error("An exception occurred while processing a transaction request, " +
-                                "processor : {}, error : {}", processor, e);
-                        processor.onError(e);
-                    }
-                }
-            });
-        }
-        return true;
+    public void addMembers(Set<String> addresses) {
+        distroConfig.addMembers(addresses);
     }
 
     @Override
-    public Class<? extends Config> configType() {
-        return DistroConfig.class;
+    public void removeMembers(Set<String> addresses) {
+        distroConfig.removeMembers(addresses);
     }
 
     @Override
@@ -137,15 +117,15 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig, Lo
     }
 
     @Override
-    public <D> KVStore<D> createKVStore(String storeName) {
-        DistroKVStore<D> kvStore = new DistroKVStore<>(storeName);
+    public KVStore<CheckSum> createKVStore(String storeName) {
+        DistroKVStore kvStore = new DistroKVStore(storeName);
         this.kvManager.addKVStore(kvStore);
 
         DistroExecutor.executeByGlobal(() -> {
             // Because Distro uses DistroProtocol internally, so LogProcessor is implemented, need to add
             LogProcessor4AP processor = kvStore.getKVLogProcessor();
             processor.injectProtocol(this);
-            loadLogDispatcher(Collections.singletonList(processor));
+            loadLogProcessor(Collections.singletonList(processor));
         });
 
         return kvStore;

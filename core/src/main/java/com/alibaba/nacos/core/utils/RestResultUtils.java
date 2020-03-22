@@ -36,8 +36,8 @@ public class RestResultUtils {
                 .build();
     }
 
-    public static RestResult<Boolean> failed(String errMsg) {
-        return RestResult.<Boolean>builder()
+    public static <T> RestResult<T> failed(String errMsg) {
+        return RestResult.<T>builder()
                 .withCode(500)
                 .withMsg(errMsg)
                 .build();

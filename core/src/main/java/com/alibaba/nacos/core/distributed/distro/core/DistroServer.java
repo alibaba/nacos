@@ -18,12 +18,11 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.DistroMapper;
 import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.DistroKVStore;
@@ -46,7 +45,6 @@ public class DistroServer {
 
     private final KVManager kvManager;
     private final DistroConfig config;
-    private final MemberManager memberManager;
     private final Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     private DataSyncer dataSyncer;
     private PartitionDataTimedSync timedSync;
@@ -60,10 +58,8 @@ public class DistroServer {
     private DistroMapper distroMapper;
 
     public DistroServer(
-            final MemberManager memberManager,
             final KVManager kvManager,
             final DistroConfig config) {
-        this.memberManager = memberManager;
         this.config = config;
         this.serializer = SerializeFactory.getDefault();
         this.kvManager = kvManager;
@@ -77,22 +73,20 @@ public class DistroServer {
             // === start:Initialize related members of the distro protocol
 
             this.distroClient = new DistroClient(
-                    this.memberManager,
-                    this.serializer);
+                    this.config);
 
             this.timedSync = new PartitionDataTimedSync(
                     this.kvManager,
                     this.distroMapper,
-                    this.memberManager,
+                    this.config,
                     this.distroClient);
 
             this.dataSyncer = new DataSyncer(
                     config,
-                    ApplicationUtils.getBean(MemberManager.class),
                     this.kvManager,
                     this.distroClient);
 
-            this.taskCenter = new TaskCenter(config, this.memberManager, this.dataSyncer);
+            this.taskCenter = new TaskCenter(config, this.dataSyncer);
 
             // === end
 
@@ -118,7 +112,7 @@ public class DistroServer {
             initialized = true;
             return;
         }
-        while (memberManager.allMembers().size() <= 1) {
+        while (config.getMembers().size() <= 1) {
             Thread.sleep(1000L);
             Loggers.DISTRO.info("waiting server list init...");
         }
@@ -126,9 +120,11 @@ public class DistroServer {
         // Until one node is successfully synchronized, 5 maximum retries
         int retryCnt = 5;
 
+        final String self = config.getSelfMember();
+
         for (int i = 0; i < retryCnt && !initialized; i++) {
-            for (Member server : memberManager.allMembers()) {
-                if (Objects.equals(memberManager.self().address(), server.address())) {
+            for (String server : config.getMembers()) {
+                if (Objects.equals(self, server)) {
                     continue;
                 }
                 if (Loggers.DISTRO.isDebugEnabled()) {
@@ -144,19 +140,19 @@ public class DistroServer {
         }
     }
 
-    public boolean submit(Log log) {
+    public LogFuture submit(Log log) {
         final String key = log.getKey();
         taskCenter.addTask(key);
-        return true;
+        return LogFuture.success(true);
     }
 
-    private boolean syncAllDataFromRemote(Member server) {
+    private boolean syncAllDataFromRemote(String server) {
         try {
-            byte[] data = distroClient.getAllData(server.address());
+            byte[] data = distroClient.getAllData(server);
             processData(data);
             return true;
         } catch (Exception e) {
-            Loggers.DISTRO.error("sync full data from " + server.address() + " failed!", e);
+            Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
             return false;
         }
     }
@@ -187,8 +183,8 @@ public class DistroServer {
                     }
 
                     if (!dataStore.contains(key) ||
-                            dataStore.getByKey(key) == null ||
-                            !Objects.equals(dataStore.getCheckSum(key), item.getValue())) {
+                            dataStore.get(key) == null ||
+                            !Objects.equals(dataStore.get(key).getChecksum(), item.getValue())) {
                         toUpdateKeys.add(entry.getKey());
                     }
                 }
@@ -260,12 +256,8 @@ public class DistroServer {
                 taskCenter.shutdown();
             }
 
-            Loggers.RAFT.warn("========= The distro protocol has been closed =========");
+            Loggers.DISTRO.warn("========= The distro protocol has been closed =========");
         }
-    }
-
-    public DistroMapper getDistroMapper() {
-        return distroMapper;
     }
 
     public KVManager getKvManager() {

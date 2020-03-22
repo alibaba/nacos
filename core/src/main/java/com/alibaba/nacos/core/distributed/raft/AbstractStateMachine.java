@@ -35,7 +35,6 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
-import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
@@ -48,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.BooleanUtils;
 
 /**
@@ -68,7 +67,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public AbstractStateMachine(JRaftServer server, LogProcessor4CP processor) {
         this.server = server;
         this.processor = processor;
-        this.groupId = processor.bizInfo();
+        this.groupId = processor.group();
 
         List<SnapshotOperation> userOperates = processor.loadSnapshotOperate();
 

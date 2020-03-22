@@ -16,40 +16,19 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.consistency.NLog;
-
 /**
- * JRaft Adapt Log Object
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public class JLog extends NLog {
+public class JRaftConstants {
 
-    private JLogOperaton operaton;
+	public static final String JRAFT_EXTEND_INFO_KEY = JRaftLogOperation.class.getCanonicalName();
 
-    JLog() {
-    }
+	public static final String GROUP_ID = "groupId";
 
-    public JLogOperaton getOperaton() {
-        return operaton;
-    }
+	public static final String TRANSFER_LEADER = "transferLeader";
 
-    public void setOperaton(JLogOperaton operaton) {
-        this.operaton = operaton;
-    }
+	public static final String RESET_RAFT_CLUSTER = "restRaftCluster";
 
-    @Override
-    public String toString() {
-        return JSON.toJSONString(this);
-    }
+	public static final String DO_SNAPSHOT = "doSnapshot";
 
-    public static enum JLogOperaton {
-
-        MODIFY_OPERATION,
-
-        READ_OPERATION
-
-    }
 }

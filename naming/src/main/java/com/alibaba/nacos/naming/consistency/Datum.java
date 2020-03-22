@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.distributed.distro.core;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
@@ -28,12 +27,13 @@ import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.consistency.store.KVStore;
-import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
+import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.distributed.distro.utils.DistroExecutor;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.RestResultUtils;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -44,6 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_HEADER;
 
 /**
+ * // TODO I think the latecomers of Distro should also be transferred to GRPC
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 class DistroClient {
@@ -54,14 +56,14 @@ class DistroClient {
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
     private final TypeReference<RestResult<String>> reference = new TypeReference<RestResult<String>>() {
     };
-    private final MemberManager memberManager;
+    private final DistroConfig distroConfig;
     private final NSyncHttpClient httpClient;
-    private final Serializer serializer;
+    private final String contextPath;
 
-    public DistroClient(MemberManager memberManager, Serializer serializer) {
-        this.memberManager = memberManager;
-        this.serializer = serializer;
+    public DistroClient(DistroConfig distroConfig) {
+        this.distroConfig = distroConfig;
         this.httpClient = HttpClientManager.newHttpClient(DataSyncer.class.getCanonicalName());
+        this.contextPath = distroConfig.getVal(DistroSysConstants.WEB_CONTEXT_PATH);
     }
 
     public void syncCheckSums(Map<String, Map<String, String>> checksumMap, String server) {
@@ -76,7 +78,7 @@ class DistroClient {
                     .addParam("Connection", "Keep-Alive");
 
             final Query query = Query.newInstance()
-                    .addParam("source", memberManager.self().address());
+                    .addParam("source", distroConfig.getSelfMember());
 
             DistroExecutor.executeByGlobal(() -> {
                 try {
@@ -156,6 +158,6 @@ class DistroClient {
     }
 
     private String buildUrl(String path, String server) {
-        return HttpUtils.buildUrl(false, server, memberManager.getContextPath(), Commons.NACOS_CORE_CONTEXT, path);
+        return HttpUtils.buildUrl(false, server, contextPath, Commons.NACOS_CORE_CONTEXT, path);
     }
 }

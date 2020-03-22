@@ -25,6 +25,8 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,24 +38,30 @@ public class IdGeneratorManager {
 
     private final Map<String, IdGenerator> generatorMap = new ConcurrentHashMap<>();
 
-    private final String idType = System.getProperty("nacos.core.idGenerator.type", "default");
+    private final String idType;
 
-    private final Function<String, IdGenerator> SUPPLIER = s -> {
-        IdGenerator generator;
-        ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
-        Iterator<IdGenerator> iterator = loader.iterator();
-        if (iterator.hasNext()) {
-            generator = iterator.next();
-        } else {
-            if (Objects.equals(idType, "snakeflower")) {
-                generator = new SnakeFlowerIdGenerator();
+    private final Function<String, IdGenerator> supplier;
+
+    public IdGeneratorManager() {
+        this.idType = ApplicationUtils
+                .getProperty("nacos.core.idGenerator.type", "default");
+        this.supplier = s -> {
+            IdGenerator generator;
+            ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
+            Iterator<IdGenerator> iterator = loader.iterator();
+            if (iterator.hasNext()) {
+                generator = iterator.next();
             } else {
-                generator = new DefaultIdGenerator(s);
+                if (Objects.equals(idType, "snakeflower")) {
+                    generator = new SnakeFlowerIdGenerator();
+                } else {
+                    generator = new DefaultIdGenerator(s);
+                }
             }
-        }
-        generator.init();
-        return generator;
-    };
+            generator.init();
+            return generator;
+        };
+    }
 
     public Map<String, Map<Object, Object>> idGeneratorInfo() {
         return generatorMap.entrySet().stream()
@@ -61,12 +69,12 @@ public class IdGeneratorManager {
     }
 
     public void register(String resource) {
-        generatorMap.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
+        generatorMap.computeIfAbsent(resource, s -> supplier.apply(resource));
     }
 
     public void register(String... resources) {
         for (String resource : resources) {
-            generatorMap.computeIfAbsent(resource, s -> SUPPLIER.apply(resource));
+            generatorMap.computeIfAbsent(resource, s -> supplier.apply(resource));
         }
     }
 

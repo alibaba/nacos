@@ -16,65 +16,64 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.fastjson.TypeReference;
-
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Serializer {
 
-    Object MONITOR = new Object();
-
-    Map<String, Class<?>> CLASS_CACHE = new HashMap<String, Class<?>>(8);
+    Map<String, Class<?>> CLASS_CACHE = new ConcurrentHashMap<>(8);
 
     /**
-     * 将数据反序列化
+     * Deserialize the data
      *
-     * @param data
-     * @param cls
-     * @param <T>
-     * @return
+     * @param data byte[]
+     * @param cls class
+     * @param <T> class type
+     * @return target object instance
      */
-    <T> T deSerialize(byte[] data, Class<T> cls);
+    <T> T deserialize(byte[] data, Class cls);
 
     /**
-     * only use to json
+     * Deserialize the data
      *
-     * @param data
-     * @param reference
-     * @param <T>
-     * @return
+     * @param data byte[]
+     * @param classFullName class full name
+     * @param <T> class type
+     * @return target object instance
      */
-    <T> T deSerialize(byte[] data, TypeReference<T> reference);
+    default <T> T deserialize(byte[] data, String classFullName) {
+        try {
+            Class<?> cls;
+            CLASS_CACHE.computeIfAbsent(classFullName, name -> {
+                try {
+                    return Class.forName(classFullName);
+                }
+                catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            cls = CLASS_CACHE.get(classFullName);
+            return (T) deserialize(data, cls);
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
 
     /**
-     * 将数据反序列化
+     * Serialize the object
      *
-     * @param data
-     * @param classFullName
-     * @param <T>
-     * @return
-     */
-    <T> T deSerialize(byte[] data, String classFullName);
-
-    /**
-     * 将数据序列化
-     *
-     * @param obj
-     * @return
+     * @param obj target obj
+     * @return byte[]
      */
     <T> byte[] serialize(T obj);
 
     /**
      * The name of the serializer implementer
-     * <ul>
-     *     <li>If fastjson is used, fastjson is returned.</li>
-     *     <li>If hession is used, hession is returned.</li>
-     *     <li>If it is kryo, kryo is returned.</li>
-     * </ul>
      *
      * @return name
      */

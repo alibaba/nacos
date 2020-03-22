@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.cluster.task.MemberDeadBroadcastTask;
 import com.alibaba.nacos.core.cluster.task.MemberPingTask;
 import com.alibaba.nacos.core.cluster.task.MemberPullTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
+import com.alibaba.nacos.core.distributed.distro.DistroSysConstants;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.Constants;
@@ -40,7 +41,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
@@ -85,10 +84,10 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     private String contextPath = "";
     @Value("${server.port:8848}")
     private int port;
-    private String localAddress;
     @Value("${useAddressServer:false}")
     private boolean isUseAddressServer;
     private Member self;
+    private String localAddress;
 
     // The node here is always the node information of the UP state
     private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
@@ -129,7 +128,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     @Override
     public void update(Member newMember) {
-        String address = newMember.address();
+        String address = newMember.getAddress();
 
         if (!serverList.containsKey(address)) {
             memberJoin(new ArrayList<>(Arrays.asList(newMember)));
@@ -189,17 +188,13 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     @Override
     public synchronized void memberJoin(Collection<Member> members) {
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
-
             final Member newMember = iterator.next();
-            final String address = newMember.address();
-
+            final String address = newMember.getAddress();
             if (serverList.containsKey(address)) {
                 iterator.remove();
                 continue;
             }
-
-            NodeState state = newMember.state();
-
+            NodeState state = newMember.getState();
             if (state == NodeState.DOWN || state == NodeState.SUSPICIOUS) {
                 iterator.remove();
                 continue;
@@ -207,9 +202,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
             // Ensure that the node is created only once
             serverList.computeIfAbsent(address, s -> newMember);
-
             memberAddressInfos.add(address);
-
             serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
@@ -224,9 +217,9 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         }
 
         Loggers.CLUSTER.warn("have new node join : {}", members);
-
+        onMemberChange(members, true);
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
-                .kind("join")
+                .join(true)
                 .changeNodes(members)
                 .allNodes(allMembers())
                 .build());
@@ -235,19 +228,14 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     @Override
     public void memberLeave(Collection<Member> members) {
-
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
-
             Member member = iterator.next();
-            final String address = member.address();
-
+            final String address = member.getAddress();
             if (Objects.equals(address, localAddress)) {
                 iterator.remove();
                 continue;
             }
-
             memberAddressInfos.remove(address);
-
             serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
@@ -261,9 +249,9 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         }
 
         Loggers.CLUSTER.warn("have node leave : {}", members);
-
+        onMemberChange(members, false);
         NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
-                .kind("leave")
+                .join(false)
                 .changeNodes(members)
                 .allNodes(allMembers())
                 .build());
@@ -279,7 +267,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         NotifyCenter.deregisterSubscribe(listener);
     }
 
-    @Override
     public String getContextPath() {
         if (StringUtils.isBlank(contextPath)) {
             String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
@@ -312,21 +299,15 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         return member.getState() == NodeState.UP;
     }
 
-    @Override
-    public void clean() {
-    }
-
     @PreDestroy
     @Override
     public void shutdown() {
-        Map<String, ConsistencyProtocol> protocolMap = ApplicationUtils.getBeansOfType(ConsistencyProtocol.class);
-        for (ConsistencyProtocol protocol : protocolMap.values()) {
-            protocol.shutdown();
-        }
+        apProtocol.shutdown();
+        cpProtocol.shutdown();
     }
 
     public boolean isSelf(Member member) {
-        return Objects.equals(member.address(), localAddress);
+        return Objects.equals(member.getAddress(), localAddress);
     }
 
     private void initSys() {
@@ -356,49 +337,36 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     private void initAPProtocol() {
         APProtocol protocol = ApplicationUtils.getBean(APProtocol.class);
-        Config config = (Config) ApplicationUtils.getBean(protocol.configType());
+        Class configType = ClassUtils.resolveGenericType(protocol.getClass());
+        Config config = (Config) ApplicationUtils.getBean(configType);
+        injectMembers4AP(config);
+        config.setVal(DistroSysConstants.WEB_CONTEXT_PATH, getContextPath());
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol));
         protocol.init((config));
-
-        injectClusterInfo(protocol.protocolMetaData());
-
-        // If the node information managed by the NodeManager changes, re-inject
-        // the information into the protocol metadata information
-
-        subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
-
         this.apProtocol = protocol;
     }
 
     private void initCPProtocol() {
         CPProtocol protocol = ApplicationUtils.getBean(CPProtocol.class);
-        Config config = (Config) ApplicationUtils.getBean(protocol.configType());
+        Class configType = ClassUtils.resolveGenericType(protocol.getClass());
+        Config config = (Config) ApplicationUtils.getBean(configType);
+        injectMembers4CP(config);
         config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol));
         protocol.init((config));
-
-        injectClusterInfo(protocol.protocolMetaData());
-
-        subscribe(event -> injectClusterInfo(protocol.protocolMetaData()));
-
         this.cpProtocol = protocol;
     }
 
-    private void injectClusterInfo(ProtocolMetaData metaData) {
+    private void injectMembers4CP(Config config) {
+        final Member selfMember = self();
+        final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+        Set<String> others = MemberUtils.toCPMembersInfo(allMembers());
+        config.setMembers(self, others);
+    }
 
-        Map<String, Map<String, Object>> defaultMetaData = new HashMap<>();
-        Map<String, Object> sub = new HashMap<>(8);
-
-        defaultMetaData.put(ProtocolMetaData.GLOBAL, sub);
-
-        // Globally unique information
-
-        // /global/cluster => [ip:port, ip:port, ...]
-        // /global/self => ip:port
-
-        sub.put(ProtocolMetaData.CLUSTER_INFO, allMembers().stream().map(Member::address).collect(Collectors.toList()));
-        sub.put(ProtocolMetaData.SELF, self().address());
-
-        metaData.load(defaultMetaData);
+    private void injectMembers4AP(Config config) {
+        final String self = self().getAddress();
+        Set<String> others = MemberUtils.toAPMembersInfo(allMembers());
+        config.setMembers(self, others);
     }
 
     @SuppressWarnings("all")
@@ -462,6 +430,16 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     public void destroy() throws Exception {
         MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
         GlobalExecutor.runWithoutThread(shutdownTask);
+    }
+
+    private void onMemberChange(Collection<Member> members, boolean isJoin) {
+        if (isJoin) {
+            GlobalExecutor.executeByCommon(() -> apProtocol.addMembers(MemberUtils.toAPMembersInfo(members)));
+            GlobalExecutor.executeByCommon(() -> cpProtocol.addMembers(MemberUtils.toCPMembersInfo(members)));
+        } else {
+            GlobalExecutor.executeByCommon(() -> apProtocol.removeMembers(MemberUtils.toAPMembersInfo(members)));
+            GlobalExecutor.executeByCommon(() -> cpProtocol.removeMembers(MemberUtils.toCPMembersInfo(members)));
+        }
     }
 
     public Set<String> getMemberAddressInfos() {

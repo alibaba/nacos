@@ -16,20 +16,22 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
+import com.alibaba.nacos.consistency.exception.KvException;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.store.KVStore;
+
 import java.util.Map;
 import java.util.function.BiConsumer;
+
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
 
 /**
  * Eventual consistency key-value pair storage
@@ -46,7 +48,7 @@ import org.javatuples.Pair;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class DistroKVStore<T> extends KVStore<T> {
+public class DistroKVStore extends KVStore<CheckSum> {
 
     private final KVLogProcessor logProcessor;
 
@@ -62,28 +64,33 @@ public class DistroKVStore<T> extends KVStore<T> {
     }
 
     @Override
-    public final boolean put(String key, T data) throws Exception {
-        final byte[] putData = serializer.serialize(data);
-
-        final NLog log = NLog.builder()
+    public final boolean put(String key, CheckSum data) throws Exception {
+        final Log log = Log.newBuilder()
                 .key(key)
-                .data(putData)
+                .data(data)
                 .operation(PUT_COMMAND)
                 .className(data.getClass().getCanonicalName())
-                .addContextValue("source", data)
                 .build();
 
-        return logProcessor.commitAutoSetBiz(log);
+        LogFuture future = logProcessor.commitAutoSetGroup(log);
+        if (future.isOk()) {
+            return true;
+        }
+        throw new KvException(future.getError());
     }
 
     @Override
     public final boolean remove(String key) throws Exception {
-        final NLog log = NLog.builder()
+        Log log = Log.newBuilder()
                 .key(key)
                 .operation(REMOVE_COMMAND)
                 .build();
 
-        return logProcessor.commitAutoSetBiz(log);
+        LogFuture future = logProcessor.commitAutoSetGroup(log);
+        if (future.isOk()) {
+            return true;
+        }
+        throw new KvException(future.getError());
     }
 
     // Loading data, will not trigger AP consistent interface call
@@ -94,8 +101,8 @@ public class DistroKVStore<T> extends KVStore<T> {
             @Override
             public void accept(String s, Item item) {
                 final String key = s;
-                final T source = serializer.deSerialize(item.getBytes(), item.getClassName());
-                operate(key, Pair.with(source, item.getBytes()), PUT_COMMAND);
+                final Object source = item.getData();
+                operate(key, source, PUT_COMMAND);
             }
         });
     }
@@ -106,24 +113,14 @@ public class DistroKVStore<T> extends KVStore<T> {
         return logProcessor;
     }
 
-    final class KVLogProcessor implements LogProcessor4AP {
-
-        @Override
-        public void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
-            DistroKVStore.this.protocol = protocol;
-        }
-
-        @Override
-        public ConsistencyProtocol<? extends Config> getProtocol() {
-            return DistroKVStore.this.protocol;
-        }
+    final class KVLogProcessor extends LogProcessor4AP {
 
         @Override
         public <D> GetResponse<D> getData(GetRequest request) {
             try {
-                final String key = new String(request.getCtx());
+                final String key = request.getCtx();
                 return GetResponse.<D>builder()
-                        .data((D) getByKeyAutoConvert(key))
+                        .data((D) get(key))
                         .build();
             } catch (Exception e) {
                 return GetResponse.<D>builder()
@@ -134,25 +131,28 @@ public class DistroKVStore<T> extends KVStore<T> {
         }
 
         @Override
-        public boolean onApply(Log log) {
+        public LogFuture onApply(Log log) {
             final String operation = log.getOperation();
             final String originKey = log.getKey();
-            final NLog nLog = (NLog) log;
-            if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
-                final byte[] data = log.getData();
-                final T source = (T) nLog.getContextValue("source");
-                operate(originKey, Pair.with(source, data), PUT_COMMAND);
-                return true;
+            try {
+                if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
+                    final CheckSum source = log.getData();
+                    operate(originKey, source, PUT_COMMAND);
+                    return LogFuture.success(true);
+                }
+                if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
+                    operate(originKey, null, REMOVE_COMMAND);
+                    return LogFuture.success(true);
+                }
+                return LogFuture.fail(new UnsupportedOperationException(
+                        "This data operation is not supported : " + operation));
+            } catch (Throwable t) {
+                return LogFuture.success(t);
             }
-            if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
-                operate(originKey, null, REMOVE_COMMAND);
-                return true;
-            }
-            throw new UnsupportedOperationException();
         }
 
         @Override
-        public String bizInfo() {
+        public String group() {
             return storeName();
         }
 

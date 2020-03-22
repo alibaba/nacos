@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
@@ -30,14 +31,13 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.raft.utils.JLog;
+import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ConvertUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alipay.sofa.jraft.Node;
 import java.util.Collections;
@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -59,7 +60,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean shutdowned = new AtomicBoolean(false);
+    private RaftConfig raftConfig;
     private JRaftServer raftServer;
+    private JRaftOps jRaftOps;
     private Node raftNode;
     private MemberManager memberManager;
     private String selfAddress = InetUtils.getSelfIp();
@@ -67,7 +70,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     public JRaftProtocol(MemberManager memberManager) {
         this.memberManager = memberManager;
-        this.raftServer = new JRaftServer(this.memberManager, failoverRetries);
+        this.raftServer = new JRaftServer(failoverRetries);
+        this.jRaftOps = new JRaftOps(raftServer);
     }
 
     @Override
@@ -75,11 +79,13 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
         if (initialized.compareAndSet(false, true)) {
 
+            this.raftConfig = config;
+
             // Load all LogProcessor information in advance
 
-            loadLogDispatcher(config.listLogProcessor());
+            loadLogProcessor(config.listLogProcessor());
 
-            this.selfAddress = memberManager.self().address();
+            this.selfAddress = memberManager.self().getAddress();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
             NotifyCenter.registerPublisher(RaftErrorEvent::new, RaftErrorEvent.class);
@@ -87,7 +93,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 
             this.raftServer.setFailoverRetries(failoverRetries);
-            this.raftServer.init(config, config.listLogProcessor());
+            this.raftServer.init(this.raftConfig, this.raftConfig.listLogProcessor());
             this.raftServer.start();
 
             // There is only one consumer to ensure that the internal consumption
@@ -132,33 +138,25 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
 
     @Override
-    public <R> R metaData(String key, String... subKey) {
-        return (R) metaData.get(key, subKey);
-    }
-
-    @Override
     public <D> GetResponse<D> getData(GetRequest request) throws Exception {
         int retryCnt = ConvertUtils.toInt(request.getValue(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
-        return (GetResponse<D>) raftServer.get(request, retryCnt).get();
+        return (GetResponse<D>) raftServer.get(request, retryCnt);
     }
 
     @Override
-    public boolean submit(Log data) throws Exception {
-        CompletableFuture<Boolean> future = submitAsync(data);
-        Boolean result = future.join();
-        if (result == null) {
-            return false;
-        }
+    public LogFuture submit(Log data) throws Exception {
+        CompletableFuture<LogFuture> future = submitAsync(data);
+        LogFuture result = future.join();
         return result;
     }
 
     @Override
-    public CompletableFuture<Boolean> submitAsync(Log data) {
-        int retryCnt = ConvertUtils.toInt(data.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
+    public CompletableFuture<LogFuture> submitAsync(Log data) {
+        int retryCnt = Integer.parseInt(data.getExtendInfoOrDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, String.valueOf(failoverRetries)));
         final Throwable[] throwable = new Throwable[]{null};
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        CompletableFuture<LogFuture> future = new CompletableFuture<>();
         try {
-            raftServer.commit(JRaftUtils.toJLog(data, JLog.JLogOperaton.MODIFY_OPERATION), future, retryCnt);
+            raftServer.commit(JRaftUtils.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), future, retryCnt);
         } catch (Throwable e) {
             throwable[0] = e;
         }
@@ -169,8 +167,19 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
 
     @Override
-    public Class<? extends Config> configType() {
-        return RaftConfig.class;
+    public void addMembers(Set<String> addresses) {
+        this.raftConfig.addMembers(addresses);
+        for (String address : addresses) {
+            raftServer.addNode(address);
+        }
+    }
+
+    @Override
+    public void removeMembers(Set<String> addresses) {
+        this.raftConfig.removeMembers(addresses);
+        for (String address : addresses) {
+            raftServer.removeNode(address);
+        }
     }
 
     @Override
@@ -195,6 +204,11 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             this.raftServer.createMultiRaftGroup(Collections.singletonList(processor));
         });
         return kvStore;
+    }
+
+    @Override
+    public RestResult<String> execute(Map<String, String> args) {
+        return jRaftOps.execute(args);
     }
 
     private void injectProtocolMetaData(ProtocolMetaData metaData) {

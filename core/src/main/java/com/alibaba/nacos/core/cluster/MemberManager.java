@@ -112,18 +112,6 @@ public interface MemberManager {
     void unSubscribe(MemberChangeListener listener);
 
     /**
-     * get web-context path
-     *
-     * @return path
-     */
-    String getContextPath();
-
-    /**
-     * clean operation
-     */
-    void clean();
-
-    /**
      * node manager shutdown
      */
     void shutdown();

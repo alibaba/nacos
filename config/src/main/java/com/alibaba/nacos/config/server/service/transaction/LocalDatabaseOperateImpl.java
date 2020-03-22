@@ -37,7 +37,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 @Primary
 @Conditional(ConditionOnDefaultStoreType.class)
 @Component
-public class LocalDatabaseOperateImpl extends BaseDatabaseOperate implements DatabaseOperate {
+public class LocalDatabaseOperateImpl implements BaseDatabaseOperate, DatabaseOperate {
 
     private DataSourceService dataSourceService;
 

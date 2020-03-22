@@ -24,12 +24,10 @@ import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.AddLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.AddPeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ChangePeersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.GetLeaderRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.GetPeersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.RemoveLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.RemovePeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ResetLearnersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ResetPeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.SnapshotRequestProcessor;
@@ -51,17 +49,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("all")
 public class JRaftUtils {
 
-    public static final JLog toJLog(Log log, final JLog.JLogOperaton operate) {
-        final JLog jLog = new JLog();
-        jLog.setBiz(log.getBiz());
-        jLog.setOperaton(operate);
-        jLog.setKey(log.getKey());
-        jLog.setData(log.getData());
-        jLog.setClassName(log.getClassName());
-        jLog.setOperation(log.getOperation());
-        jLog.setExtendInfo(log.listExtendInfo());
-        jLog.setLocalContext(log.getLocalContext());
-        return jLog;
+    public static final Log injectExtendInfo(Log log, final String operate) {
+        return log.putExtendInfoByKey(JRaftConstants.JRAFT_EXTEND_INFO_KEY, operate);
     }
 
     public static List<String> toStrings(List<PeerId> peerIds) {

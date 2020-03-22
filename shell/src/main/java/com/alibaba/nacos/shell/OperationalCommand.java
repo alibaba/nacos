@@ -17,6 +17,8 @@ package com.alibaba.nacos.shell;
 
 import com.alibaba.nacos.common.model.RestResult;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
@@ -29,6 +31,16 @@ public interface OperationalCommand {
 	 * @return {@link RestResult <String>}
 	 */
 	default RestResult<String> execute(String[] args) {
+		return RestResult.<String>builder().withMsg("Command line operations are not currently supported").build();
+	}
+
+	/**
+	 * Operation and maintenance interface of consistent protocol
+	 *
+	 * @param args command, The format is in the form key=value
+	 * @return {@link RestResult <String>}
+	 */
+	default RestResult<String> execute(Map<String, String> args) {
 		return RestResult.<String>builder().withMsg("Command line operations are not currently supported").build();
 	}
 

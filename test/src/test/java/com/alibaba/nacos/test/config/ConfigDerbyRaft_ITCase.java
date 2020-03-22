@@ -317,7 +317,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 				CPProtocol protocol = context.getBean(CPProtocol.class);
 
 				protocol.protocolMetaData()
-						.subscribe(operate.bizInfo(), Constants.LEADER_META_DATA, new Observer() {
+						.subscribe(operate.group(), Constants.LEADER_META_DATA, new Observer() {
 
 							@Override
 							public void update(Observable o, Object arg) {

@@ -16,105 +16,142 @@
 
 package com.alibaba.nacos.consistency;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Transactions committed by the distributed consistency protocol
- *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
-public interface Log extends Serializable {
+public class Log implements Serializable {
 
-    /**
-     * Returns the business to which this Log belongs
-     * This is an important distinction. How Protocol
-     * distributes different logs to different logs
-     * depends on this information.
-     *
-     * @return business-info
-     */
-    String getBiz();
+	private static final long serialVersionUID = 5151021912611953768L;
+	protected String group;
+	protected String key;
+	protected Object data;
+	protected String className;
+	protected String operation;
+	protected Map<String, String> extendInfo = new HashMap<>(4);
 
-    /**
-     * setting biz info
-     *
-     * @param biz biz info
-     */
-    void setBiz(String biz);
+	public String getGroup() {
+		return group;
+	}
 
-    /**
-     * datum key
-     *
-     * @return key
-     */
-    String getKey();
+	public void setGroup(String group) {
+		this.group = group;
+	}
 
-    /**
-     * Actual committed transaction data to be serialized
-     *
-     * @return byte[]
-     */
-    byte[] getData();
+	public String getKey() {
+		return key;
+	}
 
-    /**
-     * Class name information of the data, used for deserialization
-     *
-     * @return {@link Class#getCanonicalName()}
-     */
-    String getClassName();
+	public void setKey(String key) {
+		this.key = key;
+	}
 
-    /**
-     * Specific data manipulation
-     *
-     * @return operation name
-     */
-    String getOperation();
+	public <T> T getData() {
+		return (T) data;
+	}
 
-    /**
-     * Information carried in this transaction
-     *
-     * @param key key
-     * @return value
-     */
-    String extendVal(String key);
+	public void setData(Object data) {
+		this.data = data;
+	}
 
-    /**
-     * Set additional info data
-     *
-     * @param key key
-     * @param val value
-     */
-    void addExtendVal(String key, String val);
+	public String getClassName() {
+		return className;
+	}
 
-    /**
-     * Set additional information Map
-     *
-     * @param extendInfo {@link Map<String, String>}
-     */
-    void appendExtendInfo(Map<String, String> extendInfo);
+	public void setClassName(String className) {
+		this.className = className;
+	}
 
-    /**
-     * list all extendInfo
-     *
-     * @return {@link Map<String, String>}
-     */
-    Map<String, String> listExtendInfo();
+	public String getOperation() {
+		return operation;
+	}
 
-    /**
-     * Obtain the information data transparently transmitted by this node
-     * Does not participate in serialization ！！！
-     *
-     * @return {@link Map<String, Object>}
-     */
-    Map<String, Object> getLocalContext();
+	public void setOperation(String operation) {
+		this.operation = operation;
+	}
 
-    /**
-     * Setting the information data transparently transmitted by this node
-     * Does not participate in serialization ！！！
-     *
-     * @param context {@link Map<String, Object>}
-     */
-    void setLocalContext(Map<String, Object> context);
+	public Map<String, String> getExtendInfo() {
+		return extendInfo;
+	}
 
+	public void setExtendInfo(Map<String, String> extendInfo) {
+		this.extendInfo = extendInfo;
+	}
+
+	public Log putExtendInfoByKey(String key, String value) {
+		this.extendInfo.put(key, value);
+		return this;
+	}
+
+	public String getExtendInfoOrDefault(String key, String defaultVal) {
+		final String result = extendInfo.get(key);
+		if (StringUtils.isEmpty(result)) {
+			return defaultVal;
+		}
+		return result;
+	}
+
+	public static LogBuilder newBuilder() {
+		return new LogBuilder();
+	}
+
+	public static final class LogBuilder {
+		protected String group;
+		protected String key;
+		protected Object data;
+		protected String className;
+		protected String operation;
+		protected Map<String, String> extendInfo = new HashMap<>(4);
+
+		private LogBuilder() {
+		}
+
+		public LogBuilder group(String group) {
+			this.group = group;
+			return this;
+		}
+
+		public LogBuilder key(String key) {
+			this.key = key;
+			return this;
+		}
+
+		public LogBuilder data(Object data) {
+			this.data = data;
+			return this;
+		}
+
+		public LogBuilder className(String className) {
+			this.className = className;
+			return this;
+		}
+
+		public LogBuilder operation(String operation) {
+			this.operation = operation;
+			return this;
+		}
+
+		public LogBuilder extendInfo(Map<String, String> extendInfo) {
+			this.extendInfo.putAll(extendInfo);
+			return this;
+		}
+
+		public LogBuilder addExtendInfo(String key, String value) {
+			this.extendInfo.put(key, value);
+			return this;
+		}
+
+		public Log build() {
+			Log log = new Log();
+			log.setGroup(group);
+			log.setKey(key);
+			log.setData(data);
+			log.setClassName(className);
+			log.setOperation(operation);
+			log.setExtendInfo(extendInfo);
+			return log;
+		}
+	}
 }

@@ -32,14 +32,15 @@ public abstract class AbstractConsistencyProtocol<T extends Config, L extends Lo
 
     protected final ProtocolMetaData metaData = new ProtocolMetaData();
 
-    protected Map<String, L> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
+    protected Map<String, L> processorMap = Collections.synchronizedMap(new HashMap<>());
 
-    public void loadLogDispatcher(List<L> logProcessors) {
-        logProcessors.forEach(logDispatcher -> dispatcherMap.put(logDispatcher.bizInfo(), logDispatcher));
+    public void loadLogProcessor(List<L> logProcessors) {
+        logProcessors.forEach(logDispatcher -> processorMap
+                .put(logDispatcher.group(), logDispatcher));
     }
 
     protected Map<String, L> allProcessor() {
-        return dispatcherMap;
+        return processorMap;
     }
 
     @Override

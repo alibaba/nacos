@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.utils;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -24,6 +26,14 @@ public final class ThreadUtils {
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
+    }
+
+    public static void latchAwait(CountDownLatch latch) {
+        try {
+            latch.await();
         } catch (InterruptedException e) {
             Thread.interrupted();
         }

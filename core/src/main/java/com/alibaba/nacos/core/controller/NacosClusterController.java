@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/cluster")
-public class NacosClusterRouter {
+public class NacosClusterController {
 
     @Autowired
     private ServerMemberManager memberManager;
@@ -69,7 +69,7 @@ public class NacosClusterRouter {
                 result.add(member);
                 return;
             }
-            final String address = member.address();
+            final String address = member.getAddress();
             if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
                 result.add(member);
             }
@@ -92,7 +92,7 @@ public class NacosClusterRouter {
     }
 
     @PostMapping("/server/report")
-    public RestResult<String> report(@RequestBody Member node, @RequestParam(value = "sync") boolean sync) {
+    public RestResult<String> report(@RequestBody(required = false) Member node, @RequestParam(value = "sync") boolean sync) {
 
         if (!node.check()) {
             return RestResultUtils.failedWithData("Node information is illegal");

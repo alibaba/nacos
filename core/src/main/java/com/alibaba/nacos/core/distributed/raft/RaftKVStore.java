@@ -17,26 +17,26 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.consistency.cp.CPKvStore;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.exception.KvException;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.raft.exception.RaftKVStoreException;
-import java.util.ArrayList;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
 
 /**
  * Strong consistency key-value pair storage
@@ -64,29 +64,30 @@ class RaftKVStore<T> extends CPKvStore<T> {
 
     @Override
     public boolean put(String key, Object data) throws Exception {
-        final byte[] putData = serializer.serialize(data);
-
-        final NLog log = NLog.builder()
+        final Log log = Log.newBuilder()
                 .key(key)
-                .data(putData)
+                .data(data)
                 .operation(PUT_COMMAND)
                 .className(data.getClass().getCanonicalName())
                 .build();
-
-        logProcessor.commitAutoSetBiz(log);
-        return true;
+        LogFuture future = logProcessor.commitAutoSetGroup(log);
+        if (future.isOk()) {
+            return true;
+        }
+        throw new KvException(future.getError());
     }
 
     @Override
     public boolean remove(String key) throws Exception {
-        final NLog log = NLog.builder()
+        final Log log = Log.newBuilder()
                 .key(key)
                 .operation(REMOVE_COMMAND)
                 .build();
-
-        logProcessor.commitAutoSetBiz(log);
-
-        return true;
+        LogFuture future = logProcessor.commitAutoSetGroup(log);
+        if (future.isOk()) {
+            return true;
+        }
+        throw new KvException(future.getError());
     }
 
     @Override
@@ -99,16 +100,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
     }
 
     @Override
-    public byte[] getByKey(String key) {
-        GetResponse<byte[]> response = request(key, "getByKey");
-        if (StringUtils.isNotEmpty(response.getErrMsg())) {
-            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
-        }
-        return response.getData();
-    }
-
-    @Override
-    public T getByKeyAutoConvert(String key) {
+    public T get(String key) {
         GetResponse<T> response = request(key, "getByKeyAutoConvert");
         if (StringUtils.isNotEmpty(response.getErrMsg())) {
             throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
@@ -137,15 +129,6 @@ class RaftKVStore<T> extends CPKvStore<T> {
     @Override
     public Map<String, Item> getItemByBatch(Collection<String> keys) {
         GetResponse<Map<String, Item>> response = request(keys, "getItemByBatch");
-        if (StringUtils.isNotEmpty(response.getErrMsg())) {
-            throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
-        }
-        return response.getData();
-    }
-
-    @Override
-    public String getCheckSum(String key) {
-        GetResponse<String> response = request(key, "getCheckSum");
         if (StringUtils.isNotEmpty(response.getErrMsg())) {
             throw new RaftKVStoreException(response.getExceptionName(), response.getErrMsg());
         }
@@ -186,8 +169,8 @@ class RaftKVStore<T> extends CPKvStore<T> {
             @Override
             public void accept(String s, Item item) {
                 final String key = s;
-                final T source = serializer.deSerialize(item.getBytes(), item.getClassName());
-                operate(key, Pair.with(source, item.getBytes()), PUT_COMMAND);
+                final Object source = item.getData();
+                operate(key, source, PUT_COMMAND);
             }
         });
     }
@@ -195,7 +178,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
     private <R> GetResponse<R> request(Object arg, String type) {
         try {
             final GetRequest request = GetRequest.builder()
-                    .biz(logProcessor.bizInfo())
+                    .group(logProcessor.group())
                     .addInfo("type", type)
                     .build();
 
@@ -213,17 +196,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
         return logProcessor;
     }
 
-    class KVLogProcessor implements LogProcessor4CP {
-
-        @Override
-        public void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
-            RaftKVStore.this.protocol = protocol;
-        }
-
-        @Override
-        public ConsistencyProtocol<? extends Config> getProtocol() {
-            return RaftKVStore.this.protocol;
-        }
+    class KVLogProcessor extends LogProcessor4CP {
 
         @Override
         public <D> GetResponse<D> getData(GetRequest request) {
@@ -241,26 +214,24 @@ class RaftKVStore<T> extends CPKvStore<T> {
         }
 
         @Override
-        public boolean onApply(Log log) {
+        public LogFuture onApply(Log log) {
             final String operation = log.getOperation();
             final String originKey = log.getKey();
-            final NLog nLog = (NLog) log;
-            if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
-                final byte[] data = log.getData();
-                final T source = serializer.deSerialize(data, log.getClassName());
-                operate(originKey, Pair.with(source, data), PUT_COMMAND);
-                return true;
+            try {
+                if (StringUtils.equalsIgnoreCase(operation, PUT_COMMAND)) {
+                    final Object source = log.getData();
+                    operate(originKey, source, PUT_COMMAND);
+                    return LogFuture.success(true);
+                }
+                if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
+                    operate(originKey, null, REMOVE_COMMAND);
+                    return LogFuture.success(true);
+                }
+                return LogFuture.fail(new UnsupportedOperationException(
+                        "This data operation is not supported : " + operation));
+            } catch (Throwable t) {
+                return LogFuture.fail(t);
             }
-            if (StringUtils.equalsIgnoreCase(operation, REMOVE_COMMAND)) {
-                operate(originKey, null, REMOVE_COMMAND);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            throw new RaftKVStoreException(throwable, throwable.getClass().getCanonicalName());
         }
 
         @Override
@@ -270,7 +241,7 @@ class RaftKVStore<T> extends CPKvStore<T> {
         }
 
         @Override
-        public String bizInfo() {
+        public String group() {
             return storeName();
         }
     }
@@ -305,32 +276,26 @@ class RaftKVStore<T> extends CPKvStore<T> {
             Collection<String> keys = Collections.emptyList();
             switch (type) {
                 case contains:
-                    key = serializer.deSerialize(requestBody, String.class);
+                    key = serializer.deserialize(requestBody, String.class);
                     return RaftKVStore.super.contains(key);
-                case getByKey:
-                    key = serializer.deSerialize(requestBody, String.class);
-                    return RaftKVStore.super.getByKey(key);
                 case getByKeyAutoConvert:
-                    key = serializer.deSerialize(requestBody, String.class);
-                    return RaftKVStore.super.getByKeyAutoConvert(key);
+                    key = serializer.deserialize(requestBody, String.class);
+                    return RaftKVStore.super.get(key);
                 case getItemByKey:
-                    key = serializer.deSerialize(requestBody, String.class);
+                    key = serializer.deserialize(requestBody, String.class);
                     return RaftKVStore.super.getItemByKey(key);
                 case batchGetAutoConvert:
-                    keys = serializer.deSerialize(requestBody, Collection.class);
+                    keys = serializer.deserialize(requestBody, Collection.class);
                     return RaftKVStore.super.batchGetAutoConvert(keys);
                 case getItemByBatch:
-                    keys = serializer.deSerialize(requestBody, Collection.class);
+                    keys = serializer.deserialize(requestBody, Collection.class);
                     return RaftKVStore.super.getItemByBatch(keys);
-                case getCheckSum:
-                    key = serializer.deSerialize(requestBody, String.class);
-                    return RaftKVStore.super.getCheckSum(key);
                 case allKeys:
                     return RaftKVStore.super.allKeys();
                 case getAll:
                     return RaftKVStore.super.getAll();
                 case batchGet:
-                    keys = serializer.deSerialize(requestBody, Collection.class);
+                    keys = serializer.deserialize(requestBody, Collection.class);
                     return RaftKVStore.super.batchGet(keys);
                 default:
                     throw new UnsupportedOperationException();

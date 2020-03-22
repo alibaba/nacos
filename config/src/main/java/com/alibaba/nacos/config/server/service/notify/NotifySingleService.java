@@ -57,7 +57,7 @@ public class NotifySingleService {
 
         for (Member member : clusterIps) {
 
-            final String ip = member.ip();
+            final String ip = member.getIp();
 
             // 固定线程数，无界队列（基于假设: 线程池的吞吐量不错，不会出现持续任务堆积，存在偶尔的瞬间压力）
             @SuppressWarnings("PMD.ThreadPoolCreationRule")

@@ -62,7 +62,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
         boolean isok = true;
 
         for (Member member : memberManager.allMembers()) {
-            isok = notifyToDump(dataId, group, tenant, lastModified, member.address()) && isok;
+            isok = notifyToDump(dataId, group, tenant, lastModified, member.getAddress()) && isok;
         }
         return isok;
     }

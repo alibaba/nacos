@@ -16,24 +16,27 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
-import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.consistency.Log;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
-import com.alibaba.nacos.core.distributed.raft.utils.JLog;
+import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
+import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.distributed.raft.utils.ByteHolder;
 import com.alibaba.nacos.core.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.RestResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
+public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
 
-    private static final String INTEREST_NAME = JLog.class.getName();
+    private static final String INTEREST_NAME = Log.class.getName();
 
     private final JRaftServer server;
     private final int failoverRetries;
@@ -44,30 +47,24 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
     }
 
     @Override
-    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, JLog log) {
-        final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getBiz());
-
+    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
+        final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getGroup());
         if (Objects.isNull(tuple)) {
-            asyncCtx.sendResponse(RestResultUtils.failed("Could not find the corresponding Raft Group : " + log.getBiz()));
+            asyncCtx.sendResponse(RestResultUtils.failedWithData(new NoSuchRaftGroupException("Could not find the corresponding Raft Group : " + log.getGroup())));
             return;
         }
-
         if (tuple.getNode().isLeader()) {
-            int retryCnt = ConvertUtils.toInt(log.extendVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), failoverRetries);
+            int retryCnt = Integer.parseInt(log.getExtendInfoOrDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES, String.valueOf(failoverRetries)));
             CompletableFuture<Object> future = new CompletableFuture<>();
             server.commit(log, future, retryCnt).whenComplete((result, t) -> {
                 if (t == null) {
                     asyncCtx.sendResponse(RestResultUtils.success(result));
                 } else {
-                    asyncCtx.sendResponse(
-                            RestResult.builder()
-                                    .withData(false)
-                                    .withMsg(t.getMessage())
-                                    .build());
+                    asyncCtx.sendResponse(RestResultUtils.failedWithData(t));
                 }
             });
         } else {
-            asyncCtx.sendResponse(RestResultUtils.failed("Not leader"));
+            asyncCtx.sendResponse(RestResultUtils.failedWithData(new NoLeaderException("Not leader")));
         }
     }
 
@@ -75,4 +72,5 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<JLog> {
     public String interest() {
         return INTEREST_NAME;
     }
+
 }

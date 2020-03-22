@@ -22,5 +22,5 @@ import com.alibaba.nacos.consistency.LogProcessor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface LogProcessor4AP extends LogProcessor {
+public abstract class LogProcessor4AP extends LogProcessor {
 }

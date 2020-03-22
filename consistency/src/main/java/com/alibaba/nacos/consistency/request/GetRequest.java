@@ -30,9 +30,9 @@ public class GetRequest implements Serializable {
 
     private static final long serialVersionUID = -3588214197362245921L;
 
-    private String biz;
+    private String group;
 
-    private byte[] ctx;
+    private Object ctx;
 
     private Map<String, String> info;
 
@@ -43,24 +43,24 @@ public class GetRequest implements Serializable {
     @Override
     public String toString() {
         return "GetRequest{" +
-                "biz='" + biz + '\'' +
-                ", ctx=" + Arrays.toString(ctx) +
+                "biz='" + group + '\'' +
+                ", ctx=" + ctx +
                 '}';
     }
 
-    public String getBiz() {
-        return biz;
+    public String getGroup() {
+        return group;
     }
 
-    public void setBiz(String biz) {
-        this.biz = biz;
+    public void setGroup(String group) {
+        this.group = group;
     }
 
-    public byte[] getCtx() {
-        return ctx;
+    public <T> T getCtx() {
+        return (T) ctx;
     }
 
-    public void setCtx(byte[] ctx) {
+    public void setCtx(Object ctx) {
         this.ctx = ctx;
     }
 
@@ -91,19 +91,19 @@ public class GetRequest implements Serializable {
     }
 
     public static final class GetRequestBuilder {
-        private String biz;
-        private byte[] ctx;
+        private String group;
+        private Object ctx;
         private Map<String, String> info;
 
         private GetRequestBuilder() {
         }
 
-        public GetRequestBuilder biz(String biz) {
-            this.biz = biz;
+        public GetRequestBuilder group(String group) {
+            this.group = group;
             return this;
         }
 
-        public GetRequestBuilder ctx(byte[] ctx) {
+        public GetRequestBuilder ctx(Object ctx) {
             this.ctx = ctx;
             return this;
         }
@@ -127,7 +127,7 @@ public class GetRequest implements Serializable {
 
         public GetRequest build() {
             GetRequest getRequest = new GetRequest();
-            getRequest.setBiz(biz);
+            getRequest.setGroup(group);
             getRequest.setCtx(ctx);
             getRequest.setInfo(info);
             return getRequest;

@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.cluster;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import com.alibaba.fastjson.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -36,6 +38,7 @@ public class Member {
 
     private String address = "";
 
+    @JSONField(serialize = false)
     private transient int failAccessCnt = 0;
 
     public Member() {
@@ -47,10 +50,6 @@ public class Member {
 
     public static ServerNodeBuilder builder() {
         return new ServerNodeBuilder();
-    }
-
-    public String getIp() {
-        return ip;
     }
 
     public void setIp(String ip) {
@@ -81,38 +80,22 @@ public class Member {
         this.extendInfo = extendInfo;
     }
 
-    public String getAddress() {
-        return address;
-    }
-
     public void setAddress(String address) {
         this.address = address;
     }
 
-    public String ip() {
+    public String getIp() {
         return ip;
     }
 
-    public int port() {
-        return port;
-    }
-
-    public String address() {
+    public String getAddress() {
         if (StringUtils.isBlank(address)) {
             address = ip + ":" + port;
         }
         return address;
     }
 
-    public NodeState state() {
-        return state;
-    }
-
-    public Map<String, Object> extendInfo() {
-        return extendInfo;
-    }
-
-    public Object extendVal(String key) {
+    public Object getExtendVal(String key) {
         return extendInfo.get(key);
     }
 

@@ -16,102 +16,117 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.request.GetResponse;
-import com.alibaba.nacos.core.distributed.raft.utils.JLog;
+import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
+import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosStateMachine extends AbstractStateMachine {
 
-    private Serializer serializer;
+	private Serializer serializer;
 
-    public NacosStateMachine(Serializer serializer, JRaftServer server, LogProcessor4CP processor) {
-        super(server, processor);
-        this.serializer = serializer;
-    }
+	public NacosStateMachine(Serializer serializer, JRaftServer server,
+			LogProcessor4CP processor) {
+		super(server, processor);
+		this.serializer = serializer;
+	}
 
-    @Override
+	@Override
     public void onApply(Iterator iter) {
-        int index = 0;
-        int applied = 0;
-        try {
-            while (iter.hasNext()) {
-                JLog log = null;
-                NacosClosure closure = null;
-                Status status = Status.OK();
-                try {
-                    if (iter.done() != null) {
-                        closure = (NacosClosure) iter.done();
-                        log = closure.getLog();
-                    } else {
-                        final ByteBuffer data = iter.getData();
-                        log = serializer.deSerialize(data.array(), JLog.class);
-                    }
+		int index = 0;
+		int applied = 0;
+		try {
+			while (iter.hasNext()) {
+				Log log = null;
+				NacosClosure closure = null;
+				Status status = Status.OK();
+				try {
+					if (iter.done() != null) {
+						closure = (NacosClosure) iter.done();
+						log = closure.getLog();
+					}
+					else {
+						final ByteBuffer data = iter.getData();
+						log = serializer.deserialize(data.array(), Log.class);
+					}
 
-                    Loggers.RAFT.debug("receive log : {}", log);
+					Loggers.RAFT.debug("receive log : {}", log);
 
-                    // read request
+					final String type = log.getExtendInfoOrDefault(
+							JRaftConstants.JRAFT_EXTEND_INFO_KEY, JRaftLogOperation.READ_OPERATION);
 
-                    if (Objects.equals(JLog.JLogOperaton.READ_OPERATION, log.getOperaton())) {
-                        raftRead(closure, log);
-                    } else {
-                        try {
-
-                            boolean result = processor.onApply(log);
-
-                            if (Objects.nonNull(closure)) {
-                                closure.setObject(result);
-                            }
-
-                        } catch (Throwable t) {
-
-                            // TODO 这里的处理需要考虑下，如果业务层能够处理错误避免一致性问题，则处理，
-                            //  否则还是需要抛出交给状态机
-                            status = new Status(RaftError.UNKNOWN, t.getMessage());
-                            processor.onError(t);
-                        }
-                    }
-                } catch (Throwable e) {
-                    index++;
-                    throw e;
+					switch (type) {
+					case JRaftLogOperation.READ_OPERATION:
+						raftRead(closure, log);
+						break;
+					case JRaftLogOperation.MODIFY_OPERATION:
+						LogFuture future = processor.onApply(log);
+						futurePostProcessor(future, closure);
+						break;
+					default:
+						// It's impossible to get to this process
+						throw new UnsupportedOperationException(type);
+					}
+				}
+				catch (Throwable e) {
+					index++;
+					status.setError(RaftError.UNKNOWN, e.getMessage());
+					Optional.ofNullable(closure).ifPresent(closure1 -> closure1.setThrowable(e));
+					throw e;
+				} finally {
+                    Optional.ofNullable(closure).ifPresent(closure1 -> closure1.run(status));
                 }
 
-                if (Objects.nonNull(closure)) {
-                    closure.run(status);
-                }
+				applied++;
+				index++;
+				iter.next();
+			}
 
-                applied++;
-                index++;
-                iter.next();
-            }
+		}
+		catch (Throwable t) {
+			Loggers.RAFT.error("processor : {}, stateMachine meet critical error: {}.",
+					processor, ExceptionUtil.getAllExceptionMsg(t));
+			iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
+					"StateMachine meet critical error: %s.", t.getMessage()));
+		}
+	}
 
-        } catch (Throwable t) {
-            Loggers.RAFT.error("StateMachine meet critical error: {}.", ExceptionUtil.getAllExceptionMsg(t));
-            iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
-                    "StateMachine meet critical error: %s.", t.getMessage()));
-        }
-    }
+	private void raftRead(NacosClosure closure, Log log) {
+		final GetRequest request = GetRequest.builder().group(processor.group())
+				.ctx(log.getData()).build();
+		try {
+			GetResponse<Object> result = processor.getData(request);
+			if (Objects.nonNull(closure)) {
+				closure.setObject(result);
+			}
+		}
+		catch (Throwable t) {
+			Loggers.RAFT
+					.error("There is an exception to the data acquisition : processor : {}, request : {}, error : {}",
+							processor, request, t);
+		}
+	}
 
-    private void raftRead(NacosClosure closure, JLog log) {
-        final GetRequest request = GetRequest.builder()
-                .biz(log.getBiz())
-                .ctx(log.getData())
-                .build();
-        GetResponse<Object> result = processor.getData(request);
-        if (Objects.nonNull(closure)) {
-            closure.setObject(result);
-        }
-    }
+	private void futurePostProcessor(LogFuture future, NacosClosure closure) {
+		if (Objects.nonNull(closure)) {
+			closure.setObject(future);
+		}
+	}
 
 }

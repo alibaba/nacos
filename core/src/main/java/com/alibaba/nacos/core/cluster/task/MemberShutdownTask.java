@@ -51,7 +51,7 @@ public class MemberShutdownTask extends Task {
 
         memberManager.allMembers().forEach(member -> {
 
-            final String url = "http://" + member.address() + memberManager.getContextPath() +
+            final String url = "http://" + member.getAddress() + memberManager.getContextPath() +
                     Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
 
             try {

@@ -77,14 +77,14 @@ public class MemberPingTask extends Task {
                 if (memberManager.isSelf(member) || !member.check()) {
                     return false;
                 }
-                NodeState state = member.state();
+                NodeState state = member.getState();
                 return !(state == NodeState.DOWN || state == NodeState.SUSPICIOUS);
             })) {
                 final Query query = Query.newInstance().addParam("sync", discovery);
 
                 // If the cluster self-discovery is turned on, the information is synchronized with the node
 
-                String url = "http://" + member.address() + memberManager.getContextPath() +
+                String url = "http://" + member.getAddress() + memberManager.getContextPath() +
                         Commons.NACOS_CORE_CONTEXT + "/cluster/server/report";
 
                 asyncHttpClient.post(url, Header.EMPTY, query, self, reference, new Callback<String>() {
@@ -100,7 +100,7 @@ public class MemberPingTask extends Task {
                             }
                         } else {
                             Loggers.CLUSTER.warn("An exception occurred while reporting their " +
-                                    "information to the node : {}, error : {}", member.address(), result.getMessage());
+                                    "information to the node : {}, error : {}", member.getAddress(), result.getMessage());
                         }
                         MemberUtils.onSuccess(member, memberManager);
                     }
@@ -108,7 +108,7 @@ public class MemberPingTask extends Task {
                     @Override
                     public void onError(Throwable e) {
                         Loggers.CLUSTER.error("An exception occurred while reporting their " +
-                                "information to the node : {}, error : {}", member.address(), e);
+                                "information to the node : {}, error : {}", member.getAddress(), e);
                         MemberUtils.onFail(member, memberManager);
                     }
                 });

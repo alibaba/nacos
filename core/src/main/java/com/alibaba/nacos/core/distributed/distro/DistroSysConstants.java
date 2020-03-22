@@ -50,6 +50,8 @@ public final class DistroSysConstants {
 
     // ======= setting key ======= //
 
+    public static final String WEB_CONTEXT_PATH = "context_path";
+
     /**
      * Maximum interval between two data transmissions
      */

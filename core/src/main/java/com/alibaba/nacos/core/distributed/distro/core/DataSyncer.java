@@ -39,8 +39,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class DataSyncer {
 
-    private final MemberManager memberManager;
-
     private final KVManager kvManager;
 
     private final DistroClient distroClient;
@@ -55,11 +53,9 @@ public class DataSyncer {
 
     public DataSyncer(
             DistroConfig config,
-            MemberManager memberManager,
             KVManager kvManager,
             DistroClient distroClient) {
         this.config = config;
-        this.memberManager = memberManager;
         this.kvManager = kvManager;
         this.distroClient = distroClient;
     }
@@ -130,7 +126,7 @@ public class DataSyncer {
 
     public void retrySync(SyncTask syncTask) {
 
-        if (!memberManager.hasMember(syncTask.getTargetServer())) {
+        if (!config.getMembers().contains(syncTask.getTargetServer())) {
             // if server is no longer in healthy server list, ignore this task:
             //fix #1665 remove existing tasks
             if (syncTask.getKeys() != null) {
@@ -145,8 +141,8 @@ public class DataSyncer {
         getRetryPolicy().retryTask(syncTask);
     }
 
-    public Collection<Member> getServers() {
-        return memberManager.allMembers();
+    public Collection<String> getServers() {
+        return config.getMembers();
     }
 
     public void shutdown() {

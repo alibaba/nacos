@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.naming.pojo.Record;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import com.alibaba.nacos.core.distributed.distro.CheckSum;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
 /**
