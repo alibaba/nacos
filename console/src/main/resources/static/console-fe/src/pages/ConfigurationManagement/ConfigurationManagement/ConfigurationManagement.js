@@ -896,6 +896,7 @@ class ConfigurationManagement extends React.Component {
                         self.processImportAndCloneResult(ret, locale, cloneConfirm, false);
                       },
                       error(data) {
+                        self.closeLoading();
                         self.setState({
                           dataSource: [],
                           total: 0,
@@ -930,6 +931,7 @@ class ConfigurationManagement extends React.Component {
         });
       },
       error(data) {
+        self.closeLoading();
         self.setState({
           dataSource: [],
           total: 0,
@@ -1031,7 +1033,9 @@ class ConfigurationManagement extends React.Component {
     const { accessToken = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
-      action: `v1/cs/configs?import=true&namespace=${getParams('namespace')}&accessToken=${accessToken}`,
+      action: `v1/cs/configs?import=true&namespace=${getParams(
+        'namespace'
+      )}&accessToken=${accessToken}`,
       headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
@@ -1047,7 +1051,7 @@ class ConfigurationManagement extends React.Component {
       },
       onError(err) {
         const { data = {}, status } = err.response;
-        if([401, 403].includes(status)){
+        if ([401, 403].includes(status)) {
           Dialog.alert({
             title: locale.importFail,
             content: locale.importFail403,
