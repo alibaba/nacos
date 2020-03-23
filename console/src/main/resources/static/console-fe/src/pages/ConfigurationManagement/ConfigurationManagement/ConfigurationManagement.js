@@ -256,6 +256,7 @@ class ConfigurationManagement extends React.Component {
       config_tags: this.state.config_tags.join(','),
       pageNo,
       pageSize: this.state.pageSize,
+      tenant: this.tenant,
     };
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
       params.search = 'blur';
