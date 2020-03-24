@@ -7,15 +7,20 @@ import com.alibaba.nacos.api.common.ResponseCode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.SubscribeInfo;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.ServerPushEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.connection.ServerListManager;
 import com.alibaba.nacos.client.connection.grpc.BaseGrpcClient;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
+import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.grpc.*;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -25,6 +30,7 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -40,12 +46,15 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
 
     private SecurityProxy securityProxy;
 
-    public NamingGrpcClient(ServerListManager serverListManager, SecurityProxy securityProxy) {
+    private NamingProxy namingProxy;
+
+    public NamingGrpcClient(NamingProxy namingProxy, ServerListManager serverListManager, SecurityProxy securityProxy) {
 
         super(UuidUtils.generateUuid());
 
         this.serverListManager = serverListManager;
         this.securityProxy = securityProxy;
+        this.namingProxy = namingProxy;
 
         NAMING_LOGGER.info("[NAMING-GRPC-CLIENT] init connection id:" + connectionId
             + ", servers:" + serverListManager.getServerList());
@@ -74,8 +83,14 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
 
         @Override
         public void onNext(GrpcResponse value) {
-            if (NAMING_LOGGER.isDebugEnabled()) {
-                NAMING_LOGGER.debug("[GRPC] receive data: " + value.toString());
+//            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.info("[GRPC] receive data: " + value.toString());
+//            }
+            String message = value.getMessage().getValue().toStringUtf8();
+            JSONObject json = JSON.parseObject(message.trim());
+            ServiceInfo serviceInfo = JSON.parseObject(json.getString("data"), ServiceInfo.class);
+            for (EventListener listener : namingProxy.getListeners()) {
+                listener.onEvent(new ServerPushEvent(serviceInfo));
             }
         }
 
@@ -93,7 +108,11 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     }
 
     private String nextServer() {
-        return serverListManager.getNextServer(serverListManager.getServerList());
+        String server = serverListManager.getNextServer(serverListManager.getServerList());
+        if (server.contains(":")) {
+            server = server.split(":")[0];
+        }
+        return server;
     }
 
     private void rebuildClient() {
@@ -129,11 +148,47 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     @Override
     public void subscribeService(String namespaceId, String serviceName, String groupName, String clusters) throws NacosException {
 
+        GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
+            .setClientId(connectionId)
+            .setRequestId(buildRequestId(connectionId))
+            .setSource(NetUtils.localIP())
+            .setAction("subscribeService")
+            .setAgent(UtilAndComs.VERSION)
+            .putParams(CommonParams.NAMESPACE_ID, namespaceId)
+            .putParams(CommonParams.SERVICE_NAME, serviceName)
+            .putParams(CommonParams.GROUP_NAME, groupName)
+            .putParams("clusters", clusters)
+            .build();
+
+        GrpcResponse response = grpcServiceBlockingStub.request(request);
+
+        if (response.getCode() != ResponseCode.OK) {
+            throw new NacosException(response.getCode(), getMessage(response));
+        }
     }
 
     @Override
     public void unsubscribeService(String namespaceId, String serviceName, String groupName, String clusters) throws NacosException {
 
+        GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
+            .setClientId(connectionId)
+            .setRequestId(buildRequestId(connectionId))
+            .setSource(NetUtils.localIP())
+            .setAction("unsubscribeService")
+            .setAgent(UtilAndComs.VERSION)
+            .putParams(CommonParams.NAMESPACE_ID, namespaceId)
+            .putParams(CommonParams.SERVICE_NAME, serviceName)
+            .putParams(CommonParams.GROUP_NAME, groupName)
+            .putParams("clusters", clusters)
+            .build();
+
+        GrpcResponse response = grpcServiceBlockingStub.request(request);
+
+        if (response.getCode() != ResponseCode.OK) {
+            throw new NacosException(response.getCode(), getMessage(response));
+        }
     }
 
     @Override
@@ -145,6 +200,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -158,7 +214,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
     }
 
@@ -171,6 +227,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -184,7 +241,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
     }
 
@@ -197,6 +254,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -210,7 +268,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
     }
 
@@ -218,6 +276,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     public Service queryService(String namespaceId, String serviceName, String groupName) throws NacosException {
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -230,7 +289,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
 
         return JSON.parseObject(response.getMessage().getValue().toString(), Service.class);
@@ -245,6 +304,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -257,7 +317,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
     }
 
@@ -265,6 +325,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     public boolean deleteService(String namespaceId, String serviceName, String groupName) throws NacosException {
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -288,6 +349,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -300,7 +362,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
     }
 
@@ -308,16 +370,13 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     public String queryList(String namespaceId, String serviceName, String groupName, String clusters,
                             SubscribeInfo subscribeInfo, boolean healthyOnly) throws NacosException {
 
-        if ("UDP".equals(subscribeInfo.getType())) {
-            NAMING_LOGGER.warn("udp subscribe type is not supported in grpc client.");
-        }
-
         Any any = Any.newBuilder()
             .setValue(ByteString.copyFrom(JSON.toJSONString(subscribeInfo), Charsets.UTF_8))
             .setTypeUrl("naming/subscribeInfo")
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -333,13 +392,15 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
 
         // if subscribe flag is set, also subscribe the service:
+        if (subscribeInfo != null) {
+            subscribeService(namespaceId, serviceName, groupName, clusters);
+        }
 
-
-        return response.getMessage().getValue().toString();
+        return response.getMessage().getValue().toStringUtf8();
     }
 
     @Override
@@ -350,6 +411,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
     @Override
     public boolean serverHealthy() {
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -375,6 +437,7 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
             .build();
 
         GrpcRequest request = GrpcRequest.newBuilder()
+            .setModule("naming")
             .setClientId(connectionId)
             .setRequestId(buildRequestId(connectionId))
             .setSource(NetUtils.localIP())
@@ -389,9 +452,19 @@ public class NamingGrpcClient extends BaseGrpcClient implements NamingClient {
         GrpcResponse response = grpcServiceBlockingStub.request(request);
 
         if (response.getCode() != ResponseCode.OK) {
-            throw new NacosException(response.getCode(), response.getMessage().getValue().toString());
+            throw new NacosException(response.getCode(), getMessage(response));
         }
 
-        return JSON.parseObject(response.getMessage().getValue().toString(), new TypeReference<ListView<String>>(){});
+        return JSON.parseObject(response.getMessage().getValue().toStringUtf8(), new TypeReference<ListView<String>>(){});
+    }
+
+    private String getMessage(GrpcResponse response) {
+        String message;
+        try {
+            message = response.getMessage().getValue().toString("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            message = e.getMessage();
+        }
+        return message;
     }
 }

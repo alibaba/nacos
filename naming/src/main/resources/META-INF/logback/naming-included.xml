@@ -251,7 +251,7 @@
         <appender-ref ref="naming-event"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.push" additivity="false">
-        <level value="INFO"/>
+        <level value="DEBUG"/>
         <appender-ref ref="naming-push"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.rt" additivity="false">

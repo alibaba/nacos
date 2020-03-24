@@ -43,9 +43,12 @@ public class NamingHttpClient implements NamingClient {
 
     private SecurityProxy securityProxy;
 
-    public NamingHttpClient(ServerListManager serverListManager, SecurityProxy securityProxy) {
+    private NamingProxy namingProxy;
+
+    public NamingHttpClient(NamingProxy namingProxy, ServerListManager serverListManager, SecurityProxy securityProxy) {
         this.serverListManager = serverListManager;
         this.securityProxy = securityProxy;
+        this.namingProxy = namingProxy;
     }
 
     @Override
@@ -283,6 +286,7 @@ public class NamingHttpClient implements NamingClient {
         long end = 0;
         injectSecurityInfo(params);
         List<String> headers = builderHeaders();
+
 
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {

@@ -16,13 +16,17 @@
 
 package com.alibaba.nacos.test.smoke;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.net.NamingGrpcClient;
+import com.alibaba.nacos.api.naming.NamingFactory;
+import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class nacosSmoke_ITCase {
@@ -41,8 +45,31 @@ public class nacosSmoke_ITCase {
 
     @Test
     public void testSmoke() throws Exception {
-        NamingGrpcClient grpcClient = new NamingGrpcClient("127.0.0.1", 18849);
-        grpcClient.registerInstance("test.1", new Instance());
+        NamingService namingService = NamingFactory.createNamingService("127.0.0.1:8848");
+        namingService.subscribe("test.1", new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                NamingEvent ne = (NamingEvent)event;
+                System.out.println(ne.getServiceName() + ": " + ne.getInstances());
+            }
+        });
+
+        namingService.registerInstance("test.1", "1.1.1.1", 80);
+        TimeUnit.SECONDS.sleep(5L);
+        namingService.registerInstance("test.1", "2.2.2.2", 80);
+        TimeUnit.SECONDS.sleep(5L);
+        //namingService.deregisterInstance("test.1", "1.1.1.1", 80);
+        //TimeUnit.SECONDS.sleep(5L);
+        //namingService.deregisterInstance("test.1", "2.2.2.2", 80);
+
         TimeUnit.SECONDS.sleep(100000000L);
     }
+
+
+    @Test
+    public void myTest() {
+    }
+
+
+
 }

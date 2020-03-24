@@ -1,4 +1,4 @@
-package com.alibaba.nacos.naming.grpc;
+package com.alibaba.nacos.api.naming;
 
 public class NamingGrpcActions {
 

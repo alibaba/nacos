@@ -425,8 +425,9 @@ public class InstanceController {
         return instance;
     }
 
-    private void checkIfDisabled(Service service) throws Exception {
-        if (!service.getEnabled()) {
+    private void checkIfDisabled(String namespaceId, String serviceName) throws Exception {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service!=null && !service.getEnabled()) {
             throw new Exception("service is disabled now.");
         }
     }
@@ -438,22 +439,8 @@ public class InstanceController {
         throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
-        JSONObject result = new JSONObject();
-        Service service = serviceManager.getService(namespaceId, serviceName);
 
-        if (service == null) {
-            if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
-            }
-            result.put("name", serviceName);
-            result.put("clusters", clusters);
-            result.put("hosts", new JSONArray());
-            return result;
-        }
-
-        checkIfDisabled(service);
-
-        long cacheMillis = switchDomain.getDefaultCacheMillis();
+        checkIfDisabled(namespaceId, serviceName);
 
         // now try to enable the push
         try {
@@ -466,14 +453,29 @@ public class InstanceController {
                     pushDataSource,
                     tid,
                     app);
-                cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
-            cacheMillis = switchDomain.getDefaultCacheMillis();
+        }
+        return getJsonInstances(clientInfo, serviceName, namespaceId, clusters, clientIP, healthyOnly);
+
+    }
+
+    public JSONObject getJsonInstances(ClientInfo clientInfo, String serviceName, String namespaceId, String clusters, String clientIP, boolean healthyOnly) {
+
+        JSONObject result = new JSONObject();
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
+            }
+            result.put("name", serviceName);
+            result.put("clusters", clusters);
+            result.put("hosts", new JSONArray());
+            return result;
         }
 
-        List<Instance> instances = serviceManager.getInstances(namespaceId, serviceName, clusters, clientIP, healthyOnly);
+        List<Instance> instances = serviceManager.getInstances(namespaceId, service.getName(), clusters, clientIP, healthyOnly);
 
         JSONArray hosts = new JSONArray();
 
@@ -500,9 +502,9 @@ public class InstanceController {
             ipObj.put("clusterName", instance.getClusterName());
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&
                 clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-                ipObj.put("serviceName", instance.getServiceName());
+                ipObj.put("serviceName", serviceName);
             } else {
-                ipObj.put("serviceName", NamingUtils.getServiceName(instance.getServiceName()));
+                ipObj.put("serviceName", NamingUtils.getServiceName(serviceName));
             }
 
             ipObj.put("ephemeral", instance.isEphemeral());
@@ -514,17 +516,16 @@ public class InstanceController {
         result.put("hosts", hosts);
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
             clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-            result.put("dom", serviceName);
+            result.put("dom", service.getName());
         } else {
-            result.put("dom", NamingUtils.getServiceName(serviceName));
+            result.put("dom", NamingUtils.getServiceName(service.getName()));
         }
-        result.put("name", serviceName);
-        result.put("cacheMillis", cacheMillis);
+        result.put("name", service.getName());
+        result.put("cacheMillis", switchDomain.getPushCacheMillis(service.getName()));
         result.put("lastRefTime", System.currentTimeMillis());
         result.put("checksum", service.getChecksum());
         result.put("useSpecifiedURL", false);
         result.put("clusters", clusters);
-        result.put("env", env);
         result.put("metadata", service.getMetadata());
         return result;
     }

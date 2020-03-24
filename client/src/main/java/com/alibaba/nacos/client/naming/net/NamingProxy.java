@@ -18,6 +18,8 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.SubscribeInfo;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
@@ -27,6 +29,8 @@ import com.alibaba.nacos.client.connection.ServerListManager;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.security.SecurityProxy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -46,11 +50,22 @@ public class NamingProxy {
 
     private ServerListManager serverListManager;
 
+    private List<EventListener> listeners = new ArrayList<EventListener>();
+
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         this.serverListManager = new ServerListManager(endpoint, serverList);
         this.securityProxy = new SecurityProxy(properties);
         this.namespaceId = namespaceId;
-        this.namingHttpClient = new NamingHttpClient(serverListManager, securityProxy);
+        this.namingHttpClient = new NamingHttpClient(this, serverListManager, securityProxy);
+        this.namingGrpcClient = new NamingGrpcClient(this, serverListManager, securityProxy);
+    }
+
+    public void listen(EventListener listener) {
+        listeners.add(listener);
+    }
+
+    public List<EventListener> getListeners() {
+        return listeners;
     }
 
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
@@ -143,7 +158,7 @@ public class NamingProxy {
 
     private NamingClient getNamingClient() {
         // TODO choose a client:
-        return namingHttpClient;
+        return namingGrpcClient;
     }
 
 }

@@ -2,8 +2,10 @@ package com.alibaba.nacos.naming.pojo;
 
 import org.junit.Assert;
 import org.junit.Test;
+import sun.jvm.hotspot.opto.HaltNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -13,7 +15,7 @@ public class SubscriberTest {
 
     @Test
     public void subscriberBeanTest() {
-        Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test");
+        Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "public", "test.1", new HashMap<>());
         subscriber.setAddrStr("127.0.0.1:8080");
         subscriber.setIp("127.0.0.1");
         subscriber.setApp("app");

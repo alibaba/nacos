@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -46,7 +47,7 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.FALSE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", namespaceId, serviceName, new HashMap<>());
             clients.add(subscriber);
             Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
@@ -65,7 +66,7 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, "testGroupName@@test_subscriber");
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", namespaceId, "testGroupName@@test_subscriber", new HashMap<>());
             clients.add(subscriber);
             Mockito.when(pushService.getClientsFuzzy(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
@@ -84,7 +85,7 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", namespaceId, serviceName, new HashMap<>());
             clients.add(subscriber);
 
             List<Server> healthyServers = new ArrayList<>();

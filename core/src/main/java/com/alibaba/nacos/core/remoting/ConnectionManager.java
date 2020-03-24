@@ -3,6 +3,8 @@ package com.alibaba.nacos.core.remoting;
 
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ConnectionManager {
 
     private Map<String, Connection> connectionMap = new ConcurrentHashMap<>();
+
+    private Map<String, List<ConnectionEventListener>> listenerMap = new ConcurrentHashMap<>();
 
     public void refreshConnection(String connectionId) {
         if (!connectionMap.containsKey(connectionId)) {
@@ -28,7 +32,10 @@ public class ConnectionManager {
     }
 
     public void listen(String connectionId, ConnectionEventListener listener) {
-
+        if (!listenerMap.containsKey(connectionId)) {
+            listenerMap.putIfAbsent(connectionId, new ArrayList<>());
+        }
+        listenerMap.get(connectionId).add(listener);
     }
 
     public Connection getConnection(String connectionId) {

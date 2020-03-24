@@ -18,6 +18,9 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.SubscribeInfo;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.ServerPushEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -88,6 +91,14 @@ public class HostReactor {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
+
+        this.serverProxy.listen(new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                ServerPushEvent pushEvent = (ServerPushEvent)event;
+                processServiceInfo(pushEvent.getServiceInfo());
+            }
+        });
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -98,8 +109,7 @@ public class HostReactor {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 
-    public ServiceInfo processServiceJSON(String json) {
-        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+    public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
@@ -178,7 +188,7 @@ public class HostReactor {
                     + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
             }
 
-            serviceInfo.setJsonFromServer(json);
+            serviceInfo.setJsonFromServer(JSON.toJSONString(serviceInfo));
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
                 eventDispatcher.serviceChanged(serviceInfo);
@@ -191,7 +201,7 @@ public class HostReactor {
                 .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
-            serviceInfo.setJsonFromServer(json);
+            serviceInfo.setJsonFromServer(JSON.toJSONString(serviceInfo));
             DiskCache.write(serviceInfo, cacheDir);
         }
 
@@ -203,6 +213,11 @@ public class HostReactor {
         }
 
         return serviceInfo;
+    }
+
+    public ServiceInfo processServiceJSON(String json) {
+        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+        return processServiceInfo(serviceInfo);
     }
 
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {

@@ -26,7 +26,7 @@ public class BaseGrpcClient {
 
     public JSONObject sendBeat() {
         GrpcResponse response = grpcServiceBlockingStub.request(buildBeat(connectionId));
-        return JSON.parseObject(response.getMessage().getValue().toString());
+        return JSON.parseObject(response.getMessage().getValue().toStringUtf8());
     }
 
     protected String buildRequestId(String connectionId) {

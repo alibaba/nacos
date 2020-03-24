@@ -36,6 +36,7 @@ message GrpcRequest {
     google.protobuf.Any body = 6;
     GrpcMetadata metadata = 7;
     string module = 8;
+    string agent = 9;
 }
 
 service GrpcStreamService {
