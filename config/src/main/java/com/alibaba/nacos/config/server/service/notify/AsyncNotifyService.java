@@ -18,13 +18,14 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -43,6 +44,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -77,20 +79,20 @@ public class AsyncNotifyService extends AbstractEventListener {
             String group = evt.group;
             String tenant = evt.tenant;
             String tag = evt.tag;
-            List<?> ipList = serverListService.getServerList();
+            Collection<Member> ipList = memberManager.allMembers();
 
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
-            for (int i = 0; i < ipList.size(); i++) {
-                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, (String) ipList.get(i), evt.isBeta));
+            for (Member member : ipList) {
+                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(), evt.isBeta));
             }
             EXECUTOR.execute(new AsyncTask(httpclient, queue));
         }
     }
 
     @Autowired
-    public AsyncNotifyService(ServerListService serverListService) {
-        this.serverListService = serverListService;
+    public AsyncNotifyService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
         httpclient.start();
     }
 
@@ -110,7 +112,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
 
-    private ServerListService serverListService;
+    private ServerMemberManager memberManager;
 
     class AsyncTask implements Runnable {
 
@@ -128,11 +130,11 @@ public class AsyncNotifyService extends AbstractEventListener {
             while (!queue.isEmpty()) {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
-                if (serverListService.getServerList().contains(
+                if (memberManager.hasMember(
                     targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
-                    if (serverListService.isHealthCheck()
-                        && ServerListService.getServerListUnhealth().contains(targetIp)) {
+                    if (memberManager.isHealthCheck()
+                        && memberManager.isUnHealth(targetIp)) {
                         // target ip 不健康，则放入通知列表中
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                             task.getLastModified(),

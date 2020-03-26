@@ -49,13 +49,11 @@ public class TenantCapacityPersistService {
         TENANT_CAPACITY_ROW_MAPPER = new TenantCapacityRowMapper();
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
     @PostConstruct
     public void init() {
-        this.dataSourceService = dynamicDataSource.getDataSource();
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
     }
 
@@ -228,7 +226,7 @@ public class TenantCapacityPersistService {
     public List<TenantCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
 
-        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+        if (STANDALONE_MODE && !PropertyUtil.isUseMysql()) {
             sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         }
 

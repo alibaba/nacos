@@ -99,6 +99,9 @@
         <!-- Exclude all generated code -->
         <sonar.jacoco.itReportPath>${project.basedir}/../test/target/jacoco-it.exec</sonar.jacoco.itReportPath>
         <sonar.exclusions>file:**/generated-sources/**,**/test/**</sonar.exclusions>
+        <protostuff.version>1.6.2</protostuff.version>
+        <protobuf-java.version>3.8.0</protobuf-java.version>
+        <grpc-java.version>1.24.0</grpc-java.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -443,6 +446,7 @@
         <module>console</module>
         <module>cmdb</module>
         <module>istio</module>
+        <module>consistency</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -535,6 +539,11 @@
                 <artifactId>nacos-istio</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-consistency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Alibaba libs-->
             <dependency>
@@ -555,6 +564,68 @@
                 <artifactId>servlet-api</artifactId>
                 <version>3.0</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <!-- disruptor -->
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>3.4.2</version>
+            </dependency>
+
+            <!-- HikariCP -->
+
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>3.4.2</version>
+            </dependency>
+
+
+            <!-- JRaft -->
+            <dependency>
+                <groupId>com.alipay.sofa</groupId>
+                <artifactId>jraft-core</artifactId>
+                <version>1.3.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j-impl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-jcl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- kryo -->
+
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>4.0.2</version>
+            </dependency>
+
+            <!-- protostuff -->
+
+            <dependency>
+                <groupId>io.protostuff</groupId>
+                <artifactId>protostuff-core</artifactId>
+                <version>${protostuff.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.protostuff</groupId>
+                <artifactId>protostuff-runtime</artifactId>
+                <version>${protostuff.version}</version>
             </dependency>
 
             <!-- Apache commons -->
@@ -778,12 +849,12 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>3.8.0</version>
+                <version>${protobuf-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>protoc-gen-grpc-java</artifactId>
-                <version>1.24.0</version>
+                <version>${grpc-java.version}</version>
                 <type>pom</type>
             </dependency>
 

@@ -15,10 +15,12 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
+import com.alibaba.nacos.config.server.filter.ToLeader;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
@@ -93,6 +95,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @PostMapping
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
                                  @RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -209,6 +212,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @DeleteMapping
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("dataId") String dataId, //
@@ -239,6 +243,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
                                              @RequestParam(value = "ids") List<Long> ids) {
@@ -381,6 +386,7 @@ public class ConfigController {
     }
 
     @DeleteMapping(params = "beta=true")
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,
@@ -466,6 +472,7 @@ public class ConfigController {
     }
 
     @PostMapping(params = "import=true")
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
                                                                   @RequestParam(value = "src_user", required = false) String srcUser,
@@ -474,6 +481,10 @@ public class ConfigController {
                                                                       SameConfigPolicy policy,
                                                                   MultipartFile file) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
+
+        if (Objects.isNull(file)) {
+            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
+        }
 
         if (StringUtils.isNotBlank(namespace)) {
             if (persistService.tenantInfoCountByTenantId(namespace) <= 0) {
@@ -551,6 +562,7 @@ public class ConfigController {
     }
 
     @PostMapping(params = "clone=true")
+    @ToLeader
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
                                                        @RequestParam(value = "src_user", required = false) String srcUser,

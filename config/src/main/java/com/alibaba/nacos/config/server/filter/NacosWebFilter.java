@@ -29,8 +29,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  *
  * @author Nacos
  */
-@Order(1)
-@WebFilter(filterName = "webFilter", urlPatterns = "/*")
 public class NacosWebFilter implements Filter {
 
     static private String webRootPath;

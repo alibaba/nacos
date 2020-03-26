@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.console.model.Namespace;

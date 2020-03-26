@@ -18,18 +18,14 @@ package com.alibaba.nacos.config.server.auth;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.RowMapper;
+import java.util.ArrayList;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.service.RowMapperManager.USER_ROW_MAPPER;
 
 /**
  * User CRUD service
@@ -40,51 +36,44 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service
 public class UserPersistService extends PersistService {
 
+    @Autowired
+    private DatabaseOperate databaseOperate;
+
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
 
         try {
-            jt.update(sql, username, password, true);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
+            SqlContextUtils.addSqlContext(sql, username, password, true);
+            databaseOperate.updateAuto();
+        } finally {
+            SqlContextUtils.cleanCurrentSqlContext();
         }
     }
 
     public void deleteUser(String username) {
         String sql = "DELETE from users WHERE username=?";
         try {
-            jt.update(sql, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
+            SqlContextUtils.addSqlContext(sql, username);
+            databaseOperate.updateAuto();
+        } finally {
+            SqlContextUtils.cleanCurrentSqlContext();
         }
     }
 
     public void updateUserPassword(String username, String password) {
         try {
-            jt.update(
-                "UPDATE users SET password = ? WHERE username=?",
-                password, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
+            SqlContextUtils.addSqlContext(
+                    "UPDATE users SET password = ? WHERE username=?",
+                    password, username);
+            databaseOperate.updateAuto();
+        } finally {
+            SqlContextUtils.cleanCurrentSqlContext();
         }
     }
 
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
-        try {
-            return this.jt.queryForObject(sql, new Object[]{username}, USER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            fatalLog.error("[db-other-error]" + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return databaseOperate.queryOne(sql, new Object[]{username}, USER_ROW_MAPPER);
     }
 
     public Page<User> getUsers(int pageNo, int pageSize) {
@@ -93,38 +82,18 @@ public class UserPersistService extends PersistService {
 
         String sqlCountRows = "select count(*) from users where ";
         String sqlFetchRows
-            = "select username,password from users where ";
+                = "select username,password from users where ";
 
         String where = " 1=1 ";
-
-        try {
-            Page<User> pageInfo = helper.fetchPage(jt, sqlCountRows
-                    + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+        Page<User> pageInfo = helper.fetchPage(databaseOperate, sqlCountRows
+                        + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
                 pageSize, USER_ROW_MAPPER);
-            if (pageInfo == null) {
-                pageInfo = new Page<>();
-                pageInfo.setTotalCount(0);
-                pageInfo.setPageItems(new ArrayList<>());
-            }
-            return pageInfo;
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
+        if (pageInfo == null) {
+            pageInfo = new Page<>();
+            pageInfo.setTotalCount(0);
+            pageInfo.setPageItems(new ArrayList<>());
         }
+        return pageInfo;
     }
-
-    private static final class UserRowMapper implements
-        RowMapper<User> {
-        @Override
-        public User mapRow(ResultSet rs, int rowNum)
-            throws SQLException {
-            User info = new User();
-            info.setUsername(rs.getString("username"));
-            info.setPassword(rs.getString("password"));
-            return info;
-        }
-    }
-
-    private static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
 }

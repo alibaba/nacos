@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,12 +47,12 @@ public class ConfigSubService {
 
     private ScheduledExecutorService scheduler;
 
-    private ServerListService serverListService;
+    private ServerMemberManager memberManager;
 
     @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ConfigSubService(ServerListService serverListService1) {
-        this.serverListService = serverListService1;
+    public ConfigSubService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
 
         scheduler = Executors.newScheduledThreadPool(
             ThreadUtil.getSuitableThreadCount(), new ThreadFactory() {
@@ -82,13 +85,13 @@ public class ConfigSubService {
                                                 CompletionService<SampleResult> completionService,
                                                 List<SampleResult> resultList) {
 
-        List<String> ipList = serverListService.getServerList();
+        Collection<Member> ipList = memberManager.allMembers();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(
             ipList.size());
         // 提交查询任务
-        for (String ip : ipList) {
+        for (Member ip : ipList) {
             try {
-                completionService.submit(new Job(ip, url, params));
+                completionService.submit(new Job(ip.getAddress(), url, params));
             } catch (Exception e) { // 发送请求失败
                 LogUtil.defaultLog
                     .warn("Get client info from {} with exception: {} during submit job",
@@ -97,7 +100,7 @@ public class ConfigSubService {
         }
         // 获取结果并合并
         SampleResult sampleResults = null;
-        for (int i = 0; i < ipList.size(); i++) {
+        for (Member member : ipList) {
             try {
                 Future<SampleResult> f = completionService.poll(1000,
                     TimeUnit.MILLISECONDS);
@@ -110,7 +113,7 @@ public class ConfigSubService {
                     } else {
                         LogUtil.defaultLog
                             .warn("The task in ip: {}  did not completed in 1000ms ",
-                                ipList.get(i));
+                                member);
                     }
                 } catch (TimeoutException e) {
                     if (f != null) {
@@ -219,7 +222,7 @@ public class ConfigSubService {
             params.put("tenant", tenant);
         }
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-            serverListService.getServerList().size());
+            memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 
@@ -240,7 +243,7 @@ public class ConfigSubService {
         Map<String, String> params = new HashMap<String, String>(50);
         params.put("ip", ip);
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-            serverListService.getServerList().size());
+            memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 

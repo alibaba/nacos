@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -57,6 +58,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 /**
  * @author nacos
  */
+@DependsOn("serverMemberManager")
 @Component
 public class RaftCore {
 

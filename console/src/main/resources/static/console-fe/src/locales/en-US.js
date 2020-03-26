@@ -134,10 +134,7 @@ const I18N_CONF = {
     query: 'Search',
     pubNoData: 'No results found.',
     nodeState: 'NodeState',
-    clusterTerm: 'ClusterTerm',
-    leaderDueMs: 'LeaderDue(ms)',
-    heartbeatDueMs: 'HeartbeatDue(ms)',
-    voteFor: 'VoteFor',
+    extendInfo: 'NodeMetaData',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',

@@ -15,10 +15,11 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.NodeChangeEvent;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -34,7 +35,7 @@ import java.util.List;
  * @author nkorange
  */
 @Component("distroMapper")
-public class DistroMapper implements ServerChangeListener {
+public class DistroMapper implements MemberChangeListener {
 
     private List<String> healthyList = new ArrayList<>();
 
@@ -46,14 +47,14 @@ public class DistroMapper implements ServerChangeListener {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     /**
      * init server list
      */
     @PostConstruct
     public void init() {
-        serverListManager.listen(this);
+        memberManager.subscribe(this);
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -102,17 +103,12 @@ public class DistroMapper implements ServerChangeListener {
     }
 
     @Override
-    public void onChangeServerList(List<Server> latestMembers) {
-
-    }
-
-    @Override
-    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
-
+    public void onEvent(NodeChangeEvent event) {
         List<String> newHealthyList = new ArrayList<>();
-        for (Server server : latestReachableMembers) {
-            newHealthyList.add(server.getKey());
+        for (Member server : event.getAllMembers()) {
+            newHealthyList.add(server.getAddress());
         }
         healthyList = newHealthyList;
     }
+
 }

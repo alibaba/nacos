@@ -1,3 +1,7 @@
+# ApplicationContextInitializer
+org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.core.utils.ApplicationUtils
+
 # ApplicationListener
 org.springframework.context.ApplicationListener=\
 com.alibaba.nacos.core.listener.StandaloneProfileApplicationListener

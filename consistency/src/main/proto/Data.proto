@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.alibaba.nacos.consistency.entity";
+
+message Log {
+    string group = 1;
+    string key = 2;
+    bytes data = 3;
+    string type = 4;
+    string operation = 5;
+    map<string, string> extendInfo = 6;
+}
+
+message GetRequest {
+    string group = 1;
+    bytes data = 2;
+    map<string, string> extendInfo = 3;
+}
+
+message GetResponse {
+    bytes data = 1;
+    string errMsg = 2;
+}
+
