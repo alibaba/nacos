@@ -83,7 +83,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
             loadLogProcessor(config.listLogProcessor());
 
-            this.selfAddress = memberManager.self().getAddress();
+            this.selfAddress = memberManager.getSelf().getAddress();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
             NotifyCenter.registerPublisher(RaftErrorEvent::new, RaftErrorEvent.class);
@@ -194,7 +194,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
 
     private void injectProtocolMetaData(ProtocolMetaData metaData) {
-        Member member = memberManager.self();
+        Member member = memberManager.getSelf();
         member.setExtendVal("raft_meta_data", metaData);
     }
 

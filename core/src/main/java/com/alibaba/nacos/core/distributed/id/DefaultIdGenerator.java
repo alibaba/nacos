@@ -50,9 +50,7 @@ public class DefaultIdGenerator implements IdGenerator {
     @Override
     public void init() {
         idStore = ApplicationUtils.getBean(DefaultIdStore.class);
-
         // The first request requires an asynchronous request
-
         idStore.firstAcquire(resource, Integer.MAX_VALUE, this, bufferIndex);
     }
 

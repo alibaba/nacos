@@ -48,7 +48,6 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -90,7 +89,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
         dataSourceService.cleanAndReopenDerby();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
-        selfIp = memberManager.self().getAddress();
+        selfIp = memberManager.getSelf().getAddress();
         NotifyCenter.registerPublisher(RaftDBErrorEvent::new, RaftDBErrorEvent.class);
         defaultLog.info("use DistributedTransactionServicesImpl");
     }

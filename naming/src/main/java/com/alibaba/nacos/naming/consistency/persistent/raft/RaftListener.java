@@ -21,7 +21,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
 
@@ -55,7 +54,7 @@ public class RaftListener implements SmartApplicationListener {
 			RaftPeer peers = raftEvent.getRaftPeer();
 			String json = JSON.toJSONString(peers);
 			Map map = JSON.parseObject(json, HashMap.class);
-			Member self = memberManager.self();
+			Member self = memberManager.getSelf();
 			self.setExtendVal(GROUP, map);
 			memberManager.update(self);
 		}

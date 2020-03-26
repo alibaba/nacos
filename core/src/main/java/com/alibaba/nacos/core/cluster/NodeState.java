@@ -36,4 +36,9 @@ public enum NodeState {
      */
     DOWN,
 
+    /**
+     * The node is isolated
+     */
+    ISOLATION,
+
 }

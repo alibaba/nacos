@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.BooleanUtils;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
@@ -103,7 +101,7 @@ public class DistroMapper implements Mapper, MemberChangeListener {
             }
         }
 
-        final Member self = memberManager.self();
+        final Member self = memberManager.getSelf();
 
         if (!ApplicationUtils.getProperty("nacos.core.distro.enable", Boolean.class, true)
                 || ApplicationUtils.getStandaloneMode()) {
@@ -128,7 +126,7 @@ public class DistroMapper implements Mapper, MemberChangeListener {
     @Override
     public String mapSrv(String key) {
 
-        final Member self = memberManager.self();
+        final Member self = memberManager.getSelf();
 
         if (CollectionUtils.isEmpty(healthyList) ||
                 !ApplicationUtils

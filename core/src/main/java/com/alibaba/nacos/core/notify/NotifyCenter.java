@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.notify;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.DisruptorFactory;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
@@ -47,12 +48,16 @@ public class NotifyCenter {
 
         ShutdownUtils.addShutdownHook(new Thread(() -> {
             System.out.println("[NotifyCenter] Start destroying Publisher");
-            PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
-                @Override
-                public void accept(String s, Publisher publisher) {
-                    publisher.shutdown();
-                }
-            });
+            try {
+                PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
+                    @Override
+                    public void accept(String s, Publisher publisher) {
+                        publisher.shutdown();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             System.out.println("[NotifyCenter] Destruction of the end");
         }));
 
@@ -164,6 +169,7 @@ public class NotifyCenter {
         private Disruptor<EventHandle> disruptor;
         private Supplier<? extends Event> supplier;
         private volatile boolean canOpen = false;
+        private volatile boolean shutdown = false;
 
         public Publisher(final Class<? extends Event> eventType) {
             this.eventType = eventType;
@@ -193,7 +199,7 @@ public class NotifyCenter {
                     // waiting for the first Subscriber to register
 
                     for (; ; ) {
-                        if (canOpen || stopDeferPublish) {
+                        if (shutdown || canOpen || stopDeferPublish) {
                             break;
                         }
                         try {
@@ -209,7 +215,11 @@ public class NotifyCenter {
                         if (Objects.nonNull(executor)) {
                             executor.execute(job);
                         } else {
-                            job.run();
+                            try {
+                                job.run();
+                            } catch (Exception e) {
+                                Loggers.CORE.error("Event callback exception : {}", e);
+                            }
                         }
                     }
                 }
@@ -243,6 +253,7 @@ public class NotifyCenter {
 
         void shutdown() {
             if (disruptor != null) {
+                shutdown = true;
                 disruptor.shutdown();
             }
         }

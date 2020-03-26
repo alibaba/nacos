@@ -29,7 +29,9 @@ import com.alibaba.nacos.core.cluster.task.MemberDeadBroadcastTask;
 import com.alibaba.nacos.core.cluster.task.MemberPingTask;
 import com.alibaba.nacos.core.cluster.task.MemberPullTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
+import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -40,6 +42,7 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +55,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -100,6 +104,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     public void init() {
 
         Loggers.CORE.info("Nacos-related cluster resource initialization");
+        this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
@@ -108,6 +113,18 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         NotifyCenter.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
         NotifyCenter.registerPublisher(ServerInitializedEvent::new, ServerInitializedEvent.class);
         NotifyCenter.registerPublisher(IsolationEvent::new, IsolationEvent.class);
+        NotifyCenter.registerSubscribe(new Subscribe<IsolationEvent>() {
+
+            @Override
+            public void onEvent(IsolationEvent event) {
+                self.setState(NodeState.ISOLATION);
+            }
+
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return IsolationEvent.class;
+            }
+        });
 
         // init nacos core sys
 
@@ -131,7 +148,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
         if (!serverList.containsKey(address)) {
             memberJoin(new ArrayList<>(Arrays.asList(newMember)));
-            return;
         }
 
         serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
@@ -172,7 +188,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     }
 
     @Override
-    public Member self() {
+    public Member getSelf() {
         if (Objects.isNull(self)) {
             self = serverList.get(localAddress);
         }
@@ -181,11 +197,12 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     @Override
     public Collection<Member> allMembers() {
-        return serverList.values();
+        // We need to do a copy to avoid affecting the real data
+        return new ArrayList<>(serverList.values());
     }
 
     @Override
-    public synchronized void memberJoin(Collection<Member> members) {
+    public void memberJoin(Collection<Member> members) {
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
             final Member newMember = iterator.next();
             final String address = newMember.getAddress();
@@ -200,8 +217,10 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
             }
 
             // Ensure that the node is created only once
-            serverList.computeIfAbsent(address, s -> newMember);
-            memberAddressInfos.add(address);
+            serverList.computeIfAbsent(address, s -> {
+                memberAddressInfos.add(address);
+                return newMember;
+            });
             serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
                 @Override
                 public Member apply(String s, Member member) {
@@ -222,7 +241,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
                 .changeNodes(members)
                 .allNodes(allMembers())
                 .build());
-
     }
 
     @Override
@@ -230,17 +248,12 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
             Member member = iterator.next();
             final String address = member.getAddress();
-            if (Objects.equals(address, localAddress)) {
+            if (StringUtils.equals(address, localAddress)) {
                 iterator.remove();
                 continue;
             }
             memberAddressInfos.remove(address);
-            serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
-                @Override
-                public Member apply(String s, Member member) {
-                    return null;
-                }
-            });
+            serverList.remove(address);
         }
 
         if (members.isEmpty()) {
@@ -355,14 +368,14 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     }
 
     private void injectMembers4CP(Config config) {
-        final Member selfMember = self();
+        final Member selfMember = getSelf();
         final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
         Set<String> others = MemberUtils.toCPMembersInfo(allMembers());
         config.setMembers(self, others);
     }
 
     private void injectMembers4AP(Config config) {
-        final String self = self().getAddress();
+        final String self = getSelf().getAddress();
         Set<String> others = MemberUtils.toAPMembersInfo(allMembers());
         config.setMembers(self, others);
     }
@@ -400,8 +413,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
                 pullTask.init();
                 broadcastTask.init();
 
-                GlobalExecutor.schedulePingJob(pingTask, 10_000L);
-                GlobalExecutor.schedulePullJob(pullTask, 10_000L);
+                GlobalExecutor.schedulePingJob(pingTask, 5_000L);
+                GlobalExecutor.schedulePullJob(pullTask, 5_000L);
                 GlobalExecutor.scheduleBroadCastJob(broadcastTask, 10_000L);
 
                 NotifyCenter.publishEvent(new ServerInitializedEvent((WebServerInitializedEvent) event, servletContext));
@@ -442,6 +455,11 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         }
     }
 
+    @VisibleForTesting
+    public void updateMember(Member member) {
+        serverList.put(member.getAddress(), member);
+    }
+
     public Set<String> getMemberAddressInfos() {
         return memberAddressInfos;
     }
@@ -451,7 +469,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     }
 
     public Map<String, Member> getServerList() {
-        return serverList;
+        return Collections.unmodifiableMap(serverList);
     }
 
     public boolean isUseAddressServer() {

@@ -126,16 +126,15 @@ public class Member {
         Member that = (Member) o;
         if (StringUtils.isAnyBlank(address, that.address)) {
             return port == that.port &&
-                    Objects.equals(ip, that.ip);
+                    StringUtils.equals(ip, that.ip);
         }
         return StringUtils.equals(address, that.address);
     }
 
     @Override
     public String toString() {
-        return "Member{" +
-                "address='" + address + '\'' +
-                '}';
+        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state
+                + '}';
     }
 
     @Override
@@ -174,7 +173,9 @@ public class Member {
 
         public Member build() {
             Member serverNode = new Member();
-            serverNode.extendInfo.putAll(this.extendInfo);
+            if (Objects.nonNull(this.extendInfo)) {
+                serverNode.extendInfo.putAll(this.extendInfo);
+            }
             serverNode.state = this.state;
             serverNode.ip = this.ip;
             serverNode.port = this.port;
