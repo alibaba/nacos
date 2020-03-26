@@ -102,12 +102,12 @@ public class SelectRequest implements Serializable {
         }
 
         public SelectRequest build() {
-            SelectRequest SelectRequest = new SelectRequest();
-            SelectRequest.setQueryType(queryType);
-            SelectRequest.setSql(sql);
-            SelectRequest.setArgs(args);
-            SelectRequest.setClassName(className);
-            return SelectRequest;
+            SelectRequest request = new SelectRequest();
+            request.setQueryType(queryType);
+            request.setSql(sql);
+            request.setArgs(args);
+            request.setClassName(className);
+            return request;
         }
     }
 }

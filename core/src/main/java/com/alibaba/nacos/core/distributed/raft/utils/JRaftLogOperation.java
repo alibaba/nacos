@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftLogOperation {
 
 	public static final String MODIFY_OPERATION = "modify";

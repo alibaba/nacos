@@ -81,10 +81,11 @@ public class ConfigOpsController {
 
     @GetMapping(value = "/derby")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
+        String selectSign = "select";
         if (!PropertyUtil.isUseMysql()) {
             LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
                     .getInstance().getDataSource();
-            if (StringUtils.startsWithIgnoreCase(sql, "select")) {
+            if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
                 JdbcTemplate template = dataSourceService.getJdbcTemplate();
                 List<Map<String, Object>> result = template.queryForList(sql);
                 return RestResultUtils.success(result);

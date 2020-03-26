@@ -91,10 +91,10 @@ public interface DatabaseOperate {
     /**
      * data modify transaction
      *
-     * @param ModifyRequestContext {@link List< ModifyRequest >}
+     * @param modifyRequests {@link List< ModifyRequest >}
      * @return is success
      */
-    Boolean update(List<ModifyRequest> ModifyRequestContext);
+    Boolean update(List<ModifyRequest> modifyRequests);
 
     /**
      * data modify transaction

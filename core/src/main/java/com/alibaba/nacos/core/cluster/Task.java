@@ -58,6 +58,7 @@ public abstract class Task implements Subscribe<IsolationEvent>, Runnable {
     }
 
     // init some resource
+
     public void init() {
 
     }

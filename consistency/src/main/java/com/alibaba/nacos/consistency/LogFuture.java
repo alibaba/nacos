@@ -24,8 +24,11 @@ package com.alibaba.nacos.consistency;
 public class LogFuture {
 
 	// If an exception occurs during apply, response==null
+
 	private final Object response;
+
 	// If apply succeeds, error==null
+
 	private final Throwable error;
 
 	public LogFuture(Object response, Throwable error) {

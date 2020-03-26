@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -60,7 +61,7 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
 
 	@Override
 	public Object getBody() throws Exception {
-		if (StringUtils.containsIgnoreCase(target.getContentType(), "multipart/form-data")) {
+		if (StringUtils.containsIgnoreCase(target.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
 			return target.getParts();
 		} else {
 			String s = ByteUtils.toString(body);

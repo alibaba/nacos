@@ -33,6 +33,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface BaseDatabaseOperate {
 
     default  <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Class<R> cls) {
@@ -132,12 +133,12 @@ public interface BaseDatabaseOperate {
         }
     }
 
-    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<ModifyRequest> ModifyRequestContext) {
+    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, List<ModifyRequest> contexts) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[]{null};
             Object[][] args = new Object[][]{null};
             try {
-                ModifyRequestContext.forEach(pair -> {
+                contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
                     args[0] = pair.getArgs();
                     LogUtil.defaultLog.debug("current sql : {}", errSql[0]);

@@ -23,5 +23,11 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface ReuseHttpRequest extends HttpServletRequest {
 
+	/**
+	 * get request body
+	 *
+	 * @return object
+	 * @throws Exception
+	 */
 	Object getBody() throws Exception;
 }

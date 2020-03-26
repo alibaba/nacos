@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftConstants {
 
 	public static final String JRAFT_EXTEND_INFO_KEY = JRaftLogOperation.class.getCanonicalName();
