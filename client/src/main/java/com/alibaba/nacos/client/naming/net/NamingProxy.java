@@ -332,7 +332,7 @@ public class NamingProxy {
             try {
                 body = "beat=" + URLEncoder.encode(JSON.toJSONString(beatInfo), "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                throw new NacosException(NacosException.SERVER_ERROR, "encod beatInfo error", e);
+                throw new NacosException(NacosException.SERVER_ERROR, "encode beatInfo error", e);
             }
         }
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
