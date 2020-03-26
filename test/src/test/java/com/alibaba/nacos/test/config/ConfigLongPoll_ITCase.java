@@ -38,7 +38,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2019-06-07 22:24
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPoll_ITCase {
 
     @LocalServerPort
