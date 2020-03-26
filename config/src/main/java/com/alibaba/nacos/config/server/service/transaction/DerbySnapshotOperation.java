@@ -50,6 +50,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     private final String snapshotArchive = "derby_data.zip";
     private final String derbyBaseDir = Paths.get(ApplicationUtils.getNacosHome(), "data", "derby-data").toString();
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
+    private final String checkSumKey = "checkSum";
     private final ReentrantReadWriteLock.WriteLock writeLock;
 
     public DerbySnapshotOperation(ReentrantReadWriteLock.WriteLock writeLock) {
@@ -74,7 +75,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 DiskUtils.deleteDirectory(parentPath);
 
                 final LocalFileMeta meta = new LocalFileMeta();
-                meta.append("checkSum", Long.toHexString(checksum.getValue()));
+                meta.append(checkSumKey, Long.toHexString(checksum.getValue()));
 
                 callFinally.run(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
@@ -98,8 +99,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
 
             LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
 
-            if (fileMeta.getFileMeta().containsKey("checkSum")) {
-                if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get("checkSum"))) {
+            if (fileMeta.getFileMeta().containsKey(checkSumKey)) {
+                if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(checkSumKey))) {
                     throw new IllegalArgumentException("Snapshot checksum failed");
                 }
             }

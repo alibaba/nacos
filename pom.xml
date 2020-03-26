@@ -205,6 +205,7 @@
                     </rulesets>
                     <printFailingErrors>true</printFailingErrors>
                     <excludes>
+                        <exclude>**/consistency/entity/*.java</exclude>
                         <exclude>**/istio/model/mcp/*.java</exclude>
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>

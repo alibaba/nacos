@@ -28,13 +28,13 @@ public class SqlContextUtils {
             ThreadLocal.withInitial(ArrayList::new);
 
     public static void addSqlContext(String sql, Object... args) {
-        ArrayList<ModifyRequest> ModifyRequests = SQL_CONTEXT.get();
+        ArrayList<ModifyRequest> requests = SQL_CONTEXT.get();
         ModifyRequest context = new ModifyRequest();
-        context.setExecuteNo(ModifyRequests.size());
+        context.setExecuteNo(requests.size());
         context.setSql(sql);
         context.setArgs(args);
-        ModifyRequests.add(context);
-        SQL_CONTEXT.set(ModifyRequests);
+        requests.add(context);
+        SQL_CONTEXT.set(requests);
     }
 
     public static List<ModifyRequest> getCurrentSqlContext() {

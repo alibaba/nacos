@@ -83,7 +83,7 @@ public class LocalDatabaseOperateImpl implements BaseDatabaseOperate, DatabaseOp
     }
 
     @Override
-    public Boolean update(List<ModifyRequest> ModifyRequestContext) {
-        return update(transactionTemplate, jdbcTemplate, ModifyRequestContext);
+    public Boolean update(List<ModifyRequest> requestList) {
+        return update(transactionTemplate, jdbcTemplate, requestList);
     }
 }

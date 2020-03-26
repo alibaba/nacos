@@ -26,6 +26,12 @@ import java.util.Map;
  */
 public interface CommandOperations {
 
+	/**
+	 * Operation and maintenance interface operation entry
+	 *
+	 * @param commands commands
+	 * @return execute success
+	 */
 	default RestResult<String> execute(Map<String, String> commands) {
 		return RestResultUtils.success();
 	}

@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class LogProcessor {
 
     protected ConsistencyProtocol<? extends Config> protocol;
