@@ -40,8 +40,6 @@ import java.util.List;
  */
 public class MemberDeadBroadcastTask extends Task {
 
-    private static final int MAX_FAIL_CNT = 6;
-
     private final TypeReference<RestResult<String>> reference
             = new TypeReference<RestResult<String>>() {
     };
@@ -53,19 +51,14 @@ public class MemberDeadBroadcastTask extends Task {
     @Override
     protected void executeBody() {
         Collection<Member> members = memberManager.allMembers();
-
         Collection<Member> waitRemove = new ArrayList<>();
-
         members.forEach(member -> {
-            if (member.getState() == NodeState.DOWN) {
+            if (NodeState.DOWN.equals(member.getState())) {
                 waitRemove.add(member);
             }
         });
 
-        List<Member> waitBroad = MemberUtils.kRandom(memberManager, member -> {
-            NodeState state = member.getState();
-            return state != NodeState.DOWN;
-        });
+        List<Member> waitBroad = MemberUtils.kRandom(memberManager, member -> !NodeState.DOWN.equals(member.getState()));
 
         for (Member member : waitBroad) {
             final String url = HttpUtils.buildUrl(false, member.getAddress(),
@@ -97,6 +90,6 @@ public class MemberDeadBroadcastTask extends Task {
 
     @Override
     protected void after() {
-        GlobalExecutor.scheduleBroadCastJob(this, 10_000L);
+        GlobalExecutor.scheduleBroadCastJob(this, 5_000L);
     }
 }

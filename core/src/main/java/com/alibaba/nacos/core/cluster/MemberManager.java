@@ -59,7 +59,7 @@ public interface MemberManager {
      *
      * @return {@link Member}
      */
-    Member self();
+    Member getSelf();
 
     /**
      * this node ip is the first in node collection

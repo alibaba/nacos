@@ -312,7 +312,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      */
     public static final String LOCAL_IP = InetUtils.getSelfIp();
 
-    private static Boolean isStandalone = false;
+    private static Boolean isStandalone = null;
 
     private static String functionModeType = null;
 

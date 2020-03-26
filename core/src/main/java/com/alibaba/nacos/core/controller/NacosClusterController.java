@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
@@ -63,7 +64,7 @@ public class NacosClusterController {
 
     @GetMapping(value = "/self")
     public RestResult<Member> self() {
-        return RestResultUtils.success(memberManager.self());
+        return RestResultUtils.success(memberManager.getSelf());
     }
 
     @GetMapping(value = "/nodes")
@@ -96,20 +97,17 @@ public class NacosClusterController {
 
     @GetMapping("/server/health")
     public RestResult<String> getHealth() {
-        return RestResultUtils.success("");
+        return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
 
-    @PostMapping("/server/report")
+    @PostMapping(value = {"/server/report", "/server/join"})
     public RestResult<String> report(
             @RequestBody(required = false) Member node,
-            @RequestParam(value = "sync") boolean sync) {
+            @RequestParam(value = "sync", required = false) boolean sync) {
 
         if (!node.check()) {
             return RestResultUtils.failedWithData("Node information is illegal");
         }
-
-        Loggers.CLUSTER.debug("node state report, receive info : {}", node);
-        memberManager.update(node);
 
         String data = "";
 
@@ -117,11 +115,14 @@ public class NacosClusterController {
             data = JSON.toJSONString(MemberUtils.simpleMembers(memberManager));
         }
 
+        Loggers.CLUSTER.debug("node state report, receive info : {}", node);
+        memberManager.update(node);
+
         return RestResultUtils.success(data);
     }
 
     @PostMapping("/server/leave")
-    public RestResult<Boolean> memberLeave(@RequestBody Collection<Member> params) {
+    public RestResult<Boolean> leave(@RequestBody Collection<Member> params) {
         memberManager.memberLeave(params);
         return RestResultUtils.success();
     }

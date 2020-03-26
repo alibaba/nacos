@@ -66,6 +66,7 @@ import org.springframework.stereotype.Component;
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 @ConditionalOnProperty(value = "nacos.core.id-generator.type", havingValue = "default")
 @Component
 @DependsOn("serverMemberManager")
@@ -77,7 +78,7 @@ public class DefaultIdStore extends LogProcessor4CP {
     private final String FILE_PATH = Paths.get(ApplicationUtils.getNacosHome(), "data", "id_generator").toString();
     private long ACQUIRE_STEP;
     private CPProtocol cpProtocol;
-    private Map<String, IdStoreFile> storeFileMap;
+    private Map<String, IdStoreFile> storeFileMap = new ConcurrentHashMap<>(4);
     private Serializer serializer;
     private List<SnapshotOperation> snapshotOperations = Collections.singletonList(new IdSnapshotOperation());
 
@@ -86,7 +87,6 @@ public class DefaultIdStore extends LogProcessor4CP {
     @PostConstruct
     protected void init() throws Exception {
         Loggers.ID_GENERATOR.info("The Leaf-ID start");
-        this.storeFileMap = new ConcurrentHashMap<>(4);
         this.serializer = SerializeFactory.getDefault();
         ACQUIRE_STEP =
                 ConvertUtils.toLong(ApplicationUtils.getProperty("nacos.core.id-generator.default.acquire.step"), 100);
@@ -106,12 +106,11 @@ public class DefaultIdStore extends LogProcessor4CP {
 
     public void firstAcquire(String resource, int maxRetryCnt, DefaultIdGenerator generator, boolean bufferIndex) {
         this.cpProtocol.protocolMetaData()
-                .subscribe(group(), Constants.LEADER_META_DATA, new Observer() {
-                    @Override
-                    public void update(Observable o, Object arg) {
-                        GlobalExecutor.executeByCommon(() -> acquireNewIdSequence(resource, maxRetryCnt, generator, bufferIndex));
-                    }
-                });
+                .subscribe(group(), Constants.LEADER_META_DATA, (o, arg) -> {
+                            GlobalExecutor.executeByCommon(
+                                    () -> acquireNewIdSequence(resource, maxRetryCnt,
+                                            generator, bufferIndex));
+                        });
     }
 
     public void acquireNewIdSequence(String resource, int maxRetryCnt, DefaultIdGenerator generator, boolean bufferIndex) {
@@ -131,6 +130,7 @@ public class DefaultIdStore extends LogProcessor4CP {
             // need read maxId from raft-leader
             try {
                 long currentMaxId = Long.parseLong(protocol.getData(GetRequest.newBuilder()
+                        .setGroup(group())
                         .setData(ByteString.copyFromUtf8(resource))
                         .build()).getData().toStringUtf8());
 
@@ -177,10 +177,11 @@ public class DefaultIdStore extends LogProcessor4CP {
     @Override
     public LogFuture onApply(Log log) {
         final AcquireId acquireId = serializer.deserialize(log.getData().toByteArray(), AcquireId.class);
-        final String resources = acquireId.getApplicant();
+        final String resource = acquireId.getApplicant();
         final long minId = acquireId.getMinId();
         final long maxId = acquireId.getMaxId();
-        IdStoreFile storeFile = storeFileMap.get(resources);
+        storeFileMap.computeIfAbsent(resource, s -> new IdStoreFile(resource));
+        IdStoreFile storeFile = storeFileMap.get(resource);
         if (storeFile == null) {
             return LogFuture.fail(new NoSuchElementException("The resource does not exist"));
         }

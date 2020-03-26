@@ -66,7 +66,7 @@ public class MemberPingTask extends Task {
 
         TimerContext.start("MemberPingTask");
         try {
-            final Member self = memberManager.self();
+            final Member self = memberManager.getSelf();
             // self node information is not ready
             if (!self.check()) {
                 return;

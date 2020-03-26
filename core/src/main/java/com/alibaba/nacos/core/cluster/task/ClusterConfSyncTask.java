@@ -56,10 +56,11 @@ public class ClusterConfSyncTask extends Task {
     private int maxFailCount = 12;
     private volatile boolean alreadyLoadServer = false;
 
-    private final String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + ApplicationUtils
-            .getProperty("nacos.standalone.params", "");
-
-    private Runnable standaloneJob = () -> MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
+    private Runnable standaloneJob = () -> {
+        String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + ApplicationUtils
+                .getProperty("nacos.standalone.params", "");
+        MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
+    };
 
     public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
         super(memberManager);

@@ -124,6 +124,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
         LOGGER.error("Nacos failed to start, please see {}logs/nacos.log for more details.",
                 ApplicationUtils.getNacosHome());
+        context.close();
     }
 
     /**

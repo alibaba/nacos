@@ -403,7 +403,6 @@ public class JRaftServer {
 			Loggers.RAFT.warn("No RaftGroup information currently exists");
 			return;
 		}
-
 		String[] s = address.split(":");
 		final String ip = s[0].trim();
 		int port = Integer.parseInt(s[1].trim());
@@ -412,7 +411,12 @@ public class JRaftServer {
 			final String groupId = entry.getKey();
 			final Configuration conf = RouteTable.getInstance().getConfiguration(groupId);
 			final PeerId peerId = new PeerId(ip, port);
-			peerIdChange(groupId, peerId, () -> cliService.removePeer(groupId, conf, peerId));
+			peerIdChange(groupId, peerId, () -> {
+				if (cliService == null) {
+					return new Status(RaftError.UNKNOWN, "cliService is null");
+				}
+				return cliService.removePeer(groupId, conf, peerId);
+			});
 		}
 	}
 
@@ -420,21 +424,26 @@ public class JRaftServer {
 		final int retryCnt = failoverRetries > 1 ? failoverRetries : 3;
 		RaftExecutor.executeByRaftCore(() -> {
 			for (int i = 0; i < retryCnt; i++) {
-
+				if (isShutdown) {
+					return;
+				}
 				if (!conf.contains(peerId)) {
 					return;
 				}
 
-				Status status = callable.get();
-				if (status.isOk()) {
-					refreshRouteTable(groupId);
-					return;
-				}
-				else {
-					Loggers.RAFT
-							.error("Node remove failed, groupId : {}, peerId : {}, status : {}, Try again the {} time",
-									groupId, peerId, status, i + 1);
-					ThreadUtils.sleep(500L);
+				try {
+					Status status = callable.get();
+					if (status.isOk()) {
+						refreshRouteTable(groupId);
+						return;
+					}
+					else {
+						Loggers.RAFT.error("Node remove failed, groupId : {}, peerId : {}, status : {}, Try again the {} time",
+								groupId, peerId, status, i + 1);
+						ThreadUtils.sleep(500L);
+					}
+				} catch (Exception e) {
+					Loggers.RAFT.error("An exception occurred during the node change operation : {}", e);
 				}
 			}
 		});

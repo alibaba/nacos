@@ -56,7 +56,7 @@ public class MemberShutdownTask extends Task {
 
     @Override
     public void executeBody() {
-        Collection<Member> body = Collections.singletonList(memberManager.self());
+        Collection<Member> body = Collections.singletonList(memberManager.getSelf());
 
         Loggers.CLUSTER.info("Start broadcasting this node logout");
 
