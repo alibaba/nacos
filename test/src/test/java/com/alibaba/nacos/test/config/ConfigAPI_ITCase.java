@@ -50,7 +50,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiaochun.xxc
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAPI_ITCase {
     public static final long TIME_OUT = 2000;
     public ConfigService iconfig = null;

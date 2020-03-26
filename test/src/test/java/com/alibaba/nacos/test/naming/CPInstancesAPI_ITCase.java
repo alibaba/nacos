@@ -53,9 +53,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class CPInstancesAPI_ITCase {
 
     private NamingService naming;
