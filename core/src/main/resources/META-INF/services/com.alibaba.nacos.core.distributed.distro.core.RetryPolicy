@@ -1,0 +1,2 @@
+com.alibaba.nacos.core.distributed.distro.core.SimpleDelayRetryPolicy
+com.alibaba.nacos.core.distributed.distro.core.TimeWeightedRetryPolicy

@@ -15,6 +15,11 @@
  */
 package com.alibaba.nacos.naming.boot;
 
+import com.alibaba.nacos.core.cluster.ServerInitializedEvent;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -30,27 +35,31 @@ import java.util.TreeMap;
 /**
  * @author nkorange
  */
-@Component("runningConfig")
-public class RunningConfig implements ApplicationListener<WebServerInitializedEvent> {
+public class RunningConfig implements Subscribe<ServerInitializedEvent> {
 
     private static int serverPort;
 
     private static String contextPath;
 
-    @Autowired
-    private ServletContext servletContext;
-
     private static volatile boolean isServerInitialized = false;
 
+    private static final RunningConfig RUNNING_CONFIG = new RunningConfig();
+
+    static {
+        NotifyCenter.registerSubscribe(RUNNING_CONFIG);
+    }
+
     @Override
-    public void onApplicationEvent(WebServerInitializedEvent event) {
+    public void onEvent(ServerInitializedEvent event) {
+        serverPort = event.getEvent().getWebServer().getPort();
+        contextPath = event.getServletContext().getContextPath();
 
-        Loggers.SRV_LOG.info("[SERVER-INIT] got port: {}", event.getWebServer().getPort());
-        Loggers.SRV_LOG.info("[SERVER-INIT] got path: {}", servletContext.getContextPath());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got port: {}", serverPort);
+        Loggers.SRV_LOG.info("[SERVER-INIT] got path: {}", contextPath);
 
-        serverPort = event.getWebServer().getPort();
-        contextPath = servletContext.getContextPath();
         isServerInitialized = true;
+
+        NotifyCenter.deregisterPublisher(ServerInitializedEvent.class);
     }
 
     public static int getServerPort() {
@@ -60,7 +69,7 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     public static String getContextPath() {
 
         if (!isServerInitialized) {
-            String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
+            String contextPath = ApplicationUtils.getProperty(Constants.WEB_CONTEXT_PATH);
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
                 return StringUtils.EMPTY;
             } else {
@@ -68,5 +77,10 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
             }
         }
         return contextPath;
+    }
+
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerInitializedEvent.class;
     }
 }

@@ -19,10 +19,11 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,8 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class NotifyTaskProcessor implements TaskProcessor {
 
-    public NotifyTaskProcessor(ServerListService serverListService) {
-        this.serverListService = serverListService;
+    public NotifyTaskProcessor(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @Override
@@ -55,8 +56,8 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
         boolean isok = true;
 
-        for (String ip : serverListService.getServerList()) {
-            isok = notifyToDump(dataId, group, tenant, lastModified, ip) && isok;
+        for (Member ip : memberManager.allMembers()) {
+            isok = notifyToDump(dataId, group, tenant, lastModified, ip.getAddress()) && isok;
         }
         return isok;
     }
@@ -107,5 +108,5 @@ public class NotifyTaskProcessor implements TaskProcessor {
     static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
         + "?dataId={2}&group={3}";
 
-    final ServerListService serverListService;
+    final ServerMemberManager memberManager;
 }

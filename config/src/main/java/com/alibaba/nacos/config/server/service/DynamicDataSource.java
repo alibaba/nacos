@@ -16,45 +16,59 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * datasource adapter
  *
  * @author Nacos
  */
-@Component
-public class DynamicDataSource implements ApplicationContextAware {
+public class DynamicDataSource {
 
-    @Autowired
-    private PropertyUtil propertyUtil;
+    private volatile DataSourceService localDataSourceService = null;
+    private volatile DataSourceService basicDataSourceService = null;
 
-    private ApplicationContext applicationContext;
+    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    public static DynamicDataSource getInstance() {
+        return INSTANCE;
     }
 
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
-
-    public DataSourceService getDataSource() {
-        DataSourceService dataSourceService = null;
-
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
-            dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");
-        } else {
-            dataSourceService = (DataSourceService)applicationContext.getBean("basicDataSourceService");
+    public synchronized DataSourceService getDataSource() {
+        try {
+            if (useMemoryDB()) {
+                if (localDataSourceService == null) {
+                    localDataSourceService = new LocalDataSourceServiceImpl();
+                    localDataSourceService.init();
+                }
+                return localDataSourceService;
+            }
+            else {
+                if (basicDataSourceService == null) {
+                    basicDataSourceService = new BasicDataSourceServiceImpl();
+                    basicDataSourceService.init();
+                }
+                return basicDataSourceService;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        return dataSourceService;
+    /**
+     * 判断顺序：
+     * 1、单机模式：mysql
+     * 2、单机模式：derby
+     * 3、集群模式：mysql
+     * 4、集群模式：derby-cluster
+     *
+     * @return Whether to use derby storage
+     */
+    private boolean useMemoryDB() {
+        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql())
+                || PropertyUtil.isEmbeddedDistributedStorage();
     }
 
 }

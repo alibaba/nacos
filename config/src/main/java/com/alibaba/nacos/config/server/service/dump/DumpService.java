@@ -21,17 +21,21 @@ import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.*;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.*;
 
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -43,6 +47,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,17 +62,49 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
+@SuppressWarnings("all")
 @Service
 public class DumpService {
 
     @Autowired
-    private Environment env;
-
-    @Autowired
     PersistService persistService;
 
+    @Autowired
+    private ServerMemberManager memberManager;
+
+    @Autowired
+    private CPProtocol protocol;
+
     @PostConstruct
-    public void init() {
+    protected void init() {
+        // If using embedded distributed storage, you need to wait for the
+        // underlying master to complete the selection
+
+        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+
+            LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for " +
+                    "the underlying master to complete before you can perform the dump operation.");
+
+            // watch path => /nacos_config/leader/ has value ?
+
+            Observer observer = new Observer() {
+                @Override
+                public void update(Observable o, Object arg) {
+                    GlobalExecutor.executeByCommon(() -> dumpOperate());
+                    protocol.protocolMetaData().ubSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+                            com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA, this);
+                }
+            };
+
+            protocol.protocolMetaData()
+                    .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+                            com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA, observer);
+        } else {
+            dumpOperate();
+        }
+    }
+
+    private void dumpOperate() {
         LogUtil.defaultLog.warn("DumpService start");
         DumpProcessor processor = new DumpProcessor(this);
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
@@ -85,7 +123,7 @@ public class DumpService {
 
         Runnable clearConfigHistory = () -> {
             log.warn("clearConfigHistory start");
-            if (ServerListService.isFirstIp()) {
+            if (canExecute()) {
                 try {
                     Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                     int totalCount = persistService.findConfigHistoryCountByTime(startTime);
@@ -245,7 +283,7 @@ public class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = env.getProperty("isQuickStart");
+            val = ApplicationUtils.getProperty("isQuickStart");
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
@@ -257,7 +295,7 @@ public class DumpService {
     }
 
     private int getRetentionDays() {
-        String val = env.getProperty("nacos.config.retention.days");
+        String val = ApplicationUtils.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }
@@ -322,6 +360,9 @@ public class DumpService {
 
         @Override
         public void run() {
+            if (!canExecute()) {
+                return;
+            }
             for (ConfigInfoChanged configInfo : configInfoList) {
                 String dataId = configInfo.getDataId();
                 String group = configInfo.getGroup();
@@ -370,6 +411,20 @@ public class DumpService {
                 }
             }
             log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+        }
+    }
+
+    private boolean canExecute() {
+        if (!PropertyUtil.isEmbeddedDistributedStorage()) {
+            return true;
+        }
+        try {
+            return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        } catch (NoSuchRaftGroupException e) {
+            return true;
+        } catch (Exception e) {
+            // It's impossible to get to this point
+            throw new RuntimeException(e);
         }
     }
 

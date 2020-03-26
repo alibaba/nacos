@@ -17,10 +17,10 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
-import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -35,6 +35,7 @@ import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author nkorange
  * @since 1.0.0
  */
+@DependsOn("serverMemberManager")
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
 
@@ -75,7 +77,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private Serializer serializer;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -120,20 +122,21 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         // size = 1 means only myself in the list, we need at least one another server alive:
-        while (serverListManager.getHealthyServers().size() <= 1) {
+        while (memberManager.getServerList().size() <= 1) {
             Thread.sleep(1000L);
             Loggers.DISTRO.info("waiting server list init...");
         }
 
-        for (Server server : serverListManager.getHealthyServers()) {
-            if (NetUtils.localServer().equals(server.getKey())) {
+        for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
+            final String address = entry.getValue().getAddress();
+            if (NetUtils.localServer().equals(address)) {
                 continue;
             }
             if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("sync from " + server);
+                Loggers.DISTRO.debug("sync from " + address);
             }
             // try sync data from remote server:
-            if (syncAllDataFromRemote(server)) {
+            if (syncAllDataFromRemote(address)) {
                 initialized = true;
                 return;
             }
@@ -250,10 +253,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     }
 
-    public boolean syncAllDataFromRemote(Server server) {
+    public boolean syncAllDataFromRemote(String server) {
 
         try {
-            byte[] data = NamingProxy.getAllData(server.getKey());
+            byte[] data = NamingProxy.getAllData(server);
             processData(data);
             return true;
         } catch (Exception e) {

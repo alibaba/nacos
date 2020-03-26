@@ -21,8 +21,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -42,6 +42,7 @@ import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,7 +96,7 @@ public class ServiceManager implements RecordListener<Service> {
     private DistroMapper distroMapper;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     @Autowired
     private PushService pushService;
@@ -266,61 +267,6 @@ public class ServiceManager implements RecordListener<Service> {
                     serviceName, serverIP, e);
             }
         }
-    }
-
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
-
-        List<RaftPeer> matchList = new ArrayList<>();
-        RaftPeer localRaftPeer = raftPeerSet.local();
-        matchList.add(localRaftPeer);
-        Set<String> otherServerSet = raftPeerSet.allServersWithoutMySelf();
-        if (null != otherServerSet && otherServerSet.size() > 0) {
-            for (String server: otherServerSet) {
-                String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
-                Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
-                try {
-                    String content = NamingProxy.reqCommon(path, params, server, false);
-                    if (!StringUtils.EMPTY.equals(content)) {
-                        RaftPeer raftPeer = JSONObject.parseObject(content, RaftPeer.class);
-                        if (null != raftPeer) {
-                            matchList.add(raftPeer);
-                        }
-                    }
-                } catch (Exception e) {
-                    Loggers.SRV_LOG.warn("[QUERY-CLUSTER-STATE] Exception while query cluster state from {}, error: {}",
-                        server, e);
-                }
-            }
-        }
-        List<RaftPeer> tempList = new ArrayList<>();
-        if (StringUtils.isNotBlank(keyword)) {
-            for (RaftPeer raftPeer : matchList) {
-                String ip = raftPeer.ip.split(":")[0];
-                if (keyword.equals(ip)) {
-                    tempList.add(raftPeer);
-                }
-            }
-            matchList = tempList;
-        }
-
-        if (pageSize >= matchList.size()) {
-            raftPeerList.addAll(matchList);
-            return matchList.size();
-        }
-
-        for (int i = 0; i < matchList.size(); i++) {
-            if (i < startPage * pageSize) {
-                continue;
-            }
-
-            raftPeerList.add(matchList.get(i));
-
-            if (raftPeerList.size() >= pageSize) {
-                break;
-            }
-        }
-
-        return matchList.size();
     }
 
     public RaftPeer getMySelfClusterState() {
@@ -898,17 +844,17 @@ public class ServiceManager implements RecordListener<Service> {
 
                     msg.setData(JSON.toJSONString(checksum));
 
-                    List<Server> sameSiteServers = serverListManager.getServers();
+                    Collection<Member> sameSiteServers = memberManager.allMembers();
 
                     if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (Server server : sameSiteServers) {
-                        if (server.getKey().equals(NetUtils.localServer())) {
+                    for (Member server : sameSiteServers) {
+                        if (server.getAddress().equals(NetUtils.localServer())) {
                             continue;
                         }
-                        synchronizer.send(server.getKey(), msg);
+                        synchronizer.send(server.getAddress(), msg);
                     }
                 }
             } catch (Exception e) {

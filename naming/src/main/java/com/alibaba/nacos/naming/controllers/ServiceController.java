@@ -26,8 +26,8 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -61,7 +61,7 @@ public class ServiceController {
     private DistroMapper distroMapper;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     @Autowired
     private SubscribeManager subscribeManager;
@@ -289,7 +289,7 @@ public class ServiceController {
         String statuses = json.getString("statuses");
         String serverIp = json.getString("clientIP");
 
-        if (!serverListManager.contains(serverIp)) {
+        if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "ip: " + serverIp + " is not in serverlist");
         }

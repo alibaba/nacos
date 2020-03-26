@@ -20,11 +20,11 @@ import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
+import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.*;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoTagWrapper;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -242,10 +242,10 @@ class DumpAllProcessor implements TaskProcessor {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
-            Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
+            Page<ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
-                for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
+                for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
@@ -402,10 +402,10 @@ class DumpChangeProcessor implements TaskProcessor {
 
         LogUtil.defaultLog.warn("changeConfig start");
         long startChangeConfigTime = System.currentTimeMillis();
-        List<PersistService.ConfigInfoWrapper> changeConfigs = persistService
+        List<ConfigInfoWrapper> changeConfigs = persistService
             .findChangeConfig(startTime, endTime);
         LogUtil.defaultLog.warn("changeConfig count:{}", changeConfigs.size());
-        for (PersistService.ConfigInfoWrapper cf : changeConfigs) {
+        for (ConfigInfoWrapper cf : changeConfigs) {
             boolean result = ConfigService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                 cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
