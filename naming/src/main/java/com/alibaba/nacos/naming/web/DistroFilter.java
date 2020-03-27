@@ -123,7 +123,7 @@ public class DistroFilter implements Filter {
                 String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
 
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName), headerList,
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + req.getRequestURI(), headerList,
                         HttpClient.translateParameterMap(req.getParameterMap()),
                         body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
 
