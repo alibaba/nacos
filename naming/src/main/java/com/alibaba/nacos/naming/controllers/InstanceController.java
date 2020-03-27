@@ -280,6 +280,9 @@ public class InstanceController {
         if (clientBeat != null) {
             if (StringUtils.isNotBlank(clientBeat.getCluster())) {
                 clusterName = clientBeat.getCluster();
+            } else {
+                // fix #2533
+                clientBeat.setCluster(clusterName);
             }
             ip = clientBeat.getIp();
             port = clientBeat.getPort();
