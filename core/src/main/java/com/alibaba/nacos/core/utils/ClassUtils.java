@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.core.utils;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import org.springframework.core.ResolvableType;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ClassUtils {
+@SuppressWarnings("all")
+public final class ClassUtils {
 
 	public static <T> Class<T> resolveGenericType(Class<?> declaredClass) {
-		ParameterizedType parameterizedType = (ParameterizedType) declaredClass.getGenericSuperclass();
-		Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-		return (Class<T>) actualTypeArguments[0];
+		return (Class<T>) ResolvableType.forClass(declaredClass).getSuperType().resolveGeneric(0);
 	}
 
-	public static <T> Class<T> resolveGenericTypeByInterface(Class<?> cls) {
-		Type[] types = cls.getGenericInterfaces();
-		Type[] actualTypeArguments = ((ParameterizedType) types[0]).getActualTypeArguments();
-		return (Class<T>) actualTypeArguments[0];
+	public static <T> Class<T> resolveGenericTypeByInterface(Class<?> declaredClass) {
+		return (Class<T>) ResolvableType.forClass(declaredClass).getInterfaces()[0].resolveGeneric(0);
 	}
 
 	public static Class findClassByName(String className) {
