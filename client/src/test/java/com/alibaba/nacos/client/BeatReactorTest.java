@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.ResponseCode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
@@ -12,8 +11,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -42,11 +40,6 @@ public class BeatReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
 
-        JSONObject result = new JSONObject();
-        result.put(CommonParams.LIGHT_BEAT_ENABLED, true);
-        result.put(CommonParams.CODE, ResponseCode.OK);
-
-        Mockito.doReturn(result).when(namingProxy).sendBeat(beatInfo, true);
         beatReactor.addBeatInfo("testService", beatInfo);
 
         Assert.assertEquals(1, getActiveThread(beatReactor));
