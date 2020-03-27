@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;

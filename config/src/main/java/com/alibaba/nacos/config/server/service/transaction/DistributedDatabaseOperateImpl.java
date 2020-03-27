@@ -23,7 +23,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
