@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Data replicator
  *
  * @author nkorange
+ * @author pengzhengfa
  * @since 1.0.0
  */
 @Component
@@ -60,6 +61,8 @@ public class DataSyncer {
     private ServerListManager serverListManager;
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
+
+    private long DataSyncTimestamp = System.currentTimeMillis();
 
     @PostConstruct
     public void init() {
@@ -112,13 +115,12 @@ public class DataSyncer {
 
             byte[] data = serializer.serialize(datumMap);
 
-            long timestamp = System.currentTimeMillis();
             boolean success = NamingProxy.syncData(data, task.getTargetServer());
             if (!success) {
                 SyncTask syncTask = new SyncTask();
                 syncTask.setKeys(task.getKeys());
                 syncTask.setRetryCount(task.getRetryCount() + 1);
-                syncTask.setLastExecuteTime(timestamp);
+                syncTask.setLastExecuteTime(DataSyncTimestamp);
                 syncTask.setTargetServer(task.getTargetServer());
                 retrySync(syncTask);
             } else {
@@ -145,9 +147,17 @@ public class DataSyncer {
             }
             return;
         }
+        long finalSyncRetryDelay=0;
+        if (System.currentTimeMillis()>DataSyncTimestamp){
+            for (long syncRetryDelay=partitionConfig.getSyncRetryDelay();syncRetryDelay<Long.MAX_VALUE;
+                 syncRetryDelay+=partitionConfig.getSyncRetryDelay()){
 
-        // TODO may choose other retry policy.
-        submit(syncTask, partitionConfig.getSyncRetryDelay());
+               finalSyncRetryDelay= syncRetryDelay;
+            }
+        }else{
+            finalSyncRetryDelay= partitionConfig.getSyncRetryDelay();
+        }
+        submit(syncTask,finalSyncRetryDelay);
     }
 
     public void startTimedSync() {
