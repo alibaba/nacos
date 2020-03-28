@@ -350,7 +350,7 @@ class DumpAllTagProcessor implements TaskProcessor {
         return true;
     }
 
-    static final int PAGE_SIZE = 1000;
+    static final int PAGE_SIZE = 60;
 
     final DumpService dumpService;
     final PersistService persistService;
