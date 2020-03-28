@@ -304,6 +304,7 @@ public class HostReactor {
 
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
+        long delay = -1;
         private String clusters;
         private String serviceName;
 
@@ -314,12 +315,13 @@ public class HostReactor {
 
         @Override
         public void run() {
+            ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
             try {
-                ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
+
 
                 if (serviceObj == null) {
                     updateServiceNow(serviceName, clusters);
-                    executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+                    delay = DEFAULT_DELAY;
                     return;
                 }
 
@@ -341,11 +343,14 @@ public class HostReactor {
                     return;
                 }
 
-                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
-
+                delay = serviceObj.getCacheMillis();
 
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
+            } finally {
+                if (delay > 0) {
+                    executor.schedule(this, delay, TimeUnit.MILLISECONDS);
+                }
             }
 
         }
