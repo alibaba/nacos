@@ -304,7 +304,7 @@ public class HostReactor {
 
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
-        long delay = -1;
+        long delayTime = -1;
         private String clusters;
         private String serviceName;
 
@@ -320,7 +320,7 @@ public class HostReactor {
 
                 if (serviceObj == null) {
                     updateServiceNow(serviceName, clusters);
-                    delay = DEFAULT_DELAY;
+                    delayTime = DEFAULT_DELAY;
                     return;
                 }
 
@@ -342,14 +342,14 @@ public class HostReactor {
                     return;
                 }
 
-                delay = serviceObj.getCacheMillis();
+                delayTime = serviceObj.getCacheMillis();
 
 
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                if (delay > 0) {
-                    executor.schedule(this, delay, TimeUnit.MILLISECONDS);
+                if (delayTime > 0) {
+                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
                 }
             }
 
