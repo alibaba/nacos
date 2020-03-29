@@ -304,7 +304,6 @@ public class HostReactor {
 
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
-        long delayTime = -1;
         private String clusters;
         private String serviceName;
 
@@ -315,6 +314,8 @@ public class HostReactor {
 
         @Override
         public void run() {
+            long delayTime = -1;
+
             try {
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
 
