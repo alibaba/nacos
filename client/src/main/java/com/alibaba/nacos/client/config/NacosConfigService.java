@@ -55,8 +55,6 @@ public class NacosConfigService implements ConfigService {
 
     private static final long POST_TIMEOUT = 3000L;
 
-    private static final String EMPTY = "";
-
     /**
      * http agent
      */
