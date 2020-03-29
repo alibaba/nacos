@@ -17,15 +17,10 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,17 +33,6 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class Instances implements Record {
-
-    private static MessageDigest MESSAGE_DIGEST;
-
-    static {
-        try {
-            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            MESSAGE_DIGEST = null;
-        }
-    }
 
     private List<Instance> instanceList = new ArrayList<>();
 
@@ -73,7 +57,6 @@ public class Instances implements Record {
     }
 
     private String recalculateChecksum() {
-        String checksum;
         StringBuilder sb = new StringBuilder();
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
@@ -83,13 +66,7 @@ public class Instances implements Record {
             sb.append(",");
         }
 
-        if (MESSAGE_DIGEST != null) {
-            checksum =
-                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-        } else {
-            checksum = RandomStringUtils.randomAscii(32);
-        }
-        return checksum;
+        return Md5Utils.getMD5(sb.toString(), "UTF-8");
     }
 
     public String convertMap2String(Map<String, String> map) {
