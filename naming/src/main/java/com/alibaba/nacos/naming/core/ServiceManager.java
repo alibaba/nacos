@@ -974,13 +974,17 @@ public class ServiceManager implements RecordListener<Service> {
      * @param applicationPort
      * @return
      */
-    public List<Application> getApplications(String namespaceId,String applicationIp,Integer applicationPort){
+    public List<Application> getApplications(String namespaceId,String applicationIp,Integer applicationPort,String serviceNameParam){
         Map<String, Service> groupServiceMap = chooseServiceMap(namespaceId);
         Map<Pair<String, Integer>, List<Instance>> appInstanceListMap = new HashMap<>(16);
         if (groupServiceMap == null) {
             return Collections.emptyList();
         }
-        groupServiceMap.values().forEach(
+        Collection<Service> filtered = StringUtils.isBlank(serviceNameParam)?groupServiceMap.values():
+            groupServiceMap.values().stream().filter(
+                service -> NamingUtils.getServiceName(service.getName()).toUpperCase().contains(serviceNameParam.toUpperCase())
+            ).collect(Collectors.toSet());
+        filtered.forEach(
             service -> service.allIPs().parallelStream()
             .filter(StringUtils.isEmpty(applicationIp) ? instance -> true : instance -> instance.getIp().contains(applicationIp))
             .filter(applicationPort == null ? instance -> true : instance -> instance.getPort() == applicationPort)

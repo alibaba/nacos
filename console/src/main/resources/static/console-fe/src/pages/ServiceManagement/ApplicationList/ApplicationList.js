@@ -61,6 +61,7 @@ class ApplicationList extends React.Component {
       search: {
         applicationIp: '',
         applicationPort: '',
+        serviceNameParam: '',
       },
       hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
@@ -89,6 +90,7 @@ class ApplicationList extends React.Component {
       `pageSize=${pageSize}`,
       `applicationIp=${search.applicationIp}`,
       `applicationPort=${search.applicationPort !== 'undefined' ? search.applicationPort : ''}`,
+      `serviceNameParam=${search.serviceNameParam}`,
     ];
     request({
       url: `v1/ns/catalog/applications?${parameter.join('&')}`,
@@ -156,6 +158,8 @@ class ApplicationList extends React.Component {
       applicationIpPlaceholder,
       applicationPort,
       applicationPortPlaceholder,
+      serviceName,
+      serviceNamePlaceholder,
       query,
       pubNoData,
       operation,
@@ -228,6 +232,19 @@ class ApplicationList extends React.Component {
                         this.setState({ search: { ...search, applicationPort } });
                       }
                     }}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryApplicationList())
+                    }
+                  />
+                </FormItem>
+                <FormItem label={serviceName}>
+                  <Input
+                    placeholder={serviceNamePlaceholder}
+                    style={{ width: 200 }}
+                    value={search.serviceNameParam}
+                    onChange={serviceNameParam =>
+                      this.setState({ search: { ...search, serviceNameParam } })
+                    }
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryApplicationList())
                     }

@@ -122,6 +122,8 @@ const I18N_CONF = {
     applicationIpPlaceholder: 'Please enter ip',
     applicationPort: 'Application Port',
     applicationPortPlaceholder: 'Please enter port',
+    serviceName: 'Service Name',
+    serviceNamePlaceholder: 'Please enter service name',
     query: 'Query',
     pubNoData: 'No data',
     operation: 'Operation',

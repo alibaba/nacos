@@ -73,7 +73,7 @@ public class ApplicationControllerTest  extends BaseTest {
             application.setInstanceCount(INSTANCE_COUNT);
             mockApplications.add(application);
         }
-        Mockito.when(serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, null, null)).thenReturn(mockApplications);
+        Mockito.when(serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, null, null,null)).thenReturn(mockApplications);
         List<Instance> instanceList = new ArrayList<>();
         for (int i = 0; i < INSTANCE_COUNT; i++) {
             Instance instance = new Instance();

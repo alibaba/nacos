@@ -48,6 +48,19 @@ public class ApplicationPageRequest {
      */
     private Integer applicationPort;
 
+    /**
+     * should contain service name
+     */
+    private String serviceNameParam;
+
+    public String getServiceNameParam() {
+        return serviceNameParam;
+    }
+
+    public void setServiceNameParam(String serviceNameParam) {
+        this.serviceNameParam = serviceNameParam;
+    }
+
     public Integer getPageNo() {
         return pageNo;
     }
@@ -105,6 +118,7 @@ public class ApplicationPageRequest {
             .add("namespaceId='" + namespaceId + "'")
             .add("applicationIp='" + applicationIp + "'")
             .add("applicationPort=" + applicationPort)
+            .add("serviceName='" + serviceNameParam + "'")
             .toString();
     }
 }

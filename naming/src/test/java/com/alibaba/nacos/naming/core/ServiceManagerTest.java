@@ -119,7 +119,7 @@ public class ServiceManagerTest extends BaseTest {
     @Test
     public void testBasicQueryApplication() throws Exception {
         prepareAppData();
-        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, null, null);
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, null, null, null);
         Assert.assertEquals(20,applicationList.size());
         for (Application application : applicationList) {
             Assert.assertEquals(application.getInstanceCount(),1);
@@ -129,27 +129,40 @@ public class ServiceManagerTest extends BaseTest {
     @Test
     public void testQueryAppNsNotExist() throws Exception {
         prepareAppData();
-        List<Application> applicationList = serviceManager.getApplications("NotExistNamespaceId", null, null);
+        List<Application> applicationList = serviceManager.getApplications("NotExistNamespaceId", null, null, null);
         Assert.assertEquals(0,applicationList.size());
     }
 
     @Test
     public void testQueryAppByIp() throws Exception {
         prepareAppData();
-        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", null);
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", null,null);
         Assert.assertEquals(11,applicationList.size());
     }
 
     @Test
     public void testQueryAppByPort() throws Exception {
         prepareAppData();
-        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", 20);
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", 20,null);
         Assert.assertEquals(0,applicationList.size());
-        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 20);
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 20,null);
         Assert.assertEquals(1,applicationList.size());
         Assert.assertEquals(IP_PREFIX + "20",applicationList.get(0).getIp() );
         Assert.assertEquals(20,applicationList.get(0).getPort());
-        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 21);
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 21,null);
+        Assert.assertEquals(0,applicationList.size());
+    }
+
+    @Test
+    public void testQueryAppByService() throws Exception {
+        prepareAppData();
+        List<Application> applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "1", null,TEST_SERVICE_NAME);
+        Assert.assertEquals(11,applicationList.size());
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", null,TEST_SERVICE_NAME.toLowerCase());
+        Assert.assertEquals(1,applicationList.size());
+        Assert.assertEquals(IP_PREFIX + "20",applicationList.get(0).getIp() );
+        Assert.assertEquals(20,applicationList.get(0).getPort());
+        applicationList = serviceManager.getApplications(Constants.DEFAULT_NAMESPACE_ID, IP_PREFIX + "20", 21,TEST_SERVICE_NAME.toLowerCase().toUpperCase());
         Assert.assertEquals(0,applicationList.size());
     }
 

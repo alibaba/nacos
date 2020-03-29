@@ -59,7 +59,12 @@ public class ApplicationController {
     @GetMapping
     public ApplicationPageResponse queryApplicationPage(ApplicationPageRequest applicationPageRequest) {
         ApplicationPageResponse response = new ApplicationPageResponse();
-        List<Application> applicationList = serviceManager.getApplications(applicationPageRequest.getNamespaceId(), applicationPageRequest.getApplicationIp(), applicationPageRequest.getApplicationPort());
+        List<Application> applicationList = serviceManager.getApplications(
+            applicationPageRequest.getNamespaceId(),
+            applicationPageRequest.getApplicationIp(),
+            applicationPageRequest.getApplicationPort(),
+            applicationPageRequest.getServiceNameParam()
+        );
         response.setCount(applicationList.size());
         if (applicationPageRequest.getPageSize() * (applicationPageRequest.getPageNo() - 1) >= applicationList.size()) {
             response.setApplicationList(Collections.EMPTY_LIST);

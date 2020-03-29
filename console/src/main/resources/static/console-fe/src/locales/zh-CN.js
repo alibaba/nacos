@@ -121,6 +121,8 @@ const I18N_CONF = {
     applicationIpPlaceholder: '请输入应用IP',
     applicationPort: '应用端口',
     applicationPortPlaceholder: '请输入应用端口',
+    serviceName: '服务名',
+    serviceNamePlaceholder: '请输入服务名',
     query: '查询',
     pubNoData: '无应用',
     operation: '操作',
