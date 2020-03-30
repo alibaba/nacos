@@ -15,9 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service.trace;
 
+import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -61,7 +62,8 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1] | ext
         // (md5)
-        String md5 = content == null ? null : MD5.getInstance().getMD5String(content);
+        String md5 = content == null ? null : Md5Utils.getMD5(content, Constants.ENCODE);
+
         LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", LOCAL_IP, dataId, group, tenant,
             requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }

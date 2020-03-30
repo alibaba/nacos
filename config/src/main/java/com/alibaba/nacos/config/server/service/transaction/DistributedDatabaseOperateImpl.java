@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.transaction;
 
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -28,7 +29,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.RowMapperManager;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
@@ -245,7 +245,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
     @Override
     public Boolean update(List<ModifyRequest> sqlContext) {
         try {
-            final String key = group() + "-" + selfIp + "-" + MD5.getInstance().getMD5String(sqlContext.toString());
+            final String key = group() + "-" + selfIp + "-" + Md5Utils.getMD5(sqlContext.toString(), Constants.ENCODE);
             Log log = Log.newBuilder()
                     .setKey(key)
                     .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))

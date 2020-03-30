@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -32,12 +33,8 @@ import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.util.*;
 
 /**
@@ -475,21 +472,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipsString.append(",");
         }
 
-        try {
-            String result;
-            try {
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
-                result = new BigInteger(1, md5.digest((ipsString.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-                result = RandomStringUtils.randomAscii(32);
-            }
-
-            checksum = result;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-            checksum = RandomStringUtils.randomAscii(32);
-        }
+        checksum = Md5Utils.getMD5(ipsString.toString(), "UTF-8");
     }
 
     private void updateOrAddCluster(Collection<Cluster> clusters) {
