@@ -248,6 +248,7 @@
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
+                        <exclude>logs/*</exclude>
                         <exclude>**/istio/model/**</exclude>
                         <exclude>**/consistency/entity/**</exclude>
                     </excludes>

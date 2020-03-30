@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
@@ -38,7 +41,6 @@ import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -224,7 +226,7 @@ public class PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
 
             String sql = "INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip," +
                     "src_user,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
@@ -241,7 +243,6 @@ public class PersistService {
             if (!result) {
                 throw new NacosConfigException("【灰度】配置发布失败");
             }
-
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
                         tenantTmp, time.getTime()));
@@ -260,7 +261,7 @@ public class PersistService {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
 
             String sql = "INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
                     + "gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
@@ -276,7 +277,6 @@ public class PersistService {
             if (!result) {
                 throw new NacosConfigException("【标签】配置添加失败");
             }
-
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
                         configInfo.getGroup(), tenantTmp, tagTmp, time.getTime()));
@@ -333,7 +333,7 @@ public class PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             final String sql = "UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
                     + "data_id=? AND group_id=? AND tenant_id=?";
             final Object[] args = new Object[]{
@@ -348,7 +348,6 @@ public class PersistService {
             if (!result) {
                 throw new NacosConfigException("【灰度】配置修改失败");
             }
-
             if (notify) {
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
                         tenantTmp, time.getTime()));
@@ -367,7 +366,7 @@ public class PersistService {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             final String sql = "UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
                     + "data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
             final Object[] args = new Object[]{
@@ -2131,7 +2130,7 @@ public class PersistService {
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
 
         final String sql;
 
@@ -2308,7 +2307,7 @@ public class PersistService {
                                         final Timestamp time, Map<String, Object> configAdvanceInfo) {
         final String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         final String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
@@ -2444,7 +2443,7 @@ public class PersistService {
                                           final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
 
         final String sql;
         final Object[] args;
@@ -2726,8 +2725,7 @@ public class PersistService {
                     String md5InDb = cf.getMd5();
                     final String content = cf.getContent();
                     final String tenant = cf.getTenant();
-                    final String md5 = MD5.getInstance().getMD5String(
-                            content);
+                    final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
                     if (StringUtils.isBlank(md5InDb)) {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
