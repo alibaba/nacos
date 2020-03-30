@@ -243,7 +243,7 @@ class DumpAllProcessor implements TaskProcessor {
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
             Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
-                PAGE_SIZE);
+                task.getDumpAllInitPageSize());
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
@@ -270,13 +270,11 @@ class DumpAllProcessor implements TaskProcessor {
                 }
                 defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
             } else {
-                lastMaxId += PAGE_SIZE;
+                lastMaxId += task.getDumpAllInitPageSize();
             }
         }
         return true;
     }
-
-    static final int PAGE_SIZE = 1000;
 
     final DumpService dumpService;
     final PersistService persistService;
@@ -292,11 +290,11 @@ class DumpAllBetaProcessor implements TaskProcessor {
     @Override
     public boolean process(String taskType, AbstractTask task) {
         int rowCount = persistService.configInfoBetaCount();
-        int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+        int pageCount = (int)Math.ceil(rowCount * 1.0 / task.getDumpAllInitPageSize());
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo,task.getDumpAllInitPageSize());
             if (page != null) {
                 for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
                     boolean result = ConfigService.dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
@@ -313,7 +311,6 @@ class DumpAllBetaProcessor implements TaskProcessor {
         return true;
     }
 
-    static final int PAGE_SIZE = 1000;
 
     final DumpService dumpService;
     final PersistService persistService;
@@ -329,11 +326,11 @@ class DumpAllTagProcessor implements TaskProcessor {
     @Override
     public boolean process(String taskType, AbstractTask task) {
         int rowCount = persistService.configInfoTagCount();
-        int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+        int pageCount = (int)Math.ceil(rowCount * 1.0 / task.getDumpAllInitPageSize());
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, task.getDumpAllInitPageSize());
             if (page != null) {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
                     boolean result = ConfigService.dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
@@ -349,8 +346,6 @@ class DumpAllTagProcessor implements TaskProcessor {
         }
         return true;
     }
-
-    static final int PAGE_SIZE = 60;
 
     final DumpService dumpService;
     final PersistService persistService;

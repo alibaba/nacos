@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -64,6 +65,9 @@ public class DumpService {
 
     @Autowired
     PersistService persistService;
+
+    @Value("${nacos.dump.init.page-size:100}")
+    Integer dumpInitPageSize;
 
     @PostConstruct
     public void init() {
@@ -113,13 +117,17 @@ public class DumpService {
             LogUtil.defaultLog.info("start clear all config-info-beta.");
             DiskUtil.clearAllBeta();
             if (persistService.isExistTable(BETA_TABLE_NAME)) {
-                dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+                DumpAllBetaTask dumpAllBetaTask =  new DumpAllBetaTask();
+                dumpAllBetaTask.setDumpAllInitPageSize(this.dumpInitPageSize);
+                dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, dumpAllBetaTask);
             }
             // 更新Tag缓存
             LogUtil.defaultLog.info("start clear all config-info-tag.");
             DiskUtil.clearAllTag();
             if (persistService.isExistTable(TAG_TABLE_NAME)) {
-                dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+                DumpAllTagTask dumpAllTagTask = new DumpAllTagTask();
+                dumpAllTagTask.setDumpAllInitPageSize(this.dumpInitPageSize);
+                dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, dumpAllTagTask);
             }
 
             // add to dump aggr
@@ -190,7 +198,9 @@ public class DumpService {
             if (isAllDump) {
                 LogUtil.defaultLog.info("start clear all config-info.");
                 DiskUtil.clearAll();
-                dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
+                DumpAllTask dumpAllTask =  new DumpAllTask();
+                dumpAllTask.setDumpAllInitPageSize(this.dumpInitPageSize);
+                dumpAllProcessor.process(DumpAllTask.TASK_ID, dumpAllTask);
             } else {
                 Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp,
                     timeStep);

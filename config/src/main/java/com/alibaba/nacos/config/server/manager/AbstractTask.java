@@ -31,6 +31,8 @@ public abstract class AbstractTask {
      */
     private long lastProcessTime;
 
+    private Integer dumpAllInitPageSize;
+
     /**
      * merge task
      *
@@ -52,6 +54,14 @@ public abstract class AbstractTask {
 
     public long getLastProcessTime() {
         return this.lastProcessTime;
+    }
+
+    public Integer getDumpAllInitPageSize() {
+        return this.dumpAllInitPageSize;
+    }
+
+    public void setDumpAllInitPageSize(Integer dumpAllInitPageSize) {
+        this.dumpAllInitPageSize = dumpAllInitPageSize;
     }
 
     /**
