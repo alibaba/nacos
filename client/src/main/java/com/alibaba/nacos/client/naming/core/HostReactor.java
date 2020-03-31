@@ -314,12 +314,14 @@ public class HostReactor {
 
         @Override
         public void run() {
+            long delayTime = -1;
+
             try {
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
 
                 if (serviceObj == null) {
                     updateServiceNow(serviceName, clusters);
-                    executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+                    delayTime = DEFAULT_DELAY;
                     return;
                 }
 
@@ -341,11 +343,15 @@ public class HostReactor {
                     return;
                 }
 
-                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
+                delayTime = serviceObj.getCacheMillis();
 
 
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
+            } finally {
+                if (delayTime > 0) {
+                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
+                }
             }
 
         }

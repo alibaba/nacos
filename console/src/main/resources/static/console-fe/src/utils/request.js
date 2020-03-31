@@ -7,6 +7,13 @@ import { isPlainObject } from './nacosutil';
 
 const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
 
+function goLogin() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  window.location.href = `${base_url}#/login`;
+}
+
 const request = () => {
   const instance = axios.create();
 
@@ -17,7 +24,14 @@ const request = () => {
         config.params = {};
       }
       if (!url.includes('auth/users/login')) {
-        const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+        let token = {};
+        try {
+          token = JSON.parse(localStorage.token);
+        } catch (e) {
+          console.log(e);
+          goLogin();
+        }
+        const { accessToken = '' } = token;
         config.params.accessToken = accessToken;
         config.headers = Object.assign({}, headers, { accessToken });
       }
@@ -57,9 +71,7 @@ const request = () => {
           [401, 403].includes(status) &&
           ['unknown user!', 'token invalid', 'token expired!'].includes(message)
         ) {
-          localStorage.removeItem('token');
-          const [baseUrl] = location.href.split('#');
-          location.href = `${baseUrl}#/login`;
+          goLogin();
         }
         return Promise.reject(error.response);
       }
