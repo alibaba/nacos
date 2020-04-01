@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -43,8 +42,8 @@ public final class ValidatorUtils {
 			throw new IllegalArgumentException("Please set the serverAddr");
 		}
 		String[] addrs;
-		if (serverAddr.contains(",")) {
-			addrs = serverAddr.split(",");
+		if (serverAddr.contains(StringUtils.COMMA)) {
+			addrs = serverAddr.split(StringUtils.COMMA);
 		} else {
 			addrs = new String[]{serverAddr};
 		}

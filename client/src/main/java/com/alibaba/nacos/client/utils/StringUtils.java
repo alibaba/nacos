@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.client.utils;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -26,10 +24,49 @@ import java.util.Locale;
  * string util
  *
  * @author Nacos
- * @deprecated Use {@link org.apache.commons.lang3.StringUtils} instead
  */
-@Deprecated
 public class StringUtils {
+
+
+    private static final int INDEX_NOT_FOUND = -1;
+
+    public static final String COMMA = ",";
+
+    public static final String EMPTY = "";
+
+    public static boolean isBlank(String str) {
+        int strLen;
+        if (str == null || (strLen = str.length()) == 0) {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isNotBlank(String str) {
+        return !isBlank(str);
+    }
+
+    public static boolean isNotEmpty(String str) {
+        return !StringUtils.isEmpty(str);
+    }
+
+    public static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
+    }
+
+    public static String defaultIfEmpty(String str, String defaultStr) {
+        return StringUtils.isEmpty(str) ? defaultStr : str;
+    }
+
+    public static boolean equals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
+
 
     public static String escapeJavaScript(String str) {
         return escapeJavaStyleString(str, true, true);
