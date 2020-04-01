@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.utils;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Locale;
 
 /**
@@ -65,6 +66,39 @@ public class StringUtils {
 
     public static boolean equals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
+    }
+
+    public static String substringBetween(String str, String open, String close) {
+        if (str == null || open == null || close == null) {
+            return null;
+        }
+        int start = str.indexOf(open);
+        if (start != INDEX_NOT_FOUND) {
+            int end = str.indexOf(close, start + open.length());
+            if (end != INDEX_NOT_FOUND) {
+                return str.substring(start + open.length(), end);
+            }
+        }
+        return null;
+    }
+
+    public static String join(Collection collection, String separator) {
+        if (collection == null) {
+            return null;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        Object[] objects = collection.toArray();
+
+        for (int i = 0; i < collection.size() - 1; i++) {
+            stringBuilder.append(objects[i].toString()).append(separator);
+        }
+
+        if (collection.size() > 0) {
+            stringBuilder.append(objects[collection.size() - 1]);
+        }
+
+        return stringBuilder.toString();
     }
 
 
