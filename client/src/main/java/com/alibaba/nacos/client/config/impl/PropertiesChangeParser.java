@@ -38,10 +38,10 @@ public class PropertiesChangeParser extends AbstractConfigChangeParser {
         Properties oldProps = new Properties();
         Properties newProps = new Properties();
 
-        if (StringUtils.isNotBlank(oldContent)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(oldContent)) {
             oldProps.load(new StringReader(oldContent));
         }
-        if (StringUtils.isNotBlank(newContent)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(newContent)) {
             newProps.load(new StringReader(newContent));
         }
 

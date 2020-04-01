@@ -40,7 +40,7 @@ public class TenantUtil {
     public static String getUserTenantForAcm() {
         String tmp = userTenant;
 
-        if (StringUtils.isBlank(userTenant)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(userTenant)) {
             tmp = System.getProperty("acm.namespace", "");
         }
 
@@ -55,7 +55,7 @@ public class TenantUtil {
     public static String getUserTenantForAns() {
         String tmp = userTenant;
 
-        if (StringUtils.isBlank(userTenant)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(userTenant)) {
             tmp = System.getProperty("ans.namespace");
         }
         return tmp;

@@ -67,7 +67,7 @@ public class ServerListManager {
             }
         }
         serverUrls = new ArrayList<String>(serverAddrs);
-        if (StringUtils.isBlank(namespace)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(namespace)) {
             name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
         } else {
             this.namespace = namespace;
@@ -94,15 +94,15 @@ public class ServerListManager {
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
 
-        if (StringUtils.isBlank(endpoint)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
         }
-        if (StringUtils.isBlank(namespace)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(namespace)) {
             name = endpoint;
             addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
                 serverListName);
         } else {
-            if (StringUtils.isBlank(endpoint)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
             }
             name = endpoint + "-" + namespace;
@@ -118,7 +118,7 @@ public class ServerListManager {
         serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
-        if (StringUtils.isNotEmpty(serverAddrsStr)) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(serverAddrsStr)) {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
@@ -135,7 +135,7 @@ public class ServerListManager {
                 }
             }
             serverUrls = serverAddrs;
-            if (StringUtils.isBlank(namespace)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(namespace)) {
                 name = FIXED_NAME + "-" + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
             } else {
                 this.namespace = namespace;
@@ -144,11 +144,11 @@ public class ServerListManager {
                     + namespace;
             }
         } else {
-            if (StringUtils.isBlank(endpoint)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
             }
             isFixed = false;
-            if (StringUtils.isBlank(namespace)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(namespace)) {
                 name = endpoint;
                 addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
                     serverListName);
@@ -167,11 +167,11 @@ public class ServerListManager {
         endpoint = initEndpoint(properties);
 
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
-        if (!StringUtils.isBlank(contentPathTmp)) {
+        if (!org.apache.commons.lang3.StringUtils.isBlank(contentPathTmp)) {
             contentPath = contentPathTmp;
         }
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
-        if (!StringUtils.isBlank(serverListNameTmp)) {
+        if (!org.apache.commons.lang3.StringUtils.isBlank(serverListNameTmp)) {
             serverListName = serverListNameTmp;
         }
     }
@@ -185,7 +185,7 @@ public class ServerListManager {
             }
         });
 
-        if (StringUtils.isNotBlank(endpointPortTmp)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(endpointPortTmp)) {
             endpointPort = Integer.parseInt(endpointPortTmp);
         }
 
@@ -198,13 +198,13 @@ public class ServerListManager {
                     String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
-            if (StringUtils.isNotBlank(endpointUrl)) {
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
             }
             return endpointUrl;
         }
 
-        return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
+        return org.apache.commons.lang3.StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
     public synchronized void start() throws NacosException {
@@ -360,7 +360,7 @@ public class ServerListManager {
     }
 
     public String getCurrentServerAddr() {
-        if (StringUtils.isBlank(currentServerAddr)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(currentServerAddr)) {
             iterator = iterator();
             currentServerAddr = iterator.next();
         }
