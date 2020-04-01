@@ -77,7 +77,7 @@ public class InitUtils {
             }
         });
 
-        if (org.apache.commons.lang3.StringUtils.isEmpty(tmpNamespace) && properties != null) {
+        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
@@ -121,14 +121,14 @@ public class InitUtils {
         if (isUseEndpointParsingRule) {
             // Get the set domain name information
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (org.apache.commons.lang3.StringUtils.isBlank(endpointUrl)) {
+            if (StringUtils.isBlank(endpointUrl)) {
                 return "";
             }
         } else {
             endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
         }
 
-        if (org.apache.commons.lang3.StringUtils.isBlank(endpointUrl)) {
+        if (StringUtils.isBlank(endpointUrl)) {
             return "";
         }
 
