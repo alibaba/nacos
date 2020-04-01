@@ -25,7 +25,7 @@ public class TemplateUtils {
 
     public static void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
 
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(source)) {
+        if (StringUtils.isNotEmpty(source)) {
 
             try {
                 runnable.run();
@@ -37,7 +37,7 @@ public class TemplateUtils {
 
     public static String stringEmptyAndThenExecute(String source, Callable<String> callable) {
 
-        if (org.apache.commons.lang3.StringUtils.isEmpty(source)) {
+        if (StringUtils.isEmpty(source)) {
 
             try {
                 return callable.call();
@@ -51,7 +51,7 @@ public class TemplateUtils {
 
     public static String stringBlankAndThenExecute(String source, Callable<String> callable) {
 
-        if (org.apache.commons.lang3.StringUtils.isBlank(source)) {
+        if (StringUtils.isBlank(source)) {
 
             try {
                 return callable.call();

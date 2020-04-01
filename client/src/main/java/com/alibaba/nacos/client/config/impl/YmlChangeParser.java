@@ -35,11 +35,11 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(oldContent)) {
+        if (StringUtils.isNotBlank(oldContent)) {
             oldMap = (new Yaml()).load(oldContent);
             oldMap = getFlattenedMap(oldMap);
         }
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(newContent)) {
+        if (StringUtils.isNotBlank(newContent)) {
             newMap = (new Yaml()).load(newContent);
             newMap = getFlattenedMap(newMap);
         }
@@ -57,7 +57,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
         for (Iterator<Map.Entry<String, Object>> itr = source.entrySet().iterator(); itr.hasNext(); ) {
             Map.Entry<String, Object> e = itr.next();
             String key = e.getKey();
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(path)) {
+            if (StringUtils.isNotBlank(path)) {
                 if (e.getKey().startsWith("[")) {
                     key = path + key;
                 } else {
