@@ -66,7 +66,7 @@ public class AppNameUtils {
         }
 
         if (serverHome != null && serverHome.startsWith(LINUX_ADMIN_HOME)) {
-            return StringUtils.substringBetween(serverHome, LINUX_ADMIN_HOME, File.separator);
+            return org.apache.commons.lang3.StringUtils.substringBetween(serverHome, LINUX_ADMIN_HOME, File.separator);
         }
 
         return null;

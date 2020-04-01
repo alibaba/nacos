@@ -38,7 +38,7 @@ public class IPUtil {
     }
 
     private static boolean isMatch(String data, Pattern pattern) {
-        if (StringUtils.isBlank(data)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(data)) {
             return false;
         }
         Matcher mat = pattern.matcher(data);
