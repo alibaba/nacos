@@ -16,17 +16,34 @@
 
 package com.alibaba.nacos.core.distributed.id;
 
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.IdGenerator;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import com.alibaba.nacos.consistency.LogFuture;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.cp.Constants;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.entity.GetRequest;
+import com.alibaba.nacos.consistency.entity.GetResponse;
+import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,19 +51,15 @@ import org.springframework.stereotype.Component;
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 @Component
-public class IdGeneratorManager {
-
-    private static final String ID_GENERATOR_TYPE = "nacos.core.id-generator.type";
+public class IdGeneratorManager extends LogProcessor4CP {
 
     private final Map<String, IdGenerator> generatorMap = new ConcurrentHashMap<>();
-
     private final Function<String, IdGenerator> supplier;
-
-    private final String idType;
+    private CPProtocol cpProtocol;
+    private GetResponse emptyResponse = GetResponse.newBuilder().build();
+    private LogFuture emptyFuture = LogFuture.success(null);
 
     public IdGeneratorManager() {
-        this.idType = ApplicationUtils
-                .getProperty(ID_GENERATOR_TYPE, "default");
         this.supplier = s -> {
             IdGenerator generator;
             ServiceLoader<IdGenerator> loader = ServiceLoader.load(IdGenerator.class);
@@ -54,11 +67,7 @@ public class IdGeneratorManager {
             if (iterator.hasNext()) {
                 generator = iterator.next();
             } else {
-                if (Objects.equals(idType, "snakeflower")) {
-                    generator = new SnakeFlowerIdGenerator();
-                } else {
-                    generator = new DefaultIdGenerator(s);
-                }
+                generator = new SnakeFlowerIdGenerator();
             }
             generator.init();
             return generator;
@@ -88,4 +97,48 @@ public class IdGeneratorManager {
                 "ID resource for the time being.");
     }
 
+    @Override
+    protected void afterInject(ConsistencyProtocol<? extends Config> protocol) {
+        super.afterInject(protocol);
+        this.cpProtocol = (CPProtocol) protocol;
+        this.cpProtocol.protocolMetaData()
+                .subscribe(group(), Constants.TERM_META_DATA, new Observer() {
+                    @Override
+                    public void update(Observable o, Object arg) {
+                        long term;
+                        if (arg == null) {
+                            term = 0l;
+                        } else {
+                            term = Long.parseLong(String.valueOf(arg));
+                        }
+                        long dataCenterId = term % SnakeFlowerIdGenerator.MAX_DATA_CENTER_ID;
+                        SnakeFlowerIdGenerator.setDataCenterId(dataCenterId);
+                    }
+                });
+    }
+
+    @Override
+    public GetResponse getData(GetRequest request) {
+        return emptyResponse;
+    }
+
+    @Override
+    public LogFuture onApply(Log log) {
+        return emptyFuture;
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+        Loggers.ID_GENERATOR.error("An error occurred while onApply for ID, error : {}", throwable);
+    }
+
+    @Override
+    public String group() {
+        return "id_generator";
+    }
+
+    @Override
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.emptyList();
+    }
 }

@@ -19,7 +19,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
@@ -117,7 +117,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
 
     public void load() throws Exception {
-        if (SystemUtils.STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             initialized = true;
             return;
         }

@@ -64,7 +64,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@Conditional(ConditionOnEmbedStoreType.class)
+@Conditional(ConditionOnDistributedStore.class)
 @Component
 public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements BaseDatabaseOperate, DatabaseOperate {
 

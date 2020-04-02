@@ -17,7 +17,9 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.exception.SnakflowerException;
-import com.alibaba.nacos.core.utils.ConvertUtils;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,123 +30,136 @@ import java.util.Map;
  */
 public class SnakeFlowerIdGenerator implements IdGenerator {
 
-    /**
-     * Start time intercept (2018-08-05 08:34)
-     */
-    private final long twepoch = 1533429269000L;
-    private final long workerIdBits = 5L;
-    private final long datacenterIdBits = 5L;
-    private final long maxWorkerId = -1L ^ (-1L << workerIdBits);
-    private final long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
+	/**
+	 * Start time intercept (2018-08-05 08:34)
+	 */
+	private static final long TWEPOCH = 1533429269000L;
+	private static final long WORKER_ID_BITS = 5L;
+	private static final long DATA_CENTER_ID_BITS = 5L;
+	public static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
+    public static final long MAX_DATA_CENTER_ID = ~(-1L << DATA_CENTER_ID_BITS);
 
-    private final long sequenceBits = 12L;
-    private final long workerIdShift = sequenceBits;
-    private final long datacenterIdShift = sequenceBits + workerIdBits;
-    private final long timestampLeftShift = sequenceBits + workerIdBits
-            + datacenterIdBits;
-    private final long sequenceMask = -1L ^ (-1L << sequenceBits);
-    private volatile long currentId;
-    private long workerId;
-    private long datacenterId;
-    private long sequence = 0L;
-    private long lastTimestamp = -1L;
+	private static final long SEQUENCE_BITS = 12L;
+	private static final long SEQUENCE_BITS1 = SEQUENCE_BITS;
+	private static final long DATA_CENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
+	private static final long TIMESTAMP_LEFT_SHIFT =
+			SEQUENCE_BITS + WORKER_ID_BITS + DATA_CENTER_ID_BITS;
+	private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
 
-    @Override
+    private static long workerId;
+    private static volatile long dataCenterId;
+
+	private volatile long currentId;
+	private long sequence = 0L;
+	private long lastTimestamp = -1L;
+
+    public static void setDataCenterId(long dataCenterId) {
+        SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
+    }
+
+    static {
+        InetAddress address;
+        try {
+            address = InetAddress.getLocalHost();
+        }
+        catch (final UnknownHostException e) {
+            throw new IllegalStateException(
+                    "Cannot get LocalHost InetAddress, please check your network!");
+        }
+        byte[] ipAddressByteArray = address.getAddress();
+        workerId = (
+                ((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE)
+                        + (ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
+    }
+
+	@Override
     public void init() {
-
-        // Snowflake algorithm default parameter information
-
-        int dataCenterId = ConvertUtils.toInt(System.getProperty("nacos.core.snowflake.data-center"), 1);
-        int workerId = ConvertUtils.toInt(System.getProperty("nacos.core.snowflake.worker-id"), 1);
-
-        initialize(dataCenterId, workerId);
+        initialize(workerId, dataCenterId);
     }
 
-    @Override
+	@Override
     public long currentId() {
-        return currentId;
-    }
+		return currentId;
+	}
 
-    @Override
+	@Override
     public synchronized long nextId() {
-        long timestamp = timeGen();
+		long timestamp = timeGen();
 
-        if (timestamp < lastTimestamp) {
-            throw new SnakflowerException(String.format(
-                    "Clock moved backwards.  Refusing to generate id for %d milliseconds",
-                    lastTimestamp - timestamp));
-        }
+		if (timestamp < lastTimestamp) {
+			throw new SnakflowerException(String.format(
+					"Clock moved backwards.  Refusing to generate id for %d milliseconds",
+					lastTimestamp - timestamp));
+		}
 
-        if (lastTimestamp == timestamp) {
-            sequence = (sequence + 1) & sequenceMask;
-            if (sequence == 0) {
-                timestamp = tilNextMillis(lastTimestamp);
-            }
-        }
-        else {
-            sequence = 0L;
-        }
+		if (lastTimestamp == timestamp) {
+			sequence = (sequence + 1) & SEQUENCE_MASK;
+			if (sequence == 0) {
+				timestamp = tilNextMillis(lastTimestamp);
+			}
+		}
+		else {
+			sequence = 0L;
+		}
 
-        lastTimestamp = timestamp;
+		lastTimestamp = timestamp;
+		currentId = ((timestamp - TWEPOCH) << TIMESTAMP_LEFT_SHIFT) | (dataCenterId
+				<< DATA_CENTER_ID_SHIFT) | (workerId << SEQUENCE_BITS1) | sequence;
+		return currentId;
+	}
 
-        currentId = ((timestamp - twepoch) << timestampLeftShift)
-                | (datacenterId << datacenterIdShift)
-                | (workerId << workerIdShift)
-                | sequence;
-        return currentId;
-    }
-
-    @Override
+	@Override
     public Map<Object, Object> info() {
-        Map<Object, Object> info = new HashMap<>(4);
-        info.put("currentId", currentId);
-        info.put("dataCenterId", datacenterId);
-        info.put("workerId", workerId);
-        return info;
-    }
+		Map<Object, Object> info = new HashMap<>(4);
+		info.put("currentId", currentId);
+		info.put("dataCenterId", dataCenterId);
+		info.put("workerId", workerId);
+		return info;
+	}
 
-    // ==============================Constructors=====================================
+	// ==============================Constructors=====================================
 
-    /**
-     * init
-     *
-     * @param workerId     worker id (0~31)
-     * @param datacenterId data center id (0~31)
-     */
-    public void initialize(long workerId, long datacenterId) {
-        if (workerId > maxWorkerId || workerId < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "worker Id can't be greater than %d or less than 0", maxWorkerId));
-        }
-        if (datacenterId > maxDatacenterId || datacenterId < 0) {
-            throw new IllegalArgumentException(
-                    String.format("datacenter Id can't be greater than %d or less than 0",
-                            maxDatacenterId));
-        }
-        this.workerId = workerId;
-        this.datacenterId = datacenterId;
-    }
+	/**
+	 * init
+	 *
+	 * @param workerId     worker id (0~31)
+	 * @param datacenterId data center id (0~31)
+	 */
+	public void initialize(long workerId, long datacenterId) {
+		if (workerId > MAX_WORKER_ID || workerId < 0) {
+			throw new IllegalArgumentException(
+					String.format("worker Id can't be greater than %d or less than 0",
+                            MAX_WORKER_ID));
+		}
+		if (datacenterId > MAX_DATA_CENTER_ID || datacenterId < 0) {
+			throw new IllegalArgumentException(
+					String.format("datacenter Id can't be greater than %d or less than 0",
+                            MAX_DATA_CENTER_ID));
+		}
+        SnakeFlowerIdGenerator.workerId = workerId;
+        SnakeFlowerIdGenerator.dataCenterId = datacenterId;
+	}
 
-    /**
-     * Block to the next millisecond until a new timestamp is obtained
-     *
-     * @param lastTimestamp 上次生成ID的时间截
-     * @return 当前时间戳
-     */
-    protected long tilNextMillis(long lastTimestamp) {
-        long timestamp = timeGen();
-        while (timestamp <= lastTimestamp) {
-            timestamp = timeGen();
-        }
-        return timestamp;
-    }
+	/**
+	 * Block to the next millisecond until a new timestamp is obtained
+	 *
+	 * @param lastTimestamp 上次生成ID的时间截
+	 * @return 当前时间戳
+	 */
+	protected long tilNextMillis(long lastTimestamp) {
+		long timestamp = timeGen();
+		while (timestamp <= lastTimestamp) {
+			timestamp = timeGen();
+		}
+		return timestamp;
+	}
 
-    /**
-     * Returns the current time in milliseconds
-     *
-     * @return 当前时间(毫秒)
-     */
-    protected long timeGen() {
-        return System.currentTimeMillis();
-    }
+	/**
+	 * Returns the current time in milliseconds
+	 *
+	 * @return 当前时间(毫秒)
+	 */
+	protected long timeGen() {
+		return System.currentTimeMillis();
+	}
 }

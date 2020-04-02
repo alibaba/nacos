@@ -17,7 +17,7 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.config.server.filter.TransferToLeaderFilter;
-import com.alibaba.nacos.config.server.service.transaction.ConditionOnEmbedStoreType;
+import com.alibaba.nacos.config.server.service.transaction.ConditionOnDistributedStore;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -42,7 +42,7 @@ public class NacosConfigConfiguration {
 		return registration;
 	}
 
-	@Conditional(ConditionOnEmbedStoreType.class)
+	@Conditional(ConditionOnDistributedStore.class)
 	@Bean
 	public FilterRegistrationBean transferToLeaderRegistration() {
 		FilterRegistrationBean<TransferToLeaderFilter> registration = new FilterRegistrationBean<>();
@@ -58,7 +58,7 @@ public class NacosConfigConfiguration {
 		return new NacosWebFilter();
 	}
 
-	@Conditional(ConditionOnEmbedStoreType.class)
+	@Conditional(ConditionOnDistributedStore.class)
 	@Bean
 	public TransferToLeaderFilter transferToLeader() {
 		return new TransferToLeaderFilter();

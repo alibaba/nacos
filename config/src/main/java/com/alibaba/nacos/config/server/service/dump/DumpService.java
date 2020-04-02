@@ -54,8 +54,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
@@ -81,7 +80,7 @@ public class DumpService {
         // If using embedded distributed storage, you need to wait for the
         // underlying master to complete the selection
 
-        if (PropertyUtil.isEmbeddedDistributedStorage()) {
+        if (PropertyUtil.isEmbeddedStorage()) {
 
             LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for " +
                     "the underlying master to complete before you can perform the dump operation.");
@@ -179,7 +178,7 @@ public class DumpService {
             throw new RuntimeException(
                 "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
         }
-        if (!STANDALONE_MODE) {
+        if (!ApplicationUtils.getStandaloneMode()) {
             Runnable heartbeat = () -> {
                 String heartBeatTime = TimeUtils.getCurrentTime().toString();
                 // write disk
@@ -417,7 +416,7 @@ public class DumpService {
     }
 
     private boolean canExecute() {
-        if (!PropertyUtil.isEmbeddedDistributedStorage()) {
+        if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
         }
         try {

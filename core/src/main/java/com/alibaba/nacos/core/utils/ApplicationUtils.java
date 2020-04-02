@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
@@ -320,8 +321,8 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      * Standalone mode or not
      */
     public static boolean getStandaloneMode() {
-        if (isStandalone == null) {
-            isStandalone = getProperty(STANDALONE_MODE_PROPERTY_NAME, Boolean.class, false);
+        if (Objects.isNull(isStandalone)) {
+            isStandalone = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
         }
         return isStandalone;
     }
@@ -331,15 +332,15 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
      */
     public static String getFunctionMode() {
         if (StringUtils.isEmpty(functionModeType)) {
-            functionModeType = getProperty(FUNCTION_MODE_PROPERTY_NAME);
+            functionModeType = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
         }
         return functionModeType;
     }
 
     public static String getNacosHome() {
-        String nacosHome = getProperty(NACOS_HOME_KEY);
+        String nacosHome = System.getProperty(NACOS_HOME_KEY);
         if (StringUtils.isBlank(nacosHome)) {
-            nacosHome = System.getProperty("user.home") + File.separator + "nacos";
+            nacosHome = Paths.get(System.getProperty("user.home"), "nacos").toString();
         }
         return nacosHome;
     }

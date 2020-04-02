@@ -28,7 +28,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
@@ -43,7 +42,6 @@ import java.util.regex.Pattern;
 import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Base data source
@@ -125,7 +123,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE || PropertyUtil.isUseMysql()) {
+        if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
             } catch (IOException e) {

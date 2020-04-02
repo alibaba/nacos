@@ -21,8 +21,6 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -46,8 +44,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
@@ -78,7 +74,7 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     public RaftPeer getLeader() {
-        if (STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return local();
         }
         return leader;
@@ -104,7 +100,7 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     public boolean isLeader(String ip) {
-        if (STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return true;
         }
 
@@ -209,7 +205,7 @@ public class RaftPeerSet implements MemberChangeListener {
 
     public RaftPeer local() {
         RaftPeer peer = peers.get(NetUtils.localServer());
-        if (peer == null && SystemUtils.STANDALONE_MODE) {
+        if (peer == null && ApplicationUtils.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
             localPeer.term.set(localTerm.get());

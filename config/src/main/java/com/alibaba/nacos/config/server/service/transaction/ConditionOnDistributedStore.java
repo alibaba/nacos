@@ -16,21 +16,21 @@
 
 package com.alibaba.nacos.config.server.service.transaction;
 
-import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
+ * when embeddedStorage==true and nacos.standalone=false
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ConditionOnEmbedStoreType implements Condition {
+public class ConditionOnDistributedStore implements Condition {
 
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        boolean result = Objects.equals(context.getEnvironment().getProperty("embeddedDistributedStorage"), "true") &&
-                StringUtils.isBlank(context.getEnvironment().getProperty("spring.datasource.platform"));
-        return result;
+        return PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode();
     }
 }

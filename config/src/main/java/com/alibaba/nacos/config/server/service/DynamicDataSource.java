@@ -16,9 +16,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import org.springframework.stereotype.Component;
-
 
 /**
  * datasource adapter
@@ -38,7 +35,11 @@ public class DynamicDataSource {
 
     public synchronized DataSourceService getDataSource() {
         try {
-            if (useMemoryDB()) {
+
+            // Embedded storage is used by default in stand-alone mode
+            // In cluster mode, external databases are used by default
+
+            if (PropertyUtil.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
                     localDataSourceService = new LocalDataSourceServiceImpl();
                     localDataSourceService.init();
@@ -55,20 +56,6 @@ public class DynamicDataSource {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * 判断顺序：
-     * 1、单机模式：mysql
-     * 2、单机模式：derby
-     * 3、集群模式：mysql
-     * 4、集群模式：derby-cluster
-     *
-     * @return Whether to use derby storage
-     */
-    private boolean useMemoryDB() {
-        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql())
-                || PropertyUtil.isEmbeddedDistributedStorage();
     }
 
 }

@@ -47,11 +47,11 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 public class LocalDataSourceServiceImpl implements DataSourceService {
 
-    private final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
-    private final String USER_NAME = "nacos";
-    private final String PASSWORD = "nacos";
-    private final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
-    private final String DERBY_SHUTDOWN_ERR_MSG = "Derby system shutdown.";
+    private final String jdbcDriverName = "org.apache.derby.jdbc.EmbeddedDriver";
+    private final String userName = "nacos";
+    private final String password = "nacos";
+    private final String derbyBaseDir = "data" + File.separator + "derby-data";
+    private final String derbyShutdownErrMsg = "Derby system shutdown.";
 
     private volatile JdbcTemplate jt;
     private volatile TransactionTemplate tjt;
@@ -62,10 +62,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @PostConstruct
     @Override
     public synchronized void init() throws Exception {
-        if (!PropertyUtil.isUseMysql()) {
+        if (!PropertyUtil.isUseExternalDB()) {
             if (!initialize) {
                 LogUtil.defaultLog.info("use local db service for init");
-                final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString() + ";create=true";
+                final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(),
+                        derbyBaseDir).toString() + ";create=true";
                 initialize(jdbcUrl);
                 initialize = true;
             }
@@ -90,7 +91,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
-        final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString() + ";create=true";
+        final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(),
+                derbyBaseDir).toString() + ";create=true";
         initialize(jdbcUrl);
     }
 
@@ -108,19 +110,19 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
             // An error is thrown when the Derby shutdown is executed, which should be ignored
 
-            if (!StringUtils.contains(e.getMessage().toLowerCase(), DERBY_SHUTDOWN_ERR_MSG.toLowerCase())) {
+            if (!StringUtils.contains(e.getMessage().toLowerCase(), derbyShutdownErrMsg.toLowerCase())) {
                 throw e;
             }
         }
-        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), DERBY_BASE_DIR).toString());
+        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString());
     }
 
     private synchronized void initialize(String jdbcUrl) {
         HikariDataSource ds = new HikariDataSource();
-        ds.setDriverClassName(JDBC_DRIVER_NAME);
+        ds.setDriverClassName(jdbcDriverName);
         ds.setJdbcUrl(jdbcUrl);
-        ds.setUsername(USER_NAME);
-        ds.setPassword(PASSWORD);
+        ds.setUsername(userName);
+        ds.setPassword(password);
         ds.setMaximumPoolSize(80);
         ds.setConnectionTimeout(10000L);
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
@@ -157,7 +159,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     @Override
     public String getCurrentDBUrl() {
-        return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + DERBY_BASE_DIR + ";create=true";
+        return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + derbyBaseDir
+                + ";create=true";
     }
 
     @Override

@@ -19,7 +19,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -65,7 +65,7 @@ public class DistroMapper implements MemberChangeListener {
     }
 
     public boolean responsible(String serviceName) {
-        if (!switchDomain.isDistroEnabled() || SystemUtils.STANDALONE_MODE) {
+        if (!switchDomain.isDistroEnabled() || ApplicationUtils.getStandaloneMode()) {
             return true;
         }
 

@@ -215,7 +215,7 @@ public class PaginationHelper<E> {
     }
 
     private boolean isDerby() {
-        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseMysql()) ||
-                PropertyUtil.isEmbeddedDistributedStorage();
+        return (ApplicationUtils.getStandaloneMode() && !PropertyUtil.isUseExternalDB()) ||
+                PropertyUtil.isEmbeddedStorage();
     }
 }

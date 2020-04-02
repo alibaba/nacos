@@ -19,8 +19,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.Environment;
-
 
 /**
  * properties utils
@@ -80,13 +78,11 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     /**
      * 单机模式使用db
      */
-    private static boolean useMysql = false;
+    private static boolean useExternalDB = false;
     /**
-     * 内嵌分布式存储
+     * 内嵌存储 value = ${nacos.standalone}
      */
-    private static boolean embeddedDistributedStorage = false;
-
-    private Environment env;
+    private static boolean embeddedStorage = ApplicationUtils.getStandaloneMode();
 
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
@@ -212,37 +208,37 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return ApplicationUtils.getStandaloneMode();
     }
 
-    public static boolean isUseMysql() {
-        return useMysql;
+    public static boolean isUseExternalDB() {
+        return useExternalDB;
     }
 
-    public static void setUseMysql(boolean useMysql) {
-        PropertyUtil.useMysql = useMysql;
+    public static void setUseExternalDB(boolean useExternalDB) {
+        PropertyUtil.useExternalDB = useExternalDB;
     }
 
-    public static boolean isEmbeddedDistributedStorage() {
-        return embeddedDistributedStorage;
+    public static boolean isEmbeddedStorage() {
+        return embeddedStorage;
     }
 
-    public static void setEmbeddedDistributedStorage(boolean embeddedDistributedStorage) {
-        PropertyUtil.embeddedDistributedStorage = embeddedDistributedStorage && !isUseMysql();
+    public static void setEmbeddedStorage(boolean embeddedStorage) {
+        PropertyUtil.embeddedStorage = embeddedStorage && !isUseExternalDB();
     }
 
     public static boolean isEnableDistributedID() {
-        return !ApplicationUtils.getStandaloneMode() && isEmbeddedDistributedStorage();
+        return !ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
 
     private void loadSetting() {
         try {
-            setNotifyConnectTimeout(Integer.parseInt(env.getProperty("notifyConnectTimeout", "100")));
+            setNotifyConnectTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifyConnectTimeout", "100")));
             logger.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(env.getProperty("notifySocketTimeout", "200")));
+            setNotifySocketTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifySocketTimeout", "200")));
             logger.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.parseBoolean(env.getProperty("isHealthCheck", "true")));
+            setHealthCheck(Boolean.parseBoolean(ApplicationUtils.getProperty("isHealthCheck", "true")));
             logger.info("isHealthCheck:{}", isHealthCheck);
-            setMaxHealthCheckFailCount(Integer.parseInt(env.getProperty("maxHealthCheckFailCount", "12")));
+            setMaxHealthCheckFailCount(Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12")));
             logger.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
-            setMaxContent(Integer.parseInt(env.getProperty("maxContent", String.valueOf(maxContent))));
+            setMaxContent(Integer.parseInt(ApplicationUtils.getProperty("maxContent", String.valueOf(maxContent))));
             logger.info("maxContent:{}", maxContent);
             // 容量管理
             setManageCapacity(getBoolean("isManageCapacity", isManageCapacity));
@@ -255,8 +251,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            setUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
-            setEmbeddedDistributedStorage(getBoolean("embeddedDistributedStorage", embeddedDistributedStorage));
+            setUseExternalDB(getString("spring.datasource.platform", "").equals("mysql"));
+            setEmbeddedStorage(getBoolean("embeddedStorage", embeddedStorage));
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
         }
@@ -271,7 +267,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     private String getString(String key, String defaultValue) {
-        String value = env.getProperty(key);
+        String value = getProperty(key);
         if (value == null) {
             return defaultValue;
         }
@@ -280,16 +276,16 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     public String getProperty(String key) {
-        return env.getProperty(key);
+        return ApplicationUtils.getProperty(key);
     }
 
     public String getProperty(String key, String defaultValue) {
-        return env.getProperty(key, defaultValue);
+        return ApplicationUtils.getProperty(key, defaultValue);
     }
 
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-        env = configurableApplicationContext.getEnvironment();
+        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
         loadSetting();
     }
 }
