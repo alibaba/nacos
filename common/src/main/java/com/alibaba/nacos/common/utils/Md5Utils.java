@@ -40,13 +40,15 @@ public class Md5Utils {
     private static final int HEX_VALUE_COUNT = 16;
 
     public static String getMD5(byte[] bytes) throws NoSuchAlgorithmException {
-
-        MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
-        if (messageDigest != null) {
-            return new BigInteger(1, messageDigest.digest(bytes)).toString(HEX_VALUE_COUNT);
+        try {
+            MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
+            if (messageDigest != null) {
+                return new BigInteger(1, messageDigest.digest(bytes)).toString(HEX_VALUE_COUNT);
+            }
+            throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
+        } finally {
+            MESSAGE_DIGEST_LOCAL.remove();
         }
-
-        throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
     }
 
     public static String getMD5(String value, String encode) {
