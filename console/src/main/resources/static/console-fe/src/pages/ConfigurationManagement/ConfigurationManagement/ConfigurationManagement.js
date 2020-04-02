@@ -39,14 +39,20 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
+import { connect } from 'react-redux';
+import { getConfigs } from '../../../reducers/configuration';
 
 import './index.scss';
 import { LANGUAGE_KEY } from '../../../constants';
 
 const { Panel } = Collapse;
-const { Row, Col } = Grid;
 const configsTableSelected = new Map();
-
+@connect(
+  state => ({
+    configurations: state.configuration.configurations,
+  }),
+  { getConfigs }
+)
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
   static displayName = 'ConfigurationManagement';
@@ -132,7 +138,8 @@ class ConfigurationManagement extends React.Component {
               <div>
                 <div style={{ fontSize: '15px', lineHeight: '22px' }}>
                   {locale.ad}
-                  <a href={'https://survey.aliyun.com/survey/k0BjJ2ARC'} target={'_blank'}>
+                  {/* eslint-disable */}
+                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC" target="_blank">
                     {locale.questionnaire2}
                   </a>
                 </div>
@@ -194,25 +201,6 @@ class ConfigurationManagement extends React.Component {
     }
   }
 
-  /**
-   * 回车事件
-   */
-  keyDownSearch(e) {
-    const theEvent = e || window.event;
-    const code = theEvent.keyCode || theEvent.which || theEvent.charCode;
-    if (this.state.isPageEnter) {
-      this.setState({
-        isPageEnter: false,
-      });
-      return false;
-    }
-    if (code === 13) {
-      this.getData();
-      return false;
-    }
-    return true;
-  }
-
   navTo(url, record) {
     this.serverId = getParams('serverId') || '';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
@@ -235,18 +223,6 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  UNSAFE_componentWillMount() {
-    window.addEventListener('keydown', this.keyDownSearch.bind(this), false);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.keyDownSearch.bind(this));
-  }
-
-  onSearch() {}
-
-  onChange() {}
-
   cleanAndGetData(needclean = false) {
     if (needclean) {
       this.dataId = '';
@@ -268,54 +244,34 @@ class ConfigurationManagement extends React.Component {
   }
 
   getData(pageNo = 1, clearSelect = true) {
-    const self = this;
+    if (this.state.loading) {
+      return;
+    }
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
-    let urlPrefix = '';
+    const params = {
+      dataId: this.dataId,
+      group: this.group,
+      appName: this.appName,
+      config_tags: this.state.config_tags.join(','),
+      pageNo,
+      pageSize: this.state.pageSize,
+      tenant: this.tenant,
+    };
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
-      urlPrefix = 'v1/cs/configs?search=blur';
+      params.search = 'blur';
     } else {
-      urlPrefix = 'v1/cs/configs?search=accurate';
+      params.search = 'accurate';
     }
-
-    request({
-      url: `${urlPrefix}&dataId=${this.dataId}&group=${this.group}&appName=${
-        this.appName
-      }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
-        this.state.pageSize
-      }`,
-      beforeSend() {
-        self.openLoading();
-      },
-      success(data) {
-        if (data != null) {
-          self.setState({
-            dataSource: data.pageItems,
-            total: data.totalCount,
-            currentPage: data.pageNumber,
-          });
-          if (clearSelect) {
-            self.setState({
-              selectedRecord: [],
-              selectedKeys: [],
-            });
-          }
-        }
-        self.setState({
-          tenant: self.tenant,
-        });
-      },
-      error(data) {
-        self.setState({
-          dataSource: [],
-          total: 0,
-          currentPage: 0,
-        });
-      },
-      complete() {
-        self.closeLoading();
-      },
-    });
+    this.setState({ loading: true });
+    this.props.getConfigs(params).then(() =>
+      this.setState({
+        loading: false,
+        selectedRecord: [],
+        selectedKeys: [],
+        tenant: this.tenant,
+      })
+    );
   }
 
   showMore() {}
@@ -434,27 +390,16 @@ class ConfigurationManagement extends React.Component {
   changePage(value, e) {
     this.setState(
       {
-        isPageEnter: e.keyCode && e.keyCode === 13,
+        isPageEnter: e && e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
-      () => {
-        this.getData(value, false);
-      }
+      () => this.getData(value, false)
     );
   }
 
   handlePageSizeChange(pageSize) {
-    this.setState(
-      {
-        pageSize,
-      },
-      () => {
-        this.changePage(1);
-      }
-    );
+    this.setState({ pageSize }, () => this.changePage(1));
   }
-
-  onInputUpdate() {}
 
   chooseFieldChange(fieldValue) {
     this.setState({
@@ -501,16 +446,10 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  getDataId(value) {
-    this.dataId = value;
-    this.setState({
-      dataId: value,
-    });
-  }
-
   setConfigTags(value) {
     this.setState({
-      config_tags: value,
+      config_tags: value || [],
+      tagLst: value,
     });
   }
 
@@ -617,8 +556,6 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  onPageSelectAll(selected, records) {}
-
   getBatchFailedContent(res) {
     const { locale = {} } = this.props;
     return (
@@ -628,7 +565,7 @@ class ConfigurationManagement extends React.Component {
           <Collapse style={{ width: '500px' }}>
             {'failedItems' in res.data && res.data.failedItems.length > 0 ? (
               <Panel title={locale.failedEntry + res.data.failedItems.length}>
-                <Table dataSource={res.data.failedItems} fixedHeader maxBodyHeight={400}>
+                <Table dataSource={res.data.failedItems} fixedHeader>
                   <Table.Column title={'Data ID'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
                 </Table>
@@ -638,7 +575,7 @@ class ConfigurationManagement extends React.Component {
             )}
             {'succeededItems' in res.data && res.data.succeededItems.length > 0 ? (
               <Panel title={locale.successfulEntry + res.data.succeededItems.length}>
-                <Table dataSource={res.data.succeededItems} fixedHeader maxBodyHeight={400}>
+                <Table dataSource={res.data.succeededItems} fixedHeader>
                   <Table.Column title={'Data ID'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
                 </Table>
@@ -648,7 +585,7 @@ class ConfigurationManagement extends React.Component {
             )}
             {'unprocessedItems' in res.data && res.data.unprocessedItems.length > 0 ? (
               <Panel title={locale.unprocessedEntry + res.data.unprocessedItems.length}>
-                <Table dataSource={res.data.unprocessedItems} fixedHeader maxBodyHeight={400}>
+                <Table dataSource={res.data.unprocessedItems} fixedHeader>
                   <Table.Column title={'Data ID'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
                 </Table>
@@ -688,29 +625,51 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  openUri(url, params) {
+    window.open(
+      [
+        url,
+        Object.keys(params)
+          .map(key => `${key}=${params[key]}`)
+          .join('&'),
+      ].join('?')
+    );
+  }
+
   exportData() {
-    let url =
-      `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams('namespace')}&appName=${
-        this.appName
-      }&ids=&dataId=` + this.dataId;
-    window.location.href = url;
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
   }
 
   exportSelectedData() {
+    const ids = [];
     const { locale = {} } = this.props;
-    if (configsTableSelected.size === 0) {
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
         content: locale.exportSelectedAlertContent,
       });
-    } else {
-      let idsStr = '';
-      configsTableSelected.forEach((value, key, map) => {
-        idsStr = `${idsStr + key},`;
-      });
-      let url = `v1/cs/configs?export=true&group=&tenant=&appName=&ids=${idsStr}`;
-      window.location.href = url;
+      return;
     }
+    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    this.openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: '',
+      group: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+    });
   }
 
   multipleSelectionDeletion() {
@@ -775,6 +734,7 @@ class ConfigurationManagement extends React.Component {
         self.openLoading();
       },
       success(data) {
+        self.closeLoading();
         if (!data || data.code !== 200 || !data.data) {
           Dialog.alert({
             title: locale.getNamespaceFailed,
@@ -783,24 +743,59 @@ class ConfigurationManagement extends React.Component {
         }
         let namespaces = data.data;
         let namespaceSelectData = [];
-        namespaces.forEach(item => {
-          if (self.state.nownamespace_id !== item.namespace) {
-            let dataItem = {};
-            if (item.namespaceShowName === 'public') {
-              dataItem.label = 'public | public';
-              dataItem.value = 'public';
-            } else {
-              dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
-              dataItem.value = item.namespace;
-            }
-            namespaceSelectData.push(dataItem);
+        let namespaceSelecItemRender = item => {
+          if (item.isCurrent) {
+            return <span style={{ color: '#00AA00', 'font-weight': 'bold' }}>{item.label}</span>;
+          } else {
+            return <span>{item.label}</span>;
           }
+        };
+        namespaces.forEach(item => {
+          let dataItem = {};
+          dataItem.isCurrent = false;
+          if (self.state.nownamespace_id === item.namespace) {
+            dataItem.isCurrent = true;
+          }
+          if (item.namespaceShowName === 'public') {
+            dataItem.label = 'public | public';
+            dataItem.value = 'public';
+          } else {
+            dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
+            dataItem.value = item.namespace;
+          }
+          namespaceSelectData.push(dataItem);
         });
+
+        let editableTableData = [];
+        let configsTableSelectedDeepCopyed = new Map();
+        configsTableSelected.forEach((value, key, map) => {
+          let dataItem = {};
+          dataItem.id = key;
+          dataItem.dataId = value.dataId;
+          dataItem.group = value.group;
+          editableTableData.push(dataItem);
+          configsTableSelectedDeepCopyed.set(key, JSON.parse(JSON.stringify(value)));
+        });
+        let editableTableOnBlur = (record, type, e) => {
+          if (type === 1) {
+            configsTableSelectedDeepCopyed.get(record.id).dataId = e.target.value;
+          } else {
+            configsTableSelectedDeepCopyed.get(record.id).group = e.target.value;
+          }
+        };
+
+        let renderEditableTableCellDataId = (value, index, record) => (
+          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 1)} />
+        );
+        let renderEditableTableCellGroup = (value, index, record) => (
+          <Input defaultValue={value} onBlur={editableTableOnBlur.bind(this, record, 2)} />
+        );
+
         const cloneConfirm = Dialog.confirm({
           title: locale.cloningConfiguration,
           footer: false,
           content: (
-            <div>
+            <>
               <div style={{ marginBottom: 10 }}>
                 <span style={{ color: '#999', marginRight: 5 }}>{locale.source}</span>
                 <span style={{ color: '#49D2E7' }}>{self.state.nownamespace_name} </span>|{' '}
@@ -822,6 +817,7 @@ class ConfigurationManagement extends React.Component {
                   showSearch
                   hasClear={false}
                   mode="single"
+                  itemRender={namespaceSelecItemRender}
                   dataSource={namespaceSelectData}
                   onChange={(value, actionType, item) => {
                     if (value) {
@@ -866,7 +862,7 @@ class ConfigurationManagement extends React.Component {
                   }}
                 />
               </div>
-              <div>
+              <div style={{ marginBottom: 10 }}>
                 <Button
                   type={'primary'}
                   style={{ marginRight: 10 }}
@@ -878,20 +874,30 @@ class ConfigurationManagement extends React.Component {
                       document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
                     }
                     let idsStr = '';
-                    configsTableSelected.forEach((value, key, map) => {
-                      idsStr = `${idsStr + key},`;
+                    let clonePostData = [];
+                    configsTableSelectedDeepCopyed.forEach((value, key, map) => {
+                      let postDataItem = {};
+                      postDataItem.cfgId = key;
+                      postDataItem.dataId = value.dataId;
+                      postDataItem.group = value.group;
+                      clonePostData.push(postDataItem);
                     });
                     let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
                     let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
                     request({
-                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&ids=${idsStr}`,
+                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&namespaceId=`,
+                      method: 'post',
+                      data: JSON.stringify(clonePostData),
+                      contentType: 'application/json',
                       beforeSend() {
                         self.openLoading();
                       },
                       success(ret) {
+                        self.closeLoading();
                         self.processImportAndCloneResult(ret, locale, cloneConfirm, false);
                       },
                       error(data) {
+                        self.closeLoading();
                         self.setState({
                           dataSource: [],
                           total: 0,
@@ -908,11 +914,25 @@ class ConfigurationManagement extends React.Component {
                   {locale.startCloning}
                 </Button>
               </div>
-            </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: '#00AA00', fontWeight: 'bold' }}>
+                  {locale.cloneEditableTitle}
+                </span>
+              </div>
+              <Table dataSource={editableTableData}>
+                <Table.Column
+                  title="Data Id"
+                  dataIndex="dataId"
+                  cell={renderEditableTableCellDataId}
+                />
+                <Table.Column title="Group" dataIndex="group" cell={renderEditableTableCellGroup} />
+              </Table>
+            </>
           ),
         });
       },
       error(data) {
+        self.closeLoading();
         self.setState({
           dataSource: [],
           total: 0,
@@ -1004,9 +1024,20 @@ class ConfigurationManagement extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token);
+    } catch (e) {
+      console.log(e);
+      goLogin();
+    }
+    const { accessToken = '' } = token;
     const uploadProps = {
       accept: 'application/zip',
-      action: `v1/cs/configs?import=true&namespace=${getParams('namespace')}`,
+      action: `v1/cs/configs?import=true&namespace=${getParams(
+        'namespace'
+      )}&accessToken=${accessToken}`,
+      headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
       },
@@ -1020,10 +1051,18 @@ class ConfigurationManagement extends React.Component {
         self.processImportAndCloneResult(ret.response, locale, importConfirm, true);
       },
       onError(err) {
-        Dialog.alert({
-          title: locale.importFail,
-          content: locale.importDataValidationError,
-        });
+        const { data = {}, status } = err.response;
+        if ([401, 403].includes(status)) {
+          Dialog.alert({
+            title: locale.importFail,
+            content: locale.importFail403,
+          });
+        } else {
+          Dialog.alert({
+            title: locale.importFail,
+            content: locale.importDataValidationError,
+          });
+        }
       },
     };
     const importConfirm = Dialog.confirm({
@@ -1089,277 +1128,274 @@ class ConfigurationManagement extends React.Component {
     rowSelection.selectedRowKeys = ids;
     this.setState({ rowSelection });
     configsTableSelected.clear();
-    records.forEach(item => configsTableSelected.set(item.id, item));
+    records.forEach((record, i) => {
+      configsTableSelected.set(record.id, record);
+    });
   }
 
   render() {
-    const { locale = {} } = this.props;
+    const { locale = {}, configurations = {} } = this.props;
     return (
-      <div>
+      <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
-        <Loading
-          shape={'flower'}
-          style={{ position: 'relative', width: '100%', overflow: 'auto' }}
-          visible={this.state.loading}
-          tip={'Loading...'}
-          color={'#333'}
-        >
-          <div className={this.state.hasdash ? 'dash-page-container' : ''}>
-            <div
-              className={this.state.hasdash ? 'dash-left-container' : ''}
-              style={{ position: 'relative', padding: 10 }}
-            >
-              <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>
-                <RegionGroup
-                  namespaceCallBack={this.cleanAndGetData.bind(this)}
-                  setNowNameSpace={this.setNowNameSpace.bind(this)}
-                />
-              </div>
-              <div
-                style={{
-                  display: this.inApp ? 'none' : 'block',
-                  position: 'relative',
-                  width: '100%',
-                  overflow: 'hidden',
-                  height: '40px',
-                }}
-              >
-                <h3
-                  style={{
-                    height: 30,
-                    width: '100%',
-                    lineHeight: '30px',
-                    padding: 0,
-                    margin: 0,
-                    paddingLeft: 10,
-                    borderLeft: '3px solid #09c',
-                    color: '#ccc',
-                    fontSize: '12px',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
-                    {locale.configurationManagement8}
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>|</span>
-                  <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
-                    {this.state.nownamespace_name}
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#000', marginRight: 18 }}>
-                    {this.state.nownamespace_id}
-                  </span>
-                  {locale.queryResults}
-                  <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-                  {locale.articleMeetRequirements}
-                </h3>
-                <div
-                  style={{ position: 'absolute', textAlign: 'right', zIndex: 2, right: 0, top: 0 }}
-                />
-              </div>
-              <div
-                style={{
-                  position: 'relative',
-                  marginTop: 10,
-                  height: this.state.isAdvancedQuery ? 'auto' : 42,
-                  overflow: 'hidden',
-                }}
-              >
-                <Form inline>
-                  <Form.Item label={'Data ID:'}>
-                    <Input
-                      htmlType={'text'}
-                      placeholder={locale.fuzzyd}
-                      style={{ width: 200 }}
-                      value={this.state.dataId}
-                      onChange={this.getDataId.bind(this)}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label={'Group:'}>
-                    <Select.AutoComplete
-                      style={{ width: 200 }}
-                      size={'medium'}
-                      placeholder={locale.fuzzyg}
-                      dataSource={this.state.groups}
-                      value={this.state.group}
-                      onChange={this.setGroup.bind(this)}
-                      hasClear
-                    />
-                  </Form.Item>
-                  <Form.Item label={''}>
-                    <Button
-                      type={'primary'}
-                      style={{ marginRight: 10 }}
-                      onClick={this.selectAll.bind(this)}
-                      data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
-                    >
-                      {locale.query}
-                    </Button>
-                  </Form.Item>
-                  <Form.Item
-                    style={
-                      this.inApp
-                        ? { display: 'none' }
-                        : { verticalAlign: 'middle', marginTop: 0, marginLeft: 10 }
-                    }
-                  >
-                    <div
-                      style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }}
-                      onClick={this.changeAdvancedQuery}
-                    >
-                      <span style={{ marginRight: 5, lineHeight: '28px' }}>
-                        {locale.advancedQuery9}
-                      </span>
-                      <Icon
-                        type={
-                          this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'
-                        }
-                        size={'xs'}
-                      />
-                    </div>
-                  </Form.Item>
-                  <Form.Item label={''}>
-                    <Button
-                      type={'primary'}
-                      style={{ marginRight: 10 }}
-                      onClick={this.exportData.bind(this)}
-                      data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                    >
-                      {locale.export}
-                    </Button>
-                  </Form.Item>
-                  <Form.Item label={''}>
-                    <Button
-                      type={'primary'}
-                      style={{ marginRight: 10 }}
-                      onClick={this.importData.bind(this)}
-                      data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                    >
-                      {locale.import}
-                    </Button>
-                  </Form.Item>
-                  <br />
-                  <Form.Item
-                    style={this.inApp ? { display: 'none' } : {}}
-                    label={locale.application0}
-                  >
-                    <Input
-                      htmlType={'text'}
-                      placeholder={locale.app1}
-                      style={{ width: 200 }}
-                      value={this.state.appName}
-                      onChange={this.setAppName.bind(this)}
-                    />
-                  </Form.Item>
-                  <Form.Item label={locale.tags}>
-                    <Select
-                      style={{ width: 200 }}
-                      size={'medium'}
-                      hasArrow
-                      mode="tag"
-                      filterLocal={false}
-                      placeholder={locale.pleaseEnterTag}
-                      dataSource={this.state.tagLst}
-                      value={this.state.config_tags}
-                      onChange={this.setConfigTags.bind(this)}
-                      hasClear
-                    />
-                  </Form.Item>
-                </Form>
-                <div style={{ position: 'absolute', right: 10, top: 4 }}>
-                  <Icon
-                    type={'add'}
-                    size={'medium'}
-                    style={{
-                      color: 'black',
-                      marginRight: 0,
-                      verticalAlign: 'middle',
-                      cursor: 'pointer',
-                      backgroundColor: '#eee',
-                      border: '1px solid #ddd',
-                      padding: '3px 6px',
-                    }}
-                    onClick={this.chooseEnv.bind(this)}
-                  />
-                </div>
-              </div>
-              <div>
-                <Table
-                  dataSource={this.state.dataSource}
-                  locale={{ empty: locale.pubNoData }}
-                  fixedHeader
-                  maxBodyHeight={400}
-                  ref={'dataTable'}
-                  rowSelection={this.state.rowSelection}
-                >
-                  <Table.Column title={'Data Id'} dataIndex={'dataId'} />
-                  <Table.Column title={'Group'} dataIndex={'group'} />
-                  {!this.inApp ? (
-                    <Table.Column title={locale.application} dataIndex={'appName'} />
-                  ) : (
-                    <div />
-                  )}
-                  <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
-                </Table>
-                {this.state.dataSource.length > 0 && (
-                  <div style={{ marginTop: 10, overflow: 'hidden' }}>
-                    <div style={{ float: 'left' }}>
-                      <Button
-                        type={'primary'}
-                        warning
-                        style={{ marginRight: 10 }}
-                        onClick={this.multipleSelectionDeletion.bind(this)}
-                        data-spm-click={'gostr=/aliyun;locaid=configsDelete'}
-                      >
-                        {locale.deleteAction}
-                      </Button>
-                      <Button
-                        type={'primary'}
-                        style={{ marginRight: 10 }}
-                        onClick={this.exportSelectedData.bind(this)}
-                        data-spm-click={'gostr=/aliyun;locaid=configsExport'}
-                      >
-                        {locale.exportSelected}
-                      </Button>
-                      <Button
-                        type={'primary'}
-                        style={{ marginRight: 10 }}
-                        onClick={this.cloneSelectedDataConfirm.bind(this)}
-                        data-spm-click={'gostr=/aliyun;locaid=configsClone'}
-                      >
-                        {locale.clone}
-                      </Button>
-                    </div>
-                    <div style={{ float: 'right' }}>
-                      <Pagination
-                        style={{ float: 'right' }}
-                        pageSizeList={[10, 20, 30]}
-                        pageSizeSelector={'dropdown'}
-                        onPageSizeChange={this.handlePageSizeChange.bind(this)}
-                        current={this.state.currentPage}
-                        total={this.state.total}
-                        pageSize={this.state.pageSize}
-                        onChange={this.changePage.bind(this)}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-              <ShowCodeing ref={this.showcode} />
-              <DeleteDialog ref={this.deleteDialog} />
+        <div className={this.state.hasdash ? 'dash-page-container' : ''}>
+          <div
+            className={this.state.hasdash ? 'dash-left-container' : ''}
+            style={{ position: 'relative' }}
+          >
+            <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>
+              <RegionGroup
+                namespaceCallBack={this.cleanAndGetData.bind(this)}
+                setNowNameSpace={this.setNowNameSpace.bind(this)}
+              />
             </div>
-            {this.state.hasdash && (
-              <div
-                className={'dash-right-container'}
-                style={{ overflow: 'auto', height: window.innerHeight - 40 }}
+            <div
+              style={{
+                display: this.inApp ? 'none' : 'block',
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                height: '40px',
+              }}
+            >
+              <h3
+                style={{
+                  height: 30,
+                  width: '100%',
+                  lineHeight: '30px',
+                  padding: 0,
+                  margin: 0,
+                  paddingLeft: 10,
+                  borderLeft: '3px solid #09c',
+                  color: '#ccc',
+                  fontSize: '12px',
+                }}
               >
-                {this.state.contentList.map((v, i) => (
-                  <DashboardCard data={v} height={'auto'} key={`show${i}`} />
-                ))}
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
+                  {locale.configurationManagement8}
+                </span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>|</span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>
+                  {this.state.nownamespace_name}
+                </span>
+                <span style={{ fontSize: '14px', color: '#000', marginRight: 18 }}>
+                  {this.state.nownamespace_id}
+                </span>
+                {locale.queryResults}
+                <strong style={{ fontWeight: 'bold' }}> {configurations.totalCount} </strong>
+                {locale.articleMeetRequirements}
+              </h3>
+              <div
+                style={{ position: 'absolute', textAlign: 'right', zIndex: 2, right: 0, top: 0 }}
+              />
+            </div>
+            <div
+              style={{
+                position: 'relative',
+                marginTop: 10,
+                height: this.state.isAdvancedQuery ? 'auto' : 42,
+                overflow: 'hidden',
+              }}
+            >
+              <Form inline>
+                <Form.Item label="Data ID:">
+                  <Input
+                    htmlType="text"
+                    placeholder={locale.fuzzyd}
+                    style={{ width: 200 }}
+                    onChange={dataId => {
+                      this.dataId = dataId;
+                      this.setState({ dataId });
+                    }}
+                    onPressEnter={() => this.getData()}
+                  />
+                </Form.Item>
+
+                <Form.Item label="Group:">
+                  <Select.AutoComplete
+                    style={{ width: 200 }}
+                    size={'medium'}
+                    placeholder={locale.fuzzyg}
+                    dataSource={this.state.groups}
+                    value={this.state.group}
+                    onChange={this.setGroup.bind(this)}
+                    onPressEnter={() => this.getData()}
+                    hasClear
+                  />
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
+                    onClick={this.selectAll.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
+                  >
+                    {locale.query}
+                  </Button>
+                </Form.Item>
+                <Form.Item
+                  style={
+                    this.inApp
+                      ? { display: 'none' }
+                      : { verticalAlign: 'middle', marginTop: 0, marginLeft: 10 }
+                  }
+                >
+                  <div
+                    style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }}
+                    onClick={this.changeAdvancedQuery}
+                  >
+                    <span style={{ marginRight: 5, lineHeight: '28px' }}>
+                      {locale.advancedQuery9}
+                    </span>
+                    <Icon
+                      type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'}
+                      size={'xs'}
+                    />
+                  </div>
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
+                    onClick={this.exportData.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                  >
+                    {locale.export}
+                  </Button>
+                </Form.Item>
+                <Form.Item label={''}>
+                  <Button
+                    type={'primary'}
+                    style={{ marginRight: 10 }}
+                    onClick={this.importData.bind(this)}
+                    data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                  >
+                    {locale.import}
+                  </Button>
+                </Form.Item>
+                <br />
+                <Form.Item
+                  style={this.inApp ? { display: 'none' } : {}}
+                  label={locale.application0}
+                >
+                  <Input
+                    htmlType={'text'}
+                    placeholder={locale.app1}
+                    style={{ width: 200 }}
+                    value={this.state.appName}
+                    onChange={this.setAppName.bind(this)}
+                    onPressEnter={() => this.getData()}
+                  />
+                </Form.Item>
+                <Form.Item label={locale.tags}>
+                  <Select
+                    style={{ width: 200 }}
+                    size="medium"
+                    hasArrow
+                    mode="tag"
+                    placeholder={locale.pleaseEnterTag}
+                    dataSource={this.state.tagLst}
+                    value={this.state.config_tags}
+                    onChange={this.setConfigTags.bind(this)}
+                    showSearch
+                    onSearch={val => {
+                      const { tagLst } = this.state;
+                      if (!tagLst.includes(val)) {
+                        this.setState({ tagLst: tagLst.concat(val) });
+                      }
+                    }}
+                    hasClear
+                  />
+                </Form.Item>
+              </Form>
+              <div style={{ position: 'absolute', right: 10, top: 4 }}>
+                <Icon
+                  type="add"
+                  size="medium"
+                  style={{
+                    color: 'black',
+                    marginRight: 0,
+                    verticalAlign: 'middle',
+                    cursor: 'pointer',
+                    backgroundColor: '#eee',
+                    border: '1px solid #ddd',
+                    padding: '3px 6px',
+                  }}
+                  onClick={this.chooseEnv.bind(this)}
+                />
               </div>
+            </div>
+            <Table
+              className="configuration-table"
+              dataSource={configurations.pageItems}
+              locale={{ empty: locale.pubNoData }}
+              ref="dataTable"
+              loading={this.state.loading}
+              rowSelection={this.state.rowSelection}
+            >
+              <Table.Column title={'Data Id'} dataIndex={'dataId'} />
+              <Table.Column title={'Group'} dataIndex={'group'} />
+              {!this.inApp && <Table.Column title={locale.application} dataIndex="appName" />}
+              <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
+            </Table>
+            {configurations.totalCount > 0 && (
+              <>
+                <div style={{ float: 'left' }}>
+                  {[
+                    {
+                      warning: true,
+                      text: locale.deleteAction,
+                      locaid: 'configsDelete',
+                      onClick: () => this.multipleSelectionDeletion(),
+                    },
+                    {
+                      text: locale.exportSelected,
+                      locaid: 'configsExport',
+                      onClick: () => this.exportSelectedData(),
+                    },
+                    {
+                      text: locale.clone,
+                      locaid: 'configsDelete',
+                      onClick: () => this.cloneSelectedDataConfirm(),
+                    },
+                  ].map(item => (
+                    <Button
+                      warning={item.warning}
+                      type="primary"
+                      style={{ marginRight: 10 }}
+                      onClick={item.onClick}
+                      data-spm-click={`gostr=/aliyun;locaid=${item.locaid}`}
+                    >
+                      {item.text}
+                    </Button>
+                  ))}
+                </div>
+                <Pagination
+                  style={{ float: 'right' }}
+                  pageSizeList={[10, 20, 30]}
+                  pageSizePosition="start"
+                  pageSizeSelector="dropdown"
+                  popupProps={{ align: 'bl tl' }}
+                  onPageSizeChange={val => this.handlePageSizeChange(val)}
+                  current={configurations.pageNumber}
+                  total={configurations.totalCount}
+                  pageSize={this.state.pageSize}
+                  onChange={this.changePage.bind(this)}
+                />
+              </>
             )}
+            <ShowCodeing ref={this.showcode} />
+            <DeleteDialog ref={this.deleteDialog} />
           </div>
-        </Loading>
-      </div>
+          {this.state.hasdash && (
+            <div className="dash-right-container">
+              {this.state.contentList.map((v, i) => (
+                <DashboardCard data={v} height={'auto'} key={`show${i}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      </>
     );
   }
 }

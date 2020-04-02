@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -43,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 
 /**
  * Server Agent
@@ -53,6 +54,12 @@ import java.util.concurrent.Callable;
 public class ServerHttpAgent implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
+
+    private SecurityProxy securityProxy;
+
+    private String namespaceId;
+
+    private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -68,7 +75,7 @@ public class ServerHttpAgent implements HttpAgent {
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         final boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -121,7 +128,7 @@ public class ServerHttpAgent implements HttpAgent {
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -176,7 +183,7 @@ public class ServerHttpAgent implements HttpAgent {
                                  long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
-
+        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
 
@@ -225,7 +232,9 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return serverAddr + contextPath + relativePath;
     }
 
     public static String getAppname() {
@@ -243,7 +252,38 @@ public class ServerHttpAgent implements HttpAgent {
 
     public ServerHttpAgent(Properties properties) throws NacosException {
         serverListMgr = new ServerListManager(properties);
+        securityProxy = new SecurityProxy(properties);
+        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
+        securityProxy.login(serverListMgr.getServerUrls());
+
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+    }
+
+    private void injectSecurityInfo(List<String> params) {
+        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
+            params.add(Constants.ACCESS_TOKEN);
+            params.add(securityProxy.getAccessToken());
+        }
+        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
+            params.add(SpasAdapter.TENANT_KEY);
+            params.add(namespaceId);
+        }
     }
 
     private void init(Properties properties) {

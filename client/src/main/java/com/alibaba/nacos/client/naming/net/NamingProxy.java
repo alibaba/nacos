@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -35,6 +36,7 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -46,7 +48,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -71,14 +75,21 @@ public class NamingProxy {
 
     private List<String> serversFromEndpoint = new ArrayList<String>();
 
+    private SecurityProxy securityProxy;
+
     private long lastSrvRefTime = 0L;
 
     private long vipSrvRefInterMillis = TimeUnit.SECONDS.toMillis(30);
 
+    private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+
     private Properties properties;
 
-    public NamingProxy(String namespaceId, String endpoint, String serverList) {
+    public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
 
+        securityProxy = new SecurityProxy(properties);
+        this.properties = properties;
+        this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
         if (StringUtils.isNotEmpty(serverList)) {
@@ -88,19 +99,16 @@ public class NamingProxy {
             }
         }
 
-        initRefreshSrvIfNeed();
+        initRefreshTask();
     }
 
-    private void initRefreshSrvIfNeed() {
-        if (StringUtils.isEmpty(endpoint)) {
-            return;
-        }
+    private void initRefreshTask() {
 
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.naming.serverlist.updater");
+                t.setName("com.alibaba.nacos.client.naming.updater");
                 t.setDaemon(true);
                 return t;
             }
@@ -113,7 +121,16 @@ public class NamingProxy {
             }
         }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
+
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(getServerList());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+
         refreshSrvIfNeed();
+        securityProxy.login(getServerList());
     }
 
     public List<String> getServerListFromEndpoint() {
@@ -312,7 +329,11 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<String, String>(8);
         String body = StringUtils.EMPTY;
         if (!lightBeatEnabled) {
-            body = "beat=" + JSON.toJSONString(beatInfo);
+            try {
+                body = "beat=" + URLEncoder.encode(JSON.toJSONString(beatInfo), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new NacosException(NacosException.SERVER_ERROR, "encode beatInfo error", e);
+            }
         }
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
@@ -377,13 +398,15 @@ public class NamingProxy {
     }
 
     public String reqAPI(String api, Map<String, String> params, String body, String method) throws NacosException {
+        return reqAPI(api, params, body, getServerList(), method);
+    }
 
+    private List<String> getServerList() {
         List<String> snapshot = serversFromEndpoint;
         if (!CollectionUtils.isEmpty(serverList)) {
             snapshot = serverList;
         }
-
-        return reqAPI(api, params, body, snapshot, method);
+        return snapshot;
     }
 
     public String callServer(String api, Map<String, String> params, String body, String curServer) throws NacosException {
@@ -394,7 +417,7 @@ public class NamingProxy {
         throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        checkSignature(params);
+        injectSecurityInfo(params);
         List<String> headers = builderHeaders();
 
         String url;
@@ -456,7 +479,7 @@ public class NamingProxy {
         if (StringUtils.isNotBlank(nacosDomain)) {
             for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
                 try {
-                    return callServer(api, params, body, nacosDomain);
+                    return callServer(api, params, body, nacosDomain, method);
                 } catch (NacosException e) {
                     exception = e;
                     if (NAMING_LOGGER.isDebugEnabled()) {
@@ -469,27 +492,32 @@ public class NamingProxy {
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}",
             api, servers, exception.getErrCode(), exception.getErrMsg());
 
-        throw new NacosException(exception.getErrCode(), "failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
+        throw new NacosException(exception.getErrCode(), "failed to req API:" + api + " after all servers(" + servers + ") tried: "
             + exception.getMessage());
 
     }
 
-    private void checkSignature(Map<String, String> params) {
+    private void injectSecurityInfo(Map<String, String> params) {
+
+        // Inject token if exist:
+        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
+            params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        }
+
+        // Inject ak/sk if exist:
         String ak = getAccessKey();
         String sk = getSecretKey();
         params.put("app", AppNameUtils.getAppName());
-        if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
-            return;
-        }
-
-        try {
-            String signData = getSignData(params.get("serviceName"));
-            String signature = SignUtil.sign(signData, sk);
-            params.put("signature", signature);
-            params.put("data", signData);
-            params.put("ak", ak);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
+            try {
+                String signData = getSignData(params.get("serviceName"));
+                String signature = SignUtil.sign(signData, sk);
+                params.put("signature", signature);
+                params.put("data", signData);
+                params.put("ak", ak);
+            } catch (Exception e) {
+                NAMING_LOGGER.error("inject ak/sk failed.", e);
+            }
         }
     }
 

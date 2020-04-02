@@ -51,7 +51,7 @@ public class HealthController {
      * @return HTTP code equal to 200 indicates that Nacos is in right states. HTTP code equal to 500 indicates that
      * Nacos is in broken states.
      */
-    @GetMapping("liveness")
+    @GetMapping("/liveness")
     public ResponseEntity liveness() {
         return ResponseEntity.ok().body("OK");
     }
@@ -62,7 +62,7 @@ public class HealthController {
      * @return HTTP code equal to 200 indicates that Nacos is ready. HTTP code equal to 500 indicates that Nacos is not
      * ready.
      */
-    @GetMapping("readiness")
+    @GetMapping("/readiness")
     public ResponseEntity readiness(HttpServletRequest request) {
         boolean isConfigReadiness = isConfigReadiness();
         boolean isNamingReadiness = isNamingReadiness(request);

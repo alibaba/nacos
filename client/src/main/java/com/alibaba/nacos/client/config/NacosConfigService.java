@@ -16,7 +16,6 @@
 package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -33,8 +32,8 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
-import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.ValidatorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -44,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 /**
  * Config Impl
@@ -73,6 +71,7 @@ public class NacosConfigService implements ConfigService {
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     public NacosConfigService(Properties properties) throws NacosException {
+        ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             encode = Constants.ENCODE;
@@ -86,34 +85,7 @@ public class NacosConfigService implements ConfigService {
     }
 
     private void initNamespace(Properties properties) {
-        String namespaceTmp = null;
-
-        String isUseCloudNamespaceParsing =
-            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
-
-        if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    return TenantUtil.getUserTenantForAcm();
-                }
-            });
-
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                    return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
-                }
-            });
-        }
-
-        if (StringUtils.isBlank(namespaceTmp)) {
-            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        }
-        namespace = StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : EMPTY;
+        namespace = ParamUtil.parseNamespace(properties);
         properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
 
@@ -170,9 +142,8 @@ public class NacosConfigService implements ConfigService {
         }
 
         try {
-            content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
-
-            cr.setContent(content);
+            String[] ct = worker.getServerConfig(dataId, group, tenant, timeoutMs);
+            cr.setContent(ct[0]);
 
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();

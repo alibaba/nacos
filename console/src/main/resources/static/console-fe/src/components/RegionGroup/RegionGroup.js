@@ -125,9 +125,7 @@ class RegionGroup extends React.Component {
           ? false
           : window.location.search.indexOf('hideTopbar=') === -1,
       },
-      () => {
-        this.setRegionWidth();
-      }
+      () => this.setRegionWidth()
     );
   }
 

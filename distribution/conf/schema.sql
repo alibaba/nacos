@@ -175,12 +175,20 @@ CREATE INDEX tenant_info_tenant_id_idx ON tenant_info(tenant_id);
 CREATE TABLE users (
 	username varchar(50) NOT NULL PRIMARY KEY,
 	password varchar(500) NOT NULL,
-	enabled boolean NOT NULL
+	enabled boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE roles (
 	username varchar(50) NOT NULL,
-	role varchar(50) NOT NULL
+	role varchar(50) NOT NULL,
+	constraint uk_username_role UNIQUE (username,role)
+);
+
+CREATE TABLE permissions (
+    role varchar(50) NOT NULL,
+    resource varchar(512) NOT NULL,
+    action varchar(8) NOT NULL,
+    constraint uk_role_permission UNIQUE (role,resource,action)
 );
 
 INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);

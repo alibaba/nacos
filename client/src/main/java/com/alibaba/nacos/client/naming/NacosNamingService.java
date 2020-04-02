@@ -34,6 +34,8 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ValidatorUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -45,15 +47,15 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Nacos Naming Service
+ *
  * @author nkorange
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
-    private static final String DEFAULT_PORT = "8080";
-    private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
-     * Each Naming instance should have different namespace.
+     * Each Naming service should have different namespace.
      */
     private String namespace;
 
@@ -76,7 +78,6 @@ public class NacosNamingService implements NamingService {
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
-
         init(properties);
     }
 
@@ -85,6 +86,7 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
+        ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
@@ -92,8 +94,7 @@ public class NacosNamingService implements NamingService {
         initLogName(properties);
 
         eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        serverProxy.setProperties(properties);
+        serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));

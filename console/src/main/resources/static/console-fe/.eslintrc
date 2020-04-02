@@ -30,6 +30,7 @@
     "generator-star-spacing": "off",
     "wrap-iife": "off",
     "arrow-parens": "off",
-    "indent": "off"
+    "indent": "off",
+    "comma-dangle": "off"
   }
 }

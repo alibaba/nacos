@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.1</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -30,7 +30,6 @@
     <prerequisites>
         <maven>3.2.5</maven>
     </prerequisites>
-
 
     <scm>
         <url>git@github.com:alibaba/nacos.git</url>
@@ -525,6 +524,11 @@
                 <artifactId>nacos-example</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-address</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
@@ -539,12 +543,12 @@
                 <version>1.2.58</version>
             </dependency>
 
-            <!-- javax libs-->
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs</artifactId>
-                <version>2.1</version>
-            </dependency>
+<!--            &lt;!&ndash; javax libs&ndash;&gt;-->
+<!--            <dependency>-->
+<!--                <groupId>javax.ws.rs</groupId>-->
+<!--                <artifactId>javax.ws.rs</artifactId>-->
+<!--                <version>1.0</version>-->
+<!--            </dependency>-->
 
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -687,7 +691,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.10.1</version>
+                <version>2.9.10.3</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -781,6 +785,12 @@
                 <artifactId>protoc-gen-grpc-java</artifactId>
                 <version>1.24.0</version>
                 <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.9.11</version>
             </dependency>
 
         </dependencies>

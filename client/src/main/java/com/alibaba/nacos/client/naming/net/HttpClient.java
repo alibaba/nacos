@@ -45,9 +45,6 @@ public class HttpClient {
     private static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
 
-    private static final String POST = "POST";
-    private static final String PUT = "PUT";
-
     static {
         // limit max redirection
         System.setProperty("http.maxRedirects", "5");
@@ -80,7 +77,6 @@ public class HttpClient {
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
             if (StringUtils.isNotBlank(body)) {
-                // fix: apache http nio framework must set some content to request body
                 byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);
@@ -88,7 +84,9 @@ public class HttpClient {
                 conn.getOutputStream().close();
             }
             conn.connect();
-            NAMING_LOGGER.debug("Request from server: " + url);
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("Request from server: " + url);
+            }
             return getResult(conn);
         } catch (Exception e) {
             try {

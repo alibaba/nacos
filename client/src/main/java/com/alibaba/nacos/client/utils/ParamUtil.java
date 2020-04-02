@@ -16,8 +16,11 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import org.slf4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -152,6 +155,36 @@ public class ParamUtil {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
 
+    public static String parseNamespace(Properties properties) {
+        String namespaceTmp = null;
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    return TenantUtil.getUserTenantForAcm();
+                }
+            });
+
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
+                }
+            });
+        }
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
+        return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
+    }
 
     public static String parsingEndpointRule(String endpointUrl) {
         // 配置文件中输入的话，以 ENV 中的优先，

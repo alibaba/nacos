@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -36,6 +38,7 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -86,8 +89,10 @@ public class InstanceController {
         }
     };
 
+
     @CanDistro
     @PostMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -99,6 +104,7 @@ public class InstanceController {
 
     @CanDistro
     @DeleteMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -118,6 +124,7 @@ public class InstanceController {
 
     @CanDistro
     @PutMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -137,6 +144,7 @@ public class InstanceController {
 
     @CanDistro
     @PatchMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -180,6 +188,7 @@ public class InstanceController {
     }
 
     @GetMapping("/list")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -204,6 +213,7 @@ public class InstanceController {
     }
 
     @GetMapping
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -247,6 +257,7 @@ public class InstanceController {
 
     @CanDistro
     @PutMapping("/beat")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public JSONObject beat(HttpServletRequest request) throws Exception {
 
         JSONObject result = new JSONObject();
@@ -269,6 +280,9 @@ public class InstanceController {
         if (clientBeat != null) {
             if (StringUtils.isNotBlank(clientBeat.getCluster())) {
                 clusterName = clientBeat.getCluster();
+            } else {
+                // fix #2533
+                clientBeat.setCluster(clusterName);
             }
             ip = clientBeat.getIp();
             port = clientBeat.getPort();

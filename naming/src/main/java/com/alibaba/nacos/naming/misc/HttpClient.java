@@ -99,7 +99,7 @@ public class HttpClient {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
+            url += StringUtils.isBlank(encodedContent) ? StringUtils.EMPTY : ("?" + encodedContent);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(connectTimeout);
@@ -257,7 +257,7 @@ public class HttpClient {
                 HeaderElement[] headerElements = entity.getContentType().getElements();
 
                 if (headerElements != null && headerElements.length > 0 && headerElements[0] != null &&
-                        headerElements[0].getParameterByName("charset") != null) {
+                    headerElements[0].getParameterByName("charset") != null) {
                     charset = headerElements[0].getParameterByName("charset").getValue();
                 }
             }
@@ -392,7 +392,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -419,10 +419,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
-        inputStream.close();
-
-        return result;
+        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
     }
 
     private static String getCharset(HttpURLConnection conn) {
@@ -456,14 +453,14 @@ public class HttpClient {
         }
 
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-                + encoding);
+            + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
         conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
         conn.addRequestProperty(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
     }
 
     public static String encodingParams(Map<String, String> params, String encoding)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder();
         if (null == params || params.isEmpty()) {
             return null;

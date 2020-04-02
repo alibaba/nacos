@@ -16,6 +16,7 @@
 package com.alibaba.nacos.api.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author nkorange
@@ -32,6 +33,9 @@ public class NamingUtils {
     }
 
     public static String getServiceName(String serviceNameWithGroup) {
+        if (StringUtils.isBlank(serviceNameWithGroup)) {
+            return StringUtils.EMPTY;
+        }
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return serviceNameWithGroup;
         }
@@ -39,6 +43,9 @@ public class NamingUtils {
     }
 
     public static String getGroupName(String serviceNameWithGroup) {
+        if (StringUtils.isBlank(serviceNameWithGroup)) {
+            return StringUtils.EMPTY;
+        }
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return Constants.DEFAULT_GROUP;
         }

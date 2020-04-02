@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -113,6 +114,7 @@ public class PersistService {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
+            info.setType(rs.getString("type"));
 
             try {
                 info.setContent(rs.getString("content"));
@@ -232,6 +234,11 @@ public class PersistService {
             }
             try {
                 info.setId(rs.getLong("ID"));
+            } catch (SQLException e) {
+                // ignore
+            }
+            try {
+                info.setType(rs.getString("type"));
             } catch (SQLException e) {
                 // ignore
             }
@@ -531,7 +538,7 @@ public class PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             jt.update(
                 "INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,"
                     + "src_user,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
@@ -557,7 +564,7 @@ public class PersistService {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             jt.update(
                 "INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
                     + "gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
@@ -621,7 +628,7 @@ public class PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             jt.update(
                 "UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
                     + "data_id=? AND group_id=? AND tenant_id=?",
@@ -647,7 +654,7 @@ public class PersistService {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
             jt.update(
                 "UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
                     + "data_id=? AND group_id=? AND tenant_id=? AND tag_id=?",
@@ -1325,7 +1332,7 @@ public class PersistService {
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCount = "select count(*) from config_info";
-        String sql = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
+        String sql = "select ID,data_id,group_id,tenant_id,app_name,content,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
@@ -1944,7 +1951,7 @@ public class PersistService {
 
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         String select
-            = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where id > ? "
+            = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
             + "order by id asc limit ?,?";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
         try {
@@ -2688,7 +2695,7 @@ public class PersistService {
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
 
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -2897,7 +2904,7 @@ public class PersistService {
                                         final Timestamp time, Map<String, Object> configAdvanceInfo) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
         String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
@@ -2927,8 +2934,8 @@ public class PersistService {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.queryForObject(
-                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
-                new Object[]{dataId, group, tenantTmp}, CONFIG_INFO_ROW_MAPPER);
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,type FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+                new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -3054,7 +3061,7 @@ public class PersistService {
                                            final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
         try {
             jt.update(
                 "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
@@ -3231,36 +3238,6 @@ public class PersistService {
         }
     }
 
-    public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
-        try {
-            return this.jt.queryForObject(sql, new Object[]{username}, USER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            fatalLog.error("[db-other-error]" + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 更新用户密码
-     */
-    public void updateUserPassword(String username, String password) {
-        try {
-            jt.update(
-                "UPDATE users SET password = ? WHERE username=?",
-                password, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
-    }
-
-
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
         for (Map<String, Object> map : list) {
@@ -3378,8 +3355,7 @@ public class PersistService {
                     String md5InDb = cf.getMd5();
                     final String content = cf.getContent();
                     final String tenant = cf.getTenant();
-                    final String md5 = MD5.getInstance().getMD5String(
-                        content);
+                    final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
                     if (StringUtils.isBlank(md5InDb)) {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
@@ -3566,7 +3542,7 @@ public class PersistService {
 
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
 
-    static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
+    protected static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
     static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 
@@ -3599,7 +3575,7 @@ public class PersistService {
 
     private static String PATTERN_STR = "*";
     private final static int QUERY_LIMIT_SIZE = 50;
-    private JdbcTemplate jt;
-    private TransactionTemplate tjt;
+    protected JdbcTemplate jt;
+    protected TransactionTemplate tjt;
 
 }

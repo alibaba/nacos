@@ -34,7 +34,7 @@ import java.util.Map;
 @RequestMapping("/v1/console/server")
 public class ServerStateController {
 
-    @GetMapping("state")
+    @GetMapping("/state")
     public ResponseEntity serverState() {
         Map<String,String> serverState = new HashMap<>(3);
         serverState.put("standalone_mode",SystemUtils.STANDALONE_MODE ?

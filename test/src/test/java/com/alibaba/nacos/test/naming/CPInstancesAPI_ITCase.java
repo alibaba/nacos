@@ -15,21 +15,16 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import java.net.URL;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.naming.NamingApp;
-
+import com.alibaba.nacos.test.base.Params;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,13 +41,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URL;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
         "server.port=7001"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CPInstancesAPI_ITCase {
@@ -118,7 +119,7 @@ public class CPInstancesAPI_ITCase {
      * @TestStep :
      * @ExpectResult :
      */
-    @Test(expected = AssertionError.class)
+    @Test
     public void registerInstance_ephemeral_false() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
@@ -173,7 +174,7 @@ public class CPInstancesAPI_ITCase {
      * @TestStep :
      * @ExpectResult :
      */
-    @Test(expected = AssertionError.class)
+    @Test
     public void deleteService_hasInstace() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         namingServiceCreate(serviceName, TEST_NAMESPACE_1);

@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -28,7 +30,6 @@ import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
@@ -187,7 +188,7 @@ class DumpProcessor implements TaskProcessor {
 
                 boolean result;
                 if (null != cf) {
-                    result = ConfigService.dump(dataId, group, tenant, cf.getContent(), lastModified);
+                    result = ConfigService.dump(dataId, group, tenant, cf.getContent(), lastModified, cf.getType());
 
                     if (result) {
                         ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -261,10 +262,10 @@ class DumpAllProcessor implements TaskProcessor {
                     }
 
                     boolean result = ConfigService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                        cf.getLastModified());
+                        cf.getLastModified(), cf.getType());
 
                     final String content = cf.getContent();
-                    final String md5 = MD5.getInstance().getMD5String(content);
+                    final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
                     LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
                         GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(), md5);
                 }
@@ -409,7 +410,7 @@ class DumpChangeProcessor implements TaskProcessor {
             boolean result = ConfigService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                 cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
-            final String md5 = MD5.getInstance().getMD5String(content);
+            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
             LogUtil.defaultLog.info(
                 "[dump-change-ok] {}, {}, length={}, md5={}",
                 new Object[] {

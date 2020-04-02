@@ -16,9 +16,9 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -172,11 +172,11 @@ public class DiskUtil {
 
     static public String getLocalConfigMd5(String dataId, String group, String tenant)
         throws IOException {
-        return MD5.getInstance().getMD5String(getConfig(dataId, group, tenant));
+        return Md5Utils.getMD5(getConfig(dataId, group, tenant), Constants.ENCODE);
     }
 
     static public File heartBeatFile() {
-        return new File(NACOS_HOME, "status/heartBeat.txt");
+        return new File(NACOS_HOME, "status" + File.separator + "heartBeat.txt");
     }
 
     static public String relativePath(String dataId, String group) {

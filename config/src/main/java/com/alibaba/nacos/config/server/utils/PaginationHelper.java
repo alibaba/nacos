@@ -76,7 +76,7 @@ public class PaginationHelper<E> {
         page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         final int startRow = (pageNo - 1) * pageSize;
@@ -121,7 +121,7 @@ public class PaginationHelper<E> {
         page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         String selectSQL = sqlFetchRows;
@@ -162,7 +162,7 @@ public class PaginationHelper<E> {
         page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
-            return null;
+            return page;
         }
 
         String selectSQL = sqlFetchRows;

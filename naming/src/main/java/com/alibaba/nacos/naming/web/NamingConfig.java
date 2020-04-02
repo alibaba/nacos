@@ -48,18 +48,6 @@ public class NamingConfig {
     }
 
     @Bean
-    public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
-
-        registration.setFilter(authFilter());
-        registration.addUrlPatterns("/v1/ns/*");
-        registration.setName("authFilter");
-        registration.setOrder(5);
-
-        return registration;
-    }
-
-    @Bean
     public DistroFilter distroFilter() {
         return new DistroFilter();
     }
@@ -67,11 +55,6 @@ public class NamingConfig {
     @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
-    }
-
-    @Bean
-    public AuthFilter authFilter() {
-        return new AuthFilter();
     }
 
 }
