@@ -23,7 +23,6 @@ import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -82,7 +81,7 @@ public class ConfigOpsController {
     @GetMapping(value = "/derby")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
-        if (!PropertyUtil.isUseMysql()) {
+        if (!PropertyUtil.isUseExternalDB()) {
             LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
                     .getInstance().getDataSource();
             if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {

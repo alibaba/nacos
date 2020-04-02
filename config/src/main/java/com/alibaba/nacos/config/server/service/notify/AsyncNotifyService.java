@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * Async notify service

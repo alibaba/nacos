@@ -35,7 +35,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Primary
-@Conditional(ConditionOnDefaultStoreType.class)
+@Conditional(ConditionOnDefaultStore.class)
 @Component
 public class LocalDatabaseOperateImpl implements BaseDatabaseOperate, DatabaseOperate {
 

@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.id;
+package com.alibaba.nacos.config.server.service.transaction;
+
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
+ * when embeddedStorage==false
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class AcquireIdException extends RuntimeException {
+public class ConditionOnDefaultStore implements Condition {
 
-    public AcquireIdException() {
-        super();
-    }
-
-    public AcquireIdException(String message) {
-        super(message);
-    }
-
-    public AcquireIdException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public AcquireIdException(Throwable cause) {
-        super(cause);
-    }
-
-    protected AcquireIdException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        return !(PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode());
     }
 }
