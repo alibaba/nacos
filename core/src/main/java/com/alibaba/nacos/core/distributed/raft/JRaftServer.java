@@ -152,9 +152,9 @@ public class JRaftServer {
 
 		// Set the election timeout time. The default is 5 seconds.
 
-		int electionTimeout = ConvertUtils
+		int electionTimeout = Math.max(ConvertUtils
 				.toInt(config.getVal(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS),
-						RaftSysConstants.DEFAULT_ELECTION_TIMEOUT);
+						RaftSysConstants.DEFAULT_ELECTION_TIMEOUT), RaftSysConstants.DEFAULT_ELECTION_TIMEOUT);
 
 		nodeOptions.setElectionTimeoutMs(electionTimeout);
 
@@ -266,7 +266,7 @@ public class JRaftServer {
 			copy.setFsm(machine);
 			copy.setInitialConf(configuration);
 
-			// Set snapshot interval, default 600 seconds
+			// Set snapshot interval, default 1800 seconds
 			int doSnapshotInterval = ConvertUtils.toInt(raftConfig
 							.getVal(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS),
 					RaftSysConstants.DEFAULT_RAFT_SNAPSHOT_INTERVAL_SECS);

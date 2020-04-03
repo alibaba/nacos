@@ -492,7 +492,7 @@ public class NamingProxy {
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}",
             api, servers, exception.getErrCode(), exception.getErrMsg());
 
-        throw new NacosException(exception.getErrCode(), "failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
+        throw new NacosException(exception.getErrCode(), "failed to req API:" + api + " after all servers(" + servers + ") tried: "
             + exception.getMessage());
 
     }
