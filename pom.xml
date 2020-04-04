@@ -247,6 +247,7 @@
                         <exclude>src/test/**</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
+                        <exclude>doc/*</exclude>
                         <exclude>derby.log</exclude>
                         <exclude>logs/*</exclude>
                         <exclude>**/istio/model/**</exclude>
