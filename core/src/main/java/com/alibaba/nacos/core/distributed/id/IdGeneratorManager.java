@@ -107,7 +107,7 @@ public class IdGeneratorManager extends LogProcessor4CP {
                     public void update(Observable o, Object arg) {
                         long term;
                         if (arg == null) {
-                            term = 0l;
+                            term = 0L;
                         } else {
                             term = Long.parseLong(String.valueOf(arg));
                         }
