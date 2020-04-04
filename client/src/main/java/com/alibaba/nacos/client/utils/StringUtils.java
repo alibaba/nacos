@@ -25,12 +25,13 @@ import java.util.Locale;
  * string util
  *
  * @author Nacos
- * @deprecated Use {@link org.apache.commons.lang3.StringUtils} instead
  */
-@Deprecated
 public class StringUtils {
 
+
     private static final int INDEX_NOT_FOUND = -1;
+
+    public static final String COMMA = ",";
 
     public static final String EMPTY = "";
 
@@ -99,6 +100,7 @@ public class StringUtils {
 
         return stringBuilder.toString();
     }
+
 
     public static String escapeJavaScript(String str) {
         return escapeJavaStyleString(str, true, true);

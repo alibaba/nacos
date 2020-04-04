@@ -15,7 +15,9 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * MD5 generator
@@ -24,35 +26,36 @@ import java.io.UnsupportedEncodingException;
  */
 public class Md5Utils {
 
+    private static ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
+        @Override
+        protected MessageDigest initialValue() {
+            try {
+                return MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                return null;
+            }
+        }
+    };
+
     private static final int HEX_VALUE_COUNT = 16;
 
-    public static String getMD5(byte[] bytes) {
-        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        char[] str = new char[16 * 2];
+    public static String getMD5(byte[] bytes) throws NoSuchAlgorithmException {
         try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
-            md.update(bytes);
-            byte[] tmp = md.digest();
-            int k = 0;
-            for (int i = 0; i < HEX_VALUE_COUNT; i++) {
-                byte byte0 = tmp[i];
-                str[k++] = hexDigits[byte0 >>> 4 & 0xf];
-                str[k++] = hexDigits[byte0 & 0xf];
+            MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
+            if (messageDigest != null) {
+                return new BigInteger(1, messageDigest.digest(bytes)).toString(HEX_VALUE_COUNT);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
+        } finally {
+            MESSAGE_DIGEST_LOCAL.remove();
         }
-        return new String(str);
     }
 
     public static String getMD5(String value, String encode) {
-        String result = "";
         try {
-            result = getMD5(value.getBytes(encode));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            return getMD5(value.getBytes(encode));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return result;
     }
 }

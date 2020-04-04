@@ -39,7 +39,6 @@ import java.net.URI;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -124,9 +123,9 @@ public class DistroFilter implements Filter {
                 String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
 
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
-                        StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
-                        , body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + req.getRequestURI(), headerList,
+                        HttpClient.translateParameterMap(req.getParameterMap()),
+                        body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
 
                 try {
                     resp.setCharacterEncoding("UTF-8");
