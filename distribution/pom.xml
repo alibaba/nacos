@@ -106,7 +106,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <version>2.6</version>
                         <configuration>
                             <descriptors>
                                 <descriptor>release-address.xml</descriptor>
@@ -201,7 +201,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <version>2.6</version>
                         <configuration>
                             <descriptors>
                                 <descriptor>release-nacos.xml</descriptor>
