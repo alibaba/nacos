@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author nacos
  */
 @Component
-@DependsOn("serverMemberManager")
+@DependsOn("core")
 public class RaftPeerSet implements MemberChangeListener {
 
     @Autowired

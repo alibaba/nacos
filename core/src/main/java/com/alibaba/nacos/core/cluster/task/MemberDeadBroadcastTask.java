@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -29,6 +27,7 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import java.util.ArrayList;
@@ -40,8 +39,8 @@ import java.util.List;
  */
 public class MemberDeadBroadcastTask extends Task {
 
-    private final TypeReference<RestResult<String>> reference
-            = new TypeReference<RestResult<String>>() {
+    private final GenericType<RestResult<String>> reference
+            = new GenericType<RestResult<String>>() {
     };
 
     public MemberDeadBroadcastTask(ServerMemberManager memberManager) {
@@ -67,9 +66,9 @@ public class MemberDeadBroadcastTask extends Task {
                 return;
             }
 
-            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, waitRemove, reference, new Callback<String>() {
+            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, waitRemove, reference.getType(), new Callback<String>() {
                 @Override
-                public void onReceive(HttpRestResult<String> result) {
+                public void onReceive(RestResult<String> result) {
                     if (result.ok()) {
                         Loggers.CLUSTER.debug("The node : [{}] success to process the request", member);
                         MemberUtils.onSuccess(member, memberManager);

@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -220,12 +221,15 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return embeddedStorage;
     }
 
-    public static void setEmbeddedStorage(boolean embeddedStorage) {
-        PropertyUtil.embeddedStorage = embeddedStorage && !isUseExternalDB();
+    // Determines whether to read the data directly
+    // if use mysql, Reduce database read pressure
+    // if use raft+derby, Reduce leader read pressure
+    public static boolean isDirectRead() {
+        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
 
-    public static boolean isEnableDistributedID() {
-        return !ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
+    public static void setEmbeddedStorage(boolean embeddedStorage) {
+        PropertyUtil.embeddedStorage = embeddedStorage && !isUseExternalDB();
     }
 
     private void loadSetting() {
@@ -251,7 +255,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            setUseExternalDB(getString("spring.datasource.platform", "").equals("mysql"));
+            setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
+            // You must initialize after setUseExternalDB
             setEmbeddedStorage(getBoolean("embeddedStorage", embeddedStorage));
         } catch (Exception e) {
             logger.error("read application.properties failed", e);

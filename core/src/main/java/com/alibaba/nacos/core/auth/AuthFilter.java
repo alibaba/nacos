@@ -17,7 +17,7 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.Constants;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;

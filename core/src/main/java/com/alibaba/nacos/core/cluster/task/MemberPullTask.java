@@ -16,22 +16,20 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import java.util.Random;
 import java.util.Set;
 
 /**
@@ -42,8 +40,7 @@ import java.util.Set;
  */
 public class MemberPullTask extends Task {
 
-    private final TypeReference<RestResult<Member>> reference = new TypeReference<RestResult<Member>>(){};
-    private Random random = new Random();
+    private final GenericType<RestResult<Member>> reference = new GenericType<RestResult<Member>>(){};
 
     private int cursor = 0;
 
@@ -72,9 +69,9 @@ public class MemberPullTask extends Task {
             return;
         }
 
-        asyncHttpClient.get(url, Header.EMPTY, Query.EMPTY, reference, new Callback<Member>() {
+        asyncHttpClient.get(url, Header.EMPTY, Query.EMPTY, reference.getType(), new Callback<Member>() {
             @Override
-            public void onReceive(HttpRestResult<Member> result) {
+            public void onReceive(RestResult<Member> result) {
                 if (result.ok()) {
                     Loggers.CLUSTER.debug("success pull from node : {}, result : {}", target, result);
                     memberManager.update(result.getData());

@@ -58,11 +58,13 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
 
     private static long workerId;
-    private static volatile long dataCenterId;
+    private static volatile long dataCenterId = 1L;
 
 	private volatile long currentId;
 	private long sequence = 0L;
 	private long lastTimestamp = -1L;
+
+	private final long MAX_OFFSET = 5L;
 
     public static void setDataCenterId(long dataCenterId) {
         SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
@@ -98,9 +100,25 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 		long timestamp = timeGen();
 
 		if (timestamp < lastTimestamp) {
-			throw new SnakflowerException(String.format(
+
+			final SnakflowerException exception = new SnakflowerException(String.format(
 					"Clock moved backwards.  Refusing to generate id for %d milliseconds",
 					lastTimestamp - timestamp));
+
+			long offset = lastTimestamp - timestamp;
+			if (offset <= MAX_OFFSET) {
+				try {
+					wait(offset << 1);
+				} catch (InterruptedException ignore) {
+					Thread.interrupted();
+				}
+				timestamp = timeGen();
+				if (timestamp < lastTimestamp) {
+					throw exception;
+				}
+			} else {
+				throw exception;
+			}
 		}
 
 		if (lastTimestamp == timestamp) {
@@ -134,21 +152,21 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	 * init
 	 *
 	 * @param workerId     worker id (0~31)
-	 * @param datacenterId data center id (0~31)
+	 * @param dataCenterId data center id (0~31)
 	 */
-	public void initialize(long workerId, long datacenterId) {
+	public void initialize(long workerId, long dataCenterId) {
 		if (workerId > MAX_WORKER_ID || workerId < 0) {
 			throw new IllegalArgumentException(
 					String.format("worker Id can't be greater than %d or less than 0",
                             MAX_WORKER_ID));
 		}
-		if (datacenterId > MAX_DATA_CENTER_ID || datacenterId < 0) {
+		if (dataCenterId > MAX_DATA_CENTER_ID || dataCenterId < 0) {
 			throw new IllegalArgumentException(
-					String.format("datacenter Id can't be greater than %d or less than 0",
+					String.format("dataCenter Id can't be greater than %d or less than 0",
                             MAX_DATA_CENTER_ID));
 		}
         SnakeFlowerIdGenerator.workerId = workerId;
-        SnakeFlowerIdGenerator.dataCenterId = datacenterId;
+        SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
 	}
 
 	/**

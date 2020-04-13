@@ -17,20 +17,24 @@
 package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.utils.ShutdownUtils;
+import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.DisruptorFactory;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
+
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -41,11 +45,11 @@ import java.util.function.Supplier;
 public class NotifyCenter {
 
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
+    private static final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
 
     private static boolean stopDeferPublish = false;
 
     static {
-
         ShutdownUtils.addShutdownHook(new Thread(() -> {
             System.out.println("[NotifyCenter] Start destroying Publisher");
             try {
@@ -77,6 +81,10 @@ public class NotifyCenter {
      * @param <T>       event type
      */
     public static <T> void registerSubscribe(final Subscribe consumer) {
+        if (consumer instanceof SmartSubscribe) {
+            SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
+            return;
+        }
         final String topic = consumer.subscribeType().getCanonicalName();
         PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(consumer.subscribeType()));
         Publisher publisher = PUBLISHER_MAP.get(topic);
@@ -90,6 +98,10 @@ public class NotifyCenter {
      * @param <T>
      */
     public static <T> void deregisterSubscribe(final Subscribe consumer) {
+        if (consumer instanceof SmartSubscribe) {
+            SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
+            return;
+        }
         final String topic = consumer.subscribeType().getCanonicalName();
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
@@ -116,7 +128,7 @@ public class NotifyCenter {
      * @param eventType
      * @param event
      */
-    public static void publishEvent(final Class<? extends Event> eventType,
+    private static void publishEvent(final Class<? extends Event> eventType,
                                     final Event event) {
         final String topic = eventType.getCanonicalName();
         if (PUBLISHER_MAP.containsKey(topic)) {
@@ -209,7 +221,17 @@ public class NotifyCenter {
                         }
                     }
 
-                    for (Subscribe subscribe : subscribes) {
+                    Set<Subscribe> tmp = new HashSet<>();
+                    tmp.addAll(SMART_SUBSCRIBES);
+                    tmp.addAll(subscribes);
+
+                    for (Subscribe subscribe : tmp) {
+                        final Event event = handle.getEvent();
+                        if (subscribe instanceof SmartSubscribe) {
+                            if (!((SmartSubscribe) subscribe).canNotify(event)) {
+                                continue;
+                            }
+                        }
                         final Runnable job = () -> subscribe.onEvent(handle.getEvent());
                         final Executor executor = subscribe.executor();
                         if (Objects.nonNull(executor)) {

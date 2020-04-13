@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -28,6 +26,7 @@ import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.file.FileChangeEvent;
 import com.alibaba.nacos.core.file.FileWatcher;
 import com.alibaba.nacos.core.file.WatchFileCenter;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -39,7 +38,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
@@ -49,9 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class ClusterConfSyncTask extends Task {
 
-    private static final TypeReference<RestResult<String>> STRING_REFERENCE = new TypeReference<RestResult<String>>() {
+    private static final GenericType<RestResult<String>> STRING_REFERENCE = new GenericType<RestResult<String>>() {
     };
-    private final ServletContext context;
     private int addressServerFailCount = 0;
     private int maxFailCount = 12;
     private volatile boolean alreadyLoadServer = false;
@@ -62,11 +59,10 @@ public class ClusterConfSyncTask extends Task {
         MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
     };
 
-    public ClusterConfSyncTask(final ServerMemberManager memberManager, final ServletContext context) {
+    public ClusterConfSyncTask(final ServerMemberManager memberManager) {
         super(memberManager);
         this.maxFailCount = Integer.parseInt(
                 ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
-        this.context = context;
     }
 
     @Override
@@ -124,9 +120,9 @@ public class ClusterConfSyncTask extends Task {
 
     private void syncFromAddressUrl() {
         if (!alreadyLoadServer && memberManager.getUseAddressServer()) {
-            asyncHttpClient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, STRING_REFERENCE, new Callback<String>() {
+            asyncHttpClient.get(memberManager.getAddressServerUrl(), Header.EMPTY, Query.EMPTY, STRING_REFERENCE.getType(), new Callback<String>() {
                 @Override
-                public void onReceive(HttpRestResult<String> result) {
+                public void onReceive(RestResult<String> result) {
                     if (HttpServletResponse.SC_OK == result.getCode()) {
                         memberManager.setAddressServerHealth(true);
                         Reader reader = new StringReader(result.getData());

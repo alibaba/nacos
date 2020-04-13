@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
@@ -33,10 +34,12 @@ import com.alibaba.nacos.core.utils.Loggers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,10 +59,19 @@ public class NacosClusterController {
     @Autowired
     private IdGeneratorManager idGeneratorManager;
 
-    @PostMapping(value = "/isolation")
-    public RestResult<String> isolation() {
-        NotifyCenter.publishEvent(new IsolationEvent());
-        return RestResultUtils.success();
+    @PostMapping(value = "/{type}")
+    public RestResult<String> changeLocalStatus(@PathVariable(value = "type") String eventType) {
+        String isolation = "isolation";
+        String recover = "recover";
+        if (Objects.equals(isolation, eventType)) {
+            NotifyCenter.publishEvent(new IsolationEvent());
+            return RestResultUtils.success();
+        }
+        if (Objects.equals(recover, eventType)) {
+            NotifyCenter.publishEvent(new RecoverEvent());
+            return RestResultUtils.success();
+        }
+        return RestResultUtils.failed("unsupported event types : " + eventType);
     }
 
     @GetMapping(value = "/self")

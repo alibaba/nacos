@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -29,12 +27,15 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.common.utils.TimerContext;
 import java.util.Collection;
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -45,11 +46,11 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class MemberPingTask extends Task {
 
-    private final TypeReference<RestResult<String>> reference
-            = new TypeReference<RestResult<String>>() {
+    private final GenericType<RestResult<String>> reference
+            = new GenericType<RestResult<String>>() {
     };
 
-    private final TypeReference<Collection<String>> memberReference = new TypeReference<Collection<String>>() {
+    private final GenericType<Collection<String>> memberReference = new GenericType<Collection<String>>() {
     };
 
     public MemberPingTask(ServerMemberManager memberManager) {
@@ -91,9 +92,9 @@ public class MemberPingTask extends Task {
                     return;
                 }
 
-                asyncHttpClient.post(url, Header.EMPTY, query, self, reference, new Callback<String>() {
+                asyncHttpClient.post(url, Header.EMPTY, query, self, reference.getType(), new Callback<String>() {
                     @Override
-                    public void onReceive(HttpRestResult<String> result) {
+                    public void onReceive(RestResult<String> result) {
                         if (result.ok()) {
                             Loggers.CLUSTER.debug("success ping to node : {}, sync : {}," +
                                     " result : {}", member, discovery, result);
@@ -132,8 +133,8 @@ public class MemberPingTask extends Task {
 
     private void discovery(String result) {
         try {
-            Collection<String> members = JSON.parseObject(result, memberReference);
-            MemberUtils.readServerConf(members, memberManager);
+            Collection<String> members = ResponseHandler.convert(result, memberReference.getType());
+            MemberUtils.readServerConf(Objects.requireNonNull(members), memberManager);
         } catch (Exception e) {
             Loggers.CLUSTER.error("The cluster self-detects a problem");
         }

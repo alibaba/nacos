@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.model.HttpRestResult;
+import com.alibaba.nacos.common.model.RestResult;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -26,9 +26,9 @@ public interface Callback<T> {
     /**
      * Callback after the request is responded
      *
-     * @param result {@link HttpRestResult}
+     * @param result {@link RestResult}
      */
-    void onReceive(HttpRestResult<T> result);
+    void onReceive(RestResult<T> result);
 
     /**
      * An error occurred during the request

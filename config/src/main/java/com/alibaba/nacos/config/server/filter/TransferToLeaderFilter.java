@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.config.server.filter;
 
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
@@ -26,8 +28,8 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.ReuseUploadFileHttpServletRequest;
@@ -36,10 +38,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
@@ -78,7 +79,7 @@ public class TransferToLeaderFilter implements Filter {
 	private ControllerMethodsCache controllerMethodsCache;
 
 	private volatile String leaderServer = "";
-	private static final int MAX_TRANSFER_CNT = 3;
+	private static final int MAX_TRANSFER_CNT = 1;
 
 	private final RestTemplate restTemplate = new RestTemplate();
 
@@ -87,49 +88,15 @@ public class TransferToLeaderFilter implements Filter {
 	@PostConstruct
 	protected void init() {
 		LogUtil.defaultLog.info("Open the request and forward it to the leader");
-		protocol.protocolMetaData()
-				.subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-						com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA, new Observer() {
-							@Override
-							public void update(Observable o, Object arg) {
-								final String raftLeader = String.valueOf(arg);
-								boolean found = false;
-								for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
-									final Member member = entry.getValue();
-									final String raftAddress = member.getIp() + ":" + member.getExtendVal(
-											MemberMetaDataConstants.RAFT_PORT);
-									if (StringUtils.equals(raftLeader, raftAddress)) {
-										leaderServer = entry.getKey();
-										found = true;
-										break;
-									}
-								}
-								if (!found) {
-									leaderServer = "";
-								}
-							}
-						});
-
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
-
-			@Override
-			public void onEvent(RaftDBErrorEvent event) {
-				downgrading = true;
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorEvent.class;
-			}
-		});
-
+		listenerLeaderStatus();
+		registerSubscribe();
 	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
 		ReuseHttpRequest req;
-		if (StringUtils.containsIgnoreCase(request.getContentType(), "multipart/form-data")) {
+		if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
 			req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
 		} else {
 			req = new ReuseHttpServletRequest((HttpServletRequest) request);
@@ -153,9 +120,16 @@ public class TransferToLeaderFilter implements Filter {
 			// Determine if the system degradation was triggered
 			// System demotion is enabled and all requests are forwarded to the leader node
 
-			if (downgrading || method.isAnnotationPresent(ToLeader.class) && !protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP)) {
+			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+
+			if (downgrading && isLeader) {
+				resp.sendError(HttpStatus.LOCKED.value(), "Unable to process the request at this time: System triggered degradation");
+				return;
+			}
+
+			if (downgrading || (method.isAnnotationPresent(ToLeader.class) && !isLeader)) {
 				if (StringUtils.isBlank(leaderServer)) {
-					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to process the request at this time: no Leader");
+					resp.sendError(HttpStatus.LOCKED.value(), "Unable to process the request at this time: no Leader");
 					return;
 				}
 
@@ -195,6 +169,7 @@ public class TransferToLeaderFilter implements Filter {
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 			return;
 		} catch (Exception e) {
+			LogUtil.defaultLog.error("An exception occurred when the request was forwarded to the Leader node, {}", e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
 					"Server failed," + ExceptionUtil.getAllExceptionMsg(e));
 			return;
@@ -205,5 +180,52 @@ public class TransferToLeaderFilter implements Filter {
 	@Override
 	public void destroy() {
 
+	}
+
+	private void listenerLeaderStatus() {
+		protocol.protocolMetaData()
+				.subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+						com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
+						new Observer() {
+							@Override
+							public void update(Observable o, Object arg) {
+								final String raftLeader = String.valueOf(arg);
+								boolean found = false;
+								for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
+									final Member member = entry.getValue();
+									final String raftAddress = member.getIp() + ":" + member.getExtendVal(
+											MemberMetaDataConstants.RAFT_PORT);
+									if (StringUtils.equals(raftLeader, raftAddress)) {
+										leaderServer = entry.getKey();
+										found = true;
+										break;
+									}
+								}
+								if (!found) {
+									leaderServer = "";
+								}
+							}
+						});
+	}
+
+	private void registerSubscribe() {
+		NotifyCenter.registerSubscribe(new SmartSubscribe() {
+
+			@Override
+			public void onEvent(Event event) {
+				if (event instanceof RaftDBErrorRecoverEvent) {
+					downgrading = false;
+					return;
+				}
+				if (event instanceof RaftDBErrorEvent) {
+					downgrading = true;
+				}
+			}
+
+			@Override
+			public boolean canNotify(Event event) {
+				return (event instanceof RaftDBErrorEvent) || (event instanceof RaftDBErrorRecoverEvent);
+			}
+		});
 	}
 }

@@ -15,13 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
  * tenant info
  *
  * @author Nacos
  */
-public class TenantInfo {
+public class TenantInfo implements Serializable {
 
+    private static final long serialVersionUID = -1498218072016383809L;
     private String tenantId;
     private String tenantName;
     private String tenantDesc;

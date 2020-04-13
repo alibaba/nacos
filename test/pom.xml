@@ -104,6 +104,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.keran213539</groupId>
             <artifactId>commonOkHttp</artifactId>
             <scope>test</scope>

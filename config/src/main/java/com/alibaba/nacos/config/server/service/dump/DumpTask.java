@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.*;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.cluster.task;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
@@ -26,6 +25,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +37,7 @@ public class MemberShutdownTask extends Task {
 
     private NSyncHttpClient httpClient;
 
-    private final TypeReference<RestResult<String>> typeReference = new TypeReference<RestResult<String>>() {
+    private final GenericType<RestResult<String>> typeReference = new GenericType<RestResult<String>>() {
     };
 
     public MemberShutdownTask(ServerMemberManager memberManager) {
@@ -66,7 +66,7 @@ public class MemberShutdownTask extends Task {
                     Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
 
             try {
-                RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, body, typeReference);
+                RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, body, typeReference.getType());
                 Loggers.CLUSTER.info("{} the response of the target node to this logout operation : {}", member, result);
             } catch (Exception e) {
                 Loggers.CLUSTER.error("shutdown execute has error : {}", e);

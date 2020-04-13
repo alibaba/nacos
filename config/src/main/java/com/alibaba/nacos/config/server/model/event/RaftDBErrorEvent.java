@@ -15,11 +15,18 @@
  */
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.distributed.raft.RaftErrorEvent;
+import com.alibaba.nacos.core.notify.Event;
 
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class RaftDBErrorEvent extends RaftErrorEvent {
+public class RaftDBErrorEvent implements Event {
+
+	private static final long serialVersionUID = 101591819161802336L;
+
+	@Override
+	public Class<? extends Event> eventType() {
+		return RaftDBErrorEvent.class;
+	}
 }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -24,11 +24,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class HttpUtils {
+
+    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
 
     public static String buildUrl(boolean isHttps, String serverAddr, String... subPaths) {
         StringBuilder sb = new StringBuilder();
@@ -38,12 +42,31 @@ public final class HttpUtils {
             sb.append("http://");
         }
         sb.append(serverAddr);
+        String pre = null;
         for (String subPath : subPaths) {
-            if (subPath.startsWith("/")) {
-                sb.append(subPath);
-            } else {
-                sb.append("/").append(subPath);
+            if (StringUtils.isBlank(subPath)) {
+                continue;
             }
+            Matcher matcher = CONTEXT_PATH_MATCH.matcher(subPath);
+            if (matcher.find()) {
+                throw new IllegalArgumentException("Illegal url path expression : " + subPath);
+            }
+            if (pre == null || !pre.endsWith("/")) {
+                if (subPath.startsWith("/")) {
+                    sb.append(subPath);
+                }
+                else {
+                    sb.append("/").append(subPath);
+                }
+            } else {
+                if (subPath.startsWith("/")) {
+                    sb.append(subPath.replaceFirst("\\/", ""));
+                }
+                else {
+                    sb.append(subPath);
+                }
+            }
+            pre = subPath;
         }
         return sb.toString();
     }

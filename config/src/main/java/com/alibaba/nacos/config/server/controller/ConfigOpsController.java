@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -81,17 +81,21 @@ public class ConfigOpsController {
     @GetMapping(value = "/derby")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
-        if (!PropertyUtil.isUseExternalDB()) {
-            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
-                    .getInstance().getDataSource();
-            if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
-                JdbcTemplate template = dataSourceService.getJdbcTemplate();
-                List<Map<String, Object>> result = template.queryForList(sql);
-                return RestResultUtils.success(result);
+        try {
+            if (PropertyUtil.isEmbeddedStorage()) {
+                LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
+                        .getInstance().getDataSource();
+                if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
+                    JdbcTemplate template = dataSourceService.getJdbcTemplate();
+                    List<Map<String, Object>> result = template.queryForList(sql);
+                    return RestResultUtils.success(result);
+                }
+                return RestResultUtils.failed("Only query statements are allowed to be executed");
             }
-            return RestResultUtils.failedWithData("Only query statements are allowed to be executed");
+            return RestResultUtils.failed("The current storage mode is not Derby");
+        } catch (Exception e) {
+            return RestResultUtils.failed(e.getMessage());
         }
-        return RestResultUtils.failedWithData("The current storage mode is not Derby");
     }
 
 }

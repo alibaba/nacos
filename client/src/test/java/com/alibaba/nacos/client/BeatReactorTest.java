@@ -1,9 +1,6 @@
 package com.alibaba.nacos.client;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.ResponseCode;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;

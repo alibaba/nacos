@@ -18,9 +18,8 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.MediaType;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
@@ -32,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;

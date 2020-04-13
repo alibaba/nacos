@@ -60,12 +60,9 @@ public class NacosWebFilter implements Filter {
 
         try {
             chain.doFilter(request, response);
-        } catch (IOException ioe) {
+        } catch (IOException | ServletException ioe) {
             defaultLog.debug("Filter catch exception, " + ioe.toString(), ioe);
             throw ioe;
-        } catch (ServletException se) {
-            defaultLog.debug("Filter catch exception, " + se.toString(), se);
-            throw se;
         }
     }
 

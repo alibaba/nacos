@@ -15,13 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
  * 变化的配置信息, 聚合时使用
  *
  * @author leiwen.zh
  */
-public class ConfigInfoChanged {
+public class ConfigInfoChanged implements Serializable {
 
+    private static final long serialVersionUID = -1819539062100125171L;
     private String dataId;
     private String group;
     private String tenant;

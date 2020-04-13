@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

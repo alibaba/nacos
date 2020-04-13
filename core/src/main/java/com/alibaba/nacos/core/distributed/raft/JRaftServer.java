@@ -39,10 +39,10 @@ import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.ConvertUtils;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
@@ -65,7 +65,6 @@ import com.alipay.sofa.jraft.util.BytesUtil;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import com.google.protobuf.ByteString;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
@@ -83,10 +82,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -324,10 +321,7 @@ public class JRaftServer {
 		});
 		try {
 			return future.get(5000, TimeUnit.MILLISECONDS);
-		} catch (InterruptedException | TimeoutException e) {
-			return GetResponse.newBuilder().build();
-		}
-		catch (ExecutionException e) {
+		} catch (Exception e) {
 			throw new ConsistencyException("Data acquisition failed", e);
 		}
 	}
@@ -347,7 +341,7 @@ public class JRaftServer {
 					public void accept(Object result,
 							Throwable throwable) {
 						if (Objects.nonNull(throwable)) {
-							future.completeExceptionally(throwable);
+							future.completeExceptionally(new ConsistencyException(throwable));
 						}
 						else {
 							future.complete((GetResponse) result);

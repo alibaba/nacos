@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -25,15 +24,16 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClient {
+class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClient {
 
     private CloseableHttpClient client;
 
-    public NacosSyncHttpClient(CloseableHttpClient client) {
+    NacosSyncHttpClient(CloseableHttpClient client) {
         this.client = client;
     }
 
@@ -41,13 +41,13 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> RestResult<T> get(final String url,
                                  final Header header,
                                  final Query query,
-                                 final TypeReference<RestResult<T>> token) throws Exception {
+                                 final Type token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.GET);
         return execute(client, token, requestBase);
     }
 
     @Override
-    public <T> RestResult<T> getLarge(String url, Header header, Query query, Object body, TypeReference<RestResult<T>> token) throws Exception {
+    public <T> RestResult<T> getLarge(String url, Header header, Query query, Object body, Type token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         return execute(client, token, requestBase);
     }
@@ -56,7 +56,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
     public <T> RestResult<T> delete(final String url,
                                     final Header header,
                                     final Query query,
-                                    final TypeReference<RestResult<T>> token) throws Exception {
+                                    final Type token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.DELETE);
         return execute(client, token, requestBase);
     }
@@ -66,7 +66,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
                                  final Header header,
                                  final Query query,
                                  final Object body,
-                                 final TypeReference<RestResult<T>> token) throws Exception {
+                                 final Type token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         return execute(client, token, requestBase);
     }
@@ -76,7 +76,7 @@ public class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClie
                                   final Header header,
                                   final Query query,
                                   final Object body,
-                                  final TypeReference<RestResult<T>> token) throws Exception {
+                                  final Type token) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         return execute(client, token, requestBase);
     }

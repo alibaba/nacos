@@ -133,8 +133,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                 if (memberManager.hasMember(
                     targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
-                    if (memberManager.isHealthCheck()
-                        && memberManager.isUnHealth(targetIp)) {
+                    boolean unHealthNeedDelay = memberManager.isHealthCheck()
+                            && memberManager.isUnHealth(targetIp);
+                    if (unHealthNeedDelay) {
                         // target ip 不健康，则放入通知列表中
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                             task.getLastModified(),

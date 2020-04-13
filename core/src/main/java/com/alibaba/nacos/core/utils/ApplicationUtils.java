@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
@@ -161,6 +162,13 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
 
     public static <T> T getBean(Class<T> requiredType) throws BeansException {
         return applicationContext.getBean(requiredType);
+    }
+
+    public static <T> void getBeanIfExist(Class<T> requiredType, Consumer<T> consumer) throws BeansException {
+        try {
+            T bean = applicationContext.getBean(requiredType);
+            consumer.accept(bean);
+        } catch (NoSuchBeanDefinitionException ignore) {}
     }
 
     public static <T> T getBean(Class<T> requiredType, Object... args)

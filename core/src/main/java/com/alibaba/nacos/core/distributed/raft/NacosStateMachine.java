@@ -24,7 +24,6 @@ import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
-import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;

@@ -25,10 +25,16 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -46,6 +52,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,7 +66,6 @@ public class ServerMemberManager_ITCase {
 
 	@Autowired
 	private ServerMemberManager memberManager;
-
 
 	@LocalServerPort
 	private int port;
@@ -86,7 +92,7 @@ public class ServerMemberManager_ITCase {
 						.ip("1.1.1.1")
 						.port(80)
 						.build()),
-				new TypeReference<RestResult<String>>(){});
+				new GenericType<RestResult<String>>(){}.getType());
 		System.out.println(result);
 		System.out.println(memberManager.getServerList());
 		Assert.assertTrue(result.ok());
@@ -126,21 +132,75 @@ public class ServerMemberManager_ITCase {
 	}
 
 	@Test
-	public void test_z_member_isolation() throws Exception {
+	public void test_d_member_isolation() throws Exception {
 		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
 				memberManager.getContextPath(),
 				Commons.NACOS_CORE_CONTEXT,
 				"/cluster/isolation");
 		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, null,
-				new TypeReference<RestResult<String>>(){});
+				new GenericType<RestResult<String>>(){}.getType());
 		Assert.assertTrue(result.ok());
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		NotifyCenter.registerSubscribe(new Subscribe<IsolationEvent>() {
+
+			@Override
+			public void onEvent(IsolationEvent event) {
+				latch.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return IsolationEvent.class;
+			}
+		});
+
+		latch.await();
+
 		url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
 				memberManager.getContextPath(),
 				Commons.NACOS_CORE_CONTEXT,
 				"/cluster/server/health");
-		result = httpClient.get(url, Header.EMPTY, Query.EMPTY, new TypeReference<RestResult<String>>(){});
+		result = httpClient.get(url, Header.EMPTY, Query.EMPTY, new GenericType<RestResult<String>>(){}.getType());
 		Assert.assertTrue(result.ok());
 		Assert.assertEquals(NodeState.ISOLATION.name(), result.getData());
+	}
+
+	@Test
+	public void test_e_member_recover() throws Exception {
+		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
+				memberManager.getContextPath(),
+				Commons.NACOS_CORE_CONTEXT,
+				"/cluster/recover");
+		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, null,
+				new GenericType<RestResult<String>>(){}.getType());
+		Assert.assertTrue(result.ok());
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		NotifyCenter.registerSubscribe(new Subscribe<RecoverEvent>() {
+
+			@Override
+			public void onEvent(RecoverEvent event) {
+				latch.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return RecoverEvent.class;
+			}
+		});
+
+		latch.await();
+
+		url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
+				memberManager.getContextPath(),
+				Commons.NACOS_CORE_CONTEXT,
+				"/cluster/server/health");
+		result = httpClient.get(url, Header.EMPTY, Query.EMPTY, new GenericType<RestResult<String>>(){}.getType());
+		Assert.assertTrue(result.ok());
+		Assert.assertEquals(NodeState.UP.name(), result.getData());
 	}
 
 	private RestResult<String> memberJoin() throws Exception {
@@ -153,7 +213,7 @@ public class ServerMemberManager_ITCase {
 						.ip("1.1.1.1")
 						.port(80)
 						.build(),
-				new TypeReference<RestResult<String>>(){});
+				new GenericType<RestResult<String>>(){}.getType());
 	}
 
 }

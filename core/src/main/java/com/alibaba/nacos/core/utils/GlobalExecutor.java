@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
-import java.util.concurrent.ExecutorService;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -35,22 +34,22 @@ public class GlobalExecutor {
     );
 
     private static final ScheduledExecutorService SYNC_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            MemberManager.class.getCanonicalName(),
+            ServerMemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.sync-member")
             );
 
     private static final ScheduledExecutorService CLEAN_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            MemberManager.class.getCanonicalName(),
+            ServerMemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.clean-member")
     );
 
     private static final ScheduledExecutorService PULL_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            MemberManager.class.getCanonicalName(),
+            ServerMemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.pull-member")
     );
 
     private static final ScheduledExecutorService PING_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            MemberManager.class.getCanonicalName(),
+            ServerMemberManager.class.getCanonicalName(),
             new NameThreadFactory("com.alibaba.nacos.core.ping-member")
     );
 

@@ -19,7 +19,9 @@ package com.alibaba.nacos.common.http.param;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MediaType {
+public final class MediaType {
+
+    private MediaType() {}
 
     public static final String APPLICATION_ATOM_XML = "application/atom+xml";
 

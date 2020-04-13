@@ -17,7 +17,8 @@
 package com.alibaba.nacos.common.http.handler;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
+
+import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -28,13 +29,8 @@ public final class ResponseHandler {
         return JSON.parseObject(s, cls);
     }
 
-    public static <T> T convert(String s, TypeReference<T> typeReference) {
-        try {
-            return JSON.parseObject(s, typeReference);
-        }
-        catch (Exception e) {
-            return null;
-        }
+    public static <T> T convert(String s, Type type) {
+        return JSON.parseObject(s, type);
     }
 
 }

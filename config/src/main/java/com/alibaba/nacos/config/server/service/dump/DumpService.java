@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.*;
 
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -67,7 +68,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 public class DumpService {
 
     @Autowired
-    PersistService persistService;
+	PersistService persistService;
 
     @Autowired
     private ServerMemberManager memberManager;
@@ -416,11 +417,12 @@ public class DumpService {
     }
 
     private boolean canExecute() {
-        if (!PropertyUtil.isEmbeddedStorage()) {
-            return true;
-        }
         try {
-            return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+            // if is derby + raft mode, only leader can execute
+            if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
+                return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+            }
+            return true;
         } catch (NoSuchRaftGroupException e) {
             return true;
         } catch (Exception e) {

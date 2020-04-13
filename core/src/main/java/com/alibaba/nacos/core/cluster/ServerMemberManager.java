@@ -16,14 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
-import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.cluster.task.ClusterConfSyncTask;
 import com.alibaba.nacos.core.cluster.task.MemberDeadBroadcastTask;
 import com.alibaba.nacos.core.cluster.task.MemberPingTask;
@@ -31,8 +24,7 @@ import com.alibaba.nacos.core.cluster.task.MemberPullTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -43,15 +35,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 
@@ -66,6 +56,8 @@ import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.stereotype.Component;
 
 /**
+ * Cluster node management in Nacos
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
@@ -90,56 +82,69 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     private Member self;
     private String localAddress;
 
+    private Set<Task> tasks = new HashSet<>();
+
     // The node here is always the node information of the UP state
     private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
-    private CPProtocol cpProtocol;
-    private APProtocol apProtocol;
+
 
     public ServerMemberManager(ServletContext servletContext) {
         this.servletContext = servletContext;
     }
 
-    @PostConstruct
     @Override
     public void init() {
-
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
-
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
-        // register NodeChangeEvent publisher to NotifyManager
-
-        NotifyCenter.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
-        NotifyCenter.registerPublisher(ServerInitializedEvent::new, ServerInitializedEvent.class);
-        NotifyCenter.registerPublisher(IsolationEvent::new, IsolationEvent.class);
-        NotifyCenter.registerSubscribe(new Subscribe<IsolationEvent>() {
-
-            @Override
-            public void onEvent(IsolationEvent event) {
-                self.setState(NodeState.ISOLATION);
-            }
-
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return IsolationEvent.class;
-            }
-        });
-
         // init nacos core sys
+        initAddressSys();
 
-        initSys();
+        // register NodeChangeEvent publisher to NotifyManager
+        registerClusterEvent();
 
-        ClusterConfSyncTask task = new ClusterConfSyncTask(this, servletContext);
+        ClusterConfSyncTask task = new ClusterConfSyncTask(this);
         task.init();
         GlobalExecutor.scheduleSyncJob(task, 5_000L);
 
-        // Consistency protocol module initialization
-
-        initAPProtocol();
-        initCPProtocol();
+        tasks.add(task);
 
         Loggers.CORE.info("The cluster resource is initialized");
+    }
+
+    private void registerClusterEvent() {
+        // Register node change events
+        NotifyCenter.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
+        // Register the web container initialization completion event
+        NotifyCenter.registerPublisher(ServerInitializedEvent::new, ServerInitializedEvent.class);
+        // Register node isolation events
+        NotifyCenter.registerPublisher(IsolationEvent::new, IsolationEvent.class);
+        // Register node recover events
+        NotifyCenter.registerPublisher(RecoverEvent::new, RecoverEvent.class);
+
+        // Handles events related to node isolation and recovery
+        NotifyCenter.registerSubscribe(new SmartSubscribe() {
+
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof IsolationEvent) {
+                    self.setState(NodeState.ISOLATION);
+                    return;
+                }
+                if (event instanceof RecoverEvent) {
+                    self.setState(NodeState.UP);
+                    return;
+                }
+            }
+
+            @Override
+            public boolean canNotify(Event event) {
+                boolean i = event instanceof IsolationEvent;
+                boolean r = event instanceof RecoverEvent;
+                return i || r;
+            }
+        });
     }
 
     @Override
@@ -235,8 +240,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         }
 
         Loggers.CLUSTER.warn("have new node join : {}", members);
-        onMemberChange(members, true);
-        NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
+        NotifyCenter.publishEvent(NodeChangeEvent.builder()
                 .join(true)
                 .changeNodes(members)
                 .allNodes(allMembers())
@@ -261,8 +265,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         }
 
         Loggers.CLUSTER.warn("have node leave : {}", members);
-        onMemberChange(members, false);
-        NotifyCenter.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
+        NotifyCenter.publishEvent(NodeChangeEvent.builder()
                 .join(false)
                 .changeNodes(members)
                 .allNodes(allMembers())
@@ -308,21 +311,23 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         if (member == null) {
             return false;
         }
-        return member.getState() == NodeState.UP;
+        return !NodeState.UP.equals(member.getState());
     }
 
     @PreDestroy
     @Override
     public void shutdown() {
-        apProtocol.shutdown();
-        cpProtocol.shutdown();
+        for (Task task : tasks) {
+            task.shutdown();
+        }
+        getSelf().setState(NodeState.DOWN);
     }
 
     public boolean isSelf(Member member) {
         return Objects.equals(member.getAddress(), localAddress);
     }
 
-    private void initSys() {
+    private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
             domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
@@ -347,57 +352,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
                 ApplicationUtils.getProperty("isHealthCheck", "true"));
     }
 
-    private void initAPProtocol() {
-        APProtocol protocol = ApplicationUtils.getBean(APProtocol.class);
-        Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-        Config config = (Config) ApplicationUtils.getBean(configType);
-        injectMembers4AP(config);
-        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol));
-        protocol.init((config));
-        this.apProtocol = protocol;
-    }
-
-    private void initCPProtocol() {
-        CPProtocol protocol = ApplicationUtils.getBean(CPProtocol.class);
-        Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-        Config config = (Config) ApplicationUtils.getBean(configType);
-        injectMembers4CP(config);
-        config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol));
-        protocol.init((config));
-        this.cpProtocol = protocol;
-    }
-
-    private void injectMembers4CP(Config config) {
-        final Member selfMember = getSelf();
-        final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
-        Set<String> others = MemberUtils.toCPMembersInfo(allMembers());
-        config.setMembers(self, others);
-    }
-
-    private void injectMembers4AP(Config config) {
-        final String self = getSelf().getAddress();
-        Set<String> others = MemberUtils.toAPMembersInfo(allMembers());
-        config.setMembers(self, others);
-    }
-
-    @SuppressWarnings("all")
-    private List<LogProcessor> loadProcessorAndInjectProtocol(Class cls, ConsistencyProtocol protocol) {
-        Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils.getBeansOfType(cls);
-
-        final List<LogProcessor> result = new ArrayList<>(beans.values());
-
-        ServiceLoader<LogProcessor> loader = ServiceLoader.load(cls);
-        for (LogProcessor t : loader) {
-            result.add(t);
-        }
-
-        for (LogProcessor processor : result) {
-            processor.injectProtocol(protocol);
-        }
-
-        return result;
-    }
-
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof WebServerInitializedEvent) {
@@ -417,6 +371,10 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
                 GlobalExecutor.schedulePullJob(pullTask, 5_000L);
                 GlobalExecutor.scheduleBroadCastJob(broadcastTask, 10_000L);
 
+                tasks.add(broadcastTask);
+                tasks.add(pingTask);
+                tasks.add(pullTask);
+
                 NotifyCenter.publishEvent(new ServerInitializedEvent((WebServerInitializedEvent) event, servletContext));
             }
         }
@@ -425,9 +383,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
             // For containers that have started, stop all messages from being published late
 
             Loggers.CORE.info("Terminates delayed publication of all messages");
-
-            apProtocol.protocolMetaData().stopDeferPublish();
-            cpProtocol.protocolMetaData().stopDeferPublish();
             NotifyCenter.stopDeferPublish();
         }
     }
@@ -443,16 +398,6 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     public void destroy() throws Exception {
         MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
         GlobalExecutor.runWithoutThread(shutdownTask);
-    }
-
-    private void onMemberChange(Collection<Member> members, boolean isJoin) {
-        if (isJoin) {
-            GlobalExecutor.executeByCommon(() -> apProtocol.addMembers(MemberUtils.toAPMembersInfo(members)));
-            GlobalExecutor.executeByCommon(() -> cpProtocol.addMembers(MemberUtils.toCPMembersInfo(members)));
-        } else {
-            GlobalExecutor.executeByCommon(() -> apProtocol.removeMembers(MemberUtils.toAPMembersInfo(members)));
-            GlobalExecutor.executeByCommon(() -> cpProtocol.removeMembers(MemberUtils.toCPMembersInfo(members)));
-        }
     }
 
     @VisibleForTesting

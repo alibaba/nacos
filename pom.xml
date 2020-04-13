@@ -101,7 +101,7 @@
         <sonar.exclusions>file:**/generated-sources/**,**/test/**</sonar.exclusions>
         <protobuf-java.version>3.8.0</protobuf-java.version>
         <grpc-java.version>1.24.0</grpc-java.version>
-        <kryo.version>4.0.2</kryo.version>
+        <hessian.version>4.0.63</hessian.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -611,13 +611,14 @@
                 </exclusions>
             </dependency>
 
-            <!-- kryo -->
+            <!-- hessian -->
 
             <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo</artifactId>
-                <version>${kryo.version}</version>
+                <groupId>com.caucho</groupId>
+                <artifactId>hessian</artifactId>
+                <version>${hessian.version}</version>
             </dependency>
+
 
             <!-- Apache commons -->
             <dependency>

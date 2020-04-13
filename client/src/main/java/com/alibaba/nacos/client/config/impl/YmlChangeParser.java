@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import java.util.*;
 
