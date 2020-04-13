@@ -170,7 +170,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         this.term = term;
         this.isLeader.set(true);
         this.leaderIp = node.getNodeId().getPeerId().getEndpoint().toString();
-        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
+        NotifyCenter.publishEvent(RaftEvent.builder()
                 .groupId(groupId)
                 .leader(leaderIp)
                 .term(term)
@@ -188,7 +188,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public void onStartFollowing(LeaderChangeContext ctx) {
         this.term = ctx.getTerm();
         this.leaderIp = ctx.getLeaderId().getEndpoint().toString();
-        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
+        NotifyCenter.publishEvent(RaftEvent.builder()
                 .groupId(groupId)
                 .leader(leaderIp)
                 .term(ctx.getTerm())
@@ -198,7 +198,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onConfigurationCommitted(Configuration conf) {
-        NotifyCenter.publishEvent(RaftEvent.class, RaftEvent.builder()
+        NotifyCenter.publishEvent(RaftEvent.builder()
                 .groupId(groupId)
                 .leader(leaderIp)
                 .term(term)

@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.HttpRestResult;
-import com.alibaba.nacos.common.model.RestResult;
+
+import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -35,10 +34,10 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param header http header param
      * @param query http query param
      * @param token return type
-     * @param callback {@link Callback#onReceive(HttpRestResult)}
+     * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void get(String url, Header header, Query query,
-                 TypeReference<RestResult<T>> token, Callback<T> callback);
+                 Type token, Callback<T> callback);
 
     /**
      * get request, may be pulling a lot of data
@@ -48,10 +47,10 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param query http query param
      * @param body get with body
      * @param token return type
-     * @param callback {@link Callback#onReceive(HttpRestResult)}
+     * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void getLarge(String url, Header header, Query query, Object body,
-                              TypeReference<RestResult<T>> token,
+                              Type token,
                               Callback<T> callback);
 
     /**
@@ -61,10 +60,10 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param header http header param
      * @param query http query param
      * @param token return type
-     * @param callback {@link Callback#onReceive(HttpRestResult)}
+     * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void delete(String url, Header header, Query query,
-                    TypeReference<RestResult<T>> token, Callback<T> callback);
+                    Type token, Callback<T> callback);
 
     /**
      * http put
@@ -74,10 +73,10 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param query http query param
      * @param body http body param
      * @param token return type
-     * @param callback {@link Callback#onReceive(HttpRestResult)}
+     * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void put(String url, Header header, Query query, Object body,
-                 TypeReference<RestResult<T>> token, Callback<T> callback);
+                 Type token, Callback<T> callback);
 
     /**
      * http post
@@ -87,9 +86,9 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param query http query param
      * @param body http body param
      * @param token return type
-     * @param callback {@link Callback#onReceive(HttpRestResult)}
+     * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void post(String url, Header header, Query query, Object body,
-                  TypeReference<RestResult<T>> token, Callback<T> callback);
+                  Type token, Callback<T> callback);
 
 }

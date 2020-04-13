@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
  * @author nkorange
  * @since 1.0.0
  */
-@DependsOn("serverMemberManager")
+@DependsOn("core")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
 

@@ -19,16 +19,26 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.transaction.DistributedDatabaseOperateImpl;
+import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
-import com.alibaba.nacos.core.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -49,6 +59,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
@@ -71,7 +82,7 @@ public class ConfigDerbyRaft_ITCase
 	private static final String NAMESPACE_ID = "namespace-id";
 	private static final String USER_ID = "user-id";
 	private static final String ROLE_ID = "role-id";
-	private static final String PERMISSION_ID = "permissions_id";
+	private static final String PERMISSION_ID = "permissions-id";
 
 	private static String serverIp7 = "127.0.0.1:8847";
 	private static String serverIp8 = "127.0.0.1:8848";
@@ -80,6 +91,8 @@ public class ConfigDerbyRaft_ITCase
 	private static ConfigService iconfig7;
 	private static ConfigService iconfig8;
 	private static ConfigService iconfig9;
+
+	private static final NSyncHttpClient httpClient = HttpClientManager.newHttpClient("nacos");
 
 	private static final AtomicBoolean[] finished = new AtomicBoolean[]{new AtomicBoolean(false), new AtomicBoolean(false), new AtomicBoolean(false)};
 
@@ -90,6 +103,9 @@ public class ConfigDerbyRaft_ITCase
 	static {
 		System.getProperties().setProperty("nacos.standalone", "false");
 
+		System.getProperties().setProperty("nacos.core.auth.enabled", "false");
+		System.getProperties().setProperty("embeddedStorage", "true");
+
 		String ip = InetUtils.getSelfIp();
 
 		clusterInfo = "nacos.cluster=" + ip + ":8847?raft_port=8807," + ip
@@ -98,8 +114,6 @@ public class ConfigDerbyRaft_ITCase
 
 	@BeforeClass
 	public static void before() throws Exception {
-
-		System.getProperties().setProperty("nacos.core.auth.enabled", "false");
 
 		CountDownLatch latch = new CountDownLatch(3);
 
@@ -174,9 +188,12 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean("persistService", PersistService.class);
-		PersistService operate8 = context8.getBean("persistService", PersistService.class);
-		PersistService operate9 = context9.getBean("persistService", PersistService.class);
+		PersistService operate7 = context7.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate8 = context8.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate9 = context9.getBean(
+				"PersistService", PersistService.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
@@ -202,9 +219,12 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean("persistService", PersistService.class);
-		PersistService operate8 = context8.getBean("persistService", PersistService.class);
-		PersistService operate9 = context9.getBean("persistService", PersistService.class);
+		PersistService operate7 = context7.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate8 = context8.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate9 = context9.getBean(
+				"PersistService", PersistService.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -229,9 +249,12 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean("persistService", PersistService.class);
-		PersistService operate8 = context8.getBean("persistService", PersistService.class);
-		PersistService operate9 = context9.getBean("persistService", PersistService.class);
+		PersistService operate7 = context7.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate8 = context8.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate9 = context9.getBean(
+				"PersistService", PersistService.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -256,9 +279,12 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean("persistService", PersistService.class);
-		PersistService operate8 = context8.getBean("persistService", PersistService.class);
-		PersistService operate9 = context9.getBean("persistService", PersistService.class);
+		PersistService operate7 = context7.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate8 = context8.getBean(
+				"PersistService", PersistService.class);
+		PersistService operate9 = context9.getBean(
+				"PersistService", PersistService.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
@@ -272,41 +298,76 @@ public class ConfigDerbyRaft_ITCase
 	}
 
 	@Test
-	public void test_e_id_generator() throws Exception {
-		ConfigurableApplicationContext context7 = applications.get("8847");
-		ConfigurableApplicationContext context8 = applications.get("8848");
-		ConfigurableApplicationContext context9 = applications.get("8849");
-		IdGeneratorManager manager7 = context7.getBean(IdGeneratorManager.class);
-		IdGeneratorManager manager8 = context8.getBean(IdGeneratorManager.class);
-		IdGeneratorManager manager9 = context9.getBean(IdGeneratorManager.class);
+	public void test_e_derby_ops() throws Exception {
+		String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
+		Query query = Query.newInstance()
+				.addParam("sql", "select * from users");
+		RestResult<List<Map<String, Object>>> result = httpClient.get(url, Header.EMPTY, query, new GenericType<RestResult<List<Map<String, Object>>>>(){}.getType());
+		System.out.println(result.getData());
+		Assert.assertTrue(result.ok());
+		List<Map<String, Object>> list = result.getData();
+		Assert.assertEquals(1, list.size());
+		Assert.assertEquals("nacos", list.get(0).get("username"));
+	}
 
-		CPProtocol protocol7 = context7.getBean(CPProtocol.class);
-		CPProtocol protocol8 = context8.getBean(CPProtocol.class);
-		CPProtocol protocol9 = context9.getBean(CPProtocol.class);
+	@Test
+	public void test_g_derby_ops_no_select() throws Exception {
+		String url = "http://127.0.0.1:8848/nacos/v1/cs/ops/derby";
+		Query query = Query.newInstance()
+				.addParam("sql", "update users set username='nacos'");
+		RestResult<Object> result = httpClient.get(url, Header.EMPTY, query, new GenericType<RestResult<Object>>(){}.getType());
+		System.out.println(result);
+		Assert.assertFalse(result.ok());
+		Assert.assertEquals("Only query statements are allowed to be executed", result.getMessage());
+	}
 
-		final String configGroup = com.alibaba.nacos.config.server.constant.Constants.CONFIG_MODEL_RAFT_GROUP;
-		long configInfo7 = manager7.nextId(CONFIG_INFO_ID);
-		long configInfo8 = manager8.nextId(CONFIG_INFO_ID);
-		long configInfo9 = manager9.nextId(CONFIG_INFO_ID);
+	@Test
+	public void test_h_derby_has_error() throws Exception {
 
-		if (protocol7.isLeader(configGroup)) {
-			Assert.assertNotEquals(-1, configInfo7);
-			Assert.assertEquals(-1, configInfo8);
-			Assert.assertEquals(-1, configInfo9);
-			return;
-		}
-		if (protocol8.isLeader(configGroup)) {
-			Assert.assertEquals(-1, configInfo7);
-			Assert.assertNotEquals(-1, configInfo8);
-			Assert.assertEquals(-1, configInfo9);
-			return;
-		}
-		if (protocol9.isLeader(configGroup)) {
-			Assert.assertEquals(-1, configInfo7);
-			Assert.assertEquals(-1, configInfo8);
-			Assert.assertNotEquals(-1, configInfo9);
-		}
+		boolean result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
+				"this.is.raft_cluster=lessspring_7");
+		Assert.assertTrue(result);
 
+		NotifyCenter.registerPublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class);
+
+		CountDownLatch latch1 = new CountDownLatch(1);
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+			@Override
+			public void onEvent(RaftDBErrorEvent event) {
+				latch1.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return RaftDBErrorEvent.class;
+			}
+		});
+		NotifyCenter.publishEvent(new RaftDBErrorEvent());
+		latch1.await();
+
+		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
+				"this.is.raft_cluster=lessspring_7");
+		Assert.assertFalse(result);
+
+		CountDownLatch latch2 = new CountDownLatch(1);
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorRecoverEvent>() {
+
+			@Override
+			public void onEvent(RaftDBErrorRecoverEvent event) {
+				latch2.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return RaftDBErrorRecoverEvent.class;
+			}
+		});
+		NotifyCenter.publishEvent(new RaftDBErrorRecoverEvent());
+		latch2.await();
+
+		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
+				"this.is.raft_cluster=lessspring_7");
+		Assert.assertTrue(result);
 	}
 
 	@Test
@@ -385,16 +446,14 @@ public class ConfigDerbyRaft_ITCase
 	private static void run(final int index, CountDownLatch latch, Class<?> cls) {
 		Runnable runnable = () -> {
 			try {
-				DiskUtils.deleteDirectory(Paths.get(System.getProperty("user.home"),
-						"/nacos-" + index + "/").toString());
-
 				final String path = Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/").toString();
 				DiskUtils.deleteDirectory(path);
 
+				System.setProperty("nacos.home", path);
+
 				Map<String, Object> properties = new HashMap<>();
 				properties.put("server.port", "884" + (7 + index));
-				properties.put("nacos.home",
-						Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/").toString());
+				properties.put("nacos.home", path);
 				properties.put("nacos.logs.path",
 						Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/logs/").toString());
 				properties.put("spring.jmx.enabled", false);

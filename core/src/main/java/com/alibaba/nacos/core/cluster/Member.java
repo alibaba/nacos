@@ -32,7 +32,7 @@ public class Member {
 
     private int port = -1;
 
-    private NodeState state = NodeState.UP;
+    private volatile NodeState state = NodeState.UP;
 
     private Map<String, Object> extendInfo = new HashMap<>();
 
@@ -45,7 +45,6 @@ public class Member {
         extendInfo.put(MemberMetaDataConstants.SITE_KEY, "unknown");
         extendInfo.put(MemberMetaDataConstants.AD_WEIGHT, "0");
         extendInfo.put(MemberMetaDataConstants.WEIGHT, "1");
-        extendInfo.put(MemberMetaDataConstants.DISTRO_BEATS, null);
     }
 
     public static MemberBuilder builder() {

@@ -25,8 +25,9 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberManager;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
@@ -34,7 +35,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alipay.sofa.jraft.Node;
 
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,12 +63,19 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     private JRaftServer raftServer;
     private JRaftOps jRaftOps;
     private Node raftNode;
-    private MemberManager memberManager;
+    private ServerMemberManager memberManager;
     private String selfAddress = InetUtils.getSelfIp();
     private int failoverRetries = 1;
     private String failoverRetriesStr = String.valueOf(failoverRetries);
 
-    public JRaftProtocol(MemberManager memberManager) {
+    @VisibleForTesting
+    public static JRaftProtocol createNew() {
+        return new JRaftProtocol();
+    }
+
+    private JRaftProtocol() { }
+
+    public JRaftProtocol(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         this.raftServer = new JRaftServer(failoverRetries);
         this.jRaftOps = new JRaftOps(raftServer);
@@ -86,7 +95,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             this.selfAddress = memberManager.getSelf().getAddress();
 
             NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
-            NotifyCenter.registerPublisher(RaftErrorEvent::new, RaftErrorEvent.class);
 
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
             this.failoverRetriesStr = String.valueOf(failoverRetries);
@@ -160,7 +168,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             throwable[0] = e;
         }
         if (Objects.nonNull(throwable[0])) {
-            future.completeExceptionally(throwable[0]);
+            future.completeExceptionally(new ConsistencyException(throwable[0]));
         }
         return future;
     }

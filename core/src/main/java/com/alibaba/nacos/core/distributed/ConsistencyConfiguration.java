@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.core.cluster.MemberManager;
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftProtocol;
 import java.util.Iterator;
 import java.util.ServiceLoader;
@@ -34,14 +32,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ConsistencyConfiguration {
 
-    @Bean(value = "eventualAgreementProtocol")
-    public APProtocol eventualAgreementProtocol(MemberManager memberManager) {
-        final APProtocol protocol = getProtocol(APProtocol.class, () -> new DistroProtocol(memberManager));
-        return protocol;
-    }
-
     @Bean(value = "strongAgreementProtocol")
-    public CPProtocol strongAgreementProtocol(MemberManager memberManager) {
+    public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager) {
         final CPProtocol protocol = getProtocol(CPProtocol.class, () -> new JRaftProtocol(memberManager));
         return protocol;
     }

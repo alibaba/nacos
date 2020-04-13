@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Use the same HttpClient object in the same space
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
@@ -36,7 +38,7 @@ public class HttpClientManager {
 
 	private static final int TIMEOUT = 5000;
 
-	private static final Map<String, NSyncHttpClient> HTTP_CLIENT_MAP = new HashMap<String, NSyncHttpClient>(
+	private static final Map<String, NSyncHttpClient> HTTP_SYNC_CLIENT_MAP = new HashMap<String, NSyncHttpClient>(
 			8);
 
 	private static final Map<String, NAsyncHttpClient> HTTP_ASYNC_CLIENT_MAP = new HashMap<String, NAsyncHttpClient>(
@@ -48,7 +50,7 @@ public class HttpClientManager {
 
 				System.out.println("[NSyncHttpClient] Start destroying HttpClient");
 
-				for (Map.Entry<String, NSyncHttpClient> entry : HTTP_CLIENT_MAP
+				for (Map.Entry<String, NSyncHttpClient> entry : HTTP_SYNC_CLIENT_MAP
 						.entrySet()) {
 					try {
 						entry.getValue().close();
@@ -85,10 +87,10 @@ public class HttpClientManager {
 	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
 			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();
 
-	public static NSyncHttpClient newHttpClient(String owner) {
+	public static NSyncHttpClient newHttpClient(String namespace) {
 		synchronized (SYNC_MONITOR) {
 
-			NSyncHttpClient nSyncHttpClient = HTTP_CLIENT_MAP.get(owner);
+			NSyncHttpClient nSyncHttpClient = HTTP_SYNC_CLIENT_MAP.get(namespace);
 
 			if (nSyncHttpClient != null) {
 				return nSyncHttpClient;
@@ -96,15 +98,15 @@ public class HttpClientManager {
 
 			nSyncHttpClient = new NacosSyncHttpClient(
 					HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
-			HTTP_CLIENT_MAP.put(owner, nSyncHttpClient);
+			HTTP_SYNC_CLIENT_MAP.put(namespace, nSyncHttpClient);
 			return nSyncHttpClient;
 		}
 	}
 
-	public static NAsyncHttpClient newAsyncHttpClient(String owner) {
+	public static NAsyncHttpClient newAsyncHttpClient(String namespace) {
 		synchronized (ASYNC_MONITOR) {
 
-			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(owner);
+			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(namespace);
 
 			if (nAsyncHttpClient != null) {
 				return nAsyncHttpClient;
@@ -113,16 +115,16 @@ public class HttpClientManager {
 			nAsyncHttpClient = new NacosAsyncHttpClient(
 					HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG)
 							.build());
-			HTTP_ASYNC_CLIENT_MAP.put(owner, nAsyncHttpClient);
+			HTTP_ASYNC_CLIENT_MAP.put(namespace, nAsyncHttpClient);
 			return nAsyncHttpClient;
 		}
 	}
 
-	public static NSyncHttpClient newHttpClient(String owner,
+	public static NSyncHttpClient newHttpClient(String namespace,
 			RequestConfig requestConfig) {
 		synchronized (SYNC_MONITOR) {
 
-			NSyncHttpClient nSyncHttpClient = HTTP_CLIENT_MAP.get(owner);
+			NSyncHttpClient nSyncHttpClient = HTTP_SYNC_CLIENT_MAP.get(namespace);
 
 			if (nSyncHttpClient != null) {
 				return nSyncHttpClient;
@@ -130,15 +132,15 @@ public class HttpClientManager {
 
 			nSyncHttpClient = new NacosSyncHttpClient(
 					HttpClients.custom().setDefaultRequestConfig(requestConfig).build());
-			HTTP_CLIENT_MAP.put(owner, nSyncHttpClient);
+			HTTP_SYNC_CLIENT_MAP.put(namespace, nSyncHttpClient);
 			return nSyncHttpClient;
 		}
 	}
 
-	public static NAsyncHttpClient newAsyncHttpClient(String owner,
+	public static NAsyncHttpClient newAsyncHttpClient(String namespace,
 			RequestConfig requestConfig) {
 		synchronized (ASYNC_MONITOR) {
-			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(owner);
+			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(namespace);
 
 			if (nAsyncHttpClient != null) {
 				return nAsyncHttpClient;
@@ -147,8 +149,9 @@ public class HttpClientManager {
 			nAsyncHttpClient = new NacosAsyncHttpClient(
 					HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
 							.build());
-			HTTP_ASYNC_CLIENT_MAP.put(owner, nAsyncHttpClient);
+			HTTP_ASYNC_CLIENT_MAP.put(namespace, nAsyncHttpClient);
 			return nAsyncHttpClient;
 		}
 	}
+
 }

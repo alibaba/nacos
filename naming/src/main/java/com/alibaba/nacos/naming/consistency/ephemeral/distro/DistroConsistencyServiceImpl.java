@@ -60,7 +60,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author nkorange
  * @since 1.0.0
  */
-@DependsOn("serverMemberManager")
+@DependsOn("core")
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
 

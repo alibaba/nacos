@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.alibaba.nacos.client.utils.StringUtils.*;
+import static com.alibaba.nacos.common.utils.StringUtils.*;
 import static org.junit.Assert.*;
 
 /**

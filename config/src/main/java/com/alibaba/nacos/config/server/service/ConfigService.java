@@ -19,6 +19,7 @@ import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -76,7 +77,7 @@ public class ConfigService {
                     "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (PropertyUtil.isUseExternalDB()) {
+            } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
             updateMd5(groupKey, md5, lastModifiedTs);
@@ -121,7 +122,7 @@ public class ConfigService {
                     "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (PropertyUtil.isUseExternalDB()) {
+            } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
             String[] betaIpsArr = betaIps.split(",");
@@ -160,7 +161,7 @@ public class ConfigService {
                     "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
-            } else if (PropertyUtil.isUseExternalDB()) {
+            } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
 
@@ -192,7 +193,7 @@ public class ConfigService {
 
         try {
             final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
-            if (PropertyUtil.isUseExternalDB()) {
+            if (!PropertyUtil.isDirectRead()) {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {
                     dumpLog.warn(
@@ -324,7 +325,7 @@ public class ConfigService {
         }
 
         try {
-            if (PropertyUtil.isUseExternalDB()) {
+            if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
             }
             CACHE.remove(groupKey);
@@ -358,7 +359,7 @@ public class ConfigService {
         }
 
         try {
-            if (PropertyUtil.isUseExternalDB()) {
+            if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.removeConfigInfo4Beta(dataId, group, tenant);
             }
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
@@ -393,7 +394,7 @@ public class ConfigService {
         }
 
         try {
-            if (PropertyUtil.isUseExternalDB()) {
+            if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.removeConfigInfo4Tag(dataId, group, tenant, tag);
             }
 

@@ -16,24 +16,23 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
+class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
 
     private CloseableHttpAsyncClient asyncClient;
 
-    public NacosAsyncHttpClient(CloseableHttpAsyncClient asyncClient) {
+    NacosAsyncHttpClient(CloseableHttpAsyncClient asyncClient) {
         this.asyncClient = asyncClient;
         this.asyncClient.start();
     }
@@ -42,7 +41,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void get(final String url,
                         final Header header,
                         final Query query,
-                        final TypeReference<RestResult<T>> token,
+                        final Type token,
                         final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.GET);
         execute(asyncClient, token, callback, requestBase);
@@ -53,7 +52,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
                              final Header header,
                              final Query query,
                              final Object body,
-                             final TypeReference<RestResult<T>> token,
+                             final Type token,
                              final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         execute(asyncClient, token, callback, requestBase);
@@ -63,7 +62,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
     public <T> void delete(final String url,
                            final Header header,
                            final Query query,
-                           final TypeReference<RestResult<T>> token,
+                           final Type token,
                            final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.DELETE);
         execute(asyncClient, token, callback, requestBase);
@@ -74,7 +73,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
                         final Header header,
                         final Query query,
                         final Object body,
-                        final TypeReference<RestResult<T>> token,
+                        final Type token,
                         final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         execute(asyncClient, token, callback, requestBase);
@@ -85,7 +84,7 @@ public class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpCl
                          final Header header,
                          final Query query,
                          final Object body,
-                         final TypeReference<RestResult<T>> token,
+                         final Type token,
                          final Callback<T> callback) {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         execute(asyncClient, token, callback, requestBase);

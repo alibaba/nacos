@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
@@ -58,6 +58,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     private boolean initialize = false;
     private boolean jdbcTemplateInit = false;
+
+    private String healthStatus = "UP";
 
     @PostConstruct
     @Override
@@ -165,7 +167,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     @Override
     public String getHealth() {
-        return "UP";
+        return healthStatus;
+    }
+
+    public void setHealthStatus(String healthStatus) {
+        this.healthStatus = healthStatus;
     }
 
     /**

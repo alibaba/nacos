@@ -57,7 +57,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * @author nacos
  */
-@DependsOn("serverMemberManager")
+@DependsOn("core")
 @Component
 public class RaftCore {
 

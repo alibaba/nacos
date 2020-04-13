@@ -18,22 +18,22 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
-import com.alibaba.nacos.core.cluster.task.ClusterConfSyncTask;
 import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Task implements Subscribe<IsolationEvent>, Runnable {
+public abstract class Task extends SmartSubscribe implements Runnable {
 
     protected volatile boolean shutdown = false;
     protected NAsyncHttpClient asyncHttpClient;
     protected ServerMemberManager memberManager;
+    private volatile boolean skip = false;
 
     public Task(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -43,7 +43,7 @@ public abstract class Task implements Subscribe<IsolationEvent>, Runnable {
 
     @Override
     public void run() {
-        if (shutdown) {
+        if (shutdown || skip) {
             return;
         }
         try {
@@ -64,17 +64,30 @@ public abstract class Task implements Subscribe<IsolationEvent>, Runnable {
     }
 
     @Override
-    public final void onEvent(IsolationEvent event) {
-        // Execute the shutdown hook
-        shutdown();
-        // Execute this node logout logic
-        Task task = new MemberShutdownTask(memberManager);
-        task.executeBody();
+    public final void onEvent(Event event) {
+        if (event instanceof IsolationEvent) {
+            // Trigger task ignore
+            skip = true;
+
+            // Execute this node logout logic
+            Task task = new MemberShutdownTask(memberManager);
+            task.executeBody();
+            return;
+        }
+        if (event instanceof RecoverEvent) {
+            skip = false;
+        }
     }
 
     @Override
-    public final Class<? extends Event> subscribeType() {
-        return IsolationEvent.class;
+    public boolean canNotify(Event event) {
+        if (event instanceof IsolationEvent) {
+            return true;
+        }
+        if (event instanceof RecoverEvent) {
+            return true;
+        }
+        return false;
     }
 
     /**

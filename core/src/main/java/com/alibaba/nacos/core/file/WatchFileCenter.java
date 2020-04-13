@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.file;
 
-import com.alibaba.nacos.core.executor.ExecutorFactory;
-import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -118,7 +118,6 @@ public class WatchFileCenter {
         }
 
         void start() {
-
             NotifyCenter.registerSubscribe(new Subscribe<FileChangeEvent>() {
                 @Override
                 public void onEvent(FileChangeEvent event) {
@@ -162,7 +161,7 @@ public class WatchFileCenter {
                                 .paths(paths)
                                 .event(event)
                                 .build();
-                        NotifyCenter.publishEvent(FileChangeEvent.class, fileChangeEvent);
+                        NotifyCenter.publishEvent(fileChangeEvent);
                     }
 
                     if (!watchKey.reset()) {

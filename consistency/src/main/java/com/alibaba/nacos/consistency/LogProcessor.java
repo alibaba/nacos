@@ -61,33 +61,6 @@ public abstract class LogProcessor {
     public abstract GetResponse getData(GetRequest request);
 
     /**
-     * Commit transaction and auto inject biz info
-     *
-     * @param log {@link Log}
-     * @return is success
-     * @throws Exception
-     */
-    public final LogFuture commitAutoSetGroup(Log log) throws Exception {
-        Log gLog = Log.newBuilder(log)
-                .setGroup(group())
-                .build();
-        return this.protocol.submit(gLog);
-    }
-
-    /**
-     * Commit transaction, asynchronous and auto inject biz info
-     *
-     * @param log {@link Log}
-     * @return {@link CompletableFuture<Boolean>}
-     */
-    public final CompletableFuture<LogFuture> commitAsyncAutoSetGroup(Log log) {
-        Log gLog = Log.newBuilder(log)
-                .setGroup(group())
-                .build();
-        return this.protocol.submitAsync(gLog);
-    }
-
-    /**
      * Process Submitted Log
      *
      * @param log {@link Log}

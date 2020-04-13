@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -57,9 +58,9 @@ public final class ProtocolMetaData {
                 .map(entry -> {
                     return Pair.with(entry.getKey(), entry.getValue().getItemMap()
                             .entrySet().stream()
-                            .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), HashMap::putAll));
+                            .collect(TreeMap::new, (m, e) -> m.put(e.getKey(), e.getValue().getData()), TreeMap::putAll));
                 })
-                .collect(HashMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), HashMap::putAll);
+                .collect(TreeMap::new, (m, e) -> m.put(e.getValue0(), e.getValue1()), TreeMap::putAll);
     }
 
     // Does not guarantee thread safety, there may be two updates of

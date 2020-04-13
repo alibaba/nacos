@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
-import com.alibaba.nacos.core.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.option.ReadOnlyOption;
 import org.apache.commons.lang3.StringUtils;

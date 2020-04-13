@@ -16,19 +16,6 @@
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.transaction.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.transaction.SqlContextUtils;
-import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import java.util.ArrayList;
-import javax.annotation.PostConstruct;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import static com.alibaba.nacos.config.server.service.RowMapperManager.ROLE_INFO_ROW_MAPPER;
-
 
 /**
  * Role CRUD service
@@ -36,92 +23,17 @@ import static com.alibaba.nacos.config.server.service.RowMapperManager.ROLE_INFO
  * @author nkorange
  * @since 1.2.0
  */
-@Service
-public class RolePersistService extends PersistService {
+@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
+public interface RolePersistService {
 
-    @Autowired
-    private DatabaseOperate databaseOperate;
+    Page<RoleInfo> getRoles(int pageNo, int pageSize);
 
-    @PostConstruct
-    protected void postConstruct() {
-        NotifyCenter.registerPublisher(RoleChangeEvent::new, RoleChangeEvent.class);
-    }
+    Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize);
 
-    public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
+    void addRole(String role, String userName);
 
-        PaginationHelper<RoleInfo> helper = new PaginationHelper<>();
+    void deleteRole(String role);
 
-        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-        String sqlFetchRows
-                = "select role,username from roles where ";
-
-        String where = " 1=1 ";
-
-        Page<RoleInfo> pageInfo = helper.fetchPage(databaseOperate, sqlCountRows
-                        + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                pageSize, ROLE_INFO_ROW_MAPPER);
-        if (pageInfo == null) {
-            pageInfo = new Page<>();
-            pageInfo.setTotalCount(0);
-            pageInfo.setPageItems(new ArrayList<>());
-        }
-        return pageInfo;
-
-    }
-
-    public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-
-        PaginationHelper<RoleInfo> helper = new PaginationHelper<>();
-
-        String sqlCountRows = "select count(*) from roles where ";
-        String sqlFetchRows
-                = "select role,username from roles where ";
-
-        String where = " username='" + username + "' ";
-
-        if (StringUtils.isBlank(username)) {
-            where = " 1=1 ";
-        }
-
-        return helper.fetchPage(databaseOperate, sqlCountRows
-                        + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                pageSize, ROLE_INFO_ROW_MAPPER);
-
-    }
-
-    public void addRole(String role, String userName) {
-
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
-
-        try {
-            SqlContextUtils.addSqlContext(sql, role, userName);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
-            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
-        } finally {
-            SqlContextUtils.cleanCurrentSqlContext();
-        }
-    }
-
-    public void deleteRole(String role) {
-        String sql = "DELETE from roles WHERE role=?";
-        try {
-            SqlContextUtils.addSqlContext(sql, role);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
-            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
-        } finally {
-            SqlContextUtils.cleanCurrentSqlContext();
-        }
-    }
-
-    public void deleteRole(String role, String username) {
-        String sql = "DELETE from roles WHERE role=? and username=?";
-        try {
-            SqlContextUtils.addSqlContext(sql, role, username);
-            databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
-            NotifyCenter.publishEvent(RoleChangeEvent.class, new RoleChangeEvent());
-        } finally {
-            SqlContextUtils.cleanCurrentSqlContext();
-        }
-    }
+    void deleteRole(String role, String username);
 
 }

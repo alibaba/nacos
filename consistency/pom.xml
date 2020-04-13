@@ -83,8 +83,8 @@
             <artifactId>javatuples</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo</artifactId>
+            <groupId>com.caucho</groupId>
+            <artifactId>hessian</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>

@@ -15,12 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
  * user info
  *
  * @author wfnuser
  */
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 3371769277802700069L;
     private String username;
     private String password;
 

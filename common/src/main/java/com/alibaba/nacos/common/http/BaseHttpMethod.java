@@ -176,7 +176,7 @@ public enum BaseHttpMethod {
                 return method;
             }
         }
-        throw new IllegalArgumentException("Unsupported http method");
+        throw new IllegalArgumentException("Unsupported http method : " + name);
     }
 
 }

@@ -89,9 +89,9 @@ public class NacosRoleServiceImpl {
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
 
-            roleSet = tmpRoleSet;
-            roleInfoMap = tmpRoleInfoMap;
-            permissionInfoMap = tmpPermissionInfoMap;
+            roleSet.addAll(tmpRoleSet);
+            roleInfoMap.putAll(tmpRoleInfoMap);
+            permissionInfoMap.putAll(tmpPermissionInfoMap);
         } catch (Exception e) {
             Loggers.AUTH.warn("[LOAD-ROLES] load failed", e);
         }

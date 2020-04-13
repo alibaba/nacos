@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.http.HttpUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -30,15 +33,27 @@ import java.util.Objects;
 public class ReuseUploadFileHttpServletRequest extends
 		StandardMultipartHttpServletRequest implements ReuseHttpRequest {
 
+	private final HttpServletRequest request;
+
 	public ReuseUploadFileHttpServletRequest(HttpServletRequest request)
 			throws MultipartException {
 		super(request);
+		this.request = request;
 	}
 
 	@Override
 	public Object getBody() throws Exception {
-		MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-		parts.add("file", Objects.requireNonNull(super.getFile("file")).getResource());
-		return parts;
+		MultipartFile target = super.getFile("file");
+		if (Objects.nonNull(target)) {
+			MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+			parts.add("file", target.getResource());
+			return parts;
+		} else {
+
+			// The content-type for the configuration publication might be "multipart/form-data"
+
+			return HttpUtils.encodingParams(HttpUtils.translateParameterMap(request.getParameterMap()),
+					StandardCharsets.UTF_8.name());
+		}
 	}
 }

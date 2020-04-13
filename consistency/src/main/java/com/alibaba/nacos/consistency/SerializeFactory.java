@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.consistency.serialize.KryoSerializer;
+import com.alibaba.nacos.consistency.serialize.HessianSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,16 +27,16 @@ import java.util.ServiceLoader;
  */
 public class SerializeFactory {
 
-	public static final String KRYO_INDEX = "Kryo".toLowerCase();
+	public static final String HESSIAN_INDEX = "Kryo".toLowerCase();
 
 	private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(
 			4);
 
-	public static String DEFAULT_SERIALIZER = KRYO_INDEX;
+	public static String DEFAULT_SERIALIZER = HESSIAN_INDEX;
 
 	static {
-		Serializer serializer = new KryoSerializer();
-		SERIALIZER_MAP.put(KRYO_INDEX, serializer);
+		Serializer serializer = new HessianSerializer();
+		SERIALIZER_MAP.put(HESSIAN_INDEX, serializer);
 		ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
 		for (Serializer item : loader) {
 			SERIALIZER_MAP.put(item.name().toLowerCase(), item);

@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.core.notify.Event;
 
 /**
+ * Causes the server to handle the isolated state, unable to process any requests
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class IsolationEvent implements Event {

@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+
+import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -38,7 +39,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @throws Exception
      */
     <T> RestResult<T> get(String url, Header header, Query query,
-                          TypeReference<RestResult<T>> token) throws Exception;
+                          Type token) throws Exception;
 
     /**
      * get request, may be pulling a lot of data
@@ -52,7 +53,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @throws Exception
      */
     <T> RestResult<T> getLarge(String url, Header header, Query query, Object body,
-                               TypeReference<RestResult<T>> token) throws Exception;
+                               Type token) throws Exception;
 
     /**
      * http delete
@@ -65,7 +66,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @throws Exception
      */
     <T> RestResult<T> delete(String url, Header header, Query query,
-                             TypeReference<RestResult<T>> token) throws Exception;
+                             Type token) throws Exception;
 
     /**
      * http put
@@ -79,7 +80,7 @@ public interface NSyncHttpClient extends NHttpClient {
      * @throws Exception
      */
     <T> RestResult<T> put(String url, Header header, Query query, Object body,
-                          TypeReference<RestResult<T>> token) throws Exception;
+                          Type token) throws Exception;
 
     /**
      * http post
@@ -93,6 +94,6 @@ public interface NSyncHttpClient extends NHttpClient {
      * @throws Exception
      */
     <T> RestResult<T> post(String url, Header header, Query query, Object body,
-                           TypeReference<RestResult<T>> token) throws Exception;
+                           Type token) throws Exception;
 
 }

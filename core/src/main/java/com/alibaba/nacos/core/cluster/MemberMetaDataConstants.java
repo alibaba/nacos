@@ -33,14 +33,11 @@ public class MemberMetaDataConstants {
 
 	public static final String WEIGHT = "weight";
 
-	public static final String DISTRO_BEATS = "distro_beats";
-
 	public static final String[] META_KEY_LIST = new String[]{
 			RAFT_PORT,
 			SITE_KEY,
 			AD_WEIGHT,
 			WEIGHT,
-			DISTRO_BEATS,
 	};
 
 }
