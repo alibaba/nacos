@@ -32,26 +32,6 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class LogProcessor {
 
-    protected ConsistencyProtocol<? extends Config> protocol;
-
-    /**
-     * Pass the consistency protocol implementer to LogProcessor
-     *
-     * @param protocol {@link ConsistencyProtocol<? extends Config>} Consistent protocol implementers
-     */
-    public final void injectProtocol(ConsistencyProtocol<? extends Config> protocol) {
-        this.protocol = protocol;
-        afterInject(protocol);
-    }
-
-    /**
-     * Something is done after the ConsistencyProtocol injection
-     *
-     * @param protocol {@link ConsistencyProtocol<? extends Config>} Consistent protocol implementers
-     */
-    protected void afterInject(ConsistencyProtocol<? extends Config> protocol) {
-    }
-
     /**
      * get data by key
      *

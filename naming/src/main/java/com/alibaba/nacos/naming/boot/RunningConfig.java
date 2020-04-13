@@ -59,7 +59,7 @@ public class RunningConfig implements Subscribe<ServerInitializedEvent> {
 
         isServerInitialized = true;
 
-        NotifyCenter.deregisterPublisher(ServerInitializedEvent.class);
+        NotifyCenter.deregisterSubscribe(this);
     }
 
     public static int getServerPort() {

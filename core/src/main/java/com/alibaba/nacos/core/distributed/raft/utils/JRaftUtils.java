@@ -17,17 +17,17 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.consistency.entity.Log;
-import com.alibaba.nacos.core.distributed.raft.processor.NAddPeerRequestProcessor;
-import com.alibaba.nacos.core.distributed.raft.processor.NRemovePeerRequestProcessor;
 import com.alipay.remoting.ConnectionEventType;
 import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.AddLearnersRequestProcessor;
+import com.alipay.sofa.jraft.rpc.impl.cli.AddPeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ChangePeersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.GetLeaderRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.GetPeersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.RemoveLearnersRequestProcessor;
+import com.alipay.sofa.jraft.rpc.impl.cli.RemovePeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ResetLearnersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.ResetPeerRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.SnapshotRequestProcessor;
@@ -75,8 +75,8 @@ public class JRaftUtils {
         rpcServer.registerUserProcessor(new TimeoutNowRequestProcessor(raftExecutor));
         rpcServer.registerUserProcessor(new ReadIndexRequestProcessor(raftExecutor));
         // raft cli service
-        rpcServer.registerUserProcessor(new NAddPeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new NRemovePeerRequestProcessor(cliExecutor));
+        rpcServer.registerUserProcessor(new AddPeerRequestProcessor(cliExecutor));
+        rpcServer.registerUserProcessor(new RemovePeerRequestProcessor(cliExecutor));
         rpcServer.registerUserProcessor(new ResetPeerRequestProcessor(cliExecutor));
         rpcServer.registerUserProcessor(new ChangePeersRequestProcessor(cliExecutor));
         rpcServer.registerUserProcessor(new GetLeaderRequestProcessor(cliExecutor));

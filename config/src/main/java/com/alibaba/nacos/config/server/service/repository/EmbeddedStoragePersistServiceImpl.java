@@ -92,8 +92,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
 @SuppressWarnings("PMD.MethodReturnWrapperTypeRule")
+@Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
@@ -111,6 +111,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
     @Autowired
 	private DatabaseOperate databaseOperate;
+
 	@Autowired
 	private IdGeneratorManager idGeneratorManager;
 

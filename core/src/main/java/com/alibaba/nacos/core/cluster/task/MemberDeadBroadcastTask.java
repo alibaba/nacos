@@ -35,6 +35,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * Broadcast the node that the local node considers to be DOWN
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MemberDeadBroadcastTask extends Task {

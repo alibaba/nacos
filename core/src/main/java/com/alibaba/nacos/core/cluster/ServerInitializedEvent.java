@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.SlowEvent;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 
@@ -25,7 +26,7 @@ import javax.servlet.ServletContext;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ServerInitializedEvent implements Event {
+public class ServerInitializedEvent implements SlowEvent {
 
 	private WebServerInitializedEvent event;
 	private ServletContext servletContext;

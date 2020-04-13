@@ -84,9 +84,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
 
     private Set<Task> tasks = new HashSet<>();
 
-    // The node here is always the node information of the UP state
+    // here is always the node information of the "UP" state
     private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
-
 
     public ServerMemberManager(ServletContext servletContext) {
         this.servletContext = servletContext;

@@ -26,45 +26,47 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
-import com.google.common.annotations.VisibleForTesting;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
+ * Conformance protocol management, responsible for managing the lifecycle
+ * of conformance protocols in Nacos
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@Component(value = "CAPProtocol")
+@Component(value = "ProtocolManager")
+@DependsOn("serverMemberManager")
 public class ProtocolManager implements ApplicationListener<ContextStartedEvent>, DisposableBean, MemberChangeListener {
 
 	private CPProtocol cpProtocol;
 	private APProtocol apProtocol;
 
+	@Autowired
 	private ServerMemberManager memberManager;
 
-	@VisibleForTesting
-	public void setMemberManager(ServerMemberManager serverMemberManager) {
-		this.memberManager = serverMemberManager;
-	}
-
-	public void init(ServerMemberManager memberManager) {
+	@PostConstruct
+	public void init() {
 
 		this.memberManager = memberManager;
 
@@ -102,7 +104,7 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 			Class configType = ClassUtils.resolveGenericType(protocol.getClass());
 			Config config = (Config) ApplicationUtils.getBean(configType);
 			injectMembers4AP(config);
-			config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4AP.class, protocol));
+			config.addLogProcessors(loadProcessor(LogProcessor4AP.class, protocol));
 			protocol.init((config));
 			ProtocolManager.this.apProtocol = protocol;
 		});
@@ -113,7 +115,7 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 			Class configType = ClassUtils.resolveGenericType(protocol.getClass());
 			Config config = (Config) ApplicationUtils.getBean(configType);
 			injectMembers4CP(config);
-			config.addLogProcessors(loadProcessorAndInjectProtocol(LogProcessor4CP.class, protocol));
+			config.addLogProcessors(loadProcessor(LogProcessor4CP.class, protocol));
 			protocol.init((config));
 			ProtocolManager.this.cpProtocol = protocol;
 		});
@@ -123,18 +125,18 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 		final Member selfMember = memberManager.getSelf();
 		final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(selfMember.getExtendVal(
 				MemberMetaDataConstants.RAFT_PORT)));
-		Set<String> others = MemberUtils.toCPMembersInfo(memberManager.allMembers());
+		Set<String> others = toCPMembersInfo(memberManager.allMembers());
 		config.setMembers(self, others);
 	}
 
 	private void injectMembers4AP(Config config) {
 		final String self = memberManager.getSelf().getAddress();
-		Set<String> others = MemberUtils.toAPMembersInfo(memberManager.allMembers());
+		Set<String> others = toAPMembersInfo(memberManager.allMembers());
 		config.setMembers(self, others);
 	}
 
 	@SuppressWarnings("all")
-	private List<LogProcessor> loadProcessorAndInjectProtocol(Class cls, ConsistencyProtocol protocol) {
+	private List<LogProcessor> loadProcessor(Class cls, ConsistencyProtocol protocol) {
 		Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils.getBeansOfType(cls);
 
 		final List<LogProcessor> result = new ArrayList<>(beans.values());
@@ -143,11 +145,6 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 		for (LogProcessor t : loader) {
 			result.add(t);
 		}
-
-		for (LogProcessor processor : result) {
-			processor.injectProtocol(protocol);
-		}
-
 		return result;
 	}
 
@@ -155,11 +152,27 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 	public void onEvent(NodeChangeEvent event) {
 		Collection<Member> members = event.getAllMembers();
 		if (event.getJoin()) {
-			GlobalExecutor.executeByCommon(() -> apProtocol.addMembers(MemberUtils.toAPMembersInfo(members)));
-			GlobalExecutor.executeByCommon(() -> cpProtocol.addMembers(MemberUtils.toCPMembersInfo(members)));
+			GlobalExecutor.executeByCommon(() -> apProtocol.addMembers(toAPMembersInfo(members)));
+			GlobalExecutor.executeByCommon(() -> cpProtocol.addMembers(toCPMembersInfo(members)));
 		} else {
-			GlobalExecutor.executeByCommon(() -> apProtocol.removeMembers(MemberUtils.toAPMembersInfo(members)));
-			GlobalExecutor.executeByCommon(() -> cpProtocol.removeMembers(MemberUtils.toCPMembersInfo(members)));
+			GlobalExecutor.executeByCommon(() -> apProtocol.removeMembers(toAPMembersInfo(members)));
+			GlobalExecutor.executeByCommon(() -> cpProtocol.removeMembers(toCPMembersInfo(members)));
 		}
+	}
+
+	private static Set<String> toAPMembersInfo(Collection<Member> members) {
+		Set<String> nodes = new HashSet<>();
+		members.forEach(member -> nodes.add(member.getAddress()));
+		return nodes;
+	}
+
+	private static Set<String> toCPMembersInfo(Collection<Member> members) {
+		Set<String> nodes = new HashSet<>();
+		members.forEach(member -> {
+			final String ip = member.getIp();
+			final int port = Integer.parseInt(String.valueOf(member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+			nodes.add(ip + ":" + port);
+		});
+		return nodes;
 	}
 }

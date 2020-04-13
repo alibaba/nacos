@@ -14,22 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.snapshot;
-
-import java.util.function.BiConsumer;
+package com.alibaba.nacos.core.distributed.raft.exception;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class CallFinally {
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+public class JRaftException extends RuntimeException {
 
-    private final BiConsumer<Boolean, Throwable> sys;
+	private static final long serialVersionUID = 8802314713344513544L;
 
-    public CallFinally(BiConsumer<Boolean, Throwable> sys) {
-        this.sys = sys;
-    }
+	public JRaftException() {
+	}
 
-    public void run(boolean result, Throwable throwable) {
-        sys.accept(result, throwable);
-    }
+	public JRaftException(String message) {
+		super(message);
+	}
+
+	public JRaftException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public JRaftException(Throwable cause) {
+		super(cause);
+	}
+
+	public JRaftException(String message, Throwable cause, boolean enableSuppression,
+			boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
+	}
 }

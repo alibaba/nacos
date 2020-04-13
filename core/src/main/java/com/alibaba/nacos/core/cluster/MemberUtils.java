@@ -34,22 +34,6 @@ public class MemberUtils {
 
 	private static final String SEMICOLON = ":";
 
-	public static Set<String> toAPMembersInfo(Collection<Member> members) {
-		Set<String> nodes = new HashSet<>();
-		members.forEach(member -> nodes.add(member.getAddress()));
-		return nodes;
-	}
-
-	public static Set<String> toCPMembersInfo(Collection<Member> members) {
-		Set<String> nodes = new HashSet<>();
-		members.forEach(member -> {
-			final String ip = member.getIp();
-			final int port = Integer.parseInt(String.valueOf(member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
-			nodes.add(ip + ":" + port);
-		});
-		return nodes;
-	}
-
 	public static void copy(Member newMember, Member oldMember) {
 		oldMember.getExtendInfo().putAll(newMember.getExtendInfo());
 	}

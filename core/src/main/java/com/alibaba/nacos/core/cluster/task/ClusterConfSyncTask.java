@@ -42,6 +42,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * Responsible for handling address server logic and cluster.conf file change monitoring
+ *
+ * If the user sets the address of the address server, it will automatically turn to
+ * synchronize the information of the entire cluster node from the address server.
+ * Otherwise, the file change of cluster.conf will be monitored. When the cluster.conf
+ * file changes, the inotify mechanism will be used to change the node information
+ * at the same time
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")

@@ -26,6 +26,7 @@ import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
+import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosAsyncProcessor;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
@@ -213,12 +214,14 @@ public class JRaftServer {
 			}
 			catch (Exception e) {
 				Loggers.RAFT.error("raft protocol start failure, error : {}", e);
-				throw new RuntimeException(e);
+				throw new JRaftException(e);
 			}
 		}
 	}
 
 	synchronized void createMultiRaftGroup(Collection<LogProcessor4CP> processors) {
+
+		// There is no reason why the LogProcessor cannot be processed because of the synchronization
 
 		if (!this.isStarted) {
 			this.processors.addAll(processors);
@@ -254,8 +257,7 @@ public class JRaftServer {
 			// Ensure that each Raft Group has its own configuration and NodeOptions
 			Configuration configuration = conf.copy();
 			NodeOptions copy = nodeOptions.copy();
-			NacosStateMachine machine = new NacosStateMachine(serializer, this,
-					processor);
+			NacosStateMachine machine = new NacosStateMachine(this, processor);
 
 			copy.setLogUri(logUri);
 			copy.setRaftMetaUri(metaDataUri);

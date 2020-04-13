@@ -33,6 +33,7 @@ import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.GetResponse;
@@ -143,6 +144,9 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Autowired
 	private ServerMemberManager memberManager;
 
+	@Autowired
+	private CPProtocol protocol;
+
 	private LocalDataSourceServiceImpl dataSourceService;
 	private JdbcTemplate jdbcTemplate;
 	private TransactionTemplate transactionTemplate;
@@ -178,16 +182,17 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			}
 		});
 
+		subscribeLeaderStatus();
+
 		LogUtil.defaultLog.info("use DistributedTransactionServicesImpl");
 	}
 
 	@VisibleForTesting
-	public void moickConsistencyProtocol(ConsistencyProtocol protocol) {
+	public void moickConsistencyProtocol(CPProtocol protocol) {
 		this.protocol = protocol;
 	}
 
-	@Override
-	protected void afterInject(ConsistencyProtocol<? extends Config> protocol) {
+	private void subscribeLeaderStatus() {
 		protocol.protocolMetaData().subscribe(group(),
 				com.alibaba.nacos.consistency.cp.Constants.TERM_META_DATA,
 				new Observer() {

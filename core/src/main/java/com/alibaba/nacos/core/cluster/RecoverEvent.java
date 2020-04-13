@@ -17,13 +17,14 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.SlowEvent;
 
 /**
  * This event causes the server in Isolation to return to its normal service state
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class RecoverEvent implements Event {
+public class RecoverEvent implements SlowEvent {
 
 	@Override
 	public Class<? extends Event> eventType() {

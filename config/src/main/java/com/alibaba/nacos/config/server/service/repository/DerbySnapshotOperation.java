@@ -20,7 +20,6 @@ import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.snapshot.CallFinally;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
@@ -37,6 +36,7 @@ import java.sql.Connection;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 import java.util.zip.Checksum;
 import javax.sql.DataSource;
 
@@ -58,7 +58,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     }
 
     @Override
-    public void onSnapshotSave(Writer writer, CallFinally callFinally) {
+    public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
         RaftExecutor.doSnapshot(() -> {
             writeLock.lock();
             try {
@@ -77,11 +77,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 final LocalFileMeta meta = new LocalFileMeta();
                 meta.append(checkSumKey, Long.toHexString(checksum.getValue()));
 
-                callFinally.run(writer.addFile(snapshotArchive, meta), null);
+                callFinally.accept(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
                 LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.",
                         writer.getPath(), writer.listFiles(), t);
-                callFinally.run(false, t);
+                callFinally.accept(false, t);
             } finally {
                 writeLock.unlock();
             }

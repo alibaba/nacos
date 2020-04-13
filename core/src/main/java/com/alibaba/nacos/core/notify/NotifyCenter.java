@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.DisruptorFactory;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.google.common.annotations.VisibleForTesting;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
@@ -36,9 +37,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 /**
+ * // TODO multipart event reuse event-queue
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
@@ -46,6 +50,29 @@ public class NotifyCenter {
 
     private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
     private static final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
+    private static final Publisher SHARE_PUBLISHER = new Publisher(SlowEvent.class, new BiPredicate<Event, Subscribe>() {
+        @Override
+        public boolean test(Event event, Subscribe subscribe) {
+            final String sourceName = event.eventType().getCanonicalName();
+            final String targetName = subscribe.subscribeType().getCanonicalName();
+            return Objects.equals(sourceName, targetName);
+        }
+    });
+
+    @VisibleForTesting
+    public static Map<String, Publisher> getPublisherMap() {
+        return PUBLISHER_MAP;
+    }
+
+    @VisibleForTesting
+    public static Set<SmartSubscribe> getSmartSubscribes() {
+        return SMART_SUBSCRIBES;
+    }
+
+    @VisibleForTesting
+    public static Publisher getSharePublisher() {
+        return SHARE_PUBLISHER;
+    }
 
     private static boolean stopDeferPublish = false;
 
@@ -64,7 +91,6 @@ public class NotifyCenter {
             }
             System.out.println("[NotifyCenter] Destruction of the end");
         }));
-
     }
 
     public static void stopDeferPublish() {
@@ -81,12 +107,17 @@ public class NotifyCenter {
      * @param <T>       event type
      */
     public static <T> void registerSubscribe(final Subscribe consumer) {
+        final Class<? extends Event> cls = consumer.subscribeType();
+        if (SlowEvent.class.isAssignableFrom(cls)) {
+            SHARE_PUBLISHER.addSubscribe(consumer);
+            return;
+        }
         if (consumer instanceof SmartSubscribe) {
             SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
             return;
         }
         final String topic = consumer.subscribeType().getCanonicalName();
-        PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(consumer.subscribeType()));
+        PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(cls));
         Publisher publisher = PUBLISHER_MAP.get(topic);
         publisher.addSubscribe(consumer);
     }
@@ -98,6 +129,11 @@ public class NotifyCenter {
      * @param <T>
      */
     public static <T> void deregisterSubscribe(final Subscribe consumer) {
+        final Class<? extends Event> cls = consumer.subscribeType();
+        if (SlowEvent.class.isAssignableFrom(cls)) {
+            SHARE_PUBLISHER.unSubscribe(consumer);
+            return;
+        }
         if (consumer instanceof SmartSubscribe) {
             SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
             return;
@@ -131,6 +167,12 @@ public class NotifyCenter {
     private static void publishEvent(final Class<? extends Event> eventType,
                                     final Event event) {
         final String topic = eventType.getCanonicalName();
+
+        if (SlowEvent.class.isAssignableFrom(eventType)) {
+            SHARE_PUBLISHER.publish(event);
+            return;
+        }
+
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
             if (!publisher.isInitialized()) {
@@ -173,22 +215,40 @@ public class NotifyCenter {
         publisher.shutdown();
     }
 
-    private static class Publisher {
+    public static class Publisher {
 
         private final Class<? extends Event> eventType;
         private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
         private volatile boolean initialized = false;
-        private Disruptor<EventHandle> disruptor;
-        private Supplier<? extends Event> supplier;
         private volatile boolean canOpen = false;
         private volatile boolean shutdown = false;
+        private Disruptor<EventHandle> disruptor;
+        private Supplier<? extends Event> supplier;
 
-        public Publisher(final Class<? extends Event> eventType) {
+        // judge the subscribe can deal Event
+
+        private BiPredicate<Event, Subscribe> filter = new BiPredicate<Event, Subscribe>() {
+            @Override
+            public boolean test(Event event, Subscribe subscribe) {
+                return true;
+            }
+        };
+
+        Publisher(final Class<? extends Event> eventType) {
             this.eventType = eventType;
+        }
+
+        Publisher(final Class<? extends Event> eventType, BiPredicate<Event, Subscribe> filter) {
+            this.eventType = eventType;
+            this.filter = filter;
         }
 
         void setSupplier(Supplier<? extends Event> supplier) {
             this.supplier = supplier;
+        }
+
+        public CopyOnWriteArraySet<Subscribe> getSubscribes() {
+            return subscribes;
         }
 
         synchronized void start() {
@@ -226,7 +286,13 @@ public class NotifyCenter {
                     tmp.addAll(subscribes);
 
                     for (Subscribe subscribe : tmp) {
+
                         final Event event = handle.getEvent();
+
+                        if (!filter.test(event, subscribe)) {
+                            continue;
+                        }
+
                         if (subscribe instanceof SmartSubscribe) {
                             if (!((SmartSubscribe) subscribe).canNotify(event)) {
                                 continue;
