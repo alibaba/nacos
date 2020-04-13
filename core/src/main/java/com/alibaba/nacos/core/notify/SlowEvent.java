@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
-
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.SlowEvent;
+package com.alibaba.nacos.core.notify;
 
 /**
- * Causes the server to handle the isolated state, unable to process any requests
+ * this event share one event-queue
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class IsolationEvent implements SlowEvent {
-
-	@Override
-	public Class<? extends Event> eventType() {
-		return IsolationEvent.class;
-	}
+public interface SlowEvent extends Event {
 }

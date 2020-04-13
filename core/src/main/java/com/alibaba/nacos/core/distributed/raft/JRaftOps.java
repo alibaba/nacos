@@ -29,6 +29,8 @@ import com.alipay.sofa.jraft.entity.PeerId;
 import java.util.Map;
 
 /**
+ * JRaft operations interface
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

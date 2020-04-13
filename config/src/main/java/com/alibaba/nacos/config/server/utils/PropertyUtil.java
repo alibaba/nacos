@@ -224,6 +224,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // Determines whether to read the data directly
     // if use mysql, Reduce database read pressure
     // if use raft+derby, Reduce leader read pressure
+
     public static boolean isDirectRead() {
         return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
