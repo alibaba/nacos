@@ -16,11 +16,16 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -28,6 +33,9 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -42,14 +50,48 @@ public class HttpClient {
         .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    private static final boolean ENABLE_HTTPS = Boolean
+    public static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
 
     static {
         // limit max redirection
         System.setProperty("http.maxRedirects", "5");
     }
+    static {
+        try {
+            trustAllHttpsCertificates();
+            HttpsURLConnection.setDefaultHostnameVerifier
+                (
+                    (urlHostName, session) -> true
+                );
+        } catch (Exception e) {
+        }
+    }
 
+    private static void trustAllHttpsCertificates()
+        throws NoSuchAlgorithmException, KeyManagementException {
+        TrustManager[] trustAllCerts = new TrustManager[1];
+        trustAllCerts[0] = new TrustAllManager();
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, null);
+        HttpsURLConnection.setDefaultSSLSocketFactory(
+            sc.getSocketFactory());
+    }
+
+    private static class TrustAllManager
+        implements X509TrustManager {
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+
+        public void checkServerTrusted(X509Certificate[] certs,
+                                       String authType) {
+        }
+
+        public void checkClientTrusted(X509Certificate[] certs,
+                                       String authType) {
+        }
+    }
     public static String getPrefix() {
         if (ENABLE_HTTPS) {
             return "https://";

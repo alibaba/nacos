@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.apache.commons.codec.Charsets;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,9 +113,14 @@ public class SecurityProxy {
             Map<String, String> params = new HashMap<String, String>(2);
             params.put("username", username);
             String body = "password=" + password;
-            String url = "http://" + server + contextPath + LOGIN_URL;
+            String url;
+            if (HttpClient.ENABLE_HTTPS){
+                url = "https://" + server + contextPath + LOGIN_URL;
+            }else {
+                url = "http://" + server + contextPath + LOGIN_URL;
+            }
 
-            if (server.contains(Constants.HTTP_PREFIX)) {
+            if (server.contains(Constants.HTTP_PREFIX)||server.contains(Constants.HTTPS_PREFIX)) {
                 url = server + contextPath + LOGIN_URL;
             }
 

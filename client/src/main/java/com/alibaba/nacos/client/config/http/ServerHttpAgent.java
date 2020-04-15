@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
+import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -31,6 +32,7 @@ import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -40,10 +42,7 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -58,6 +57,11 @@ public class ServerHttpAgent implements HttpAgent {
     private SecurityProxy securityProxy;
 
     private String namespaceId;
+
+    private String  httpPre="http://";
+
+    private String  httpsPre="https://";
+
 
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
@@ -74,7 +78,7 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        final boolean isSSL = false;
+
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
@@ -86,8 +90,8 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpGet(
-                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
-                    readTimeoutMs, isSSL);
+                    getUrl(currentServerAddr, path, HttpClient.ENABLE_HTTPS), newHeaders, paramValues, encoding,
+                    readTimeoutMs, HttpClient.ENABLE_HTTPS);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
@@ -127,7 +131,6 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        boolean isSSL = false;
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
@@ -141,8 +144,8 @@ public class ServerHttpAgent implements HttpAgent {
                 }
 
                 HttpResult result = HttpSimpleClient.httpPost(
-                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
-                    readTimeoutMs, isSSL);
+                    getUrl(currentServerAddr, path,HttpClient.ENABLE_HTTPS), newHeaders, paramValues, encoding,
+                    readTimeoutMs, HttpClient.ENABLE_HTTPS);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
@@ -182,7 +185,6 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
                                  long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        boolean isSSL = false;
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
@@ -194,8 +196,8 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpDelete(
-                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
-                    readTimeoutMs, isSSL);
+                    getUrl(currentServerAddr, path,HttpClient.ENABLE_HTTPS), newHeaders, paramValues, encoding,
+                    readTimeoutMs, HttpClient.ENABLE_HTTPS);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
@@ -233,10 +235,19 @@ public class ServerHttpAgent implements HttpAgent {
 
     private String getUrl(String serverAddr, String relativePath) {
         String contextPath = serverListMgr.getContentPath().startsWith("/") ?
-                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
-        return serverAddr + contextPath + relativePath;
+            serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        return StringUtils.removeEnd(serverAddr,"/")+"/"+StringUtils.removeStart(contextPath,"/")+ relativePath;
     }
-
+    private String getUrl(String serverAddr, String relativePath,boolean isSSL) {
+        String contextPath = serverListMgr.getContentPath().startsWith("/") ?
+            serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+        String url= StringUtils.removeEnd(serverAddr,"/")+"/"+StringUtils.removeStart(contextPath,"/")+ relativePath;
+        if (isSSL &&url.startsWith(httpPre)){
+            return httpsPre+StringUtils.removeStart(url,httpPre);
+        }else{
+            return url;
+        }
+    }
     public static String getAppname() {
         return ParamUtil.getAppName();
     }
