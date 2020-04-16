@@ -22,7 +22,7 @@ import java.util.Collection;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NodeChangeEvent implements Event {
+public class MemberChangeEvent implements Event {
 
     private static final long serialVersionUID = 7308126651076668976L;
 
@@ -30,10 +30,8 @@ public class NodeChangeEvent implements Event {
 
     private Collection<Member> allMembers;
 
-    private boolean join;
-
-    public static NodeChangeEventBuilder builder() {
-        return new NodeChangeEventBuilder();
+    public static MemberChangeEventBuilder builder() {
+        return new MemberChangeEventBuilder();
     }
 
     public Collection<Member> getChangeMembers() {
@@ -52,48 +50,33 @@ public class NodeChangeEvent implements Event {
         this.allMembers = allMembers;
     }
 
-    public boolean getJoin() {
-        return join;
-    }
-
-    public void setJoin(boolean join) {
-        this.join = join;
-    }
-
     @Override
     public Class<? extends Event> eventType() {
-        return NodeChangeEvent.class;
+        return MemberChangeEvent.class;
     }
 
-    public static final class NodeChangeEventBuilder {
+    public static final class MemberChangeEventBuilder {
         private Collection<Member> changeMembers;
         private Collection<Member> allMembers;
-        private boolean join;
 
-        private NodeChangeEventBuilder() {
+        private MemberChangeEventBuilder() {
         }
 
-        public NodeChangeEventBuilder changeNodes(Collection<Member> changeMembers) {
+        public MemberChangeEventBuilder changeNodes(Collection<Member> changeMembers) {
             this.changeMembers = changeMembers;
             return this;
         }
 
-        public NodeChangeEventBuilder allNodes(Collection<Member> allMembers) {
+        public MemberChangeEventBuilder allNodes(Collection<Member> allMembers) {
             this.allMembers = allMembers;
             return this;
         }
 
-        public NodeChangeEventBuilder join(boolean join) {
-            this.join = join;
-            return this;
-        }
-
-        public NodeChangeEvent build() {
-            NodeChangeEvent nodeChangeEvent = new NodeChangeEvent();
-            nodeChangeEvent.setChangeMembers(changeMembers);
-            nodeChangeEvent.setJoin(join);
-            nodeChangeEvent.setAllMembers(allMembers);
-            return nodeChangeEvent;
+        public MemberChangeEvent build() {
+            MemberChangeEvent memberChangeEvent = new MemberChangeEvent();
+            memberChangeEvent.setChangeMembers(changeMembers);
+            memberChangeEvent.setAllMembers(allMembers);
+            return memberChangeEvent;
         }
     }
 }

@@ -72,8 +72,8 @@ public class NotifyCenter_ITCase {
 	};
 
 	static {
-		NotifyCenter.registerPublisher(TestSlowEvent::new, TestSlowEvent.class);
-		NotifyCenter.registerPublisher(Test2SlowEvent::new, Test2SlowEvent.class);
+		NotifyCenter.registerToSharePublisher(TestSlowEvent::new, TestSlowEvent.class);
+		NotifyCenter.registerToSharePublisher(Test2SlowEvent::new, Test2SlowEvent.class);
 
 		NotifyCenter.registerSubscribe(subscribe);
 		NotifyCenter.registerSubscribe(subscribe2);

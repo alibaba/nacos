@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.file;
+package com.alibaba.nacos.common.file;
 
 import java.nio.file.WatchEvent;
 import java.util.concurrent.Executor;
@@ -22,14 +22,15 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface FileWatcher {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class FileWatcher {
 
     /**
      * Triggered when a file change occurs
      *
      * @param event {@link FileChangeEvent}
      */
-    void onChange(FileChangeEvent event);
+    public abstract void onChange(FileChangeEvent event);
 
     /**
      * WatchEvent context information
@@ -37,7 +38,7 @@ public interface FileWatcher {
      * @param context {@link WatchEvent#context()}
      * @return is this watcher interest context
      */
-    boolean interest(String context);
+    public abstract boolean interest(String context);
 
     /**
      * If the FileWatcher has its own thread pool, use this thread
@@ -45,7 +46,7 @@ public interface FileWatcher {
      *
      * @return {@link Executor}
      */
-    default Executor executor() {
+    public Executor executor() {
         return null;
     }
 

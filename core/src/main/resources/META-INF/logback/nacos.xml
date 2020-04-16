@@ -52,23 +52,6 @@
         </encoder>
     </appender>
 
-    <appender name="file-watch"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/file-watch.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/file-watch.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <MaxHistory>7</MaxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
     <appender name="protocol-raft"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/protocol-raft.log</file>
@@ -162,11 +145,6 @@
     <logger name="com.alibaba.nacos.core.auth" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="core-auth"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.core.file.watch" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="file-watch"/>
     </logger>
 
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">

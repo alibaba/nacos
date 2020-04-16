@@ -23,7 +23,7 @@ package com.alibaba.nacos.core.cluster;
 public class MemberMetaDataConstants {
 
 	/**
-	 * Raft port
+	 * Raft port，This parameter is dropped when GRPC is used as a whole
 	 */
 	public static final String RAFT_PORT = "raft_port";
 

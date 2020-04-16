@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import java.time.Duration;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

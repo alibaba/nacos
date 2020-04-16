@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * // TODO ： 春涛：字段版本问题
- *
  * Has nothing to do with the specific implementation of the consistency protocol
  * Initialization sequence： init(Config) => loadLogProcessor(List)
  *
@@ -88,18 +86,12 @@ public interface ConsistencyProtocol<T extends Config> extends CommandOperations
     CompletableFuture<LogFuture> submitAsync(Log data);
 
     /**
-     * ip:port info
+     * New member list
+     * 新的成员节点列表，一致性协议自行处理相应的成员节点是加入还是离开
      *
      * @param addresses [ip:port, ip:port, ...]
      */
-    void addMembers(Set<String> addresses);
-
-    /**
-     * ip:port info
-     *
-     * @param addresses [ip:port, ip:port, ...]
-     */
-    void removeMembers(Set<String> addresses);
+    void memberChange(Set<String> addresses);
 
     /**
      * Consistency agreement service shut down

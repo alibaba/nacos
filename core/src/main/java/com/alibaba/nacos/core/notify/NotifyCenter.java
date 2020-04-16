@@ -41,8 +41,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 /**
- * // TODO multipart event reuse event-queue
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
@@ -54,10 +52,13 @@ public class NotifyCenter {
         @Override
         public boolean test(Event event, Subscribe subscribe) {
             final String sourceName = event.eventType().getCanonicalName();
+            if (subscribe instanceof SmartSubscribe) {
+                return true;
+            }
             final String targetName = subscribe.subscribeType().getCanonicalName();
             return Objects.equals(sourceName, targetName);
         }
-    });
+    }, 1024);
 
     @VisibleForTesting
     public static Map<String, Publisher> getPublisherMap() {
@@ -77,6 +78,9 @@ public class NotifyCenter {
     private static boolean stopDeferPublish = false;
 
     static {
+        SHARE_PUBLISHER.setSupplier(() -> null);
+        SHARE_PUBLISHER.start();
+
         ShutdownUtils.addShutdownHook(new Thread(() -> {
             System.out.println("[NotifyCenter] Start destroying Publisher");
             try {
@@ -86,6 +90,8 @@ public class NotifyCenter {
                         publisher.shutdown();
                     }
                 });
+
+                SHARE_PUBLISHER.shutdown();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -108,12 +114,16 @@ public class NotifyCenter {
      */
     public static <T> void registerSubscribe(final Subscribe consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
-        if (SlowEvent.class.isAssignableFrom(cls)) {
-            SHARE_PUBLISHER.addSubscribe(consumer);
-            return;
-        }
+        // If you want to listen to multiple events, you do it separately,
+        // without automatically registering the appropriate publisher
         if (consumer instanceof SmartSubscribe) {
             SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
+            return;
+        }
+        // If the event does not require additional queue resources,
+        // go to share-publisher to reduce resource waste
+        if (SlowEvent.class.isAssignableFrom(cls)) {
+            SHARE_PUBLISHER.addSubscribe(consumer);
             return;
         }
         final String topic = consumer.subscribeType().getCanonicalName();
@@ -130,12 +140,12 @@ public class NotifyCenter {
      */
     public static <T> void deregisterSubscribe(final Subscribe consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
-        if (SlowEvent.class.isAssignableFrom(cls)) {
-            SHARE_PUBLISHER.unSubscribe(consumer);
-            return;
-        }
         if (consumer instanceof SmartSubscribe) {
             SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
+            return;
+        }
+        if (SlowEvent.class.isAssignableFrom(cls)) {
+            SHARE_PUBLISHER.unSubscribe(consumer);
             return;
         }
         final String topic = consumer.subscribeType().getCanonicalName();
@@ -185,20 +195,34 @@ public class NotifyCenter {
     }
 
     /**
-     * register publisher
+     * register to share-publisher
      *
      * @param supplier
      * @param eventType
      * @return
      */
-    public static Publisher registerPublisher(final Supplier<? extends Event> supplier,
-                                              final Class<? extends Event> eventType) {
+    public static Publisher registerToSharePublisher(final Supplier<? extends SlowEvent> supplier,
+                                              final Class<? extends SlowEvent> eventType) {
+        return SHARE_PUBLISHER;
+    }
+
+    /**
+     * register publisher
+     *
+     * @param supplier
+     * @param eventType
+     * @param queueMaxSize
+     * @return
+     */
+    public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
+            final Class<? extends Event> eventType, final int queueMaxSize) {
         final String topic = eventType.getCanonicalName();
         PUBLISHER_MAP.computeIfAbsent(topic, s -> {
-            Publisher publisher = new Publisher(eventType);
+            Publisher publisher = new Publisher(eventType, queueMaxSize);
             return publisher;
         });
         Publisher publisher = PUBLISHER_MAP.get(topic);
+        publisher.queueMaxSize = queueMaxSize;
         publisher.setSupplier(supplier);
         return publisher;
     }
@@ -219,6 +243,7 @@ public class NotifyCenter {
 
         private final Class<? extends Event> eventType;
         private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
+        private int queueMaxSize = -1;
         private volatile boolean initialized = false;
         private volatile boolean canOpen = false;
         private volatile boolean shutdown = false;
@@ -238,9 +263,15 @@ public class NotifyCenter {
             this.eventType = eventType;
         }
 
-        Publisher(final Class<? extends Event> eventType, BiPredicate<Event, Subscribe> filter) {
+        Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {
+            this.eventType = eventType;
+            this.queueMaxSize = queueMaxSize;
+        }
+
+        Publisher(final Class<? extends Event> eventType, BiPredicate<Event, Subscribe> filter, final int queueMaxSize) {
             this.eventType = eventType;
             this.filter = filter;
+            this.queueMaxSize = queueMaxSize;
         }
 
         void setSupplier(Supplier<? extends Event> supplier) {
@@ -253,7 +284,11 @@ public class NotifyCenter {
 
         synchronized void start() {
             if (!initialized) {
-                this.disruptor = DisruptorFactory.build((EventFactory) () -> {
+                if (queueMaxSize == -1) {
+                    queueMaxSize = DisruptorFactory.ringBufferSize;
+                }
+
+                this.disruptor = DisruptorFactory.build(queueMaxSize, (EventFactory) () -> {
                     return new EventHandle(supplier.get());
                 }, eventType);
                 openEventHandler();

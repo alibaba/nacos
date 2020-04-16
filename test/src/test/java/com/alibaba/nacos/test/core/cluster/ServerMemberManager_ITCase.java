@@ -76,7 +76,7 @@ public class ServerMemberManager_ITCase {
 	public void init() throws Exception {
 		TimeUnit.SECONDS.sleep(5L);
 		if (httpClient == null) {
-			httpClient = HttpClientManager.newHttpClient(ServerMemberManager_ITCase.class.getCanonicalName());
+			httpClient = HttpClientManager.newSyncHttpClient(ServerMemberManager_ITCase.class.getCanonicalName());
 		}
 	}
 

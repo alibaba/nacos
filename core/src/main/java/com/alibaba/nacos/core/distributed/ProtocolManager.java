@@ -24,10 +24,11 @@ import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
-import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -41,7 +42,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,7 +60,9 @@ import java.util.Set;
 @SuppressWarnings("all")
 @Component(value = "ProtocolManager")
 @DependsOn("serverMemberManager")
-public class ProtocolManager implements ApplicationListener<ContextStartedEvent>, DisposableBean, MemberChangeListener {
+public class ProtocolManager
+		implements ApplicationListener<ContextStartedEvent>, DisposableBean,
+		MemberChangeListener {
 
 	private CPProtocol cpProtocol;
 	private APProtocol apProtocol;
@@ -69,6 +74,7 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 	public void init() {
 
 		this.memberManager = memberManager;
+		NotifyCenter.registerSubscribe(this);
 
 		// Consistency protocol module initialization
 
@@ -123,8 +129,8 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 
 	private void injectMembers4CP(Config config) {
 		final Member selfMember = memberManager.getSelf();
-		final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(selfMember.getExtendVal(
-				MemberMetaDataConstants.RAFT_PORT)));
+		final String self = selfMember.getIp() + ":" + Integer.parseInt(String.valueOf(
+				selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
 		Set<String> others = toCPMembersInfo(memberManager.allMembers());
 		config.setMembers(self, others);
 	}
@@ -137,7 +143,8 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 
 	@SuppressWarnings("all")
 	private List<LogProcessor> loadProcessor(Class cls, ConsistencyProtocol protocol) {
-		Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils.getBeansOfType(cls);
+		Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils
+				.getBeansOfType(cls);
 
 		final List<LogProcessor> result = new ArrayList<>(beans.values());
 
@@ -149,15 +156,12 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 	}
 
 	@Override
-	public void onEvent(NodeChangeEvent event) {
-		Collection<Member> members = event.getAllMembers();
-		if (event.getJoin()) {
-			GlobalExecutor.executeByCommon(() -> apProtocol.addMembers(toAPMembersInfo(members)));
-			GlobalExecutor.executeByCommon(() -> cpProtocol.addMembers(toCPMembersInfo(members)));
-		} else {
-			GlobalExecutor.executeByCommon(() -> apProtocol.removeMembers(toAPMembersInfo(members)));
-			GlobalExecutor.executeByCommon(() -> cpProtocol.removeMembers(toCPMembersInfo(members)));
-		}
+	public void onEvent(MemberChangeEvent event) {
+		Set<Member> copy = new HashSet<>(event.getAllMembers());
+		GlobalExecutor
+				.executeByCommon(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+		GlobalExecutor
+				.executeByCommon(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
 	}
 
 	private static Set<String> toAPMembersInfo(Collection<Member> members) {
@@ -170,7 +174,8 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
 		Set<String> nodes = new HashSet<>();
 		members.forEach(member -> {
 			final String ip = member.getIp();
-			final int port = Integer.parseInt(String.valueOf(member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+			final int port = Integer.parseInt(String.valueOf(
+					member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
 			nodes.add(ip + ":" + port);
 		});
 		return nodes;

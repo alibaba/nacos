@@ -52,6 +52,47 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * A concrete implementation of CP protocol: JRaft
+ *
+ * <pre>
+ *                                               ┌──────────────────────┐               
+ *                                           │                      │               
+ *            ┌──────────────────────┐       │                      ▼               
+ *            │   ProtocolManager    │       │        ┌───────────────────────────┐ 
+ *            └──────────────────────┘       │        │for p in [LogProcessor4CP] │ 
+ *                        │                  │        └───────────────────────────┘ 
+ *                        ▼                  │                      │               
+ *      ┌──────────────────────────────────┐ │                      ▼               
+ *      │    discovery LogProcessor4CP     │ │             ┌─────────────────┐      
+ *      └──────────────────────────────────┘ │             │  get p.group()  │      
+ *                        │                  │             └─────────────────┘      
+ *                        ▼                  │                      │               
+ *                 ┌─────────────┐           │                      │               
+ *                 │ RaftConfig  │           │                      ▼               
+ *                 └─────────────┘           │      ┌──────────────────────────────┐
+ *                        │                  │      │  create raft group service   │
+ *                        ▼                  │      └──────────────────────────────┘
+ *              ┌──────────────────┐         │                                      
+ *              │  JRaftProtocol   │         │                                      
+ *              └──────────────────┘         │                                      
+ *                        │                  │                                      
+ *                     init()                │                                      
+ *                        │                  │                                      
+ *                        ▼                  │                                      
+ *               ┌─────────────────┐         │                                      
+ *               │   JRaftServer   │         │                                      
+ *               └─────────────────┘         │                                      
+ *                        │                  │                                      
+ *                        │                  │                                      
+ *                        ▼                  │                                      
+ *             ┌────────────────────┐        │                                      
+ *             │JRaftServer.start() │        │                                      
+ *             └────────────────────┘        │                                      
+ *                        │                  │                                      
+ *                        │                  │                                      
+ *                        └──────────────────┘                                      
+ * </pre>
+ * 
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
@@ -83,29 +124,22 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
     @Override
     public void init(RaftConfig config) {
-
         if (initialized.compareAndSet(false, true)) {
-
             this.raftConfig = config;
 
             // Load all LogProcessor information in advance
-
             loadLogProcessor(config.listLogProcessor());
 
             this.selfAddress = memberManager.getSelf().getAddress();
-
-            NotifyCenter.registerPublisher(RaftEvent::new, RaftEvent.class);
-
+            NotifyCenter.registerToSharePublisher(RaftEvent::new, RaftEvent.class);
             this.failoverRetries = ConvertUtils.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
             this.failoverRetriesStr = String.valueOf(failoverRetries);
-
             this.raftServer.setFailoverRetries(failoverRetries);
             this.raftServer.init(this.raftConfig, this.raftConfig.listLogProcessor());
             this.raftServer.start();
 
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
-
             NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
                 @Override
                 public void onEvent(RaftEvent event) {
@@ -118,7 +152,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
 
                     // Leader information needs to be selectively updated. If it is valid data,
                     // the information in the protocol metadata is updated.
-
                     if (StringUtils.isNotBlank(leader)) {
                         properties.put(Constants.LEADER_META_DATA, leader);
                     }
@@ -132,7 +165,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
                     metaData.load(value);
 
                     // The metadata information is injected into the metadata information of the node
-
                     injectProtocolMetaData(metaData);
                 }
 
@@ -174,19 +206,9 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     }
 
     @Override
-    public void addMembers(Set<String> addresses) {
-        this.raftConfig.addMembers(addresses);
-        for (String address : addresses) {
-            raftServer.addNode(address);
-        }
-    }
-
-    @Override
-    public void removeMembers(Set<String> addresses) {
-        this.raftConfig.removeMembers(addresses);
-        for (String address : addresses) {
-            raftServer.removeNode(address);
-        }
+    public void memberChange(Set<String> addresses) {
+        this.raftConfig.setMembers(raftConfig.getSelfMember(), addresses);
+        raftServer.peersChange(addresses);
     }
 
     @Override
@@ -205,7 +227,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
         Member member = memberManager.getSelf();
         member.setExtendVal("raft_meta_data", metaData);
     }
-
 
     @Override
     public boolean isLeader(String group) throws Exception {

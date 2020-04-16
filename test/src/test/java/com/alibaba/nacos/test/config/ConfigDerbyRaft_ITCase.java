@@ -92,7 +92,7 @@ public class ConfigDerbyRaft_ITCase
 	private static ConfigService iconfig8;
 	private static ConfigService iconfig9;
 
-	private static final NSyncHttpClient httpClient = HttpClientManager.newHttpClient("nacos");
+	private static final NSyncHttpClient httpClient = HttpClientManager.newSyncHttpClient("nacos");
 
 	private static final AtomicBoolean[] finished = new AtomicBoolean[]{new AtomicBoolean(false), new AtomicBoolean(false), new AtomicBoolean(false)};
 
@@ -108,7 +108,7 @@ public class ConfigDerbyRaft_ITCase
 
 		String ip = InetUtils.getSelfIp();
 
-		clusterInfo = "nacos.cluster=" + ip + ":8847?raft_port=8807," + ip
+		clusterInfo = "nacos.member.list=" + ip + ":8847?raft_port=8807," + ip
 				+ ":8848?raft_port=8808," + ip + ":8849?raft_port=8809";
 	}
 
@@ -328,7 +328,7 @@ public class ConfigDerbyRaft_ITCase
 				"this.is.raft_cluster=lessspring_7");
 		Assert.assertTrue(result);
 
-		NotifyCenter.registerPublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class);
+		NotifyCenter.registerToSharePublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class);
 
 		CountDownLatch latch1 = new CountDownLatch(1);
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
