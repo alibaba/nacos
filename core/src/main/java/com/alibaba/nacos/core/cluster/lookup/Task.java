@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NAsyncHttpClient;
-import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
+import com.alibaba.nacos.core.cluster.IsolationEvent;
+import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
@@ -28,16 +27,12 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Task extends SmartSubscribe implements Runnable {
+abstract class Task extends SmartSubscribe implements Runnable {
 
     protected volatile boolean shutdown = false;
-    protected NAsyncHttpClient asyncHttpClient;
-    protected ServerMemberManager memberManager;
     private volatile boolean skip = false;
 
-    public Task(ServerMemberManager memberManager) {
-        this.memberManager = memberManager;
-        this.asyncHttpClient = HttpClientManager.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
+    public Task() {
         NotifyCenter.registerSubscribe(this);
     }
 
@@ -57,21 +52,11 @@ public abstract class Task extends SmartSubscribe implements Runnable {
         }
     }
 
-    // init some resource
-
-    public void init() {
-
-    }
-
     @Override
     public final void onEvent(Event event) {
         if (event instanceof IsolationEvent) {
             // Trigger task ignore
             skip = true;
-
-            // Execute this node logout logic
-            Task task = new MemberShutdownTask(memberManager);
-            task.executeBody();
             return;
         }
         if (event instanceof RecoverEvent) {

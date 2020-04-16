@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.NodeChangeEvent;
+import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -103,7 +103,7 @@ public class DistroMapper implements MemberChangeListener {
     }
 
     @Override
-    public void onEvent(NodeChangeEvent event) {
+    public void onEvent(MemberChangeEvent event) {
         List<String> newHealthyList = new ArrayList<>();
         for (Member server : event.getAllMembers()) {
             newHealthyList.add(server.getAddress());

@@ -28,8 +28,6 @@ import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -168,7 +166,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		transactionTemplate = dataSourceService.getTransactionTemplate();
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
-		NotifyCenter.registerPublisher(RaftDBErrorEvent::new, RaftDBErrorEvent.class);
+		NotifyCenter.registerToPublisher(RaftDBErrorEvent::new, RaftDBErrorEvent.class, 8);
 
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
@@ -188,7 +186,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@VisibleForTesting
-	public void moickConsistencyProtocol(CPProtocol protocol) {
+	public void mockConsistencyProtocol(CPProtocol protocol) {
 		this.protocol = protocol;
 	}
 

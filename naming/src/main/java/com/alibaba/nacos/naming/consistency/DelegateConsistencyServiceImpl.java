@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
  * @author nkorange
  * @since 1.0.0
  */
-@DependsOn("core")
+@DependsOn("ProtocolManager")
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
 

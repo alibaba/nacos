@@ -32,7 +32,7 @@ public final class DisruptorFactory {
     // Internal disruptor buffer size. For applications with high write throughput,
     // this value needs to be increased appropriately. default value is 16384
 
-    private static int ringBufferSize = 16384;
+    public static int ringBufferSize = 16384;
 
     static {
         String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
@@ -44,9 +44,18 @@ public final class DisruptorFactory {
         return build(factory, name, ProducerType.MULTI, new BlockingWaitStrategy());
     }
 
+    public static <T> Disruptor<T> build(int ringBufferSize, EventFactory<T> factory, Class<T> name) {
+        return build(ringBufferSize, factory, name, ProducerType.MULTI, new BlockingWaitStrategy());
+    }
+
     public static <T> Disruptor<T> build(EventFactory<T> factory, Class<T> name,
                                          ProducerType type) {
         return build(factory, name, type, new BlockingWaitStrategy());
+    }
+
+    public static <T> Disruptor<T> build(int ringBufferSize, EventFactory<T> factory, Class<T> name,
+            ProducerType type) {
+        return build(ringBufferSize, factory, name, type, new BlockingWaitStrategy());
     }
 
     public static <T> Disruptor<T> build(EventFactory<T> factory, Class<T> name,

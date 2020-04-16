@@ -172,8 +172,8 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	/**
 	 * Block to the next millisecond until a new timestamp is obtained
 	 *
-	 * @param lastTimestamp 上次生成ID的时间截
-	 * @return 当前时间戳
+	 * @param lastTimestamp The time intercept of the last ID generated
+	 * @return Current timestamp
 	 */
 	protected long tilNextMillis(long lastTimestamp) {
 		long timestamp = timeGen();
@@ -186,7 +186,7 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	/**
 	 * Returns the current time in milliseconds
 	 *
-	 * @return 当前时间(毫秒)
+	 * @return Current time (milliseconds)
 	 */
 	protected long timeGen() {
 		return System.currentTimeMillis();

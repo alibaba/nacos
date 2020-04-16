@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.GsonUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -24,7 +24,7 @@ import com.alibaba.fastjson.JSON;
 public final class RequestHandler {
 
     public static String parse(Object object) {
-        return JSON.toJSONString(object);
+        return GsonUtils.toJson(object);
     }
 
 }

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.exception.NacosException;
+
 import java.util.Collection;
 
 /**
@@ -25,8 +27,10 @@ public interface MemberManager {
 
     /**
      * node manager init
+     *
+     * @throws NacosException
      */
-    void init();
+    void init() throws NacosException ;
 
     /**
      * this address which index in NodeManager
@@ -113,7 +117,9 @@ public interface MemberManager {
 
     /**
      * node manager shutdown
+     *
+     * @throws NacosException
      */
-    void shutdown();
+    void shutdown() throws NacosException;
 
 }

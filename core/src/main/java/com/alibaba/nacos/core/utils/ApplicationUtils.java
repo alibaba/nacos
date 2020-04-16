@@ -386,7 +386,7 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         return Paths.get(getNacosHome(), "conf").toString();
     }
 
-    private static String getClusterConfFilePath() {
+    public static String getClusterConfFilePath() {
         return Paths.get(getNacosHome(), "conf", "cluster.conf").toString();
     }
 

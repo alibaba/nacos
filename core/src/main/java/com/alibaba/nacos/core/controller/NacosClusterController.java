@@ -16,24 +16,20 @@
 
 package com.alibaba.nacos.core.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
@@ -55,9 +51,6 @@ public class NacosClusterController {
 
     @Autowired
     private ServerMemberManager memberManager;
-
-    @Autowired
-    private IdGeneratorManager idGeneratorManager;
 
     @PostMapping(value = "/{type}")
     public RestResult<String> changeLocalStatus(@PathVariable(value = "type") String eventType) {
@@ -104,7 +97,7 @@ public class NacosClusterController {
 
     @GetMapping(value = "/simple/nodes")
     public RestResult<Collection<String>> listSimpleNodes() {
-        return RestResultUtils.success(MemberUtils.simpleMembers(memberManager));
+        return RestResultUtils.success(MemberUtils.simpleMembers(memberManager.allMembers()));
     }
 
     @GetMapping("/server/health")
@@ -112,36 +105,21 @@ public class NacosClusterController {
         return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
 
-    @PostMapping(value = {"/server/report", "/server/join"})
-    public RestResult<String> report(
-            @RequestBody(required = false) Member node,
-            @RequestParam(value = "sync", required = false) boolean sync) {
-
+    @PostMapping(value = {"/server/report"})
+    public RestResult<String> report(@RequestBody(required = false) Member node) {
         if (!node.check()) {
             return RestResultUtils.failedWithData("Node information is illegal");
         }
-
-        String data = "";
-
-        if (sync) {
-            data = JSON.toJSONString(MemberUtils.simpleMembers(memberManager));
-        }
-
         Loggers.CLUSTER.debug("node state report, receive info : {}", node);
         memberManager.update(node);
 
-        return RestResultUtils.success(data);
+        return RestResultUtils.success("ok");
     }
 
     @PostMapping("/server/leave")
-    public RestResult<Boolean> leave(@RequestBody Collection<Member> params) {
+    public RestResult<String> leave(@RequestBody Collection<Member> params) {
         memberManager.memberLeave(params);
-        return RestResultUtils.success();
-    }
-
-    @GetMapping("/sys/idGeneratorInfo")
-    public RestResult<Map<String, Map<Object, Object>>> idGeneratorInfo() {
-        return RestResultUtils.success(idGeneratorManager.idGeneratorInfo());
+        return RestResultUtils.success("ok");
     }
 
 }

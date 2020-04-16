@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.file;
+package com.alibaba.nacos.common.file;
 
-import com.alibaba.nacos.core.notify.Event;
+import java.io.Serializable;
 import java.nio.file.WatchEvent;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class FileChangeEvent implements Event {
+public class FileChangeEvent implements Serializable {
 
     private static final long serialVersionUID = -4255584033113954765L;
 
     private String paths;
 
-    private WatchEvent<?> event;
+    private Object context;
 
     public static FileChangeEventBuilder builder() {
         return new FileChangeEventBuilder();
@@ -42,31 +42,23 @@ public class FileChangeEvent implements Event {
         this.paths = paths;
     }
 
-    public WatchEvent<?> getEvent() {
-        return event;
+    public Object getContext() {
+        return context;
     }
 
-    public void setEvent(WatchEvent<?> event) {
-        this.event = event;
+    public void setContext(Object context) {
+        this.context = context;
     }
 
     @Override
     public String toString() {
-        return "FileChangeEvent{" +
-                "paths='" + paths + '\'' +
-                ", event-kind=" + event.kind() + '\'' +
-                ", even-context=" + event.context() + '\'' +
-                '}';
-    }
-
-    @Override
-    public Class<? extends Event> eventType() {
-        return FileChangeEvent.class;
+        return "FileChangeEvent{" + "paths='" + paths + '\'' + ", context=" + context
+                + '}';
     }
 
     public static final class FileChangeEventBuilder {
         private String paths;
-        private WatchEvent<?> event;
+        private Object context;
 
         private FileChangeEventBuilder() {
         }
@@ -76,15 +68,15 @@ public class FileChangeEvent implements Event {
             return this;
         }
 
-        public FileChangeEventBuilder event(WatchEvent<?> event) {
-            this.event = event;
+        public FileChangeEventBuilder context(Object context) {
+            this.context = context;
             return this;
         }
 
         public FileChangeEvent build() {
             FileChangeEvent fileChangeEvent = new FileChangeEvent();
             fileChangeEvent.setPaths(paths);
-            fileChangeEvent.setEvent(event);
+            fileChangeEvent.setContext(context);
             return fileChangeEvent;
         }
     }

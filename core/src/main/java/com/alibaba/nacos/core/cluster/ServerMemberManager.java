@@ -16,17 +16,13 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
-import com.alibaba.nacos.core.cluster.task.ClusterConfSyncTask;
-import com.alibaba.nacos.core.cluster.task.MemberDeadBroadcastTask;
-import com.alibaba.nacos.core.cluster.task.MemberPingTask;
-import com.alibaba.nacos.core.cluster.task.MemberPullTask;
-import com.alibaba.nacos.core.cluster.task.MemberShutdownTask;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.utils.Constants;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.PropertyUtil;
@@ -35,19 +31,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationEvent;
@@ -62,18 +57,12 @@ import org.springframework.stereotype.Component;
  */
 @Component(value = "serverMemberManager")
 @SuppressWarnings("all")
-public class ServerMemberManager implements SmartApplicationListener, DisposableBean, MemberManager {
+public class ServerMemberManager implements SmartApplicationListener, MemberManager {
 
     private final ServletContext servletContext;
-    public String domainName;
-    public String addressPort;
-    public String addressUrl;
-    public String envIdUrl;
-    public String addressServerUrl;
+
     private Map<String, Member> serverList = new ConcurrentSkipListMap<>();
     private volatile boolean isInIpList = true;
-    private volatile boolean isAddressServerHealth = true;
-    private boolean isHealthCheck = true;
     private String contextPath = "";
     @Value("${server.port:8848}")
     private int port;
@@ -81,8 +70,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     private boolean isUseAddressServer;
     private Member self;
     private String localAddress;
-
-    private Set<Task> tasks = new HashSet<>();
+    private boolean isHealthCheck = true;
+    private final int memberChangeEventMaxQueueSize = Integer.getInteger("nacos.member-change-event.queue.size", 128);
 
     // here is always the node information of the "UP" state
     private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
@@ -91,36 +80,34 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         this.servletContext = servletContext;
     }
 
+    @PostConstruct
     @Override
-    public void init() {
+    public void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
-        // init nacos core sys
-        initAddressSys();
+        isHealthCheck = Boolean.parseBoolean(
+                ApplicationUtils.getProperty("isHealthCheck", "true"));
 
         // register NodeChangeEvent publisher to NotifyManager
         registerClusterEvent();
 
-        ClusterConfSyncTask task = new ClusterConfSyncTask(this);
-        task.init();
-        GlobalExecutor.scheduleSyncJob(task, 5_000L);
-
-        tasks.add(task);
+        // Initializes the addressing mode
+        LookupFactory.initLookUp(this);
 
         Loggers.CORE.info("The cluster resource is initialized");
     }
 
     private void registerClusterEvent() {
         // Register node change events
-        NotifyCenter.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
+        NotifyCenter.registerToPublisher(MemberChangeEvent::new, MemberChangeEvent.class, memberChangeEventMaxQueueSize);
         // Register the web container initialization completion event
-        NotifyCenter.registerPublisher(ServerInitializedEvent::new, ServerInitializedEvent.class);
+        NotifyCenter.registerToSharePublisher(ServerInitializedEvent::new, ServerInitializedEvent.class);
         // Register node isolation events
-        NotifyCenter.registerPublisher(IsolationEvent::new, IsolationEvent.class);
+        NotifyCenter.registerToSharePublisher(IsolationEvent::new, IsolationEvent.class);
         // Register node recover events
-        NotifyCenter.registerPublisher(RecoverEvent::new, RecoverEvent.class);
+        NotifyCenter.registerToSharePublisher(RecoverEvent::new, RecoverEvent.class);
 
         // Handles events related to node isolation and recovery
         NotifyCenter.registerSubscribe(new SmartSubscribe() {
@@ -238,9 +225,10 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
             return;
         }
 
+        // Persist the current cluster node information to cluster.conf
+        MemberUtils.syncToFile(allMembers());
         Loggers.CLUSTER.warn("have new node join : {}", members);
-        NotifyCenter.publishEvent(NodeChangeEvent.builder()
-                .join(true)
+        NotifyCenter.publishEvent(MemberChangeEvent.builder()
                 .changeNodes(members)
                 .allNodes(allMembers())
                 .build());
@@ -255,17 +243,23 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
                 iterator.remove();
                 continue;
             }
-            memberAddressInfos.remove(address);
-            serverList.remove(address);
+            serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+                @Override
+                public Member apply(String s, Member member) {
+                    memberAddressInfos.remove(address);
+                    return null;
+                }
+            });
         }
 
         if (members.isEmpty()) {
             return;
         }
 
+        // Persist the current cluster node information to cluster.conf
+        MemberUtils.syncToFile(allMembers());
         Loggers.CLUSTER.warn("have node leave : {}", members);
-        NotifyCenter.publishEvent(NodeChangeEvent.builder()
-                .join(false)
+        NotifyCenter.publishEvent(MemberChangeEvent.builder()
                 .changeNodes(members)
                 .allNodes(allMembers())
                 .build());
@@ -284,9 +278,7 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
     public String getContextPath() {
         if (StringUtils.isBlank(contextPath)) {
             String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
-
             // If you can't find it, check it from Sping Environment
-
             if (StringUtils.isBlank(contextPath)) {
                 contextPath = ApplicationUtils.getProperty(Constants.WEB_CONTEXT_PATH);
             }
@@ -313,75 +305,18 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         return !NodeState.UP.equals(member.getState());
     }
 
-    @PreDestroy
-    @Override
-    public void shutdown() {
-        for (Task task : tasks) {
-            task.shutdown();
-        }
-        getSelf().setState(NodeState.DOWN);
-    }
-
     public boolean isSelf(Member member) {
         return Objects.equals(member.getAddress(), localAddress);
-    }
-
-    private void initAddressSys() {
-        String envDomainName = System.getenv("address_server_domain");
-        if (StringUtils.isBlank(envDomainName)) {
-            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
-        } else {
-            domainName = envDomainName;
-        }
-        String envAddressPort = System.getenv("address_server_port");
-        if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = System.getProperty("address.server.port", "8080");
-        } else {
-            addressPort = envAddressPort;
-        }
-        addressUrl = System.getProperty("address.server.url",
-                servletContext.getContextPath() + "/" + "serverlist");
-        addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
-        envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
-
-        Loggers.CORE.info("ServerListService address-server port:" + addressPort);
-        Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
-
-        isHealthCheck = Boolean.parseBoolean(
-                ApplicationUtils.getProperty("isHealthCheck", "true"));
     }
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof WebServerInitializedEvent) {
-            if (!ApplicationUtils.getStandaloneMode()) {
-
-                Loggers.CLUSTER.info("execute cluster tasks");
-
-                MemberPingTask pingTask = new MemberPingTask(this);
-                MemberPullTask pullTask = new MemberPullTask(this);
-                MemberDeadBroadcastTask broadcastTask = new MemberDeadBroadcastTask(this);
-
-                pingTask.init();
-                pullTask.init();
-                broadcastTask.init();
-
-                GlobalExecutor.schedulePingJob(pingTask, 5_000L);
-                GlobalExecutor.schedulePullJob(pullTask, 5_000L);
-                GlobalExecutor.scheduleBroadCastJob(broadcastTask, 10_000L);
-
-                tasks.add(broadcastTask);
-                tasks.add(pingTask);
-                tasks.add(pullTask);
-
-                NotifyCenter.publishEvent(new ServerInitializedEvent((WebServerInitializedEvent) event, servletContext));
-            }
+            NotifyCenter.publishEvent(new ServerInitializedEvent((WebServerInitializedEvent) event, servletContext));
         }
         if (event instanceof ContextStartedEvent) {
-
             // For containers that have started, stop all messages from being published late
-
-            Loggers.CORE.info("Terminates delayed publication of all messages");
+            Loggers.CORE.info("Terminates delayed publish of all messages");
             NotifyCenter.stopDeferPublish();
         }
     }
@@ -393,10 +328,11 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         return initializedEvent || contextStartedEvent;
     }
 
+    @PreDestroy
     @Override
-    public void destroy() throws Exception {
-        MemberShutdownTask shutdownTask = new MemberShutdownTask(this);
-        GlobalExecutor.runWithoutThread(shutdownTask);
+    public void shutdown() throws NacosException {
+        LookupFactory.destroy();
+        getSelf().setState(NodeState.DOWN);
     }
 
     @VisibleForTesting
@@ -424,36 +360,8 @@ public class ServerMemberManager implements SmartApplicationListener, Disposable
         return isInIpList;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public String getAddressPort() {
-        return addressPort;
-    }
-
-    public String getAddressUrl() {
-        return addressUrl;
-    }
-
-    public String getEnvIdUrl() {
-        return envIdUrl;
-    }
-
     public boolean isHealthCheck() {
         return isHealthCheck;
-    }
-
-    public boolean isAddressServerHealth() {
-        return isAddressServerHealth;
-    }
-
-    public void setAddressServerHealth(boolean addressServerHealth) {
-        isAddressServerHealth = addressServerHealth;
-    }
-
-    public String getAddressServerUrl() {
-        return addressServerUrl;
     }
 
     public ServletContext getServletContext() {

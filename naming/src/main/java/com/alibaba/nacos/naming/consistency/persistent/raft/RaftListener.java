@@ -51,8 +51,8 @@ public class RaftListener implements SmartApplicationListener {
 	public void onApplicationEvent(ApplicationEvent event) {
 		if (event instanceof BaseRaftEvent) {
 			BaseRaftEvent raftEvent = (BaseRaftEvent) event;
-			RaftPeer peers = raftEvent.getRaftPeer();
-			String json = JSON.toJSONString(peers);
+			RaftPeer local = raftEvent.getLocal();
+			String json = JSON.toJSONString(local);
 			Map map = JSON.parseObject(json, HashMap.class);
 			Member self = memberManager.getSelf();
 			self.setExtendVal(GROUP, map);

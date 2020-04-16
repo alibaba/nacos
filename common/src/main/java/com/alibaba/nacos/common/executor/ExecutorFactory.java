@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadFactory;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
-public class ExecutorFactory {
+public final class ExecutorFactory {
 
     private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
 

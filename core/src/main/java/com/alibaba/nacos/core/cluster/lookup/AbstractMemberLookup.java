@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.common;
+package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.common.http.param.Query;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Query_ITCase {
+abstract class AbstractMemberLookup implements MemberLookup {
 
-	@Test public void test_query_str() throws Exception {
-		Query query = Query.newInstance().addParam("key-1", "value-1")
-				.addParam("key-2", "value-2");
-		String s1 = query.toQueryUrl();
-		String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name())
-				+ "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
-		Assert.assertEquals(s1, s2);
+	protected ServerMemberManager memberManager;
+
+	@Override
+	public void init(ServerMemberManager memberManager) throws NacosException {
+		this.memberManager = memberManager;
 	}
 
+	@Override
+	public void destroy() throws NacosException {
+
+	}
 }

@@ -2433,7 +2433,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 							updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
 									new Timestamp(cf.getLastModified()));
 						}
-						catch (Exception e) {
+						catch (Throwable e) {
 							LogUtil.defaultLog
 									.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
 											cf.getDataId(), cf.getGroup(),
@@ -2446,7 +2446,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 								updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
 										new Timestamp(cf.getLastModified()));
 							}
-							catch (Exception e) {
+							catch (Throwable e) {
 								LogUtil.defaultLog
 										.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
 												cf.getDataId(), cf.getGroup(),
@@ -2516,7 +2516,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(),
 						"datumId", configInfo.getContent());
 			}
-			catch (NacosException e) {
+			catch (Throwable e) {
 				defaultLog.error("data verification failed", e);
 				throw e;
 			}
@@ -2534,7 +2534,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					try {
 						type = FileTypeEnum.valueOf(extName.toUpperCase()).getFileType();
 					}
-					catch (Exception ex) {
+					catch (Throwable ex) {
 						type = FileTypeEnum.TEXT.getFileType();
 					}
 				}

@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.handler;
+package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.common.utils.GsonUtils;
-import org.slf4j.LoggerFactory;
+import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.InetUtils;
 
-import java.lang.reflect.Type;
-import org.slf4j.Logger;
+import java.util.Collections;
 
 /**
+ * Member node addressing mode in stand-alone mode
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class ResponseHandler {
+public class StandaloneMemberLookup extends AbstractMemberLookup {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResponseHandler.class);
-
-    public static <T> T convert(String s, Class<T> cls) {
-        return GsonUtils.toObj(s, cls);
-    }
-
-    public static <T> T convert(String s, Type type) {
-        return GsonUtils.toObj(s, type);
-    }
-
+	@Override
+	public void run() {
+		String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + ApplicationUtils
+				.getProperty("nacos.standalone.params", "");
+		MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
+	}
 }

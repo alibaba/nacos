@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +35,7 @@ public class Member {
 
     private volatile NodeState state = NodeState.UP;
 
-    private Map<String, Object> extendInfo = new HashMap<>();
+    private Map<String, Object> extendInfo = Collections.synchronizedMap(new TreeMap<>());
 
     private String address = "";
 
@@ -72,7 +73,7 @@ public class Member {
     }
 
     public Map<String, Object> getExtendInfo() {
-        return extendInfo;
+        return new TreeMap<>(extendInfo);
     }
 
     public void setExtendInfo(Map<String, Object> extendInfo) {

@@ -37,45 +37,44 @@ import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 
-    private DataSourceService dataSourceService;
-    private String heathUpStr = "UP";
-    private String heathDownStr = "DOWN";
-    private String heathWarnStr = "WARN";
+	private DataSourceService dataSourceService;
+	private String heathUpStr = "UP";
+	private String heathDownStr = "DOWN";
+	private String heathWarnStr = "WARN";
 
-    @Autowired
-    private ServerMemberManager memberManager;
+	@Autowired
+	private ServerMemberManager memberManager;
 
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
-    }
+	@PostConstruct
+	public void init() {
+		dataSourceService = DynamicDataSource.getInstance().getDataSource();
+	}
 
-    @GetMapping
-    public String getHealth() {
-        // TODO UP DOWN WARN
-        StringBuilder sb = new StringBuilder();
-        String dbStatus = dataSourceService.getHealth();
-        if (dbStatus.contains(heathUpStr) && memberManager.isAddressServerHealth() && memberManager
-            .isInIpList()) {
-            sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && memberManager.isAddressServerHealth() && memberManager
-            .isInIpList()) {
-            sb.append("WARN:");
-            sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
-        } else {
-            sb.append("DOWN:");
-            if (dbStatus.contains(heathDownStr)) {
-                sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
-            }
-            if (!memberManager.isAddressServerHealth()) {
-                sb.append("address server down. ");
-            }
-            if (!memberManager.isInIpList()) {
-                sb.append("server ip ").append(LOCAL_IP).append(" is not in the serverList of address server. ");
-            }
-        }
+	@GetMapping
+	public String getHealth() {
+		// TODO UP DOWN WARN
+		StringBuilder sb = new StringBuilder();
+		String dbStatus = dataSourceService.getHealth();
+		if (dbStatus.contains(heathUpStr) && memberManager.isInIpList()) {
+			sb.append(heathUpStr);
+		}
+		else if (dbStatus.contains(heathWarnStr) && memberManager.isInIpList()) {
+			sb.append("WARN:");
+			sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
+		}
+		else {
+			sb.append("DOWN:");
+			if (dbStatus.contains(heathDownStr)) {
+				sb.append("master db (").append(dbStatus.split(":")[1])
+						.append(") down. ");
+			}
+			if (!memberManager.isInIpList()) {
+				sb.append("server ip ").append(LOCAL_IP)
+						.append(" is not in the serverList of address server. ");
+			}
+		}
 
-        return sb.toString();
-    }
+		return sb.toString();
+	}
 
 }

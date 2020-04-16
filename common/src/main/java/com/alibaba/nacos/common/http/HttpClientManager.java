@@ -87,7 +87,7 @@ public class HttpClientManager {
 	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
 			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();
 
-	public static NSyncHttpClient newHttpClient(String namespace) {
+	public static NSyncHttpClient newSyncHttpClient(String namespace) {
 		synchronized (SYNC_MONITOR) {
 
 			NSyncHttpClient nSyncHttpClient = HTTP_SYNC_CLIENT_MAP.get(namespace);
@@ -120,7 +120,7 @@ public class HttpClientManager {
 		}
 	}
 
-	public static NSyncHttpClient newHttpClient(String namespace,
+	public static NSyncHttpClient newSyncHttpClient(String namespace,
 			RequestConfig requestConfig) {
 		synchronized (SYNC_MONITOR) {
 

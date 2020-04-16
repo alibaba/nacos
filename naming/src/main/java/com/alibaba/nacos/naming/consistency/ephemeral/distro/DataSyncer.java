@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Component
-@DependsOn("core")
+@DependsOn("ProtocolManager")
 public class DataSyncer {
 
     @Autowired

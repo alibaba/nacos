@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.Loggers;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,6 +84,18 @@ public class MemberUtils {
 			members.add(member);
 		}
 		return members;
+	}
+
+	public static void syncToFile(Collection<Member> members) {
+		try {
+			StringBuilder builder = new StringBuilder();
+			for (String member : simpleMembers(members)) {
+				builder.append(member).append(StringUtils.LF);
+			}
+			ApplicationUtils.writeClusterConf(builder.toString());
+		} catch (Throwable ex) {
+			Loggers.CLUSTER.error("Cluster member node persistence failed : {}", ex);
+		}
 	}
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
@@ -162,8 +176,8 @@ public class MemberUtils {
 		memberManager.memberJoin(nodes);
 	}
 
-	public static List<String> simpleMembers(ServerMemberManager memberManager) {
-		return memberManager.allMembers().stream().map(member -> {
+	public static List<String> simpleMembers(Collection<Member> members) {
+		return members.stream().map(member -> {
 			String address = member.getAddress();
 			StringBuilder params = new StringBuilder();
 			String[] keys = MemberMetaDataConstants.META_KEY_LIST;

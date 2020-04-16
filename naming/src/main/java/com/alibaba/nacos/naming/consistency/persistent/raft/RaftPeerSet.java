@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.NodeChangeEvent;
+import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author nacos
  */
 @Component
-@DependsOn("core")
+@DependsOn("ProtocolManager")
 public class RaftPeerSet implements MemberChangeListener {
 
     @Autowired
@@ -157,7 +157,7 @@ public class RaftPeerSet implements MemberChangeListener {
 
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
-                ApplicationUtils.publishEvent(new LeaderElectFinishedEvent(this, leader));
+                ApplicationUtils.publishEvent(new LeaderElectFinishedEvent(this, leader, local()));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
         }
@@ -168,7 +168,7 @@ public class RaftPeerSet implements MemberChangeListener {
     public RaftPeer makeLeader(RaftPeer candidate) {
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
-            ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader));
+            ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader, local()));
             Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
                 leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
         }
@@ -250,7 +250,7 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     @Override
-    public void onEvent(NodeChangeEvent event) {
+    public void onEvent(MemberChangeEvent event) {
         Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
         for (Member member : event.getAllMembers()) {
 

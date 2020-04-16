@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.utils.Commons;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +46,7 @@ public class CoreOpsController {
 	// }
 
 	@PostMapping(value = "/raft")
-	public RestResult<String> raftOps(@RequestBody
-			Map<String, String> commands) {
+	public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
 		return cpProtocol.execute(commands);
 	}
 
