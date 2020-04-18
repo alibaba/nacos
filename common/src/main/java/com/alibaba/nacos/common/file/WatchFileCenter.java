@@ -82,6 +82,15 @@ public class WatchFileCenter {
 		return false;
 	}
 
+	public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {
+		WatchJob job = MANAGER.get(path);
+		if (job != null) {
+			job.watchers.remove(watcher);
+			return true;
+		}
+		return false;
+	}
+
 	private static class WatchJob implements Runnable {
 
 		private final String paths;

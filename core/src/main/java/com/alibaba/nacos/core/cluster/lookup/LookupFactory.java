@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -30,7 +31,7 @@ import java.util.Objects;
  */
 public final class LookupFactory {
 
-	static final String GOSSIP_SWITCH_NAME = "nacos.gossip";
+	static final String DISCOVERY_SWITCH_NAME = "nacos.member.discovery";
 
 	static MemberLookup LOOK_UP = null;
 
@@ -58,7 +59,7 @@ public final class LookupFactory {
 				LOOK_UP = new AddressServerMemberLookup();
 				break;
 			case LookupType.GOSSIP:
-				LOOK_UP = new GossipMemberLookup();
+				LOOK_UP = new DiscoveryMemberLookup();
 				break;
 			default:
 				throw new IllegalArgumentException();
@@ -91,7 +92,7 @@ public final class LookupFactory {
 			newLookup = new AddressServerMemberLookup();
 			break;
 		case LookupType.GOSSIP:
-			newLookup = new GossipMemberLookup();
+			newLookup = new DiscoveryMemberLookup();
 			break;
 		default:
 			throw new IllegalArgumentException();
@@ -106,10 +107,10 @@ public final class LookupFactory {
 
 	private static int chooseLookup() {
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
-		if (Boolean.parseBoolean(ApplicationUtils.getProperty(GOSSIP_SWITCH_NAME, Boolean.toString(false)))) {
+		if (Boolean.parseBoolean(ApplicationUtils.getProperty(DISCOVERY_SWITCH_NAME, Boolean.toString(false)))) {
 			return LookupType.GOSSIP;
 		}
-		if (file.exists()) {
+		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
 			return LookupType.FILE_CONFIG;
 		}
 		return LookupType.ADDRESS_SERVER;

@@ -102,12 +102,9 @@ public class ConfigDerbyRaft_ITCase
 
 	static {
 		System.getProperties().setProperty("nacos.standalone", "false");
-
 		System.getProperties().setProperty("nacos.core.auth.enabled", "false");
 		System.getProperties().setProperty("embeddedStorage", "true");
-
 		String ip = InetUtils.getSelfIp();
-
 		clusterInfo = "nacos.member.list=" + ip + ":8847?raft_port=8807," + ip
 				+ ":8848?raft_port=8808," + ip + ":8849?raft_port=8809";
 	}
@@ -328,7 +325,7 @@ public class ConfigDerbyRaft_ITCase
 				"this.is.raft_cluster=lessspring_7");
 		Assert.assertTrue(result);
 
-		NotifyCenter.registerToSharePublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class);
+		NotifyCenter.registerToPublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class, 8);
 
 		CountDownLatch latch1 = new CountDownLatch(1);
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {

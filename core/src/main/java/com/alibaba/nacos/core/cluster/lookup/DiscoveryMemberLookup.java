@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -49,8 +50,6 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * The member node addressing mode based on gossip protocol
- *
  * <pre>
  *     ┌─────────────────────────────────────────────────────────────────────────┐
  *     │                                            ┌─────────────────────────┐  │
@@ -59,8 +58,6 @@ import java.util.Set;
  *     │       ┌───────────────────────┐            │                         │  │
  *     │       │  GossipMemberLookup   │            └─────────────────────────┘  │
  *     │       └───────────────────────┘                                         │
- *     │                   │                                                     │
- *     │                   │                                                     │
  *     │                   │                                                     │
  *     │                   │                                     ┌───────────────┼────────────────[ip1:port,ip2:port,ip3:port]───────────────────────┐
  *     │                   │                                     │               │                                                                   │
@@ -77,24 +74,9 @@ import java.util.Set;
  *     │                   ▼                 │                                   │                                             ╲  │                                    │
  *     │        ┌─────────────────────┐      │       ┌─────────────────────────┐ │    Broadcast the node that the local node    ╲ │              Member B              │
  *     │        │  init gossip task   │──────┼──────▶│ MemberDeadBroadcastTask │─┼─────────────considers to be DOWN──────────────▶│    [ip1:port,ip2.port,ip3.port]    │
- *     │        └─────────────────────┘      │       └─────────────────────────┘ │                                              ╱ │   {adweight:"",site:"",state:""}   │
- *     │                   │                 │                                   │                                             ╱  │                                    │
- *     │                   │                 │                                   │                                            ╱   └────────────────────────────────────┘
- *     │                   │                 │                                   │╱──────Gets the metadata information ──────╱                       │
- *     │                   │                 │                                   ╳               for the node                                        │
- *     │                   │                 │                                  ╱│                                                                   │
- *     │                   │                 │                                 ╱ │                                                                   │
- *     │                   │                 │       ┌──────────────────────┐ ╱  │                                                                   │
- *     │                   │                 └──────▶│  MemberInfoSyncTask  │╱   │                                                                   │
- *     │                   │                         └──────────────────────┘    │                                                                   │
- *     │                   │                                     ▲               │                                                                   │
- *     │                   │                                     │               │                                                                   │
- *     │                   │                                     └───────────────┼─────────────{adweight:"",site:"",state:""}────────────────────────┘
- *     │                   │                                                     │
- *     │                   │                                                     │
- *     │                   │                                                     │
- *     │                   │                                                     │
- *     │                   │                                                     │
+ *     │        └─────────────────────┘              └─────────────────────────┘ │                                                │   {adweight:"",site:"",state:""}   │
+ *     │                   │                                                     │                                                │                                    │
+ *     │                   │                                                     │                                                └────────────────────────────────────┘
  *     │                   │                                                     │
  *     │                   ▼                                                     │
  *     │   ┌──────────────────────────────┐         ┌────────────────────────┐   │
@@ -103,12 +85,18 @@ import java.util.Set;
  *     └─────────────────────────────────────────────────────────────────────────┘
  * </pre>
  *
+ * <ul>
+ *     <li>{@link MemberListSyncTask} : Cluster node list synchronization tasks</li>
+ *     <li>{@link MemberDeadBroadcastTask} : Broadcast a node that it thinks is already in a DOWN state machine</li>
+ *     <li>{@link MemberShutdownTask} : Node closes the broadcast local node logoff task</li>
+ * </ul>
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class GossipMemberLookup extends AbstractMemberLookup {
+public class DiscoveryMemberLookup extends AbstractMemberLookup {
 
 	NAsyncHttpClient asyncHttpClient = HttpClientManager
-			.newAsyncHttpClient(GossipMemberLookup.class.getCanonicalName());
+			.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
 
 	Set<Task> tasks = new HashSet<>();
 
@@ -125,7 +113,7 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 			MemberUtils.readServerConf(members, memberManager);
 		}
 		catch (FileNotFoundException e) {
-			String clusters = ApplicationUtils.getProperty("nacos.member.list");
+			String clusters = ApplicationUtils.getMemberList();
 			if (StringUtils.isNotBlank(clusters)) {
 				String[] details = clusters.split(",");
 				List<String> members = new ArrayList<>();
@@ -153,17 +141,13 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 		// Whether to enable the node self-discovery function that comes with nacos
 		// The reason why instance properties are not used here is so that
 		// the hot update mechanism can be implemented later
-
-		MemberListSyncTask pingTask = new MemberListSyncTask();
-		MemberInfoSyncTask pullTask = new MemberInfoSyncTask();
+		MemberListSyncTask syncTask = new MemberListSyncTask();
 		MemberDeadBroadcastTask broadcastTask = new MemberDeadBroadcastTask();
 
-		GlobalExecutor.schedulePingJob(pingTask, 5_000L);
-		GlobalExecutor.schedulePullJob(pullTask, 5_000L);
+		GlobalExecutor.schedulePingJob(syncTask, 5_000L);
 		GlobalExecutor.scheduleBroadCastJob(broadcastTask, 10_000L);
 
-		tasks.add(pingTask);
-		tasks.add(pullTask);
+		tasks.add(syncTask);
 		tasks.add(broadcastTask);
 	}
 
@@ -172,14 +156,7 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 		for (Task task : tasks) {
 			task.shutdown();
 		}
-		try {
-			asyncHttpClient.close();
-		}
-		catch (Exception e) {
-			Loggers.CLUSTER.error("error : {}", e);
-		}
-		MemberShutdownTask shutdownTask = new MemberShutdownTask();
-		shutdownTask.run();
+		GlobalExecutor.runWithoutThread(new MemberDeadBroadcastTask());
 	}
 
 	// Synchronize cluster member list information to a node
@@ -202,16 +179,17 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 					return;
 				}
 
-				for (Member member : MemberUtils.kRandom(memberManager, member -> {
+				Collection<Member> members = MemberUtils.kRandom(memberManager, member -> {
 					// local node or node check failed will not perform task processing
 					if (memberManager.isSelf(member) || !member.check()) {
 						return false;
 					}
 					NodeState state = member.getState();
 					return !(state == NodeState.DOWN || state == NodeState.SUSPICIOUS);
-				})) {
-					// If the cluster self-discovery is turned on, the information is synchronized with the node
+				});
 
+				for (Member member : members) {
+					// If the cluster self-discovery is turned on, the information is synchronized with the node
 					String url = "http://" + member.getAddress() + memberManager
 							.getContextPath() + Commons.NACOS_CORE_CONTEXT
 							+ "/cluster/simple/nodes";
@@ -284,67 +262,6 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 
 	}
 
-	// Synchronize the metadata information of a node
-
-	class MemberInfoSyncTask extends Task {
-
-		private final GenericType<RestResult<Member>> reference = new GenericType<RestResult<Member>>() {
-		};
-
-		private int cursor = 0;
-
-		@Override
-		protected void executeBody() {
-			Set<String> members = memberManager.getMemberAddressInfos();
-			this.cursor = (this.cursor + 1) % members.size();
-			String[] ss = members.toArray(new String[0]);
-			String target = ss[cursor];
-
-			final String url = HttpUtils
-					.buildUrl(false, target, memberManager.getContextPath(),
-							Commons.NACOS_CORE_CONTEXT, "/cluster/self");
-
-			if (shutdown) {
-				return;
-			}
-
-			asyncHttpClient.get(url, Header.EMPTY, Query.EMPTY, reference.getType(),
-					new Callback<Member>() {
-						@Override
-						public void onReceive(RestResult<Member> result) {
-							if (result.ok()) {
-								Loggers.CLUSTER
-										.debug("success pull from node : {}, result : {}",
-												target, result);
-								memberManager.update(result.getData());
-								MemberUtils.onSuccess(MemberUtils.parse(target),
-										memberManager);
-							}
-							else {
-								Loggers.CLUSTER
-										.warn("failed to pull new info from target node : {}, result : {}",
-												target, result);
-								MemberUtils
-										.onFail(MemberUtils.parse(target), memberManager);
-							}
-						}
-
-						@Override
-						public void onError(Throwable throwable) {
-							Loggers.CLUSTER
-									.error("failed to pull new info from target node : {}, error : {}",
-											target, throwable);
-							MemberUtils.onFail(MemberUtils.parse(target), memberManager);
-						}
-					});
-		}
-
-		@Override
-		protected void after() {
-			GlobalExecutor.schedulePullJob(this, 2_000L);
-		}
-	}
-
 	class MemberDeadBroadcastTask extends Task {
 
 		private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
@@ -361,10 +278,10 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 				}
 			});
 
-			List<Member> waitBroad = MemberUtils.kRandom(memberManager,
+			List<Member> waitBroadcast = MemberUtils.kRandom(memberManager,
 					member -> !NodeState.DOWN.equals(member.getState()));
 
-			for (Member member : waitBroad) {
+			for (Member member : waitBroadcast) {
 				final String url = HttpUtils.buildUrl(false, member.getAddress(),
 						memberManager.getContextPath(), Commons.NACOS_CORE_CONTEXT,
 						"/cluster/server/leave");
@@ -407,7 +324,7 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 		}
 	}
 
-	class MemberShutdownTask extends Task {
+	class MemberShutdownTask implements Runnable {
 
 		private NSyncHttpClient httpClient = HttpClientManager
 				.newSyncHttpClient(MemberShutdownTask.class.getCanonicalName());
@@ -418,53 +335,39 @@ public class GossipMemberLookup extends AbstractMemberLookup {
 		@Override
 		public void run() {
 			try {
-				executeBody();
+				Collection<Member> body = new ArrayList<>(
+						Collections.singletonList(memberManager.getSelf()));
+				Loggers.CLUSTER.info("Start broadcasting this node logout");
+				memberManager.allMembers().forEach(member -> {
+					// don't have to broadcast yourself
+					if (memberManager.isSelf(member)) {
+						return;
+					}
+					final String url =
+							"http://" + member.getAddress() + memberManager.getContextPath()
+									+ Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
+					try {
+						RestResult<String> result = httpClient
+								.post(url, Header.EMPTY, Query.EMPTY, body,
+										typeReference.getType());
+						Loggers.CLUSTER
+								.info("{} the response of the target node to this logout operation : {}",
+										member, result);
+					}
+					catch (Throwable e) {
+						Loggers.CLUSTER.error("shutdown execute has error : {}", e);
+					}
+				});
 			}
 			finally {
-				after();
-			}
-		}
-
-		@Override
-		public void executeBody() {
-			Collection<Member> body = new ArrayList<>(
-					Collections.singletonList(memberManager.getSelf()));
-
-			Loggers.CLUSTER.info("Start broadcasting this node logout");
-
-			memberManager.allMembers().forEach(member -> {
-
-				// don't have to broadcast yourself
-				if (memberManager.isSelf(member)) {
-					return;
-				}
-
-				final String url =
-						"http://" + member.getAddress() + memberManager.getContextPath()
-								+ Commons.NACOS_CORE_CONTEXT + "/cluster/server/leave";
-
 				try {
-					RestResult<String> result = httpClient
-							.post(url, Header.EMPTY, Query.EMPTY, body,
-									typeReference.getType());
-					Loggers.CLUSTER
-							.info("{} the response of the target node to this logout operation : {}",
-									member, result);
+					httpClient.close();
 				}
-				catch (Throwable e) {
-					Loggers.CLUSTER.error("shutdown execute has error : {}", e);
+				catch (Exception e) {
+					Loggers.CLUSTER.error("error : {}", e);
 				}
-			});
-		}
-
-		@Override
-		protected void after() {
-			try {
-				httpClient.close();
-			}
-			catch (Exception ignore) {
-
 			}
 		}
+
 	}
 }

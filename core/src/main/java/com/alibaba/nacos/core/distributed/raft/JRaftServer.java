@@ -91,6 +91,17 @@ import java.util.function.Supplier;
 /**
  * JRaft server instance, away from Spring IOC management
  *
+ * <p>
+ *     Why do we need to create a raft group based on the value of LogProcessor group (),
+ *     that is, each function module has its own state machine. Because each LogProcessor
+ *     corresponds to a different functional module, such as Nacos's naming module and
+ *     config module, these two modules are independent of each other and do not affect
+ *     each other. If we have only one state machine, it is equal to the log of all functional
+ *     modules The processing is loaded together. Any module that has an exception during
+ *     the log processing and a long block operation will affect the normal operation of
+ *     other functional modules.
+ * </p>
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")

@@ -57,8 +57,8 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 					"Failed to initialize the member node, is empty");
 		}
 
-		// Use the inotify mechanism to monitor file changes and automatically trigger the reading of cluster.conf
-
+		// Use the inotify mechanism to monitor file changes and automatically
+		// trigger the reading of cluster.conf
 		try {
 			WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), watcher);
 		}
@@ -70,7 +70,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 
 	@Override
 	public void destroy() throws NacosException {
-		WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), watcher);
+		WatchFileCenter.deregisterWatcher(ApplicationUtils.getConfFilePath(), watcher);
 	}
 
 	private void readClusterConfFromDisk() {
@@ -79,7 +79,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 			MemberUtils.readServerConf(members, memberManager);
 		}
 		catch (FileNotFoundException e) {
-			String clusters = ApplicationUtils.getProperty("nacos.member.list");
+			String clusters = ApplicationUtils.getMemberList();
 			if (StringUtils.isNotBlank(clusters)) {
 				String[] details = clusters.split(",");
 				List<String> members = new ArrayList<>();

@@ -428,6 +428,13 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         IoUtils.writeStringToFile(new File(getClusterConfFilePath()), content, UTF_8);
     }
 
+    public static String getMemberList() {
+        if (environment == null) {
+            return System.getProperty("nacos.member.list");
+        }
+        return getProperty("nacos.member.list");
+    }
+
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         applicationContext = context;
