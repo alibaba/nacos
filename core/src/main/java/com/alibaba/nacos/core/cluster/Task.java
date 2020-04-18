@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.cluster.IsolationEvent;
-import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
@@ -27,7 +25,7 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-abstract class Task extends SmartSubscribe implements Runnable {
+public abstract class Task extends SmartSubscribe implements Runnable {
 
     protected volatile boolean shutdown = false;
     private volatile boolean skip = false;

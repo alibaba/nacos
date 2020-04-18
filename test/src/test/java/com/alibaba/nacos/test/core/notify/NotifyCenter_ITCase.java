@@ -39,11 +39,11 @@ public class NotifyCenter_ITCase {
 		}
 	}
 
-	private static class Test2SlowEvent implements Event {
+	private static class TestEvent implements Event {
 
 		@Override
 		public Class<? extends Event> eventType() {
-			return Test2SlowEvent.class;
+			return TestEvent.class;
 		}
 	}
 
@@ -59,21 +59,21 @@ public class NotifyCenter_ITCase {
 		}
 	};
 
-	private static final Subscribe<Test2SlowEvent> subscribe2 = new Subscribe<Test2SlowEvent>() {
+	private static final Subscribe<TestEvent> subscribe2 = new Subscribe<TestEvent>() {
 		@Override
-		public void onEvent(Test2SlowEvent event) {
+		public void onEvent(TestEvent event) {
 
 		}
 
 		@Override
 		public Class<? extends Event> subscribeType() {
-			return Test2SlowEvent.class;
+			return TestEvent.class;
 		}
 	};
 
 	static {
 		NotifyCenter.registerToSharePublisher(TestSlowEvent::new, TestSlowEvent.class);
-		NotifyCenter.registerToSharePublisher(Test2SlowEvent::new, Test2SlowEvent.class);
+		NotifyCenter.registerToPublisher(TestEvent::new, TestEvent.class, 8);
 
 		NotifyCenter.registerSubscribe(subscribe);
 		NotifyCenter.registerSubscribe(subscribe2);
@@ -87,7 +87,8 @@ public class NotifyCenter_ITCase {
 
 	@Test
 	public void test_event_can_listen() throws Exception {
-		CountDownLatch latch = new CountDownLatch(2);
+		CountDownLatch latch = new CountDownLatch(1);
+		CountDownLatch latch2 = new CountDownLatch(1);
 		AtomicInteger count = new AtomicInteger(0);
 
 		NotifyCenter.registerSubscribe(new Subscribe<TestSlowEvent>() {
@@ -102,20 +103,21 @@ public class NotifyCenter_ITCase {
 				return TestSlowEvent.class;
 			}
 		});
-		NotifyCenter.registerSubscribe(new Subscribe<Test2SlowEvent>() {
+		NotifyCenter.registerSubscribe(new Subscribe<TestEvent>() {
 			@Override
-			public void onEvent(Test2SlowEvent event) {
-				latch.countDown();
+			public void onEvent(TestEvent event) {
+				latch2.countDown();
 				count.incrementAndGet();
 			}
 
 			@Override
 			public Class<? extends Event> subscribeType() {
-				return Test2SlowEvent.class;
+				return TestEvent.class;
 			}
 		});
 
 		latch.await();
+		latch2.await();
 
 		Assert.assertEquals(2, count.get());
 	}

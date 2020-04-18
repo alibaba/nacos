@@ -47,28 +47,21 @@ public class HttpClientManager {
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override public void run() {
-
 				System.out.println("[NSyncHttpClient] Start destroying HttpClient");
-
 				for (Map.Entry<String, NSyncHttpClient> entry : HTTP_SYNC_CLIENT_MAP
 						.entrySet()) {
 					try {
 						entry.getValue().close();
 					}
-					catch (Exception ignore) {
-
-					}
+					catch (Exception ignore) {}
 				}
-
 				System.out.println("[NSyncHttpClient] Destruction of the end");
 			}
 		});
 
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override public void run() {
-
 				System.out.println("[NAsyncHttpClient] Start destroying HttpClient");
-
 				for (Map.Entry<String, NAsyncHttpClient> entry : HTTP_ASYNC_CLIENT_MAP
 						.entrySet()) {
 					try {
@@ -77,7 +70,6 @@ public class HttpClientManager {
 					catch (Exception ignore) {
 					}
 				}
-
 				System.out.println("[NAsyncHttpClient] Destruction of the end");
 			}
 		});
@@ -89,7 +81,6 @@ public class HttpClientManager {
 
 	public static NSyncHttpClient newSyncHttpClient(String namespace) {
 		synchronized (SYNC_MONITOR) {
-
 			NSyncHttpClient nSyncHttpClient = HTTP_SYNC_CLIENT_MAP.get(namespace);
 
 			if (nSyncHttpClient != null) {
@@ -105,7 +96,6 @@ public class HttpClientManager {
 
 	public static NAsyncHttpClient newAsyncHttpClient(String namespace) {
 		synchronized (ASYNC_MONITOR) {
-
 			NAsyncHttpClient nAsyncHttpClient = HTTP_ASYNC_CLIENT_MAP.get(namespace);
 
 			if (nAsyncHttpClient != null) {
@@ -123,7 +113,6 @@ public class HttpClientManager {
 	public static NSyncHttpClient newSyncHttpClient(String namespace,
 			RequestConfig requestConfig) {
 		synchronized (SYNC_MONITOR) {
-
 			NSyncHttpClient nSyncHttpClient = HTTP_SYNC_CLIENT_MAP.get(namespace);
 
 			if (nSyncHttpClient != null) {

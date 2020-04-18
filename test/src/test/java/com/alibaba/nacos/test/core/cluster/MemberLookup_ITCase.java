@@ -21,7 +21,7 @@ import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.FileConfigMemberLookup;
-import com.alibaba.nacos.core.cluster.lookup.GossipMemberLookup;
+import com.alibaba.nacos.core.cluster.lookup.DiscoveryMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.After;
@@ -125,7 +125,7 @@ public class MemberLookup_ITCase {
 		System.setProperty("nacos.gossip", "false");
 		MemberLookup lookup = LookupFactory.getLookUp();
 		System.out.println(lookup);
-		Assert.assertTrue(lookup instanceof GossipMemberLookup);
+		Assert.assertTrue(lookup instanceof DiscoveryMemberLookup);
 	}
 
 }
