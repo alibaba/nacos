@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * MD5 generator
@@ -37,13 +37,11 @@ public class Md5Utils {
         }
     };
 
-    private static final int HEX_VALUE_COUNT = 16;
-
     public static String getMD5(byte[] bytes) throws NoSuchAlgorithmException {
         try {
             MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
             if (messageDigest != null) {
-                return new BigInteger(1, messageDigest.digest(bytes)).toString(HEX_VALUE_COUNT);
+                return Hex.encodeHexString(messageDigest.digest(bytes));
             }
             throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
         } finally {
