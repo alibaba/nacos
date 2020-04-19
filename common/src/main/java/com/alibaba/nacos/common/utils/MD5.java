@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.utils;
+package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.google.common.collect.Maps;
