@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.MD5;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -347,7 +347,7 @@ public class DumpService {
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                         String aggrContent = cf.getContent();
                         String localContentMD5 = ConfigService.getContentMd5(GroupKey.getKey(dataId, group));
-                        String aggrConetentMD5 = Md5Utils.getMD5(aggrContent, Constants.ENCODE);
+                        String aggrConetentMD5 = MD5.getInstance().getMD5String(aggrContent);
 
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
                             persistService.insertOrUpdate(null, null, cf, time, null, false);

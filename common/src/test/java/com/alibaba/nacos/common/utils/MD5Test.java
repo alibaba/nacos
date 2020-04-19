@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.utils;
+package com.alibaba.nacos.common.utils;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,6 +26,8 @@ public class MD5Test {
             MD5.getInstance().getMD5String(""));
         Assert.assertEquals("acbd18db4cc2f85cedef654fccc4a4d8",
             MD5.getInstance().getMD5String("foo"));
+        Assert.assertEquals("02f463eb799797e2a978fb1a2ae2991e",
+            MD5.getInstance().getMD5String("38c5ee9532f037a20b93d0f804cf111fca4003e451d09a692d9dea8032308d9c64eda9047fcd5e850284a49b1a0cfb2ecd45"));
 
         Assert.assertEquals("d41d8cd98f00b204e9800998ecf8427e",
             MD5.getInstance().getMD5String(new byte[0]));
