@@ -255,6 +255,8 @@ public class JRaftServer {
 			// Ensure that each Raft Group has its own configuration and NodeOptions
 			Configuration configuration = conf.copy();
 			NodeOptions copy = nodeOptions.copy();
+			// Here, the LogProcessor is passed into StateMachine, and when the StateMachine
+			// triggers onApply, the onApply of the LogProcessor is actually called
 			NacosStateMachine machine = new NacosStateMachine(this, processor);
 
 			copy.setLogUri(logUri);

@@ -57,7 +57,6 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	private NSyncHttpClient syncHttpClient = HttpClientManager
 			.newSyncHttpClient(AddressServerMemberLookup.class.getCanonicalName());
 	private AddressServerSyncTask task;
-	private int maxRetry = Integer.getInteger("nacos.address-server.retry", 5);
 	private volatile boolean shutdown = false;
 
 	@Override
@@ -97,6 +96,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 		// Repeat three times, successfully jump out
 		boolean success = false;
 		Throwable ex = null;
+		int maxRetry = ApplicationUtils.getProperty("nacos.core.address-server.retry", Integer.class, 5);
 		for (int i = 0; i < maxRetry; i ++) {
 			try {
 				syncFromAddressUrl();
@@ -108,7 +108,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			}
 		}
 		if (!success) {
-			throw new RuntimeException(ex);
+			throw new NacosException(NacosException.SERVER_ERROR, ex);
 		}
 
 		task = new AddressServerSyncTask();

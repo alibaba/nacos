@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Has nothing to do with the specific implementation of the consistency protocol
- * Initialization sequence： init(Config) => loadLogProcessor(List)
+ * Initialization sequence： init(Config)
  *
  * <ul>
  *     <li>{@link Config} : Relevant configuration information required by the consistency protocol,
