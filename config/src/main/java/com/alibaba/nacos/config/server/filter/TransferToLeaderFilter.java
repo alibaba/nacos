@@ -135,7 +135,9 @@ public class TransferToLeaderFilter implements Filter {
 
 				String val = req.getHeader(Constants.FORWARD_LEADER);
 				final int transferCnt = Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
-				if (transferCnt > MAX_TRANSFER_CNT) {
+
+				// Requests can only be forwarded once if a downgrade is not triggered
+				if (transferCnt > MAX_TRANSFER_CNT && !downgrading) {
 					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 							"Exceeded forwarding times:" + req.getMethod() + ":" + req.getRequestURI());
 					return;

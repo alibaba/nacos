@@ -17,6 +17,7 @@ package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.exception.SnakflowerException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,7 +31,7 @@ import java.util.Map;
  * on the Raft Term and the maximum DataCenterId information
  *
  * <strong>WorkerId</strong> generation policy: Calculate the InetAddress hashcode
- *
+ * <p>
  * The repeat rate of the dataCenterId, the value of the maximum dataCenterId times the
  * time of each Raft election. The time for raft to select the master is generally measured
  * in seconds. If the interval of an election is 5 seconds, it will take 150 seconds for
@@ -48,7 +49,7 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	private static final long WORKER_ID_BITS = 5L;
 	private static final long DATA_CENTER_ID_BITS = 5L;
 	public static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
-    public static final long MAX_DATA_CENTER_ID = ~(-1L << DATA_CENTER_ID_BITS);
+	public static final long MAX_DATA_CENTER_ID = ~(-1L << DATA_CENTER_ID_BITS);
 
 	private static final long SEQUENCE_BITS = 12L;
 	private static final long SEQUENCE_BITS1 = SEQUENCE_BITS;
@@ -56,47 +57,62 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	private static final long TIMESTAMP_LEFT_SHIFT =
 			SEQUENCE_BITS + WORKER_ID_BITS + DATA_CENTER_ID_BITS;
 	private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+	private static final long MAX_OFFSET = 5L;
 
-    private static long workerId;
-    private static volatile long dataCenterId = 1L;
+	private static long workerId = -1L;
+	private static volatile long dataCenterId = -1L;
 
 	private volatile long currentId;
 	private long sequence = 0L;
 	private long lastTimestamp = -1L;
 
-	private final long MAX_OFFSET = 5L;
 
-    public static void setDataCenterId(long dataCenterId) {
-        SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
-    }
+	public static void setDataCenterId(long dataCenterId) {
+		SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
+	}
 
-    static {
-        InetAddress address;
-        try {
-            address = InetAddress.getLocalHost();
-        }
-        catch (final UnknownHostException e) {
-            throw new IllegalStateException(
-                    "Cannot get LocalHost InetAddress, please check your network!");
-        }
-        byte[] ipAddressByteArray = address.getAddress();
-        workerId = (
-                ((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE)
-                        + (ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
-    }
+	{
+		long dataCenterId = ApplicationUtils
+				.getProperty("nacos.core.snowflake.data-center", Integer.class, -1);
+		long workerId = ApplicationUtils
+				.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
+
+		if (dataCenterId != -1) {
+			SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
+		} else {
+			SnakeFlowerIdGenerator.dataCenterId = 1L;
+		}
+		if (workerId != -1) {
+			SnakeFlowerIdGenerator.workerId = workerId;
+		}
+		else {
+			InetAddress address;
+			try {
+				address = InetAddress.getLocalHost();
+			}
+			catch (final UnknownHostException e) {
+				throw new IllegalStateException(
+						"Cannot get LocalHost InetAddress, please check your network!");
+			}
+			byte[] ipAddressByteArray = address.getAddress();
+			SnakeFlowerIdGenerator.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11)
+					<< Byte.SIZE) + (ipAddressByteArray[ipAddressByteArray.length - 1]
+					& 0xFF));
+		}
+	}
 
 	@Override
-    public void init() {
-        initialize(workerId, dataCenterId);
-    }
+	public void init() {
+		initialize(workerId, dataCenterId);
+	}
 
 	@Override
-    public long currentId() {
+	public long currentId() {
 		return currentId;
 	}
 
 	@Override
-    public synchronized long nextId() {
+	public synchronized long nextId() {
 		long timestamp = timeGen();
 
 		if (timestamp < lastTimestamp) {
@@ -109,14 +125,16 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 			if (offset <= MAX_OFFSET) {
 				try {
 					wait(offset << 1);
-				} catch (InterruptedException ignore) {
+				}
+				catch (InterruptedException ignore) {
 					Thread.interrupted();
 				}
 				timestamp = timeGen();
 				if (timestamp < lastTimestamp) {
 					throw exception;
 				}
-			} else {
+			}
+			else {
 				throw exception;
 			}
 		}
@@ -138,7 +156,7 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	}
 
 	@Override
-    public Map<Object, Object> info() {
+	public Map<Object, Object> info() {
 		Map<Object, Object> info = new HashMap<>(4);
 		info.put("currentId", currentId);
 		info.put("dataCenterId", dataCenterId);
@@ -158,15 +176,15 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 		if (workerId > MAX_WORKER_ID || workerId < 0) {
 			throw new IllegalArgumentException(
 					String.format("worker Id can't be greater than %d or less than 0",
-                            MAX_WORKER_ID));
+							MAX_WORKER_ID));
 		}
 		if (dataCenterId > MAX_DATA_CENTER_ID || dataCenterId < 0) {
 			throw new IllegalArgumentException(
 					String.format("dataCenter Id can't be greater than %d or less than 0",
-                            MAX_DATA_CENTER_ID));
+							MAX_DATA_CENTER_ID));
 		}
-        SnakeFlowerIdGenerator.workerId = workerId;
-        SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
+		SnakeFlowerIdGenerator.workerId = workerId;
+		SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
 	}
 
 	/**

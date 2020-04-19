@@ -34,15 +34,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Consistent protocol metadata information, <Key, <Key, Value >> structure
  * Listeners that can register to listen to changes in value
  *
- * <ul>
- *     <li>
- *         <global, <cluster, List <String >> metadata information that exists by default, that is, all node information of the entire cluster
- *     </li>
- *     <li>
- *         <global, <self, String> The metadata information existing by default, that is, the IP: PORT information of the current node
- *     </li>
- * </ul>
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
