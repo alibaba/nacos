@@ -15,7 +15,8 @@
  */
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.common.utils.MD5;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -66,7 +67,7 @@ public class RequestLogAspect {
     public Object interfacePublishSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
                                          HttpServletResponse response, String dataId, String group, String tenant,
                                          String content) throws Throwable {
-        final String md5 = content == null ? null : MD5.getInstance().getMD5String(content);
+        final String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
         MetricsMonitor.getPublishMonitor().incrementAndGet();
         return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
     }

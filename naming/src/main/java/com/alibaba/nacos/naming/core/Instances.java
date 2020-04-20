@@ -17,7 +17,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.common.utils.MD5;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 
@@ -66,7 +67,7 @@ public class Instances implements Record {
             sb.append(",");
         }
 
-        return MD5.getInstance().getMD5String(sb.toString());
+        return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
     }
 
     public String convertMap2String(Map<String, String> map) {
