@@ -45,11 +45,6 @@
         </dependency>
 
         <dependency>
-            <artifactId>commons-codec</artifactId>
-            <groupId>commons-codec</groupId>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
