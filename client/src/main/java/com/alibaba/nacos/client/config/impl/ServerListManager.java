@@ -306,7 +306,7 @@ public class ServerListManager {
                 List<String> lines = IoUtils.readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
-                    if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {
+                    if (StringUtils.isNotBlank(serverAddr)) {
                         String[] ipPort = serverAddr.trim().split(":");
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
