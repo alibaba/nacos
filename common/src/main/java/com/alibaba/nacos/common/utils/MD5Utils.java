@@ -15,16 +15,18 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * MD5 generator
+ * MD5 util
  *
- * @author nacos
+ *@author nacos
  */
-public class Md5Utils {
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+public class MD5Utils {
+
+    private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     private static ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
         @Override
@@ -37,13 +39,11 @@ public class Md5Utils {
         }
     };
 
-    private static final int HEX_VALUE_COUNT = 16;
-
-    public static String getMD5(byte[] bytes) throws NoSuchAlgorithmException {
+    public static String md5Hex(byte[] bytes) throws NoSuchAlgorithmException {
         try {
             MessageDigest messageDigest = MESSAGE_DIGEST_LOCAL.get();
             if (messageDigest != null) {
-                return new BigInteger(1, messageDigest.digest(bytes)).toString(HEX_VALUE_COUNT);
+                return encodeHexString(messageDigest.digest(bytes));
             }
             throw new NoSuchAlgorithmException("MessageDigest get MD5 instance error");
         } finally {
@@ -51,11 +51,28 @@ public class Md5Utils {
         }
     }
 
-    public static String getMD5(String value, String encode) {
+    public static String md5Hex(String value,String encode) {
         try {
-            return getMD5(value.getBytes(encode));
+            return md5Hex(value.getBytes(encode));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * 将一个字节数组转化为可见的字符串
+     */
+     public static String encodeHexString(byte[] bytes) {
+        int l = bytes.length;
+
+        char[] out = new char[l << 1];
+
+        for (int i = 0, j = 0; i < l; i++) {
+            out[j++] = DIGITS_LOWER[(0xF0 & bytes[i]) >>> 4];
+            out[j++] = DIGITS_LOWER[0x0F & bytes[i]];
+        }
+
+        return new String(out);
+    }
+
 }
