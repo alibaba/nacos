@@ -17,6 +17,8 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -34,6 +36,7 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,13 +52,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
@@ -399,7 +399,7 @@ public class DumpService {
                     }
                     // 删除
                     else {
-                        persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
                         log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                             + group);
                     }

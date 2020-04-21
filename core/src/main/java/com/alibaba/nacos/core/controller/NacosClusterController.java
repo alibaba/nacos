@@ -16,26 +16,31 @@
 
 package com.alibaba.nacos.core.controller;
 
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.http.NAsyncHttpClient;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.core.auth.Secured;
-import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.cluster.RecoverEvent;
+import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,28 +57,12 @@ public class NacosClusterController {
     @Autowired
     private ServerMemberManager memberManager;
 
-    @PostMapping(value = "/{type}")
-    public RestResult<String> changeLocalStatus(@PathVariable(value = "type") String eventType) {
-        String isolation = "isolation";
-        String recover = "recover";
-        if (Objects.equals(isolation, eventType)) {
-            NotifyCenter.publishEvent(new IsolationEvent());
-            return RestResultUtils.success();
-        }
-        if (Objects.equals(recover, eventType)) {
-            NotifyCenter.publishEvent(new RecoverEvent());
-            return RestResultUtils.success();
-        }
-        return RestResultUtils.failed("unsupported event types : " + eventType);
-    }
-
     @GetMapping(value = "/self")
     public RestResult<Member> self() {
         return RestResultUtils.success(memberManager.getSelf());
     }
 
     @GetMapping(value = "/nodes")
-    @Secured
     public RestResult<Collection<Member>> listAllNode(@RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> members = memberManager.allMembers();
         Collection<Member> result = new ArrayList<>();
@@ -100,26 +89,77 @@ public class NacosClusterController {
         return RestResultUtils.success(MemberUtils.simpleMembers(memberManager.allMembers()));
     }
 
-    @GetMapping("/server/health")
+    @GetMapping("/health")
     public RestResult<String> getHealth() {
         return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
 
-    @PostMapping(value = {"/server/report"})
-    public RestResult<String> report(@RequestBody(required = false) Member node) {
+    @PostMapping(value = {"/report"})
+    public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {
             return RestResultUtils.failedWithData("Node information is illegal");
         }
         Loggers.CLUSTER.debug("node state report, receive info : {}", node);
+        node.setState(NodeState.UP);
+        node.setFailAccessCnt(0);
         memberManager.update(node);
 
         return RestResultUtils.success("ok");
     }
 
     @PostMapping("/server/leave")
-    public RestResult<String> leave(@RequestBody Collection<Member> params) {
-        memberManager.memberLeave(params);
-        return RestResultUtils.success("ok");
+    public RestResult<String> leave(@RequestBody Collection<String> params) {
+        Collection<Member> memberList = MemberUtils.multiParse(params);
+        memberManager.memberLeave(memberList);
+        final NAsyncHttpClient asyncHttpClient = HttpClientManager
+                .newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
+        final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {};
+        final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
+        notifyList.removeAll(memberList);
+        CountDownLatch latch = new CountDownLatch(notifyList.size());
+        for (Member member : notifyList) {
+            final String url = HttpUtils.buildUrl(false, member.getAddress(),
+                    ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
+                    "/cluster/server/leave");
+            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, params,
+                    genericType.getType(), new Callback<String>() {
+                        @Override
+                        public void onReceive(RestResult<String> result) {
+                            try {
+                                if (result.ok()) {
+                                    Loggers.CLUSTER.debug("The node : [{}] success to process the request",
+                                            member);
+                                    MemberUtils.onSuccess(member);
+                                }
+                                else {
+                                    Loggers.CLUSTER.warn("The node : [{}] failed to process the request, response is : {}",
+                                            member, result);
+                                    MemberUtils.onFail(member);
+                                }
+                            } finally {
+                                latch.countDown();
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                            try {
+                                Loggers.CLUSTER.error("Failed to communicate with the node : {}",
+                                        member);
+                                MemberUtils.onFail(member);
+                            } finally {
+                                latch.countDown();
+                            }
+                        }
+                    });
+        }
+
+        try {
+            latch.await(5_000, TimeUnit.MILLISECONDS);
+            return RestResultUtils.success("ok");
+        } catch (Throwable ex) {
+            return RestResultUtils.failed(ex.getMessage());
+        }
     }
 
 }

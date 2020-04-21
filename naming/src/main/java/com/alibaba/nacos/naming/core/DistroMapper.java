@@ -19,6 +19,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -54,7 +55,7 @@ public class DistroMapper implements MemberChangeListener {
      */
     @PostConstruct
     public void init() {
-        memberManager.subscribe(this);
+        NotifyCenter.registerSubscribe(this);
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {

@@ -16,27 +16,19 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Task extends SmartSubscribe implements Runnable {
+public abstract class Task implements Runnable {
 
     protected volatile boolean shutdown = false;
-    private volatile boolean skip = false;
-
-    public Task() {
-        NotifyCenter.registerSubscribe(this);
-    }
 
     @Override
     public void run() {
-        if (shutdown || skip) {
+        if (shutdown) {
             return;
         }
         try {
@@ -48,29 +40,6 @@ public abstract class Task extends SmartSubscribe implements Runnable {
                 after();
             }
         }
-    }
-
-    @Override
-    public final void onEvent(Event event) {
-        if (event instanceof IsolationEvent) {
-            // Trigger task ignore
-            skip = true;
-            return;
-        }
-        if (event instanceof RecoverEvent) {
-            skip = false;
-        }
-    }
-
-    @Override
-    public boolean canNotify(Event event) {
-        if (event instanceof IsolationEvent) {
-            return true;
-        }
-        if (event instanceof RecoverEvent) {
-            return true;
-        }
-        return false;
     }
 
     /**

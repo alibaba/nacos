@@ -20,7 +20,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -840,9 +839,9 @@ public class RaftCore {
 
     public static String buildURL(String ip, String api) {
         if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        return "http://" + ip + RunningConfig.getContextPath() + api;
+        return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }
 
     public Datum<?> getDatum(String key) {

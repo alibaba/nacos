@@ -33,26 +33,6 @@ public class GlobalExecutor {
             new NameThreadFactory("com.alibaba.nacos.core.common")
     );
 
-    private static final ScheduledExecutorService SYNC_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            ServerMemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.sync-member")
-            );
-
-    private static final ScheduledExecutorService CLEAN_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            ServerMemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.clean-member")
-    );
-
-    private static final ScheduledExecutorService PULL_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            ServerMemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.pull-member")
-    );
-
-    private static final ScheduledExecutorService PING_MEMBER_EXECUTOR = ExecutorFactory.newSingleScheduledExecutorService(
-            ServerMemberManager.class.getCanonicalName(),
-            new NameThreadFactory("com.alibaba.nacos.core.ping-member")
-    );
-
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();
     }
@@ -63,22 +43,6 @@ public class GlobalExecutor {
 
     public static void scheduleByCommon(Runnable runnable, long delayMs) {
         COMMON_EXECUTOR.schedule(runnable, delayMs, TimeUnit.MILLISECONDS);
-    }
-
-    public static void scheduleSyncJob(Runnable runnable, long delay) {
-        SYNC_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-    }
-
-    public static void scheduleBroadCastJob(Runnable runnable, long delay) {
-        CLEAN_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-    }
-
-    public static void schedulePullJob(Runnable runnable, long delay) {
-        PULL_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-    }
-
-    public static void schedulePingJob(Runnable runnable, long delay) {
-        PING_MEMBER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
 }

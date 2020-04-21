@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -39,7 +38,6 @@ public class Member {
 
     private String address = "";
 
-    @JSONField(serialize = false)
     private transient int failAccessCnt = 0;
 
     public Member() {
@@ -73,11 +71,11 @@ public class Member {
     }
 
     public Map<String, Object> getExtendInfo() {
-        return new TreeMap<>(extendInfo);
+        return extendInfo;
     }
 
     public void setExtendInfo(Map<String, Object> extendInfo) {
-        this.extendInfo = extendInfo;
+        this.extendInfo.putAll(extendInfo);
     }
 
     public void setAddress(String address) {
@@ -146,7 +144,7 @@ public class Member {
         private String ip;
         private int port;
         private NodeState state;
-        private Map<String, String> extendInfo;
+        private Map<String, String> extendInfo = Collections.synchronizedMap(new TreeMap<>());
 
         private MemberBuilder() {
         }
@@ -167,7 +165,7 @@ public class Member {
         }
 
         public MemberBuilder extendInfo(Map<String, String> extendInfo) {
-            this.extendInfo = extendInfo;
+            this.extendInfo.putAll(extendInfo);
             return this;
         }
 

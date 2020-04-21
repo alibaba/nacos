@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -88,7 +88,8 @@ public class SubscribeManager {
                     continue;
                 }
 
-                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getAddress() + RunningConfig.getContextPath()
+                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getAddress() + ApplicationUtils
+                        .getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {

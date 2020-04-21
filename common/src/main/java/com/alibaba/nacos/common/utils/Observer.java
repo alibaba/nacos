@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
-
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.SlowEvent;
+package com.alibaba.nacos.common.utils;
 
 /**
- * Causes the server to handle the isolated state, unable to process any requests
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class IsolationEvent implements SlowEvent {
+public interface Observer {
 
-	@Override
-	public Class<? extends Event> eventType() {
-		return IsolationEvent.class;
-	}
+	/**
+	 * This method is called whenever the observed object is changed. An
+	 * application calls an {@code Observable} object's
+	 * {@code notifyObservers} method to have all the object's
+	 * observers notified of the change.
+	 *
+	 * @param   o     the observable object.
+	 * @param   arg   an argument passed to the {@code notifyObservers}
+	 *                 method.
+	 */
+	void update(Observable o, Object arg);
+
 }

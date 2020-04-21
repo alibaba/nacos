@@ -25,14 +25,9 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.core.cluster.IsolationEvent;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.RecoverEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -83,7 +78,7 @@ public class ServerMemberManager_ITCase {
 	@After
 	public void after() throws Exception {
 		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
+				ApplicationUtils.getContextPath(),
 				Commons.NACOS_CORE_CONTEXT,
 				"/cluster/server/leave");
 		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY,
@@ -131,83 +126,11 @@ public class ServerMemberManager_ITCase {
 		Assert.assertEquals(2, members.size());
 	}
 
-	@Test
-	public void test_d_member_isolation() throws Exception {
-		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
-				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/isolation");
-		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, null,
-				new GenericType<RestResult<String>>(){}.getType());
-		Assert.assertTrue(result.ok());
-
-		CountDownLatch latch = new CountDownLatch(1);
-
-		NotifyCenter.registerSubscribe(new Subscribe<IsolationEvent>() {
-
-			@Override
-			public void onEvent(IsolationEvent event) {
-				latch.countDown();
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return IsolationEvent.class;
-			}
-		});
-
-		latch.await();
-
-		url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
-				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/server/health");
-		result = httpClient.get(url, Header.EMPTY, Query.EMPTY, new GenericType<RestResult<String>>(){}.getType());
-		Assert.assertTrue(result.ok());
-		Assert.assertEquals(NodeState.ISOLATION.name(), result.getData());
-	}
-
-	@Test
-	public void test_e_member_recover() throws Exception {
-		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
-				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/recover");
-		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY, null,
-				new GenericType<RestResult<String>>(){}.getType());
-		Assert.assertTrue(result.ok());
-
-		CountDownLatch latch = new CountDownLatch(1);
-
-		NotifyCenter.registerSubscribe(new Subscribe<RecoverEvent>() {
-
-			@Override
-			public void onEvent(RecoverEvent event) {
-				latch.countDown();
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return RecoverEvent.class;
-			}
-		});
-
-		latch.await();
-
-		url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
-				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/server/health");
-		result = httpClient.get(url, Header.EMPTY, Query.EMPTY, new GenericType<RestResult<String>>(){}.getType());
-		Assert.assertTrue(result.ok());
-		Assert.assertEquals(NodeState.UP.name(), result.getData());
-	}
-
 	private RestResult<String> memberJoin() throws Exception {
 		final String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				memberManager.getContextPath(),
+				ApplicationUtils.getContextPath(),
 				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/server/report");
+				"/cluster/report");
 		return httpClient.post(url, Header.EMPTY, Query.newInstance().addParam("sync", true), Member
 						.builder()
 						.ip("1.1.1.1")

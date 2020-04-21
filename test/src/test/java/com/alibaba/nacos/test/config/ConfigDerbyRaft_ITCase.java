@@ -61,8 +61,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -470,16 +468,13 @@ public class ConfigDerbyRaft_ITCase
 				CPProtocol protocol = context.getBean(CPProtocol.class);
 
 				protocol.protocolMetaData()
-						.subscribe(operate.group(), Constants.LEADER_META_DATA, new Observer() {
-
-							@Override
-							public void update(Observable o, Object arg) {
-								System.out.println("node : 884" + (7 + index) + "-> select leader is : " + arg);
-								if (finished[index].compareAndSet(false, true)) {
-									latch.countDown();
-								}
-							}
-						});
+						.subscribe(operate.group(), Constants.LEADER_META_DATA,
+								(o, arg) -> {
+									System.out.println("node : 884" + (7 + index) + "-> select leader is : " + arg);
+									if (finished[index].compareAndSet(false, true)) {
+										latch.countDown();
+									}
+								});
 
 				new Thread(() -> {
 					try {

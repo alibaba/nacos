@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -95,7 +95,7 @@ public class HealthCheckCommon {
                     }
 
                     HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.getAddress()
-                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                         + "/api/healthCheckResult", null, params);
 
                     if (httpResult.code != HttpURLConnection.HTTP_OK) {

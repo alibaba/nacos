@@ -21,9 +21,10 @@ import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,6 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * 通知服务。数据库变更后，通知所有server，包括自己，加载新数据。
@@ -71,13 +70,14 @@ public class NotifyTaskProcessor implements TaskProcessor {
             // XXX 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
             List<String> headers = Arrays.asList(
                 NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
-                NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
-            String urlString = MessageFormat.format(URL_PATTERN, serverIp, RunningConfigUtils.getContextPath(), dataId,
+                NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
+            String urlString = MessageFormat.format(URL_PATTERN, serverIp, ApplicationUtils
+                            .getContextPath(), dataId,
                 group);
 
             HttpResult result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.code == HttpStatus.SC_OK) {
-                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
+                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                     ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
 
                 MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
@@ -87,7 +87,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
                 MetricsMonitor.getConfigNotifyException().increment();
                 log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
                     serverIp, result.code});
-                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
+                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                     ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
@@ -97,7 +97,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
                 "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
                     + e.toString());
             log.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
-            ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
+            ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                 ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }

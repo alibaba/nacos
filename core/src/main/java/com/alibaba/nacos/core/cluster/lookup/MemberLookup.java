@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster;
+package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.core.cluster.Member;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -26,36 +29,43 @@ import java.util.Map;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface MemberLookup {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class MemberLookup extends Observable {
 
 	/**
-	 * Initialize the corresponding resource
-	 *
-	 * @param memberManager {@link ServerMemberManager}
-	 * @throws NacosException
-	 */
-	void init(ServerMemberManager memberManager) throws NacosException;
-
-	/**
-	 * Run this addressing mode
+	 * start
 	 *
 	 * @throws NacosException
 	 */
-	void run() throws NacosException;
+	public abstract void start() throws NacosException;
+
+	/**
+	 * Gets the list of addresses stored in the addressing mode
+	 *
+	 * @return {@link Collection<Member>}
+	 */
+	public abstract Collection<Member> getMembers();
+
+	/**
+	 * The addressing pattern finds cluster nodes
+	 *
+	 * @param members {@link Collection<Member>}
+	 */
+	abstract void afterLookup(Collection<Member> members);
 
 	/**
 	 * Addressing mode closed
 	 *
 	 * @throws NacosException
 	 */
-	void destroy() throws NacosException;
+	abstract void destroy() throws NacosException;
 
 	/**
 	 * Some data information about the addressing pattern
 	 *
 	 * @return {@link Map<String, Object>}
 	 */
-	default Map<String, Object> info() {
+	public Map<String, Object> info() {
 		return Collections.emptyMap();
 	}
 
