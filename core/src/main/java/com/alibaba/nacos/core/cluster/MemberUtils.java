@@ -34,6 +34,8 @@ import java.util.function.Predicate;
  */
 public class MemberUtils {
 
+	private static final String SEMICOLON = ":";
+
 	private static ServerMemberManager manager;
 
 	public static void setManager(ServerMemberManager manager) {
@@ -48,6 +50,7 @@ public class MemberUtils {
 		oldMember.setAddress(newMember.getAddress());
 	}
 
+	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static Member singleParse(String member) {
 		int selfPort = ApplicationUtils.getPort();
 		// Nacos default port is 8848
@@ -58,8 +61,8 @@ public class MemberUtils {
 		String[] memberDetails = member.split("\\?");
 		String address = memberDetails[0];
 		int port = defaultPort;
-		if (address.contains(":")) {
-			String[] info = address.split(":");
+		if (address.contains(SEMICOLON)) {
+			String[] info = address.split(SEMICOLON);
 			address = info[0];
 			port = Integer.parseInt(info[1]);
 		}
