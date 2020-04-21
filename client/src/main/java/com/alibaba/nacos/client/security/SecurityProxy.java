@@ -55,6 +55,10 @@ public class SecurityProxy {
      * User's password
      */
     private String password;
+    /**
+     * NacosServer配置地址
+     */
+    private String  serverAddress;
 
     /**
      * A token to take with when sending request to Nacos server
@@ -86,6 +90,7 @@ public class SecurityProxy {
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
         contextPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+        serverAddress= properties.getProperty(PropertyKeyConst.SERVER_ADDR, StringUtils.EMPTY);
     }
 
     public boolean login(List<String> servers) {
@@ -102,8 +107,8 @@ public class SecurityProxy {
                 }
             }
         } catch (Throwable ignore) {
+            SECURITY_LOGGER.warn("nacos  login failed:",ignore);
         }
-
         return false;
     }
 
@@ -113,16 +118,24 @@ public class SecurityProxy {
             Map<String, String> params = new HashMap<String, String>(2);
             params.put("username", username);
             String body = "password=" + password;
-            String url;
-            if (HttpClient.ENABLE_HTTPS){
-                url = "https://" + server + contextPath + LOGIN_URL;
-            }else {
-                url = "http://" + server + contextPath + LOGIN_URL;
+            String url=server;
+            if (!server.startsWith(Constants.HTTP_PREFIX)) {
+                if (HttpClient.ENABLE_HTTPS) {
+                    url = "https://" + server + contextPath + LOGIN_URL;
+                } else {
+                    url = "http://" + server + contextPath + LOGIN_URL;
+                }
+            }else{
+                if (HttpClient.ENABLE_HTTPS && !server.startsWith(Constants.HTTPS_PREFIX)) {
+                    url =StringUtils.removeStart(server,Constants.HTTP_PREFIX)+Constants.HTTPS_PREFIX + contextPath + LOGIN_URL;
+                } else {
+                    url = server + contextPath + LOGIN_URL;
+                }
             }
-
-            if (server.contains(Constants.HTTP_PREFIX)||server.contains(Constants.HTTPS_PREFIX)) {
-                url = server + contextPath + LOGIN_URL;
-            }
+ //           securityProxy.login(serverListMgr.getServerUrls()); 这个方法对URL进行了包装所以不能用此判断
+//            if (server.contains(Constants.HTTP_PREFIX)||server.contains(Constants.HTTPS_PREFIX)) {
+//                url = server + contextPath + LOGIN_URL;
+//            }
 
             HttpClient.HttpResult result = HttpClient.request(url, new ArrayList<String>(2),
                 params, body, Charsets.UTF_8.name(), HttpMethod.POST);
@@ -137,6 +150,9 @@ public class SecurityProxy {
                 accessToken = obj.getString(Constants.ACCESS_TOKEN);
                 tokenTtl = obj.getIntValue(Constants.TOKEN_TTL);
                 tokenRefreshWindow = tokenTtl / 10;
+                System.setProperty(Constants.ACCESS_TOKEN,accessToken);
+            }else{
+                SECURITY_LOGGER.warn("login  got   accessToken  is empty");
             }
         }
         return true;

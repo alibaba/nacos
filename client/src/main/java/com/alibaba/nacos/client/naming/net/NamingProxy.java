@@ -502,6 +502,8 @@ public class NamingProxy {
         // Inject token if exist:
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        }else if (StringUtils.isNoneBlank(System.getProperty(Constants.ACCESS_TOKEN))){
+            params.put(Constants.ACCESS_TOKEN,System.getProperty(Constants.ACCESS_TOKEN));
         }
 
         // Inject ak/sk if exist:
