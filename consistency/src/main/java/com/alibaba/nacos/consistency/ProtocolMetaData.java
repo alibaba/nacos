@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.consistency;
 
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import org.javatuples.Pair;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +38,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
 
-    private volatile boolean stopDefer = false;
+    private transient volatile boolean stopDefer = false;
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 
@@ -152,11 +151,11 @@ public final class ProtocolMetaData {
 
         private transient final MetaData holder;
         private transient final String path;
-        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-        private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-        private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+        private transient final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+        private transient final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+        private transient final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
         private volatile Object data;
-        private BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
+        private transient BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
 
         public ValueItem(MetaData holder, String path) {
             this.holder = holder;

@@ -27,7 +27,6 @@ import java.lang.reflect.Type;
 public final class GsonUtils {
 
 	private static final Gson GSON = new GsonBuilder()
-			.setPrettyPrinting()
 			.setLenient().create();
 
 	public static String toJson(Object obj) {

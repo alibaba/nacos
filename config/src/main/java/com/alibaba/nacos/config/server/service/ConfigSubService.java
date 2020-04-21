@@ -20,10 +20,10 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +78,7 @@ public class ConfigSubService {
      * @return all path
      */
     private String getUrl(String ip, String relativePath) {
-        return "http://" + ip + RunningConfigUtils.getContextPath() + relativePath;
+        return "http://" + ip + ApplicationUtils.getContextPath() + relativePath;
     }
 
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,

@@ -25,18 +25,19 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
+import com.alibaba.nacos.core.cluster.lookup.MemberLookup;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -61,94 +63,117 @@ import java.util.function.BiFunction;
 /**
  * Cluster node management in Nacos
  *
+ * {@link ServerMemberManager#init()} Cluster node manager initialization
+ * {@link ServerMemberManager#shutdown()} The cluster node manager is down
+ * {@link ServerMemberManager#getSelf()} Gets local node information
+ * {@link ServerMemberManager#getServerList()} Gets the cluster node dictionary
+ * {@link ServerMemberManager#getMemberAddressInfos()} Gets the address information of the healthy member node
+ * {@link ServerMemberManager#getPort()} Gets the port number of this node
+ * {@link ServerMemberManager#allMembers()} Gets a list of member information objects
+ * {@link ServerMemberManager#allMembersWithoutSelf()} Gets a list of cluster member nodes with the exception of this node
+ * {@link ServerMemberManager#hasMember(String)} Is there a node
+ * {@link ServerMemberManager#memberJoin(Collection)} Node join, can automatically trigger
+ * {@link ServerMemberManager#memberLeave(Collection)} When the node leaves, only the interface call can be manually triggered
+ * {@link ServerMemberManager#update(Member)} Update the target node information
+ * {@link ServerMemberManager#indexOf(String)} The index location of a node
+ * {@link ServerMemberManager#isFirstIp()} Is it the first node
+ * {@link ServerMemberManager#isUnHealth(String)} Whether the target node is healthy
+ * {@link ServerMemberManager#initLookup()} Initializes the addressing mode
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
 @SuppressWarnings("all")
 public class ServerMemberManager
-		implements ApplicationListener<WebServerInitializedEvent>, MemberManager {
+		implements ApplicationListener<WebServerInitializedEvent> {
 
 	private final ServletContext servletContext;
 	private final NAsyncHttpClient asyncHttpClient = HttpClientManager
 			.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
 	private Map<String, Member> serverList = new ConcurrentSkipListMap<>();
 	private volatile boolean isInIpList = true;
-	private String contextPath = "";
 	@Value("${server.port:8848}")
 	private int port;
-	@Value("${useAddressServer:false}")
-	private boolean isUseAddressServer;
 	private Member self;
 	private String localAddress;
 	private boolean isHealthCheck = true;
-	private final int memberChangeEventMaxQueueSize = Integer
-			.getInteger("nacos.member-change-event.queue.size", 128);
-	private final MemberInfoSyncTask syncTask = new MemberInfoSyncTask();
+	private MemberLookup lookup;
+	private final MemberInfoReportTask syncTask = new MemberInfoReportTask();
 
 	// here is always the node information of the "UP" state
 	private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
 
 	public ServerMemberManager(ServletContext servletContext) {
 		this.servletContext = servletContext;
+		MemberUtils.setManager(this);
 	}
 
 	@PostConstruct
-	@Override
 	public void init() throws NacosException {
 		Loggers.CORE.info("Nacos-related cluster resource initialization");
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
-
-		isHealthCheck = Boolean
+		this.isHealthCheck = Boolean
 				.parseBoolean(ApplicationUtils.getProperty("isHealthCheck", "true"));
 
 		// register NodeChangeEvent publisher to NotifyManager
 		registerClusterEvent();
 
-		// Initializes the addressing mode
-		LookupFactory.initLookUp(this);
+		// Initializes the lookup mode
+		initLookup();
 
+		if (serverList.isEmpty()) {
+			throw new NacosException(NacosException.SERVER_ERROR,
+					"Failed to initialize the list of member nodes");
+		}
+
+		getSelf().setState(NodeState.STARTING);
 		Loggers.CORE.info("The cluster resource is initialized");
+	}
+
+	private void initLookup() throws NacosException {
+		this.lookup = LookupFactory.createLookUp();
+		this.lookup.addObserver(new Observer() {
+			@Override
+			public void update(Observable o, Object arg) {
+				Collection<Member> tmp = lookup.getMembers();
+				memberJoin(tmp);
+			}
+		});
+		this.lookup.start();
 	}
 
 	private void registerClusterEvent() {
 		// Register node change events
 		NotifyCenter.registerToPublisher(MemberChangeEvent::new, MemberChangeEvent.class,
-				memberChangeEventMaxQueueSize);
-		// Register the web container initialization completion event
-		NotifyCenter.registerToSharePublisher(ServerInitializedEvent::new,
-				ServerInitializedEvent.class);
-		// Register node isolation events
-		NotifyCenter.registerToSharePublisher(IsolationEvent::new, IsolationEvent.class);
-		// Register node recover events
-		NotifyCenter.registerToSharePublisher(RecoverEvent::new, RecoverEvent.class);
-
-		// Handles events related to node isolation and recovery
-		NotifyCenter.registerSubscribe(new SmartSubscribe() {
-
+				ApplicationUtils.getProperty("nacos.member-change-event.queue.size",
+						Integer.class, 128));
+		// The address information of this node needs to be dynamically modified
+		// when registering the IP change of this node
+		NotifyCenter.registerSubscribe(new Subscribe<InetUtils.IPChangeEvent>() {
 			@Override
-			public void onEvent(Event event) {
-				if (event instanceof IsolationEvent) {
-					self.setState(NodeState.ISOLATION);
-					return;
-				}
-				if (event instanceof RecoverEvent) {
-					self.setState(NodeState.UP);
-					return;
+			public void onEvent(InetUtils.IPChangeEvent event) {
+				String oldAddress = event.getOldIp() + ":" + port;
+				String newAddress = event.getNewIp() + ":" + port;
+				localAddress = newAddress;
+				Member member = serverList.get(oldAddress);
+				if (Objects.nonNull(member)) {
+					member.setIp(event.getNewIp());
+					serverList.remove(oldAddress);
+					serverList.put(newAddress, member);
 				}
 			}
 
 			@Override
-			public boolean canNotify(Event event) {
-				boolean i = event instanceof IsolationEvent;
-				boolean r = event instanceof RecoverEvent;
-				return i || r;
+			public Class<? extends Event> subscribeType() {
+				return InetUtils.IPChangeEvent.class;
 			}
 		});
 	}
 
-	@Override
 	public void update(Member newMember) {
+		Loggers.CLUSTER.debug("Node information update : {}", newMember);
+
 		String address = newMember.getAddress();
 
 		if (!serverList.containsKey(address)) {
@@ -158,15 +183,15 @@ public class ServerMemberManager
 		serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
 			@Override
 			public Member apply(String s, Member member) {
-				member.setFailAccessCnt(0);
-				member.setState(NodeState.UP);
+				if (!NodeState.UP.equals(newMember.getState())) {
+					memberAddressInfos.remove(newMember.getAddress());
+				}
 				MemberUtils.copy(newMember, member);
 				return member;
 			}
 		});
 	}
 
-	@Override
 	public int indexOf(String address) {
 		int index = 1;
 		for (Map.Entry<String, Member> entry : serverList.entrySet()) {
@@ -178,7 +203,6 @@ public class ServerMemberManager
 		return index;
 	}
 
-	@Override
 	public boolean hasMember(String address) {
 		boolean result = serverList.containsKey(address);
 		if (!result) {
@@ -192,7 +216,6 @@ public class ServerMemberManager
 		return result;
 	}
 
-	@Override
 	public Member getSelf() {
 		if (Objects.isNull(self)) {
 			self = serverList.get(localAddress);
@@ -200,23 +223,25 @@ public class ServerMemberManager
 		return self;
 	}
 
-	@Override
 	public Collection<Member> allMembers() {
 		// We need to do a copy to avoid affecting the real data
 		return new ArrayList<>(serverList.values());
 	}
 
-	@Override
+	public List<Member> allMembersWithoutSelf() {
+		List<Member> members = new ArrayList<>(serverList.values());
+		members.remove(getSelf());
+		return members;
+	}
+
 	public void memberJoin(Collection<Member> members) {
 		for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 			final Member newMember = iterator.next();
 			final String address = newMember.getAddress();
+
+			// If the current node is already in the node list, remove it;
+			// if all the node lists to be added are removed, there is no node list change event
 			if (serverList.containsKey(address)) {
-				iterator.remove();
-				continue;
-			}
-			NodeState state = newMember.getState();
-			if (state == NodeState.DOWN || state == NodeState.SUSPICIOUS) {
 				iterator.remove();
 				continue;
 			}
@@ -240,19 +265,21 @@ public class ServerMemberManager
 			return;
 		}
 
+		Collection<Member> memberCollection = allMembers();
+
 		// Persist the current cluster node information to cluster.conf
-		MemberUtils.syncToFile(allMembers());
+		MemberUtils.syncToFile(memberCollection);
 		Loggers.CLUSTER.warn("have new node join : {}", members);
 		NotifyCenter.publishEvent(
-				MemberChangeEvent.builder().changeNodes(members).allNodes(allMembers())
+				MemberChangeEvent.builder().changeNodes(members).allNodes(memberCollection)
 						.build());
 	}
 
-	@Override
 	public void memberLeave(Collection<Member> members) {
 		for (Iterator<Member> iterator = members.iterator(); iterator.hasNext(); ) {
 			Member member = iterator.next();
 			final String address = member.getAddress();
+
 			if (StringUtils.equals(address, localAddress)) {
 				iterator.remove();
 				continue;
@@ -271,47 +298,20 @@ public class ServerMemberManager
 			return;
 		}
 
+		Collection<Member> memberCollection = allMembers();
+
 		// Persist the current cluster node information to cluster.conf
-		MemberUtils.syncToFile(allMembers());
+		MemberUtils.syncToFile(memberCollection);
 		Loggers.CLUSTER.warn("have node leave : {}", members);
 		NotifyCenter.publishEvent(
-				MemberChangeEvent.builder().changeNodes(members).allNodes(allMembers())
+				MemberChangeEvent.builder().changeNodes(members).allNodes(memberCollection)
 						.build());
 	}
 
-	@Override
-	public void subscribe(MemberChangeListener listener) {
-		NotifyCenter.registerSubscribe(listener);
-	}
-
-	@Override
-	public void unSubscribe(MemberChangeListener listener) {
-		NotifyCenter.deregisterSubscribe(listener);
-	}
-
-	public String getContextPath() {
-		if (StringUtils.isBlank(contextPath)) {
-			String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
-			// If you can't find it, check it from Sping Environment
-			if (StringUtils.isBlank(contextPath)) {
-				contextPath = ApplicationUtils.getProperty(Constants.WEB_CONTEXT_PATH);
-			}
-			if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
-				return StringUtils.EMPTY;
-			}
-			else {
-				return contextPath;
-			}
-		}
-		return contextPath;
-	}
-
-	@Override
 	public boolean isFirstIp() {
-		return 1 == indexOf(localAddress);
+		return 1 == indexOf(this.localAddress);
 	}
 
-	@Override
 	public boolean isUnHealth(String address) {
 		Member member = serverList.get(address);
 		if (member == null) {
@@ -321,26 +321,25 @@ public class ServerMemberManager
 	}
 
 	public boolean isSelf(Member member) {
-		return Objects.equals(member.getAddress(), localAddress);
+		return Objects.equals(member.getAddress(), this.localAddress);
 	}
 
 	@Override
 	public void onApplicationEvent(WebServerInitializedEvent event) {
-        // For containers that have started, stop all messages from being published late
-	    NotifyCenter.stopDeferPublish();
-
-		GlobalExecutor.schedulePullJob(syncTask, 5_000L);
-		NotifyCenter.publishEvent(
-				new ServerInitializedEvent((WebServerInitializedEvent) event,
-						servletContext));
+		getSelf().setState(NodeState.UP);
+		// For containers that have started, stop all messages from being published late
+		NotifyCenter.stopDeferPublish();
+		GlobalExecutor.scheduleByCommon(this.syncTask, 5_000L);
+		ApplicationUtils.setPort(event.getWebServer().getPort());
+		ApplicationUtils.setLocalAddress(this.localAddress);
+		Loggers.CLUSTER.info("This node is ready to provide external services");
 	}
 
 	@PreDestroy
-	@Override
 	public void shutdown() throws NacosException {
-	    syncTask.shutdown();
-		LookupFactory.destroy();
 		getSelf().setState(NodeState.DOWN);
+		syncTask.shutdown();
+		LookupFactory.destroy();
 	}
 
 	@VisibleForTesting
@@ -352,16 +351,13 @@ public class ServerMemberManager
 		return memberAddressInfos;
 	}
 
+	@VisibleForTesting
 	public void setMemberAddressInfos(Set<String> memberAddressInfos) {
 		this.memberAddressInfos = memberAddressInfos;
 	}
 
 	public Map<String, Member> getServerList() {
 		return Collections.unmodifiableMap(serverList);
-	}
-
-	public boolean isUseAddressServer() {
-		return isUseAddressServer;
 	}
 
 	public boolean isInIpList() {
@@ -372,25 +368,13 @@ public class ServerMemberManager
 		return isHealthCheck;
 	}
 
-	public ServletContext getServletContext() {
-		return servletContext;
-	}
-
-	public boolean getUseAddressServer() {
-		return isUseAddressServer;
-	}
-
-	public void setUseAddressServer(boolean useAddressServer) {
-		isUseAddressServer = useAddressServer;
-	}
-
 	public int getPort() {
 		return port;
 	}
 
 	// Synchronize the metadata information of a node
 
-	class MemberInfoSyncTask extends Task {
+	class MemberInfoReportTask extends Task {
 
 		private final GenericType<RestResult<Member>> reference = new GenericType<RestResult<Member>>() {
 		};
@@ -399,54 +383,48 @@ public class ServerMemberManager
 
 		@Override
 		protected void executeBody() {
-			Set<String> members = ServerMemberManager.this.getMemberAddressInfos();
+			List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
 			this.cursor = (this.cursor + 1) % members.size();
-			String[] ss = members.toArray(new String[0]);
-			String target = ss[cursor];
+			Member target = members.get(cursor);
 
-			final String url = HttpUtils
-					.buildUrl(false, target, ServerMemberManager.this.getContextPath(),
-							Commons.NACOS_CORE_CONTEXT, "/cluster/self");
+			Loggers.CLUSTER.debug("report the metadata to the node : {}", target);
 
-			if (shutdown) {
-				return;
-			}
+			final String url = HttpUtils.buildUrl(false, target.getAddress(),
+					ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
+					"/cluster/report");
 
-			asyncHttpClient.get(url, Header.EMPTY, Query.EMPTY, reference.getType(),
-					new Callback<Member>() {
-						@Override
-						public void onReceive(RestResult<Member> result) {
-							if (result.ok()) {
-								Loggers.CLUSTER
-										.debug("success pull from node : {}, result : {}",
-												target, result);
-								ServerMemberManager.this.update(result.getData());
-								MemberUtils.onSuccess(MemberUtils.parse(target),
-										ServerMemberManager.this);
-							}
-							else {
-								Loggers.CLUSTER
-										.warn("failed to pull new info from target node : {}, result : {}",
-												target, result);
-								MemberUtils.onFail(MemberUtils.parse(target),
-										ServerMemberManager.this);
-							}
-						}
+			asyncHttpClient
+					.post(url, Header.EMPTY, Query.EMPTY, getSelf(), reference.getType(),
+							new Callback<Member>() {
+								@Override
+								public void onReceive(RestResult<Member> result) {
+									if (result.ok()) {
+										MemberUtils.onSuccess(
+												MemberUtils.singleParse(target.getAddress()));
+									}
+									else {
+										Loggers.CLUSTER
+												.warn("failed to pull new info from target node : {}, result : {}",
+														target, result);
+										MemberUtils.onFail(MemberUtils
+												.singleParse(target.getAddress()));
+									}
+								}
 
-						@Override
-						public void onError(Throwable throwable) {
-							Loggers.CLUSTER
-									.error("failed to pull new info from target node : {}, error : {}",
-											target, throwable);
-							MemberUtils.onFail(MemberUtils.parse(target),
-									ServerMemberManager.this);
-						}
-					});
+								@Override
+								public void onError(Throwable throwable) {
+									Loggers.CLUSTER
+											.error("failed to pull new info from target node : {}, error : {}",
+													target, throwable);
+									MemberUtils.onFail(MemberUtils
+											.singleParse(target.getAddress()));
+								}
+							});
 		}
 
 		@Override
 		protected void after() {
-			GlobalExecutor.schedulePullJob(this, 2_000L);
+			GlobalExecutor.scheduleByCommon(this, 2_000L);
 		}
 	}
 

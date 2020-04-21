@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +37,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * 数据聚合服务。
@@ -102,7 +101,7 @@ public class MergeDatumService {
             return;
         }
         for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), LOCAL_IP);
+            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
         }
     }
 
@@ -161,7 +160,7 @@ public class MergeDatumService {
                     }
                     // 删除
                     else {
-                        persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
                         log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                             + group);
                     }

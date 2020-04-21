@@ -72,7 +72,6 @@ import org.springframework.util.CollectionUtils;
  * @author nkorange
  */
 @Component
-@DependsOn("nacosApplicationContext")
 public class ServiceManager implements RecordListener<Service> {
 
     /**

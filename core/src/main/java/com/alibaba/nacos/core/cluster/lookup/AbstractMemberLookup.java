@@ -17,19 +17,35 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.MemberLookup;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-abstract class AbstractMemberLookup implements MemberLookup {
+abstract class AbstractMemberLookup extends MemberLookup {
 
-	protected ServerMemberManager memberManager;
+	protected Set<Member> members = new ConcurrentHashSet<>();
 
 	@Override
-	public void init(ServerMemberManager memberManager) throws NacosException {
-		this.memberManager = memberManager;
+	public Set<Member> getMembers() {
+		return members;
+	}
+
+	public void setMembers(Set<Member> members) {
+		this.members = members;
+	}
+
+	@Override
+	void afterLookup(Collection<Member> members) {
+		this.members.clear();
+		this.members.addAll(members);
+		setChanged();
+		notifyObservers();
 	}
 
 	@Override

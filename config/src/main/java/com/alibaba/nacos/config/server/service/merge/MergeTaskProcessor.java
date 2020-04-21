@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * Merge task processor
@@ -81,7 +80,8 @@ public class MergeTaskProcessor implements TaskProcessor {
                 log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
                     cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
 
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), LOCAL_IP,
+                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils
+                                .getSelfIp(),
                     ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
             }
             // 删除
@@ -95,7 +95,7 @@ public class MergeTaskProcessor implements TaskProcessor {
                 log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId
                     + ", groupId=" + group);
 
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), LOCAL_IP,
+                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
                     ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             }
 

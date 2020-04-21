@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -56,15 +55,14 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	private int maxFailCount = 12;
 	private NSyncHttpClient syncHttpClient = HttpClientManager
 			.newSyncHttpClient(AddressServerMemberLookup.class.getCanonicalName());
-	private AddressServerSyncTask task;
 	private volatile boolean shutdown = false;
 
 	@Override
-	public void init(ServerMemberManager memberManager) throws NacosException {
-		super.init(memberManager);
+	public void start() throws NacosException {
 		initAddressSys();
 		this.maxFailCount = Integer
 				.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
+		run();
 	}
 
 	private void initAddressSys() {
@@ -81,7 +79,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			addressPort = envAddressPort;
 		}
 		addressUrl = System.getProperty("address.server.url",
-				memberManager.getContextPath() + "/" + "serverlist");
+				ApplicationUtils.getContextPath() + "/" + "serverlist");
 		addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
 		envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
 
@@ -90,8 +88,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	}
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
-	@Override
-	public void run() throws NacosException {
+	private void run() throws NacosException {
 		// With the address server, you need to perform a synchronous member node pull at startup
 		// Repeat three times, successfully jump out
 		boolean success = false;
@@ -111,8 +108,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			throw new NacosException(NacosException.SERVER_ERROR, ex);
 		}
 
-		task = new AddressServerSyncTask();
-		GlobalExecutor.scheduleSyncJob(task, 5_000L);
+		GlobalExecutor.scheduleByCommon(new AddressServerSyncTask(), 5_000L);
 	}
 
 	@Override
@@ -147,7 +143,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 				}
 				Loggers.CLUSTER.error("[serverlist] exception, error : {}", ex);
 			} finally {
-				GlobalExecutor.scheduleSyncJob(this, 5_000L);
+				GlobalExecutor.scheduleByCommon(this, 5_000L);
 			}
 		}
 	}
@@ -160,8 +156,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			isAddressServerHealth = true;
 			Reader reader = new StringReader(result.getData());
 			try {
-				MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(reader),
-						memberManager);
+				afterLookup(MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(reader)));
 			}
 			catch (Exception e) {
 				Loggers.CLUSTER
@@ -179,6 +174,5 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			Loggers.CLUSTER.error("[serverlist] failed to get serverlist, error code {}",
 					result.getCode());
 		}
-
 	}
 }

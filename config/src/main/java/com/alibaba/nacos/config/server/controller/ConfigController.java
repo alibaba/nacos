@@ -44,6 +44,7 @@ import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -76,8 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * 软负载客户端发布数据专用控制器
@@ -195,7 +194,7 @@ public class ConfigController {
 		}
 		ConfigTraceService
 				.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-						LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+						InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 
 		return true;
 	}
@@ -626,7 +625,7 @@ public class ConfigController {
 			ConfigTraceService
 					.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
 							configInfo.getTenant(), requestIpApp, time.getTime(),
-							LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB,
+							InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB,
 							configInfo.getContent());
 		}
 		return ResultBuilder.buildSuccessResult("导入成功", saveResult);
@@ -714,7 +713,7 @@ public class ConfigController {
 			ConfigTraceService
 					.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
 							configInfo.getTenant(), requestIpApp, time.getTime(),
-							LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB,
+							InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB,
 							configInfo.getContent());
 		}
 		return ResultBuilder.buildSuccessResult("克隆成功", saveResult);

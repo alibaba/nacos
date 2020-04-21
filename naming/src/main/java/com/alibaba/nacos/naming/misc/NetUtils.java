@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -28,7 +28,7 @@ public class NetUtils {
     private static String serverAddress = null;
 
     public static String localServer() {
-        return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+        return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
     }
 
     public static String getLocalAddress() {

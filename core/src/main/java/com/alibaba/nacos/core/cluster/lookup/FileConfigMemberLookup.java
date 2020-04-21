@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.file.FileChangeEvent;
 import com.alibaba.nacos.common.file.FileWatcher;
 import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -49,13 +51,8 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 	};
 
 	@Override
-	public void run() throws NacosException {
+	public void start() throws NacosException {
 		readClusterConfFromDisk();
-
-		if (memberManager.getServerList().isEmpty()) {
-			throw new NacosException(NacosException.SERVER_ERROR,
-					"Failed to initialize the member node, is empty");
-		}
 
 		// Use the inotify mechanism to monitor file changes and automatically
 		// trigger the reading of cluster.conf
@@ -74,25 +71,17 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 	}
 
 	private void readClusterConfFromDisk() {
+		Collection<Member> tmpMembers = new ArrayList<>();
 		try {
-			List<String> members = ApplicationUtils.readClusterConf();
-			MemberUtils.readServerConf(members, memberManager);
-		}
-		catch (FileNotFoundException e) {
-			String clusters = ApplicationUtils.getMemberList();
-			if (StringUtils.isNotBlank(clusters)) {
-				String[] details = clusters.split(",");
-				List<String> members = new ArrayList<>();
-				for (String item : details) {
-					members.add(item.trim());
-				}
-				MemberUtils.readServerConf(members, memberManager);
-			}
+			List<String> tmp = ApplicationUtils.readClusterConf();
+			tmpMembers = MemberUtils.readServerConf(tmp);
 		}
 		catch (Throwable e) {
 			Loggers.CLUSTER
 					.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}",
 							e);
 		}
+
+		afterLookup(tmpMembers);
 	}
 }

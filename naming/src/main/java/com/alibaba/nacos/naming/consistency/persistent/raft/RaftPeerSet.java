@@ -20,6 +20,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -59,7 +61,7 @@ public class RaftPeerSet implements MemberChangeListener {
 
     private RaftPeer leader = null;
 
-    private volatile Map<String, RaftPeer> peers = new HashMap<>();
+    private volatile Map<String, RaftPeer> peers = new ConcurrentHashMap<>();
 
     private Set<String> sites = new HashSet<>();
 
@@ -70,7 +72,8 @@ public class RaftPeerSet implements MemberChangeListener {
 
     @PostConstruct
     public void init() {
-        memberManager.subscribe(this);
+        NotifyCenter.registerSubscribe(this);
+        changePeers(memberManager.allMembers());
     }
 
     public RaftPeer getLeader() {
@@ -204,7 +207,7 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     public RaftPeer local() {
-        RaftPeer peer = peers.get(NetUtils.localServer());
+        RaftPeer peer = peers.get(ApplicationUtils.getLocalAddress());
         if (peer == null && ApplicationUtils.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
@@ -251,12 +254,15 @@ public class RaftPeerSet implements MemberChangeListener {
 
     @Override
     public void onEvent(MemberChangeEvent event) {
-        Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
-        for (Member member : event.getAllMembers()) {
+        changePeers(event.getAllMembers());
+    }
+
+    private void changePeers(Collection<Member> members) {
+        for (Member member : members) {
 
             final String address = member.getAddress();
             if (peers.containsKey(address)) {
-                tmpPeers.put(address, peers.get(address));
+                peers.put(address, peers.get(address));
                 continue;
             }
 
@@ -264,17 +270,16 @@ public class RaftPeerSet implements MemberChangeListener {
             raftPeer.ip = address;
 
             // first time meet the local server:
-            if (NetUtils.localServer().equals(address)) {
+            if (ApplicationUtils.getLocalAddress().equals(address)) {
                 raftPeer.term.set(localTerm.get());
             }
 
-            tmpPeers.put(address, raftPeer);
+            peers.put(address, raftPeer);
         }
 
         // replace raft peer set:
-        peers = tmpPeers;
         ready = true;
-        Loggers.RAFT.info("raft peers changed: " + event);
+        Loggers.RAFT.info("raft peers changed: " + members);
     }
 
 }

@@ -34,56 +34,82 @@ import java.util.function.Predicate;
  */
 public class MemberUtils {
 
-	private static final String SEMICOLON = ":";
+	private static ServerMemberManager manager;
+
+	public static void setManager(ServerMemberManager manager) {
+		MemberUtils.manager = manager;
+	}
 
 	public static void copy(Member newMember, Member oldMember) {
-		oldMember.getExtendInfo().putAll(newMember.getExtendInfo());
+		oldMember.setIp(newMember.getIp());
+		oldMember.setPort(newMember.getPort());
+		oldMember.setState(newMember.getState());
+		oldMember.setExtendInfo(newMember.getExtendInfo());
+		oldMember.setAddress(newMember.getAddress());
 	}
 
-	public static Member parse(String host, int port) {
-		Member member = new Member();
-		member.setIp(host);
-		member.setPort(port);
-		return member;
-	}
+	public static Member singleParse(String member) {
+		int selfPort = ApplicationUtils.getPort();
+		// Nacos default port is 8848
+		int defaultPort = 8848;
+		// Set the default Raft port information for security
+		int defaultRaftPort = selfPort + 1000 >= 65535 ? selfPort + 1 : selfPort + 1000;
 
-	public static Member parse(String address) {
-		Member member = new Member();
-		if (address.contains(SEMICOLON)) {
-			String[] s = address.split(SEMICOLON);
-			member.setIp(s[0].trim());
-			member.setPort(Integer.parseInt(s[1].trim()));
+		String[] memberDetails = member.split("\\?");
+		String address = memberDetails[0];
+		int port = defaultPort;
+		if (address.contains(":")) {
+			String[] info = address.split(":");
+			address = info[0];
+			port = Integer.parseInt(info[1]);
+		}
+
+		// example ip:port?raft_port=&node_name=
+		Map<String, String> extendInfo = new HashMap<>(4);
+
+		if (memberDetails.length == 2) {
+			String[] parameters = memberDetails[1].split("&");
+			for (String parameter : parameters) {
+				String[] info = parameter.split("=");
+				extendInfo.put(info[0].trim(), info[1].trim());
+			}
 		}
 		else {
-			member.setIp(address);
-			member.setPort(8848);
+			// The Raft Port information needs to be set by default
+			extendInfo.put(MemberMetaDataConstants.RAFT_PORT,
+					String.valueOf(defaultRaftPort));
+
 		}
-		return member;
+		return Member.builder().ip(address).port(port).extendInfo(extendInfo)
+				.state(NodeState.UP).build();
 	}
 
-	public static void onSuccess(Member member, ServerMemberManager manager) {
-		manager.getMemberAddressInfos().add(member.getAddress());
-		member.setState(NodeState.UP);
-		member.setFailAccessCnt(0);
-	}
-
-	@SuppressWarnings("PMD.UndefineMagicConstantRule")
-	public static void onFail(Member member, ServerMemberManager manager) {
-		manager.getMemberAddressInfos().remove(member.getAddress());
-		member.setState(NodeState.SUSPICIOUS);
-		member.setFailAccessCnt(member.getFailAccessCnt() + 1);
-		if (member.getFailAccessCnt() > 3) {
-			member.setState(NodeState.DOWN);
-		}
-	}
-
-	public static Collection<Member> stringToMembers(Collection<String> addresses) {
+	public static Collection<Member> multiParse(Collection<String> addresses) {
 		List<Member> members = new ArrayList<>(addresses.size());
 		for (String address : addresses) {
-			Member member = parse(address);
+			Member member = singleParse(address);
 			members.add(member);
 		}
 		return members;
+	}
+
+	public static void onSuccess(Member member) {
+		manager.getMemberAddressInfos().add(member.getAddress());
+		member.setState(NodeState.UP);
+		member.setFailAccessCnt(0);
+		manager.update(member);
+	}
+
+	public static void onFail(Member member) {
+		manager.getMemberAddressInfos().remove(member.getAddress());
+		member.setState(NodeState.SUSPICIOUS);
+		member.setFailAccessCnt(member.getFailAccessCnt() + 1);
+		int maxFailAccessCnt = ApplicationUtils
+				.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
+		if (member.getFailAccessCnt() > maxFailAccessCnt) {
+			member.setState(NodeState.DOWN);
+		}
+		manager.update(member);
 	}
 
 	public static void syncToFile(Collection<Member> members) {
@@ -93,87 +119,47 @@ public class MemberUtils {
 				builder.append(member).append(StringUtils.LF);
 			}
 			ApplicationUtils.writeClusterConf(builder.toString());
-		} catch (Throwable ex) {
+		}
+		catch (Throwable ex) {
 			Loggers.CLUSTER.error("Cluster member node persistence failed : {}", ex);
 		}
 	}
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
-	public static List<Member> kRandom(ServerMemberManager memberManager,
+	public static List<Member> kRandom(Collection<Member> members,
 			Predicate<Member> filter) {
 		int k = ApplicationUtils
 				.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
 
-		List<Member> members = new ArrayList<>();
-		Collection<Member> have = memberManager.allMembers();
-
+		List<Member> tmp = new ArrayList<>();
 		// Here thinking similar consul gossip protocols random k node
 
-		int totalSize = have.size();
+		int totalSize = members.size();
 		for (int i = 0; i < 3 * totalSize && members.size() <= k; i++) {
-			for (Member member : have) {
+			for (Member member : members) {
 
 				if (filter.test(member)) {
-					members.add(member);
+					tmp.add(member);
 				}
 
 			}
 		}
 
-		return members;
+		return tmp;
 	}
 
-	// 默认配置格式解析，只有nacos-server的ip:port or hostname:port 信息
+	// 默认配置格式解析，只有nacos-server的ip or ip:port or hostname:port 信息
 	// example 192.168.16.1:8848?raft_port=8849&key=value
 
-	public static void readServerConf(Collection<String> members,
-			ServerMemberManager memberManager) {
+	public static Collection<Member> readServerConf(Collection<String> members) {
 		Set<Member> nodes = new HashSet<>();
-		int selfPort = memberManager.getPort();
-
-		// Nacos default port is 8848
-
-		int defaultPort = 8848;
-
-		// Set the default Raft port information for security
-
-		int defaultRaftPort = selfPort + 1000 >= 65535 ? selfPort + 1 : selfPort + 1000;
 
 		for (String member : members) {
-			String[] memberDetails = member.split("\\?");
-			String address = memberDetails[0];
-			int port = defaultPort;
-			if (address.contains(":")) {
-				String[] info = address.split(":");
-				address = info[0];
-				port = Integer.parseInt(info[1]);
-			}
-
-			// example ip:port?raft_port=&node_name=
-
-			Map<String, String> extendInfo = new HashMap<>(4);
-
-			if (memberDetails.length == 2) {
-				String[] parameters = memberDetails[1].split("&");
-				for (String parameter : parameters) {
-					String[] info = parameter.split("=");
-					extendInfo.put(info[0].trim(), info[1].trim());
-				}
-			}
-			else {
-
-				// The Raft Port information needs to be set by default
-				extendInfo.put(MemberMetaDataConstants.RAFT_PORT,
-						String.valueOf(defaultRaftPort));
-
-			}
-
-			nodes.add(Member.builder().ip(address).port(port).extendInfo(extendInfo)
-					.state(NodeState.UP).build());
-
+			Member target = singleParse(member);
+			nodes.add(target);
 		}
 
-		memberManager.memberJoin(nodes);
+		return nodes;
 	}
 
 	public static List<String> simpleMembers(Collection<Member> members) {

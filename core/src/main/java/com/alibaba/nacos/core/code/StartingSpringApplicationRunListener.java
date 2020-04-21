@@ -25,6 +25,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -33,8 +35,6 @@ import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
-
-import static com.alibaba.nacos.core.utils.ApplicationUtils.LOCAL_IP;
 
 /**
  * Logging starting message {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution
@@ -82,7 +82,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         }
 
 
-        System.setProperty(LOCAL_IP_PROPERTY_KEY, LOCAL_IP);
+        System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIp());
     }
 
     @Override

@@ -18,8 +18,6 @@ package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.cluster.MemberLookup;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 
@@ -35,80 +33,87 @@ public final class LookupFactory {
 
 	static MemberLookup LOOK_UP = null;
 
-	static int currentLookupType = -1;
+	static LookupType currentLookupType = null;
 
-	interface LookupType {
+	enum LookupType {
 
-		int FILE_CONFIG = 1;
+		/**
+		 * File addressing mode
+		 */
+		FILE_CONFIG(1, "file"),
 
-		int ADDRESS_SERVER = 2;
+		/**
+		 * Address server addressing mode
+		 */
+		ADDRESS_SERVER(2, "address-server"),
 
-		int GOSSIP = 3;
+		/**
+		 * Self discovery addressing pattern
+		 */
+		DISCOVERY(3, "discovery");
 
+		private final int code;
+		private final String name;
+
+		LookupType(int code, String name) {
+			this.code = code;
+			this.name = name;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public String getName() {
+			return name;
+		}
 	}
 
-	public static void initLookUp(ServerMemberManager memberManager)
-			throws NacosException {
+	public static MemberLookup createLookUp() throws NacosException {
 		if (!ApplicationUtils.getStandaloneMode()) {
-			int type = chooseLookup();
-			switch (type) {
-			case LookupType.FILE_CONFIG:
-				LOOK_UP = new FileConfigMemberLookup();
-				break;
-			case LookupType.ADDRESS_SERVER:
-				LOOK_UP = new AddressServerMemberLookup();
-				break;
-			case LookupType.GOSSIP:
-				LOOK_UP = new DiscoveryMemberLookup();
-				break;
-			default:
-				throw new IllegalArgumentException();
-			}
-
+			LookupType type = chooseLookup();
+			LOOK_UP =  find(type);
 			currentLookupType = type;
-
 		}
 		else {
 			LOOK_UP = new StandaloneMemberLookup();
 		}
-
 		Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
-		LOOK_UP.init(memberManager);
-		LOOK_UP.run();
+		return LOOK_UP;
 	}
 
-	public static void switchLookup(int type, ServerMemberManager memberManager) throws NacosException {
-
-		if (currentLookupType == type) {
-			return;
+	public static MemberLookup switchLookup(String name) throws NacosException {
+		LookupType lookupType = LookupType.valueOf(name);
+		if (Objects.equals(currentLookupType, lookupType)) {
+			return LOOK_UP;
 		}
-
-		MemberLookup newLookup = null;
-		switch (type) {
-		case LookupType.FILE_CONFIG:
-			newLookup = new FileConfigMemberLookup();
-			break;
-		case LookupType.ADDRESS_SERVER:
-			newLookup = new AddressServerMemberLookup();
-			break;
-		case LookupType.GOSSIP:
-			newLookup = new DiscoveryMemberLookup();
-			break;
-		default:
-			throw new IllegalArgumentException();
-		}
-
-		currentLookupType = type;
+		MemberLookup newLookup = find(lookupType);
+		currentLookupType = lookupType;
 		LOOK_UP.destroy();
 		LOOK_UP = newLookup;
-		LOOK_UP.init(memberManager);
-		LOOK_UP.destroy();
+		return LOOK_UP;
 	}
 
-	private static int chooseLookup() {
+	private static MemberLookup find(LookupType type) {
+		 if (LookupType.FILE_CONFIG.equals(type)) {
+			 LOOK_UP = new FileConfigMemberLookup();
+			 return LOOK_UP;
+		 }
+		if (LookupType.ADDRESS_SERVER.equals(type)) {
+			LOOK_UP = new AddressServerMemberLookup();
+			return LOOK_UP;
+		}
+		if (LookupType.DISCOVERY.equals(type)) {
+			LOOK_UP = new DiscoveryMemberLookup();
+			return LOOK_UP;
+		}
+		throw new IllegalArgumentException();
+	}
+
+	private static LookupType chooseLookup() {
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
 		if (Boolean.parseBoolean(ApplicationUtils.getProperty(DISCOVERY_SWITCH_NAME, Boolean.toString(false)))) {
-			return LookupType.GOSSIP;
+			return LookupType.DISCOVERY;
 		}
 		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
 			return LookupType.FILE_CONFIG;

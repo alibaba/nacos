@@ -30,9 +30,9 @@ import java.util.Collections;
 public class StandaloneMemberLookup extends AbstractMemberLookup {
 
 	@Override
-	public void run() {
-		String url = InetUtils.getSelfIp() + ":" + memberManager.getPort() + "?" + ApplicationUtils
+	public void start() {
+		String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort() + "?" + ApplicationUtils
 				.getProperty("nacos.standalone.params", "");
-		MemberUtils.readServerConf(Collections.singletonList(url), memberManager);
+		afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
 	}
 }

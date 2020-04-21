@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
@@ -64,20 +66,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * <pre>
- *
- *
- *
- *
- *
- *
- *
- *
  *                   ┌────────────────────┐
  *               ┌──▶│   PersistService   │
  *               │   └────────────────────┘ ┌─────────────────┐
@@ -107,10 +99,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *            └────┘                                                                                                │
  *               ▲                                                                                                  │
  *               │                                           ┌1:getCurrentSqlContexts───────────────────────────────┘
- *               │                                           │
- *               │                                           │
- *               │                                           │
- *               │                                           │
  *               │                                           │
  *               │                                           │
  *               │                                           │

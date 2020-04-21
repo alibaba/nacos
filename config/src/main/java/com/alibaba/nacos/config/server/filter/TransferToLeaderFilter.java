@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.http.param.MediaType;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
@@ -56,8 +58,6 @@ import java.net.URI;
 import java.security.AccessControlException;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 
 /**
  * If the embedded distributed storage is enabled, all requests are routed to the Leader

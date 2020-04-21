@@ -62,6 +62,10 @@ public final class DiskUtils {
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     private static final CharsetDecoder DECODER = CHARSET.newDecoder();
 
+    public static void touch(String path, String fileName) throws IOException {
+        FileUtils.touch(Paths.get(path, fileName).toFile());
+    }
+
     public static void touch(File file) throws IOException {
         FileUtils.touch(file);
     }
