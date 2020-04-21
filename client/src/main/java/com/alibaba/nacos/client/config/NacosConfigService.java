@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -68,10 +69,12 @@ public class NacosConfigService implements ConfigService {
     private ClientWorker worker;
     private String namespace;
     private String encode;
+    private String configType;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
+        configType = properties.getProperty(PropertyKeyConst.CONFIG_DATA_TYPE, ConfigType.JSON.getType());
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             encode = Constants.ENCODE;
@@ -108,7 +111,7 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public boolean publishConfig(String dataId, String group, String content) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, configType);
     }
 
     @Override
@@ -210,7 +213,7 @@ public class NacosConfigService implements ConfigService {
     }
 
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-                                       String betaIps, String content) throws NacosException {
+                                       String betaIps, String content, String type) throws NacosException {
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
 
@@ -230,6 +233,10 @@ public class NacosConfigService implements ConfigService {
         params.add(group);
         params.add("content");
         params.add(content);
+        //if type is empty, set a default value: json
+        params.add("type");
+        params.add(StringUtils.isNotBlank(type) ? type.trim() : ConfigType.JSON.getType());
+
         if (StringUtils.isNotEmpty(tenant)) {
             params.add("tenant");
             params.add(tenant);

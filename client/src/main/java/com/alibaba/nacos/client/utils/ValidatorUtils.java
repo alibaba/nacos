@@ -33,9 +33,28 @@ public final class ValidatorUtils {
 	private static final Pattern IP_MATCH = Pattern.compile("([^\\/:]+)(:\\d+)");
 
 	public static void checkInitParam(Properties properties) {
-		checkServerAddr(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
+        if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.ENDPOINT))) {
+            checkServerAddr(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
+        } else {
+            checkAcmParam(properties);
+        }
 		checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
 	}
+
+    public static void checkAcmParam(Properties properties) {
+        String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        String accessKey = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
+        String secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
+	    if(StringUtils.isBlank(namespace)){
+            throw new IllegalArgumentException("Please set the namespace");
+        }
+        if(StringUtils.isBlank(accessKey)){
+            throw new IllegalArgumentException("Please set the accessKey");
+        }
+        if(StringUtils.isBlank(secretKey)){
+            throw new IllegalArgumentException("Please set the secretKey");
+        }
+    }
 
 	public static void checkServerAddr(String serverAddr) {
 		if (StringUtils.isEmpty(serverAddr)) {
