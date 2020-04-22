@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -39,7 +39,6 @@ import java.io.IOException;
  */
 public class DiskUtil {
 
-    static final Logger logger = LoggerFactory.getLogger(DiskUtil.class);
     static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
     static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
     static final String BETA_DIR = File.separator + "data" + File.separator + "beta-data";
@@ -89,7 +88,6 @@ public class DiskUtil {
      * 删除磁盘上的配置文件
      */
     static public void removeConfigInfo4Beta(String dataId, String group, String tenant) {
-
         FileUtils.deleteQuietly(targetBetaFile(dataId, group, tenant));
     }
 
@@ -97,7 +95,6 @@ public class DiskUtil {
      * 删除磁盘上的配置文件
      */
     static public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
-
         FileUtils.deleteQuietly(targetTagFile(dataId, group, tenant, tag));
     }
 
@@ -171,7 +168,7 @@ public class DiskUtil {
 
     static public String getLocalConfigMd5(String dataId, String group, String tenant)
         throws IOException {
-        return Md5Utils.getMD5(getConfig(dataId, group, tenant), Constants.ENCODE);
+        return MD5Utils.md5Hex(getConfig(dataId, group, tenant), Constants.ENCODE);
     }
 
     static public File heartBeatFile() {

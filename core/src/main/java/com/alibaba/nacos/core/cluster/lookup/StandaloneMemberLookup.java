@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Member node addressing mode in stand-alone mode
@@ -31,8 +32,10 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
 
 	@Override
 	public void start() {
-		String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort() + "?" + ApplicationUtils
-				.getProperty("nacos.standalone.params", "");
-		afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
+		if (start.compareAndSet(false, true)) {
+			String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort() + "?"
+					+ ApplicationUtils.getProperty("nacos.standalone.params", "");
+			afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
+		}
 	}
 }

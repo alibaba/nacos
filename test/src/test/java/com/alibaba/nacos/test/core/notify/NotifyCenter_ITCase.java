@@ -116,6 +116,11 @@ public class NotifyCenter_ITCase {
 			}
 		});
 
+		NotifyCenter.publishEvent(new TestEvent());
+		NotifyCenter.publishEvent(new TestSlowEvent());
+
+		NotifyCenter.stopDeferPublish();
+
 		latch.await();
 		latch2.await();
 

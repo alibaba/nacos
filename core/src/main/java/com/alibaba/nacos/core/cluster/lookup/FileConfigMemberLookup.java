@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cluster.conf file managed cluster member node addressing pattern
@@ -52,16 +53,18 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 
 	@Override
 	public void start() throws NacosException {
-		readClusterConfFromDisk();
+		if (start.compareAndSet(false, true)) {
+			readClusterConfFromDisk();
 
-		// Use the inotify mechanism to monitor file changes and automatically
-		// trigger the reading of cluster.conf
-		try {
-			WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), watcher);
-		}
-		catch (Throwable e) {
-			Loggers.CLUSTER
-					.error("An exception occurred in the launch file monitor : {}", e);
+			// Use the inotify mechanism to monitor file changes and automatically
+			// trigger the reading of cluster.conf
+			try {
+				WatchFileCenter.registerWatcher(ApplicationUtils.getConfFilePath(), watcher);
+			}
+			catch (Throwable e) {
+				Loggers.CLUSTER
+						.error("An exception occurred in the launch file monitor : {}", e);
+			}
 		}
 	}
 

@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.cluster.MemberUtils;
-import com.google.common.annotations.VisibleForTesting;
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -374,7 +373,11 @@ public class ApplicationUtils
 		return contextPath;
 	}
 
-	@VisibleForTesting
+	public static void setContextPath(String contextPath) {
+		ApplicationUtils.contextPath = contextPath;
+	}
+
+	@JustForTest
 	public static void setIsStandalone(Boolean isStandalone) {
 		ApplicationUtils.isStandalone = isStandalone;
 	}

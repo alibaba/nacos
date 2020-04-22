@@ -28,12 +28,14 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cluster member addressing mode for the address server
@@ -53,16 +55,16 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	private volatile boolean isAddressServerHealth = true;
 	private int addressServerFailCount = 0;
 	private int maxFailCount = 12;
-	private NSyncHttpClient syncHttpClient = HttpClientManager
-			.newSyncHttpClient(AddressServerMemberLookup.class.getCanonicalName());
+	private NSyncHttpClient syncHttpClient = HttpClientManager.getShareSyncHttpClient();
 	private volatile boolean shutdown = false;
 
 	@Override
 	public void start() throws NacosException {
-		initAddressSys();
-		this.maxFailCount = Integer
-				.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
-		run();
+		if (start.compareAndSet(false, true)) {
+			initAddressSys();
+			this.maxFailCount = Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
+			run();
+		}
 	}
 
 	private void initAddressSys() {
@@ -152,13 +154,13 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 		RestResult<String> result = syncHttpClient
 				.get(addressServerUrl, Header.EMPTY, Query.EMPTY,
 						stringReference.getType());
-		if (HttpServletResponse.SC_OK == result.getCode()) {
+		if (HttpStatus.OK.value() == result.getCode()) {
 			isAddressServerHealth = true;
 			Reader reader = new StringReader(result.getData());
 			try {
 				afterLookup(MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(reader)));
 			}
-			catch (Exception e) {
+			catch (Throwable e) {
 				Loggers.CLUSTER
 						.error("[serverlist] exception for analyzeClusterConf, error : {}",
 								e);

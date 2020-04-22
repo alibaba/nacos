@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,43 +29,42 @@ import java.util.Map;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class MemberLookup extends Observable {
+public interface MemberLookup {
 
 	/**
 	 * start
 	 *
 	 * @throws NacosException
 	 */
-	public abstract void start() throws NacosException;
+	void start() throws NacosException;
 
 	/**
-	 * Gets the list of addresses stored in the addressing mode
+	 * Inject the ServerMemberManager property
 	 *
-	 * @return {@link Collection<Member>}
+	 * @param memberManager {@link ServerMemberManager}
 	 */
-	public abstract Collection<Member> getMembers();
+	void injectMemberManager(ServerMemberManager memberManager);
 
 	/**
 	 * The addressing pattern finds cluster nodes
 	 *
 	 * @param members {@link Collection<Member>}
 	 */
-	abstract void afterLookup(Collection<Member> members);
+	void afterLookup(Collection<Member> members);
 
 	/**
 	 * Addressing mode closed
 	 *
 	 * @throws NacosException
 	 */
-	abstract void destroy() throws NacosException;
+	void destroy() throws NacosException;
 
 	/**
 	 * Some data information about the addressing pattern
 	 *
 	 * @return {@link Map<String, Object>}
 	 */
-	public Map<String, Object> info() {
+	default Map<String, Object> info() {
 		return Collections.emptyMap();
 	}
 

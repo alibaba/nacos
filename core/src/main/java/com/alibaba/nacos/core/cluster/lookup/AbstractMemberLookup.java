@@ -23,29 +23,24 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-abstract class AbstractMemberLookup extends MemberLookup {
+abstract class AbstractMemberLookup implements MemberLookup {
 
-	protected Set<Member> members = new ConcurrentHashSet<>();
+	protected ServerMemberManager memberManager;
+	protected AtomicBoolean start = new AtomicBoolean(false);
 
 	@Override
-	public Set<Member> getMembers() {
-		return members;
-	}
-
-	public void setMembers(Set<Member> members) {
-		this.members = members;
+	public void injectMemberManager(ServerMemberManager memberManager) {
+		this.memberManager = memberManager;
 	}
 
 	@Override
-	void afterLookup(Collection<Member> members) {
-		this.members.clear();
-		this.members.addAll(members);
-		setChanged();
-		notifyObservers();
+	public void afterLookup(Collection<Member> members) {
+		this.memberManager.memberChange(members);
 	}
 
 	@Override

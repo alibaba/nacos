@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
@@ -47,7 +48,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -109,7 +109,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
     private int failoverRetries = 1;
     private String failoverRetriesStr = String.valueOf(failoverRetries);
 
-    @VisibleForTesting
+    @JustForTest
     public static JRaftProtocol createNew() {
         return new JRaftProtocol();
     }

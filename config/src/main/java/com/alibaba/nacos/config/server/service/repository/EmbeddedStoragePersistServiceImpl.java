@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -205,7 +205,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				StringUtils.EMPTY :
 				configInfo.getTenant();
 		try {
-			String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
 			final String sql =
 					"INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,"
@@ -241,7 +241,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
 		try {
-			String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
 			final String sql =
 					"INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
@@ -324,7 +324,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				StringUtils.EMPTY :
 				configInfo.getTenant();
 		try {
-			String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
 			final String sql =
 					"UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
@@ -361,7 +361,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
 		try {
-			String md5 = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
 			final String sql =
 					"UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
@@ -1966,7 +1966,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final String schema = configAdvanceInfo == null ?
 				null :
 				(String) configAdvanceInfo.get("schema");
-		final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+		final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 		final String sql =
 				"INSERT INTO config_info(id, data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
 						+ "gmt_modified, c_desc, c_use, effect, type, c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -2070,7 +2070,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
 				StringUtils.EMPTY :
 				configInfo.getTenant();
-		final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+		final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 		final String desc =
 				configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
 		final String use =
@@ -2189,7 +2189,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
 				StringUtils.EMPTY :
 				configInfo.getTenant();
-		final String md5Tmp = Md5Utils.getMD5(configInfo.getContent(), Constants.ENCODE);
+		final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
 		final String sql =
 				"INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
@@ -2427,7 +2427,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					String md5InDb = cf.getMd5();
 					final String content = cf.getContent();
 					final String tenant = cf.getTenant();
-					final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
+					final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
 					if (StringUtils.isBlank(md5InDb)) {
 						try {
 							updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,

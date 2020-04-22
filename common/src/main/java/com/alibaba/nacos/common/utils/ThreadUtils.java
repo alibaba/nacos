@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.utils;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -34,6 +35,14 @@ public final class ThreadUtils {
     public static void latchAwait(CountDownLatch latch) {
         try {
             latch.await();
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+        }
+    }
+
+    public static void latchAwait(CountDownLatch latch, long time, TimeUnit unit) {
+        try {
+            latch.await(time, unit);
         } catch (InterruptedException e) {
             Thread.interrupted();
         }

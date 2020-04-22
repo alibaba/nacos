@@ -140,11 +140,9 @@ public class MemberUtils {
 		int totalSize = members.size();
 		for (int i = 0; i < 3 * totalSize && members.size() <= k; i++) {
 			for (Member member : members) {
-
 				if (filter.test(member)) {
 					tmp.add(member);
 				}
-
 			}
 		}
 

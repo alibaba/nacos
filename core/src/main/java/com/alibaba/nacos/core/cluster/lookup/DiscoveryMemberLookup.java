@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <pre>
@@ -86,27 +87,26 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 
 	@Override
 	public void start() throws NacosException {
-		Collection<Member> tmpMembers = new ArrayList<>();
+		if (start.compareAndSet(false, true)) {
+			Collection<Member> tmpMembers = new ArrayList<>();
 
-		try {
-			List<String> tmp = ApplicationUtils.readClusterConf();
-			tmpMembers.addAll(MemberUtils.readServerConf(tmp));
+			try {
+				List<String> tmp = ApplicationUtils.readClusterConf();
+				tmpMembers.addAll(MemberUtils.readServerConf(tmp));
+			}
+			catch (Throwable ex) {
+				throw new NacosException(NacosException.SERVER_ERROR, ex);
+			}
+
+			afterLookup(tmpMembers);
+
+			// Whether to enable the node self-discovery function that comes with nacos
+			// The reason why instance properties are not used here is so that
+			// the hot update mechanism can be implemented later
+			syncTask = new MemberListSyncTask();
+
+			GlobalExecutor.scheduleByCommon(syncTask, 5_000L);
 		}
-		catch (Throwable ex) {
-			throw new NacosException(NacosException.SERVER_ERROR, ex);
-		}
-
-		afterLookup(tmpMembers);
-		run();
-	}
-
-	private void run() {
-		// Whether to enable the node self-discovery function that comes with nacos
-		// The reason why instance properties are not used here is so that
-		// the hot update mechanism can be implemented later
-		syncTask = new MemberListSyncTask();
-
-		GlobalExecutor.scheduleByCommon(syncTask, 5_000L);
 	}
 
 	@Override
@@ -125,7 +125,7 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 		public void executeBody() {
 			TimerContext.start("MemberListSyncTask");
 			try {
-				Collection<Member> kMembers = MemberUtils.kRandom(members, member -> {
+				Collection<Member> kMembers = MemberUtils.kRandom(memberManager.allMembers(), member -> {
 					// local node or node check failed will not perform task processing
 					if (!member.check()) {
 						return false;

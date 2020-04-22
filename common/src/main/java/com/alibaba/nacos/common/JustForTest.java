@@ -14,28 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.common;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class EventHandle {
-
-    private Event event;
-
-    public EventHandle(Event event) {
-        this.event = event;
-    }
-
-    public Event getEvent() {
-        return event;
-    }
-
-    public void setEvent(Event event) {
-        this.event = event;
-    }
-
-    public void clear() {
-        this.event = null;
-    }
+public @interface JustForTest {
 }

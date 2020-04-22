@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -35,6 +36,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -46,6 +48,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.PostConstruct;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -107,6 +111,16 @@ public class NacosClusterController {
         return RestResultUtils.success("ok");
     }
 
+    @PostConstruct
+    public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
+        try {
+            memberManager.swithLookup(type);
+            return RestResultUtils.success();
+        } catch (Throwable ex) {
+            return RestResultUtils.failed(ex.getMessage());
+        }
+    }
+
     @PostMapping("/server/leave")
     public RestResult<String> leave(@RequestBody Collection<String> params) {
         Collection<Member> memberList = MemberUtils.multiParse(params);
@@ -155,7 +169,7 @@ public class NacosClusterController {
         }
 
         try {
-            latch.await(5_000, TimeUnit.MILLISECONDS);
+            latch.await(10_000, TimeUnit.MILLISECONDS);
             return RestResultUtils.success("ok");
         } catch (Throwable ex) {
             return RestResultUtils.failed(ex.getMessage());

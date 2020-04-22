@@ -16,23 +16,20 @@
 
 package com.alibaba.nacos.core.notify;
 
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.core.utils.DisruptorFactory;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.common.annotations.VisibleForTesting;
-import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.EventTranslator;
-import com.lmax.disruptor.dsl.Disruptor;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
@@ -46,344 +43,363 @@ import java.util.function.Supplier;
 @SuppressWarnings("all")
 public class NotifyCenter {
 
-    private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(16);
-    private static final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
-    private static final Publisher SHARE_PUBLISHER = new Publisher(SlowEvent.class, new BiPredicate<Event, Subscribe>() {
-        @Override
-        public boolean test(Event event, Subscribe subscribe) {
-            final String sourceName = event.eventType().getCanonicalName();
-            if (subscribe instanceof SmartSubscribe) {
-                return true;
-            }
-            final String targetName = subscribe.subscribeType().getCanonicalName();
-            return Objects.equals(sourceName, targetName);
-        }
-    }, 1024);
+	// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
+	// this value needs to be increased appropriately. default value is 16384
 
-    @VisibleForTesting
-    public static Map<String, Publisher> getPublisherMap() {
-        return PUBLISHER_MAP;
-    }
+	public static int RING_BUFFER_SIZE = 16384;
 
-    @VisibleForTesting
-    public static Set<SmartSubscribe> getSmartSubscribes() {
-        return SMART_SUBSCRIBES;
-    }
+	static {
+		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+		String val = System.getProperty(ringBufferSizeProperty, "16384");
+		RING_BUFFER_SIZE = Integer.parseInt(val);
+	}
 
-    @VisibleForTesting
-    public static Publisher getSharePublisher() {
-        return SHARE_PUBLISHER;
-    }
+	private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(
+			16);
+	private static final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
+	private static final Publisher SHARE_PUBLISHER = new Publisher(SlowEvent.class,
+			new BiPredicate<Event, Subscribe>() {
+				@Override
+				public boolean test(Event event, Subscribe subscribe) {
+					final String sourceName = event.eventType().getCanonicalName();
+					if (subscribe instanceof SmartSubscribe) {
+						return true;
+					}
+					final String targetName = subscribe.subscribeType()
+							.getCanonicalName();
+					return Objects.equals(sourceName, targetName);
+				}
+			}, 1024);
 
-    private static boolean stopDeferPublish = false;
+	@JustForTest
+	public static Map<String, Publisher> getPublisherMap() {
+		return PUBLISHER_MAP;
+	}
 
-    static {
-        SHARE_PUBLISHER.setSupplier(() -> null);
-        SHARE_PUBLISHER.start();
+	@JustForTest
+	public static Set<SmartSubscribe> getSmartSubscribes() {
+		return SMART_SUBSCRIBES;
+	}
 
-        ShutdownUtils.addShutdownHook(new Thread(() -> {
-            System.out.println("[NotifyCenter] Start destroying Publisher");
-            try {
-                PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
-                    @Override
-                    public void accept(String s, Publisher publisher) {
-                        publisher.shutdown();
-                    }
-                });
+	@JustForTest
+	public static Publisher getSharePublisher() {
+		return SHARE_PUBLISHER;
+	}
 
-                SHARE_PUBLISHER.shutdown();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            System.out.println("[NotifyCenter] Destruction of the end");
-        }));
-    }
+	private static boolean stopDeferPublish = false;
 
-    public static void stopDeferPublish() {
-        stopDeferPublish = true;
-    }
+	static {
+		SHARE_PUBLISHER.setSupplier(() -> null);
+		SHARE_PUBLISHER.start();
 
-    /**
-     * Register a Subscriber. If the Publisher concerned by the
-     * Subscriber does not exist, then PublihserMap will preempt
-     * a placeholder Publisher first. not call {@link Publisher#start()}
-     *
-     * @param eventType Types of events that Subscriber cares about
-     * @param consumer  subscriber
-     * @param <T>       event type
-     */
-    public static <T> void registerSubscribe(final Subscribe consumer) {
-        final Class<? extends Event> cls = consumer.subscribeType();
-        // If you want to listen to multiple events, you do it separately,
-        // without automatically registering the appropriate publisher
-        if (consumer instanceof SmartSubscribe) {
-            SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
-            return;
-        }
-        // If the event does not require additional queue resources,
-        // go to share-publisher to reduce resource waste
-        if (SlowEvent.class.isAssignableFrom(cls)) {
-            SHARE_PUBLISHER.addSubscribe(consumer);
-            return;
-        }
-        final String topic = consumer.subscribeType().getCanonicalName();
-        PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(cls));
-        Publisher publisher = PUBLISHER_MAP.get(topic);
-        publisher.addSubscribe(consumer);
-    }
+		ShutdownUtils.addShutdownHook(new Thread(() -> {
+			System.out.println("[NotifyCenter] Start destroying Publisher");
+			try {
+				PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
+					@Override
+					public void accept(String s, Publisher publisher) {
+						publisher.shutdown();
+					}
+				});
 
-    /**
-     * deregister subscriber
-     *
-     * @param consumer subscriber
-     * @param <T>
-     */
-    public static <T> void deregisterSubscribe(final Subscribe consumer) {
-        final Class<? extends Event> cls = consumer.subscribeType();
-        if (consumer instanceof SmartSubscribe) {
-            SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
-            return;
-        }
-        if (SlowEvent.class.isAssignableFrom(cls)) {
-            SHARE_PUBLISHER.unSubscribe(consumer);
-            return;
-        }
-        final String topic = consumer.subscribeType().getCanonicalName();
-        if (PUBLISHER_MAP.containsKey(topic)) {
-            Publisher publisher = PUBLISHER_MAP.get(topic);
-            publisher.unSubscribe(consumer);
-            return;
-        }
-        throw new NoSuchElementException("The subcriber has no event publisher");
-    }
+				SHARE_PUBLISHER.shutdown();
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			System.out.println("[NotifyCenter] Destruction of the end");
+		}));
+	}
 
-    /**
-     * request publisher publish event
-     * Publishers load lazily, calling publisher. Start () only when the event is actually published
-     *
-     * @param event
-     */
-    public static void publishEvent(final Event event) {
-        publishEvent(event.eventType(), event);
-    }
+	public static void stopDeferPublish() {
+		stopDeferPublish = true;
+	}
 
-    /**
-     * request publisher publish event
-     * Publishers load lazily, calling publisher. Start () only when the event is actually published
-     *
-     * @param eventType
-     * @param event
-     */
-    private static void publishEvent(final Class<? extends Event> eventType,
-                                    final Event event) {
-        final String topic = eventType.getCanonicalName();
+	/**
+	 * Register a Subscriber. If the Publisher concerned by the
+	 * Subscriber does not exist, then PublihserMap will preempt
+	 * a placeholder Publisher first. not call {@link Publisher#start()}
+	 *
+	 * @param eventType Types of events that Subscriber cares about
+	 * @param consumer  subscriber
+	 * @param <T>       event type
+	 */
+	public static <T> void registerSubscribe(final Subscribe consumer) {
+		final Class<? extends Event> cls = consumer.subscribeType();
+		// If you want to listen to multiple events, you do it separately,
+		// without automatically registering the appropriate publisher
+		if (consumer instanceof SmartSubscribe) {
+			SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
+			return;
+		}
+		// If the event does not require additional queue resources,
+		// go to share-publisher to reduce resource waste
+		if (SlowEvent.class.isAssignableFrom(cls)) {
+			SHARE_PUBLISHER.addSubscribe(consumer);
+			return;
+		}
+		final String topic = consumer.subscribeType().getCanonicalName();
+		PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(cls));
+		Publisher publisher = PUBLISHER_MAP.get(topic);
+		publisher.addSubscribe(consumer);
+	}
 
-        if (SlowEvent.class.isAssignableFrom(eventType)) {
-            SHARE_PUBLISHER.publish(event);
-            return;
-        }
+	/**
+	 * deregister subscriber
+	 *
+	 * @param consumer subscriber
+	 * @param <T>
+	 */
+	public static <T> void deregisterSubscribe(final Subscribe consumer) {
+		final Class<? extends Event> cls = consumer.subscribeType();
+		if (consumer instanceof SmartSubscribe) {
+			SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
+			return;
+		}
+		if (SlowEvent.class.isAssignableFrom(cls)) {
+			SHARE_PUBLISHER.unSubscribe(consumer);
+			return;
+		}
+		final String topic = consumer.subscribeType().getCanonicalName();
+		if (PUBLISHER_MAP.containsKey(topic)) {
+			Publisher publisher = PUBLISHER_MAP.get(topic);
+			publisher.unSubscribe(consumer);
+			return;
+		}
+		throw new NoSuchElementException("The subcriber has no event publisher");
+	}
 
-        if (PUBLISHER_MAP.containsKey(topic)) {
-            Publisher publisher = PUBLISHER_MAP.get(topic);
-            if (!publisher.isInitialized()) {
-                publisher.start();
-            }
-            publisher.publish(event);
-            return;
-        }
-        throw new NoSuchElementException("There are no event publishers for this event, please register");
-    }
+	/**
+	 * request publisher publish event
+	 * Publishers load lazily, calling publisher. Start () only when the event is actually published
+	 *
+	 * @param event
+	 */
+	public static void publishEvent(final Event event) {
+		publishEvent(event.eventType(), event);
+	}
 
-    /**
-     * register to share-publisher
-     *
-     * @param supplier
-     * @param eventType
-     * @return
-     */
-    public static Publisher registerToSharePublisher(final Supplier<? extends SlowEvent> supplier,
-                                              final Class<? extends SlowEvent> eventType) {
-        return SHARE_PUBLISHER;
-    }
+	/**
+	 * request publisher publish event
+	 * Publishers load lazily, calling publisher. Start () only when the event is actually published
+	 *
+	 * @param eventType
+	 * @param event
+	 */
+	private static void publishEvent(final Class<? extends Event> eventType,
+			final Event event) {
+		final String topic = eventType.getCanonicalName();
 
-    /**
-     * register publisher
-     *
-     * @param supplier
-     * @param eventType
-     * @param queueMaxSize
-     * @return
-     */
-    public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
-            final Class<? extends Event> eventType, final int queueMaxSize) {
-        final String topic = eventType.getCanonicalName();
-        PUBLISHER_MAP.computeIfAbsent(topic, s -> {
-            Publisher publisher = new Publisher(eventType, queueMaxSize);
-            return publisher;
-        });
-        Publisher publisher = PUBLISHER_MAP.get(topic);
-        publisher.queueMaxSize = queueMaxSize;
-        publisher.setSupplier(supplier);
-        return publisher;
-    }
+		if (SlowEvent.class.isAssignableFrom(eventType)) {
+			SHARE_PUBLISHER.publish(event);
+			return;
+		}
 
-    /**
-     * deregister publisher
-     *
-     * @param eventType
-     * @return
-     */
-    public static void deregisterPublisher(final Class<? extends Event> eventType) {
-        final String topic = eventType.getCanonicalName();
-        Publisher publisher = PUBLISHER_MAP.remove(topic);
-        publisher.shutdown();
-    }
+		if (PUBLISHER_MAP.containsKey(topic)) {
+			Publisher publisher = PUBLISHER_MAP.get(topic);
+			if (!publisher.isInitialized()) {
+				publisher.start();
+			}
+			publisher.publish(event);
+			return;
+		}
+		throw new NoSuchElementException(
+				"There are no event publishers for this event, please register");
+	}
 
-    public static class Publisher {
+	/**
+	 * register to share-publisher
+	 *
+	 * @param supplier
+	 * @param eventType
+	 * @return
+	 */
+	public static Publisher registerToSharePublisher(
+			final Supplier<? extends SlowEvent> supplier,
+			final Class<? extends SlowEvent> eventType) {
+		return SHARE_PUBLISHER;
+	}
 
-        private final Class<? extends Event> eventType;
-        private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
-        private int queueMaxSize = -1;
-        private volatile boolean initialized = false;
-        private volatile boolean canOpen = false;
-        private volatile boolean shutdown = false;
-        private Disruptor<EventHandle> disruptor;
-        private Supplier<? extends Event> supplier;
+	/**
+	 * register publisher
+	 *
+	 * @param supplier
+	 * @param eventType
+	 * @param queueMaxSize
+	 * @return
+	 */
+	public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
+			final Class<? extends Event> eventType, final int queueMaxSize) {
+		final String topic = eventType.getCanonicalName();
+		PUBLISHER_MAP.computeIfAbsent(topic, s -> {
+			Publisher publisher = new Publisher(eventType, queueMaxSize);
+			return publisher;
+		});
+		Publisher publisher = PUBLISHER_MAP.get(topic);
+		publisher.queueMaxSize = queueMaxSize;
+		publisher.setSupplier(supplier);
+		return publisher;
+	}
 
-        // judge the subscribe can deal Event
+	/**
+	 * deregister publisher
+	 *
+	 * @param eventType
+	 * @return
+	 */
+	public static void deregisterPublisher(final Class<? extends Event> eventType) {
+		final String topic = eventType.getCanonicalName();
+		Publisher publisher = PUBLISHER_MAP.remove(topic);
+		publisher.shutdown();
+	}
 
-        private BiPredicate<Event, Subscribe> filter = new BiPredicate<Event, Subscribe>() {
-            @Override
-            public boolean test(Event event, Subscribe subscribe) {
-                return true;
-            }
-        };
+	public static class Publisher extends Thread {
 
-        Publisher(final Class<? extends Event> eventType) {
-            this.eventType = eventType;
-        }
+		private final Class<? extends Event> eventType;
+		private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
+		private int queueMaxSize = -1;
+		private volatile boolean initialized = false;
+		private volatile boolean canOpen = false;
+		private volatile boolean shutdown = false;
+		private BlockingQueue<Event> queue;
+		private Supplier<? extends Event> supplier;
 
-        Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {
-            this.eventType = eventType;
-            this.queueMaxSize = queueMaxSize;
-        }
+		// judge the subscribe can deal Event
 
-        Publisher(final Class<? extends Event> eventType, BiPredicate<Event, Subscribe> filter, final int queueMaxSize) {
-            this.eventType = eventType;
-            this.filter = filter;
-            this.queueMaxSize = queueMaxSize;
-        }
+		private BiPredicate<Event, Subscribe> filter = new BiPredicate<Event, Subscribe>() {
+			@Override
+			public boolean test(Event event, Subscribe subscribe) {
+				return true;
+			}
+		};
 
-        void setSupplier(Supplier<? extends Event> supplier) {
-            this.supplier = supplier;
-        }
+		Publisher(final Class<? extends Event> eventType) {
+			this.eventType = eventType;
+		}
 
-        public CopyOnWriteArraySet<Subscribe> getSubscribes() {
-            return subscribes;
-        }
+		Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {
+			this.eventType = eventType;
+			this.queueMaxSize = queueMaxSize;
+			this.queue = new ArrayBlockingQueue<>(queueMaxSize);
+		}
 
-        synchronized void start() {
-            if (!initialized) {
-                if (queueMaxSize == -1) {
-                    queueMaxSize = DisruptorFactory.ringBufferSize;
-                }
+		Publisher(final Class<? extends Event> eventType,
+				BiPredicate<Event, Subscribe> filter, final int queueMaxSize) {
+			this.eventType = eventType;
+			this.filter = filter;
+			this.queueMaxSize = queueMaxSize;
+			this.queue = new ArrayBlockingQueue<>(queueMaxSize);
+		}
 
-                this.disruptor = DisruptorFactory.build(queueMaxSize, (EventFactory) () -> {
-                    return new EventHandle(supplier.get());
-                }, eventType);
-                openEventHandler();
-                this.disruptor.start();
-                initialized = true;
-            }
-        }
+		void setSupplier(Supplier<? extends Event> supplier) {
+			this.supplier = supplier;
+		}
 
-        void openEventHandler() {
-            this.disruptor.handleEventsWith(new EventHandler<EventHandle>() {
-                @Override
-                public void onEvent(EventHandle handle, long sequence, boolean endOfBatch) throws Exception {
+		public CopyOnWriteArraySet<Subscribe> getSubscribes() {
+			return subscribes;
+		}
 
-                    // To ensure that messages are not lost, enable EventHandler when
-                    // waiting for the first Subscriber to register
+		@Override
+		public synchronized void start() {
+			super.start();
+			if (!initialized) {
+				if (queueMaxSize == -1) {
+					queueMaxSize = RING_BUFFER_SIZE;
+				}
+				initialized = true;
+			}
+		}
 
-                    for (; ; ) {
-                        if (shutdown || canOpen || stopDeferPublish) {
-                            break;
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ignore) {
-                            Thread.interrupted();
-                        }
-                    }
+		@Override
+		public void run() {
+			openEventHandler();
+		}
 
-                    Set<Subscribe> tmp = new HashSet<>();
-                    tmp.addAll(SMART_SUBSCRIBES);
-                    tmp.addAll(subscribes);
+		void openEventHandler() {
+			try {
+				for (; ; ) {
 
-                    for (Subscribe subscribe : tmp) {
+					if (shutdown) {
+						break;
+					}
+					// To ensure that messages are not lost, enable EventHandler when
+					// waiting for the first Subscriber to register
+					for (; ; ) {
+						if (shutdown || canOpen || stopDeferPublish) {
+							break;
+						}
+						try {
+							Thread.sleep(1000);
+						}
+						catch (InterruptedException ignore) {
+							Thread.interrupted();
+						}
+					}
+					Set<Subscribe> tmp = new HashSet<>();
+					tmp.addAll(SMART_SUBSCRIBES);
+					tmp.addAll(subscribes);
 
-                        final Event event = handle.getEvent();
+					final Event event = queue.take();
 
-                        if (!filter.test(event, subscribe)) {
-                            continue;
-                        }
+					for (Subscribe subscribe : tmp) {
+						if (!filter.test(event, subscribe)) {
+							continue;
+						}
 
-                        if (subscribe instanceof SmartSubscribe) {
-                            if (!((SmartSubscribe) subscribe).canNotify(event)) {
-                                continue;
-                            }
-                        }
-                        final Runnable job = () -> subscribe.onEvent(handle.getEvent());
-                        final Executor executor = subscribe.executor();
-                        if (Objects.nonNull(executor)) {
-                            executor.execute(job);
-                        } else {
-                            try {
-                                job.run();
-                            } catch (Exception e) {
-                                Loggers.CORE.error("Event callback exception : {}", e);
-                            }
-                        }
-                    }
-                }
-            });
-        }
+						if (subscribe instanceof SmartSubscribe) {
+							if (!((SmartSubscribe) subscribe).canNotify(event)) {
+								continue;
+							}
+						}
+						final Runnable job = () -> subscribe.onEvent(event);
+						final Executor executor = subscribe.executor();
+						if (Objects.nonNull(executor)) {
+							executor.execute(job);
+						}
+						else {
+							try {
+								job.run();
+							}
+							catch (Throwable e) {
+								Loggers.CORE.error("Event callback exception : {}", e);
+							}
+						}
+					}
+				}
+			}
+			catch (Throwable ex) {
+                Loggers.CORE.error("Event listener exception : {}", ex);
+			}
+		}
 
-        void addSubscribe(Subscribe subscribe) {
-            subscribes.add(subscribe);
-            canOpen = true;
-        }
+		void addSubscribe(Subscribe subscribe) {
+			subscribes.add(subscribe);
+			canOpen = true;
+		}
 
-        void unSubscribe(Subscribe subscribe) {
-            subscribes.remove(subscribe);
-        }
+		void unSubscribe(Subscribe subscribe) {
+			subscribes.remove(subscribe);
+		}
 
-        void publish(Event event) {
-            checkIsStart();
-            this.disruptor.publishEvent(new EventTranslator<EventHandle>() {
-                @Override
-                public void translateTo(EventHandle eventHandle, long sequence) {
-                    eventHandle.setEvent(event);
-                }
-            });
-        }
+		void publish(Event event) {
+			checkIsStart();
+			this.queue.offer(event);
+		}
 
-        void checkIsStart() {
-            if (!initialized) {
-                throw new IllegalStateException("Publisher does not start");
-            }
-        }
+		void checkIsStart() {
+			if (!initialized) {
+				throw new IllegalStateException("Publisher does not start");
+			}
+		}
 
-        void shutdown() {
-            if (disruptor != null) {
-                shutdown = true;
-                disruptor.shutdown();
-            }
-        }
+		void shutdown() {
+			this.shutdown = true;
+			this.queue.clear();
+		}
 
-        public boolean isInitialized() {
-            return initialized;
-        }
-    }
+		public boolean isInitialized() {
+			return initialized;
+		}
+	}
 
 }
