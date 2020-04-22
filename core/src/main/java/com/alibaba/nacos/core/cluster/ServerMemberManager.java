@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.lookup.MemberLookup;
 import com.alibaba.nacos.core.notify.Event;
@@ -37,7 +38,6 @@ import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -100,7 +100,6 @@ public class ServerMemberManager
 	/**
 	 * port
 	 */
-	@Value("${server.port:8848}")
 	private int port;
 
 	/**
@@ -117,7 +116,7 @@ public class ServerMemberManager
 	/**
 	 * here is always the node information of the "UP" state
 	 */
-	private Set<String> memberAddressInfos = new HashSet<>();
+	private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
 
 	/**
 	 * Broadcast this node element information task
@@ -237,6 +236,8 @@ public class ServerMemberManager
 		try {
 			boolean result = serverList.containsKey(address);
 			if (!result) {
+
+				// If only IP information is passed in, a fuzzy match is required
 				for (Map.Entry<String, Member> entry : serverList.entrySet()) {
 					if (StringUtils.contains(entry.getKey(), address)) {
 						result = true;
@@ -327,16 +328,18 @@ public class ServerMemberManager
 
 			memberAddressInfos.clear();
 			memberAddressInfos.addAll(tmpAddressInfo);
+
+			// Persist the current cluster node information to cluster.conf
+			// <important> need to put the event publication into a synchronized block to ensure
+			// that the event publication is sequential
+			if (hasChange) {
+				MemberUtils.syncToFile(members);
+				Loggers.CLUSTER.warn("member has changed : {}", members);
+				NotifyCenter.publishEvent(MemberChangeEvent.builder().allNodes(members).build());
+			}
 		}
 		finally {
 			writeLock.unlock();
-		}
-
-		// Persist the current cluster node information to cluster.conf
-		if (hasChange) {
-			MemberUtils.syncToFile(members);
-			Loggers.CLUSTER.warn("member has changed : {}", members);
-			NotifyCenter.publishEvent(MemberChangeEvent.builder().allNodes(members).build());
 		}
 	}
 
@@ -444,7 +447,7 @@ public class ServerMemberManager
 
 	class MemberInfoReportTask extends Task {
 
-		private final GenericType<RestResult<Member>> reference = new GenericType<RestResult<Member>>() {
+		private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
 		};
 
 		private int cursor = 0;
@@ -463,19 +466,17 @@ public class ServerMemberManager
 
 			asyncHttpClient
 					.post(url, Header.EMPTY, Query.EMPTY, getSelf(), reference.getType(),
-							new Callback<Member>() {
+							new Callback<String>() {
 								@Override
-								public void onReceive(RestResult<Member> result) {
+								public void onReceive(RestResult<String> result) {
 									if (result.ok()) {
-										MemberUtils.onSuccess(MemberUtils
-												.singleParse(target.getAddress()));
+										MemberUtils.onSuccess(target);
 									}
 									else {
 										Loggers.CLUSTER
 												.warn("failed to report new info to target node : {}, result : {}",
 														target, result);
-										MemberUtils.onFail(MemberUtils
-												.singleParse(target.getAddress()));
+										MemberUtils.onFail(target);
 									}
 								}
 
@@ -484,8 +485,7 @@ public class ServerMemberManager
 									Loggers.CLUSTER
 											.error("failed to report new info to target node : {}, error : {}",
 													target, throwable);
-									MemberUtils.onFail(MemberUtils
-											.singleParse(target.getAddress()));
+									MemberUtils.onFail(target);
 								}
 							});
 		}

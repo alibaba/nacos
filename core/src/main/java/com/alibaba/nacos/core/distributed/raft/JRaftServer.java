@@ -31,6 +31,7 @@ import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
+import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosAsyncProcessor;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
@@ -76,7 +77,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -86,7 +86,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 /**
  * JRaft server instance, away from Spring IOC management
@@ -122,7 +121,6 @@ public class JRaftServer {
 
 	private AsyncUserProcessor userProcessor;
 	private NodeOptions nodeOptions;
-	private Set<String> alreadyRegisterBiz = new HashSet<>();
 	private Serializer serializer;
 	private Collection<LogProcessor4CP> processors = Collections
 			.synchronizedSet(new HashSet<>());
@@ -163,8 +161,11 @@ public class JRaftServer {
 								RaftSysConstants.DEFAULT_ELECTION_TIMEOUT),
 				RaftSysConstants.DEFAULT_ELECTION_TIMEOUT);
 
+		rpcRequestTimeoutMs = ConvertUtils
+				.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
+						RaftSysConstants.DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS);
+
 		nodeOptions.setElectionTimeoutMs(electionTimeout);
-		initRpcRequestTimeoutMs();
 		RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 		nodeOptions.setRaftOptions(raftOptions);
 
@@ -181,7 +182,7 @@ public class JRaftServer {
 
 		if (!isStarted) {
 
-			Loggers.RAFT.info("========= The raft protocol is start... =========");
+			Loggers.RAFT.info("========= The raft protocol is starting... =========");
 
 			try {
 				// init raft group node
@@ -210,7 +211,7 @@ public class JRaftServer {
 				isStarted = true;
 				createMultiRaftGroup(processors);
 				Loggers.RAFT
-						.info("========= The raft protocol finish start... =========");
+						.info("========= The raft protocol start finished... =========");
 			}
 			catch (Exception e) {
 				Loggers.RAFT.error("raft protocol start failure, error : {}", e);
@@ -231,10 +232,9 @@ public class JRaftServer {
 
 		for (LogProcessor4CP processor : processors) {
 			final String groupName = processor.group();
-			if (alreadyRegisterBiz.contains(groupName)) {
+			if (multiRaftGroup.containsKey(groupName)) {
 				throw new DuplicateRaftGroupException(groupName);
 			}
-			alreadyRegisterBiz.add(groupName);
 			final String logUri = Paths.get(parentPath, groupName, "log").toString();
 			final String snapshotUri = Paths.get(parentPath, groupName, "snapshot")
 					.toString();
@@ -255,6 +255,7 @@ public class JRaftServer {
 			// Ensure that each Raft Group has its own configuration and NodeOptions
 			Configuration configuration = conf.copy();
 			NodeOptions copy = nodeOptions.copy();
+
 			// Here, the LogProcessor is passed into StateMachine, and when the StateMachine
 			// triggers onApply, the onApply of the LogProcessor is actually called
 			NacosStateMachine machine = new NacosStateMachine(this, processor);
@@ -295,11 +296,11 @@ public class JRaftServer {
 	}
 
 	GetResponse get(final GetRequest request, final int failoverRetries) {
-		final String biz = request.getGroup();
+		final String group = request.getGroup();
 		CompletableFuture<GetResponse> future = new CompletableFuture<>();
-		final RaftGroupTuple tuple = findNodeByBiz(biz);
+		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (Objects.isNull(tuple)) {
-			future.completeExceptionally(new NoSuchElementException());
+			future.completeExceptionally(new NoSuchRaftGroupException(group));
 			return future.join();
 		}
 		final Node node = tuple.node;
@@ -323,7 +324,7 @@ public class JRaftServer {
 		try {
 			return future.get(5000, TimeUnit.MILLISECONDS);
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			throw new ConsistencyException("Data acquisition failed", e);
 		}
 	}
@@ -355,7 +356,7 @@ public class JRaftServer {
 			final int retryLeft) {
 		Loggers.RAFT.debug("data requested this time : {}", data);
 		final String group = data.getGroup();
-		final RaftGroupTuple tuple = findNodeByBiz(group);
+		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (tuple == null) {
 			future.completeExceptionally(new IllegalArgumentException(
 					"No corresponding Raft Group found : " + group));
@@ -393,7 +394,7 @@ public class JRaftServer {
 						Loggers.RAFT
 								.info("Node update success, groupId : {}, oldConf : {}, newConf : {}, status : {}, Try again the {} time",
 										groupId, oldConf, newConf, status, i + 1);
-						refreshRouteTable(groupId);
+						RaftExecutor.executeByCommon(() -> refreshRouteTable(groupId));
 						return;
 					}
 					else {
@@ -421,6 +422,7 @@ public class JRaftServer {
 			if (st.isOk()) {
 				return leader;
 			}
+			Loggers.RAFT.error("get Leader has failed : {}", st);
 		}
 		catch (final Throwable t) {
 			Loggers.RAFT.error("get Leader has error : {}", t);
@@ -428,12 +430,16 @@ public class JRaftServer {
 		return null;
 	}
 
-	void shutdown() {
+	synchronized void shutdown() {
+
+		if (isShutdown) {
+			return;
+		}
 
 		isShutdown = true;
 
 		try {
-			Loggers.RAFT.info("========= The raft protocol is start to close =========");
+			Loggers.RAFT.info("========= The raft protocol is starting to close =========");
 
 			for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 				final RaftGroupTuple tuple = entry.getValue();
@@ -549,23 +555,17 @@ public class JRaftServer {
 		}
 	}
 
-	public RaftGroupTuple findNodeByBiz(final String group) {
+	public RaftGroupTuple findTupleByGroup(final String group) {
 		RaftGroupTuple tuple = multiRaftGroup.get(group);
 		return tuple;
 	}
 
-	public Node findNodeByGroup(String group) {
+	public Node findNodeByGroup(final String group) {
 		final RaftGroupTuple tuple = multiRaftGroup.get(group);
 		if (Objects.nonNull(tuple)) {
 			return tuple.node;
 		}
 		return null;
-	}
-
-	private void initRpcRequestTimeoutMs() {
-		rpcRequestTimeoutMs = ConvertUtils
-				.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
-						RaftSysConstants.DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS);
 	}
 
 	Map<String, RaftGroupTuple> getMultiRaftGroup() {
@@ -603,9 +603,9 @@ public class JRaftServer {
 						.prefixedWith("nacos_raft_[" + node.getGroupId() + "]")
 						.withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
 						.outputTo(Loggers.RAFT)
-						.scheduleOn(RaftExecutor.getRaftMemberRefreshExecutor())
+						.scheduleOn(RaftExecutor.getRaftCommonExecutor())
 						.shutdownExecutorOnStop(
-								RaftExecutor.getRaftMemberRefreshExecutor().isShutdown())
+								RaftExecutor.getRaftCommonExecutor().isShutdown())
 						.build();
 				regionMetricsReporter.start(30, TimeUnit.SECONDS);
 			}

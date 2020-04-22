@@ -25,8 +25,4 @@ public class RaftDBErrorEvent implements Event {
 
 	private static final long serialVersionUID = 101591819161802336L;
 
-	@Override
-	public Class<? extends Event> eventType() {
-		return RaftDBErrorEvent.class;
-	}
 }

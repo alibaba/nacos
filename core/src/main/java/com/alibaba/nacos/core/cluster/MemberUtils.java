@@ -20,6 +20,7 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -118,13 +119,14 @@ public class MemberUtils {
 	public static void syncToFile(Collection<Member> members) {
 		try {
 			StringBuilder builder = new StringBuilder();
+			builder.append("#").append(LocalDateTime.now()).append(StringUtils.LF);
 			for (String member : simpleMembers(members)) {
 				builder.append(member).append(StringUtils.LF);
 			}
 			ApplicationUtils.writeClusterConf(builder.toString());
 		}
 		catch (Throwable ex) {
-			Loggers.CLUSTER.error("Cluster member node persistence failed : {}", ex);
+			Loggers.CLUSTER.error("cluster member node persistence failed : {}", ex);
 		}
 	}
 

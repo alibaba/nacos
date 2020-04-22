@@ -47,4 +47,13 @@ public interface Subscribe<T extends Event> {
         return null;
     }
 
+    /**
+     * Whether to ignore expired events
+     *
+     * @return default value is {@link Boolean#FALSE}
+     */
+    default boolean ignoreExpireEvent() {
+        return false;
+    }
+
 }

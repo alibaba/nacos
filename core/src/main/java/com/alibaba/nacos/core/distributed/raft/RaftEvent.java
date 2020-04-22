@@ -73,11 +73,6 @@ public class RaftEvent implements SlowEvent {
         this.raftClusterInfo = raftClusterInfo;
     }
 
-    @Override
-    public Class<? extends Event> eventType() {
-        return RaftEvent.class;
-    }
-
     public static final class RaftEventBuilder {
         private String groupId;
         private String leader;

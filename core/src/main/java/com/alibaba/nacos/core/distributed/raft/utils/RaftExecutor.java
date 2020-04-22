@@ -33,7 +33,8 @@ public final class RaftExecutor {
 
 	private static ExecutorService raftCoreExecutor;
 	private static ExecutorService raftCliServiceExecutor;
-	private static ScheduledExecutorService raftMemberRefreshExecutor;
+	private static ScheduledExecutorService raftCommonExecutor;
+	private static ExecutorService raftSnapshotExecutor;
 
 	private static final String OWNER = JRaftServer.class.getName();
 
@@ -55,15 +56,21 @@ public final class RaftExecutor {
 				.newFixExecutorService(OWNER, raftCliServiceThreadNum,
 						new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
 
-		raftMemberRefreshExecutor = ExecutorFactory.newScheduledExecutorService(OWNER, 8,
+		raftCommonExecutor = ExecutorFactory.newScheduledExecutorService(OWNER, 8,
 				new NameThreadFactory(
-						"com.alibaba.nacos.core.protocol.raft-member-refresh"));
+						"com.alibaba.nacos.core.protocol.raft-common"));
+
+		int snapshotNum = raftCoreThreadNum / 2;
+		snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
+
+		raftSnapshotExecutor = ExecutorFactory.newFixExecutorService(OWNER, snapshotNum,
+				new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
 
 	}
 
 	public static void scheduleRaftMemberRefreshJob(Runnable runnable, long initialDelay,
 			long period, TimeUnit unit) {
-		raftMemberRefreshExecutor
+		raftCommonExecutor
 				.scheduleAtFixedRate(runnable, initialDelay, period, unit);
 	}
 
@@ -75,16 +82,16 @@ public final class RaftExecutor {
 		return raftCliServiceExecutor;
 	}
 
-	public static ScheduledExecutorService getRaftMemberRefreshExecutor() {
-		return raftMemberRefreshExecutor;
+	public static void executeByCommon(Runnable r) {
+		raftCommonExecutor.execute(r);
 	}
 
-	public static void executeByRaftCore(Runnable runnable) {
-		raftCoreExecutor.execute(runnable);
+	public static ScheduledExecutorService getRaftCommonExecutor() {
+		return raftCommonExecutor;
 	}
 
 	public static void doSnapshot(Runnable runnable) {
-		raftCoreExecutor.execute(runnable);
+		raftSnapshotExecutor.execute(runnable);
 	}
 
 }

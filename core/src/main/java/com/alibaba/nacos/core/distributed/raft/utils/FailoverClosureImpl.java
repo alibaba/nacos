@@ -80,7 +80,7 @@ public class FailoverClosureImpl<T> implements FailoverClosure<T> {
         }
     }
 
-    private boolean canRetryException(Throwable throwable) {
+    protected boolean canRetryException(Throwable throwable) {
         if (throwable == null) {
             return false;
         }

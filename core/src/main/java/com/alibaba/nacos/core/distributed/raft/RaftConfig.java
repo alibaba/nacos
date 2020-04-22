@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.GsonUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     @Override
     public void setMembers(String self, Set<String> members) {
         this.selfAddress = self;
+        this.members.clear();
         this.members.addAll(members);
     }
 
@@ -107,6 +109,6 @@ public class RaftConfig implements Config<LogProcessor4CP> {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(data);
+        return GsonUtils.toJson(data);
     }
 }

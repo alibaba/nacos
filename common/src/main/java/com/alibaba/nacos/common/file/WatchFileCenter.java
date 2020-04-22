@@ -19,10 +19,14 @@ package com.alibaba.nacos.common.file;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
@@ -33,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -46,15 +49,27 @@ import java.util.concurrent.ExecutorService;
  */
 public class WatchFileCenter {
 
+	private static final Logger logger = LoggerFactory.getLogger(WatchFileCenter.class);
+
+	/**
+	 * Maximum number of monitored file directories
+	 */
 	private static final int MAX_WATCH_FILE_JOB = Integer
 			.getInteger("nacos.watch-file.max-dirs", 16);
-	private static final Map<String, WatchJob> MANAGER = new HashMap<>(
+
+	private static final Map<String, WatchDirJob> MANAGER = new HashMap<>(
 			MAX_WATCH_FILE_JOB);
+
 	private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
+
 	private static final ExecutorService WATCH_FILE_EXECUTOR = ExecutorFactory
 			.newFixExecutorService(WatchFileCenter.class.getCanonicalName(),
 					MAX_WATCH_FILE_JOB << 1,
 					new NameThreadFactory("com.alibaba.nacos.common.file.watch"));
+
+	/**
+	 * The number of directories that are currently monitored
+	 */
 	private static int NOW_WATCH_JOB_CNT = 0;
 
 	public synchronized static boolean registerWatcher(final String paths,
@@ -63,17 +78,17 @@ public class WatchFileCenter {
 		if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
 			return false;
 		}
-		WatchJob job = MANAGER.get(paths);
+		WatchDirJob job = MANAGER.get(paths);
 		if (job == null) {
-			job = new WatchJob(paths);
+			job = new WatchDirJob(paths);
 			WATCH_FILE_EXECUTOR.execute(job);
 		}
 		job.addSubscribe(watcher);
 		return true;
 	}
 
-	public synchronized static boolean deregisterWatcher(final String path) {
-		WatchJob job = MANAGER.get(path);
+	public synchronized static boolean deregisterAllWatcher(final String path) {
+		WatchDirJob job = MANAGER.get(path);
 		if (job != null) {
 			job.shutdown();
 			MANAGER.remove(path);
@@ -83,7 +98,7 @@ public class WatchFileCenter {
 	}
 
 	public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {
-		WatchJob job = MANAGER.get(path);
+		WatchDirJob job = MANAGER.get(path);
 		if (job != null) {
 			job.watchers.remove(watcher);
 			return true;
@@ -91,7 +106,7 @@ public class WatchFileCenter {
 		return false;
 	}
 
-	private static class WatchJob implements Runnable {
+	private static class WatchDirJob implements Runnable {
 
 		private final String paths;
 
@@ -99,18 +114,19 @@ public class WatchFileCenter {
 
 		private volatile boolean watch = true;
 
-		private Set<FileWatcher> watchers = new CopyOnWriteArraySet<>();
+		private Set<FileWatcher> watchers = new ConcurrentHashSet<>();
 
-		public WatchJob(String paths) throws NacosException {
+		public WatchDirJob(String paths) throws NacosException {
 			this.paths = paths;
 
-			if (!Paths.get(paths).toFile().isDirectory()) {
+			final Path p = Paths.get(paths);
+			if (!p.toFile().isDirectory()) {
 				throw new IllegalArgumentException("Must be a file directory : " + paths);
 			}
 
 			try {
 				WatchService service = FILE_SYSTEM.newWatchService();
-				Paths.get(paths).register(service, StandardWatchEventKinds.OVERFLOW,
+				p.register(service, StandardWatchEventKinds.OVERFLOW,
 						StandardWatchEventKinds.ENTRY_MODIFY,
 						StandardWatchEventKinds.ENTRY_CREATE,
 						StandardWatchEventKinds.ENTRY_DELETE);
@@ -133,7 +149,7 @@ public class WatchFileCenter {
 		public void run() {
 			while (watch) {
 				try {
-					WatchKey watchKey = watchService.take();
+					final WatchKey watchKey = watchService.take();
 					final List<WatchEvent<?>> events = watchKey.pollEvents();
 					watchKey.reset();
 					if (WATCH_FILE_EXECUTOR.isShutdown()) {
@@ -155,6 +171,8 @@ public class WatchFileCenter {
 				}
 				catch (InterruptedException ignore) {
 					Thread.interrupted();
+				} catch (Throwable ex) {
+					logger.error("An exception occurred during file listening : {}", ex);
 				}
 			}
 		}
@@ -162,7 +180,7 @@ public class WatchFileCenter {
 		private void eventProcess(Object context) {
 			final FileChangeEvent fileChangeEvent = FileChangeEvent.builder().paths(paths)
 					.context(context).build();
-			String str = String.valueOf(context);
+			final String str = String.valueOf(context);
 			for (final FileWatcher watcher : watchers) {
 				if (watcher.interest(str)) {
 					Runnable job = () -> watcher.onChange(fileChangeEvent);
@@ -180,6 +198,7 @@ public class WatchFileCenter {
 		private void eventOverflow() {
 			File dir = Paths.get(paths).toFile();
 			for (File file : Objects.requireNonNull(dir.listFiles())) {
+				// Subdirectories do not participate in listening
 				if (file.isDirectory()) {
 					continue;
 				}

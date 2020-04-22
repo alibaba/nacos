@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
-import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alipay.remoting.AsyncContext;
@@ -49,7 +48,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, BytesHolder holder) {
         try {
             Log log = Log.parseFrom(holder.getBytes());
-            final JRaftServer.RaftGroupTuple tuple = server.findNodeByBiz(log.getGroup());
+            final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(log.getGroup());
             if (Objects.isNull(tuple)) {
                 asyncCtx.sendResponse(RestResultUtils.failedWithData(new NoSuchRaftGroupException(
                         "Could not find the corresponding Raft Group : " + log.getGroup())));

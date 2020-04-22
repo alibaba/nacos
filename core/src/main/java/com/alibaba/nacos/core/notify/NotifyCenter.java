@@ -56,12 +56,14 @@ public class NotifyCenter {
 
 	private static final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(
 			16);
+
 	private static final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
+
 	private static final Publisher SHARE_PUBLISHER = new Publisher(SlowEvent.class,
 			new BiPredicate<Event, Subscribe>() {
 				@Override
 				public boolean test(Event event, Subscribe subscribe) {
-					final String sourceName = event.eventType().getCanonicalName();
+					final String sourceName = event.getClass().getCanonicalName();
 					if (subscribe instanceof SmartSubscribe) {
 						return true;
 					}
@@ -176,7 +178,7 @@ public class NotifyCenter {
 	 * @param event
 	 */
 	public static void publishEvent(final Event event) {
-		publishEvent(event.eventType(), event);
+		publishEvent(event.getClass(), event);
 	}
 
 	/**
@@ -263,6 +265,7 @@ public class NotifyCenter {
 		private volatile boolean shutdown = false;
 		private BlockingQueue<Event> queue;
 		private Supplier<? extends Event> supplier;
+		private long lastEventSequence = -1L;
 
 		// judge the subscribe can deal Event
 
@@ -340,17 +343,27 @@ public class NotifyCenter {
 					tmp.addAll(subscribes);
 
 					final Event event = queue.take();
+					final long currentEventSequence = event.sequence();
 
 					for (Subscribe subscribe : tmp) {
+
+						// Determines whether the event is acceptable to this subscriber
 						if (!filter.test(event, subscribe)) {
 							continue;
 						}
 
+						// If you are a multi-event listener, you need to make additional logical judgments
 						if (subscribe instanceof SmartSubscribe) {
 							if (!((SmartSubscribe) subscribe).canNotify(event)) {
 								continue;
 							}
 						}
+
+						// Whether to ignore expiration events
+						if (subscribe.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
+							continue;
+						}
+
 						final Runnable job = () -> subscribe.onEvent(event);
 						final Executor executor = subscribe.executor();
 						if (Objects.nonNull(executor)) {
@@ -365,6 +378,8 @@ public class NotifyCenter {
 							}
 						}
 					}
+
+					lastEventSequence = currentEventSequence;
 				}
 			}
 			catch (Throwable ex) {

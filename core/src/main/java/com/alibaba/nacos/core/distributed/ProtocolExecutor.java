@@ -14,18 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.event;
+package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+
+import java.util.concurrent.ExecutorService;
 
 /**
- *
- *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-@JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
+public final class ProtocolExecutor {
+
+	private static final ExecutorService CP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.newSingleExecutorService(
+			ProtocolManager.class.getName());
+
+	private static final ExecutorService AP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.newSingleExecutorService(
+			ProtocolManager.class.getName());
+
+	public static void cpMemberChange(Runnable runnable) {
+		CP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
+	}
+
+	public static void apMemberChange(Runnable runnable) {
+		AP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
+	}
 
 }

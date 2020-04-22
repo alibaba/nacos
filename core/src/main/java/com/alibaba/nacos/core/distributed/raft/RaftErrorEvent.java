@@ -24,8 +24,4 @@ import com.alibaba.nacos.core.notify.Event;
 public class RaftErrorEvent implements Event {
     private static final long serialVersionUID = 3016514657754158167L;
 
-    @Override
-    public Class<? extends Event> eventType() {
-        return RaftErrorEvent.class;
-    }
 }
