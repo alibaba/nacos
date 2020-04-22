@@ -127,7 +127,7 @@ public class SecurityProxy {
                 }
             }else{
                 if (HttpClient.ENABLE_HTTPS && !server.startsWith(Constants.HTTPS_PREFIX)) {
-                    url =StringUtils.removeStart(server,Constants.HTTP_PREFIX)+Constants.HTTPS_PREFIX + contextPath + LOGIN_URL;
+                    url =Constants.HTTPS_PREFIX +StringUtils.removeStart(server,Constants.HTTP_PREFIX)+ contextPath + LOGIN_URL;
                 } else {
                     url = server + contextPath + LOGIN_URL;
                 }
