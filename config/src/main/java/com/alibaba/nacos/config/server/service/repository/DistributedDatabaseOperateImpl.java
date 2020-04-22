@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
@@ -46,7 +47,6 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
@@ -173,7 +173,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		LogUtil.defaultLog.info("use DistributedTransactionServicesImpl");
 	}
 
-	@VisibleForTesting
+	@JustForTest
 	public void mockConsistencyProtocol(CPProtocol protocol) {
 		this.protocol = protocol;
 	}
@@ -361,7 +361,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 			final String key =
 					System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
-							+ Md5Utils.getMD5(sqlContext.toString(), Constants.ENCODE);
+							+ MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
 			Log log = Log.newBuilder().setGroup(group()).setKey(key)
 					.setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
 					.setType(sqlContext.getClass().getCanonicalName()).build();

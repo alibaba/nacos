@@ -42,6 +42,9 @@ import static com.alibaba.nacos.core.utils.Constants.*;
  */
 public class InetUtils {
 
+    /**
+     * {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener
+     */
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class IPChangeEvent implements SlowEvent {
 

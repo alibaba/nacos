@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model;
 
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 
 import java.io.PrintWriter;
@@ -47,7 +47,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         this.group = group;
         this.content = content;
         if (this.content != null) {
-            this.md5 = Md5Utils.getMD5(this.content, Constants.ENCODE);
+            this.md5 = MD5Utils.md5Hex(this.content, Constants.ENCODE);
         }
     }
 

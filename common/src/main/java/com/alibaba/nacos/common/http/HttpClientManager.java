@@ -32,11 +32,14 @@ import java.util.Map;
 @SuppressWarnings("all")
 public class HttpClientManager {
 
+	private static final int TIMEOUT = 5000;
+
+	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
+			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();
+
 	private static final Object SYNC_MONITOR = new Object();
 
 	private static final Object ASYNC_MONITOR = new Object();
-
-	private static final int TIMEOUT = 5000;
 
 	private static final Map<String, NSyncHttpClient> HTTP_SYNC_CLIENT_MAP = new HashMap<String, NSyncHttpClient>(
 			8);
@@ -44,31 +47,42 @@ public class HttpClientManager {
 	private static final Map<String, NAsyncHttpClient> HTTP_ASYNC_CLIENT_MAP = new HashMap<String, NAsyncHttpClient>(
 			8);
 
+	private static final NSyncHttpClient SHARE_SYNC_HTTP_CLIENT = new NacosSyncHttpClient(
+			HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
+
+	private static final NAsyncHttpClient SHARE_ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
+			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
+
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
-			@Override public void run() {
+			@Override
+			public void run() {
 				System.out.println("[NSyncHttpClient] Start destroying HttpClient");
-				for (Map.Entry<String, NSyncHttpClient> entry : HTTP_SYNC_CLIENT_MAP
-						.entrySet()) {
-					try {
+				try {
+					for (Map.Entry<String, NSyncHttpClient> entry : HTTP_SYNC_CLIENT_MAP
+							.entrySet()) {
 						entry.getValue().close();
 					}
-					catch (Exception ignore) {}
+					SHARE_SYNC_HTTP_CLIENT.close();
+				}
+				catch (Exception ignore) {
 				}
 				System.out.println("[NSyncHttpClient] Destruction of the end");
 			}
 		});
 
 		ShutdownUtils.addShutdownHook(new Runnable() {
-			@Override public void run() {
+			@Override
+			public void run() {
 				System.out.println("[NAsyncHttpClient] Start destroying HttpClient");
-				for (Map.Entry<String, NAsyncHttpClient> entry : HTTP_ASYNC_CLIENT_MAP
-						.entrySet()) {
-					try {
+				try {
+					for (Map.Entry<String, NAsyncHttpClient> entry : HTTP_ASYNC_CLIENT_MAP
+							.entrySet()) {
 						entry.getValue().close();
 					}
-					catch (Exception ignore) {
-					}
+					SHARE_ASYNC_HTTP_CLIENT.close();
+				}
+				catch (Exception ignore) {
 				}
 				System.out.println("[NAsyncHttpClient] Destruction of the end");
 			}
@@ -76,8 +90,13 @@ public class HttpClientManager {
 
 	}
 
-	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
-			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();
+	public static NSyncHttpClient getShareSyncHttpClient() {
+		return SHARE_SYNC_HTTP_CLIENT;
+	}
+
+	public static NAsyncHttpClient getShareAsyncHttpClient() {
+		return SHARE_ASYNC_HTTP_CLIENT;
+	}
 
 	public static NSyncHttpClient newSyncHttpClient(String namespace) {
 		synchronized (SYNC_MONITOR) {

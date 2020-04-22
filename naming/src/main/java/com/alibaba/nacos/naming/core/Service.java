@@ -17,8 +17,9 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.common.utils.Md5Utils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
@@ -472,7 +473,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipsString.append(",");
         }
 
-        checksum = Md5Utils.getMD5(ipsString.toString(), "UTF-8");
+        checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
     }
 
     private void updateOrAddCluster(Collection<Cluster> clusters) {

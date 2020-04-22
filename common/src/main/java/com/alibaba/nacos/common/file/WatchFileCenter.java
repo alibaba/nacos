@@ -139,19 +139,16 @@ public class WatchFileCenter {
 					if (WATCH_FILE_EXECUTOR.isShutdown()) {
 						return;
 					}
-					WATCH_FILE_EXECUTOR.execute(new Runnable() {
-						@Override
-						public void run() {
-							for (WatchEvent<?> event : events) {
-								WatchEvent.Kind<?> kind = event.kind();
+					WATCH_FILE_EXECUTOR.execute(() -> {
+						for (WatchEvent<?> event : events) {
+							WatchEvent.Kind<?> kind = event.kind();
 
-								// Since the OS's event cache may be overflow, a backstop is needed
-								if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
-									eventOverflow();
-								}
-								else {
-									eventProcess(event.context());
-								}
+							// Since the OS's event cache may be overflow, a backstop is needed
+							if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
+								eventOverflow();
+							}
+							else {
+								eventProcess(event.context());
 							}
 						}
 					});
@@ -168,12 +165,7 @@ public class WatchFileCenter {
 			String str = String.valueOf(context);
 			for (final FileWatcher watcher : watchers) {
 				if (watcher.interest(str)) {
-					Runnable job = new Runnable() {
-						@Override
-						public void run() {
-							watcher.onChange(fileChangeEvent);
-						}
-					};
+					Runnable job = () -> watcher.onChange(fileChangeEvent);
 					Executor executor = watcher.executor();
 					if (executor == null) {
 						job.run();

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.notify.Event;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  *
@@ -25,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-@VisibleForTesting
+@JustForTest
 public class RaftDBErrorRecoverEvent implements Event {
 	@Override
 	public Class<? extends Event> eventType() {

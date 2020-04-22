@@ -26,7 +26,11 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -42,13 +46,14 @@ import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -82,11 +87,7 @@ public class ServerMemberManager_ITCase {
 				Commons.NACOS_CORE_CONTEXT,
 				"/cluster/server/leave");
 		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY,
-				Collections.singletonList(Member
-						.builder()
-						.ip("1.1.1.1")
-						.port(80)
-						.build()),
+				Collections.singletonList("1.1.1.1:80"),
 				new GenericType<RestResult<String>>(){}.getType());
 		System.out.println(result);
 		System.out.println(memberManager.getServerList());
@@ -94,7 +95,7 @@ public class ServerMemberManager_ITCase {
 	}
 
 	@Test
-	public void test_a_member_join_no_sync() throws Exception {
+	public void test_a_member_join() throws Exception {
 		Collection<Member> members = memberManager.allMembers();
 		Assert.assertEquals(members.size(), 1);
 		Assert.assertEquals(InetUtils.getSelfIp() + ":" + port, memberManager.getSelf().getAddress());
@@ -112,18 +113,35 @@ public class ServerMemberManager_ITCase {
 	}
 
 	@Test
-	public void test_b_member_join_with_sync() throws Exception {
+	public void test_b_member_change() throws Exception {
+
+		AtomicInteger integer = new AtomicInteger(0);
+		CountDownLatch latch = new CountDownLatch(1);
+
+		NotifyCenter.registerSubscribe(new Subscribe<MemberChangeEvent>() {
+			@Override
+			public void onEvent(MemberChangeEvent event) {
+				integer.incrementAndGet();
+				latch.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return MemberChangeEvent.class;
+			}
+		});
 		Collection<Member> members = memberManager.allMembers();
-		Assert.assertEquals(1, members.size());
-		Assert.assertEquals(InetUtils.getSelfIp() + ":" + port, memberManager.getSelf().getAddress());
 
-		RestResult<String> result = memberJoin();
+		memberManager.memberChange(members);
 
-		Assert.assertTrue(result.ok());
-		Collection<String> remoteServer = JSON.parseObject(result.getData(), new TypeReference<List<String>>(){});
-		Assert.assertTrue(StringUtils.startsWith(remoteServer.iterator().next(), memberManager.getSelf().getAddress()));
-		members = memberManager.allMembers();
-		Assert.assertEquals(2, members.size());
+		members.add(Member.builder()
+				.ip("115.159.3.213")
+				.port(8848)
+				.build());
+
+		memberManager.memberChange(members);
+
+		latch.await();
 	}
 
 	private RestResult<String> memberJoin() throws Exception {
@@ -131,7 +149,7 @@ public class ServerMemberManager_ITCase {
 				ApplicationUtils.getContextPath(),
 				Commons.NACOS_CORE_CONTEXT,
 				"/cluster/report");
-		return httpClient.post(url, Header.EMPTY, Query.newInstance().addParam("sync", true), Member
+		return httpClient.post(url, Header.EMPTY, Query.EMPTY, Member
 						.builder()
 						.ip("1.1.1.1")
 						.port(80)
