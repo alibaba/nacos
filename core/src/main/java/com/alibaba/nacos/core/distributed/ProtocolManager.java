@@ -31,7 +31,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
@@ -42,13 +41,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -143,25 +139,33 @@ public class ProtocolManager
 
 	@SuppressWarnings("all")
 	private List<LogProcessor> loadProcessor(Class cls, ConsistencyProtocol protocol) {
-		Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils
+		final Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils
 				.getBeansOfType(cls);
-
 		final List<LogProcessor> result = new ArrayList<>(beans.values());
-
-		ServiceLoader<LogProcessor> loader = ServiceLoader.load(cls);
-		for (LogProcessor t : loader) {
-			result.add(t);
-		}
 		return result;
 	}
 
 	@Override
 	public void onEvent(MemberChangeEvent event) {
+		// Here, the sequence of node change events is very important. For example,
+		// node change event A occurs at time T1, and node change event B occurs at
+		// time T2 after a period of time.
+		// (T1 < T2)
+
 		Set<Member> copy = new HashSet<>(event.getAllMembers());
-		GlobalExecutor
-				.executeByCommon(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
-		GlobalExecutor
-				.executeByCommon(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
+
+		// Node change events between different protocols should not block each other
+		if (Objects.nonNull(apProtocol)) {
+			ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+		}
+		if (Objects.nonNull(cpProtocol)) {
+			ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
+		}
+	}
+
+	@Override
+	public boolean ignoreExpireEvent() {
+		return true;
 	}
 
 	private static Set<String> toAPMembersInfo(Collection<Member> members) {

@@ -30,12 +30,10 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cluster member addressing mode for the address server
@@ -44,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
 
-	private final GenericType<RestResult<String>> stringReference = new GenericType<RestResult<String>>() {
+	private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
 	};
 
 	public String domainName;
@@ -61,8 +59,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	@Override
 	public void start() throws NacosException {
 		if (start.compareAndSet(false, true)) {
-			initAddressSys();
 			this.maxFailCount = Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12"));
+			initAddressSys();
 			run();
 		}
 	}
@@ -153,7 +151,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	private void syncFromAddressUrl() throws Exception {
 		RestResult<String> result = syncHttpClient
 				.get(addressServerUrl, Header.EMPTY, Query.EMPTY,
-						stringReference.getType());
+						genericType.getType());
 		if (HttpStatus.OK.value() == result.getCode()) {
 			isAddressServerHealth = true;
 			Reader reader = new StringReader(result.getData());

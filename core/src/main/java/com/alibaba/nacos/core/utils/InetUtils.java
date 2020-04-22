@@ -72,11 +72,6 @@ public class InetUtils {
             return "IPChangeEvent{" + "oldIp='" + oldIp + '\'' + ", newIp='"
                     + newIp + '\'' + '}';
         }
-
-        @Override
-        public Class<? extends Event> eventType() {
-            return IPChangeEvent.class;
-        }
     }
 
     private static final Logger log = LoggerFactory.getLogger(InetUtils.class);

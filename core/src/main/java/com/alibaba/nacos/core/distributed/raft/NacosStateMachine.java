@@ -217,8 +217,8 @@ class NacosStateMachine extends StateMachineAdapter {
 
 	@Override
 	public void onError(RaftException e) {
-		processor.onError(e);
 		super.onError(e);
+		processor.onError(e);
 	}
 
 	public boolean isLeader() {

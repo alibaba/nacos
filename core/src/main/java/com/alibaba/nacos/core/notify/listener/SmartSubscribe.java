@@ -39,4 +39,8 @@ public abstract class SmartSubscribe implements Subscribe<Event> {
 		return null;
 	}
 
+	@Override
+	public final boolean ignoreExpireEvent() {
+		return false;
+	}
 }

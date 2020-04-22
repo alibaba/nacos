@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -33,18 +34,10 @@ public class NotifyCenter_ITCase {
 
 	private static class TestSlowEvent implements SlowEvent {
 
-		@Override
-		public Class<? extends Event> eventType() {
-			return TestSlowEvent.class;
-		}
 	}
 
 	private static class TestEvent implements Event {
 
-		@Override
-		public Class<? extends Event> eventType() {
-			return TestEvent.class;
-		}
 	}
 
 	private static final Subscribe<TestSlowEvent> subscribe = new Subscribe<TestSlowEvent>() {
@@ -125,6 +118,90 @@ public class NotifyCenter_ITCase {
 		latch2.await();
 
 		Assert.assertEquals(2, count.get());
+	}
+
+	static CountDownLatch latch = new CountDownLatch(3);
+
+	static class ExpireEvent implements Event {
+
+		static AtomicLong sequence = new AtomicLong(3);
+
+		private long no = sequence.getAndDecrement();
+
+		@Override
+		public long sequence() {
+			latch.countDown();
+			return no;
+		}
+	}
+
+	@Test
+	public void test_ignore_expire_event() throws Exception {
+		NotifyCenter.registerToPublisher(ExpireEvent::new, ExpireEvent.class, 16);
+		AtomicInteger count = new AtomicInteger(0);
+		NotifyCenter.registerSubscribe(new Subscribe<ExpireEvent>() {
+			@Override
+			public void onEvent(ExpireEvent event) {
+				count.incrementAndGet();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return ExpireEvent.class;
+			}
+
+			@Override
+			public boolean ignoreExpireEvent() {
+				return true;
+			}
+		});
+
+		for (int i = 0; i < 3; i ++) {
+			NotifyCenter.publishEvent(new ExpireEvent());
+		}
+
+		latch.await();
+		Assert.assertEquals(1, count.get());
+	}
+
+	static CountDownLatch latch2 = new CountDownLatch(3);
+
+	static class NoExpireEvent implements Event {
+
+		static AtomicLong sequence = new AtomicLong(3);
+
+		private long no = sequence.getAndDecrement();
+
+		@Override
+		public long sequence() {
+			latch2.countDown();
+			return no;
+		}
+	}
+
+	@Test
+	public void test_no_ignore_expire_event() throws Exception {
+		NotifyCenter.registerToPublisher(NoExpireEvent::new, NoExpireEvent.class, 16);
+		AtomicInteger count = new AtomicInteger(0);
+		NotifyCenter.registerSubscribe(new Subscribe<NoExpireEvent>() {
+			@Override
+			public void onEvent(NoExpireEvent event) {
+				count.incrementAndGet();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return NoExpireEvent.class;
+			}
+
+		});
+
+		for (int i = 0; i < 3; i ++) {
+			NotifyCenter.publishEvent(new NoExpireEvent());
+		}
+
+		latch2.await();
+		Assert.assertEquals(3, count.get());
 	}
 
 }

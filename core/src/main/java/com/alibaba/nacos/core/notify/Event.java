@@ -24,10 +24,12 @@ import java.io.Serializable;
 public interface Event extends Serializable {
 
     /**
-     * Return own event type
+     * Event sequence number, which can be used to handle the sequence of events
      *
-     * @return {@link Event}
+     * @return sequence num, It's best to make sure it's monotone
      */
-    Class<? extends Event> eventType();
+    default long sequence() {
+        return System.currentTimeMillis();
+    }
 
 }
