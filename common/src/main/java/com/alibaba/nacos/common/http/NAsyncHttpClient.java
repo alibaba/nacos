@@ -37,7 +37,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void get(String url, Header header, Query query,
-                 Type token, Callback<T> callback);
+                 Type token, Callback<T> callback) throws Exception;
 
     /**
      * get request, may be pulling a lot of data
@@ -51,7 +51,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      */
     <T> void getLarge(String url, Header header, Query query, Object body,
                               Type token,
-                              Callback<T> callback);
+                              Callback<T> callback) throws Exception;
 
     /**
      * http delete
@@ -63,7 +63,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void delete(String url, Header header, Query query,
-                    Type token, Callback<T> callback);
+                    Type token, Callback<T> callback) throws Exception;
 
     /**
      * http put
@@ -76,7 +76,7 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void put(String url, Header header, Query query, Object body,
-                 Type token, Callback<T> callback);
+                 Type token, Callback<T> callback) throws Exception;
 
     /**
      * http post
@@ -89,6 +89,6 @@ public interface NAsyncHttpClient extends NHttpClient {
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     <T> void post(String url, Header header, Query query, Object body,
-                  Type token, Callback<T> callback);
+                  Type token, Callback<T> callback) throws Exception;
 
 }

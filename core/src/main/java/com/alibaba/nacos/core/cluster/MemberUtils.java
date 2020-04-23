@@ -53,11 +53,9 @@ public class MemberUtils {
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static Member singleParse(String member) {
-		int selfPort = ApplicationUtils.getPort();
 		// Nacos default port is 8848
 		int defaultPort = 8848;
-		// Set the default Raft port information for security
-		int defaultRaftPort = selfPort + 1000 >= 65535 ? selfPort + 1 : selfPort + 1000;
+		// Set the default Raft port information for securit
 
 		String[] memberDetails = member.split("\\?");
 		String address = memberDetails[0];
@@ -68,22 +66,11 @@ public class MemberUtils {
 			port = Integer.parseInt(info[1]);
 		}
 
-		// example ip:port?raft_port=&node_name=
+		int raftPort = port + 1000 >= 65535 ? port + 1 : port + 1000;
+
 		Map<String, String> extendInfo = new HashMap<>(4);
-
-		if (memberDetails.length == 2) {
-			String[] parameters = memberDetails[1].split("&");
-			for (String parameter : parameters) {
-				String[] info = parameter.split("=");
-				extendInfo.put(info[0].trim(), info[1].trim());
-			}
-		}
-		else {
-			// The Raft Port information needs to be set by default
-			extendInfo.put(MemberMetaDataConstants.RAFT_PORT,
-					String.valueOf(defaultRaftPort));
-
-		}
+		// The Raft Port information needs to be set by default
+		extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(raftPort));
 		return Member.builder().ip(address).port(port).extendInfo(extendInfo)
 				.state(NodeState.UP).build();
 	}
@@ -166,19 +153,8 @@ public class MemberUtils {
 	}
 
 	public static List<String> simpleMembers(Collection<Member> members) {
-		return members.stream().map(member -> {
-			String address = member.getAddress();
-			StringBuilder params = new StringBuilder();
-			String[] keys = MemberMetaDataConstants.META_KEY_LIST;
-			int length = keys.length;
-			for (int i = 0; i < length; i++) {
-				params.append(keys[i]).append("=").append(member.getExtendVal(keys[i]));
-				if (i != length - 1) {
-					params.append("&");
-				}
-			}
-			return address + "?" + params.toString();
-		}).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+		return members.stream().map(Member::getAddress)
+				.collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 	}
 
 }

@@ -153,7 +153,7 @@ public enum BaseHttpMethod {
         }
     }
 
-    public void initEntity(Object body, String mediaType) {
+    public void initEntity(Object body, String mediaType) throws Exception {
         if (body == null) {
             return;
         }

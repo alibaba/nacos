@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.utils.GsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -109,6 +107,10 @@ public class RaftConfig implements Config<LogProcessor4CP> {
 
     @Override
     public String toString() {
-        return GsonUtils.toJson(data);
+        try {
+            return JacksonUtils.toJson(data);
+        } catch (Exception e) {
+            return String.valueOf(data);
+        }
     }
 }

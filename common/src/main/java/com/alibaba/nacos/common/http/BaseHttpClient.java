@@ -64,7 +64,7 @@ public abstract class BaseHttpClient {
 					RestResult<T> data = ResponseHandler.convert(body, type);
 					callback.onReceive(data);
 				}
-				catch (IOException e) {
+				catch (Throwable e) {
 					callback.onError(e);
 				}
 			}
@@ -88,12 +88,12 @@ public abstract class BaseHttpClient {
 		return baseUrl + "?" + query.toQueryUrl();
 	}
 
-	protected HttpRequestBase build(String url, Header header, String method) {
+	protected HttpRequestBase build(String url, Header header, String method) throws Exception {
 		return build(url, header, null, method);
 	}
 
 	protected HttpRequestBase build(String url, Header header, Object body,
-			String method) {
+			String method) throws Exception {
 
 		BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
 		httpMethod.init(url);

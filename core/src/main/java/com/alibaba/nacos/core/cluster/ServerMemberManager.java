@@ -106,6 +106,10 @@ public class ServerMemberManager
 	 * This node information object
 	 */
 	private Member self;
+
+	/**
+	 * Address information for the local node
+	 */
 	private String localAddress;
 
 	/**
@@ -464,30 +468,32 @@ public class ServerMemberManager
 					ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
 					"/cluster/report");
 
-			asyncHttpClient
-					.post(url, Header.EMPTY, Query.EMPTY, getSelf(), reference.getType(),
-							new Callback<String>() {
-								@Override
-								public void onReceive(RestResult<String> result) {
-									if (result.ok()) {
-										MemberUtils.onSuccess(target);
-									}
-									else {
-										Loggers.CLUSTER
-												.warn("failed to report new info to target node : {}, result : {}",
-														target, result);
-										MemberUtils.onFail(target);
-									}
+			try {
+				asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, getSelf(), reference.getType(),
+						new Callback<String>() {
+							@Override
+							public void onReceive(RestResult<String> result) {
+								if (result.ok()) {
+									MemberUtils.onSuccess(target);
 								}
-
-								@Override
-								public void onError(Throwable throwable) {
-									Loggers.CLUSTER
-											.error("failed to report new info to target node : {}, error : {}",
-													target, throwable);
+								else {
+									Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
+											target, result);
 									MemberUtils.onFail(target);
 								}
-							});
+							}
+
+							@Override
+							public void onError(Throwable throwable) {
+								Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
+										target, throwable);
+								MemberUtils.onFail(target);
+							}
+						});
+			} catch (Throwable ex) {
+				Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
+						target, ex);
+			}
 		}
 
 		@Override

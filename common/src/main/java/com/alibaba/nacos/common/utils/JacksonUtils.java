@@ -16,40 +16,43 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class GsonUtils {
+public final class JacksonUtils {
 
-	private static final Gson GSON = new GsonBuilder()
-			.setLenient().create();
+	static ObjectMapper mapper = new ObjectMapper();
 
-	public static String toJson(Object obj) {
-		return GSON.toJson(obj);
+	static {
+		mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 	}
 
-	public static byte[] toJsonBytes(Object obj) {
-		return ByteUtils.toBytes(GSON.toJson(obj));
+	public static String toJson(Object obj) throws Exception {
+		return mapper.writeValueAsString(obj);
 	}
 
-	public static <T> T toObj(byte[] json, Class<T> cls) {
+	public static byte[] toJsonBytes(Object obj) throws Exception {
+		return ByteUtils.toBytes(mapper.writeValueAsString(obj));
+	}
+
+	public static <T> T toObj(byte[] json, Class<T> cls) throws Exception {
 		return toObj(StringUtils.newString4UTF8(json), cls);
 	}
 
-	public static <T> T toObj(byte[] json, Type cls) {
+	public static <T> T toObj(byte[] json, Type cls) throws Exception {
 		return toObj(StringUtils.newString4UTF8(json), cls);
 	}
 
-	public static <T> T toObj(String json, Class<T> cls) {
-		return GSON.fromJson(json, cls);
+	public static <T> T toObj(String json, Class<T> cls) throws Exception {
+		return mapper.readValue(json, cls);
 	}
 
-	public static <T> T toObj(String json, Type cls) {
-		return GSON.fromJson(json, cls);
+	public static <T> T toObj(String json, Type type) throws Exception {
+		return mapper.readValue(json, mapper.constructType(type));
 	}
 }
