@@ -4,13 +4,13 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.common.utils.GsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.Test;
 
 public class ProtocolMetaDataTest {
 
     @Test
-    public void test_protocol_meta_data() {
+    public void test_protocol_meta_data() throws Exception {
 
         Map<String, Map<String, Object>> map = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
@@ -22,7 +22,7 @@ public class ProtocolMetaDataTest {
 
         metaData.load(map);
 
-        String json = GsonUtils.toJson(metaData);
+        String json = JacksonUtils.toJson(metaData);
         System.out.println(json);
     }
 

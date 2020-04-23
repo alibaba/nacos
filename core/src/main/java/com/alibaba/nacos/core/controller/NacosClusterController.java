@@ -122,7 +122,7 @@ public class NacosClusterController {
     }
 
     @PostMapping("/server/leave")
-    public RestResult<String> leave(@RequestBody Collection<String> params) {
+    public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
         Collection<Member> memberList = MemberUtils.multiParse(params);
         memberManager.memberLeave(memberList);
         final NAsyncHttpClient asyncHttpClient = HttpClientManager

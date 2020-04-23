@@ -42,7 +42,7 @@ class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
                         final Header header,
                         final Query query,
                         final Type token,
-                        final Callback<T> callback) {
+                        final Callback<T> callback) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.GET);
         execute(asyncClient, token, callback, requestBase);
     }
@@ -53,7 +53,7 @@ class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
                              final Query query,
                              final Object body,
                              final Type token,
-                             final Callback<T> callback) {
+                             final Callback<T> callback) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.GET_LARGE);
         execute(asyncClient, token, callback, requestBase);
     }
@@ -63,7 +63,7 @@ class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
                            final Header header,
                            final Query query,
                            final Type token,
-                           final Callback<T> callback) {
+                           final Callback<T> callback) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, HttpMethod.DELETE);
         execute(asyncClient, token, callback, requestBase);
     }
@@ -74,7 +74,7 @@ class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
                         final Query query,
                         final Object body,
                         final Type token,
-                        final Callback<T> callback) {
+                        final Callback<T> callback) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.PUT);
         execute(asyncClient, token, callback, requestBase);
     }
@@ -85,7 +85,7 @@ class NacosAsyncHttpClient extends BaseHttpClient implements NAsyncHttpClient {
                          final Query query,
                          final Object body,
                          final Type token,
-                         final Callback<T> callback) {
+                         final Callback<T> callback) throws Exception {
         HttpRequestBase requestBase = build(buildUrl(url, query), header, body, HttpMethod.POST);
         execute(asyncClient, token, callback, requestBase);
     }

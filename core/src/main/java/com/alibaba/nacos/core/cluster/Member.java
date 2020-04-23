@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -30,156 +31,160 @@ public class Member {
 
     private String ip;
 
-    private int port = -1;
+	private int port = -1;
 
-    private volatile NodeState state = NodeState.UP;
+	private volatile NodeState state = NodeState.UP;
 
-    private Map<String, Object> extendInfo = Collections.synchronizedMap(new TreeMap<>());
+	private Map<String, Object> extendInfo = Collections.synchronizedMap(new TreeMap<>());
 
-    private String address = "";
+	private String address = "";
 
-    private transient int failAccessCnt = 0;
+	private transient int failAccessCnt = 0;
 
-    public Member() {
-        extendInfo.put(MemberMetaDataConstants.SITE_KEY, "unknown");
-        extendInfo.put(MemberMetaDataConstants.AD_WEIGHT, "0");
-        extendInfo.put(MemberMetaDataConstants.WEIGHT, "1");
-    }
+	public Member() {
+        String PREFIX = "nacos.core.member.meta.";
+        extendInfo.put(MemberMetaDataConstants.SITE_KEY, ApplicationUtils
+				.getProperty(PREFIX + MemberMetaDataConstants.SITE_KEY, "unknow"));
+		extendInfo.put(MemberMetaDataConstants.AD_WEIGHT, ApplicationUtils
+				.getProperty(PREFIX + MemberMetaDataConstants.AD_WEIGHT, "0"));
+		extendInfo.put(MemberMetaDataConstants.WEIGHT, ApplicationUtils
+				.getProperty(PREFIX + MemberMetaDataConstants.WEIGHT, "1"));
+	}
 
-    public static MemberBuilder builder() {
-        return new MemberBuilder();
-    }
+	public static MemberBuilder builder() {
+		return new MemberBuilder();
+	}
 
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
 
-    public int getPort() {
-        return port;
-    }
+	public int getPort() {
+		return port;
+	}
 
-    public void setPort(int port) {
-        this.port = port;
-    }
+	public void setPort(int port) {
+		this.port = port;
+	}
 
-    public NodeState getState() {
-        return state;
-    }
+	public NodeState getState() {
+		return state;
+	}
 
-    public void setState(NodeState state) {
-        this.state = state;
-    }
+	public void setState(NodeState state) {
+		this.state = state;
+	}
 
-    public Map<String, Object> getExtendInfo() {
-        return extendInfo;
-    }
+	public Map<String, Object> getExtendInfo() {
+		return extendInfo;
+	}
 
-    public void setExtendInfo(Map<String, Object> extendInfo) {
-        this.extendInfo.putAll(extendInfo);
-    }
+	public void setExtendInfo(Map<String, Object> extendInfo) {
+		this.extendInfo.putAll(extendInfo);
+	}
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+	public void setAddress(String address) {
+		this.address = address;
+	}
 
-    public String getIp() {
-        return ip;
-    }
+	public String getIp() {
+		return ip;
+	}
 
-    public String getAddress() {
-        if (StringUtils.isBlank(address)) {
-            address = ip + ":" + port;
-        }
-        return address;
-    }
+	public String getAddress() {
+		if (StringUtils.isBlank(address)) {
+			address = ip + ":" + port;
+		}
+		return address;
+	}
 
-    public Object getExtendVal(String key) {
-        return extendInfo.get(key);
-    }
+	public Object getExtendVal(String key) {
+		return extendInfo.get(key);
+	}
 
-    public void setExtendVal(String key, Object value) {
-        extendInfo.put(key, value);
-    }
+	public void setExtendVal(String key, Object value) {
+		extendInfo.put(key, value);
+	}
 
-    public boolean check() {
-        return StringUtils.isNoneBlank(ip, address) && port != -1;
-    }
+	public boolean check() {
+		return StringUtils.isNoneBlank(ip, address) && port != -1;
+	}
 
-    public int getFailAccessCnt() {
-        return failAccessCnt;
-    }
+	public int getFailAccessCnt() {
+		return failAccessCnt;
+	}
 
-    public void setFailAccessCnt(int failAccessCnt) {
-        this.failAccessCnt = failAccessCnt;
-    }
+	public void setFailAccessCnt(int failAccessCnt) {
+		this.failAccessCnt = failAccessCnt;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Member that = (Member) o;
-        if (StringUtils.isAnyBlank(address, that.address)) {
-            return port == that.port &&
-                    StringUtils.equals(ip, that.ip);
-        }
-        return StringUtils.equals(address, that.address);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Member that = (Member) o;
+		if (StringUtils.isAnyBlank(address, that.address)) {
+			return port == that.port && StringUtils.equals(ip, that.ip);
+		}
+		return StringUtils.equals(address, that.address);
+	}
 
-    @Override
-    public String toString() {
-        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state
-                + '}';
-    }
+	@Override
+	public String toString() {
+		return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state
+				+ '}';
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(ip, port);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(ip, port);
+	}
 
-    public static final class MemberBuilder {
-        private String ip;
-        private int port;
-        private NodeState state;
-        private Map<String, String> extendInfo = Collections.synchronizedMap(new TreeMap<>());
+	public static final class MemberBuilder {
+		private String ip;
+		private int port;
+		private NodeState state;
+		private Map<String, String> extendInfo = Collections
+				.synchronizedMap(new TreeMap<>());
 
-        private MemberBuilder() {
-        }
+		private MemberBuilder() {
+		}
 
-        public MemberBuilder ip(String ip) {
-            this.ip = ip;
-            return this;
-        }
+		public MemberBuilder ip(String ip) {
+			this.ip = ip;
+			return this;
+		}
 
-        public MemberBuilder port(int port) {
-            this.port = port;
-            return this;
-        }
+		public MemberBuilder port(int port) {
+			this.port = port;
+			return this;
+		}
 
-        public MemberBuilder state(NodeState state) {
-            this.state = state;
-            return this;
-        }
+		public MemberBuilder state(NodeState state) {
+			this.state = state;
+			return this;
+		}
 
-        public MemberBuilder extendInfo(Map<String, String> extendInfo) {
-            this.extendInfo.putAll(extendInfo);
-            return this;
-        }
+		public MemberBuilder extendInfo(Map<String, String> extendInfo) {
+			this.extendInfo.putAll(extendInfo);
+			return this;
+		}
 
-        public Member build() {
-            Member serverNode = new Member();
-            if (Objects.nonNull(this.extendInfo)) {
-                serverNode.extendInfo.putAll(this.extendInfo);
-            }
-            serverNode.state = this.state;
-            serverNode.ip = this.ip;
-            serverNode.port = this.port;
-            serverNode.address = this.ip + ":" + this.port;
-            return serverNode;
-        }
-    }
+		public Member build() {
+			Member serverNode = new Member();
+			if (Objects.nonNull(this.extendInfo)) {
+				serverNode.extendInfo.putAll(this.extendInfo);
+			}
+			serverNode.state = this.state;
+			serverNode.ip = this.ip;
+			serverNode.port = this.port;
+			serverNode.address = this.ip + ":" + this.port;
+			return serverNode;
+		}
+	}
 
 }
