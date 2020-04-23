@@ -42,13 +42,13 @@ public class Member {
 	private transient int failAccessCnt = 0;
 
 	public Member() {
-        String PREFIX = "nacos.core.member.meta.";
+        String prefix = "nacos.core.member.meta.";
         extendInfo.put(MemberMetaDataConstants.SITE_KEY, ApplicationUtils
-				.getProperty(PREFIX + MemberMetaDataConstants.SITE_KEY, "unknow"));
+				.getProperty(prefix + MemberMetaDataConstants.SITE_KEY, "unknow"));
 		extendInfo.put(MemberMetaDataConstants.AD_WEIGHT, ApplicationUtils
-				.getProperty(PREFIX + MemberMetaDataConstants.AD_WEIGHT, "0"));
+				.getProperty(prefix + MemberMetaDataConstants.AD_WEIGHT, "0"));
 		extendInfo.put(MemberMetaDataConstants.WEIGHT, ApplicationUtils
-				.getProperty(PREFIX + MemberMetaDataConstants.WEIGHT, "1"));
+				.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
 	}
 
 	public static MemberBuilder builder() {
