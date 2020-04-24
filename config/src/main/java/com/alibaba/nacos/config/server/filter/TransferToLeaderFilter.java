@@ -99,19 +99,19 @@ public class TransferToLeaderFilter implements Filter {
 		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
+		if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
+			req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
+		} else {
+			req = new ReuseHttpServletRequest((HttpServletRequest) request);
+		}
+
+		String urlString = req.getRequestURI();
+
+		if (StringUtils.isNotBlank(req.getQueryString())) {
+			urlString += "?" + req.getQueryString();
+		}
+
 		try {
-			if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
-				req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
-			} else {
-				req = new ReuseHttpServletRequest((HttpServletRequest) request);
-			}
-
-			String urlString = req.getRequestURI();
-
-			if (StringUtils.isNotBlank(req.getQueryString())) {
-				urlString += "?" + req.getQueryString();
-			}
-
 			String path = new URI(req.getRequestURI()).getPath();
 			Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
 
@@ -163,7 +163,6 @@ public class TransferToLeaderFilter implements Filter {
 				resp.setStatus(result.getStatusCodeValue());
 				return;
 			}
-			req.getBody();
 			chain.doFilter(request, response);
 		} catch (AccessControlException e) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil
