@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ModuleEnums;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 

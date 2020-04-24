@@ -35,7 +35,7 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ModuleEnums;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;

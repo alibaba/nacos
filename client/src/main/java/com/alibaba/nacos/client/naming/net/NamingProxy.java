@@ -40,7 +40,7 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.TemplateUtils;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;

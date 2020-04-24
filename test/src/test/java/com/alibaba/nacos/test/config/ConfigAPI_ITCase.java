@@ -18,7 +18,6 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;

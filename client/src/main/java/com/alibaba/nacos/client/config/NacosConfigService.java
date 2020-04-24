@@ -34,7 +34,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

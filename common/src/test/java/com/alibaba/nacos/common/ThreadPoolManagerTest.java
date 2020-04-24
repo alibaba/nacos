@@ -2,6 +2,8 @@ package com.alibaba.nacos.common;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
+
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import org.junit.Test;
 
 public class ThreadPoolManagerTest {

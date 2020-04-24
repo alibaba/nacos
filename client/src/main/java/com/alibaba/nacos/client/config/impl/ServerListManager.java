@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.utils.*;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 

@@ -27,7 +27,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ModuleEnums;
-import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.common.executor.ThreadPoolManager;
 
 import java.util.Map;
 import java.util.concurrent.*;
