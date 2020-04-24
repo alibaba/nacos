@@ -55,6 +55,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlException;
 import java.util.Enumeration;
 import java.util.Map;
@@ -79,7 +80,7 @@ public class TransferToLeaderFilter implements Filter {
 	private ControllerMethodsCache controllerMethodsCache;
 
 	private volatile String leaderServer = "";
-	private static final int MAX_TRANSFER_CNT = 1;
+	private static final int MAX_TRANSFER_CNT = Integer.getInteger("nacos.config.transfer-leader.max-num", 1);
 
 	private final RestTemplate restTemplate = new RestTemplate();
 
@@ -95,21 +96,22 @@ public class TransferToLeaderFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
-		ReuseHttpRequest req;
-		if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
-			req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
-		} else {
-			req = new ReuseHttpServletRequest((HttpServletRequest) request);
-		}
+		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
-		String urlString = req.getRequestURI();
-
-		if (StringUtils.isNotBlank(req.getQueryString())) {
-			urlString += "?" + req.getQueryString();
-		}
-
 		try {
+			if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
+				req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
+			} else {
+				req = new ReuseHttpServletRequest((HttpServletRequest) request);
+			}
+
+			String urlString = req.getRequestURI();
+
+			if (StringUtils.isNotBlank(req.getQueryString())) {
+				urlString += "?" + req.getQueryString();
+			}
+
 			String path = new URI(req.getRequestURI()).getPath();
 			Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
 
@@ -156,12 +158,13 @@ public class TransferToLeaderFilter implements Filter {
 				}
 				HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
 				ResponseEntity<String> result = restTemplate.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity, String.class);
-				resp.setCharacterEncoding("UTF-8");
+				resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
 				resp.getWriter().write(result.getBody());
 				resp.setStatus(result.getStatusCodeValue());
 				return;
 			}
-			chain.doFilter(req, response);
+			req.getBody();
+			chain.doFilter(request, response);
 		} catch (AccessControlException e) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil
 					.getAllExceptionMsg(e));
@@ -170,7 +173,7 @@ public class TransferToLeaderFilter implements Filter {
 			resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 			return;
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LogUtil.defaultLog.error("An exception occurred when the request was forwarded to the Leader node, {}", e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
 					"Server failed," + ExceptionUtil.getAllExceptionMsg(e));

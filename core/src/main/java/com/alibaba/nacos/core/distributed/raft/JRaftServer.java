@@ -228,7 +228,7 @@ public class JRaftServer {
 		}
 
 		final String parentPath = Paths
-				.get(ApplicationUtils.getNacosHome(), "protocol/raft").toString();
+				.get(ApplicationUtils.getNacosHome(), "data/protocol/raft").toString();
 
 		for (LogProcessor4CP processor : processors) {
 			final String groupName = processor.group();
