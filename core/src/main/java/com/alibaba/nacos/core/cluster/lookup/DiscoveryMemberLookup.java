@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     │                   │                                                     │                                      ┌────────────────────────────────────┐
  *     │                   ▼                                                     │                                      │                                    │
  *     │        ┌─────────────────────┐              ┌─────────────────────────┐ │                                      │              Member B              │
- *     │        │  init gossip task   │─────────────▶│ MemberListSyncTask      │─┼──────[ip1:port,ip2:port,ip3:port]────│    [ip1:port,ip2.port,ip3.port]    │
+ *     │        │ init discovery task │─────────────▶│ MemberListSyncTask      │─┼──────[ip1:port,ip2:port,ip3:port]────│    [ip1:port,ip2.port,ip3.port]    │
  *     │        └─────────────────────┘              └─────────────────────────┘ │                                      │   {adweight:"",site:"",state:""}   │
  *     │                                                                         │                                      │                                    │
  *     │                                                                         │                                      └────────────────────────────────────┘

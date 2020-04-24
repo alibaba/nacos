@@ -49,9 +49,7 @@ public class ReuseUploadFileHttpServletRequest extends
 			parts.add("file", target.getResource());
 			return parts;
 		} else {
-
 			// The content-type for the configuration publication might be "multipart/form-data"
-
 			return HttpUtils.encodingParams(HttpUtils.translateParameterMap(request.getParameterMap()),
 					StandardCharsets.UTF_8.name());
 		}
