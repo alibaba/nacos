@@ -81,11 +81,11 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) {
 
         String ignoreURLs = null;
-//
+
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             ignoreURLs = "/**";
         }
-//
+
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
             ignoreURLs = env.getProperty("nacos.security.ignore.urls", "/**");
         }

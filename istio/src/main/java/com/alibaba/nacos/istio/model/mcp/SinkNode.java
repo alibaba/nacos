@@ -65,7 +65,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 18: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               annotations_ = com.google.protobuf.MapField.newMapField(
                   AnnotationsDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000001;
@@ -136,7 +136,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       id_ = s;
@@ -155,7 +155,7 @@ private static final long serialVersionUID = 0L;
       getIdBytes() {
     java.lang.Object ref = id_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       id_ = b;
@@ -171,7 +171,7 @@ private static final long serialVersionUID = 0L;
         java.lang.String, java.lang.String> defaultEntry =
             com.google.protobuf.MapEntry
             .<java.lang.String, java.lang.String>newDefaultInstance(
-                com.alibaba.nacos.istio.model.mcp.Mcp.internal_static_istio_mcp_v1alpha1_SinkNode_AnnotationsEntry_descriptor, 
+                com.alibaba.nacos.istio.model.mcp.Mcp.internal_static_istio_mcp_v1alpha1_SinkNode_AnnotationsEntry_descriptor,
                 com.google.protobuf.WireFormat.FieldType.STRING,
                 "",
                 com.google.protobuf.WireFormat.FieldType.STRING,
@@ -651,7 +651,7 @@ private static final long serialVersionUID = 0L;
         getIdBytes() {
       java.lang.Object ref = id_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         id_ = b;
@@ -674,7 +674,7 @@ private static final long serialVersionUID = 0L;
       if (value == null) {
     throw new NullPointerException();
   }
-  
+
       id_ = value;
       onChanged();
       return this;
@@ -688,7 +688,7 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearId() {
-      
+
       id_ = getDefaultInstance().getId();
       onChanged();
       return this;
@@ -708,7 +708,7 @@ private static final long serialVersionUID = 0L;
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-      
+
       id_ = value;
       onChanged();
       return this;
