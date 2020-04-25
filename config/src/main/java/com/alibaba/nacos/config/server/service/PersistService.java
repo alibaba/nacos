@@ -1930,7 +1930,7 @@ public class PersistService {
     public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(
         final int pageNo, final int pageSize) {
         String sqlCountRows = "select count(*) from config_info";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
+        String sqlFetchRows = " SELECT t.id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
             + " FROM (                               "
             + "   SELECT id FROM config_info         "
             + "   ORDER BY id LIMIT ?,?             "
@@ -1951,7 +1951,7 @@ public class PersistService {
 
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         String select
-            = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
+            = "SELECT id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
             + "order by id asc limit ?,?";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
         try {
@@ -2615,7 +2615,7 @@ public class PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "select count(*) from config_info where ";
         String sqlFetchRows
-            = "select id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where ";
+            = "select id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where ";
         String where = " 1=1 ";
         List<Object> params = new ArrayList<Object>();
 
@@ -3293,7 +3293,7 @@ public class PersistService {
     private List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
         String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
         String sqlFetchRows
-            = " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+            = " SELECT t.id,type,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
         try {
             Page<ConfigInfoWrapper> page = helper.fetchPageLimit(jt, sqlCountRows, sqlFetchRows, new Object[]{
@@ -3321,7 +3321,7 @@ public class PersistService {
         try {
             return this.jt
                 .queryForObject(
-                    "SELECT ID,data_id,group_id,tenant_id,app_name,content,gmt_modified,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+                    "SELECT ID,`type`,data_id,group_id,tenant_id,app_name,content,gmt_modified,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
                     new Object[]{dataId, group, tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) {
             return null;
