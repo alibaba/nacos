@@ -121,7 +121,7 @@ public final class ThreadPoolManager {
         }
     }
 
-    public synchronized void destroy(String namespace) {
+    public void destroy(String namespace) {
 	    final Object monitor = lockers.get(namespace);
 	    if (monitor == null) {
 	        throw new NoSuchElementException("This module does not have any thread pool resources : " + namespace);
