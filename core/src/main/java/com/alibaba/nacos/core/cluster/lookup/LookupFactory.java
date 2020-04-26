@@ -33,6 +33,8 @@ public final class LookupFactory {
 
 	static final String DISCOVERY_SWITCH_NAME = "nacos.member.discovery";
 
+	static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
+
 	static MemberLookup LOOK_UP = null;
 
 	static LookupType currentLookupType = null;
@@ -88,7 +90,10 @@ public final class LookupFactory {
 	public static MemberLookup createLookUp(ServerMemberManager memberManager)
 			throws NacosException {
 		if (!ApplicationUtils.getStandaloneMode()) {
-			LookupType type = chooseLookup();
+
+			String lookupType = ApplicationUtils.getProperty(LOOKUP_MODE_TYPE);
+
+			LookupType type = chooseLookup(lookupType);
 			LOOK_UP = find(type);
 			currentLookupType = type;
 		}
@@ -142,7 +147,13 @@ public final class LookupFactory {
 		throw new IllegalArgumentException();
 	}
 
-	private static LookupType chooseLookup() {
+	private static LookupType chooseLookup(String lookupType) {
+		if (StringUtils.isNotBlank(lookupType)) {
+			LookupType type = LookupType.sourceOf(lookupType);
+			if (Objects.nonNull(type)) {
+				return type;
+			}
+		}
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
 		if (Boolean.parseBoolean(ApplicationUtils
 				.getProperty(DISCOVERY_SWITCH_NAME, Boolean.toString(false)))) {

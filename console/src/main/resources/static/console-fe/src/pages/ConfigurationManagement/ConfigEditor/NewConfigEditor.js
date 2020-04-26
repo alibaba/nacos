@@ -39,7 +39,7 @@ import {
   ConfigProvider,
 } from '@alifd/next';
 import { resolve } from 'url';
-import { qs } from 'qs';
+import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -227,10 +227,11 @@ class ConfigEditor extends React.Component {
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
+    const stringify = require('qs/lib/stringify');
     return request({
       url: 'v1/cs/configs',
       method: 'post',
-      data: qs.stringify(payload),
+      data: stringify(payload),
       headers,
     }).then(res => {
       if (res) {

@@ -57,7 +57,7 @@ public class WatchFileCenter {
 	private static final int MAX_WATCH_FILE_JOB = Integer
 			.getInteger("nacos.watch-file.max-dirs", 16);
 
-	private static final Map<String, WatchDirJob> MANAGER = new HashMap<>(
+	private static final Map<String, WatchDirJob> MANAGER = new HashMap<String, WatchDirJob>(
 			MAX_WATCH_FILE_JOB);
 
 	private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
@@ -155,16 +155,19 @@ public class WatchFileCenter {
 					if (WATCH_FILE_EXECUTOR.isShutdown()) {
 						return;
 					}
-					WATCH_FILE_EXECUTOR.execute(() -> {
-						for (WatchEvent<?> event : events) {
-							WatchEvent.Kind<?> kind = event.kind();
+					WATCH_FILE_EXECUTOR.execute(new Runnable() {
+						@Override
+						public void run() {
+							for (WatchEvent<?> event : events) {
+								WatchEvent.Kind<?> kind = event.kind();
 
-							// Since the OS's event cache may be overflow, a backstop is needed
-							if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
-								eventOverflow();
-							}
-							else {
-								eventProcess(event.context());
+								// Since the OS's event cache may be overflow, a backstop is needed
+								if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
+									eventOverflow();
+								}
+								else {
+									eventProcess(event.context());
+								}
 							}
 						}
 					});
@@ -183,7 +186,12 @@ public class WatchFileCenter {
 			final String str = String.valueOf(context);
 			for (final FileWatcher watcher : watchers) {
 				if (watcher.interest(str)) {
-					Runnable job = () -> watcher.onChange(fileChangeEvent);
+					Runnable job = new Runnable() {
+						@Override
+						public void run() {
+							watcher.onChange(fileChangeEvent);
+						}
+					};
 					Executor executor = watcher.executor();
 					if (executor == null) {
 						job.run();
