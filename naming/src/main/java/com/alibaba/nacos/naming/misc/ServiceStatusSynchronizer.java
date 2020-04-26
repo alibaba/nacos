@@ -73,7 +73,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             return null;
         }
 
-        Map<String,String> params = new HashMap<>(10);
+        Map<String,String> params = new HashMap<>(1);
 
         params.put("key", key);
 
