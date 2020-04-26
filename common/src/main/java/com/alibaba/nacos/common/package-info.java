@@ -14,6 +14,4 @@
  * limitations under the License.
  */
 
-// TODO We need to replace fastjson with gson
-
 package com.alibaba.nacos.common;
