@@ -35,9 +35,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+import sun.net.util.IPAddressUtil;
 
 import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -211,20 +214,49 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     public RaftPeer local() {
-        RaftPeer peer = peers.get(NetUtils.localServer());
+        String localServer = NetUtils.localServer();
+        RaftPeer peer = peers.get(localServer);
         if (peer == null && SystemUtils.STANDALONE_MODE) {
             RaftPeer localPeer = new RaftPeer();
-            localPeer.ip = NetUtils.localServer();
+            localPeer.ip = localServer;
             localPeer.term.set(localTerm.get());
             peers.put(localPeer.ip, localPeer);
             return localPeer;
         }
+
+        try {
+            String localIp;
+            if (!IPAddressUtil.isIPv4LiteralAddress(localServer)) {
+                localIp = resolveIPAddress(localServer);
+            } else {
+                localIp = localServer;
+            }
+            for (Map.Entry<String, RaftPeer> peerEntry : peers.entrySet()) {
+                String peerIp;
+                if (!IPAddressUtil.isIPv4LiteralAddress(peerEntry.getKey())) {
+                    peerIp = resolveIPAddress(peerEntry.getKey());
+                } else {
+                    peerIp = peerEntry.getKey();
+                }
+                if (Objects.equals(peerIp, localIp)) {
+                    peer = peerEntry.getValue();
+                }
+            }
+        } catch (UnknownHostException e) {
+            Loggers.RAFT.info("unable to parse host name", e);
+        }
+
         if (peer == null) {
-            throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
+            throw new IllegalStateException("unable to find local peer: " + localServer + ", all peers: "
                 + Arrays.toString(peers.keySet().toArray()));
         }
 
         return peer;
+    }
+
+    private String resolveIPAddress(String dns) throws UnknownHostException {
+        InetAddress address = InetAddress.getByName(dns);
+        return address.getHostAddress();
     }
 
     public RaftPeer get(String server) {
