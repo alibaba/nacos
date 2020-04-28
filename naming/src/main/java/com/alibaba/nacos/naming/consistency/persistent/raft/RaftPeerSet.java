@@ -225,20 +225,24 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         }
 
         try {
-            String localIp;
-            if (!IPAddressUtil.isIPv4LiteralAddress(localServer)) {
-                localIp = resolveIPAddress(localServer);
+            String localIpAndPort;
+            String[] split = localServer.split(":");
+            String hostname = split[0];
+            String port = split[1];
+            if (!IPAddressUtil.isIPv4LiteralAddress(hostname)) {
+                localIpAndPort = SystemUtils.resolveIPAddress(hostname) + ":" + port;
             } else {
-                localIp = localServer;
+                localIpAndPort = localServer;
             }
             for (Map.Entry<String, RaftPeer> peerEntry : peers.entrySet()) {
-                String peerIp;
-                if (!IPAddressUtil.isIPv4LiteralAddress(peerEntry.getKey())) {
-                    peerIp = resolveIPAddress(peerEntry.getKey());
+                String peerHostAndPort;
+                String[] splitPeer = peerEntry.getKey().split(":");
+                if (!IPAddressUtil.isIPv4LiteralAddress(splitPeer[0])) {
+                    peerHostAndPort = SystemUtils.resolveIPAddress(splitPeer[0])+":"+splitPeer[1];
                 } else {
-                    peerIp = peerEntry.getKey();
+                    peerHostAndPort = peerEntry.getKey();
                 }
-                if (Objects.equals(peerIp, localIp)) {
+                if (Objects.equals(peerHostAndPort, localIpAndPort)) {
                     peer = peerEntry.getValue();
                 }
             }
@@ -252,11 +256,6 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         }
 
         return peer;
-    }
-
-    private String resolveIPAddress(String dns) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(dns);
-        return address.getHostAddress();
     }
 
     public RaftPeer get(String server) {

@@ -24,8 +24,10 @@ import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import sun.net.util.IPAddressUtil;
 
 import javax.annotation.PostConstruct;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -133,10 +135,22 @@ public class ServerListManager {
     }
 
     public boolean contains(String s) {
-        for (Server server : servers) {
-            if (server.getKey().equals(s)) {
-                return true;
+        try {
+            String[] split = s.split(":");
+            if (!IPAddressUtil.isIPv4LiteralAddress(split[0])) {
+                split[0] = SystemUtils.resolveIPAddress(split[0]);
             }
+            for (Server server : servers) {
+                String[] serverSplit = server.getKey().split(":");
+                if (!IPAddressUtil.isIPv4LiteralAddress(serverSplit[0])) {
+                    serverSplit[0] = SystemUtils.resolveIPAddress(serverSplit[0]);
+                }
+                if (Objects.equals(split[0], serverSplit[0]) && Objects.equals(split[1], serverSplit[1])) {
+                    return true;
+                }
+            }
+        } catch (UnknownHostException e) {
+            Loggers.SRV_LOG.warn("unable to parse host name ", e);
         }
         return false;
     }
@@ -384,7 +398,7 @@ public class ServerListManager {
 
         List<Server> newHealthyList = new ArrayList<>(servers.size());
         long now = System.currentTimeMillis();
-        for (Server s: servers) {
+        for (Server s : servers) {
             Long lastBeat = distroBeats.get(s.getKey());
             if (null == lastBeat) {
                 continue;

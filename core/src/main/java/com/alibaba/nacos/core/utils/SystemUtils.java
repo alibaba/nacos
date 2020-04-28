@@ -19,13 +19,17 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
+import sun.net.util.IPAddressUtil;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
@@ -121,8 +125,8 @@ public class SystemUtils {
 
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
-        try(Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
-        StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+            StandardCharsets.UTF_8)) {
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {
@@ -145,8 +149,28 @@ public class SystemUtils {
                     instanceList.add(instance);
                 }
             }
+            //将域名转成IP
+            instanceList = instanceList.stream().map(instance -> {
+                String[] split = instance.split(":");
+                String ip = split[0];
+                String port = split[1];
+                if (!IPAddressUtil.isIPv4LiteralAddress(ip)) {
+                    try {
+                        ip = resolveIPAddress(ip);
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return ip + ":" + port;
+            }).collect(Collectors.toList());
+            System.out.println("instanceList: "+ instanceList);
             return instanceList;
         }
+    }
+
+    public static String resolveIPAddress(String hostname) throws UnknownHostException {
+        InetAddress address = InetAddress.getByName(hostname);
+        return address.getHostAddress();
     }
 
     public static void writeClusterConf(String content) throws IOException {
