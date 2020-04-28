@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -114,8 +115,8 @@ public class NotifyCenter_ITCase {
 
 		NotifyCenter.stopDeferPublish();
 
-		latch.await();
-		latch2.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
+		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(2, count.get());
 	}
@@ -160,7 +161,7 @@ public class NotifyCenter_ITCase {
 			NotifyCenter.publishEvent(new ExpireEvent());
 		}
 
-		latch.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
 		Assert.assertEquals(1, count.get());
 	}
 
@@ -200,7 +201,7 @@ public class NotifyCenter_ITCase {
 			NotifyCenter.publishEvent(new NoExpireEvent());
 		}
 
-		latch2.await();
+		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 		Assert.assertEquals(3, count.get());
 	}
 

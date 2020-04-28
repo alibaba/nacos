@@ -136,7 +136,7 @@ public class Member {
 	@Override
 	public String toString() {
 		return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state
-				+ '}';
+				+ ", extendInfo=" + new TreeMap<>(extendInfo) + '}';
 	}
 
 	@Override

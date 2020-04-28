@@ -166,7 +166,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 		try {
 			long configId = idGeneratorManager.nextId(configInfoId);
-			long configHistoryId = idGeneratorManager.nextId(this.configHistoryId);
+			long hisId = idGeneratorManager.nextId(configHistoryId);
 
 			addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, time,
 					configAdvanceInfo);
@@ -176,7 +176,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 			addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 					configInfo.getGroup(), configInfo.getTenant());
-			insertConfigHistoryAtomic(configHistoryId, configInfo, srcIp, srcUser, time,
+			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time,
 					"I");
 
 			boolean result = databaseOperate.smartUpdate();

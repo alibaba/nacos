@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -179,7 +180,7 @@ public class NacosRoleServiceImpl {
     }
 
     public void addRole(String role, String username) {
-        if (userDetailsService.getUser(username) == null) {
+        if (userDetailsService.getUserFromDatabase(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
         if (GLOBAL_ADMIN_ROLE.equals(role)) {

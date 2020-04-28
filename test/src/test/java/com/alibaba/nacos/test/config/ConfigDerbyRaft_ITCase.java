@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -36,6 +37,7 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -90,7 +92,7 @@ public class ConfigDerbyRaft_ITCase
 	private static ConfigService iconfig8;
 	private static ConfigService iconfig9;
 
-	private static final NSyncHttpClient httpClient = HttpClientManager.newSyncHttpClient("nacos");
+	private static final NSyncHttpClient httpClient = HttpClientManager.getShareSyncHttpClient();
 
 	private static final AtomicBoolean[] finished = new AtomicBoolean[]{new AtomicBoolean(false), new AtomicBoolean(false), new AtomicBoolean(false)};
 
@@ -99,12 +101,23 @@ public class ConfigDerbyRaft_ITCase
 	private static String clusterInfo;
 
 	static {
-		System.getProperties().setProperty("nacos.standalone", "false");
 		System.getProperties().setProperty("nacos.core.auth.enabled", "false");
 		System.getProperties().setProperty("embeddedStorage", "true");
 		String ip = InetUtils.getSelfIp();
-		clusterInfo = "nacos.member.list=" + ip + ":8847?raft_port=8807," + ip
-				+ ":8848?raft_port=8808," + ip + ":8849?raft_port=8809";
+		clusterInfo = "nacos.member.list=" + ip + ":8847," + ip
+				+ ":8848," + ip + ":8849";
+
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+			@Override
+			public void onEvent(RaftDBErrorEvent event) {
+				System.out.println(event.getEx());
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return RaftDBErrorEvent.class;
+			}
+		});
 	}
 
 	@BeforeClass
@@ -183,12 +196,9 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate8 = context8.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate9 = context9.getBean(
-				"PersistService", PersistService.class);
+		PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
@@ -214,12 +224,9 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate8 = context8.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate9 = context9.getBean(
-				"PersistService", PersistService.class);
+		PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -235,7 +242,7 @@ public class ConfigDerbyRaft_ITCase
 	@Test
 	public void test_c_publish_config() throws Exception {
 		boolean result = iconfig9.publishConfig("raft_test", "cluster_test_2",
-				"this.is.raft_cluster=lessspring_8");
+				"this.is.raft_cluster=lessspring_9");
 		Assert.assertTrue(result);
 
 		ThreadUtils.sleep(5000);
@@ -244,12 +251,9 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate8 = context8.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate9 = context9.getBean(
-				"PersistService", PersistService.class);
+		PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -257,9 +261,9 @@ public class ConfigDerbyRaft_ITCase
 
 		Assert.assertArrayEquals("The three nodes must have consistent data",
 				new String[] { s7, s8, s9 },
-				new String[] { "this.is.raft_cluster=lessspring_8",
-						"this.is.raft_cluster=lessspring_8",
-						"this.is.raft_cluster=lessspring_8" });
+				new String[] { "this.is.raft_cluster=lessspring_9",
+						"this.is.raft_cluster=lessspring_9",
+						"this.is.raft_cluster=lessspring_9" });
 	}
 
 	@Test
@@ -274,12 +278,9 @@ public class ConfigDerbyRaft_ITCase
 		ConfigurableApplicationContext context8 = applications.get("8848");
 		ConfigurableApplicationContext context9 = applications.get("8849");
 
-		PersistService operate7 = context7.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate8 = context8.getBean(
-				"PersistService", PersistService.class);
-		PersistService operate9 = context9.getBean(
-				"PersistService", PersistService.class);
+		PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
+		PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
 
 		String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
 		String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
@@ -302,7 +303,7 @@ public class ConfigDerbyRaft_ITCase
 		Assert.assertTrue(result.ok());
 		List<Map<String, Object>> list = result.getData();
 		Assert.assertEquals(1, list.size());
-		Assert.assertEquals("nacos", list.get(0).get("username"));
+		Assert.assertEquals("nacos", list.get(0).get("USERNAME"));
 	}
 
 	@Test
@@ -395,10 +396,10 @@ public class ConfigDerbyRaft_ITCase
 		// transfer leader to ip:8807
 
 		Map<String, String> transfer = new HashMap<>();
-		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":8807");
+		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9847");
 		RestResult<String> result = protocol7.execute(transfer);
-		Assert.assertTrue(result.ok());
 		System.out.println(result);
+		Assert.assertTrue(result.ok());
 
 		TimeUnit.SECONDS.sleep(2);
 
@@ -410,10 +411,10 @@ public class ConfigDerbyRaft_ITCase
 		// transfer leader to ip:8808
 
 		transfer = new HashMap<>();
-		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":8808");
+		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9848");
 		result = protocol8.execute(transfer);
-		Assert.assertTrue(result.ok());
 		System.out.println(result);
+		Assert.assertTrue(result.ok());
 
 		TimeUnit.SECONDS.sleep(2);
 
@@ -425,10 +426,10 @@ public class ConfigDerbyRaft_ITCase
 		// transfer leader to ip:8809
 
 		transfer = new HashMap<>();
-		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":8809");
+		transfer.put(JRaftConstants.TRANSFER_LEADER, InetUtils.getSelfIp() + ":9849");
 		result = protocol9.execute(transfer);
-		Assert.assertTrue(result.ok());
 		System.out.println(result);
+		Assert.assertTrue(result.ok());
 
 		TimeUnit.SECONDS.sleep(2);
 
@@ -441,24 +442,28 @@ public class ConfigDerbyRaft_ITCase
 	private static void run(final int index, CountDownLatch latch, Class<?> cls) {
 		Runnable runnable = () -> {
 			try {
+				ApplicationUtils.setIsStandalone(false);
+
 				final String path = Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/").toString();
 				DiskUtils.deleteDirectory(path);
 
 				System.setProperty("nacos.home", path);
+				System.out.println("nacos.home is : [" + path + "]");
 
 				Map<String, Object> properties = new HashMap<>();
 				properties.put("server.port", "884" + (7 + index));
 				properties.put("nacos.home", path);
 				properties.put("nacos.logs.path",
-						Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/logs/").toString());
+						Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
 				properties.put("spring.jmx.enabled", false);
+				properties.put("nacos.core.snowflake.worker-id", index + 1);
 				MapPropertySource propertySource = new MapPropertySource(
 						"nacos_cluster_test", properties);
 				ConfigurableEnvironment environment = new StandardServletEnvironment();
 				environment.getPropertySources().addFirst(propertySource);
 				SpringApplication cluster = new SpringApplicationBuilder(cls).web(
 						WebApplicationType.SERVLET).environment(environment)
-						.properties(clusterInfo).properties("embeddedDistributedStorage=true").build();
+						.properties(clusterInfo).properties("embeddedStorage=true").build();
 
 				ConfigurableApplicationContext context = cluster.run();
 
@@ -482,7 +487,6 @@ public class ConfigDerbyRaft_ITCase
 					} catch (Exception e) {
 						e.printStackTrace();
 					} finally {
-
 						if (finished[index].compareAndSet(false, true)) {
 							latch.countDown();
 						}

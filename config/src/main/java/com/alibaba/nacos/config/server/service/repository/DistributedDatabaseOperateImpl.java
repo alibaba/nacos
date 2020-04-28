@@ -168,34 +168,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			}
 		});
 
-		subscribeLeaderStatus();
-
 		LogUtil.defaultLog.info("use DistributedTransactionServicesImpl");
 	}
 
 	@JustForTest
 	public void mockConsistencyProtocol(CPProtocol protocol) {
 		this.protocol = protocol;
-	}
-
-	private void subscribeLeaderStatus() {
-		protocol.protocolMetaData().subscribe(group(),
-				com.alibaba.nacos.consistency.cp.Constants.TERM_META_DATA,
-				new Observer() {
-					@Override
-					public void update(Observable o, Object arg) {
-						long term;
-						if (arg == null) {
-							term = 0L;
-						}
-						else {
-							term = Long.parseLong(String.valueOf(arg));
-						}
-						long dataCenterId =
-								term % SnakeFlowerIdGenerator.MAX_DATA_CENTER_ID;
-						SnakeFlowerIdGenerator.setDataCenterId(dataCenterId);
-					}
-				});
 	}
 
 	@Override
@@ -491,7 +469,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public void onError(Throwable throwable) {
 		// Trigger reversion strategy
-		NotifyCenter.publishEvent(new RaftDBErrorEvent());
+		NotifyCenter.publishEvent(new RaftDBErrorEvent(throwable));
 	}
 
 	@Override

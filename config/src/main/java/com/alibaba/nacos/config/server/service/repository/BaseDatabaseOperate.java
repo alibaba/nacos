@@ -154,11 +154,11 @@ public interface BaseDatabaseOperate {
                 return Boolean.TRUE;
             }
             catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-                fatalLog.error("[db-error] " + e.toString(), e);
+                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e);
                 return false;
             }
             catch (CannotGetJdbcConnectionException e) {
-                fatalLog.error("[db-error] " + e.toString(), e);
+                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e);
                 throw e;
             } catch (DataAccessException e) {
                 fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",

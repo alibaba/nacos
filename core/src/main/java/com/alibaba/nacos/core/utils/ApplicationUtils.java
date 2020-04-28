@@ -402,12 +402,22 @@ public class ApplicationUtils
 		return functionModeType;
 	}
 
+	private static String NACOS_HOME_PATH = null;
+
 	public static String getNacosHome() {
-		String nacosHome = System.getProperty(NACOS_HOME_KEY);
-		if (StringUtils.isBlank(nacosHome)) {
-			nacosHome = Paths.get(System.getProperty("user.home"), "nacos").toString();
+		if (StringUtils.isBlank(NACOS_HOME_PATH)) {
+			String nacosHome = System.getProperty(NACOS_HOME_KEY);
+			if (StringUtils.isBlank(nacosHome)) {
+				nacosHome = Paths.get(System.getProperty("user.home"), "nacos").toString();
+			}
+			NACOS_HOME_PATH = nacosHome;
 		}
-		return nacosHome;
+		return NACOS_HOME_PATH;
+	}
+
+	@JustForTest
+	public static void setNacosHomePath(String nacosHomePath) {
+		NACOS_HOME_PATH = nacosHomePath;
 	}
 
 	private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory

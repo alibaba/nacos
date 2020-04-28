@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
@@ -178,9 +179,9 @@ public class ProtocolManager
 		Set<String> nodes = new HashSet<>();
 		members.forEach(member -> {
 			final String ip = member.getIp();
-			final int port = Integer.parseInt(String.valueOf(
-					member.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
-			nodes.add(ip + ":" + port);
+			final int port = member.getPort();
+			final int raftPort = port + 1000 >= 65535 ? port + 1 : port + 1000;
+			nodes.add(ip + ":" + raftPort);
 		});
 		return nodes;
 	}
