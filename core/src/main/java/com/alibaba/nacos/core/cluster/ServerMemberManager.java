@@ -103,11 +103,6 @@ public class ServerMemberManager
 	private int port;
 
 	/**
-	 * This node information object
-	 */
-	private Member self;
-
-	/**
 	 * Address information for the local node
 	 */
 	private String localAddress;
@@ -142,6 +137,8 @@ public class ServerMemberManager
 		Loggers.CORE.info("Nacos-related cluster resource initialization");
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
+		Member self = MemberUtils.singleParse(this.localAddress);
+		serverList.put(self.getAddress(), self);
 
 		// register NodeChangeEvent publisher to NotifyManager
 		registerClusterEvent();
@@ -154,7 +151,6 @@ public class ServerMemberManager
 					"cannot get serverlist, so exit.");
 		}
 
-		getSelf().setState(NodeState.STARTING);
 		Loggers.CORE.info("The cluster resource is initialized");
 	}
 
@@ -193,7 +189,6 @@ public class ServerMemberManager
 						memberAddressInfos.add(newAddress);
 
 					}
-					self = null;
 					localAddress = newAddress;
 				}
 				finally {
@@ -257,16 +252,13 @@ public class ServerMemberManager
 	}
 
 	public Member getSelf() {
-		if (Objects.isNull(self)) {
-			readLock.lock();
-			try {
-				self = serverList.get(localAddress);
-			}
-			finally {
-				readLock.unlock();
-			}
+		readLock.lock();
+		try {
+			return serverList.get(localAddress);
 		}
-		return self;
+		finally {
+			readLock.unlock();
+		}
 	}
 
 	public Collection<Member> allMembers() {
@@ -304,7 +296,10 @@ public class ServerMemberManager
 			isInIpList = true;
 		} else {
 			isInIpList = false;
-			members.add(getSelf());
+			Member self = MemberUtils.singleParse(this.localAddress);
+			if (Objects.nonNull(self)) {
+				members.add(getSelf());
+			}
 			Loggers.CLUSTER.error("[serverlist] self ip {} not in serverlist {}", getSelf(), members);
 		}
 

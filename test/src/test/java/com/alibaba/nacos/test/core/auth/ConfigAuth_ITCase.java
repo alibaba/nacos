@@ -156,6 +156,7 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         CountDownLatch latch = new CountDownLatch(1);
 
+        properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         iconfig = NacosFactory.createConfigService(properties);

@@ -16,19 +16,21 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.consistency.IdGenerator;
-import com.alibaba.nacos.core.exception.SnakflowerException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * copy from https://blog.csdn.net/qq_38366063/article/details/83691424
- *
- * <strong>DataCenterId</strong> generation policy: Modular operations are performed based
- * on the Raft Term and the maximum DataCenterId information
+ * copy from http://www.cluozy.com/home/hexo/2018/08/11/shariding-JDBC-snowflake/
  *
  * <strong>WorkerId</strong> generation policy: Calculate the InetAddress hashcode
  * <p>
@@ -40,50 +42,39 @@ import java.util.Map;
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class SnakeFlowerIdGenerator implements IdGenerator {
+
+	private static final Logger logger = LoggerFactory
+			.getLogger(SnakeFlowerIdGenerator.class);
 
 	/**
 	 * Start time intercept (2018-08-05 08:34)
 	 */
-	private static final long TWEPOCH = 1533429269000L;
-	private static final long WORKER_ID_BITS = 5L;
-	private static final long DATA_CENTER_ID_BITS = 5L;
-	public static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
-	public static final long MAX_DATA_CENTER_ID = ~(-1L << DATA_CENTER_ID_BITS);
-
+	public static final long EPOCH = 1533429240000L;
+	// 序列所占位数
 	private static final long SEQUENCE_BITS = 12L;
-	private static final long SEQUENCE_BITS1 = SEQUENCE_BITS;
-	private static final long DATA_CENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
-	private static final long TIMESTAMP_LEFT_SHIFT =
-			SEQUENCE_BITS + WORKER_ID_BITS + DATA_CENTER_ID_BITS;
-	private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
-	private static final long MAX_OFFSET = 5L;
-
-	private static long workerId = -1L;
-	private static volatile long dataCenterId = -1L;
-
-	private volatile long currentId;
-	private long sequence = 0L;
-	private long lastTimestamp = -1L;
-
-
-	public static void setDataCenterId(long dataCenterId) {
-		SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
-	}
+	// workerId所占位数
+	private static final long WORKER_ID_BITS = 10L;
+	// 序列掩码（111111111111B = 4095）
+	private static final long SEQUENCE_MASK = 4095L;
+	// workerId左边共12位（序列号）
+	private static final long WORKER_ID_LEFT_SHIFT_BITS = 12L;
+	// 时间戳左边共22位（序列号+workerId）
+	private static final long TIMESTAMP_LEFT_SHIFT_BITS = 22L;
+	// 工作机器ID最大值1024
+	private static final long WORKER_ID_MAX_VALUE = 1024L;
+	private long workerId;
+	private long sequence;
+	private long lastTime;
+	private long currentId;
 
 	{
-		long dataCenterId = ApplicationUtils
-				.getProperty("nacos.core.snowflake.data-center", Integer.class, -1);
 		long workerId = ApplicationUtils
 				.getProperty("nacos.core.snowflake.worker-id", Integer.class, -1);
 
-		if (dataCenterId != -1) {
-			SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
-		} else {
-			SnakeFlowerIdGenerator.dataCenterId = 1L;
-		}
 		if (workerId != -1) {
-			SnakeFlowerIdGenerator.workerId = workerId;
+			this.workerId = workerId;
 		}
 		else {
 			InetAddress address;
@@ -95,15 +86,16 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 						"Cannot get LocalHost InetAddress, please check your network!");
 			}
 			byte[] ipAddressByteArray = address.getAddress();
-			SnakeFlowerIdGenerator.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11)
-					<< Byte.SIZE) + (ipAddressByteArray[ipAddressByteArray.length - 1]
-					& 0xFF));
+			this.workerId = (
+					((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11)
+							<< Byte.SIZE) + (
+							ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF));
 		}
 	}
 
 	@Override
 	public void init() {
-		initialize(workerId, dataCenterId);
+		initialize(workerId);
 	}
 
 	@Override
@@ -113,45 +105,24 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 
 	@Override
 	public synchronized long nextId() {
-		long timestamp = timeGen();
-
-		if (timestamp < lastTimestamp) {
-
-			final SnakflowerException exception = new SnakflowerException(String.format(
-					"Clock moved backwards.  Refusing to generate id for %d milliseconds",
-					lastTimestamp - timestamp));
-
-			long offset = lastTimestamp - timestamp;
-			if (offset <= MAX_OFFSET) {
-				try {
-					wait(offset << 1);
-				}
-				catch (InterruptedException ignore) {
-					Thread.interrupted();
-				}
-				timestamp = timeGen();
-				if (timestamp < lastTimestamp) {
-					throw exception;
-				}
-			}
-			else {
-				throw exception;
-			}
-		}
-
-		if (lastTimestamp == timestamp) {
-			sequence = (sequence + 1) & SEQUENCE_MASK;
-			if (sequence == 0) {
-				timestamp = tilNextMillis(lastTimestamp);
+		long currentMillis = System.currentTimeMillis();
+		Preconditions.checkState(this.lastTime <= currentMillis,
+				"Clock is moving backwards, last time is %d milliseconds, current time is %d milliseconds",
+				new Object[] { this.lastTime, currentMillis });
+		if (this.lastTime == currentMillis) {
+			if (0L == (this.sequence = ++this.sequence & 4095L)) {
+				currentMillis = this.waitUntilNextTime(currentMillis);
 			}
 		}
 		else {
-			sequence = 0L;
+			this.sequence = 0L;
 		}
 
-		lastTimestamp = timestamp;
-		currentId = ((timestamp - TWEPOCH) << TIMESTAMP_LEFT_SHIFT) | (dataCenterId
-				<< DATA_CENTER_ID_SHIFT) | (workerId << SEQUENCE_BITS1) | sequence;
+		this.lastTime = currentMillis;
+		logger.debug("{}-{}-{}", (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+				.format(new Date(this.lastTime)), workerId, this.sequence);
+
+		currentId = currentMillis - EPOCH << 22 | workerId << 12 | this.sequence;
 		return currentId;
 	}
 
@@ -159,7 +130,6 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	public Map<Object, Object> info() {
 		Map<Object, Object> info = new HashMap<>(4);
 		info.put("currentId", currentId);
-		info.put("dataCenterId", dataCenterId);
 		info.put("workerId", workerId);
 		return info;
 	}
@@ -169,22 +139,15 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	/**
 	 * init
 	 *
-	 * @param workerId     worker id (0~31)
-	 * @param dataCenterId data center id (0~31)
+	 * @param workerId worker id (0~1024)
 	 */
-	public void initialize(long workerId, long dataCenterId) {
-		if (workerId > MAX_WORKER_ID || workerId < 0) {
-			throw new IllegalArgumentException(
-					String.format("worker Id can't be greater than %d or less than 0",
-							MAX_WORKER_ID));
+	public void initialize(long workerId) {
+		if (workerId > WORKER_ID_MAX_VALUE || workerId < 0) {
+			throw new IllegalArgumentException(String.format(
+					"worker Id can't be greater than %d or less than 0, current workId %d",
+					WORKER_ID_MAX_VALUE, workerId));
 		}
-		if (dataCenterId > MAX_DATA_CENTER_ID || dataCenterId < 0) {
-			throw new IllegalArgumentException(
-					String.format("dataCenter Id can't be greater than %d or less than 0",
-							MAX_DATA_CENTER_ID));
-		}
-		SnakeFlowerIdGenerator.workerId = workerId;
-		SnakeFlowerIdGenerator.dataCenterId = dataCenterId;
+		this.workerId = workerId;
 	}
 
 	/**
@@ -193,20 +156,15 @@ public class SnakeFlowerIdGenerator implements IdGenerator {
 	 * @param lastTimestamp The time intercept of the last ID generated
 	 * @return Current timestamp
 	 */
-	protected long tilNextMillis(long lastTimestamp) {
-		long timestamp = timeGen();
-		while (timestamp <= lastTimestamp) {
-			timestamp = timeGen();
+	private long waitUntilNextTime(long lastTimestamp) {
+		long time;
+		time = System.currentTimeMillis();
+		while (time <= lastTimestamp) {
+			;
+			time = System.currentTimeMillis();
 		}
-		return timestamp;
+
+		return time;
 	}
 
-	/**
-	 * Returns the current time in milliseconds
-	 *
-	 * @return Current time (milliseconds)
-	 */
-	protected long timeGen() {
-		return System.currentTimeMillis();
-	}
 }

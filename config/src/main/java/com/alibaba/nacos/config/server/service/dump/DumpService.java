@@ -78,10 +78,10 @@ public class DumpService {
 
     @PostConstruct
     protected void init() {
+
         // If using embedded distributed storage, you need to wait for the
         // underlying master to complete the selection
-
-        if (PropertyUtil.isEmbeddedStorage()) {
+        if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
 
             LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for " +
                     "the underlying master to complete before you can perform the dump operation.");

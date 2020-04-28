@@ -80,20 +80,6 @@ public class ServerMemberManager_ITCase {
 		}
 	}
 
-	@After
-	public void after() throws Exception {
-		String url = HttpUtils.buildUrl(false, "localhost:" + memberManager.getSelf().getPort(),
-				ApplicationUtils.getContextPath(),
-				Commons.NACOS_CORE_CONTEXT,
-				"/cluster/server/leave");
-		RestResult<String> result = httpClient.post(url, Header.EMPTY, Query.EMPTY,
-				Collections.singletonList("1.1.1.1:80"),
-				new GenericType<RestResult<String>>(){}.getType());
-		System.out.println(result);
-		System.out.println(memberManager.getServerList());
-		Assert.assertTrue(result.ok());
-	}
-
 	@Test
 	public void test_a_member_join() throws Exception {
 		Collection<Member> members = memberManager.allMembers();

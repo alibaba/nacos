@@ -194,7 +194,11 @@ public class WatchFileCenter {
 					};
 					Executor executor = watcher.executor();
 					if (executor == null) {
-						job.run();
+						try {
+							job.run();
+						} catch (Throwable ex) {
+							logger.error("File change event callback error : {}", ex);
+						}
 					}
 					else {
 						executor.execute(job);

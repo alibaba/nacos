@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001", "nacos.standalone=true"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPollReturnChanges_ITCase {
     @LocalServerPort
@@ -66,16 +66,21 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(null, cci.getOldValue());
-                Assert.assertEquals(content, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(null, cci.getOldValue());
+                    Assert.assertEquals(content, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
-
         });
-        configService.publishConfig(dataId, group, content);
+        boolean result = configService.publishConfig(dataId, group, content);
+//        Assert.assertTrue(result);
+
+        configService.getConfig(dataId, group, 50);
 
         latch.await();
     }
@@ -89,7 +94,9 @@ public class ConfigLongPollReturnChanges_ITCase {
         final String oldData = "old data";
         final String newData = "new data";
 
-        configService.publishConfig(dataId, group, oldData);
+        boolean result = configService.publishConfig(dataId, group, oldData);
+
+        Assert.assertTrue(result);
 
         // query config immediately may return null
         String config = null;
@@ -101,12 +108,15 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(oldData, cci.getOldValue());
-                Assert.assertEquals(newData, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(oldData, cci.getOldValue());
+                    Assert.assertEquals(newData, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
 
         });
@@ -123,7 +133,8 @@ public class ConfigLongPollReturnChanges_ITCase {
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
 
-        configService.publishConfig(dataId, group, oldData);
+        boolean result = configService.publishConfig(dataId, group, oldData);
+        Assert.assertTrue(result);
 
         // query config immediately may return null
         String config = null;
@@ -135,12 +146,15 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(oldData, cci.getOldValue());
-                Assert.assertEquals(null, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(oldData, cci.getOldValue());
+                    Assert.assertEquals(null, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
 
         });

@@ -13,28 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.notify.Event;
+package com.alibaba.nacos.test;
 
 /**
- * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class RaftDBErrorEvent implements Event {
+public class BaseTest {
 
-	private static final long serialVersionUID = 101591819161802336L;
-
-	private Throwable ex;
-
-	public RaftDBErrorEvent() {
-	}
-
-	public RaftDBErrorEvent(Throwable ex) {
-		this.ex = ex;
-	}
-
-	public Throwable getEx() {
-		return ex;
-	}
 }

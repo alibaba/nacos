@@ -55,6 +55,11 @@ public class WatchFileCenter_ITCase {
 		DiskUtils.deleteDirThenMkdir(path);
 	}
 
+	@AfterClass
+	public static void afterCls() throws Exception {
+		DiskUtils.deleteDirectory(path);
+	}
+
 	// The last file change must be notified
 
 	@Test

@@ -112,12 +112,15 @@ public final class ThreadPoolManager {
 	 * @param group group name
 	 * @param executor {@link ExecutorService}
 	 */
-	public synchronized void deregister(String namespace, String group, ExecutorService executor) {
+	public void deregister(String namespace, String group, ExecutorService executor) {
         if (resourcesManager.containsKey(namespace)) {
-            final Map<String, Set<ExecutorService>> subResourceMap = resourcesManager.get(namespace);
-            if (subResourceMap.containsKey(group)) {
-                subResourceMap.get(group).remove(executor);
-            }
+            final Object monitor = lockers.get(namespace);
+            synchronized (monitor) {
+				final Map<String, Set<ExecutorService>> subResourceMap = resourcesManager.get(namespace);
+				if (subResourceMap.containsKey(group)) {
+					subResourceMap.get(group).remove(executor);
+				}
+			}
         }
     }
 

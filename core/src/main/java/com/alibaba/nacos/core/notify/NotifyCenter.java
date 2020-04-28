@@ -277,7 +277,7 @@ public class NotifyCenter {
 		};
 
 		Publisher(final Class<? extends Event> eventType) {
-			this.eventType = eventType;
+			this(eventType, RING_BUFFER_SIZE);
 		}
 
 		Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {

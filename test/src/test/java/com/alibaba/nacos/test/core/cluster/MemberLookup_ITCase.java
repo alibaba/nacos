@@ -34,11 +34,15 @@ import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.test.BaseTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 
@@ -53,13 +57,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberLookup_ITCase {
+@FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
+public class MemberLookup_ITCase extends BaseTest {
 
 	static final String path = Paths.get(System.getProperty("user.home"), "/look")
 			.toString();
@@ -69,7 +75,8 @@ public class MemberLookup_ITCase {
 	static final ServerMemberManager memberManager = new ServerMemberManager(
 			new MockServletContext());
 
-	static {
+	@Before
+	public void before() throws Exception {
 		System.setProperty("nacos.home", path);
 		ApplicationUtils.injectEnvironment(new StandardEnvironment());
 		ApplicationUtils.setIsStandalone(false);
@@ -81,10 +88,6 @@ public class MemberLookup_ITCase {
 		System.out.println(ApplicationUtils.getStandaloneMode());
 
 		System.out.println(Arrays.toString(LookupFactory.LookupType.values()));
-	}
-
-	@Before
-	public void before() throws Exception {
 		DiskUtils.forceMkdir(path);
 		DiskUtils.forceMkdir(Paths.get(path, "conf").toString());
 		File file = Paths.get(path, "conf", name).toFile();
@@ -100,7 +103,7 @@ public class MemberLookup_ITCase {
 	}
 
 	@Test
-	public void test_lookup_file_config() throws Exception {
+	public void test_a_lookup_file_config() throws Exception {
 		try {
 			LookupFactory.createLookUp(memberManager);
 		}
@@ -113,7 +116,7 @@ public class MemberLookup_ITCase {
 	}
 
 	@Test
-	public void test_lookup_standalone() throws Exception {
+	public void test_b_lookup_standalone() throws Exception {
 		ApplicationUtils.setIsStandalone(true);
 		try {
 			LookupFactory.createLookUp(memberManager);
@@ -130,7 +133,7 @@ public class MemberLookup_ITCase {
 	}
 
 	@Test
-	public void test_lookup_address_server() throws Exception {
+	public void test_c_lookup_address_server() throws Exception {
 		ApplicationUtils.setIsStandalone(false);
 		System.out.println(ApplicationUtils.getClusterConfFilePath());
 		DiskUtils.deleteFile(Paths.get(path, "conf").toString(), "cluster.conf");
@@ -151,7 +154,7 @@ public class MemberLookup_ITCase {
 	}
 
 	@Test
-	public void test_lookup_discovery() throws Exception {
+	public void test_d_lookup_discovery() throws Exception {
 		ApplicationUtils.setIsStandalone(false);
 		System.setProperty("nacos.member.discovery", "true");
 		System.out.println(ApplicationUtils.getClusterConfFilePath());
@@ -179,9 +182,12 @@ public class MemberLookup_ITCase {
 		Assert.assertEquals(expectSize, tmp.size());
 	}
 
+	@Ignore
 	@Test
-	public void test_lookup_file_change() throws Throwable {
+	public void test_e_lookup_file_change() throws Throwable {
 		File file = Paths.get(path, "conf", name).toFile();
+
+		ApplicationUtils.setNacosHomePath(path);
 
 		CountDownLatch[] latches = new CountDownLatch[] {
 				new CountDownLatch(1),
@@ -196,11 +202,13 @@ public class MemberLookup_ITCase {
 				new AtomicReference<Collection<Member>>(Collections.emptyList())
 		};
 
+		System.out.println("test_e_lookup_file_change : " + ApplicationUtils.getConfFilePath());
+
 		FileConfigMemberLookup lookup = new FileConfigMemberLookup() {
 			@Override
 			public void afterLookup(Collection<Member> members) {
-				System.out.println("test : " + members);
 				int i = index.getAndIncrement();
+				System.out.println("test-" + i + " : " + members);
 				try {
 					reference[i].set(members);
 				} finally {
@@ -214,7 +222,8 @@ public class MemberLookup_ITCase {
 		String ip = InetUtils.getSelfIp();
 		String ips = ip + ":8848," + ip + ":8847," + ip + ":8849";
 
-		latches[0].await();
+		ThreadUtils.sleep(5_000L);
+		latches[0].await(10_000L, TimeUnit.MILLISECONDS);
 
 		Collection<Member> members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
 		Set<Member> set = new HashSet<>(members);
@@ -225,10 +234,11 @@ public class MemberLookup_ITCase {
 		// test for write file -1
 
 		ips = ip + ":8848," + ip + ":8847," + ip + ":8849," + ip + ":8850";
-		DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
-		latches[1].await();
-
+		boolean result = DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
+		Assert.assertTrue(result);
 		ThreadUtils.sleep(5_000L);
+		latches[1].await(10_000L, TimeUnit.MILLISECONDS);
+
 		members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
 		set = new HashSet<>(members);
 		System.out.println("2 : " + reference[1].get());
@@ -238,15 +248,18 @@ public class MemberLookup_ITCase {
 		// test for write file -2
 
 		ips = ip + ":8848," + ip + ":8847," + ip + ":8849";
-		DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
-		latches[2].await();
-
+		result = DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
+		Assert.assertTrue(result);
 		ThreadUtils.sleep(5_000L);
+		latches[2].await(10_000L, TimeUnit.MILLISECONDS);
+
 		members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
 		set = new HashSet<>(members);
 		System.out.println("3: " + reference[2].get());
 		set.removeAll(reference[2].get());
 		Assert.assertEquals(0, set.size());
+
+		ApplicationUtils.setNacosHomePath(null);
 	}
 
 }
