@@ -53,6 +53,7 @@ export default {
     return str
       .replace('\n\r', '\n')
       .split('\n')
+      .filter(_str => _str)
       .every(_str => reg.test(_str.trim()));
   },
 

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.common.utils.Md5Utils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
@@ -265,7 +265,7 @@ class DumpAllProcessor implements TaskProcessor {
                         cf.getLastModified(), cf.getType());
 
                     final String content = cf.getContent();
-                    final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
+                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
                     LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
                         GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(), md5);
                 }
@@ -410,7 +410,7 @@ class DumpChangeProcessor implements TaskProcessor {
             boolean result = ConfigService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                 cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
-            final String md5 = Md5Utils.getMD5(content, Constants.ENCODE);
+            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             LogUtil.defaultLog.info(
                 "[dump-change-ok] {}, {}, length={}, md5={}",
                 new Object[] {
