@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * // TODO Access Metric
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadPoolManager {
 
-	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolManager.class);
 
     private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
 
@@ -48,14 +48,16 @@ public final class ThreadPoolManager {
 
     private static final ThreadPoolManager INSTANCE = new ThreadPoolManager();
 
+    private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
+
     static {
         INSTANCE.init();
 		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-				logger.warn("[ThreadPoolManager] Start destroying ThreadPool");
+				LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
                 shutdown();
-				logger.warn("[ThreadPoolManager] Destruction of the end");
+				LOGGER.warn("[ThreadPoolManager] Destruction of the end");
             }
         }));
     }
@@ -78,6 +80,7 @@ public final class ThreadPoolManager {
 	 * @param executor {@link ExecutorService}
 	 */
 	public void register(String namespace, String group, ExecutorService executor) {
+		checkState();
         synchronized(this) {
             if (!resourcesManager.containsKey(namespace)) {
                 resourcesManager.put(namespace, new HashMap<String, Set<ExecutorService>>(8));
@@ -161,16 +164,25 @@ public final class ThreadPoolManager {
 				executor.shutdownNow();
 				Thread.interrupted();
 			} catch (Throwable ex) {
-				logger.error("ThreadPoolManager shutdown executor has error : {}", ex);
+				LOGGER.error("ThreadPoolManager shutdown executor has error : {}", ex);
 			}
 		}
 		executor.shutdownNow();
 	}
 
     public static void shutdown() {
+		if (!CLOSED.compareAndSet(false, true)) {
+			return;
+		}
 	    Set<String> namespaces = INSTANCE.resourcesManager.keySet();
 	    for (String namespace : namespaces) {
 	        INSTANCE.destroy(namespace);
         }
     }
+
+	private static void checkState() {
+		if (CLOSED.get()) {
+			throw new IllegalStateException("WatchFileCenter already shutdown");
+		}
+	}
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.Loggers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +46,14 @@ import java.util.function.Supplier;
 @SuppressWarnings("all")
 public class NotifyCenter {
 
-	private static final Logger logger = LoggerFactory.getLogger(NotifyCenter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
 
 	// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 	// this value needs to be increased appropriately. default value is 16384
 
 	public static int RING_BUFFER_SIZE = 16384;
+
+	private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
 	static {
 		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
@@ -62,12 +63,12 @@ public class NotifyCenter {
 
 	private static final NotifyCenter INSTANCE = new NotifyCenter();
 
-	private final Map<String, Publisher> PUBLISHER_MAP = new ConcurrentHashMap<>(
+	private final Map<String, Publisher> publisherMap = new ConcurrentHashMap<>(
 			16);
 
-	private final Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
+	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
 
-	private final Publisher SHARE_PUBLISHER = new Publisher(SlowEvent.class,
+	private final Publisher sharePublisher = new Publisher(SlowEvent.class,
 			new BiPredicate<Event, Subscribe>() {
 				@Override
 				public boolean test(Event event, Subscribe subscribe) {
@@ -83,32 +84,32 @@ public class NotifyCenter {
 
 	@JustForTest
 	public static Map<String, Publisher> getPublisherMap() {
-		return INSTANCE.PUBLISHER_MAP;
+		return INSTANCE.publisherMap;
 	}
 
 	@JustForTest
 	public static Publisher getPublisher(Class<? extends Event> topic) {
 		if (SlowEvent.class.isAssignableFrom(topic)) {
-			return INSTANCE.SHARE_PUBLISHER;
+			return INSTANCE.sharePublisher;
 		}
-		return INSTANCE.PUBLISHER_MAP.get(topic.getCanonicalName());
+		return INSTANCE.publisherMap.get(topic.getCanonicalName());
 	}
 
 	@JustForTest
 	public static Set<SmartSubscribe> getSmartSubscribes() {
-		return INSTANCE.SMART_SUBSCRIBES;
+		return INSTANCE.smartSubscribes;
 	}
 
 	@JustForTest
 	public static Publisher getSharePublisher() {
-		return INSTANCE.SHARE_PUBLISHER;
+		return INSTANCE.sharePublisher;
 	}
 
 	private static volatile boolean stopDeferPublish = false;
 
 	static {
-		INSTANCE.SHARE_PUBLISHER.setSupplier(() -> null);
-		INSTANCE.SHARE_PUBLISHER.start();
+		INSTANCE.sharePublisher.setSupplier(() -> null);
+		INSTANCE.sharePublisher.start();
 
 		ShutdownUtils.addShutdownHook(new Thread(() -> {
 			shutdown();
@@ -121,21 +122,21 @@ public class NotifyCenter {
 		if (!closed.compareAndSet(false, true)) {
 			return;
 		}
-		logger.warn("[NotifyCenter] Start destroying Publisher");
+		LOGGER.warn("[NotifyCenter] Start destroying Publisher");
 		try {
-			INSTANCE.PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
+			INSTANCE.publisherMap.forEach(new BiConsumer<String, Publisher>() {
 				@Override
 				public void accept(String s, Publisher publisher) {
 					publisher.shutdown();
 				}
 			});
 
-			INSTANCE.SHARE_PUBLISHER.shutdown();
+			INSTANCE.sharePublisher.shutdown();
 		}
 		catch (Throwable e) {
-			logger.error("NotifyCenter shutdown has error : {}", e);
+			LOGGER.error("NotifyCenter shutdown has error : {}", e);
 		}
-		logger.warn("[NotifyCenter] Destruction of the end");
+		LOGGER.warn("[NotifyCenter] Destruction of the end");
 	}
 
 	public static void stopDeferPublish() {
@@ -152,22 +153,24 @@ public class NotifyCenter {
 	 * @param <T>       event type
 	 */
 	public static <T> void registerSubscribe(final Subscribe consumer) {
+		checkState();
+
 		final Class<? extends Event> cls = consumer.subscribeType();
 		// If you want to listen to multiple events, you do it separately,
 		// without automatically registering the appropriate publisher
 		if (consumer instanceof SmartSubscribe) {
-			INSTANCE.SMART_SUBSCRIBES.add((SmartSubscribe) consumer);
+			INSTANCE.smartSubscribes.add((SmartSubscribe) consumer);
 			return;
 		}
 		// If the event does not require additional queue resources,
 		// go to share-publisher to reduce resource waste
 		if (SlowEvent.class.isAssignableFrom(cls)) {
-			INSTANCE.SHARE_PUBLISHER.addSubscribe(consumer);
+			INSTANCE.sharePublisher.addSubscribe(consumer);
 			return;
 		}
 		final String topic = consumer.subscribeType().getCanonicalName();
-		INSTANCE.PUBLISHER_MAP.computeIfAbsent(topic, s -> new Publisher(cls));
-		Publisher publisher = INSTANCE.PUBLISHER_MAP.get(topic);
+		INSTANCE.publisherMap.computeIfAbsent(topic, s -> new Publisher(cls));
+		Publisher publisher = INSTANCE.publisherMap.get(topic);
 		publisher.addSubscribe(consumer);
 	}
 
@@ -180,16 +183,16 @@ public class NotifyCenter {
 	public static <T> void deregisterSubscribe(final Subscribe consumer) {
 		final Class<? extends Event> cls = consumer.subscribeType();
 		if (consumer instanceof SmartSubscribe) {
-			INSTANCE.SMART_SUBSCRIBES.remove((SmartSubscribe) consumer);
+			INSTANCE.smartSubscribes.remove((SmartSubscribe) consumer);
 			return;
 		}
 		if (SlowEvent.class.isAssignableFrom(cls)) {
-			INSTANCE.SHARE_PUBLISHER.unSubscribe(consumer);
+			INSTANCE.sharePublisher.unSubscribe(consumer);
 			return;
 		}
 		final String topic = consumer.subscribeType().getCanonicalName();
-		if (INSTANCE.PUBLISHER_MAP.containsKey(topic)) {
-			Publisher publisher = INSTANCE.PUBLISHER_MAP.get(topic);
+		if (INSTANCE.publisherMap.containsKey(topic)) {
+			Publisher publisher = INSTANCE.publisherMap.get(topic);
 			publisher.unSubscribe(consumer);
 			return;
 		}
@@ -215,14 +218,14 @@ public class NotifyCenter {
 	 */
 	private static boolean publishEvent(final Class<? extends Event> eventType,
 			final Event event) {
+		checkState();
 		final String topic = eventType.getCanonicalName();
-
 		if (SlowEvent.class.isAssignableFrom(eventType)) {
-			return INSTANCE.SHARE_PUBLISHER.publish(event);
+			return INSTANCE.sharePublisher.publish(event);
 		}
 
-		if (INSTANCE.PUBLISHER_MAP.containsKey(topic)) {
-			Publisher publisher = INSTANCE.PUBLISHER_MAP.get(topic);
+		if (INSTANCE.publisherMap.containsKey(topic)) {
+			Publisher publisher = INSTANCE.publisherMap.get(topic);
 			if (!publisher.isInitialized()) {
 				publisher.start();
 			}
@@ -242,7 +245,8 @@ public class NotifyCenter {
 	public static Publisher registerToSharePublisher(
 			final Supplier<? extends SlowEvent> supplier,
 			final Class<? extends SlowEvent> eventType) {
-		return INSTANCE.SHARE_PUBLISHER;
+		checkState();
+		return INSTANCE.sharePublisher;
 	}
 
 	/**
@@ -255,12 +259,13 @@ public class NotifyCenter {
 	 */
 	public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
 			final Class<? extends Event> eventType, final int queueMaxSize) {
+		checkState();
 		final String topic = eventType.getCanonicalName();
-		INSTANCE.PUBLISHER_MAP.computeIfAbsent(topic, s -> {
+		INSTANCE.publisherMap.computeIfAbsent(topic, s -> {
 			Publisher publisher = new Publisher(eventType, queueMaxSize);
 			return publisher;
 		});
-		Publisher publisher = INSTANCE.PUBLISHER_MAP.get(topic);
+		Publisher publisher = INSTANCE.publisherMap.get(topic);
 		publisher.queueMaxSize = queueMaxSize;
 		publisher.setSupplier(supplier);
 		return publisher;
@@ -274,7 +279,7 @@ public class NotifyCenter {
 	 */
 	public static void deregisterPublisher(final Class<? extends Event> eventType) {
 		final String topic = eventType.getCanonicalName();
-		Publisher publisher = INSTANCE.PUBLISHER_MAP.remove(topic);
+		Publisher publisher = INSTANCE.publisherMap.remove(topic);
 		publisher.shutdown();
 	}
 
@@ -366,7 +371,7 @@ public class NotifyCenter {
 				}
 			}
 			catch (Throwable ex) {
-				logger.error("Event listener exception : {}", ex);
+				LOGGER.error("Event listener exception : {}", ex);
 			}
 		}
 
@@ -389,7 +394,7 @@ public class NotifyCenter {
 				receiveEvent(event);
 				return true;
 			} catch (Throwable ex) {
-				logger.error("[NotifyCenter] publish {} has error : {}", event, ex);
+				LOGGER.error("[NotifyCenter] publish {} has error : {}", event, ex);
 				return false;
 			}
 		}
@@ -414,7 +419,7 @@ public class NotifyCenter {
 
 		void receiveEvent(Event event) {
 			Set<Subscribe> tmp = new HashSet<>();
-			tmp.addAll(INSTANCE.SMART_SUBSCRIBES);
+			tmp.addAll(INSTANCE.smartSubscribes);
 			tmp.addAll(subscribes);
 
 			final long currentEventSequence = event.sequence();
@@ -423,25 +428,25 @@ public class NotifyCenter {
 
 				// Determines whether the event is acceptable to this subscriber
 				if (!filter.test(event, subscribe)) {
-					logger.debug("[NotifyCenter] the {} is unacceptable to this subscriber", event.getClass());
+					LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber", event.getClass());
 					continue;
 				}
 
 				// If you are a multi-event listener, you need to make additional logical judgments
 				if (subscribe instanceof SmartSubscribe) {
 					if (!((SmartSubscribe) subscribe).canNotify(event)) {
-						logger.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
+						LOGGER.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
 						continue;
 					}
 				}
 
 				// Whether to ignore expiration events
 				if (subscribe.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
-					logger.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire", event.getClass());
+					LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire", event.getClass());
 					continue;
 				}
 
-				logger.debug("[NotifyCenter] the {} will received by {}", event, subscribe);
+				LOGGER.debug("[NotifyCenter] the {} will received by {}", event, subscribe);
 
 				final Runnable job = () -> subscribe.onEvent(event);
 				final Executor executor = subscribe.executor();
@@ -453,10 +458,16 @@ public class NotifyCenter {
 						job.run();
 					}
 					catch (Throwable e) {
-						logger.error("Event callback exception : {}", e);
+						LOGGER.error("Event callback exception : {}", e);
 					}
 				}
 			}
+		}
+	}
+
+	private static void checkState() {
+		if (CLOSED.get()) {
+			throw new IllegalStateException("WatchFileCenter already shutdown");
 		}
 	}
 

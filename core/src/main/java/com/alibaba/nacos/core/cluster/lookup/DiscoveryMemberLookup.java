@@ -40,8 +40,11 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * <pre>
@@ -195,7 +198,9 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 
 		private void discovery(Collection<String> result) {
 			try {
-				afterLookup(MemberUtils.readServerConf(Objects.requireNonNull(result)));
+				Set<Member> tmp = new HashSet<>(memberManager.allMembers());
+				tmp.addAll(MemberUtils.readServerConf(Objects.requireNonNull(result)));
+				afterLookup(tmp);
 			}
 			catch (Exception e) {
 				Loggers.CLUSTER.error("The cluster self-detects a problem");

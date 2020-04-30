@@ -47,7 +47,6 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,14 +80,13 @@ import java.util.function.BiFunction;
 public class ServerMemberManager
 		implements ApplicationListener<WebServerInitializedEvent> {
 
-	private final ServletContext servletContext;
 	private final NAsyncHttpClient asyncHttpClient = HttpClientManager
 			.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
 
 	/**
 	 * Cluster node list
 	 */
-	private ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
+	private volatile ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
 
 	/**
 	 * Is this node in the cluster list
@@ -110,10 +108,12 @@ public class ServerMemberManager
 	 */
 	private MemberLookup lookup;
 
+	private Member self;
+
 	/**
 	 * here is always the node information of the "UP" state
 	 */
-	private Set<String> memberAddressInfos = new ConcurrentHashSet<>();
+	private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
 
 	/**
 	 * Broadcast this node element information task
@@ -121,7 +121,6 @@ public class ServerMemberManager
 	private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
 
 	public ServerMemberManager(ServletContext servletContext) {
-		this.servletContext = servletContext;
 		ApplicationUtils.setContextPath(servletContext.getContextPath());
 		MemberUtils.setManager(this);
 	}
@@ -131,7 +130,7 @@ public class ServerMemberManager
 		Loggers.CORE.info("Nacos-related cluster resource initialization");
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
-		Member self = MemberUtils.singleParse(this.localAddress);
+		this.self = MemberUtils.singleParse(this.localAddress);
 		serverList.put(self.getAddress(), self);
 
 		// register NodeChangeEvent publisher to NotifyManager
@@ -171,17 +170,14 @@ public class ServerMemberManager
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				String oldAddress = event.getOldIp() + ":" + port;
 				String newAddress = event.getNewIp() + ":" + port;
-				Member member = serverList.get(oldAddress);
 				localAddress = newAddress;
-				if (Objects.nonNull(member)) {
-					member.setIp(event.getNewIp());
-					serverList.remove(oldAddress);
-					serverList.put(newAddress, member);
+				Member self = ServerMemberManager.this.self;
+				self.setIp(event.getNewIp());
+				serverList.remove(oldAddress);
+				serverList.put(newAddress, self);
 
-					memberAddressInfos.remove(oldAddress);
-					memberAddressInfos.add(newAddress);
-
-				}
+				memberAddressInfos.remove(oldAddress);
+				memberAddressInfos.add(newAddress);
 			}
 
 			@Override
@@ -225,12 +221,7 @@ public class ServerMemberManager
 	}
 
 	public Member getSelf() {
-		Member self = serverList.get(localAddress);
-		if (Objects.isNull(self)) {
-			self = MemberUtils.singleParse(localAddress);
-			serverList.put(self.getAddress(), self);
-		}
-		return self;
+		return this.self;
 	}
 
 	public Collection<Member> allMembers() {
@@ -240,7 +231,7 @@ public class ServerMemberManager
 
 	public List<Member> allMembersWithoutSelf() {
 		List<Member> members = new ArrayList<>(serverList.values());
-		members.remove(getSelf());
+		members.remove(self);
 		return members;
 	}
 
@@ -258,17 +249,14 @@ public class ServerMemberManager
 		}
 		else {
 			isInIpList = false;
-			Member self = MemberUtils.singleParse(this.localAddress);
-			if (Objects.nonNull(self)) {
-				members.add(self);
-			}
+			members.add(this.self);
 			Loggers.CLUSTER
 					.error("[serverlist] self ip {} not in serverlist {}", self, members);
 		}
 
 		boolean hasChange = false;
-		Map<String, Member> tmpMap = new HashMap<>();
-		Set<String> tmpAddressInfo = new HashSet<>();
+		ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap<>();
+		Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
 		for (Member member : members) {
 			final String address = member.getAddress();
 
@@ -281,11 +269,14 @@ public class ServerMemberManager
 			tmpAddressInfo.add(address);
 		}
 
-		serverList.clear();
-		serverList.putAll(tmpMap);
+		Map oldList = serverList;
+		Set oldSet = memberAddressInfos;
 
-		memberAddressInfos.clear();
-		memberAddressInfos.addAll(tmpAddressInfo);
+		serverList = tmpMap;
+		memberAddressInfos = tmpAddressInfo;
+
+		oldList.clear();
+		oldSet.clear();
 
 		// Persist the current cluster node information to cluster.conf
 		// <important> need to put the event publication into a synchronized block to ensure
@@ -335,7 +326,9 @@ public class ServerMemberManager
 		getSelf().setState(NodeState.UP);
 		// For containers that have started, stop all messages from being published late
 		NotifyCenter.stopDeferPublish();
-		GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+		if (!ApplicationUtils.getStandaloneMode()) {
+			GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+		}
 		ApplicationUtils.setPort(event.getWebServer().getPort());
 		ApplicationUtils.setLocalAddress(this.localAddress);
 		Loggers.CLUSTER.info("This node is ready to provide external services");
@@ -384,6 +377,11 @@ public class ServerMemberManager
 		@Override
 		protected void executeBody() {
 			List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
+
+			if (members.isEmpty()) {
+				return;
+			}
+
 			this.cursor = (this.cursor + 1) % members.size();
 			Member target = members.get(cursor);
 

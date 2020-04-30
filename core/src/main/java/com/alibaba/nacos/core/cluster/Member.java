@@ -27,7 +27,7 @@ import java.util.TreeMap;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Member {
+public class Member implements Cloneable {
 
     private String ip;
 
