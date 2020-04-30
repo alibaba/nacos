@@ -23,6 +23,7 @@ import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import org.junit.Assert;

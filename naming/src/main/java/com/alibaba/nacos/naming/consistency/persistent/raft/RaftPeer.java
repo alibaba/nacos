@@ -81,4 +81,11 @@ public class RaftPeer {
 
         return StringUtils.equals(ip, other.ip);
     }
+
+    @Override
+    public String toString() {
+        return "RaftPeer{" + "ip='" + ip + '\'' + ", voteFor='" + voteFor + '\''
+                + ", term=" + term + ", leaderDueMs=" + leaderDueMs + ", heartbeatDueMs="
+                + heartbeatDueMs + ", state=" + state + '}';
+    }
 }

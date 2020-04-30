@@ -486,7 +486,6 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				if (!result) {
 					throw new NacosConfigException("config deletion failed");
 				}
-
 			}
 			finally {
 				SqlContextUtils.cleanCurrentSqlContext();

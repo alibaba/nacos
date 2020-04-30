@@ -19,11 +19,13 @@ package com.alibaba.nacos.test.common;
 import com.alibaba.nacos.common.file.FileChangeEvent;
 import com.alibaba.nacos.common.file.FileWatcher;
 import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -76,6 +78,42 @@ public class WatchFileCenter_ITCase {
 		});
 
 		ThreadUtils.sleep(5_000L);
+	}
+
+	@Test
+	public void test_modify_file_much() throws Exception {
+		final String fileName = "modify_file_much";
+		final File file = Paths.get(path, fileName).toFile();
+
+		CountDownLatch latch = new CountDownLatch(3);
+		AtomicInteger count = new AtomicInteger(0);
+
+		WatchFileCenter.registerWatcher(path, new FileWatcher() {
+			@Override
+			public void onChange(FileChangeEvent event) {
+				try {
+					System.out.println(event);
+					System.out.println(DiskUtils.readFile(file));
+					count.incrementAndGet();
+				} finally {
+					latch.countDown();
+				}
+			}
+
+			@Override
+			public boolean interest(String context) {
+				return StringUtils.contains(context, fileName);
+			}
+		});
+
+		for (int i = 0; i < 3; i ++) {
+			DiskUtils.writeFile(file, ByteUtils.toBytes(("test_modify_file_" + i)), false);
+			ThreadUtils.sleep(10_000L);
+		}
+
+		latch.await();
+
+		Assert.assertEquals(3, count.get());
 	}
 
 	@Test

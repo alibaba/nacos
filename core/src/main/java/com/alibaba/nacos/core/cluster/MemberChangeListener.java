@@ -33,4 +33,14 @@ public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
     default Class<? extends Event> subscribeType() {
         return MemberChangeEvent.class;
     }
+
+    /**
+     * Whether to ignore expired events
+     *
+     * @return default value is {@link Boolean#TRUE}
+     */
+    @Override
+    default boolean ignoreExpireEvent() {
+        return true;
+    }
 }

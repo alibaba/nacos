@@ -78,6 +78,7 @@ public class DumpService {
 
     @PostConstruct
     protected void init() {
+        DynamicDataSource.getInstance().getDataSource();
 
         // If using embedded distributed storage, you need to wait for the
         // underlying master to complete the selection

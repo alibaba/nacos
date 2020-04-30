@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Assert;
@@ -84,7 +85,6 @@ public class NamingAuth_ITCase extends AuthBase {
 
     @Test
     public void readWithReadPermission() throws Exception {
-
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         NamingService namingService1 = NacosFactory.createNamingService(properties);

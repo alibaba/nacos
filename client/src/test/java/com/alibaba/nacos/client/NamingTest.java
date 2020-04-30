@@ -31,6 +31,7 @@ import java.util.Properties;
 /**
  * @author nkorange
  */
+@Ignore
 public class NamingTest {
 
     @Test

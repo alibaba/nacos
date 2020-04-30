@@ -42,6 +42,7 @@ import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.SnakeFlowerIdGenerator;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
@@ -131,6 +132,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	private ServerMemberManager memberManager;
 
 	@Autowired
+	private ProtocolManager protocolManager;
+
 	private CPProtocol protocol;
 
 	private LocalDataSourceServiceImpl dataSourceService;
@@ -143,15 +146,16 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@PostConstruct
 	protected void init() throws Exception {
-		dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
+		this.protocol = protocolManager.getCpProtocol();
+		this.dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
 				.getDataSource();
 
 		// Because in Raft + Derby mode, ensuring data consistency depends on the Raft's
 		// log playback and snapshot recovery capabilities, and the last data must be cleared
-		dataSourceService.cleanAndReopenDerby();
+		this.dataSourceService.cleanAndReopenDerby();
 
-		jdbcTemplate = dataSourceService.getJdbcTemplate();
-		transactionTemplate = dataSourceService.getTransactionTemplate();
+		this.jdbcTemplate = dataSourceService.getJdbcTemplate();
+		this.transactionTemplate = dataSourceService.getTransactionTemplate();
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
 		NotifyCenter.registerToPublisher(RaftDBErrorEvent::new, RaftDBErrorEvent.class, 8);

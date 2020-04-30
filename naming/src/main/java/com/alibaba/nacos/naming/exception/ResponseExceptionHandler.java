@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.auth.AccessException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
-    private ResponseEntity<String> handleNacosException(NacosException e) {
+    public ResponseEntity<String> handleNacosException(NacosException e) {
         Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), e);
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
@@ -50,7 +49,7 @@ public class ResponseExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    private ResponseEntity<String> handleException(Exception e) {
+    public ResponseEntity<String> handleException(Exception e) {
         Loggers.SRV_LOG.error("got exception.", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
     }

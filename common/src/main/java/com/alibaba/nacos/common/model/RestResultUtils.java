@@ -34,6 +34,13 @@ public class RestResultUtils {
 				.build();
 	}
 
+	public static <T> RestResult<T> success(int code, T data) {
+		return RestResult.<T>builder()
+				.withCode(code)
+				.withData(data)
+				.build();
+	}
+
 	public static <T> RestResult<T> failed(String errMsg) {
 		return RestResult.<T>builder()
 				.withCode(500)
@@ -44,6 +51,21 @@ public class RestResultUtils {
 	public static <T> RestResult<T> failed() {
 		return RestResult.<T>builder()
 				.withCode(500)
+				.build();
+	}
+
+	public static <T> RestResult<T> failed(int code, T data) {
+		return RestResult.<T>builder()
+				.withCode(code)
+				.withData(data)
+				.build();
+	}
+
+	public static <T> RestResult<T> failed(int code, T data, String errMsg) {
+		return RestResult.<T>builder()
+				.withCode(code)
+				.withData(data)
+				.withMsg(errMsg)
 				.build();
 	}
 

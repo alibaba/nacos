@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -90,9 +91,7 @@ public final class LookupFactory {
 	public static MemberLookup createLookUp(ServerMemberManager memberManager)
 			throws NacosException {
 		if (!ApplicationUtils.getStandaloneMode()) {
-
 			String lookupType = ApplicationUtils.getProperty(LOOKUP_MODE_TYPE);
-
 			LookupType type = chooseLookup(lookupType);
 			LOOK_UP = find(type);
 			currentLookupType = type;
@@ -155,8 +154,8 @@ public final class LookupFactory {
 			}
 		}
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
-		if (Boolean.parseBoolean(ApplicationUtils
-				.getProperty(DISCOVERY_SWITCH_NAME, Boolean.toString(false)))) {
+		if (ApplicationUtils
+				.getProperty(DISCOVERY_SWITCH_NAME, Boolean.class, false)) {
 			return LookupType.DISCOVERY;
 		}
 		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {

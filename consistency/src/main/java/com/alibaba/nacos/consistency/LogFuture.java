@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.consistency;
 
+import java.io.Serializable;
+
 /**
  * There is no network traffic involved
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class LogFuture {
+public class LogFuture implements Serializable {
+
+	private static final long serialVersionUID = 5586490452907514669L;
 
 	// If an exception occurs during apply, response==null
 
@@ -55,6 +59,11 @@ public class LogFuture {
 
 	public static LogFuture fail(Throwable error) {
 		LogFuture future = new LogFuture(null, error);
+		return future;
+	}
+
+	public static LogFuture create(Object data, Throwable error) {
+		LogFuture future = new LogFuture(data, error);
 		return future;
 	}
 }

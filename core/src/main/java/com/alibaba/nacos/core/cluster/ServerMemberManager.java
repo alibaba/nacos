@@ -27,7 +27,6 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
-import com.alibaba.nacos.core.cluster.lookup.MemberLookup;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -54,8 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 
 /**
@@ -90,7 +88,7 @@ public class ServerMemberManager
 	/**
 	 * Cluster node list
 	 */
-	private TreeMap<String, Member> serverList = new TreeMap<>();
+	private ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
 
 	/**
 	 * Is this node in the cluster list
@@ -121,10 +119,6 @@ public class ServerMemberManager
 	 * Broadcast this node element information task
 	 */
 	private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
-
-	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-	private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-	private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
 
 	public ServerMemberManager(ServletContext servletContext) {
 		this.servletContext = servletContext;
@@ -177,22 +171,16 @@ public class ServerMemberManager
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				String oldAddress = event.getOldIp() + ":" + port;
 				String newAddress = event.getNewIp() + ":" + port;
-				writeLock.lock();
-				try {
-					Member member = serverList.get(oldAddress);
-					if (Objects.nonNull(member)) {
-						member.setIp(event.getNewIp());
-						serverList.remove(oldAddress);
-						serverList.put(newAddress, member);
+				Member member = serverList.get(oldAddress);
+				localAddress = newAddress;
+				if (Objects.nonNull(member)) {
+					member.setIp(event.getNewIp());
+					serverList.remove(oldAddress);
+					serverList.put(newAddress, member);
 
-						memberAddressInfos.remove(oldAddress);
-						memberAddressInfos.add(newAddress);
+					memberAddressInfos.remove(oldAddress);
+					memberAddressInfos.add(newAddress);
 
-					}
-					localAddress = newAddress;
-				}
-				finally {
-					writeLock.unlock();
 				}
 			}
 
@@ -207,188 +195,135 @@ public class ServerMemberManager
 		Loggers.CLUSTER.debug("Node information update : {}", newMember);
 
 		String address = newMember.getAddress();
-
-		writeLock.lock();
-		try {
-			if (!serverList.containsKey(address)) {
-				memberJoin(Collections.singletonList(newMember));
+		if (!serverList.containsKey(address)) {
+			memberJoin(Collections.singletonList(newMember));
+		}
+		serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
+			@Override
+			public Member apply(String s, Member member) {
+				if (!NodeState.UP.equals(newMember.getState())) {
+					memberAddressInfos.remove(newMember.getAddress());
+				}
+				MemberUtils.copy(newMember, member);
+				return member;
 			}
-			serverList
-					.computeIfPresent(address, new BiFunction<String, Member, Member>() {
-						@Override
-						public Member apply(String s, Member member) {
-							if (!NodeState.UP.equals(newMember.getState())) {
-								memberAddressInfos.remove(newMember.getAddress());
-							}
-							MemberUtils.copy(newMember, member);
-							return member;
-						}
-					});
-		}
-		finally {
-			writeLock.unlock();
-		}
+		});
 	}
 
 	public boolean hasMember(String address) {
-		readLock.lock();
-		try {
-			boolean result = serverList.containsKey(address);
-			if (!result) {
-
-				// If only IP information is passed in, a fuzzy match is required
-				for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-					if (StringUtils.contains(entry.getKey(), address)) {
-						result = true;
-						break;
-					}
+		boolean result = serverList.containsKey(address);
+		if (!result) {
+			// If only IP information is passed in, a fuzzy match is required
+			for (Map.Entry<String, Member> entry : serverList.entrySet()) {
+				if (StringUtils.contains(entry.getKey(), address)) {
+					result = true;
+					break;
 				}
 			}
-			return result;
 		}
-		finally {
-			readLock.unlock();
-		}
+		return result;
 	}
 
 	public Member getSelf() {
-		readLock.lock();
-		try {
-			return serverList.get(localAddress);
+		Member self = serverList.get(localAddress);
+		if (Objects.isNull(self)) {
+			self = MemberUtils.singleParse(localAddress);
+			serverList.put(self.getAddress(), self);
 		}
-		finally {
-			readLock.unlock();
-		}
+		return self;
 	}
 
 	public Collection<Member> allMembers() {
-		readLock.lock();
-		try {
-			// We need to do a copy to avoid affecting the real data
-			return new ArrayList<>(serverList.values());
-		}
-		finally {
-			readLock.unlock();
-		}
+		// We need to do a copy to avoid affecting the real data
+		return new ArrayList<>(serverList.values());
 	}
 
 	public List<Member> allMembersWithoutSelf() {
-		readLock.lock();
-		try {
-			List<Member> members = new ArrayList<>(serverList.values());
-			members.remove(getSelf());
-			return members;
-		}
-		finally {
-			readLock.unlock();
-		}
+		List<Member> members = new ArrayList<>(serverList.values());
+		members.remove(getSelf());
+		return members;
 	}
 
-	public void memberChange(Collection<Member> members) {
+	synchronized boolean memberChange(Collection<Member> members) {
 
 		if (members == null || members.isEmpty()) {
-			return;
+			return false;
 		}
 
-		boolean isContainSelfIp = members.stream().anyMatch(ipPortTmp -> Objects.equals(localAddress, ipPortTmp.getAddress()));
+		boolean isContainSelfIp = members.stream().anyMatch(
+				ipPortTmp -> Objects.equals(localAddress, ipPortTmp.getAddress()));
 
 		if (isContainSelfIp) {
 			isInIpList = true;
-		} else {
+		}
+		else {
 			isInIpList = false;
 			Member self = MemberUtils.singleParse(this.localAddress);
 			if (Objects.nonNull(self)) {
-				members.add(getSelf());
+				members.add(self);
 			}
-			Loggers.CLUSTER.error("[serverlist] self ip {} not in serverlist {}", getSelf(), members);
+			Loggers.CLUSTER
+					.error("[serverlist] self ip {} not in serverlist {}", self, members);
 		}
 
-		writeLock.lock();
 		boolean hasChange = false;
-		try {
-			Map<String, Member> tmpMap = new HashMap<>();
-			Set<String> tmpAddressInfo = new HashSet<>();
-			for (Member member : members) {
-				final String address = member.getAddress();
+		Map<String, Member> tmpMap = new HashMap<>();
+		Set<String> tmpAddressInfo = new HashSet<>();
+		for (Member member : members) {
+			final String address = member.getAddress();
 
-				if (!serverList.containsKey(address)) {
-					hasChange = true;
-				}
-
-				// Ensure that the node is created only once
-				tmpMap.computeIfAbsent(address, s -> {
-					tmpAddressInfo.add(address);
-					return member;
-				});
+			if (!serverList.containsKey(address)) {
+				hasChange = true;
 			}
 
-			serverList.clear();
-			serverList.putAll(tmpMap);
-
-			memberAddressInfos.clear();
-			memberAddressInfos.addAll(tmpAddressInfo);
-
-			// Persist the current cluster node information to cluster.conf
-			// <important> need to put the event publication into a synchronized block to ensure
-			// that the event publication is sequential
-			if (hasChange) {
-				MemberUtils.syncToFile(members);
-				Loggers.CLUSTER.warn("member has changed : {}", members);
-				NotifyCenter.publishEvent(MemberChangeEvent.builder().allNodes(members).build());
-			}
+			// Ensure that the node is created only once
+			tmpMap.put(address, member);
+			tmpAddressInfo.add(address);
 		}
-		finally {
-			writeLock.unlock();
+
+		serverList.clear();
+		serverList.putAll(tmpMap);
+
+		memberAddressInfos.clear();
+		memberAddressInfos.addAll(tmpAddressInfo);
+
+		// Persist the current cluster node information to cluster.conf
+		// <important> need to put the event publication into a synchronized block to ensure
+		// that the event publication is sequential
+		if (hasChange) {
+			MemberUtils.syncToFile(members);
+			Loggers.CLUSTER.warn("member has changed : {}", members);
+			Event event = MemberChangeEvent.builder().allNodes(members).build();
+			NotifyCenter.publishEvent(event);
 		}
+
+		return hasChange;
 	}
 
-	public void memberJoin(Collection<Member> members) {
-		writeLock.lock();
-		try {
-			Set<Member> set = new HashSet<>();
-			set.addAll(members);
-			set.addAll(allMembers());
-			memberChange(set);
-		}
-		finally {
-			writeLock.unlock();
-		}
+	public synchronized boolean memberJoin(Collection<Member> members) {
+		Set<Member> set = new HashSet<>();
+		set.addAll(members);
+		set.addAll(allMembers());
+		return memberChange(set);
 	}
 
-	public void memberLeave(Collection<Member> members) {
-		writeLock.lock();
-		try {
-			Set<Member> set = new HashSet<>();
-			set.addAll(allMembers());
-			set.removeAll(members);
-			memberChange(set);
-		}
-		finally {
-			writeLock.unlock();
-		}
+	public synchronized boolean memberLeave(Collection<Member> members) {
+		Set<Member> set = new HashSet<>();
+		set.addAll(allMembers());
+		set.removeAll(members);
+		return memberChange(set);
 	}
 
 	public boolean isUnHealth(String address) {
-		readLock.lock();
-		try {
-			Member member = serverList.get(address);
-			if (member == null) {
-				return false;
-			}
-			return !NodeState.UP.equals(member.getState());
+		Member member = serverList.get(address);
+		if (member == null) {
+			return false;
 		}
-		finally {
-			readLock.unlock();
-		}
+		return !NodeState.UP.equals(member.getState());
 	}
 
 	public boolean isFirstIp() {
-		readLock.lock();
-		try {
-			return Objects.equals(serverList.firstKey(), this.localAddress);
-		} finally {
-			readLock.unlock();
-		}
+		return Objects.equals(serverList.firstKey(), this.localAddress);
 	}
 
 	public boolean isSelf(Member member) {
@@ -408,7 +343,8 @@ public class ServerMemberManager
 
 	@PreDestroy
 	public void shutdown() throws NacosException {
-		getSelf().setState(NodeState.DOWN);
+		serverList.clear();
+		memberAddressInfos.clear();
 		infoReportTask.shutdown();
 		LookupFactory.destroy();
 	}
@@ -419,13 +355,7 @@ public class ServerMemberManager
 
 	@JustForTest
 	public void updateMember(Member member) {
-		writeLock.lock();
-		try {
-			serverList.put(member.getAddress(), member);
-		}
-		finally {
-			writeLock.unlock();
-		}
+		serverList.put(member.getAddress(), member);
 	}
 
 	@JustForTest
@@ -464,30 +394,34 @@ public class ServerMemberManager
 					"/cluster/report");
 
 			try {
-				asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, getSelf(), reference.getType(),
-						new Callback<String>() {
+				asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, getSelf(),
+						reference.getType(), new Callback<String>() {
 							@Override
 							public void onReceive(RestResult<String> result) {
 								if (result.ok()) {
 									MemberUtils.onSuccess(target);
 								}
 								else {
-									Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
-											target, result);
+									Loggers.CLUSTER
+											.warn("failed to report new info to target node : {}, result : {}",
+													target, result);
 									MemberUtils.onFail(target);
 								}
 							}
 
 							@Override
 							public void onError(Throwable throwable) {
-								Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
-										target, throwable);
+								Loggers.CLUSTER
+										.error("failed to report new info to target node : {}, error : {}",
+												target, throwable);
 								MemberUtils.onFail(target);
 							}
 						});
-			} catch (Throwable ex) {
-				Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
-						target, ex);
+			}
+			catch (Throwable ex) {
+				Loggers.CLUSTER
+						.error("failed to report new info to target node : {}, error : {}",
+								target, ex);
 			}
 		}
 

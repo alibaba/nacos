@@ -16,8 +16,13 @@
 
 package com.alibaba.nacos.core.distributed.raft.processor;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.consistency.LogFuture;
+import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
@@ -59,11 +64,30 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                         RaftSysConstants.REQUEST_FAILOVER_RETRIES, String.valueOf(failoverRetries)));
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 server.commit(log, future, retryCnt).whenComplete((result, t) -> {
-                    if (t == null) {
-                        asyncCtx.sendResponse(RestResultUtils.success(result));
-                    }
-                    else {
+                    if (Objects.nonNull(t)) {
                         asyncCtx.sendResponse(RestResultUtils.failedWithData(t));
+                        return;
+                    }
+                    if (result instanceof LogFuture) {
+                        LogFuture f = (LogFuture) result;
+                        RestResult r = null;
+                        if (f.isOk()) {
+                            r = RestResultUtils.success(f.getResponse());
+                        } else {
+                            r = RestResultUtils.success(f.getError());
+                        }
+                        asyncCtx.sendResponse(r);
+                        return;
+                    }
+                    if (result instanceof GetResponse) {
+                        GetResponse response = (GetResponse) result;
+                        RestResult r = null;
+                        if (StringUtils.isNotBlank(response.getErrMsg())) {
+                            r = RestResultUtils.failedWithData(new ConsistencyException(response.getErrMsg()));
+                        } else {
+                            r = RestResultUtils.success(response.getData().toByteArray());
+                        }
+                        asyncCtx.sendResponse(r);
                     }
                 });
             }
@@ -79,5 +103,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
     public String interest() {
         return INTEREST_NAME;
     }
+
+
 
 }

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 import com.alibaba.nacos.consistency.LogProcessor;
@@ -67,16 +66,35 @@ public class ProtocolManager
 	@Autowired
 	private ServerMemberManager memberManager;
 
+	private boolean apInit = false;
+	private boolean cpInit = false;
+
 	@PostConstruct
 	public void init() {
-
 		this.memberManager = memberManager;
 		NotifyCenter.registerSubscribe(this);
+	}
 
-		// Consistency protocol module initialization
+	// delay init protocol
 
-		initAPProtocol();
-		initCPProtocol();
+	public CPProtocol getCpProtocol() {
+		synchronized (this) {
+			if (!cpInit) {
+				initCPProtocol();
+			}
+			cpInit = true;
+		}
+		return cpProtocol;
+	}
+
+	public APProtocol getApProtocol() {
+		synchronized (this) {
+			if (!apInit) {
+				initAPProtocol();
+			}
+			apInit = true;
+		}
+		return apProtocol;
 	}
 
 	public void destroy() {
@@ -162,11 +180,6 @@ public class ProtocolManager
 		if (Objects.nonNull(cpProtocol)) {
 			ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
 		}
-	}
-
-	@Override
-	public boolean ignoreExpireEvent() {
-		return true;
 	}
 
 	private static Set<String> toAPMembersInfo(Collection<Member> members) {

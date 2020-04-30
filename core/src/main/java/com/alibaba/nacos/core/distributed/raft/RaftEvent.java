@@ -111,4 +111,10 @@ public class RaftEvent implements SlowEvent {
             return raftEvent;
         }
     }
+
+    @Override
+    public String toString() {
+        return "RaftEvent{" + "groupId='" + groupId + '\'' + ", leader='" + leader + '\''
+                + ", term=" + term + ", raftClusterInfo=" + raftClusterInfo + '}';
+    }
 }

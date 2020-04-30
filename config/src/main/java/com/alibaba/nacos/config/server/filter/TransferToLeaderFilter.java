@@ -88,6 +88,7 @@ public class TransferToLeaderFilter implements Filter {
 
 	@PostConstruct
 	protected void init() {
+		System.out.println(getClass());
 		LogUtil.defaultLog.info("Open the request and forward it to the leader");
 		listenerLeaderStatus();
 		registerSubscribe();

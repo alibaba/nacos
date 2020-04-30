@@ -62,7 +62,7 @@ public class AuthFilter implements Filter {
         String userAgent = WebUtils.getUserAgent(req);
 
         if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
-            chain.doFilter(req, resp);
+            chain.doFilter(request, response);
             return;
         }
 
@@ -99,7 +99,7 @@ public class AuthFilter implements Filter {
                 authManager.auth(new Permission(resource, action), authManager.login(req));
 
             }
-
+            chain.doFilter(request, response);
         } catch (AccessException e) {
             if (Loggers.AUTH.isDebugEnabled()) {
                 Loggers.AUTH.debug("access denied, request: {} {}, reason: {}", req.getMethod(), req.getRequestURI(), e.getErrMsg());
@@ -113,7 +113,5 @@ public class AuthFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
             return;
         }
-
-        chain.doFilter(request, response);
     }
 }

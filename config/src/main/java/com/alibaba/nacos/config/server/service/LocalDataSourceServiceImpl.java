@@ -125,6 +125,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         ds.setJdbcUrl(jdbcUrl);
         ds.setUsername(userName);
         ds.setPassword(password);
+        ds.setIdleTimeout(30_000L);
         ds.setMaximumPoolSize(80);
         ds.setConnectionTimeout(10000L);
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
