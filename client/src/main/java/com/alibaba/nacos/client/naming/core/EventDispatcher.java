@@ -57,8 +57,9 @@ public class EventDispatcher {
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
-
-        NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        if(NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        }
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
@@ -71,9 +72,9 @@ public class EventDispatcher {
     }
 
     public void removeListener(String serviceName, String clusters, EventListener listener) {
-
-        NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
-
+        if(NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
+        }
         List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters));
         if (observers != null) {
             Iterator<EventListener> iter = observers.iterator();

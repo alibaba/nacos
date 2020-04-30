@@ -153,7 +153,9 @@ public class LocalConfigInfoProcessor {
         tmp = new File(tmp, "snapshot");
         try {
             IoUtils.cleanDirectory(tmp);
-            LOGGER.info("success delete " + envName + "-snapshot");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("success delete " + envName + "-snapshot");
+            }
         } catch (IOException e) {
             LOGGER.info("fail delete " + envName + "-snapshot, " + e.toString());
             e.printStackTrace();
@@ -192,7 +194,9 @@ public class LocalConfigInfoProcessor {
             + "nacos" + File.separator + "config";
         LOCAL_SNAPSHOT_PATH = System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator
             + "nacos" + File.separator + "config";
-        LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
+        }
     }
 
 }

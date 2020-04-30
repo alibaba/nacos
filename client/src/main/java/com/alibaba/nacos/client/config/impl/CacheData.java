@@ -89,8 +89,10 @@ public class CacheData {
             new ManagerListenerWrap(listener, md5, content) : new ManagerListenerWrap(listener, md5);
 
         if (listeners.addIfAbsent(wrap)) {
-            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
-                listeners.size());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
+                    listeners.size());
+            }
         }
     }
 
@@ -100,7 +102,9 @@ public class CacheData {
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
         if (listeners.remove(wrap)) {
-            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={}, cnt={}", name, dataId, group, listeners.size());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[{}] [remove-listener] ok, dataId={}, group={}, cnt={}", name, dataId, group, listeners.size());
+            }
         }
     }
 
@@ -189,7 +193,9 @@ public class CacheData {
                     if (listener instanceof AbstractSharedListener) {
                         AbstractSharedListener adapter = (AbstractSharedListener) listener;
                         adapter.fillContext(dataId, group);
-                        LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
+                        }
                     }
                     // 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
                     Thread.currentThread().setContextClassLoader(appClassLoader);
@@ -211,8 +217,10 @@ public class CacheData {
                     }
 
                     listenerWrap.lastCallMd5 = md5;
-                    LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
-                        listener);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
+                            listener);
+                    }
                 } catch (NacosException de) {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
                         dataId, group, md5, listener, de.getErrCode(), de.getErrMsg());
@@ -237,8 +245,10 @@ public class CacheData {
                 md5, listener, t.getCause());
         }
         final long finishNotify = System.currentTimeMillis();
-        LOGGER.info("[{}] [notify-listener] time cost={}ms in ClientWorker, dataId={}, group={}, md5={}, listener={} ",
-            name, (finishNotify - startNotify), dataId, group, md5, listener);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] [notify-listener] time cost={}ms in ClientWorker, dataId={}, group={}, md5={}, listener={} ",
+                name, (finishNotify - startNotify), dataId, group, md5, listener);
+        }
     }
 
     static public String getMd5String(String config) {

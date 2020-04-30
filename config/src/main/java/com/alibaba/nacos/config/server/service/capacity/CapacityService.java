@@ -73,10 +73,14 @@ public class CapacityService {
         scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                LOGGER.info("[capacityManagement] start correct usage");
+                if(LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("[capacityManagement] start correct usage");
+                }
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 correctUsage();
-                LOGGER.info("[capacityManagement] end correct usage, cost: {}s", stopwatch.elapsed(TimeUnit.SECONDS));
+                if(LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("[capacityManagement] end correct usage, cost: {}s", stopwatch.elapsed(TimeUnit.SECONDS));
+                }
 
             }
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);

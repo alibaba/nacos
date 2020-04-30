@@ -196,7 +196,9 @@ public class NacosConfigService implements ConfigService {
         }
 
         if (HttpURLConnection.HTTP_OK == result.code) {
-            LOGGER.info("[{}] [remove] ok, dataId={}, group={}, tenant={}", agent.getName(), dataId, group, tenant);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[{}] [remove] ok, dataId={}, group={}, tenant={}", agent.getName(), dataId, group, tenant);
+            }
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
@@ -259,8 +261,10 @@ public class NacosConfigService implements ConfigService {
         }
 
         if (HttpURLConnection.HTTP_OK == result.code) {
-            LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(), dataId,
-                group, tenant, ContentUtils.truncateContent(content));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(), dataId,
+                    group, tenant, ContentUtils.truncateContent(content));
+            }
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
             LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),

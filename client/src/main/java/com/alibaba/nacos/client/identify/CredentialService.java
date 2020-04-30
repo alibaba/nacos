@@ -82,7 +82,9 @@ public final class CredentialService implements SpasCredentialLoader {
         if (watcher != null) {
             watcher.stop();
         }
-        LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] {} is freed", appName, this.getClass().getSimpleName());
+        }
     }
 
     @Override

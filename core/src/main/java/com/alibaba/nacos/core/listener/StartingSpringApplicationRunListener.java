@@ -108,8 +108,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         }
 
         logFilePath();
-
-        LOGGER.info("Nacos started successfully in {} mode.", System.getProperty(MODE_PROPERTY_KEY_STAND_MODE));
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Nacos started successfully in {} mode.", System.getProperty(MODE_PROPERTY_KEY_STAND_MODE));
+        }
     }
 
     @Override

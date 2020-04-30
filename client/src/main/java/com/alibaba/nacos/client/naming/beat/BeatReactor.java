@@ -63,7 +63,9 @@ public class BeatReactor {
     }
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
-        NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
+        if(NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[BEAT] adding beat: {} to beat map.", beatInfo);
+        }
         String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
         BeatInfo existBeat = null;
         //fix #1733
@@ -76,7 +78,9 @@ public class BeatReactor {
     }
 
     public void removeBeatInfo(String serviceName, String ip, int port) {
-        NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
+        if(NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
+        }
         BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
         if (beatInfo == null) {
             return;

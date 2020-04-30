@@ -115,7 +115,9 @@ public class ClientWorker {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        }
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
@@ -127,7 +129,9 @@ public class ClientWorker {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        }
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
@@ -159,7 +163,9 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
 
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] [subscribe] {}", agent.getName(), key);
+        }
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
@@ -194,7 +200,9 @@ public class ClientWorker {
             copy.put(key, cache);
             cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[{}] [subscribe] {}", agent.getName(), key);
+        }
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
@@ -424,12 +432,16 @@ public class ClientWorker {
                 String group = keyArr[1];
                 if (keyArr.length == 2) {
                     updateList.add(GroupKey.getKey(dataId, group));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId, group);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId, group);
+                    }
                 } else if (keyArr.length == 3) {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
+                            dataId, group, tenant);
+                    }
                 } else {
                     LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(), dataIdAndGroup);
                 }
@@ -519,7 +531,9 @@ public class ClientWorker {
 
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
-                LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("get changedGroupKeys:" + changedGroupKeys);
+                }
 
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);
@@ -536,9 +550,11 @@ public class ClientWorker {
                         if (null != ct[1]) {
                             cache.setType(ct[1]);
                         }
-                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
-                            agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(ct[0]), ct[1]);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}, type={}",
+                                agent.getName(), dataId, group, tenant, cache.getMd5(),
+                                ContentUtils.truncateContent(ct[0]), ct[1]);
+                        }
                     } catch (NacosException ioe) {
                         String message = String.format(
                             "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",

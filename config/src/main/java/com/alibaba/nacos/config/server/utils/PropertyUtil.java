@@ -150,7 +150,9 @@ public class PropertyUtil {
         if (value == null) {
             return defaultValue;
         }
-        logger.info("{}:{}", key, value);
+        if(logger.isDebugEnabled()) {
+            logger.debug("{}:{}", key, value);
+        }
         return value;
     }
 

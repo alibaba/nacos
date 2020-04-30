@@ -50,7 +50,9 @@ public class Limiter {
             String limitTimeStr = System
                 .getProperty("limitTime", String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
-            LOGGER.info("limitTime:{}", limit);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("limitTime:{}", limit);
+            }
         } catch (Exception e) {
             LOGGER.error("init limitTime fail", e);
         }

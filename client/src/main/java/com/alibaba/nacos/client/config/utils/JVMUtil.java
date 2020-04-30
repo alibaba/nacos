@@ -44,6 +44,8 @@ public class JVMUtil {
         if (TRUE.equals(multiDeploy)) {
             isMultiInstance = true;
         }
-        LOGGER.info("isMultiInstance:{}", isMultiInstance);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("isMultiInstance:{}", isMultiInstance);
+        }
     }
 }
