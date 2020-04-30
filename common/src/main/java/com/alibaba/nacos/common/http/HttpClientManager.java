@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,8 @@ import java.util.Map;
  */
 @SuppressWarnings("all")
 public class HttpClientManager {
+
+	private static final Logger logger = LoggerFactory.getLogger(HttpClientManager.class);
 
 	private static final int TIMEOUT = 5000;
 
@@ -57,34 +61,36 @@ public class HttpClientManager {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
-				System.out.println("[NSyncHttpClient] Start destroying HttpClient");
+				logger.warn("[NSyncHttpClient] Start destroying HttpClient");
 				try {
 					for (Map.Entry<String, NSyncHttpClient> entry : HTTP_SYNC_CLIENT_MAP
 							.entrySet()) {
 						entry.getValue().close();
 					}
 					SHARE_SYNC_HTTP_CLIENT.close();
+					HTTP_SYNC_CLIENT_MAP.clear();
 				}
 				catch (Exception ignore) {
 				}
-				System.out.println("[NSyncHttpClient] Destruction of the end");
+				logger.warn("[NSyncHttpClient] Destruction of the end");
 			}
 		});
 
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
-				System.out.println("[NAsyncHttpClient] Start destroying HttpClient");
+				logger.warn("[NAsyncHttpClient] Start destroying HttpClient");
 				try {
 					for (Map.Entry<String, NAsyncHttpClient> entry : HTTP_ASYNC_CLIENT_MAP
 							.entrySet()) {
 						entry.getValue().close();
 					}
 					SHARE_ASYNC_HTTP_CLIENT.close();
+					HTTP_ASYNC_CLIENT_MAP.clear();
 				}
 				catch (Exception ignore) {
 				}
-				System.out.println("[NAsyncHttpClient] Destruction of the end");
+				logger.warn("[NAsyncHttpClient] Destruction of the end");
 			}
 		});
 

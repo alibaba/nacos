@@ -38,10 +38,16 @@ public class GlobalExecutor {
     }
 
     public static void executeByCommon(Runnable runnable) {
+        if (COMMON_EXECUTOR.isShutdown()) {
+            return;
+        }
         COMMON_EXECUTOR.execute(runnable);
     }
 
     public static void scheduleByCommon(Runnable runnable, long delayMs) {
+        if (COMMON_EXECUTOR.isShutdown()) {
+            return;
+        }
         COMMON_EXECUTOR.schedule(runnable, delayMs, TimeUnit.MILLISECONDS);
     }
 
