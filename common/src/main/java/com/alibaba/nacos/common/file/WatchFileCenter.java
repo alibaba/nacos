@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class WatchFileCenter {
 
-	private static final Logger logger = LoggerFactory.getLogger(WatchFileCenter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(WatchFileCenter.class);
 
 	/**
 	 * Maximum number of monitored file directories
@@ -64,7 +64,7 @@ public class WatchFileCenter {
 
 	private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
 
-	private static final AtomicBoolean closed = new AtomicBoolean(false);
+	private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
@@ -82,6 +82,7 @@ public class WatchFileCenter {
 
 	public synchronized static boolean registerWatcher(final String paths,
 			FileWatcher watcher) throws NacosException {
+		checkState();
 		NOW_WATCH_JOB_CNT++;
 		if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
 			return false;
@@ -107,20 +108,20 @@ public class WatchFileCenter {
 	}
 
 	public static void shutdown() {
-		if (!closed.compareAndSet(false, true)) {
+		if (!CLOSED.compareAndSet(false, true)) {
 			return;
 		}
-		logger.warn("WatchFileCenter start close");
+		LOGGER.warn("WatchFileCenter start close");
 		for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
-			System.out.println("start to shutdown this watcher which is watch : " + entry.getKey());
+			LOGGER.warn("start to shutdown this watcher which is watch : " + entry.getKey());
 			try {
 				entry.getValue().shutdown();
 			} catch (Throwable e) {
-				logger.error("WatchFileCenter shutdown has error : {}", e);
+				LOGGER.error("WatchFileCenter shutdown has error : {}", e);
 			}
 		}
 		MANAGER.clear();
-		logger.warn("WatchFileCenter already closed");
+		LOGGER.warn("WatchFileCenter already closed");
 	}
 
 	public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {
@@ -208,7 +209,7 @@ public class WatchFileCenter {
 				catch (InterruptedException ignore) {
 					Thread.interrupted();
 				} catch (Throwable ex) {
-					logger.error("An exception occurred during file listening : {}", ex);
+					LOGGER.error("An exception occurred during file listening : {}", ex);
 				}
 			}
 		}
@@ -230,7 +231,7 @@ public class WatchFileCenter {
 						try {
 							job.run();
 						} catch (Throwable ex) {
-							logger.error("File change event callback error : {}", ex);
+							LOGGER.error("File change event callback error : {}", ex);
 						}
 					}
 					else {
@@ -251,5 +252,11 @@ public class WatchFileCenter {
 			}
 		}
 
+	}
+
+	private static void checkState() {
+		if (CLOSED.get()) {
+			throw new IllegalStateException("WatchFileCenter already shutdown");
+		}
 	}
 }

@@ -262,13 +262,18 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             // This value is true in stand-alone mode and false in cluster mode
             // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
             // default value is depend on ${nacos.standalone}
-            boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
 
-            if (embeddedStorage && isUseExternalDB()) {
-                throw new IllegalArgumentException("Just only can use one storage type, now use embeddedStorage is true and use externalStorage is true");
+            if (isUseExternalDB()) {
+                setEmbeddedStorage(false);
+            } else {
+                boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
+                setEmbeddedStorage(embeddedStorage);
             }
 
-            setEmbeddedStorage(embeddedStorage);
+            if (!isEmbeddedStorage() && !isUseExternalDB()) {
+                throw new IllegalArgumentException("please choose one storage type");
+            }
+
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
             throw e;

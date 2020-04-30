@@ -149,7 +149,7 @@ public class MemberLookup_ITCase extends BaseTest {
 		try {
 			func(lookup);
 		} catch (NacosException e) {
-			e.printStackTrace();
+			System.out.println(e.getErrMsg());
 			Assert.assertTrue(StringUtils.containsIgnoreCase(e.getErrMsg(), "jmenv.tbsite.net"));
 		}
 	}

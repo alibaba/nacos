@@ -185,6 +185,7 @@ public class ConfigBeta_ITCase {
                 .done(),
             String.class,
             HttpMethod.GET);
+        System.out.println(response1);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
         System.out.println(response1.getBody());
         Assert.assertEquals(content, response1.getBody());
