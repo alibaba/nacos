@@ -42,8 +42,10 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -122,8 +124,8 @@ public class ConfigDerbyRaft_ITCase
 		});
 	}
 
-	@BeforeClass
-	public static void before() throws Exception {
+	@Before
+	public void before() throws Exception {
 
 		CountDownLatch latch = new CountDownLatch(3);
 
@@ -168,8 +170,8 @@ public class ConfigDerbyRaft_ITCase
 		TimeUnit.SECONDS.sleep(20L);
 	}
 
-	@AfterClass
-	public static void after() throws Exception {
+	@After
+	public void after() throws Exception {
 		CountDownLatch latch = new CountDownLatch(applications.size());
 		for (ConfigurableApplicationContext context : applications.values()) {
 			new Thread(() -> {

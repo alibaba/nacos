@@ -55,6 +55,9 @@ public abstract class BaseHttpClient {
 
 	protected <T> void execute(CloseableHttpAsyncClient httpAsyncClient, final Type type,
 			final Callback<T> callback, final HttpUriRequest request) {
+		if (!httpAsyncClient.isRunning()) {
+			throw new IllegalArgumentException("httpAsyncClient already shutdown");
+		}
 		httpAsyncClient.execute(request, new FutureCallback<HttpResponse>() {
 
 			@Override

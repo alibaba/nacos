@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.beans.BeansException;
@@ -530,5 +531,6 @@ public class ApplicationUtils
 	public static void injectEnvironment(ConfigurableEnvironment environment) {
 		ApplicationUtils.environment = environment;
 	}
+
 }
 

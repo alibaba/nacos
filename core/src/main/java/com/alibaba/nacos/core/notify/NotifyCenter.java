@@ -23,6 +23,8 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -34,6 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -43,6 +46,8 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("all")
 public class NotifyCenter {
+
+	private static final Logger logger = LoggerFactory.getLogger(NotifyCenter.class);
 
 	// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 	// this value needs to be increased appropriately. default value is 16384
@@ -106,22 +111,31 @@ public class NotifyCenter {
 		INSTANCE.SHARE_PUBLISHER.start();
 
 		ShutdownUtils.addShutdownHook(new Thread(() -> {
-			System.out.println("[NotifyCenter] Start destroying Publisher");
-			try {
-				INSTANCE.PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
-					@Override
-					public void accept(String s, Publisher publisher) {
-						publisher.shutdown();
-					}
-				});
-
-				INSTANCE.SHARE_PUBLISHER.shutdown();
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			System.out.println("[NotifyCenter] Destruction of the end");
+			shutdown();
 		}));
+	}
+
+	private static final AtomicBoolean closed = new AtomicBoolean(false);
+
+	public static void shutdown() {
+		if (!closed.compareAndSet(false, true)) {
+			return;
+		}
+		logger.warn("[NotifyCenter] Start destroying Publisher");
+		try {
+			INSTANCE.PUBLISHER_MAP.forEach(new BiConsumer<String, Publisher>() {
+				@Override
+				public void accept(String s, Publisher publisher) {
+					publisher.shutdown();
+				}
+			});
+
+			INSTANCE.SHARE_PUBLISHER.shutdown();
+		}
+		catch (Throwable e) {
+			logger.error("NotifyCenter shutdown has error : {}", e);
+		}
+		logger.warn("[NotifyCenter] Destruction of the end");
 	}
 
 	public static void stopDeferPublish() {
@@ -352,7 +366,7 @@ public class NotifyCenter {
 				}
 			}
 			catch (Throwable ex) {
-                Loggers.CORE.error("Event listener exception : {}", ex);
+				logger.error("Event listener exception : {}", ex);
 			}
 		}
 
@@ -375,7 +389,7 @@ public class NotifyCenter {
 				receiveEvent(event);
 				return true;
 			} catch (Throwable ex) {
-				Loggers.CORE.error("[NotifyCenter] publish {} has error : {}", event, ex);
+				logger.error("[NotifyCenter] publish {} has error : {}", event, ex);
 				return false;
 			}
 		}
@@ -409,25 +423,25 @@ public class NotifyCenter {
 
 				// Determines whether the event is acceptable to this subscriber
 				if (!filter.test(event, subscribe)) {
-					Loggers.CORE.debug("[NotifyCenter] the {} is unacceptable to this subscriber", event.getClass());
+					logger.debug("[NotifyCenter] the {} is unacceptable to this subscriber", event.getClass());
 					continue;
 				}
 
 				// If you are a multi-event listener, you need to make additional logical judgments
 				if (subscribe instanceof SmartSubscribe) {
 					if (!((SmartSubscribe) subscribe).canNotify(event)) {
-						Loggers.CORE.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
+						logger.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
 						continue;
 					}
 				}
 
 				// Whether to ignore expiration events
 				if (subscribe.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
-					Loggers.CORE.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire", event.getClass());
+					logger.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire", event.getClass());
 					continue;
 				}
 
-				Loggers.CORE.debug("[NotifyCenter] the {} will received by {}", event, subscribe);
+				logger.debug("[NotifyCenter] the {} will received by {}", event, subscribe);
 
 				final Runnable job = () -> subscribe.onEvent(event);
 				final Executor executor = subscribe.executor();
@@ -439,7 +453,7 @@ public class NotifyCenter {
 						job.run();
 					}
 					catch (Throwable e) {
-						Loggers.CORE.error("Event callback exception : {}", e);
+						logger.error("Event callback exception : {}", e);
 					}
 				}
 			}

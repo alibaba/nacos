@@ -17,6 +17,8 @@ package com.alibaba.nacos.common.executor;
 
 
 import com.alibaba.nacos.common.utils.ShutdownUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +40,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadPoolManager {
 
+	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolManager.class);
+
     private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
 
     private Map<String, Object> lockers = new ConcurrentHashMap<String, Object>(8);
@@ -49,9 +53,9 @@ public final class ThreadPoolManager {
 		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-            	System.out.println("[ThreadPoolManager] Start destroying ThreadPool");
-                INSTANCE.destroyAll();
-				System.out.println("[ThreadPoolManager] Destruction of the end");
+				logger.warn("[ThreadPoolManager] Start destroying ThreadPool");
+                shutdown();
+				logger.warn("[ThreadPoolManager] Destruction of the end");
             }
         }));
     }
@@ -63,7 +67,7 @@ public final class ThreadPoolManager {
     private ThreadPoolManager() {}
 
     private void init() {
-        resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
+        resourcesManager = new ConcurrentHashMap<>(8);
     }
 
     /**
@@ -108,7 +112,7 @@ public final class ThreadPoolManager {
 	/**
 	 * Undoing the uniform lifecycle management of {@link ExecutorService} under this resource
 	 *
-     * @param namespace namespace name
+	 * @param namespace namespace name
 	 * @param group group name
 	 * @param executor {@link ExecutorService}
 	 */
@@ -127,7 +131,7 @@ public final class ThreadPoolManager {
     public void destroy(String namespace) {
 	    final Object monitor = lockers.get(namespace);
 	    if (monitor == null) {
-	        throw new NoSuchElementException("This module does not have any thread pool resources : " + namespace);
+	        return;
         }
 	    synchronized (monitor) {
 	        Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
@@ -139,10 +143,8 @@ public final class ThreadPoolManager {
 					shutdownThreadPool(executor);
 				}
             }
-
             resourcesManager.get(namespace).clear();
 	        resourcesManager.remove(namespace);
-
         }
     }
 
@@ -158,15 +160,17 @@ public final class ThreadPoolManager {
 			} catch (InterruptedException e) {
 				executor.shutdownNow();
 				Thread.interrupted();
+			} catch (Throwable ex) {
+				logger.error("ThreadPoolManager shutdown executor has error : {}", ex);
 			}
 		}
 		executor.shutdownNow();
 	}
 
-    private void destroyAll() {
-	    Set<String> bizs = resourcesManager.keySet();
-	    for (String namespace : bizs) {
-	        destroy(namespace);
+    public static void shutdown() {
+	    Set<String> namespaces = INSTANCE.resourcesManager.keySet();
+	    for (String namespace : namespaces) {
+	        INSTANCE.destroy(namespace);
         }
     }
 }

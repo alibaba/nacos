@@ -230,7 +230,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
 
     public static void setEmbeddedStorage(boolean embeddedStorage) {
-        PropertyUtil.embeddedStorage = embeddedStorage && !isUseExternalDB();
+        PropertyUtil.embeddedStorage = embeddedStorage;
     }
 
     private void loadSetting() {
@@ -257,15 +257,21 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
             setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
+
             // must initialize after setUseExternalDB
-            boolean embeddedStorage = PropertyUtil.embeddedStorage;
-            // Only works in cluster mode
-            if (!ApplicationUtils.getStandaloneMode()) {
-                embeddedStorage = getBoolean("embeddedStorage", false);
+            // This value is true in stand-alone mode and false in cluster mode
+            // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
+            // default value is depend on ${nacos.standalone}
+            boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
+
+            if (embeddedStorage && isUseExternalDB()) {
+                throw new IllegalArgumentException("Just only can use one storage type, now use embeddedStorage is true and use externalStorage is true");
             }
+
             setEmbeddedStorage(embeddedStorage);
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
+            throw e;
         }
     }
 

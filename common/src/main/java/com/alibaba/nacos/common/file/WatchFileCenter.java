@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Unified file change monitoring management center, which uses {@link WatchService} internally.
@@ -63,16 +64,13 @@ public class WatchFileCenter {
 
 	private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
 
+	private static final AtomicBoolean closed = new AtomicBoolean(false);
+
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
-				System.out.println("WatchFileCenter start close");
-				for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
-					System.out.println("start to shutdown this watcher which is watch : " + entry.getKey());
-					entry.getValue().shutdown();
-				}
-				System.out.println("WatchFileCenter already closed");
+				shutdown();
 			}
 		});
 	}
@@ -106,6 +104,23 @@ public class WatchFileCenter {
 			return true;
 		}
 		return false;
+	}
+
+	public static void shutdown() {
+		if (!closed.compareAndSet(false, true)) {
+			return;
+		}
+		logger.warn("WatchFileCenter start close");
+		for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
+			System.out.println("start to shutdown this watcher which is watch : " + entry.getKey());
+			try {
+				entry.getValue().shutdown();
+			} catch (Throwable e) {
+				logger.error("WatchFileCenter shutdown has error : {}", e);
+			}
+		}
+		MANAGER.clear();
+		logger.warn("WatchFileCenter already closed");
 	}
 
 	public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {
