@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.consistency.LogFuture;
@@ -52,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 /**
  * A concrete implementation of CP protocol: JRaft
@@ -207,9 +207,15 @@ public class JRaftProtocol
 		final Throwable[] throwable = new Throwable[] { null };
 		CompletableFuture<LogFuture> future = new CompletableFuture<>();
 		try {
+			CompletableFuture<Object> f = new CompletableFuture<>();
 			raftServer.commit(JRaftUtils
-							.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), future,
-					retryCnt);
+							.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), f,
+					retryCnt).whenComplete(new BiConsumer<Object, Throwable>() {
+				@Override
+				public void accept(Object o, Throwable throwable) {
+					future.complete(LogFuture.create(o, throwable));
+				}
+			});
 		}
 		catch (Throwable e) {
 			throwable[0] = e;

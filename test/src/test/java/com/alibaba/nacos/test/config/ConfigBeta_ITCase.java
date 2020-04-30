@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,8 +51,6 @@ public class ConfigBeta_ITCase {
     private int port;
 
     private String url;
-
-    private ConfigService configService;
 
     @Autowired
     private TestRestTemplate restTemplate;

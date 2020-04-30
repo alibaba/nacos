@@ -57,8 +57,7 @@ public class MemberUtils {
 		int defaultPort = 8848;
 		// Set the default Raft port information for securit
 
-		String[] memberDetails = member.split("\\?");
-		String address = memberDetails[0];
+		String address = member;
 		int port = defaultPort;
 		if (address.contains(SEMICOLON)) {
 			String[] info = address.split(SEMICOLON);

@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-abstract class AbstractMemberLookup implements MemberLookup {
+public abstract class AbstractMemberLookup implements MemberLookup {
 
 	protected ServerMemberManager memberManager;
 	protected AtomicBoolean start = new AtomicBoolean(false);

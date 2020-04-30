@@ -22,6 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.core.auth.Permission;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.After;

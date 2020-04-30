@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

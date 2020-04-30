@@ -16,12 +16,16 @@
 
 package com.alibaba.nacos.test.core.notify;
 
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.SlowEvent;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import org.junit.Assert;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +35,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Ignore
+@FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class NotifyCenter_ITCase {
 
 	private static class TestSlowEvent implements SlowEvent {
@@ -41,55 +47,29 @@ public class NotifyCenter_ITCase {
 
 	}
 
-	private static final Subscribe<TestSlowEvent> subscribe = new Subscribe<TestSlowEvent>() {
-		@Override
-		public void onEvent(TestSlowEvent event) {
+	private static class TestSlow2Event implements SlowEvent {
 
-		}
-
-		@Override
-		public Class<? extends Event> subscribeType() {
-			return TestSlowEvent.class;
-		}
-	};
-
-	private static final Subscribe<TestEvent> subscribe2 = new Subscribe<TestEvent>() {
-		@Override
-		public void onEvent(TestEvent event) {
-
-		}
-
-		@Override
-		public Class<? extends Event> subscribeType() {
-			return TestEvent.class;
-		}
-	};
+	}
 
 	static {
 		NotifyCenter.registerToSharePublisher(TestSlowEvent::new, TestSlowEvent.class);
+		NotifyCenter.registerToSharePublisher(TestSlow2Event::new, TestSlow2Event.class);
 		NotifyCenter.registerToPublisher(TestEvent::new, TestEvent.class, 8);
-
-		NotifyCenter.registerSubscribe(subscribe);
-		NotifyCenter.registerSubscribe(subscribe2);
 	}
 
 	@Test
-	public void test_success_is_slow_event() {
-		Assert.assertTrue(NotifyCenter.getSharePublisher().getSubscribes().contains(subscribe));
-		Assert.assertFalse(NotifyCenter.getSharePublisher().getSubscribes().contains(subscribe2));
-	}
-
-	@Test
-	public void test_event_can_listen() throws Exception {
-		CountDownLatch latch = new CountDownLatch(1);
-		CountDownLatch latch2 = new CountDownLatch(1);
-		AtomicInteger count = new AtomicInteger(0);
+	public void test_a_event_can_listen() throws Exception {
+		final CountDownLatch latch = new CountDownLatch(2);
+		final AtomicInteger count = new AtomicInteger(0);
 
 		NotifyCenter.registerSubscribe(new Subscribe<TestSlowEvent>() {
 			@Override
 			public void onEvent(TestSlowEvent event) {
-				latch.countDown();
-				count.incrementAndGet();
+				try {
+					count.incrementAndGet();
+				} finally {
+					latch.countDown();
+				}
 			}
 
 			@Override
@@ -100,8 +80,11 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerSubscribe(new Subscribe<TestEvent>() {
 			@Override
 			public void onEvent(TestEvent event) {
-				latch2.countDown();
-				count.incrementAndGet();
+				try {
+					count.incrementAndGet();
+				} finally {
+					latch.countDown();
+				}
 			}
 
 			@Override
@@ -110,13 +93,17 @@ public class NotifyCenter_ITCase {
 			}
 		});
 
-		NotifyCenter.publishEvent(new TestEvent());
-		NotifyCenter.publishEvent(new TestSlowEvent());
+		Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
+		Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
 
 		NotifyCenter.stopDeferPublish();
 
-		latch.await(10_000L, TimeUnit.MILLISECONDS);
-		latch2.await(10_000L, TimeUnit.MILLISECONDS);
+		ThreadUtils.sleep(5_000L);
+
+		System.out.println("TestEvent event num : " + NotifyCenter.getPublisher(TestEvent.class).currentEventSize());
+		System.out.println("TestSlowEvent event num : " + NotifyCenter.getPublisher(TestSlowEvent.class).currentEventSize());
+
+		latch.await();
 
 		Assert.assertEquals(2, count.get());
 	}
@@ -137,7 +124,7 @@ public class NotifyCenter_ITCase {
 	}
 
 	@Test
-	public void test_ignore_expire_event() throws Exception {
+	public void test_b_ignore_expire_event() throws Exception {
 		NotifyCenter.registerToPublisher(ExpireEvent::new, ExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 		NotifyCenter.registerSubscribe(new Subscribe<ExpireEvent>() {
@@ -158,7 +145,7 @@ public class NotifyCenter_ITCase {
 		});
 
 		for (int i = 0; i < 3; i ++) {
-			NotifyCenter.publishEvent(new ExpireEvent());
+			Assert.assertTrue(NotifyCenter.publishEvent(new ExpireEvent()));
 		}
 
 		latch.await(10_000L, TimeUnit.MILLISECONDS);
@@ -181,7 +168,7 @@ public class NotifyCenter_ITCase {
 	}
 
 	@Test
-	public void test_no_ignore_expire_event() throws Exception {
+	public void test_c_no_ignore_expire_event() throws Exception {
 		NotifyCenter.registerToPublisher(NoExpireEvent::new, NoExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 		NotifyCenter.registerSubscribe(new Subscribe<NoExpireEvent>() {
@@ -198,7 +185,7 @@ public class NotifyCenter_ITCase {
 		});
 
 		for (int i = 0; i < 3; i ++) {
-			NotifyCenter.publishEvent(new NoExpireEvent());
+			Assert.assertTrue(NotifyCenter.publishEvent(new NoExpireEvent()));
 		}
 
 		latch2.await(10_000L, TimeUnit.MILLISECONDS);

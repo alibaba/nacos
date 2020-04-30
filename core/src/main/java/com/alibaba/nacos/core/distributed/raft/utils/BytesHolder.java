@@ -36,7 +36,8 @@ public final class BytesHolder implements Serializable {
 
 	public static BytesHolder create(byte[] bytes) {
 		BytesHolder holder = new BytesHolder();
-		holder.setBytes(bytes);
+		holder.bytes = bytes;
 		return holder;
 	}
+
 }

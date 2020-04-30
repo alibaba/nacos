@@ -257,8 +257,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
             setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
-            // You must initialize after setUseExternalDB
-            setEmbeddedStorage(getBoolean("embeddedStorage", embeddedStorage));
+            // must initialize after setUseExternalDB
+            boolean embeddedStorage = PropertyUtil.embeddedStorage;
+            // Only works in cluster mode
+            if (!ApplicationUtils.getStandaloneMode()) {
+                embeddedStorage = getBoolean("embeddedStorage", false);
+            }
+            setEmbeddedStorage(embeddedStorage);
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
         }

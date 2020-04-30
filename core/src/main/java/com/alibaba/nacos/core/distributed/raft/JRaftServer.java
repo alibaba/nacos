@@ -336,17 +336,22 @@ public class JRaftServer {
 				.setData(request.getData())
 				.putExtendInfo(JRaftConstants.JRAFT_EXTEND_INFO_KEY,
 						JRaftLogOperation.READ_OPERATION).build();
-
-		commit(readLog, future, failoverRetries)
-				.whenComplete(new BiConsumer<Object, Throwable>() {
+		CompletableFuture<byte[]> f = new CompletableFuture<byte[]>();
+		commit(readLog, f, failoverRetries)
+				.whenComplete(new BiConsumer<byte[], Throwable>() {
 					@Override
-					public void accept(Object result, Throwable throwable) {
+					public void accept(byte[] result, Throwable throwable) {
 						if (Objects.nonNull(throwable)) {
 							future.completeExceptionally(
 									new ConsistencyException(throwable));
 						}
 						else {
-							future.complete((GetResponse) result);
+							try {
+								GetResponse r = GetResponse.parseFrom(result);
+								future.complete(r);
+							} catch (Throwable ex) {
+								future.completeExceptionally(ex);
+							}
 						}
 					}
 				});

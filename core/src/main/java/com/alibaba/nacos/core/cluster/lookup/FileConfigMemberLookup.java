@@ -20,17 +20,16 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.file.FileChangeEvent;
 import com.alibaba.nacos.common.file.FileWatcher;
 import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cluster.conf file managed cluster member node addressing pattern

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +61,9 @@ public class SelectInstances_ITCase {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
-        while (true) {
+        int i = 5;
+        while (i >= 0) {
+            i --;
             if (!"UP".equals(naming.getServerStatus())) {
                 Thread.sleep(1000L);
                 continue;

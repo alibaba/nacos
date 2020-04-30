@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,10 +63,19 @@ public class WatchFileCenter {
 
 	private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
 
-	private static final ExecutorService WATCH_FILE_EXECUTOR = ExecutorFactory
-			.newFixExecutorService(WatchFileCenter.class.getCanonicalName(),
-					MAX_WATCH_FILE_JOB << 1,
-					new NameThreadFactory("com.alibaba.nacos.common.file.watch"));
+	static {
+		ShutdownUtils.addShutdownHook(new Runnable() {
+			@Override
+			public void run() {
+				System.out.println("WatchFileCenter start close");
+				for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
+					System.out.println("start to shutdown this watcher which is watch : " + entry.getKey());
+					entry.getValue().shutdown();
+				}
+				System.out.println("WatchFileCenter already closed");
+			}
+		});
+	}
 
 	/**
 	 * The number of directories that are currently monitored
@@ -81,7 +91,8 @@ public class WatchFileCenter {
 		WatchDirJob job = MANAGER.get(paths);
 		if (job == null) {
 			job = new WatchDirJob(paths);
-			WATCH_FILE_EXECUTOR.execute(job);
+			job.start();
+			MANAGER.put(paths, job);
 		}
 		job.addSubscribe(watcher);
 		return true;
@@ -106,7 +117,9 @@ public class WatchFileCenter {
 		return false;
 	}
 
-	private static class WatchDirJob implements Runnable {
+	private static class WatchDirJob extends Thread {
+
+		private ExecutorService callBackExecutor;
 
 		private final String paths;
 
@@ -117,12 +130,17 @@ public class WatchFileCenter {
 		private Set<FileWatcher> watchers = new ConcurrentHashSet<>();
 
 		public WatchDirJob(String paths) throws NacosException {
+			setName(paths);
 			this.paths = paths;
-
 			final Path p = Paths.get(paths);
 			if (!p.toFile().isDirectory()) {
 				throw new IllegalArgumentException("Must be a file directory : " + paths);
 			}
+
+			this.callBackExecutor = ExecutorFactory
+					.newFixExecutorService(WatchFileCenter.class.getCanonicalName(),
+							1,
+							new NameThreadFactory("com.alibaba.nacos.file.watch-" + paths));
 
 			try {
 				WatchService service = FILE_SYSTEM.newWatchService();
@@ -152,10 +170,10 @@ public class WatchFileCenter {
 					final WatchKey watchKey = watchService.take();
 					final List<WatchEvent<?>> events = watchKey.pollEvents();
 					watchKey.reset();
-					if (WATCH_FILE_EXECUTOR.isShutdown()) {
+					if (callBackExecutor.isShutdown()) {
 						return;
 					}
-					WATCH_FILE_EXECUTOR.execute(new Runnable() {
+					callBackExecutor.execute(new Runnable() {
 						@Override
 						public void run() {
 							for (WatchEvent<?> event : events) {

@@ -161,7 +161,12 @@ public class RaftCore {
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
-            raftProxy.proxyPostLarge(getLeader().ip, API_PUB, params.toJSONString(), parameters);
+            final RaftPeer leader = getLeader();
+
+            System.out.println("leader : " + leader);
+            System.out.println(peers);
+
+            raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toJSONString(), parameters);
             return;
         }
 

@@ -18,10 +18,7 @@ package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.DiskUtils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -29,18 +26,16 @@ import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.DiscoveryMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.FileConfigMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
-import com.alibaba.nacos.core.cluster.lookup.MemberLookup;
+import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.test.BaseTest;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.springframework.core.env.StandardEnvironment;
@@ -58,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class MemberLookup_ITCase extends BaseTest {
 
-	static final String path = Paths.get(System.getProperty("user.home"), "/look")
+	static final String path = Paths.get(System.getProperty("user.home"), "/member_look")
 			.toString();
 
 	static final String name = "cluster.conf";
@@ -99,6 +95,11 @@ public class MemberLookup_ITCase extends BaseTest {
 
 	@After
 	public void after() throws Exception {
+		try {
+			memberManager.shutdown();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
 		DiskUtils.deleteDirectory(path);
 	}
 
@@ -129,7 +130,6 @@ public class MemberLookup_ITCase extends BaseTest {
 		MemberLookup lookup = LookupFactory.getLookUp();
 		System.out.println(lookup);
 		Assert.assertTrue(lookup instanceof StandaloneMemberLookup);
-		func(lookup, 1);
 	}
 
 	@Test
@@ -148,8 +148,9 @@ public class MemberLookup_ITCase extends BaseTest {
 		Assert.assertTrue(lookup instanceof AddressServerMemberLookup);
 		try {
 			func(lookup);
-		} catch (NacosException ignore) {
-			Assert.assertEquals("ErrCode:500, ErrMsg:jmenv.tbsite.net", ignore.toString());
+		} catch (NacosException e) {
+			e.printStackTrace();
+			Assert.assertTrue(StringUtils.containsIgnoreCase(e.getErrMsg(), "jmenv.tbsite.net"));
 		}
 	}
 
@@ -179,87 +180,8 @@ public class MemberLookup_ITCase extends BaseTest {
 	private void func(MemberLookup lookup, int expectSize) throws Exception {
 		lookup.start();
 		Map<String, Member> tmp = memberManager.getServerList();
+		System.out.println(lookup + " : " + tmp);
 		Assert.assertEquals(expectSize, tmp.size());
-	}
-
-	@Ignore
-	@Test
-	public void test_e_lookup_file_change() throws Throwable {
-		File file = Paths.get(path, "conf", name).toFile();
-
-		ApplicationUtils.setNacosHomePath(path);
-
-		CountDownLatch[] latches = new CountDownLatch[] {
-				new CountDownLatch(1),
-				new CountDownLatch(1),
-				new CountDownLatch(1)
-		};
-
-		AtomicInteger index = new AtomicInteger(0);
-		AtomicReference<Collection<Member>>[] reference = new AtomicReference[] {
-				new AtomicReference<Collection<Member>>(Collections.emptyList()),
-				new AtomicReference<Collection<Member>>(Collections.emptyList()),
-				new AtomicReference<Collection<Member>>(Collections.emptyList())
-		};
-
-		System.out.println("test_e_lookup_file_change : " + ApplicationUtils.getConfFilePath());
-
-		FileConfigMemberLookup lookup = new FileConfigMemberLookup() {
-			@Override
-			public void afterLookup(Collection<Member> members) {
-				int i = index.getAndIncrement();
-				System.out.println("test-" + i + " : " + members);
-				try {
-					reference[i].set(members);
-				} finally {
-					latches[i].countDown();
-				}
-			}
-		};
-
-		lookup.start();
-
-		String ip = InetUtils.getSelfIp();
-		String ips = ip + ":8848," + ip + ":8847," + ip + ":8849";
-
-		ThreadUtils.sleep(5_000L);
-		latches[0].await(10_000L, TimeUnit.MILLISECONDS);
-
-		Collection<Member> members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
-		Set<Member> set = new HashSet<>(members);
-		System.out.println("1 : " + reference[0].get());
-		set.removeAll(reference[0].get());
-		Assert.assertEquals(0, set.size());
-
-		// test for write file -1
-
-		ips = ip + ":8848," + ip + ":8847," + ip + ":8849," + ip + ":8850";
-		boolean result = DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
-		Assert.assertTrue(result);
-		ThreadUtils.sleep(5_000L);
-		latches[1].await(10_000L, TimeUnit.MILLISECONDS);
-
-		members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
-		set = new HashSet<>(members);
-		System.out.println("2 : " + reference[1].get());
-		set.removeAll(reference[1].get());
-		Assert.assertEquals(0, set.size());
-
-		// test for write file -2
-
-		ips = ip + ":8848," + ip + ":8847," + ip + ":8849";
-		result = DiskUtils.writeFile(file, ips.getBytes(StandardCharsets.UTF_8), false);
-		Assert.assertTrue(result);
-		ThreadUtils.sleep(5_000L);
-		latches[2].await(10_000L, TimeUnit.MILLISECONDS);
-
-		members = MemberUtils.readServerConf(ApplicationUtils.analyzeClusterConf(new StringReader(ips)));
-		set = new HashSet<>(members);
-		System.out.println("3: " + reference[2].get());
-		set.removeAll(reference[2].get());
-		Assert.assertEquals(0, set.size());
-
-		ApplicationUtils.setNacosHomePath(null);
 	}
 
 }

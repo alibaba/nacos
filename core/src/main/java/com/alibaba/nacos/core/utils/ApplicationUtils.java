@@ -358,10 +358,8 @@ public class ApplicationUtils
 
 	public static String getContextPath() {
 		if (StringUtils.isBlank(contextPath)) {
-			String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
-			// If you can't find it, check it from Sping Environment
 			if (StringUtils.isBlank(contextPath)) {
-				contextPath = ApplicationUtils.getProperty(Constants.WEB_CONTEXT_PATH);
+				contextPath = getProperty(Constants.WEB_CONTEXT_PATH, "/nacos");
 			}
 			if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
 				return StringUtils.EMPTY;
@@ -402,6 +400,7 @@ public class ApplicationUtils
 		return functionModeType;
 	}
 
+	@JustForTest
 	private static String NACOS_HOME_PATH = null;
 
 	public static String getNacosHome() {
@@ -410,8 +409,9 @@ public class ApplicationUtils
 			if (StringUtils.isBlank(nacosHome)) {
 				nacosHome = Paths.get(System.getProperty("user.home"), "nacos").toString();
 			}
-			NACOS_HOME_PATH = nacosHome;
+			return nacosHome;
 		}
+		// test-first
 		return NACOS_HOME_PATH;
 	}
 
@@ -509,10 +509,16 @@ public class ApplicationUtils
 	}
 
 	public static String getMemberList() {
+		String val = null;
 		if (environment == null) {
-			return System.getProperty("nacos.member.list");
+			val = System.getenv("nacos.member.list");
+			if (StringUtils.isBlank(val)) {
+				val = System.getProperty("nacos.member.list");
+			}
+		} else {
+			val = getProperty("nacos.member.list");
 		}
-		return getProperty("nacos.member.list");
+		return val;
 	}
 
 	@Override

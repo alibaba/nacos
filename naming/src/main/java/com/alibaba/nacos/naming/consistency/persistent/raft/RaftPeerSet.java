@@ -282,4 +282,9 @@ public class RaftPeerSet implements MemberChangeListener {
         Loggers.RAFT.info("raft peers changed: " + members);
     }
 
+    @Override
+    public String toString() {
+        return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader
+                + ", peers=" + peers + ", sites=" + sites + '}';
+    }
 }
