@@ -205,4 +205,14 @@
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>
+
+    <logger name="com.alibaba.nacos.core.notify.NotifyCenter">
+        <appender-ref ref="CONSOLE"/>
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.alibaba.nacos.common.file.FileWatcher">
+        <appender-ref ref="CONSOLE"/>
+        <level value="DEBUG"/>
+    </logger>
 </configuration>

@@ -17,6 +17,9 @@ package com.alibaba.nacos.common.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * Common methods for exception
@@ -36,5 +39,20 @@ public class ExceptionUtil {
         }
 
         return strBuilder.toString();
+    }
+
+    public static String getStackTrace(final Throwable t) {
+        if (t == null) {
+            return "";
+        }
+
+        try (final ByteArrayOutputStream out = new ByteArrayOutputStream(); final PrintStream ps = new PrintStream(out)) {
+            t.printStackTrace(ps);
+            ps.flush();
+            return new String(out.toByteArray());
+        } catch (final IOException ignored) {
+            // ignored
+        }
+        return "";
     }
 }

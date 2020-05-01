@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -347,7 +348,12 @@ public class JRaftServer {
 						}
 						else {
 							try {
-								GetResponse r = GetResponse.parseFrom(result);
+								GetResponse r = null;
+								if (ByteUtils.isNotEmpty(result)) {
+									r = GetResponse.parseFrom(result);
+								} else {
+									r = GetResponse.newBuilder().build();
+								}
 								future.complete(r);
 							} catch (Throwable ex) {
 								future.completeExceptionally(ex);
@@ -543,9 +549,6 @@ public class JRaftServer {
 				Configuration conf = instance.getConfiguration(groupName);
 				String leader = instance.selectLeader(groupName).getEndpoint().toString();
 				List<String> groupMembers = JRaftUtils.toStrings(conf.getPeers());
-				NotifyCenter.publishEvent(
-						RaftEvent.builder().groupId(groupName).leader(leader)
-								.raftClusterInfo(groupMembers).build());
 			}
 			else {
 				Loggers.RAFT
