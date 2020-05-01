@@ -150,7 +150,7 @@ public class SecurityProxy {
                 accessToken = obj.getString(Constants.ACCESS_TOKEN);
                 tokenTtl = obj.getIntValue(Constants.TOKEN_TTL);
                 tokenRefreshWindow = tokenTtl / 10;
-                System.setProperty(Constants.ACCESS_TOKEN,accessToken);
+                System.setProperty(Constants.NACOS_TOEKN_PREFIX+Constants.ACCESS_TOKEN,accessToken);
             }else{
                 SECURITY_LOGGER.warn("login  got   accessToken  is empty");
             }

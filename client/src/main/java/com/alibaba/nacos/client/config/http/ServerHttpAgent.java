@@ -287,9 +287,11 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void injectSecurityInfo(List<String> params) {
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
+        //MetricsHttpAgent 调用 ServerHttpAgent   injectSecurityInfo方法 securityProxy的token为空，所以login后直接设置到全局
+        String accessToken=StringUtils.defaultString(securityProxy.getAccessToken(), System.getProperty(Constants.NACOS_TOEKN_PREFIX+Constants.ACCESS_TOKEN));
+        if (StringUtils.isNotBlank(accessToken)) {
             params.add(Constants.ACCESS_TOKEN);
-            params.add(securityProxy.getAccessToken());
+            params.add(accessToken);
         }
         if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
             params.add(SpasAdapter.TENANT_KEY);

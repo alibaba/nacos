@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class Constants {
+    public static final String NACOS_TOEKN_PREFIX="nacos_";
 
     public static final String CLIENT_VERSION = "3.0.0";
 
