@@ -36,7 +36,7 @@ public class HttpClientManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(HttpClientManager.class);
 
-	private static final int TIMEOUT = 5000;
+	private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
 
 	private static final RequestConfig DEFAULT_CONFIG = RequestConfig.custom()
 			.setConnectTimeout(TIMEOUT).setSocketTimeout(TIMEOUT << 1).build();

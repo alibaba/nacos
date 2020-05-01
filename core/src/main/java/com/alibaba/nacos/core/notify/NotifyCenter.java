@@ -391,6 +391,7 @@ public class NotifyCenter {
 				return true;
 			} catch (InterruptedException ignore) {
 				Thread.interrupted();
+				LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
 				receiveEvent(event);
 				return true;
 			} catch (Throwable ex) {

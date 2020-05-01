@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.SlowEvent;
 
 import java.util.Collections;

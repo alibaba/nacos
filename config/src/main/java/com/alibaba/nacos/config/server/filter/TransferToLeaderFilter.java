@@ -166,16 +166,16 @@ public class TransferToLeaderFilter implements Filter {
 			chain.doFilter(request, response);
 		} catch (AccessControlException e) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil
-					.getAllExceptionMsg(e));
+					.getStackTrace(e));
 			return;
 		} catch (NoSuchMethodException e) {
 			resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 			return;
 		} catch (Throwable e) {
-			LogUtil.defaultLog.error("An exception occurred when the request was forwarded to the Leader node, {}", e);
+			LogUtil.defaultLog.error("An exception occurred when the request was forwarded to the Leader {}, error {}", leaderServer, e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					"Server failed," + ExceptionUtil.getAllExceptionMsg(e));
+					"Server failed," + e.toString());
 			return;
 		}
 

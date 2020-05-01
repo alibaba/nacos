@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
@@ -70,6 +71,8 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -298,6 +301,39 @@ public class ConfigDerbyRaft_ITCase
 				new String[] { "this.is.raft_cluster=lessspring_7_it_is_for_modify",
 						"this.is.raft_cluster=lessspring_7_it_is_for_modify",
 						"this.is.raft_cluster=lessspring_7_it_is_for_modify" });
+	}
+
+	@Test
+	public void test_k_config_listener() throws Exception {
+		String dataId = "test_h_config_listener";
+		String group = "test_h_config_listener";
+		String content = "test_h_config_listener";
+		CountDownLatch[] latch = new CountDownLatch[]{new CountDownLatch(1), new CountDownLatch(0)};
+		AtomicReference<String> r = new AtomicReference<>();
+		AtomicInteger i = new AtomicInteger(0);
+		iconfig7.addListener(dataId, group, new AbstractListener() {
+			@Override
+			public void receiveConfigInfo(String configInfo) {
+				System.out.println(configInfo);
+				r.set(configInfo);
+				latch[i.getAndIncrement()].countDown();
+			}
+		});
+
+		iconfig7.publishConfig(dataId, group, content);
+
+		ThreadUtils.sleep(10_000L);
+		latch[0].await();
+		Assert.assertEquals(content, r.get());
+		Assert.assertEquals(content, iconfig7.getConfig(dataId, group, 2_000L));
+
+		content = content + System.currentTimeMillis();
+		iconfig7.publishConfig(dataId, group, content);
+
+		ThreadUtils.sleep(10_000L);
+		latch[1].await();
+		Assert.assertEquals(content, r.get());
+		Assert.assertEquals(content, iconfig7.getConfig(dataId, group, 2_000L));
 	}
 
 	@Test
