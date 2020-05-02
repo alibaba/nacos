@@ -628,17 +628,17 @@
 
     <logger name="com.alibaba.nacos.core.notify.NotifyCenter">
         <appender-ref ref="CONSOLE"/>
-        <level value="DEBUG"/>
+        <level value="INFO"/>
     </logger>
 
     <logger name="com.alibaba.nacos.common.file.FileWatcher">
         <appender-ref ref="CONSOLE"/>
-        <level value="DEBUG"/>
+        <level value="INFO"/>
     </logger>
 
     <logger name="com.alibaba.nacos.common.executor.ThreadPoolManager">
         <appender-ref ref="CONSOLE"/>
-        <level value="DEBUG"/>
+        <level value="INFO"/>
     </logger>
 
     <root>

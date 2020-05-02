@@ -226,7 +226,6 @@ class DumpProcessor implements TaskProcessor {
                 return result;
             }
         }
-
     }
 
     final DumpService dumpService;

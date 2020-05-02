@@ -153,8 +153,6 @@ public class NotifyCenter {
 	 * @param <T>       event type
 	 */
 	public static <T> void registerSubscribe(final Subscribe consumer) {
-		checkState();
-
 		final Class<? extends Event> cls = consumer.subscribeType();
 		// If you want to listen to multiple events, you do it separately,
 		// without automatically registering the appropriate publisher
@@ -218,7 +216,6 @@ public class NotifyCenter {
 	 */
 	private static boolean publishEvent(final Class<? extends Event> eventType,
 			final Event event) {
-		checkState();
 		final String topic = eventType.getCanonicalName();
 		if (SlowEvent.class.isAssignableFrom(eventType)) {
 			return INSTANCE.sharePublisher.publish(event);
@@ -245,7 +242,6 @@ public class NotifyCenter {
 	public static Publisher registerToSharePublisher(
 			final Supplier<? extends SlowEvent> supplier,
 			final Class<? extends SlowEvent> eventType) {
-		checkState();
 		return INSTANCE.sharePublisher;
 	}
 
@@ -259,7 +255,6 @@ public class NotifyCenter {
 	 */
 	public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
 			final Class<? extends Event> eventType, final int queueMaxSize) {
-		checkState();
 		final String topic = eventType.getCanonicalName();
 		INSTANCE.publisherMap.computeIfAbsent(topic, s -> {
 			Publisher publisher = new Publisher(eventType, queueMaxSize);
@@ -463,12 +458,6 @@ public class NotifyCenter {
 					}
 				}
 			}
-		}
-	}
-
-	private static void checkState() {
-		if (CLOSED.get()) {
-			throw new IllegalStateException("WatchFileCenter already shutdown");
 		}
 	}
 

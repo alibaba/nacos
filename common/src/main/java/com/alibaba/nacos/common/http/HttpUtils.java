@@ -72,7 +72,6 @@ public final class HttpUtils {
     }
 
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
-
         Map<String, String> map = new HashMap<String, String>(16);
         for (String key : parameterMap.keySet()) {
             map.put(key, parameterMap.get(key)[0]);

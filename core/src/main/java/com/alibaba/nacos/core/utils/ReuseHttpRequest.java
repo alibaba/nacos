@@ -17,6 +17,11 @@
 package com.alibaba.nacos.core.utils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -30,4 +35,22 @@ public interface ReuseHttpRequest extends HttpServletRequest {
 	 * @throws Exception
 	 */
 	Object getBody() throws Exception;
+
+	/**
+	 * Remove duplicate values from the array
+	 *
+	 * @param request {@link HttpServletRequest}
+	 * @return {@link Map<String, String[]>}
+	 */
+	default Map<String, String[]> toDuplication(HttpServletRequest request) {
+		Map<String, String[]> tmp = request.getParameterMap();
+		Map<String, String[]> result = new HashMap<>(tmp.size());
+		Set<String> set = new HashSet<>();
+		for (Map.Entry<String, String[]>  entry : tmp.entrySet()) {
+			set.addAll(Arrays.asList(entry.getValue()));
+			result.put(entry.getKey(), set.toArray(new String[0]));
+			set.clear();
+		}
+		return result;
+	}
 }

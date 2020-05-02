@@ -483,7 +483,7 @@ public class DumpService {
 		catch (NoSuchRaftGroupException e) {
 			return true;
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			// It's impossible to get to this point
 			throw new RuntimeException(e);
 		}

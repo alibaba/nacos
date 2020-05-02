@@ -80,7 +80,6 @@ public final class ThreadPoolManager {
 	 * @param executor {@link ExecutorService}
 	 */
 	public void register(String namespace, String group, ExecutorService executor) {
-		checkState();
         synchronized(this) {
             if (!resourcesManager.containsKey(namespace)) {
                 resourcesManager.put(namespace, new HashMap<String, Set<ExecutorService>>(8));
@@ -180,9 +179,4 @@ public final class ThreadPoolManager {
         }
     }
 
-	private static void checkState() {
-		if (CLOSED.get()) {
-			throw new IllegalStateException("WatchFileCenter already shutdown");
-		}
-	}
 }

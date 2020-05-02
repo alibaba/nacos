@@ -226,7 +226,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // if use raft+derby, Reduce leader read pressure
 
     public static boolean isDirectRead() {
-        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
+        boolean isDirectRead = ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
+        if (isDirectRead) {
+            LogUtil.defaultLog.info("Read config from storage");
+        } else {
+            LogUtil.defaultLog.info("Read config from disk file cache");
+        }
+        return isDirectRead;
     }
 
     public static void setEmbeddedStorage(boolean embeddedStorage) {
