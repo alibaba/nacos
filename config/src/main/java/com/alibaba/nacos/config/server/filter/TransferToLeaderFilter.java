@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.http.param.MediaType;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -31,7 +32,6 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.ReuseUploadFileHttpServletRequest;
@@ -64,6 +64,8 @@ import java.util.Map;
  * If the embedded distributed storage is enabled, all requests are routed to the Leader
  * node for processing, and the maximum number of forwards for a single request cannot
  * exceed three
+ * <p>
+ * // TODO Request forwarding unified processing
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -80,7 +82,8 @@ public class TransferToLeaderFilter implements Filter {
 	private ControllerMethodsCache controllerMethodsCache;
 
 	private volatile String leaderServer = "";
-	private static final int MAX_TRANSFER_CNT = Integer.getInteger("nacos.config.transfer-leader.max-num", 1);
+	private static final int MAX_TRANSFER_CNT = Integer
+			.getInteger("nacos.config.transfer-leader.max-num", 1);
 
 	private final RestTemplate restTemplate = new RestTemplate();
 
@@ -99,9 +102,11 @@ public class TransferToLeaderFilter implements Filter {
 		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
-		if (StringUtils.containsIgnoreCase(request.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
+		if (StringUtils.containsIgnoreCase(request.getContentType(),
+				MediaType.MULTIPART_FORM_DATA)) {
 			req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
-		} else {
+		}
+		else {
 			req = new ReuseHttpServletRequest((HttpServletRequest) request);
 		}
 
@@ -125,30 +130,36 @@ public class TransferToLeaderFilter implements Filter {
 			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 
 			if (downgrading && isLeader) {
-				resp.sendError(HttpStatus.LOCKED.value(), "Unable to process the request at this time: System triggered degradation");
+				resp.sendError(HttpStatus.LOCKED.value(),
+						"Unable to process the request at this time: System triggered degradation");
 				return;
 			}
 
-			if (downgrading || (method.isAnnotationPresent(ToLeader.class) && !isLeader)) {
+			if (downgrading || (method.isAnnotationPresent(ToLeader.class)
+					&& !isLeader)) {
 				if (StringUtils.isBlank(leaderServer)) {
-					resp.sendError(HttpStatus.LOCKED.value(), "Unable to process the request at this time: no Leader");
+					resp.sendError(HttpStatus.LOCKED.value(),
+							"Unable to process the request at this time: no Leader");
 					return;
 				}
 
 				String val = req.getHeader(Constants.FORWARD_LEADER);
-				final int transferCnt = Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
+				final int transferCnt =
+						Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
 
 				// Requests can only be forwarded once if a downgrade is not triggered
 				if (transferCnt > MAX_TRANSFER_CNT && !downgrading) {
 					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-							"Exceeded forwarding times:" + req.getMethod() + ":" + req.getRequestURI());
+							"Exceeded forwarding times:" + req.getMethod() + ":" + req
+									.getRequestURI());
 					return;
 				}
 
 				if (urlString.startsWith("/")) {
 					urlString = urlString.substring(1);
 				}
-				final String reqUrl = req.getScheme() + "://" + leaderServer + "/" + urlString;
+				final String reqUrl =
+						req.getScheme() + "://" + leaderServer + "/" + urlString;
 				HttpHeaders headers = new HttpHeaders();
 				Enumeration<String> headerNames = req.getHeaderNames();
 				headers.set(Constants.FORWARD_LEADER, String.valueOf(transferCnt));
@@ -157,23 +168,30 @@ public class TransferToLeaderFilter implements Filter {
 					headers.set(headerName, req.getHeader(headerName));
 				}
 				HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
-				ResponseEntity<String> result = restTemplate.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity, String.class);
+				ResponseEntity<String> result = restTemplate
+						.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity,
+								String.class);
 				resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
 				resp.getWriter().write(result.getBody());
 				resp.setStatus(result.getStatusCodeValue());
 				return;
 			}
-			chain.doFilter(request, response);
-		} catch (AccessControlException e) {
-			resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil
-					.getStackTrace(e));
+			chain.doFilter(req, response);
+		}
+		catch (AccessControlException e) {
+			resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+					"access denied: " + ExceptionUtil.getStackTrace(e));
 			return;
-		} catch (NoSuchMethodException e) {
+		}
+		catch (NoSuchMethodException e) {
 			resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 			return;
-		} catch (Throwable e) {
-			LogUtil.defaultLog.error("An exception occurred when the request was forwarded to the Leader {}, error {}", leaderServer, e);
+		}
+		catch (Throwable e) {
+			LogUtil.defaultLog
+					.error("An exception occurred when the request was forwarded to the Leader {}, error {}",
+							leaderServer, e);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
 					"Server failed," + e.toString());
 			return;
@@ -187,29 +205,29 @@ public class TransferToLeaderFilter implements Filter {
 	}
 
 	private void listenerLeaderStatus() {
-		protocol.protocolMetaData()
-				.subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-						com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-						new Observer() {
-							@Override
-							public void update(Observable o, Object arg) {
-								final String raftLeader = String.valueOf(arg);
-								boolean found = false;
-								for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
-									final Member member = entry.getValue();
-									final String raftAddress = member.getIp() + ":" + member.getExtendVal(
-											MemberMetaDataConstants.RAFT_PORT);
-									if (StringUtils.equals(raftLeader, raftAddress)) {
-										leaderServer = entry.getKey();
-										found = true;
-										break;
-									}
-								}
-								if (!found) {
-									leaderServer = "";
-								}
+		protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+				com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
+				new Observer() {
+					@Override
+					public void update(Observable o, Object arg) {
+						final String raftLeader = String.valueOf(arg);
+						boolean found = false;
+						for (Map.Entry<String, Member> entry : memberManager
+								.getServerList().entrySet()) {
+							final Member member = entry.getValue();
+							final String raftAddress = member.getIp() + ":" + member
+									.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
+							if (StringUtils.equals(raftLeader, raftAddress)) {
+								leaderServer = entry.getKey();
+								found = true;
+								break;
 							}
-						});
+						}
+						if (!found) {
+							leaderServer = "";
+						}
+					}
+				});
 	}
 
 	private void registerSubscribe() {
@@ -228,7 +246,8 @@ public class TransferToLeaderFilter implements Filter {
 
 			@Override
 			public boolean canNotify(Event event) {
-				return (event instanceof RaftDBErrorEvent) || (event instanceof RaftDBErrorRecoverEvent);
+				return (event instanceof RaftDBErrorEvent)
+						|| (event instanceof RaftDBErrorRecoverEvent);
 			}
 		});
 	}

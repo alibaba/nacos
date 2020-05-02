@@ -342,7 +342,9 @@ public class AsyncNotifyService extends AbstractEventListener {
 	}
 
 	/**
-	 * get delayTime and also set failCount to task;失败时间指数增加，以免断网场景不断重试无效任务，影响正常同步
+	 * get delayTime and also set failCount to task;
+	 * The failure time index increases, so as not to retry invalid tasks in the offline
+	 * scene, which affects the normal synchronization
 	 *
 	 * @param task notify task
 	 * @return delay

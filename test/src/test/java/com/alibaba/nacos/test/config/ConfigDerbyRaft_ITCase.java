@@ -43,10 +43,8 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -77,23 +75,13 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 @Ignore
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class ConfigDerbyRaft_ITCase
 		extends HttpClient4Test {
 
 	private static final String CONFIG_INFO_ID = "config-info-id";
-	private static final String CONFIG_HISTORY_ID = "config-history-id";
-	private static final String CONFIG_TAG_RELATION_ID = "config-tag-relation-id";
-	private static final String CONFIG_BETA_ID = "config-beta-id";
-	private static final String NAMESPACE_ID = "namespace-id";
-	private static final String USER_ID = "user-id";
-	private static final String ROLE_ID = "role-id";
-	private static final String PERMISSION_ID = "permissions-id";
-
-	private static String serverIp7 = "127.0.0.1:8847";
-	private static String serverIp8 = "127.0.0.1:8848";
-	private static String serverIp9 = "127.0.0.1:8849";
 
 	private static ConfigService iconfig7;
 	private static ConfigService iconfig8;
@@ -117,7 +105,7 @@ public class ConfigDerbyRaft_ITCase
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
 			public void onEvent(RaftDBErrorEvent event) {
-				System.out.println(event.getEx());
+				System.out.print(event.getEx());
 			}
 
 			@Override
@@ -127,8 +115,8 @@ public class ConfigDerbyRaft_ITCase
 		});
 	}
 
-	@Before
-	public void before() throws Exception {
+	@BeforeClass
+	public static void before() throws Exception {
 
 		CountDownLatch latch = new CountDownLatch(3);
 
@@ -153,18 +141,21 @@ public class ConfigDerbyRaft_ITCase
 		System.out.println("The cluster node initialization is complete");
 
 		Properties setting7 = new Properties();
+		String serverIp7 = "127.0.0.1:8847";
 		setting7.put(PropertyKeyConst.SERVER_ADDR, serverIp7);
 		setting7.put(PropertyKeyConst.USERNAME, "nacos");
 		setting7.put(PropertyKeyConst.PASSWORD, "nacos");
 		iconfig7 = NacosFactory.createConfigService(setting7);
 
 		Properties setting8 = new Properties();
+		String serverIp8 = "127.0.0.1:8848";
 		setting8.put(PropertyKeyConst.SERVER_ADDR, serverIp8);
 		setting8.put(PropertyKeyConst.USERNAME, "nacos");
 		setting8.put(PropertyKeyConst.PASSWORD, "nacos");
 		iconfig8 = NacosFactory.createConfigService(setting8);
 
 		Properties setting9 = new Properties();
+		String serverIp9 = "127.0.0.1:8849";
 		setting9.put(PropertyKeyConst.SERVER_ADDR, serverIp9);
 		setting9.put(PropertyKeyConst.USERNAME, "nacos");
 		setting9.put(PropertyKeyConst.PASSWORD, "nacos");
@@ -173,8 +164,8 @@ public class ConfigDerbyRaft_ITCase
 		TimeUnit.SECONDS.sleep(20L);
 	}
 
-	@After
-	public void after() throws Exception {
+	@AfterClass
+	public static void after() throws Exception {
 		CountDownLatch latch = new CountDownLatch(applications.size());
 		for (ConfigurableApplicationContext context : applications.values()) {
 			new Thread(() -> {
@@ -216,7 +207,6 @@ public class ConfigDerbyRaft_ITCase
 				new String[] { "this.is.raft_cluster=lessspring_7",
 						"this.is.raft_cluster=lessspring_7",
 						"this.is.raft_cluster=lessspring_7" });
-
 	}
 
 	@Test
@@ -301,6 +291,67 @@ public class ConfigDerbyRaft_ITCase
 				new String[] { "this.is.raft_cluster=lessspring_7_it_is_for_modify",
 						"this.is.raft_cluster=lessspring_7_it_is_for_modify",
 						"this.is.raft_cluster=lessspring_7_it_is_for_modify" });
+	}
+
+	@Test
+	public void test_l_client_operation() throws Exception {
+		final String dataId = "test_l_client_operation";
+		final String groupId = "test_l_client_operation";
+		String content = "test_l_client_operation" + System.currentTimeMillis();
+
+		// publish by 8847
+		boolean result = iconfig7.publishConfig(dataId, groupId, content);
+		Assert.assertTrue(result);
+		ThreadUtils.sleep(5000);
+
+		String v1_7 = iconfig7.getConfig(dataId, groupId, 5000L);
+		String v1_8 = iconfig8.getConfig(dataId, groupId, 5000L);
+		String v1_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+
+		Assert.assertEquals(content, v1_7);
+		Assert.assertEquals(content, v1_8);
+		Assert.assertEquals(content, v1_9);
+
+		// publish by 8848
+		content = "test_l_client_operation" + System.currentTimeMillis();
+		result = iconfig8.publishConfig(dataId, groupId, content);
+		Assert.assertTrue(result);
+		ThreadUtils.sleep(5000);
+
+		String v2_7 = iconfig7.getConfig(dataId, groupId, 5000L);
+		String v2_8 = iconfig8.getConfig(dataId, groupId, 5000L);
+		String v2_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+
+		Assert.assertEquals(content, v2_7);
+		Assert.assertEquals(content, v2_8);
+		Assert.assertEquals(content, v2_9);
+
+		// publish by 8849
+		content = "test_l_client_operation" + System.currentTimeMillis();
+		result = iconfig9.publishConfig(dataId, groupId, content);
+		Assert.assertTrue(result);
+		ThreadUtils.sleep(5000);
+
+		String v3_7 = iconfig7.getConfig(dataId, groupId, 5000L);
+		String v3_8 = iconfig8.getConfig(dataId, groupId, 5000L);
+		String v3_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+
+		Assert.assertEquals(content, v3_7);
+		Assert.assertEquals(content, v3_8);
+		Assert.assertEquals(content, v3_9);
+
+		// delete by 8849
+		result = iconfig9.removeConfig(dataId, groupId);
+		Assert.assertTrue(result);
+		ThreadUtils.sleep(5000);
+
+		String v4_7 = iconfig7.getConfig(dataId, groupId, 5000L);
+		String v4_8 = iconfig8.getConfig(dataId, groupId, 5000L);
+		String v4_9 = iconfig9.getConfig(dataId, groupId, 5000L);
+
+		Assert.assertNull(v4_7);
+		Assert.assertNull(v4_8);
+		Assert.assertNull(v4_9);
 	}
 
 	@Test

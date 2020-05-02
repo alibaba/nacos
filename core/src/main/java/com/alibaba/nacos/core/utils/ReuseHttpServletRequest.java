@@ -41,7 +41,7 @@ import java.util.Map;
 public class ReuseHttpServletRequest extends HttpServletRequestWrapper implements ReuseHttpRequest {
 
 	private byte[] body;
-	private Map<String, String[]> stringMap = new HashMap<>(8);
+	private Map<String, String[]> stringMap;
 	private final HttpServletRequest target;
 
 	/**
@@ -54,7 +54,7 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
 		super(request);
 		this.target = request;
 		this.body = toBytes(request.getInputStream());
-		this.stringMap.putAll(request.getParameterMap());
+		this.stringMap = toDuplication(request);
 	}
 
 	@Override
@@ -86,7 +86,21 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		return super.getParameterMap();
+		return stringMap;
+	}
+
+	@Override
+	public String getParameter(String name) {
+		String[] values = stringMap.get(name);
+		if (values == null || values.length == 0) {
+			return null;
+		}
+		return values[0];
+	}
+
+	@Override
+	public String[] getParameterValues(String name) {
+		return stringMap.get(name);
 	}
 
 	@Override

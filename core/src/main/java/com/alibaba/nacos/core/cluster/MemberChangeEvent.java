@@ -38,22 +38,12 @@ public class MemberChangeEvent implements Event {
 
     private static final long serialVersionUID = 7308126651076668976L;
 
-    private Collection<Member> changeMembers;
-
     private Collection<Member> allMembers;
 
     private long no = SEQUENCE.getAndIncrement();
 
     public static MemberChangeEventBuilder builder() {
         return new MemberChangeEventBuilder();
-    }
-
-    public Collection<Member> getChangeMembers() {
-        return changeMembers;
-    }
-
-    public void setChangeMembers(Collection<Member> changeMembers) {
-        this.changeMembers = changeMembers;
     }
 
     public Collection<Member> getAllMembers() {
@@ -70,15 +60,9 @@ public class MemberChangeEvent implements Event {
     }
 
     public static final class MemberChangeEventBuilder {
-        private Collection<Member> changeMembers;
         private Collection<Member> allMembers;
 
         private MemberChangeEventBuilder() {
-        }
-
-        public MemberChangeEventBuilder changeNodes(Collection<Member> changeMembers) {
-            this.changeMembers = changeMembers;
-            return this;
         }
 
         public MemberChangeEventBuilder allNodes(Collection<Member> allMembers) {
@@ -88,7 +72,6 @@ public class MemberChangeEvent implements Event {
 
         public MemberChangeEvent build() {
             MemberChangeEvent memberChangeEvent = new MemberChangeEvent();
-            memberChangeEvent.setChangeMembers(changeMembers);
             memberChangeEvent.setAllMembers(allMembers);
             return memberChangeEvent;
         }

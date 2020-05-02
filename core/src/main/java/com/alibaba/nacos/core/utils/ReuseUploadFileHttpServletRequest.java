@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartException;
@@ -25,6 +27,9 @@ import org.springframework.web.multipart.support.StandardMultipartHttpServletReq
 
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -34,11 +39,32 @@ public class ReuseUploadFileHttpServletRequest extends
 		StandardMultipartHttpServletRequest implements ReuseHttpRequest {
 
 	private final HttpServletRequest request;
+	private Map<String, String[]> stringMap;
 
 	public ReuseUploadFileHttpServletRequest(HttpServletRequest request)
 			throws MultipartException {
 		super(request);
 		this.request = request;
+		this.stringMap = toDuplication(request);
+	}
+
+	@Override
+	public Map<String, String[]> getParameterMap() {
+		return stringMap;
+	}
+
+	@Override
+	public String getParameter(String name) {
+		String[] values = stringMap.get(name);
+		if (values == null || values.length == 0) {
+			return null;
+		}
+		return values[0];
+	}
+
+	@Override
+	public String[] getParameterValues(String name) {
+		return stringMap.get(name);
 	}
 
 	@Override
@@ -50,7 +76,7 @@ public class ReuseUploadFileHttpServletRequest extends
 			return parts;
 		} else {
 			// The content-type for the configuration publication might be "multipart/form-data"
-			return HttpUtils.encodingParams(HttpUtils.translateParameterMap(request.getParameterMap()),
+			return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
 					StandardCharsets.UTF_8.name());
 		}
 	}

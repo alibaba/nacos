@@ -43,7 +43,6 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.remoting.InvokeCallback;
@@ -86,20 +85,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 /**
  * JRaft server instance, away from Spring IOC management
  *
  * <p>
- *     Why do we need to create a raft group based on the value of LogProcessor group (),
- *     that is, each function module has its own state machine. Because each LogProcessor
- *     corresponds to a different functional module, such as Nacos's naming module and
- *     config module, these two modules are independent of each other and do not affect
- *     each other. If we have only one state machine, it is equal to the log of all functional
- *     modules The processing is loaded together. Any module that has an exception during
- *     the log processing and a long block operation will affect the normal operation of
- *     other functional modules.
+ * Why do we need to create a raft group based on the value of LogProcessor group (),
+ * that is, each function module has its own state machine. Because each LogProcessor
+ * corresponds to a different functional module, such as Nacos's naming module and
+ * config module, these two modules are independent of each other and do not affect
+ * each other. If we have only one state machine, it is equal to the log of all functional
+ * modules The processing is loaded together. Any module that has an exception during
+ * the log processing and a long block operation will affect the normal operation of
+ * other functional modules.
  * </p>
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -318,12 +318,22 @@ public class JRaftServer {
 					}
 					return;
 				}
-				// run raft read
-				readThrouthRaftLog(request, future);
+				future.completeExceptionally(
+						new ConsistencyException(status.getErrorMsg()));
 			}
 		});
 		try {
-			return future.get(5000, TimeUnit.MILLISECONDS);
+			return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
+		}
+		catch (TimeoutException e) {
+			// run raft read
+			readThrouthRaftLog(request, future);
+			try {
+				return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
+			}
+			catch (Throwable ex) {
+				throw new ConsistencyException("Data acquisition failed", e);
+			}
 		}
 		catch (Throwable e) {
 			throw new ConsistencyException("Data acquisition failed", e);
@@ -345,19 +355,20 @@ public class JRaftServer {
 						if (Objects.nonNull(throwable)) {
 							future.completeExceptionally(
 									new ConsistencyException(throwable));
+							return;
 						}
-						else {
-							try {
-								GetResponse r = null;
-								if (ByteUtils.isNotEmpty(result)) {
-									r = GetResponse.parseFrom(result);
-								} else {
-									r = GetResponse.newBuilder().build();
-								}
-								future.complete(r);
-							} catch (Throwable ex) {
-								future.completeExceptionally(ex);
+						try {
+							GetResponse r = null;
+							if (ByteUtils.isNotEmpty(result)) {
+								r = GetResponse.parseFrom(result);
 							}
+							else {
+								r = GetResponse.newBuilder().build();
+							}
+							future.complete(r);
+						}
+						catch (Throwable ex) {
+							future.completeExceptionally(ex);
 						}
 					}
 				});
@@ -450,7 +461,8 @@ public class JRaftServer {
 		isShutdown = true;
 
 		try {
-			Loggers.RAFT.info("========= The raft protocol is starting to close =========");
+			Loggers.RAFT
+					.info("========= The raft protocol is starting to close =========");
 
 			for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 				final RaftGroupTuple tuple = entry.getValue();
@@ -539,12 +551,11 @@ public class JRaftServer {
 		}
 
 		final String groupName = group;
-		int timeoutMs = 5000;
 		Status status = null;
 		try {
 			RouteTable instance = RouteTable.getInstance();
-			status = instance
-					.refreshConfiguration(this.cliClientService, groupName, 5000);
+			status = instance.refreshConfiguration(this.cliClientService, groupName,
+					rpcRequestTimeoutMs);
 			if (status.isOk()) {
 				Configuration conf = instance.getConfiguration(groupName);
 				String leader = instance.selectLeader(groupName).getEndpoint().toString();
