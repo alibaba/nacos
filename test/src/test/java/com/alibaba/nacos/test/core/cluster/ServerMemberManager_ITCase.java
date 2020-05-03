@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
@@ -32,7 +33,11 @@ import org.junit.runners.MethodSorters;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,6 +59,32 @@ public class ServerMemberManager_ITCase {
 	@After
 	public void after() throws Exception {
 		memberManager.shutdown();
+	}
+
+	@Test
+	public void test_k_isFirst() {
+		String firstIp = "127.0.0.1:8847";
+		String secondIp = "127.0.0.1:8847";
+		String thirdIp = "127.0.0.1:8847";
+		ConcurrentSkipListMap<String, Member> map = new ConcurrentSkipListMap<>();
+		map.put(secondIp, Member.builder()
+				.ip("127.0.0.1")
+				.port(8847)
+				.build());
+		map.put(firstIp, Member.builder()
+				.ip("127.0.0.1")
+				.port(8848)
+				.build());
+		map.put(thirdIp, Member.builder()
+				.ip("127.0.0.1")
+				.port(8849)
+				.build());
+
+		List<Member> members = new ArrayList<Member>(map.values());
+		Collections.sort(members);
+		List<String> ss = MemberUtils.simpleMembers(members);
+
+		Assert.assertEquals(ss.get(0), members.get(0).getAddress());
 	}
 
 	@Test

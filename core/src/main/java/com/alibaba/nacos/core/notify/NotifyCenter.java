@@ -280,33 +280,32 @@ public class NotifyCenter {
 
 	public static class Publisher extends Thread {
 
-		private final Class<? extends Event> eventType;
-		private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
-		private int queueMaxSize = -1;
 		private volatile boolean initialized = false;
 		private volatile boolean canOpen = false;
 		private volatile boolean shutdown = false;
+
+		private final Class<? extends Event> eventType;
+		private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
+		private int queueMaxSize = -1;
 		private BlockingQueue<Event> queue;
 		private Supplier<? extends Event> supplier;
 		private long lastEventSequence = -1L;
 
 		// judge the subscribe can deal Event
 
-		private BiPredicate<Event, Subscribe> filter = new BiPredicate<Event, Subscribe>() {
-			@Override
-			public boolean test(Event event, Subscribe subscribe) {
-				return true;
-			}
-		};
+		private BiPredicate<Event, Subscribe> filter;
 
 		Publisher(final Class<? extends Event> eventType) {
 			this(eventType, RING_BUFFER_SIZE);
 		}
 
 		Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {
-			this.eventType = eventType;
-			this.queueMaxSize = queueMaxSize;
-			this.queue = new ArrayBlockingQueue<>(queueMaxSize);
+			this(eventType, new BiPredicate<Event, Subscribe>() {
+				@Override
+				public boolean test(Event event, Subscribe subscribe) {
+					return true;
+				}
+			}, queueMaxSize);
 		}
 
 		Publisher(final Class<? extends Event> eventType,
@@ -398,9 +397,6 @@ public class NotifyCenter {
 		void checkIsStart() {
 			if (!initialized) {
 				throw new IllegalStateException("Publisher does not start");
-			}
-			if (shutdown) {
-				throw new IllegalStateException("Publisher already shutdown");
 			}
 		}
 

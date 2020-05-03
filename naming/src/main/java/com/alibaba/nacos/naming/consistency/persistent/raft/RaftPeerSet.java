@@ -30,7 +30,6 @@ import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -54,20 +52,20 @@ import java.util.concurrent.atomic.AtomicLong;
 @DependsOn("ProtocolManager")
 public class RaftPeerSet implements MemberChangeListener {
 
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
 
     private AtomicLong localTerm = new AtomicLong(0L);
 
     private RaftPeer leader = null;
 
-    private volatile Map<String, RaftPeer> peers = new ConcurrentHashMap<>();
+    private volatile Map<String, RaftPeer> peers = new HashMap<>(8);
 
     private Set<String> sites = new HashSet<>();
 
     private volatile boolean ready = false;
 
-    public RaftPeerSet() {
+    public RaftPeerSet(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @PostConstruct
@@ -254,15 +252,18 @@ public class RaftPeerSet implements MemberChangeListener {
 
     @Override
     public void onEvent(MemberChangeEvent event) {
-        changePeers(event.getAllMembers());
+        changePeers(event.getMembers());
     }
 
     private void changePeers(Collection<Member> members) {
+        Map<String, RaftPeer> tmpPeers = new HashMap<>(members.size());
+
         for (Member member : members) {
+
 
             final String address = member.getAddress();
             if (peers.containsKey(address)) {
-                peers.put(address, peers.get(address));
+                tmpPeers.put(address, peers.get(address));
                 continue;
             }
 
@@ -274,10 +275,12 @@ public class RaftPeerSet implements MemberChangeListener {
                 raftPeer.term.set(localTerm.get());
             }
 
-            peers.put(address, raftPeer);
+            tmpPeers.put(address, raftPeer);
         }
 
         // replace raft peer set:
+        peers = tmpPeers;
+
         ready = true;
         Loggers.RAFT.info("raft peers changed: " + members);
     }

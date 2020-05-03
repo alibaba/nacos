@@ -102,6 +102,8 @@ public class TransferToLeaderFilter implements Filter {
 		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
+		String urlString = ((HttpServletRequest) request).getRequestURI();
+
 		if (StringUtils.containsIgnoreCase(request.getContentType(),
 				MediaType.MULTIPART_FORM_DATA)) {
 			req = new ReuseUploadFileHttpServletRequest((HttpServletRequest) request);
@@ -110,12 +112,9 @@ public class TransferToLeaderFilter implements Filter {
 			req = new ReuseHttpServletRequest((HttpServletRequest) request);
 		}
 
-		String urlString = req.getRequestURI();
-
 		if (StringUtils.isNotBlank(req.getQueryString())) {
 			urlString += "?" + req.getQueryString();
 		}
-
 		try {
 			String path = new URI(req.getRequestURI()).getPath();
 			Method method = controllerMethodsCache.getMethod(req.getMethod(), path);

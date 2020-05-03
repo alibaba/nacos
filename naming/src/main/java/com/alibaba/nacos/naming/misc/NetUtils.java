@@ -25,19 +25,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class NetUtils {
 
-    private static String serverAddress = null;
-
     public static String localServer() {
-        return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
-    }
-
-    public static String getLocalAddress() {
-        if (StringUtils.isNotBlank(serverAddress)) {
-            return serverAddress;
-        }
-
-        serverAddress = InetUtils.getSelfIp();
-        return serverAddress;
+        return InetUtils.getSelfIp() + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
     }
 
     public static String num2ip(int ip) {

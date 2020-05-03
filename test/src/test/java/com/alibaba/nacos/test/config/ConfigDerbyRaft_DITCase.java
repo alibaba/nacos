@@ -16,12 +16,7 @@
 
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.nacos.api.NacosFactory;
-import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -29,46 +24,27 @@ import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
 import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.common.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.test.base.HttpClient4Test;
-import org.junit.AfterClass;
+import com.alibaba.nacos.test.core.BaseClusterTest;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
-import org.springframework.web.context.support.StandardServletEnvironment;
 
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -76,111 +52,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@Ignore
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
-public class ConfigDerbyRaft_ITCase
-		extends HttpClient4Test {
-
-	private static final String CONFIG_INFO_ID = "config-info-id";
-
-	private static ConfigService iconfig7;
-	private static ConfigService iconfig8;
-	private static ConfigService iconfig9;
-
-	private static final NSyncHttpClient httpClient = HttpClientManager.getShareSyncHttpClient();
-
-	private static final AtomicBoolean[] finished = new AtomicBoolean[]{new AtomicBoolean(false), new AtomicBoolean(false), new AtomicBoolean(false)};
-
-	private static Map<String, ConfigurableApplicationContext> applications = new HashMap<>();
-
-	private static String clusterInfo;
-
-	static {
-		System.getProperties().setProperty("nacos.core.auth.enabled", "false");
-		System.getProperties().setProperty("embeddedStorage", "true");
-		String ip = InetUtils.getSelfIp();
-		clusterInfo = "nacos.member.list=" + ip + ":8847," + ip
-				+ ":8848," + ip + ":8849";
-
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
-			@Override
-			public void onEvent(RaftDBErrorEvent event) {
-				System.out.print(event.getEx());
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorEvent.class;
-			}
-		});
-	}
-
-	@BeforeClass
-	public static void before() throws Exception {
-
-		CountDownLatch latch = new CountDownLatch(3);
-
-		Runnable runnable = () -> {
-			for (int i = 0; i < 3; i++) {
-				try {
-					URL runnerUrl = new File("../console/target/classes").toURI().toURL();
-					URL[] urls = new URL[] { runnerUrl };
-					URLClassLoader cl = new URLClassLoader(urls);
-					Class<?> runnerClass = cl.loadClass("com.alibaba.nacos.Nacos");
-					run(i, latch, runnerClass);
-				} catch (Exception e) {
-					latch.countDown();
-				}
-			}
-		};
-
-		new Thread(runnable).start();
-
-		latch.await();
-
-		System.out.println("The cluster node initialization is complete");
-
-		Properties setting7 = new Properties();
-		String serverIp7 = "127.0.0.1:8847";
-		setting7.put(PropertyKeyConst.SERVER_ADDR, serverIp7);
-		setting7.put(PropertyKeyConst.USERNAME, "nacos");
-		setting7.put(PropertyKeyConst.PASSWORD, "nacos");
-		iconfig7 = NacosFactory.createConfigService(setting7);
-
-		Properties setting8 = new Properties();
-		String serverIp8 = "127.0.0.1:8848";
-		setting8.put(PropertyKeyConst.SERVER_ADDR, serverIp8);
-		setting8.put(PropertyKeyConst.USERNAME, "nacos");
-		setting8.put(PropertyKeyConst.PASSWORD, "nacos");
-		iconfig8 = NacosFactory.createConfigService(setting8);
-
-		Properties setting9 = new Properties();
-		String serverIp9 = "127.0.0.1:8849";
-		setting9.put(PropertyKeyConst.SERVER_ADDR, serverIp9);
-		setting9.put(PropertyKeyConst.USERNAME, "nacos");
-		setting9.put(PropertyKeyConst.PASSWORD, "nacos");
-		iconfig9 = NacosFactory.createConfigService(setting9);
-
-		TimeUnit.SECONDS.sleep(20L);
-	}
-
-	@AfterClass
-	public static void after() throws Exception {
-		CountDownLatch latch = new CountDownLatch(applications.size());
-		for (ConfigurableApplicationContext context : applications.values()) {
-			new Thread(() -> {
-				try {
-					System.out.println("start close : " + context);
-					context.close();
-				} catch (Exception ignore) {
-				} finally {
-					System.out.println("finished close : " + context);
-					latch.countDown();
-				}
-			}).start();
-		}
-		latch.await();
-	}
+public class ConfigDerbyRaft_DITCase
+		extends BaseClusterTest {
 
 	@Test
 	public void test_a_publish_config() throws Exception {
@@ -533,71 +407,6 @@ public class ConfigDerbyRaft_ITCase
 		currentId = manager9.nextId(CONFIG_INFO_ID);
 		Assert.assertNotEquals(preId, currentId);
 
-	}
-
-	private static void run(final int index, final CountDownLatch latch, final Class<?> cls) {
-		Runnable runnable = () -> {
-			try {
-				ApplicationUtils.setIsStandalone(false);
-
-				final String path = Paths.get(System.getProperty("user.home"), "/nacos-" + index + "/").toString();
-				DiskUtils.deleteDirectory(path);
-
-				System.setProperty("nacos.home", path);
-				System.out.println("nacos.home is : [" + path + "]");
-
-				Map<String, Object> properties = new HashMap<>();
-				properties.put("server.port", "884" + (7 + index));
-				properties.put("nacos.home", path);
-				properties.put("nacos.logs.path",
-						Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
-				properties.put("spring.jmx.enabled", false);
-				properties.put("nacos.core.snowflake.worker-id", index + 1);
-				MapPropertySource propertySource = new MapPropertySource(
-						"nacos_cluster_test", properties);
-				ConfigurableEnvironment environment = new StandardServletEnvironment();
-				environment.getPropertySources().addFirst(propertySource);
-				SpringApplication cluster = new SpringApplicationBuilder(cls).web(
-						WebApplicationType.SERVLET).environment(environment)
-						.properties(clusterInfo).properties("embeddedStorage=true").build();
-
-				ConfigurableApplicationContext context = cluster.run();
-
-				context.stop();
-
-				DistributedDatabaseOperateImpl operate = context.getBean(DistributedDatabaseOperateImpl.class);
-				CPProtocol protocol = context.getBean(CPProtocol.class);
-
-				protocol.protocolMetaData()
-						.subscribe(operate.group(), Constants.LEADER_META_DATA,
-								(o, arg) -> {
-									System.out.println("node : 884" + (7 + index) + "-> select leader is : " + arg);
-									if (finished[index].compareAndSet(false, true)) {
-										latch.countDown();
-									}
-								});
-
-				new Thread(() -> {
-					try {
-						Thread.sleep(5000L);
-					} catch (Exception e) {
-						e.printStackTrace();
-					} finally {
-						if (finished[index].compareAndSet(false, true)) {
-							latch.countDown();
-						}
-					}
-				});
-
-				applications.put(String.valueOf(properties.get("server.port")), context);
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-				latch.countDown();
-			}
-		};
-
-		runnable.run();
 	}
 
 }

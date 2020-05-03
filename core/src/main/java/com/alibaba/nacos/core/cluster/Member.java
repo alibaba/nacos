@@ -27,7 +27,7 @@ import java.util.TreeMap;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Member implements Cloneable {
+public class Member implements Comparable<Member>, Cloneable {
 
     private String ip;
 
@@ -142,6 +142,11 @@ public class Member implements Cloneable {
 	@Override
 	public int hashCode() {
 		return Objects.hash(ip, port);
+	}
+
+	@Override
+	public int compareTo(Member o) {
+		return getAddress().compareTo(o.getAddress());
 	}
 
 	public static final class MemberBuilder {
