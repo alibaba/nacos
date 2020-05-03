@@ -54,7 +54,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 	private volatile boolean isAddressServerHealth = true;
 	private int addressServerFailCount = 0;
 	private int maxFailCount = 12;
-	private NSyncHttpClient syncHttpClient = HttpClientManager.getShareSyncHttpClient();
+	private NSyncHttpClient syncHttpClient = HttpClientManager.getSyncHttpClient();
 	private volatile boolean shutdown = false;
 
 	@Override

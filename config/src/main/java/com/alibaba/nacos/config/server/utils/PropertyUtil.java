@@ -226,13 +226,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     // if use raft+derby, Reduce leader read pressure
 
     public static boolean isDirectRead() {
-        boolean isDirectRead = ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
-        if (isDirectRead) {
-            LogUtil.defaultLog.info("Read config from storage");
-        } else {
-            LogUtil.defaultLog.info("Read config from disk file cache");
-        }
-        return isDirectRead;
+        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
     }
 
     public static void setEmbeddedStorage(boolean embeddedStorage) {
@@ -262,6 +256,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
+
+            // External data sources are used by default in cluster mode
             setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
 
             // must initialize after setUseExternalDB
@@ -274,12 +270,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             } else {
                 boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
                 setEmbeddedStorage(embeddedStorage);
-            }
 
-            if (!isEmbeddedStorage() && !isUseExternalDB()) {
-                throw new IllegalArgumentException("please choose one storage type");
+                // If the embedded data source storage is not turned on, it is automatically
+                // upgraded to the external data source storage, as before
+                if (!embeddedStorage) {
+                    setUseExternalDB(true);
+                }
             }
-
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
             throw e;

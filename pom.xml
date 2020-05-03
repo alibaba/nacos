@@ -418,6 +418,31 @@
             </build>
         </profile>
         <profile>
+            <id>cluster-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>2.19.1</version>
+                        <configuration>
+                            <argLine>@{failsafeArgLine}</argLine>
+                            <includes>
+                                <include>**/*DITCase.java</include>
+                            </includes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>sonar-apache</id>
             <properties>
                 <!-- URL of the ASF SonarQube server -->

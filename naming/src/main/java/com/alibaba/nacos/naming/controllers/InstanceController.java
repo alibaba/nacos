@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -95,10 +96,15 @@ public class InstanceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
-        serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+        final Instance instance = parseInstance(request);
+
+        TimerContext.run(() -> {
+            serviceManager.registerInstance(namespaceId, serviceName, instance);
+            return true;
+        }, instance.generateInstanceId() + " register, ephemeral : " + instance.isEphemeral());
         return "ok";
     }
 
@@ -117,7 +123,10 @@ public class InstanceController {
             return "ok";
         }
 
-        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+        TimerContext.run(() -> {
+            serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+            return true;
+        }, instance.getInstanceId() + " deregister, ephemeral : " + instance.isEphemeral());
 
         return "ok";
     }
@@ -126,19 +135,24 @@ public class InstanceController {
     @PutMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final Instance instance = parseInstance(request);
 
         String agent = WebUtils.getUserAgent(request);
 
         ClientInfo clientInfo = new ClientInfo(agent);
 
-        if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-            serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
-        } else {
-            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
-        }
+        TimerContext.run(() -> {
+            if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+                    clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                serviceManager.updateInstance(namespaceId, serviceName, instance);
+            } else {
+                serviceManager.registerInstance(namespaceId, serviceName, instance);
+            }
+            return true;
+        }, instance.generateInstanceId() + " update, ephemeral : " + instance.isEphemeral());
+
         return "ok";
     }
 
@@ -182,8 +196,10 @@ public class InstanceController {
         }
         instance.setLastBeat(System.currentTimeMillis());
         instance.validate();
-
-        serviceManager.updateInstance(namespaceId, serviceName, instance);
+        TimerContext.run(() -> {
+            serviceManager.updateInstance(namespaceId, serviceName, instance);
+            return true;
+        }, instance.generateInstanceId() + " patch, ephemeral : " + instance.isEphemeral());
         return "ok";
     }
 
@@ -288,9 +304,7 @@ public class InstanceController {
             port = clientBeat.getPort();
         }
 
-        if (Loggers.SRV_LOG.isDebugEnabled()) {
-            Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
-        }
+        Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
 
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
 
@@ -299,17 +313,26 @@ public class InstanceController {
                 result.put(CommonParams.CODE, NamingResponseCode.RESOURCE_NOT_FOUND);
                 return result;
             }
-            instance = new Instance();
-            instance.setPort(clientBeat.getPort());
-            instance.setIp(clientBeat.getIp());
-            instance.setWeight(clientBeat.getWeight());
-            instance.setMetadata(clientBeat.getMetadata());
-            instance.setClusterName(clusterName);
-            instance.setServiceName(serviceName);
-            instance.setInstanceId(instance.getInstanceId());
-            instance.setEphemeral(clientBeat.isEphemeral());
 
-            serviceManager.registerInstance(namespaceId, serviceName, instance);
+            TimerContext.start("[CLIENT-BEAT] : " + serviceName + "@@" + ip + ":" + port + ", ephemeral : " + clientBeat.isEphemeral());
+            try {
+                Loggers.SRV_LOG.warn("[CLIENT-BEAT] The instance has been removed for health mechanism, perform data compensation operations, beat: {}, serviceName: {}",
+                        clientBeat, serviceName);
+
+                instance = new Instance();
+                instance.setPort(clientBeat.getPort());
+                instance.setIp(clientBeat.getIp());
+                instance.setWeight(clientBeat.getWeight());
+                instance.setMetadata(clientBeat.getMetadata());
+                instance.setClusterName(clusterName);
+                instance.setServiceName(serviceName);
+                instance.setInstanceId(instance.getInstanceId());
+                instance.setEphemeral(clientBeat.isEphemeral());
+
+                serviceManager.registerInstance(namespaceId, serviceName, instance);
+            } finally {
+                TimerContext.end();
+            }
         }
 
         Service service = serviceManager.getService(namespaceId, serviceName);

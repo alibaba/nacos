@@ -23,13 +23,11 @@ import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.TimerContext;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.Task;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
@@ -40,7 +38,6 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -83,8 +80,7 @@ import java.util.Set;
  */
 public class DiscoveryMemberLookup extends AbstractMemberLookup {
 
-	NAsyncHttpClient asyncHttpClient = HttpClientManager
-			.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
+	NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
 
 	MemberListSyncTask syncTask;
 
@@ -186,7 +182,7 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 				Loggers.CLUSTER.error("node state report task has error : {}", e);
 			}
 			finally {
-				TimerContext.end(Loggers.CLUSTER);
+				TimerContext.end();
 			}
 		}
 

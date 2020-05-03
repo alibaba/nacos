@@ -80,13 +80,12 @@ import java.util.function.BiFunction;
 public class ServerMemberManager
 		implements ApplicationListener<WebServerInitializedEvent> {
 
-	private final NAsyncHttpClient asyncHttpClient = HttpClientManager
-			.newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
+	private final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
 
 	/**
 	 * Cluster node list
 	 */
-	private volatile ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
+	private volatile ConcurrentSkipListMap<String, Member> serverList;
 
 	/**
 	 * Is this node in the cluster list
@@ -108,6 +107,9 @@ public class ServerMemberManager
 	 */
 	private MemberLookup lookup;
 
+	/**
+	 * self member obj
+	 */
 	private Member self;
 
 	/**
@@ -121,6 +123,7 @@ public class ServerMemberManager
 	private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
 
 	public ServerMemberManager(ServletContext servletContext) {
+		this.serverList = new ConcurrentSkipListMap();
 		ApplicationUtils.setContextPath(servletContext.getContextPath());
 		MemberUtils.setManager(this);
 	}
@@ -226,7 +229,9 @@ public class ServerMemberManager
 
 	public Collection<Member> allMembers() {
 		// We need to do a copy to avoid affecting the real data
-		return new ArrayList<>(serverList.values());
+		List<Member> list = new ArrayList<>(serverList.values());
+		Collections.sort(list);
+		return list;
 	}
 
 	public List<Member> allMembersWithoutSelf() {
@@ -255,7 +260,7 @@ public class ServerMemberManager
 		}
 
 		boolean hasChange = false;
-		ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap<>();
+		ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap();
 		Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
 		for (Member member : members) {
 			final String address = member.getAddress();
@@ -284,7 +289,7 @@ public class ServerMemberManager
 		if (hasChange) {
 			MemberUtils.syncToFile(members);
 			Loggers.CLUSTER.warn("member has changed : {}", members);
-			Event event = MemberChangeEvent.builder().allNodes(members).build();
+			Event event = MemberChangeEvent.builder().members(allMembers()).build();
 			NotifyCenter.publishEvent(event);
 		}
 
@@ -292,15 +297,13 @@ public class ServerMemberManager
 	}
 
 	public synchronized boolean memberJoin(Collection<Member> members) {
-		Set<Member> set = new HashSet<>();
-		set.addAll(members);
+		Set<Member> set = new HashSet<>(members);
 		set.addAll(allMembers());
 		return memberChange(set);
 	}
 
 	public synchronized boolean memberLeave(Collection<Member> members) {
-		Set<Member> set = new HashSet<>();
-		set.addAll(allMembers());
+		Set<Member> set = new HashSet<>(allMembers());
 		set.removeAll(members);
 		return memberChange(set);
 	}
@@ -385,7 +388,7 @@ public class ServerMemberManager
 			this.cursor = (this.cursor + 1) % members.size();
 			Member target = members.get(cursor);
 
-			Loggers.CLUSTER.debug("report the metadata to the node : {}", target);
+			Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
 
 			final String url = HttpUtils.buildUrl(false, target.getAddress(),
 					ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
@@ -402,7 +405,7 @@ public class ServerMemberManager
 								else {
 									Loggers.CLUSTER
 											.warn("failed to report new info to target node : {}, result : {}",
-													target, result);
+													target.getAddress(), result);
 									MemberUtils.onFail(target);
 								}
 							}
@@ -411,7 +414,7 @@ public class ServerMemberManager
 							public void onError(Throwable throwable) {
 								Loggers.CLUSTER
 										.error("failed to report new info to target node : {}, error : {}",
-												target, throwable);
+												target.getAddress(), throwable);
 								MemberUtils.onFail(target);
 							}
 						});
@@ -419,7 +422,7 @@ public class ServerMemberManager
 			catch (Throwable ex) {
 				Loggers.CLUSTER
 						.error("failed to report new info to target node : {}, error : {}",
-								target, ex);
+								target.getAddress(), ex);
 			}
 		}
 

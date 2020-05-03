@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Ignore
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class NotifyCenter_ITCase {
 
@@ -103,7 +102,7 @@ public class NotifyCenter_ITCase {
 		System.out.println("TestEvent event num : " + NotifyCenter.getPublisher(TestEvent.class).currentEventSize());
 		System.out.println("TestSlowEvent event num : " + NotifyCenter.getPublisher(TestSlowEvent.class).currentEventSize());
 
-		latch.await();
+		latch.await(5_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(2, count.get());
 	}

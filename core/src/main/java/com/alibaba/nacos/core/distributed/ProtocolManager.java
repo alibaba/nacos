@@ -171,7 +171,7 @@ public class ProtocolManager
 		// time T2 after a period of time.
 		// (T1 < T2)
 
-		Set<Member> copy = new HashSet<>(event.getAllMembers());
+		Set<Member> copy = new HashSet<>(event.getMembers());
 
 		// Node change events between different protocols should not block each other
 		if (Objects.nonNull(apProtocol)) {

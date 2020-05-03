@@ -28,7 +28,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -36,20 +35,16 @@ import com.alibaba.nacos.core.utils.Loggers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -58,8 +53,11 @@ import javax.annotation.PostConstruct;
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/cluster")
 public class NacosClusterController {
 
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
+
+    public NacosClusterController(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
+    }
 
     @GetMapping(value = "/self")
     public RestResult<Member> self() {
@@ -67,7 +65,7 @@ public class NacosClusterController {
     }
 
     @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listAllNode(@RequestParam(value = "keyword", required = false) String ipKeyWord) {
+    public RestResult<Collection<Member>> listNodes(@RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> members = memberManager.allMembers();
         Collection<Member> result = new ArrayList<>();
 
@@ -90,7 +88,7 @@ public class NacosClusterController {
 
     @GetMapping(value = "/simple/nodes")
     public RestResult<Collection<String>> listSimpleNodes() {
-        return RestResultUtils.success(MemberUtils.simpleMembers(memberManager.allMembers()));
+        return RestResultUtils.success(memberManager.getMemberAddressInfos());
     }
 
     @GetMapping("/health")
@@ -101,7 +99,7 @@ public class NacosClusterController {
     @PostMapping(value = {"/report"})
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {
-            return RestResultUtils.failedWithData("Node information is illegal");
+            return RestResultUtils.failedWithMsg(400, "Node information is illegal");
         }
         Loggers.CLUSTER.debug("node state report, receive info : {}", node);
         node.setState(NodeState.UP);
@@ -125,8 +123,7 @@ public class NacosClusterController {
     public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
         Collection<Member> memberList = MemberUtils.multiParse(params);
         memberManager.memberLeave(memberList);
-        final NAsyncHttpClient asyncHttpClient = HttpClientManager
-                .newAsyncHttpClient(ServerMemberManager.class.getCanonicalName());
+        final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {};
         final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
         notifyList.removeAll(memberList);

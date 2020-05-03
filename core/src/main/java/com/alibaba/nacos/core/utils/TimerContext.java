@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.core.utils;
 
-import org.slf4j.Logger;
+import com.alibaba.nacos.common.utils.Pair;
+
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -30,11 +32,29 @@ public class TimerContext {
         TIME_RECORD.set(Pair.with(name, startTime));
     }
 
-    public static void end(Logger logger) {
+    public static void end() {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        logger.debug("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        Loggers.JOB_TIMER.info("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
         TIME_RECORD.remove();
+    }
+
+    public static void run(Runnable job, String name) {
+        start(name);
+        try {
+            job.run();
+        } finally {
+            end();
+        }
+    }
+
+    public static <V> V run(Callable<V> job, String name) throws Exception {
+        start(name);
+        try {
+            return job.call();
+        } finally {
+            end();
+        }
     }
 
 }
