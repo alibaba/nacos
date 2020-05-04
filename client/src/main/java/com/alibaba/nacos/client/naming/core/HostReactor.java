@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.GlobalEventType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -57,6 +58,8 @@ public class HostReactor {
     private String cacheDir;
 
     private ScheduledExecutorService executor;
+
+    private EventPublisher eventPublisher;
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
         this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
@@ -163,18 +166,21 @@ public class HostReactor {
                 changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
+                publishEvent(GlobalEventType.REGISTER, oldService, serviceInfo);
             }
 
             if (remvHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
+                publishEvent(GlobalEventType.DOWN, oldService, serviceInfo);
             }
 
             if (modHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
+                publishEvent(GlobalEventType.MODIFY, oldService, serviceInfo);
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -190,6 +196,7 @@ public class HostReactor {
                 .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
+            publishEvent(GlobalEventType.REGISTER, null, serviceInfo);
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
         }
@@ -202,6 +209,10 @@ public class HostReactor {
         }
 
         return serviceInfo;
+    }
+
+    private void publishEvent(GlobalEventType type, ServiceInfo oldInfo, ServiceInfo newInfo) {
+        eventPublisher.publish(type, oldInfo, newInfo);
     }
 
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
@@ -355,5 +366,9 @@ public class HostReactor {
             }
 
         }
+    }
+
+    public void setEventPublisher(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 }
