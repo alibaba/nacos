@@ -54,14 +54,10 @@ public class InetUtils {
         useOnlySiteLocalInterface = Boolean.parseBoolean(PropertyUtil.getProperty(USE_ONLY_SITE_INTERFACES));
 
         List<String> networks = PropertyUtil.getPropertyList(PREFERRED_NETWORKS);
-        for (String preferred : networks) {
-            preferredNetworks.add(preferred);
-        }
+        preferredNetworks.addAll(networks);
 
         List<String> interfaces = PropertyUtil.getPropertyList(IGNORED_INTERFACES);
-        for (String ignored : interfaces) {
-            ignoredInterfaces.add(ignored);
-        }
+        ignoredInterfaces.addAll(interfaces);
 
         String nacosIp = System.getProperty(NACOS_SERVER_IP);
         if (StringUtils.isBlank(nacosIp)) {
