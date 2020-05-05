@@ -91,7 +91,7 @@ public class InetUtils {
     private static List<String> ignoredInterfaces = new ArrayList<String>();
 
     static {
-        NotifyCenter.registerToSharePublisher(IPChangeEvent::new, IPChangeEvent.class);
+        NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
 
         useOnlySiteLocalInterface = Boolean.parseBoolean(PropertyUtil.getProperty(USE_ONLY_SITE_INTERFACES));
 
