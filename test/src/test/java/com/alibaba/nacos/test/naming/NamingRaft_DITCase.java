@@ -49,11 +49,9 @@ public class NamingRaft_DITCase extends BaseClusterTest {
 			inaming7.registerInstance(serviceName, instance);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
-			CountDownLatch latch = new CountDownLatch(1);
-			latch.await(60_000L, TimeUnit.MILLISECONDS);
+			Assert.fail(ex.getMessage());
+			return;
 		}
-
-		ThreadUtils.sleep(5_000L);
 		List<Instance> list = inaming8.getAllInstances(serviceName);
 		Assert.assertEquals(1, list.size());
 

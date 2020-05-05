@@ -80,15 +80,21 @@ public final class ThreadPoolManager {
 	 * @param executor {@link ExecutorService}
 	 */
 	public void register(String namespace, String group, ExecutorService executor) {
-        synchronized(this) {
-            if (!resourcesManager.containsKey(namespace)) {
-                resourcesManager.put(namespace, new HashMap<String, Set<ExecutorService>>(8));
+		if (!resourcesManager.containsKey(namespace)) {
+        	synchronized(this) {
                 lockers.put(namespace, new Object());
             }
         }
         final Object monitor = lockers.get(namespace);
         synchronized (monitor) {
             Map<String, Set<ExecutorService>> map = resourcesManager.get(namespace);
+            if (map == null) {
+            	map = new HashMap<>(8);
+            	map.put(group, new HashSet<ExecutorService>());
+				map.get(group).add(executor);
+				resourcesManager.put(namespace, map);
+				return;
+			}
             if (!map.containsKey(group)) {
                 map.put(group, new HashSet<ExecutorService>());
             }

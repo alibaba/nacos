@@ -150,21 +150,21 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 val = ApplicationUtils.getProperty("db.url." + i);
                 if (null == val) {
                     fatalLog.error("db.url." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.url." + i + " is null");
                 }
                 ds.setUrl(val.trim());
 
                 val = ApplicationUtils.getProperty("db.user." + i, ApplicationUtils.getProperty("db.user"));
                 if (null == val) {
                     fatalLog.error("db.user." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.user." + i + " is null");
                 }
                 ds.setUsername(val.trim());
 
                 val = ApplicationUtils.getProperty("db.password." + i, ApplicationUtils.getProperty("db.password"));
                 if (null == val) {
                     fatalLog.error("db.password." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.password." + i + " is null");
                 }
                 ds.setPassword(val.trim());
 

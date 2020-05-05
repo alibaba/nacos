@@ -143,6 +143,7 @@ public final class LookupFactory {
 			LOOK_UP = new DiscoveryMemberLookup();
 			return LOOK_UP;
 		}
+		// unpossible to run here
 		throw new IllegalArgumentException();
 	}
 
