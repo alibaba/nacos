@@ -136,7 +136,7 @@ public class JRaftProtocol
 			loadLogProcessor(config.listLogProcessor());
 
 			this.selfAddress = memberManager.getSelf().getAddress();
-			NotifyCenter.registerToSharePublisher(RaftEvent::new, RaftEvent.class);
+			NotifyCenter.registerToSharePublisher(RaftEvent.class);
 			this.failoverRetries = ConvertUtils
 					.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 			this.failoverRetriesStr = String.valueOf(failoverRetries);

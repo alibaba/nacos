@@ -162,7 +162,7 @@ public class ServerMemberManager
 
 	private void registerClusterEvent() {
 		// Register node change events
-		NotifyCenter.registerToPublisher(MemberChangeEvent::new, MemberChangeEvent.class,
+		NotifyCenter.registerToPublisher(MemberChangeEvent.class,
 				ApplicationUtils.getProperty("nacos.member-change-event.queue.size",
 						Integer.class, 128));
 

@@ -37,8 +37,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -63,24 +61,11 @@ public class NotifyCenter {
 
 	private static final NotifyCenter INSTANCE = new NotifyCenter();
 
-	private final Map<String, Publisher> publisherMap = new ConcurrentHashMap<>(
-			16);
+	private final Map<String, Publisher> publisherMap = new ConcurrentHashMap<>(16);
 
 	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
 
-	private final Publisher sharePublisher = new Publisher(SlowEvent.class,
-			new BiPredicate<Event, Subscribe>() {
-				@Override
-				public boolean test(Event event, Subscribe subscribe) {
-					final String sourceName = event.getClass().getCanonicalName();
-					if (subscribe instanceof SmartSubscribe) {
-						return true;
-					}
-					final String targetName = subscribe.subscribeType()
-							.getCanonicalName();
-					return Objects.equals(sourceName, targetName);
-				}
-			}, 1024);
+	private final Publisher sharePublisher = new Publisher(SlowEvent.class, 1024);
 
 	@JustForTest
 	public static Map<String, Publisher> getPublisherMap() {
@@ -108,7 +93,6 @@ public class NotifyCenter {
 	private static volatile boolean stopDeferPublish = false;
 
 	static {
-		INSTANCE.sharePublisher.setSupplier(() -> null);
 		INSTANCE.sharePublisher.start();
 
 		ShutdownUtils.addShutdownHook(new Thread(() -> {
@@ -240,7 +224,6 @@ public class NotifyCenter {
 	 * @return
 	 */
 	public static Publisher registerToSharePublisher(
-			final Supplier<? extends SlowEvent> supplier,
 			final Class<? extends SlowEvent> eventType) {
 		return INSTANCE.sharePublisher;
 	}
@@ -253,8 +236,8 @@ public class NotifyCenter {
 	 * @param queueMaxSize
 	 * @return
 	 */
-	public static Publisher registerToPublisher(final Supplier<? extends Event> supplier,
-			final Class<? extends Event> eventType, final int queueMaxSize) {
+	public static Publisher registerToPublisher(final Class<? extends Event> eventType,
+			final int queueMaxSize) {
 		final String topic = eventType.getCanonicalName();
 		INSTANCE.publisherMap.computeIfAbsent(topic, s -> {
 			Publisher publisher = new Publisher(eventType, queueMaxSize);
@@ -262,7 +245,6 @@ public class NotifyCenter {
 		});
 		Publisher publisher = INSTANCE.publisherMap.get(topic);
 		publisher.queueMaxSize = queueMaxSize;
-		publisher.setSupplier(supplier);
 		return publisher;
 	}
 
@@ -288,36 +270,16 @@ public class NotifyCenter {
 		private final CopyOnWriteArraySet<Subscribe> subscribes = new CopyOnWriteArraySet<>();
 		private int queueMaxSize = -1;
 		private BlockingQueue<Event> queue;
-		private Supplier<? extends Event> supplier;
 		private long lastEventSequence = -1L;
-
-		// judge the subscribe can deal Event
-
-		private BiPredicate<Event, Subscribe> filter;
 
 		Publisher(final Class<? extends Event> eventType) {
 			this(eventType, RING_BUFFER_SIZE);
 		}
 
 		Publisher(final Class<? extends Event> eventType, final int queueMaxSize) {
-			this(eventType, new BiPredicate<Event, Subscribe>() {
-				@Override
-				public boolean test(Event event, Subscribe subscribe) {
-					return true;
-				}
-			}, queueMaxSize);
-		}
-
-		Publisher(final Class<? extends Event> eventType,
-				BiPredicate<Event, Subscribe> filter, final int queueMaxSize) {
 			this.eventType = eventType;
-			this.filter = filter;
 			this.queueMaxSize = queueMaxSize;
 			this.queue = new ArrayBlockingQueue<>(queueMaxSize);
-		}
-
-		void setSupplier(Supplier<? extends Event> supplier) {
-			this.supplier = supplier;
 		}
 
 		public CopyOnWriteArraySet<Subscribe> getSubscribes() {
@@ -361,7 +323,7 @@ public class NotifyCenter {
 					}
 					final Event event = queue.take();
 					receiveEvent(event);
-					lastEventSequence = event.sequence();
+					lastEventSequence = Math.max(lastEventSequence, event.sequence());
 				}
 			}
 			catch (Throwable ex) {
@@ -383,12 +345,16 @@ public class NotifyCenter {
 			try {
 				this.queue.put(event);
 				return true;
-			} catch (InterruptedException ignore) {
+			}
+			catch (InterruptedException ignore) {
 				Thread.interrupted();
-				LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
+				LOGGER.warn(
+						"Unable to plug in due to interruption, synchronize sending time, event : {}",
+						event);
 				receiveEvent(event);
 				return true;
-			} catch (Throwable ex) {
+			}
+			catch (Throwable ex) {
 				LOGGER.error("[NotifyCenter] publish {} has error : {}", event, ex);
 				return false;
 			}
@@ -417,28 +383,27 @@ public class NotifyCenter {
 			final long currentEventSequence = event.sequence();
 
 			for (Subscribe subscribe : tmp) {
-
-				// Determines whether the event is acceptable to this subscriber
-				if (!filter.test(event, subscribe)) {
-					LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber", event.getClass());
-					continue;
-				}
-
 				// If you are a multi-event listener, you need to make additional logical judgments
 				if (subscribe instanceof SmartSubscribe) {
 					if (!((SmartSubscribe) subscribe).canNotify(event)) {
-						LOGGER.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
+						LOGGER.debug(
+								"[NotifyCenter] the {} is unacceptable to this multi-event subscriber",
+								event.getClass());
 						continue;
 					}
 				}
 
 				// Whether to ignore expiration events
-				if (subscribe.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
-					LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire", event.getClass());
+				if (subscribe.ignoreExpireEvent()
+						&& lastEventSequence > currentEventSequence) {
+					LOGGER.debug(
+							"[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
+							event.getClass());
 					continue;
 				}
 
-				LOGGER.debug("[NotifyCenter] the {} will received by {}", event, subscribe);
+				LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
+						subscribe);
 
 				final Runnable job = () -> subscribe.onEvent(event);
 				final Executor executor = subscribe.executor();

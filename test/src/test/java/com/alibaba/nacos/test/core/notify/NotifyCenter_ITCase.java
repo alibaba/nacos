@@ -51,9 +51,9 @@ public class NotifyCenter_ITCase {
 	}
 
 	static {
-		NotifyCenter.registerToSharePublisher(TestSlowEvent::new, TestSlowEvent.class);
-		NotifyCenter.registerToSharePublisher(TestSlow2Event::new, TestSlow2Event.class);
-		NotifyCenter.registerToPublisher(TestEvent::new, TestEvent.class, 8);
+		NotifyCenter.registerToSharePublisher(TestSlowEvent.class);
+		NotifyCenter.registerToSharePublisher(TestSlow2Event.class);
+		NotifyCenter.registerToPublisher(TestEvent.class, 8);
 	}
 
 	@Test
@@ -124,7 +124,7 @@ public class NotifyCenter_ITCase {
 
 	@Test
 	public void test_b_ignore_expire_event() throws Exception {
-		NotifyCenter.registerToPublisher(ExpireEvent::new, ExpireEvent.class, 16);
+		NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 		NotifyCenter.registerSubscribe(new Subscribe<ExpireEvent>() {
 			@Override
@@ -168,7 +168,7 @@ public class NotifyCenter_ITCase {
 
 	@Test
 	public void test_c_no_ignore_expire_event() throws Exception {
-		NotifyCenter.registerToPublisher(NoExpireEvent::new, NoExpireEvent.class, 16);
+		NotifyCenter.registerToPublisher(NoExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 		NotifyCenter.registerSubscribe(new Subscribe<NoExpireEvent>() {
 			@Override

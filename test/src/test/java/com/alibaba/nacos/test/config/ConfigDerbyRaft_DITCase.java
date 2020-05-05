@@ -36,6 +36,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.core.BaseClusterTest;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
+@Ignore
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class ConfigDerbyRaft_DITCase
 		extends BaseClusterTest {
@@ -294,7 +296,7 @@ public class ConfigDerbyRaft_DITCase
 				"this.is.raft_cluster=lessspring_7");
 		Assert.assertTrue(result);
 
-		NotifyCenter.registerToPublisher(RaftDBErrorRecoverEvent::new, RaftDBErrorRecoverEvent.class, 8);
+		NotifyCenter.registerToPublisher(RaftDBErrorRecoverEvent.class, 8);
 
 		CountDownLatch latch1 = new CountDownLatch(1);
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
