@@ -16,6 +16,7 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {
-                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
+                value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
             } catch (UnsupportedEncodingException ignore) {
             }
         }
@@ -59,7 +60,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {
-                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
+                value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
             } catch (UnsupportedEncodingException ignore) {
             }
         }

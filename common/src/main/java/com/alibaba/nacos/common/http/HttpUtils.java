@@ -19,7 +19,9 @@ package com.alibaba.nacos.common.http;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -71,7 +73,7 @@ public final class HttpUtils {
         return sb.toString();
     }
 
-    public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
+    public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) throws Exception {
         Map<String, String> map = new HashMap<String, String>(16);
         for (String key : parameterMap.keySet()) {
             map.put(key, parameterMap.get(key)[0]);
@@ -113,6 +115,21 @@ public final class HttpUtils {
             }
         }
         return sb.toString();
+    }
+
+    public static String decode(String str, String encode) throws UnsupportedEncodingException {
+        return innerDecode(null, str, encode);
+    }
+
+    private static String innerDecode(String pre, String now, String encode) throws UnsupportedEncodingException {
+        // Because the data may be encoded by the URL more than once,
+        // it needs to be decoded recursively until it is fully successful
+        if (StringUtils.equals(pre, now)) {
+            return pre;
+        }
+        pre = now;
+        now = URLDecoder.decode(now, encode);
+        return innerDecode(pre, now, encode);
     }
 
 

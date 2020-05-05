@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -63,9 +62,12 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
 			return target.getParts();
 		} else {
 			String s = ByteUtils.toString(body);
-			return StringUtils.isBlank(s) ? HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
-							StandardCharsets.UTF_8.name()) :
-					s;
+			if (StringUtils.isBlank(s)) {
+				return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
+								StandardCharsets.UTF_8.name());
+			}
+			System.out.println("body : " + s);
+			return s;
 		}
 	}
 

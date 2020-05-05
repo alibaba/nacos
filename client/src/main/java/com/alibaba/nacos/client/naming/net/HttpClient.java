@@ -39,7 +39,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class HttpClient {
 
     public static final int READ_TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 5000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     private static final boolean ENABLE_HTTPS = Boolean

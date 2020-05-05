@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
@@ -32,13 +31,13 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -47,26 +46,21 @@ import java.net.URI;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author nacos
  */
 public class DistroFilter implements Filter {
 
-    private static final String SLASH= "/";
-    private static final String DOUBLE_SLASH = "://";
+    private static final int PROXY_CONNECT_TIMEOUT = 2000;
+    private static final int PROXY_READ_TIMEOUT = 2000;
 
     @Autowired
     private DistroMapper distroMapper;
 
     @Autowired
     private ControllerMethodsCache controllerMethodsCache;
-
-    private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -125,41 +119,31 @@ public class DistroFilter implements Filter {
                     return;
                 }
 
-                if (urlString.startsWith(SLASH)) {
-                    urlString = urlString.substring(1);
-                }
-
                 final String targetServer = distroMapper.mapSrv(groupedServiceName);
 
-                final String reqUrl =
-                        req.getScheme() + DOUBLE_SLASH + targetServer + SLASH + urlString;
-
-                HttpHeaders headers = new HttpHeaders();
-                Enumeration<String> headerNames = req.getHeaderNames();
-                while (headerNames.hasMoreElements()) {
-                    String headerName = headerNames.nextElement();
-                    headers.set(headerName, req.getHeader(headerName));
+                List<String> headerList = new ArrayList<>(16);
+                Enumeration<String> headers = req.getHeaderNames();
+                while (headers.hasMoreElements()) {
+                    String headerName = headers.nextElement();
+                    headerList.add(headerName);
+                    headerList.add(req.getHeader(headerName));
                 }
 
-                headers.set("Content-Type", "application/x-www-form-urlencoded;charset="
-                        + Charsets.UTF_8.name());
-                headers.set("Accept-Charset", Charsets.UTF_8.name());
-                headers.set(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
-                headers.set(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
+                String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
 
+                HttpClient.HttpResult result =
+                        HttpClient.request("http://" + targetServer + req.getRequestURI(), headerList,
+                                HttpClient.translateParameterMap(req.getParameterMap()),
+                                body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
                 try {
-                    HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
-                    ResponseEntity<String> result = restTemplate
-                            .exchange(reqUrl, Objects.requireNonNull(
-                                    HttpMethod.resolve(req.getMethod()), "req.getMethod() is null"), httpEntity,
-                                    String.class);
                     resp.setCharacterEncoding("UTF-8");
-                    resp.getWriter().write(Objects.requireNonNull(result.getBody(), "result.getBody() is null"));
-                    resp.setStatus(result.getStatusCodeValue());
-                } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName) + urlString);
+                    resp.getWriter().write(result.content);
+                    resp.setStatus(result.code);
+                } catch (Throwable ex) {
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: {}, error : {}", distroMapper.mapSrv(groupedServiceName) + urlString, ex);
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server Error: " + ex.getMessage());
+                    return;
                 }
-                return;
             }
 
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
