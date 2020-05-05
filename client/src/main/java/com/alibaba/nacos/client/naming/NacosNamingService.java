@@ -28,7 +28,9 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
+import com.alibaba.nacos.client.naming.core.DefaultEventPublisher;
 import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.core.EventPublisher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -73,6 +75,8 @@ public class NacosNamingService implements NamingService {
 
     private EventDispatcher eventDispatcher;
 
+    private EventPublisher eventPublisher;
+
     private NamingProxy serverProxy;
 
     public NacosNamingService(String serverList) {
@@ -94,9 +98,10 @@ public class NacosNamingService implements NamingService {
         initLogName(properties);
 
         eventDispatcher = new EventDispatcher();
+        eventPublisher = new DefaultEventPublisher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
+        hostReactor = new HostReactor(eventDispatcher, eventPublisher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
     }
 

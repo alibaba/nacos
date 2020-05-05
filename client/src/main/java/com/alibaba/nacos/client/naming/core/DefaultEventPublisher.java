@@ -21,10 +21,14 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 /**
  * @author maketubo
  * @version 1.0
- * @ClassName EventInvoker
+ * @ClassName DefaultEventPublisher
  * @description
- * @date 2020/5/4 17:59
+ * @date 2020/5/4 23:41
  */
-public abstract class EventPublisher {
-    public abstract void publish(GlobalEventType type, ServiceInfo oldInfo, ServiceInfo newInfo);
+public class DefaultEventPublisher extends EventPublisher {
+
+    @Override
+    public void publish(GlobalEventType type, ServiceInfo oldInfo, ServiceInfo newInfo) {
+        //do nothing to avoid NPE
+    }
 }

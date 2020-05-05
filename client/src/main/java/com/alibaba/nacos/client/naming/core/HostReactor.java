@@ -62,10 +62,14 @@ public class HostReactor {
     private EventPublisher eventPublisher;
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+        this(eventDispatcher, new DefaultEventPublisher(), serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+    public HostReactor(EventDispatcher eventDispatcher, EventPublisher eventPublisher, NamingProxy serverProxy, String cacheDir) {
+        this(eventDispatcher, eventPublisher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    }
+
+    public HostReactor(EventDispatcher eventDispatcher, EventPublisher eventPublisher, NamingProxy serverProxy, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
 
         executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
@@ -90,6 +94,7 @@ public class HostReactor {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
+        this.eventPublisher = eventPublisher;
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -269,7 +274,6 @@ public class HostReactor {
     }
 
 
-
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -368,7 +372,4 @@ public class HostReactor {
         }
     }
 
-    public void setEventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
 }
