@@ -25,6 +25,7 @@ import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
+import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alipay.remoting.AsyncContext;
@@ -55,7 +56,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
             Log log = Log.parseFrom(holder.getBytes());
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(log.getGroup());
             if (Objects.isNull(tuple)) {
-                asyncCtx.sendResponse(RestResultUtils.failedWithData(new NoSuchRaftGroupException(
+                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoSuchRaftGroupException(
                         "Could not find the corresponding Raft Group : " + log.getGroup())));
                 return;
             }
@@ -65,7 +66,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 server.commit(log, future, retryCnt).whenComplete((result, t) -> {
                     if (Objects.nonNull(t)) {
-                        asyncCtx.sendResponse(RestResultUtils.failedWithData(t));
+                        asyncCtx.sendResponse(RestResultUtils.failedWithException(t));
                         return;
                     }
                     if (result instanceof LogFuture) {
@@ -83,19 +84,19 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                         GetResponse response = (GetResponse) result;
                         RestResult r = null;
                         if (StringUtils.isNotBlank(response.getErrMsg())) {
-                            r = RestResultUtils.failedWithData(new ConsistencyException(response.getErrMsg()));
+                            r = RestResultUtils.failedWithException(new ConsistencyException(response.getErrMsg()));
                         } else {
-                            r = RestResultUtils.success(response.getData().toByteArray());
+                            r = RestResultUtils.success(response.toByteArray());
                         }
                         asyncCtx.sendResponse(r);
                     }
                 });
             }
             else {
-                asyncCtx.sendResponse(RestResultUtils.failedWithData("not leader"));
+                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoLeaderException(log.getGroup())));
             }
         } catch (Exception e) {
-            asyncCtx.sendResponse(RestResultUtils.failedWithData(e.getMessage()));
+            asyncCtx.sendResponse(RestResultUtils.failedWithException(e));
         }
     }
 

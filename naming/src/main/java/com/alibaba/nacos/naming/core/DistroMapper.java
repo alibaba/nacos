@@ -39,6 +39,9 @@ import java.util.Objects;
 @Component("distroMapper")
 public class DistroMapper implements MemberChangeListener {
 
+    /**
+     * List of service nodes, you must ensure that the order of healthyList is the same for all nodes
+     */
     private volatile List<String> healthyList = new ArrayList<>();
 
     private final SwitchDomain switchDomain;
