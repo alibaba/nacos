@@ -163,9 +163,6 @@ public class RaftCore {
 
             final RaftPeer leader = getLeader();
 
-            System.out.println("leader : " + leader);
-            System.out.println(peers);
-
             raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toJSONString(), parameters);
             return;
         }

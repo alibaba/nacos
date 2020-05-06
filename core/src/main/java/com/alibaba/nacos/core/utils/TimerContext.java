@@ -35,7 +35,7 @@ public class TimerContext {
     public static void end() {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        Loggers.JOB_TIMER.info("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        Loggers.JOB_TIMER.debug("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
         TIME_RECORD.remove();
     }
 

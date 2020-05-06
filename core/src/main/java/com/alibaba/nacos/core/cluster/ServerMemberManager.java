@@ -47,6 +47,7 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -318,10 +319,6 @@ public class ServerMemberManager
 
 	public boolean isFirstIp() {
 		return Objects.equals(serverList.firstKey(), this.localAddress);
-	}
-
-	public boolean isSelf(Member member) {
-		return Objects.equals(member.getAddress(), this.localAddress);
 	}
 
 	@Override

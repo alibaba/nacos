@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
@@ -32,9 +33,11 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.ReuseUploadFileHttpServletRequest;
+import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -64,8 +67,6 @@ import java.util.Map;
  * If the embedded distributed storage is enabled, all requests are routed to the Leader
  * node for processing, and the maximum number of forwards for a single request cannot
  * exceed three
- * <p>
- * // TODO Request forwarding unified processing
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -91,14 +92,22 @@ public class TransferToLeaderFilter implements Filter {
 
 	@PostConstruct
 	protected void init() {
-		LogUtil.defaultLog.info("Open the request and forward it to the leader");
-		listenerLeaderStatus();
-		registerSubscribe();
+		if (shouldProcessRequests()) {
+			LogUtil.defaultLog.info("Open the request and forward it to the leader");
+			listenerLeaderStatus();
+			registerSubscribe();
+		}
 	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
+
+		if (!shouldProcessRequests()) {
+			chain.doFilter(request, response);
+			return;
+		}
+
 		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
@@ -125,7 +134,6 @@ public class TransferToLeaderFilter implements Filter {
 
 			// Determine if the system degradation was triggered
 			// System demotion is enabled and all requests are forwarded to the leader node
-
 			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 
 			if (downgrading && isLeader) {
@@ -142,7 +150,7 @@ public class TransferToLeaderFilter implements Filter {
 					return;
 				}
 
-				String val = req.getHeader(Constants.FORWARD_LEADER);
+				final String val = req.getHeader(Constants.FORWARD_LEADER);
 				final int transferCnt =
 						Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
 
@@ -157,10 +165,12 @@ public class TransferToLeaderFilter implements Filter {
 				if (urlString.startsWith("/")) {
 					urlString = urlString.substring(1);
 				}
+
 				final String reqUrl =
 						req.getScheme() + "://" + leaderServer + "/" + urlString;
-				HttpHeaders headers = new HttpHeaders();
-				Enumeration<String> headerNames = req.getHeaderNames();
+
+				final HttpHeaders headers = new HttpHeaders();
+				final Enumeration<String> headerNames = req.getHeaderNames();
 				headers.set(Constants.FORWARD_LEADER, String.valueOf(transferCnt));
 				while (headerNames.hasMoreElements()) {
 					String headerName = headerNames.nextElement();
@@ -170,9 +180,7 @@ public class TransferToLeaderFilter implements Filter {
 				ResponseEntity<String> result = restTemplate
 						.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity,
 								String.class);
-				resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-				resp.getWriter().write(result.getBody());
-				resp.setStatus(result.getStatusCodeValue());
+				WebUtils.response(resp, result.getBody(), result.getStatusCodeValue());
 				return;
 			}
 			chain.doFilter(req, response);
@@ -187,7 +195,7 @@ public class TransferToLeaderFilter implements Filter {
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 			return;
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			LogUtil.defaultLog
 					.error("An exception occurred when the request was forwarded to the Leader {}, error {}",
 							leaderServer, e);
@@ -195,7 +203,6 @@ public class TransferToLeaderFilter implements Filter {
 					"Server failed," + e.toString());
 			return;
 		}
-
 	}
 
 	@Override
@@ -249,5 +256,9 @@ public class TransferToLeaderFilter implements Filter {
 						|| (event instanceof RaftDBErrorRecoverEvent);
 			}
 		});
+	}
+
+	private boolean shouldProcessRequests() {
+		return PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode();
 	}
 }
