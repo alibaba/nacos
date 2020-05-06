@@ -182,7 +182,7 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 				Loggers.CLUSTER.error("node state report task has error : {}", e);
 			}
 			finally {
-				TimerContext.end();
+				TimerContext.end(Loggers.CLUSTER);
 			}
 		}
 
