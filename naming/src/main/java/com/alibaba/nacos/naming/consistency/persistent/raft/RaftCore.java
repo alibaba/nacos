@@ -579,7 +579,7 @@ public class RaftCore {
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();
         remote.ip = beat.getJSONObject("peer").getString("ip");
-        remote.state = RaftPeer.State.valueOf(beat.getJSONObject("peer").getString("state"));
+        remote.state = peers.getOrThrowException(remote.ip).state;
         remote.term.set(beat.getJSONObject("peer").getLongValue("term"));
         remote.heartbeatDueMs = beat.getJSONObject("peer").getLongValue("heartbeatDueMs");
         remote.leaderDueMs = beat.getJSONObject("peer").getLongValue("leaderDueMs");
