@@ -34,5 +34,4 @@ public class Loggers {
 
     public static final Logger CLUSTER = LoggerFactory.getLogger("com.alibaba.nacos.core.cluster");
 
-    public static final Logger JOB_TIMER = LoggerFactory.getLogger("com.alibaba.nacos.core.job.timer");
 }

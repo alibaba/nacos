@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -55,7 +55,7 @@ public class ConfigSubService {
         this.memberManager = memberManager;
 
         scheduler = Executors.newScheduledThreadPool(
-            ThreadUtil.getSuitableThreadCount(), new ThreadFactory() {
+            ThreadUtils.getSuitableThreadCount(), new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread t = new Thread(r);

@@ -13,28 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.utils;
+
+package com.alibaba.nacos.common.model;
 
 /**
- * Thread util
+ * Unified storage of code
  *
- * @author Nacos
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ThreadUtil {
+public enum Code {
 
-    /**
-     * 通过内核数，算出合适的线程数；1.5-2倍cpu内核数
-     *
-     * @return thread count
-     */
-    public static int getSuitableThreadCount() {
-        final int coreCount = Runtime.getRuntime().availableProcessors();
-        int workerCount = 1;
-        while (workerCount < coreCount * THREAD_MULTIPLER) {
-            workerCount <<= 1;
-        }
-        return workerCount;
-    }
+	SUCCESS(0, "success"),
 
-    private final static int THREAD_MULTIPLER = 2;
+	SERVER_INNER_ERROR(500, "server inner error");
+
+	// naming module
+
+	// config module
+
+	// core module
+
+	private int code;
+	private String msg;
+
+	Code(int code, String msg) {
+		this.code = code;
+		this.msg = msg;
+	}
+
+	public int getCode() {
+		return code;
+	}
+
+	public void setCode(int code) {
+		this.code = code;
+	}
+
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
 }

@@ -66,7 +66,6 @@ public class ReuseHttpServletRequest extends HttpServletRequestWrapper implement
 				return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
 								StandardCharsets.UTF_8.name());
 			}
-			System.out.println("body : " + s);
 			return s;
 		}
 	}

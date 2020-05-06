@@ -17,10 +17,13 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.Pair;
+import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
 
 /**
+ * Simple task time calculation
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class TimerContext {
@@ -32,28 +35,28 @@ public class TimerContext {
         TIME_RECORD.set(Pair.with(name, startTime));
     }
 
-    public static void end() {
+    public static void end(final Logger logger) {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        Loggers.JOB_TIMER.debug("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        logger.debug("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
         TIME_RECORD.remove();
     }
 
-    public static void run(Runnable job, String name) {
+    public static void run(final Runnable job, final String name, final Logger logger) {
         start(name);
         try {
             job.run();
         } finally {
-            end();
+            end(logger);
         }
     }
 
-    public static <V> V run(Callable<V> job, String name) throws Exception {
+    public static <V> V run(final Callable<V> job, final String name, final Logger logger) throws Exception {
         start(name);
         try {
             return job.call();
         } finally {
-            end();
+            end(logger);
         }
     }
 
