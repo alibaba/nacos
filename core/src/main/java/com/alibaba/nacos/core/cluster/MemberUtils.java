@@ -153,6 +153,7 @@ public class MemberUtils {
 
 	public static List<String> simpleMembers(Collection<Member> members) {
 		return members.stream().map(Member::getAddress)
+				.sorted()
 				.collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 	}
 

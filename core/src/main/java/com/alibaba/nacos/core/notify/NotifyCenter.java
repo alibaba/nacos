@@ -25,7 +25,6 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -65,7 +64,27 @@ public class NotifyCenter {
 
 	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
 
-	private final Publisher sharePublisher = new Publisher(SlowEvent.class, 1024);
+
+	private final Publisher sharePublisher = new Publisher(SlowEvent.class, 1024) {
+
+		@Override
+		protected void notifySubscriber(Subscribe subscribe, Event event) {
+			// Is to handle a SlowEvent, because the event shares an event
+			// queue and requires additional filtering logic
+			if (filter(subscribe, event)) {
+				return;
+			}
+			super.notifySubscriber(subscribe, event);
+		}
+
+		private boolean filter(final Subscribe subscribe, final Event event) {
+			final String sourceName = event.getClass().getCanonicalName();
+			final String targetName = subscribe.subscribeType()
+					.getCanonicalName();
+			return !Objects.equals(sourceName, targetName);
+		}
+
+	};
 
 	@JustForTest
 	public static Map<String, Publisher> getPublisherMap() {
@@ -238,6 +257,11 @@ public class NotifyCenter {
 	 */
 	public static Publisher registerToPublisher(final Class<? extends Event> eventType,
 			final int queueMaxSize) {
+
+		if (SlowEvent.class.isAssignableFrom(eventType)) {
+			return INSTANCE.sharePublisher;
+		}
+
 		final String topic = eventType.getCanonicalName();
 		INSTANCE.publisherMap.computeIfAbsent(topic, s -> {
 			Publisher publisher = new Publisher(eventType, queueMaxSize);
@@ -376,23 +400,10 @@ public class NotifyCenter {
 		}
 
 		void receiveEvent(Event event) {
-			Set<Subscribe> tmp = new HashSet<>();
-			tmp.addAll(INSTANCE.smartSubscribes);
-			tmp.addAll(subscribes);
-
 			final long currentEventSequence = event.sequence();
 
-			for (Subscribe subscribe : tmp) {
-				// If you are a multi-event listener, you need to make additional logical judgments
-				if (subscribe instanceof SmartSubscribe) {
-					if (!((SmartSubscribe) subscribe).canNotify(event)) {
-						LOGGER.debug(
-								"[NotifyCenter] the {} is unacceptable to this multi-event subscriber",
-								event.getClass());
-						continue;
-					}
-				}
-
+			// Notification single event listener
+			for (Subscribe subscribe : subscribes) {
 				// Whether to ignore expiration events
 				if (subscribe.ignoreExpireEvent()
 						&& lastEventSequence > currentEventSequence) {
@@ -401,22 +412,37 @@ public class NotifyCenter {
 							event.getClass());
 					continue;
 				}
+				notifySubscriber(subscribe, event);
+			}
 
-				LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
-						subscribe);
-
-				final Runnable job = () -> subscribe.onEvent(event);
-				final Executor executor = subscribe.executor();
-				if (Objects.nonNull(executor)) {
-					executor.execute(job);
+			// Notification multi-event event listener
+			for (SmartSubscribe subscribe : INSTANCE.smartSubscribes) {
+				// If you are a multi-event listener, you need to make additional logical judgments
+				if (!subscribe.canNotify(event)) {
+					LOGGER.debug(
+								"[NotifyCenter] the {} is unacceptable to this multi-event subscriber",
+								event.getClass());
+					continue;
 				}
-				else {
-					try {
-						job.run();
-					}
-					catch (Throwable e) {
-						LOGGER.error("Event callback exception : {}", e);
-					}
+				notifySubscriber(subscribe, event);
+			}
+		}
+
+		protected void notifySubscriber(final Subscribe subscribe, final Event event) {
+			LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
+					subscribe);
+
+			final Runnable job = () -> subscribe.onEvent(event);
+			final Executor executor = subscribe.executor();
+			if (Objects.nonNull(executor)) {
+				executor.execute(job);
+			}
+			else {
+				try {
+					job.run();
+				}
+				catch (Throwable e) {
+					LOGGER.error("Event callback exception : {}", e);
 				}
 			}
 		}

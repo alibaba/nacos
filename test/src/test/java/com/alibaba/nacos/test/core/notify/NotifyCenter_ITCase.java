@@ -46,18 +46,12 @@ public class NotifyCenter_ITCase {
 
 	}
 
-	private static class TestSlow2Event implements SlowEvent {
-
-	}
-
-	static {
-		NotifyCenter.registerToSharePublisher(TestSlowEvent.class);
-		NotifyCenter.registerToSharePublisher(TestSlow2Event.class);
-		NotifyCenter.registerToPublisher(TestEvent.class, 8);
-	}
-
 	@Test
 	public void test_a_event_can_listen() throws Exception {
+
+		NotifyCenter.registerToSharePublisher(TestSlowEvent.class);
+		NotifyCenter.registerToPublisher(TestEvent.class, 8);
+
 		final CountDownLatch latch = new CountDownLatch(2);
 		final AtomicInteger count = new AtomicInteger(0);
 
@@ -65,6 +59,7 @@ public class NotifyCenter_ITCase {
 			@Override
 			public void onEvent(TestSlowEvent event) {
 				try {
+					System.out.println(event);
 					count.incrementAndGet();
 				} finally {
 					latch.countDown();
@@ -76,10 +71,12 @@ public class NotifyCenter_ITCase {
 				return TestSlowEvent.class;
 			}
 		});
+
 		NotifyCenter.registerSubscribe(new Subscribe<TestEvent>() {
 			@Override
 			public void onEvent(TestEvent event) {
 				try {
+					System.out.println(event);
 					count.incrementAndGet();
 				} finally {
 					latch.countDown();
@@ -161,7 +158,6 @@ public class NotifyCenter_ITCase {
 
 		@Override
 		public long sequence() {
-			latch2.countDown();
 			return no;
 		}
 	}
@@ -173,7 +169,9 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerSubscribe(new Subscribe<NoExpireEvent>() {
 			@Override
 			public void onEvent(NoExpireEvent event) {
+				System.out.println(event);
 				count.incrementAndGet();
+				latch2.countDown();
 			}
 
 			@Override
@@ -189,6 +187,77 @@ public class NotifyCenter_ITCase {
 
 		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 		Assert.assertEquals(3, count.get());
+	}
+
+	private static class SlowE1 implements SlowEvent {
+		private String info = "SlowE1";
+
+		public String getInfo() {
+			return info;
+		}
+
+		public void setInfo(String info) {
+			this.info = info;
+		}
+	}
+
+	private static class SlowE2 implements SlowEvent {
+		private String info = "SlowE2";
+
+		public String getInfo() {
+			return info;
+		}
+
+		public void setInfo(String info) {
+			this.info = info;
+		}
+	}
+
+	@Test(timeout = 10_000L)
+	public void test_k_two_slowEvent() throws Exception {
+		NotifyCenter.registerToSharePublisher(SlowE1.class);
+		NotifyCenter.registerToSharePublisher(SlowE2.class);
+
+		CountDownLatch latch1 = new CountDownLatch(1);
+		CountDownLatch latch2 = new CountDownLatch(1);
+
+		String[] values = new String[] {null, null};
+
+		NotifyCenter.registerSubscribe(new Subscribe<SlowE1>() {
+			@Override
+			public void onEvent(SlowE1 event) {
+				values[0] = event.info;
+				latch1.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return SlowE1.class;
+			}
+		});
+
+		NotifyCenter.registerSubscribe(new Subscribe<SlowE2>() {
+			@Override
+			public void onEvent(SlowE2 event) {
+				values[1] = event.info;
+				latch2.countDown();
+			}
+
+			@Override
+			public Class<? extends Event> subscribeType() {
+				return SlowE2.class;
+			}
+		});
+
+		NotifyCenter.publishEvent(new SlowE1());
+		NotifyCenter.publishEvent(new SlowE2());
+
+		latch1.await();
+		latch2.await();
+
+		Assert.assertEquals("SlowE1", values[0]);
+		Assert.assertEquals("SlowE2", values[1]);
+
 	}
 
 }
