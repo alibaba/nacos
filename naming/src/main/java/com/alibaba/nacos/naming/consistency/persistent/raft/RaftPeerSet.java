@@ -231,6 +231,15 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.get(server);
     }
 
+    public RaftPeer getOrThrowException(String server) {
+        RaftPeer raftPeer = peers.get(server);
+        if (raftPeer == null) {
+            throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
+                + Arrays.toString(peers.keySet().toArray()));
+        }
+        return raftPeer;
+    }
+
     public int majorityCount() {
         return peers.size() / 2 + 1;
     }
