@@ -65,7 +65,7 @@ public class MemberUtils {
 			port = Integer.parseInt(info[1]);
 		}
 
-		int raftPort = port + 1000 >= 65535 ? port + 1 : port + 1000;
+		int raftPort = port - 1000;
 
 		Map<String, String> extendInfo = new HashMap<>(4);
 		// The Raft Port information needs to be set by default

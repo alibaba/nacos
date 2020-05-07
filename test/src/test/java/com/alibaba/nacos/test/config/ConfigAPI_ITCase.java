@@ -387,23 +387,17 @@ public class ConfigAPI_ITCase {
         Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
 
-        CountDownLatch latch = new CountDownLatch(1);
-
         Listener ml = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                try {
-                    count.incrementAndGet();
-                    Assert.assertEquals(content, configInfo);
-                } finally {
-                    latch.countDown();
-                }
+                count.incrementAndGet();
+                Assert.assertEquals(content, configInfo);
             }
         };
         iconfig.addListener(dataId, group, ml);
-
-        latch.await();
-
+        while (count.get() == 0) {
+            Thread.sleep(2000);
+        }
         Assert.assertEquals(1, count.get());
         iconfig.removeListener(dataId, group, ml);
     }
