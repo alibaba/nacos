@@ -115,7 +115,7 @@ public class DumpService {
 						dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
 					});
 					protocol.protocolMetaData()
-							.ubSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+							.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 									com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
 									this);
 				}

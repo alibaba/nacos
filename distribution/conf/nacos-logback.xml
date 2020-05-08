@@ -630,7 +630,7 @@
         <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.common.file.FileWatcher">
+    <logger name="com.alibaba.nacos.common.file.WatchFileCenter">
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>

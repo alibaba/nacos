@@ -96,18 +96,4 @@ public interface Config<L extends LogProcessor> extends Serializable {
      */
     String getValOfDefault(String key, String defaultVal);
 
-    /**
-     * get LogProcessors
-     *
-     * @return {@link List<LogProcessor>}
-     */
-    List<L> listLogProcessor();
-
-    /**
-     * add {@link LogProcessor} processor
-     *
-     * @param processors {@link LogProcessor} array
-     */
-    void addLogProcessors(Collection<L> processors);
-
 }

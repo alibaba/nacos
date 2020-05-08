@@ -109,10 +109,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         try {
             DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (Exception e) {
-
             // An error is thrown when the Derby shutdown is executed, which should be ignored
-
-            if (!StringUtils.contains(e.getMessage().toLowerCase(), derbyShutdownErrMsg.toLowerCase())) {
+            if (!StringUtils.containsIgnoreCase(e.getMessage(), derbyShutdownErrMsg)) {
                 throw e;
             }
         }

@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(Exception ex) throws IOException {
         MetricsMonitor.getIllegalArgumentException().increment();
-        return ResponseEntity.status(400).body(ExceptionUtil.getStackTrace(ex));
+        return ResponseEntity.status(400).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 
     /**
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException ex) throws IOException {
         MetricsMonitor.getNacosException().increment();
-        return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getStackTrace(ex));
+        return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 
     /**
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
         MetricsMonitor.getDbException().increment();
-        return ResponseEntity.status(500).body(ExceptionUtil.getStackTrace(ex));
+        return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 
 }

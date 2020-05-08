@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.consistency.LogFuture;
+import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
@@ -43,6 +44,7 @@ import com.alipay.sofa.jraft.Node;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +102,7 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("all")
 public class JRaftProtocol
 		extends AbstractConsistencyProtocol<RaftConfig, LogProcessor4CP>
-		implements CPProtocol<RaftConfig> {
+		implements CPProtocol<RaftConfig, LogProcessor4CP> {
 
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
@@ -131,17 +133,13 @@ public class JRaftProtocol
 	public void init(RaftConfig config) {
 		if (initialized.compareAndSet(false, true)) {
 			this.raftConfig = config;
-
-			// Load all LogProcessor information in advance
-			loadLogProcessor(config.listLogProcessor());
-
 			this.selfAddress = memberManager.getSelf().getAddress();
 			NotifyCenter.registerToSharePublisher(RaftEvent.class);
 			this.failoverRetries = ConvertUtils
 					.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
 			this.failoverRetriesStr = String.valueOf(failoverRetries);
 			this.raftServer.setFailoverRetries(failoverRetries);
-			this.raftServer.init(this.raftConfig, this.raftConfig.listLogProcessor());
+			this.raftServer.init(this.raftConfig);
 			this.raftServer.start();
 
 			// There is only one consumer to ensure that the internal consumption
@@ -182,6 +180,11 @@ public class JRaftProtocol
 
 			});
 		}
+	}
+
+	@Override
+	public void addLogProcessors(Collection<LogProcessor4CP> processors) {
+		raftServer.createMultiRaftGroup(processors);
 	}
 
 	@Override
@@ -247,6 +250,7 @@ public class JRaftProtocol
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
 		Member member = memberManager.getSelf();
 		member.setExtendVal("raft_meta_data", metaData);
+		memberManager.update(member);
 	}
 
 	@Override

@@ -111,17 +111,17 @@ public class WatchFileCenter {
 		if (!CLOSED.compareAndSet(false, true)) {
 			return;
 		}
-		LOGGER.warn("WatchFileCenter start close");
+		LOGGER.warn("[WatchFileCenter] start close");
 		for (Map.Entry<String, WatchDirJob> entry : MANAGER.entrySet()) {
-			LOGGER.warn("start to shutdown this watcher which is watch : " + entry.getKey());
+			LOGGER.warn("[WatchFileCenter] start to shutdown this watcher which is watch : " + entry.getKey());
 			try {
 				entry.getValue().shutdown();
 			} catch (Throwable e) {
-				LOGGER.error("WatchFileCenter shutdown has error : {}", e);
+				LOGGER.error("[WatchFileCenter] shutdown has error : {}", e);
 			}
 		}
 		MANAGER.clear();
-		LOGGER.warn("WatchFileCenter already closed");
+		LOGGER.warn("[WatchFileCenter] already closed");
 	}
 
 	public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {

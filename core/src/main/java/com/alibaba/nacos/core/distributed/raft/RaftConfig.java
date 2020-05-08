@@ -41,7 +41,6 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     private static final long serialVersionUID = 9174789390266064002L;
 
     private Map<String, String> data = Collections.synchronizedMap(new HashMap<>());
-    private List<LogProcessor4CP> processors = Collections.synchronizedList(new ArrayList<>());
     private String selfAddress;
     private Set<String> members = Collections.synchronizedSet(new HashSet<>());
 
@@ -93,16 +92,6 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     @Override
     public String getValOfDefault(String key, String defaultVal) {
         return data.getOrDefault(key, defaultVal);
-    }
-
-    @Override
-    public List<LogProcessor4CP> listLogProcessor() {
-        return processors;
-    }
-
-    @Override
-    public void addLogProcessors(Collection<LogProcessor4CP> processors) {
-        this.processors.addAll(processors);
     }
 
     @Override

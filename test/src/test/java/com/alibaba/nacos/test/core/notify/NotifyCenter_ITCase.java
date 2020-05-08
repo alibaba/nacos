@@ -252,8 +252,8 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.publishEvent(new SlowE1());
 		NotifyCenter.publishEvent(new SlowE2());
 
-		latch1.await();
-		latch2.await();
+		latch1.await(10_000L, TimeUnit.MILLISECONDS);
+		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals("SlowE1", values[0]);
 		Assert.assertEquals("SlowE2", values[1]);

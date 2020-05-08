@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -102,7 +103,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 				break;
 			} catch (Throwable e) {
 				ex = e;
-				Loggers.CLUSTER.error("[serverlist] exception, error : {}", ex);
+				Loggers.CLUSTER.error("[serverlist] exception, error : {}", ExceptionUtil.getAllExceptionMsg(ex));
 			}
 		}
 		if (!success) {
@@ -142,7 +143,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 				if (addressServerFailCount >= maxFailCount) {
 					isAddressServerHealth = false;
 				}
-				Loggers.CLUSTER.error("[serverlist] exception, error : {}", ex);
+				Loggers.CLUSTER.error("[serverlist] exception, error : {}", ExceptionUtil.getAllExceptionMsg(ex));
 			} finally {
 				GlobalExecutor.scheduleByCommon(this, 5_000L);
 			}
@@ -162,7 +163,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
 			catch (Throwable e) {
 				Loggers.CLUSTER
 						.error("[serverlist] exception for analyzeClusterConf, error : {}",
-								e);
+								ExceptionUtil.getAllExceptionMsg(e));
 			}
 			addressServerFailCount = 0;
 			isAddressServerHealth = false;

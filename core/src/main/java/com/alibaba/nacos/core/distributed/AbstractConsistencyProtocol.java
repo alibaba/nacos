@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class AbstractConsistencyProtocol<T extends Config, L extends LogProcessor> implements ConsistencyProtocol<T> {
+public abstract class AbstractConsistencyProtocol<T extends Config, L extends LogProcessor> implements ConsistencyProtocol<T, L> {
 
     protected final ProtocolMetaData metaData = new ProtocolMetaData();
 

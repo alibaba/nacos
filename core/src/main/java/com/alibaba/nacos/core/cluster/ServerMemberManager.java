@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
@@ -47,7 +48,6 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +111,7 @@ public class ServerMemberManager
 	/**
 	 * self member obj
 	 */
-	private Member self;
+	private volatile Member self;
 
 	/**
 	 * here is always the node information of the "UP" state
@@ -230,9 +230,9 @@ public class ServerMemberManager
 
 	public Collection<Member> allMembers() {
 		// We need to do a copy to avoid affecting the real data
-		List<Member> list = new ArrayList<>(serverList.values());
-		Collections.sort(list);
-		return list;
+		HashSet<Member> set = new HashSet<>(serverList.values());
+		set.add(self);
+		return set;
 	}
 
 	public List<Member> allMembersWithoutSelf() {
@@ -257,7 +257,7 @@ public class ServerMemberManager
 			isInIpList = false;
 			members.add(this.self);
 			Loggers.CLUSTER
-					.error("[serverlist] self ip {} not in serverlist {}", self, members);
+					.warn("[serverlist] self ip {} not in serverlist {}", self, members);
 		}
 
 		boolean hasChange = false;
@@ -281,6 +281,10 @@ public class ServerMemberManager
 		serverList = tmpMap;
 		memberAddressInfos = tmpAddressInfo;
 
+		Collection<Member> finalMembers = allMembers();
+
+		Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
+
 		oldList.clear();
 		oldSet.clear();
 
@@ -288,9 +292,8 @@ public class ServerMemberManager
 		// <important> need to put the event publication into a synchronized block to ensure
 		// that the event publication is sequential
 		if (hasChange) {
-			MemberUtils.syncToFile(members);
-			Loggers.CLUSTER.warn("member has changed : {}", members);
-			Event event = MemberChangeEvent.builder().members(allMembers()).build();
+			MemberUtils.syncToFile(finalMembers);
+			Event event = MemberChangeEvent.builder().members(finalMembers).build();
 			NotifyCenter.publishEvent(event);
 		}
 
@@ -411,15 +414,15 @@ public class ServerMemberManager
 							public void onError(Throwable throwable) {
 								Loggers.CLUSTER
 										.error("failed to report new info to target node : {}, error : {}",
-												target.getAddress(), throwable);
-								MemberUtils.onFail(target);
+												target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
+								MemberUtils.onFail(target, throwable);
 							}
 						});
 			}
 			catch (Throwable ex) {
 				Loggers.CLUSTER
 						.error("failed to report new info to target node : {}, error : {}",
-								target.getAddress(), ex);
+								target.getAddress(), ExceptionUtil.getAllExceptionMsg(ex));
 			}
 		}
 

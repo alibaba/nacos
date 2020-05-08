@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -119,7 +120,7 @@ public class ServerMemberManager_ITCase {
 		boolean changed = memberManager.memberJoin(members);
 		Assert.assertTrue(changed);
 
-		latch.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(1, integer.get());
 	}

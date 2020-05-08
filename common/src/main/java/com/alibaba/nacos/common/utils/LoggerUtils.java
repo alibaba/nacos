@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.ap;
+package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import org.slf4j.Logger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
-public interface APProtocol<C extends Config, P extends LogProcessor4AP> extends ConsistencyProtocol<C, P> {
+public final class LoggerUtils {
+
+	public static void printIfDebugEnabled(Logger logger, String s, Object... args) {
+		if (logger.isDebugEnabled()) {
+			logger.debug(s, args);
+		}
+	}
 
 }

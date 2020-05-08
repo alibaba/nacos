@@ -62,7 +62,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 			}
 			catch (Throwable e) {
 				Loggers.CLUSTER
-						.error("An exception occurred in the launch file monitor : {}", e);
+						.error("An exception occurred in the launch file monitor : {}", e.getMessage());
 			}
 		}
 	}
@@ -81,7 +81,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
 		catch (Throwable e) {
 			Loggers.CLUSTER
 					.error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}",
-							e);
+							e.getMessage());
 		}
 
 		afterLookup(tmpMembers);
