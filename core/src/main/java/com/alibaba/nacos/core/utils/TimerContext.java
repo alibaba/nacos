@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import org.slf4j.Logger;
 
@@ -38,7 +39,7 @@ public class TimerContext {
     public static void end(final Logger logger) {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        logger.debug("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
         TIME_RECORD.remove();
     }
 

@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.api.exception;
 
+import com.alibaba.nacos.api.common.Constants;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Nacos Exception
@@ -63,16 +63,13 @@ public class NacosException extends Exception {
 	}
 
 	public String getErrMsg() {
-		StringBuilder builder = new StringBuilder();
 		if (!StringUtils.isBlank(this.errMsg)) {
-			builder.append("errMsg:").append(errMsg);
+			return errMsg;
 		}
 		if (this.causeThrowable != null) {
-			builder.append("causeThrowable:[").append(causeThrowable.getClass().getName())
-                    .append("]")
-					.append(causeThrowable.getMessage());
+			return causeThrowable.getMessage();
 		}
-		return builder.toString();
+		return Constants.NULL;
 	}
 
 	public void setErrCode(int errCode) {
@@ -127,7 +124,7 @@ public class NacosException extends Exception {
 	 */
 	public static final int NO_RIGHT = 403;
 	/**
-	 * not found
+	 *  not found
 	 */
 	public static final int NOT_FOUND = 404;
 	/**

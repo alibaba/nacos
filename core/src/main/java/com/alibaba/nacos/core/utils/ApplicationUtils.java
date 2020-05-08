@@ -532,5 +532,9 @@ public class ApplicationUtils
 		ApplicationUtils.environment = environment;
 	}
 
+	public static void injectContext(ConfigurableApplicationContext context) {
+		ApplicationUtils.applicationContext = context;
+	}
+
 }
 

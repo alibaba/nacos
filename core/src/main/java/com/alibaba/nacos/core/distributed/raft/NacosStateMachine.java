@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
@@ -100,8 +102,7 @@ class NacosStateMachine extends StateMachineAdapter {
 						final ByteBuffer data = iter.getData();
 						log = Log.parseFrom(data.array());
 					}
-
-					Loggers.RAFT.debug("receive log : {}", log);
+					LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", log);
 
 					final String type = log
 							.getExtendInfoOrDefault(JRaftConstants.JRAFT_EXTEND_INFO_KEY,
@@ -122,7 +123,7 @@ class NacosStateMachine extends StateMachineAdapter {
 				}
 				catch (Throwable e) {
 					index++;
-					status.setError(RaftError.UNKNOWN, e.getMessage());
+					status.setError(RaftError.UNKNOWN, e.toString());
 					Optional.ofNullable(closure)
 							.ifPresent(closure1 -> closure1.setThrowable(e));
 					throw e;
@@ -142,7 +143,7 @@ class NacosStateMachine extends StateMachineAdapter {
 			Loggers.RAFT.error("processor : {}, stateMachine meet critical error: {}.",
 					processor, t);
 			iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
-					"StateMachine meet critical error: %s.", t.getMessage()));
+					"StateMachine meet critical error: %s.", ExceptionUtil.getStackTrace(t)));
 		}
 	}
 

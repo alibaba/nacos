@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
@@ -58,7 +57,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessControlException;
 import java.util.Enumeration;
 import java.util.Map;
@@ -137,7 +135,7 @@ public class TransferToLeaderFilter implements Filter {
 			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 
 			if (downgrading && isLeader) {
-				resp.sendError(HttpStatus.LOCKED.value(),
+				resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 						"Unable to process the request at this time: System triggered degradation");
 				return;
 			}
@@ -145,7 +143,7 @@ public class TransferToLeaderFilter implements Filter {
 			if (downgrading || (method.isAnnotationPresent(ToLeader.class)
 					&& !isLeader)) {
 				if (StringUtils.isBlank(leaderServer)) {
-					resp.sendError(HttpStatus.LOCKED.value(),
+					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 							"Unable to process the request at this time: no Leader");
 					return;
 				}
@@ -187,7 +185,7 @@ public class TransferToLeaderFilter implements Filter {
 		}
 		catch (AccessControlException e) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN,
-					"access denied: " + ExceptionUtil.getStackTrace(e));
+					"access denied: " + ExceptionUtil.getAllExceptionMsg(e));
 			return;
 		}
 		catch (NoSuchMethodException e) {

@@ -24,8 +24,8 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
  */
 public class DynamicDataSource {
 
-    private volatile DataSourceService localDataSourceService = null;
-    private volatile DataSourceService basicDataSourceService = null;
+    private DataSourceService localDataSourceService = null;
+    private DataSourceService basicDataSourceService = null;
 
     private static final DynamicDataSource INSTANCE = new DynamicDataSource();
 

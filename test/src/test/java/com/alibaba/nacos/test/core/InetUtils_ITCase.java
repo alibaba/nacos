@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.core.utils.Constants.NACOS_SERVER_IP;
@@ -69,7 +70,7 @@ public class InetUtils_ITCase {
 		};
 
 		NotifyCenter.registerSubscribe(subscribe);
-		latch.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(testIp, reference.get());
 		Assert.assertEquals(testIp, InetUtils.getSelfIp());

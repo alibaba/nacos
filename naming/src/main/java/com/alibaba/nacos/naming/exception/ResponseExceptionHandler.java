@@ -32,26 +32,26 @@ public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException e) {
-        Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getStackTrace(e));
+        Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
-        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ExceptionUtil.getStackTrace(ex));
+        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ExceptionUtil.getAllExceptionMsg(ex));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
-        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getStackTrace(ex));
+        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(ex));
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
-        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getStackTrace(e));
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getStackTrace(e));
+        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
     }
 }

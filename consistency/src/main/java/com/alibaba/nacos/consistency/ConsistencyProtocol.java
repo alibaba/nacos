@@ -21,6 +21,7 @@ import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface ConsistencyProtocol<T extends Config> extends CommandOperations {
+public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> extends CommandOperations {
 
     /**
      * Consistency protocol initialization: perform initialization operations based on the incoming Config
@@ -47,6 +48,13 @@ public interface ConsistencyProtocol<T extends Config> extends CommandOperations
      * @param config {@link Config}
      */
     void init(T config);
+
+    /**
+     * Add a log handler
+     *
+     * @param processors {@link LogProcessor}
+     */
+    void addLogProcessors(Collection<P> processors);
 
     /**
      * Copy of metadata information for this consensus protocol

@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
@@ -147,9 +148,8 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 								@Override
 								public void onReceive(RestResult<Collection<String>> result) {
 									if (result.ok()) {
-										Loggers.CLUSTER
-												.debug("success ping to node : {}, result : {}",
-														member, result);
+										LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "success ping to node : {}, result : {}",
+												member, result);
 
 										final Collection<String> data = result.getData();
 										if (CollectionUtils.isNotEmpty(data)) {
@@ -172,14 +172,14 @@ public class DiscoveryMemberLookup extends AbstractMemberLookup {
 									Loggers.CLUSTER
 											.error("An exception occurred while reporting their "
 															+ "information to the node : {}, error : {}",
-													member.getAddress(), e);
-									MemberUtils.onFail(member);
+													member.getAddress(), e.getMessage());
+									MemberUtils.onFail(member, e);
 								}
 							});
 				}
 			}
 			catch (Exception e) {
-				Loggers.CLUSTER.error("node state report task has error : {}", e);
+				Loggers.CLUSTER.error("node state report task has error : {}", e.getMessage());
 			}
 			finally {
 				TimerContext.end(Loggers.CLUSTER);

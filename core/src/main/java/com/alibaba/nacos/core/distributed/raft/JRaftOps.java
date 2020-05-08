@@ -43,7 +43,7 @@ public class JRaftOps {
 	}
 
 	public RestResult<String> execute(String[] args) {
-		return RestResultUtils.failed("not support yeah");
+		return RestResultUtils.failed("not support yet");
 	}
 
 	public RestResult<String> execute(Map<String, String> args) {
