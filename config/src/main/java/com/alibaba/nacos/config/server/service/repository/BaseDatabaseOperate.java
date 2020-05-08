@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -58,7 +59,7 @@ public interface BaseDatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            fatalLog.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",
@@ -76,7 +77,7 @@ public interface BaseDatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            fatalLog.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",
@@ -92,7 +93,7 @@ public interface BaseDatabaseOperate {
         try {
             return jdbcTemplate.query(sql, args, mapper);
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            fatalLog.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",
@@ -112,7 +113,7 @@ public interface BaseDatabaseOperate {
             return null;
         }
         catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            fatalLog.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",
@@ -128,7 +129,7 @@ public interface BaseDatabaseOperate {
         try {
             return jdbcTemplate.queryForList(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            fatalLog.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",
@@ -147,18 +148,18 @@ public interface BaseDatabaseOperate {
                 contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
                     args[0] = pair.getArgs();
-                    LogUtil.defaultLog.debug("current sql : {}", errSql[0]);
-                    LogUtil.defaultLog.debug("current args : {}", args[0]);
+                    LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "current sql : {}", errSql[0]);
+                    LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "current args : {}", args[0]);
                     jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
                 return Boolean.TRUE;
             }
             catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e);
+                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 return false;
             }
             catch (CannotGetJdbcConnectionException e) {
-                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e);
+                fatalLog.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;
             } catch (DataAccessException e) {
                 fatalLog.error("[db-error] DataAccessException sql : {}, args : {}, error : {}",

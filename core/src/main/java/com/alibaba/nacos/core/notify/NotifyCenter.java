@@ -232,7 +232,7 @@ public class NotifyCenter {
 			return publisher.publish(event);
 		}
 		throw new NoSuchElementException(
-				"There are no event publishers for this event, please register");
+				"There are no [" + topic + "] publishers for this event, please register");
 	}
 
 	/**

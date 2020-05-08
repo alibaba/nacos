@@ -17,16 +17,13 @@
 package com.alibaba.nacos.core.distributed;
 
 import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.APProtocol;
-import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -39,11 +36,8 @@ import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -125,7 +119,6 @@ public class ProtocolManager
 			Class configType = ClassUtils.resolveGenericType(protocol.getClass());
 			Config config = (Config) ApplicationUtils.getBean(configType);
 			injectMembers4AP(config);
-			config.addLogProcessors(loadProcessor(LogProcessor4AP.class, protocol));
 			protocol.init((config));
 			ProtocolManager.this.apProtocol = protocol;
 		});
@@ -136,7 +129,6 @@ public class ProtocolManager
 			Class configType = ClassUtils.resolveGenericType(protocol.getClass());
 			Config config = (Config) ApplicationUtils.getBean(configType);
 			injectMembers4CP(config);
-			config.addLogProcessors(loadProcessor(LogProcessor4CP.class, protocol));
 			protocol.init((config));
 			ProtocolManager.this.cpProtocol = protocol;
 		});
@@ -154,14 +146,6 @@ public class ProtocolManager
 		final String self = memberManager.getSelf().getAddress();
 		Set<String> others = toAPMembersInfo(memberManager.allMembers());
 		config.setMembers(self, others);
-	}
-
-	@SuppressWarnings("all")
-	private List<LogProcessor> loadProcessor(Class cls, ConsistencyProtocol protocol) {
-		final Map<String, LogProcessor> beans = (Map<String, LogProcessor>) ApplicationUtils
-				.getBeansOfType(cls);
-		final List<LogProcessor> result = new ArrayList<>(beans.values());
-		return result;
 	}
 
 	@Override
@@ -192,8 +176,7 @@ public class ProtocolManager
 		Set<String> nodes = new HashSet<>();
 		members.forEach(member -> {
 			final String ip = member.getIp();
-			final int port = member.getPort();
-			final int raftPort = port + 1000 >= 65535 ? port + 1 : port + 1000;
+			final int raftPort = MemberUtils.calculateRaftPort(member);
 			nodes.add(ip + ":" + raftPort);
 		});
 		return nodes;
