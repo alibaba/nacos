@@ -114,7 +114,12 @@ public class PersistService {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
-            info.setType(rs.getString("type"));
+
+            try{
+                info.setType(rs.getString("type"));
+            } catch (SQLException e){
+                // ignore
+            }
 
             try {
                 info.setContent(rs.getString("content"));
