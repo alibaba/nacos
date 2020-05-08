@@ -18,6 +18,7 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.javatuples.Pair;
 
 import java.util.Map;
@@ -64,13 +65,12 @@ public final class ProtocolMetaData {
         });
     }
 
-    public Object get(String group, String... subKey) {
-        if (subKey == null || subKey.length == 0) {
+    public Object get(String group, String subKey) {
+        if (StringUtils.isBlank(subKey)) {
             return metaDataMap.get(group);
         } else {
-            final String key = subKey[0];
             if (metaDataMap.containsKey(group)) {
-                return metaDataMap.get(group).get(key);
+                return metaDataMap.get(group).get(subKey);
             }
             return null;
         }
@@ -84,7 +84,7 @@ public final class ProtocolMetaData {
                 .subscribe(key, observer);
     }
 
-    public void ubSubscribe(final String group, final String key, final Observer observer) {
+    public void unSubscribe(final String group, final String key, final Observer observer) {
         metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
         metaDataMap.get(group)
                 .unSubscribe(key, observer);

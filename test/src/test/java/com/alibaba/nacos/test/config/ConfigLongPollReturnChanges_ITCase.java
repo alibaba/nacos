@@ -84,7 +84,7 @@ public class ConfigLongPollReturnChanges_ITCase {
 
         configService.getConfig(dataId, group, 50);
 
-        latch.await();
+        latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class ConfigLongPollReturnChanges_ITCase {
         });
         configService.publishConfig(dataId, group, newData);
 
-        latch.await();
+        latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -162,7 +162,7 @@ public class ConfigLongPollReturnChanges_ITCase {
         });
         configService.removeConfig(dataId, group);
 
-        latch.await();
+        latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
 
 }

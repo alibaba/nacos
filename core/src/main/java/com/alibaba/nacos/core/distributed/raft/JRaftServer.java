@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -143,7 +144,7 @@ public class JRaftServer {
 		this.failoverRetries = failoverRetries;
 	}
 
-	void init(RaftConfig config, Collection<LogProcessor4CP> processors) {
+	void init(RaftConfig config) {
 		this.raftConfig = config;
 		this.serializer = SerializeFactory.getDefault();
 		Loggers.RAFT.info("Initializes the Raft protocol, raft-config info : {}", config);
@@ -175,8 +176,6 @@ public class JRaftServer {
 		this.cliClientService = new BoltCliClientService();
 		this.cliClientService.init(cliOptions);
 		this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
-
-		this.processors.addAll(processors);
 	}
 
 	synchronized void start() {
@@ -376,7 +375,7 @@ public class JRaftServer {
 
 	public <T> CompletableFuture<T> commit(Log data, final CompletableFuture<T> future,
 			final int retryLeft) {
-		Loggers.RAFT.debug("data requested this time : {}", data);
+		LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
 		final String group = data.getGroup();
 		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (tuple == null) {
@@ -409,6 +408,11 @@ public class JRaftServer {
 			for (String address : addresses) {
 				newConf.addPeer(PeerId.parsePeer(address));
 			}
+
+			if (Objects.equals(oldConf, newConf)) {
+				return;
+			}
+
 			for (int i = 0; i < 3; i++) {
 				try {
 					Status status = cliService.changePeers(groupId, oldConf, newConf);

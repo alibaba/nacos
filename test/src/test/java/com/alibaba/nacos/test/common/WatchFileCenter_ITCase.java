@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -111,7 +112,7 @@ public class WatchFileCenter_ITCase {
 			ThreadUtils.sleep(10_000L);
 		}
 
-		latch.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(3, count.get());
 	}
@@ -139,7 +140,7 @@ public class WatchFileCenter_ITCase {
 				}
 			});
 		}
-		latch.await();
+		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		ThreadUtils.sleep(5_000L);
 	}

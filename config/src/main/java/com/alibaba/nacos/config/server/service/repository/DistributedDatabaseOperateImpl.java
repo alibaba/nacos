@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
@@ -47,6 +48,7 @@ import com.alibaba.nacos.core.distributed.id.SnakeFlowerIdGenerator;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
@@ -128,12 +130,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		implements BaseDatabaseOperate, DatabaseOperate {
 
-	@Autowired
 	private ServerMemberManager memberManager;
-
-	@Autowired
-	private ProtocolManager protocolManager;
-
 	private CPProtocol protocol;
 
 	private LocalDataSourceServiceImpl dataSourceService;
@@ -144,9 +141,18 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	private ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
 	private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-	@PostConstruct
-	protected void init() throws Exception {
+	public DistributedDatabaseOperateImpl(ServerMemberManager memberManager,
+			ProtocolManager protocolManager) throws Exception {
+		this.memberManager = memberManager;
 		this.protocol = protocolManager.getCpProtocol();
+
+		init();
+
+		this.protocol.addLogProcessors(Collections.singletonList(this));
+	}
+
+	protected void init() throws Exception {
+
 		this.dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance()
 				.getDataSource();
 
@@ -183,7 +189,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public <R> R queryOne(String sql, Class<R> cls) {
 		try {
-			LogUtil.defaultLog.debug("queryOne info : sql : {}", sql);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryOne info : sql : {}", sql);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
@@ -199,7 +205,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -207,7 +213,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public <R> R queryOne(String sql, Object[] args, Class<R> cls) {
 		try {
-			LogUtil.defaultLog.debug("queryOne info : sql : {}, args : {}", sql, args);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryOne info : sql : {}, args : {}", sql, args);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql)
@@ -223,7 +229,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -231,8 +237,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public <R> R queryOne(String sql, Object[] args, RowMapper<R> mapper) {
 		try {
-
-			LogUtil.defaultLog.debug("queryOne info : sql : {}, args : {}", sql, args);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryOne info : sql : {}, args : {}", sql, args);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql)
@@ -249,7 +254,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -257,7 +262,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public <R> List<R> queryMany(String sql, Object[] args, RowMapper<R> mapper) {
 		try {
-			LogUtil.defaultLog.debug("queryMany info : sql : {}, args : {}", sql, args);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryMany info : sql : {}, args : {}", sql, args);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql)
@@ -274,7 +279,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -282,7 +287,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public <R> List<R> queryMany(String sql, Object[] args, Class<R> rClass) {
 		try {
-			LogUtil.defaultLog.debug("queryMany info : sql : {}, args : {}", sql, args);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryMany info : sql : {}, args : {}", sql, args);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql)
@@ -298,7 +303,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -306,8 +311,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public List<Map<String, Object>> queryMany(String sql, Object[] args) {
 		try {
-
-			LogUtil.defaultLog.debug("queryMany info : sql : {}, args : {}", sql, args);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "queryMany info : sql : {}, args : {}", sql, args);
 
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql)
@@ -324,7 +328,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
-					.error("An exception occurred during the query operation : {}", e);
+					.error("An exception occurred during the query operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -337,7 +341,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			// array elements are not lost, the serialization here is done using the java-specific
 			// serialization framework, rather than continuing with the protobuff
 
-			LogUtil.defaultLog.debug("modifyRequests info : {}", sqlContext);
+			LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "modifyRequests info : {}", sqlContext);
 
 			// {timestamp}-{group}-{ip:port}-{signature}
 
@@ -358,7 +362,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				throw (ConsistencyException) e;
 			}
 			LogUtil.fatalLog
-					.error("An exception occurred during the update operation : {}", e);
+					.error("An exception occurred during the update operation : {}", e.toString());
 			throw new NJdbcException(e);
 		}
 	}
@@ -374,7 +378,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		final SelectRequest selectRequest = serializer
 				.deserialize(request.getData().toByteArray(), SelectRequest.class);
 
-		LogUtil.defaultLog.debug("getData info : selectRequest : {}", selectRequest);
+		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "getData info : selectRequest : {}", selectRequest);
 
 		final RowMapper<Object> mapper = RowMapperManager
 				.getRowMapper(selectRequest.getClassName());
@@ -417,7 +421,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		catch (Exception e) {
 			LogUtil.fatalLog
 					.error("There was an error querying the data, request : {}, error : {}",
-							selectRequest, e);
+							selectRequest, e.toString());
 			return GetResponse.newBuilder()
 					.setErrMsg(e.getClass().getSimpleName() + ":" + e.getMessage())
 					.build();
@@ -429,8 +433,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@Override
 	public LogFuture onApply(Log log) {
-
-		LogUtil.defaultLog.debug("onApply info : log : {}", log);
+		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
 
 		final ByteString byteString = log.getData();
 		Preconditions.checkArgument(byteString != null, "Log.getData() must not null");

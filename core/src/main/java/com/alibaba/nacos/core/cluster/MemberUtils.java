@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +37,7 @@ import java.util.function.Predicate;
 public class MemberUtils {
 
 	private static final String SEMICOLON = ":";
+	private static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
 
 	private static ServerMemberManager manager;
 
@@ -65,13 +67,20 @@ public class MemberUtils {
 			port = Integer.parseInt(info[1]);
 		}
 
-		int raftPort = port - 1000;
+		Member target = Member.builder().ip(address).port(port)
+				.state(NodeState.UP).build();
 
-		Map<String, String> extendInfo = new HashMap<>(4);
+		int raftPort = calculateRaftPort(target);
+
+		Map<String, Object> extendInfo = new HashMap<>(4);
 		// The Raft Port information needs to be set by default
 		extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(raftPort));
-		return Member.builder().ip(address).port(port).extendInfo(extendInfo)
-				.state(NodeState.UP).build();
+		target.setExtendInfo(extendInfo);
+		return target;
+	}
+
+	public static int calculateRaftPort(Member member) {
+		return member.getPort() - 1000;
 	}
 
 	public static Collection<Member> multiParse(Collection<String> addresses) {
@@ -91,12 +100,19 @@ public class MemberUtils {
 	}
 
 	public static void onFail(Member member) {
+		onFail(member, null);
+	}
+
+	public static void onFail(Member member, Throwable ex) {
 		manager.getMemberAddressInfos().remove(member.getAddress());
 		member.setState(NodeState.SUSPICIOUS);
 		member.setFailAccessCnt(member.getFailAccessCnt() + 1);
 		int maxFailAccessCnt = ApplicationUtils
 				.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
-		if (member.getFailAccessCnt() > maxFailAccessCnt) {
+
+		// If the number of consecutive failures to access the target node reaches
+		// a maximum, or the link request is rejected, the state is directly down
+		if (member.getFailAccessCnt() > maxFailAccessCnt || StringUtils.containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
 			member.setState(NodeState.DOWN);
 		}
 		manager.update(member);
@@ -112,21 +128,22 @@ public class MemberUtils {
 			ApplicationUtils.writeClusterConf(builder.toString());
 		}
 		catch (Throwable ex) {
-			Loggers.CLUSTER.error("cluster member node persistence failed : {}", ex);
+			Loggers.CLUSTER.error("cluster member node persistence failed : {}",
+					ExceptionUtil.getAllExceptionMsg(ex));
 		}
 	}
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
-	public static List<Member> kRandom(Collection<Member> members,
+	public static Collection<Member> kRandom(Collection<Member> members,
 			Predicate<Member> filter) {
 		int k = ApplicationUtils
 				.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
 
-		List<Member> tmp = new ArrayList<>();
-		// Here thinking similar consul gossip protocols random k node
+		Set<Member> tmp = new HashSet<>();
 
+		// Here thinking similar consul gossip protocols random k node
 		int totalSize = members.size();
-		for (int i = 0; i < 3 * totalSize && members.size() <= k; i++) {
+		for (int i = 0; i < 3 * totalSize && tmp.size() <= k; i++) {
 			for (Member member : members) {
 				if (filter.test(member)) {
 					tmp.add(member);

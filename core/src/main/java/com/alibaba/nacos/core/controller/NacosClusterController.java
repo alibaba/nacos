@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
@@ -101,7 +102,7 @@ public class NacosClusterController {
         if (!node.check()) {
             return RestResultUtils.failedWithMsg(400, "Node information is illegal");
         }
-        Loggers.CLUSTER.debug("node state report, receive info : {}", node);
+        LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state report, receive info : {}", node);
         node.setState(NodeState.UP);
         node.setFailAccessCnt(0);
         memberManager.update(node);
@@ -138,7 +139,7 @@ public class NacosClusterController {
                         public void onReceive(RestResult<String> result) {
                             try {
                                 if (result.ok()) {
-                                    Loggers.CLUSTER.debug("The node : [{}] success to process the request",
+                                    LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "The node : [{}] success to process the request",
                                             member);
                                     MemberUtils.onSuccess(member);
                                 }

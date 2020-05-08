@@ -250,7 +250,7 @@ public class ConfigDerbyRaft_DITCase
 		iconfig7.publishConfig(dataId, group, content);
 
 		ThreadUtils.sleep(10_000L);
-		latch[0].await();
+		latch[0].await(10_000L, TimeUnit.MILLISECONDS);
 		Assert.assertEquals(content, r.get());
 		Assert.assertEquals(content, iconfig7.getConfig(dataId, group, 2_000L));
 
@@ -258,7 +258,7 @@ public class ConfigDerbyRaft_DITCase
 		iconfig7.publishConfig(dataId, group, content);
 
 		ThreadUtils.sleep(10_000L);
-		latch[1].await();
+		latch[1].await(10_000L, TimeUnit.MILLISECONDS);
 		Assert.assertEquals(content, r.get());
 		Assert.assertEquals(content, iconfig7.getConfig(dataId, group, 2_000L));
 	}
@@ -311,7 +311,7 @@ public class ConfigDerbyRaft_DITCase
 			}
 		});
 		NotifyCenter.publishEvent(new RaftDBErrorEvent());
-		latch1.await();
+		latch1.await(10_000L, TimeUnit.MILLISECONDS);
 
 		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
 				"this.is.raft_cluster=lessspring_7");
@@ -331,7 +331,7 @@ public class ConfigDerbyRaft_DITCase
 			}
 		});
 		NotifyCenter.publishEvent(new RaftDBErrorRecoverEvent());
-		latch2.await();
+		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 
 		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
 				"this.is.raft_cluster=lessspring_7");

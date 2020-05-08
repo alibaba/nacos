@@ -112,14 +112,33 @@ public class StartingSpringApplicationRunListener
 	public void started(ConfigurableApplicationContext context) {
 		starting = false;
 
+		ConfigurableEnvironment env = context.getEnvironment();
+
 		if (scheduledExecutorService != null) {
 			scheduledExecutorService.shutdownNow();
 		}
 
 		logFilePath();
 
-		LOGGER.info("Nacos started successfully in {} mode.",
-				System.getProperty(MODE_PROPERTY_KEY_STAND_MODE));
+		// External data sources are used by default in cluster mode
+		boolean useExternalStorage = ("mysql".equalsIgnoreCase(env.getProperty("spring.datasource.platform", "")));
+
+		// must initialize after setUseExternalDB
+		// This value is true in stand-alone mode and false in cluster mode
+		// If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
+		// default value is depend on ${nacos.standalone}
+
+		if (!useExternalStorage) {
+			boolean embeddedStorage = ApplicationUtils.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
+			// If the embedded data source storage is not turned on, it is automatically
+			// upgraded to the external data source storage, as before
+			if (!embeddedStorage) {
+				useExternalStorage = true;
+			}
+		}
+
+		LOGGER.info("Nacos started successfully in {} mode. use {} storage",
+				System.getProperty(MODE_PROPERTY_KEY_STAND_MODE), useExternalStorage ? "external" : "embedded");
 	}
 
 	@Override
