@@ -75,8 +75,8 @@ public class ProtocolManager
 		synchronized (this) {
 			if (!cpInit) {
 				initCPProtocol();
-			}
-			cpInit = true;
+                cpInit = true;
+            }
 		}
 		return cpProtocol;
 	}
@@ -85,8 +85,8 @@ public class ProtocolManager
 		synchronized (this) {
 			if (!apInit) {
 				initAPProtocol();
-			}
-			apInit = true;
+                apInit = true;
+            }
 		}
 		return apProtocol;
 	}
