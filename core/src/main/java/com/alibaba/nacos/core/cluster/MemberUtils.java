@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.cluster;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -139,19 +140,21 @@ public class MemberUtils {
 		int k = ApplicationUtils
 				.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
 
-		Set<Member> tmp = new HashSet<>();
+        Set<Member> kMembers = new HashSet<>();
 
-		// Here thinking similar consul gossip protocols random k node
-		int totalSize = members.size();
-		for (int i = 0; i < 3 * totalSize && tmp.size() <= k; i++) {
-			for (Member member : members) {
-				if (filter.test(member)) {
-					tmp.add(member);
-				}
-			}
-		}
+        // Here thinking similar consul gossip protocols random k node
+        int totalSize = members.size();
+        Member[] membersArray = members.toArray(new Member[totalSize]);
+        ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+        for (int i = 0; i < 3 * totalSize && kMembers.size() < k; i++) {
+            int idx = threadLocalRandom.nextInt(totalSize);
+            Member member = membersArray[idx];
+            if (filter.test(member)) {
+                kMembers.add(member);
+            }
+        }
 
-		return tmp;
+        return kMembers;
 	}
 
 	// 默认配置格式解析，只有nacos-server的ip or ip:port or hostname:port 信息
