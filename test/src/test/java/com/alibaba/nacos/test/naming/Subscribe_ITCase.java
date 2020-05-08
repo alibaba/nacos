@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,8 +47,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class Subscribe_ITCase extends RestAPI_ITCase {
 
     private NamingService naming;

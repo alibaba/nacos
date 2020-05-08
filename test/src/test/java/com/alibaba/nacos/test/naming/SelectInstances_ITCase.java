@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +46,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class SelectInstances_ITCase {
 
     private NamingService naming;
@@ -60,7 +61,9 @@ public class SelectInstances_ITCase {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
-        while (true) {
+        int i = 5;
+        while (i >= 0) {
+            i --;
             if (!"UP".equals(naming.getServerStatus())) {
                 Thread.sleep(1000L);
                 continue;

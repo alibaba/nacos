@@ -65,13 +65,13 @@ public class ParamUtils {
 
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId.trim())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId");
+            throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId : " + dataId);
         } else if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid group");
+            throw new NacosException(NacosException.INVALID_PARAM, "invalid group : " + group);
         } else if (StringUtils.isBlank(datumId) || !ParamUtils.isValid(datumId)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId");
+            throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId : " + datumId);
         } else if (StringUtils.isBlank(content)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "content is blank");
+            throw new NacosException(NacosException.INVALID_PARAM, "content is blank : " + content);
         } else if (content.length() > PropertyUtil.getMaxContent()) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "invalid content, over " + PropertyUtil.getMaxContent());
@@ -81,7 +81,7 @@ public class ParamUtils {
     public static void checkParam(String tag) {
         if (StringUtils.isNotBlank(tag)) {
             if (!ParamUtils.isValid(tag.trim())) {
-                throw new IllegalArgumentException("invalid tag");
+                throw new IllegalArgumentException("invalid tag : " + tag);
             }
             if (tag.length() > TAG_MAX_LEN) {
                 throw new IllegalArgumentException("too long tag, over 16");

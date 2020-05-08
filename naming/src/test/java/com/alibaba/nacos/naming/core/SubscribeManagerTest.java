@@ -1,8 +1,10 @@
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
+import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
@@ -31,7 +33,7 @@ public class SubscribeManagerTest extends BaseTest {
     private PushService pushService;
 
     @Mock
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     @Before
     public void before() {
@@ -87,22 +89,21 @@ public class SubscribeManagerTest extends BaseTest {
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
             clients.add(subscriber);
 
-            List<Server> healthyServers = new ArrayList<>();
+            List<Member> healthyServers = new ArrayList<>();
 
             for (int i = 0; i <= 2; i++) {
-                Server server = new Server();
+                Member server = new Member();
                 server.setIp("127.0.0.1");
-                server.setServePort(8080 + i);
-                server.setAlive(Boolean.TRUE);
-                server.setAdWeight(10);
-                server.setLastRefTime(System.currentTimeMillis());
-                server.setLastRefTimeStr(String.valueOf(System.currentTimeMillis()));
-                server.setSite("site");
-                server.setWeight(1);
+                server.setPort(8080 + i);
+                server.setState(NodeState.UP);
+                server.setExtendVal(MemberMetaDataConstants.AD_WEIGHT, 10);
+                server.setExtendVal(MemberMetaDataConstants.SITE_KEY, "site");
+                server.setExtendVal(MemberMetaDataConstants.WEIGHT, 1);
+                server.setExtendVal(MemberMetaDataConstants.RAFT_PORT, 8000 + i);
                 healthyServers.add(server);
             }
 
-            Mockito.when(serverListManager.getHealthyServers()).thenReturn(healthyServers);
+            Mockito.when(memberManager.allMembers()).thenReturn(healthyServers);
             //Mockito.doReturn(3).when(serverListManager.getHealthyServers().size());
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);

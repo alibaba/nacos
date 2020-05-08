@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.junit.Assert;
 import org.junit.Before;
