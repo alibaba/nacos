@@ -3293,7 +3293,7 @@ public class PersistService {
     private List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
         String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
         String sqlFetchRows
-            = " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+            = " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
         PaginationHelper<ConfigInfoWrapper> helper = new PaginationHelper<ConfigInfoWrapper>();
         try {
             Page<ConfigInfoWrapper> page = helper.fetchPageLimit(jt, sqlCountRows, sqlFetchRows, new Object[]{
