@@ -15,12 +15,15 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
+import java.io.Serializable;
+
 /**
  * @author nkorange
  * @since 1.2.0
  */
-public class PermissionInfo {
+public class PermissionInfo implements Serializable {
 
+    private static final long serialVersionUID = 388813573388837395L;
     /**
      * Role name
      */

@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.auth.Resource;

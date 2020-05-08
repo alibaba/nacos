@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * ConfigServlet inner for aop
@@ -142,7 +141,7 @@ public class ConfigServletInner {
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
-                    if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                    if (PropertyUtil.isDirectRead()) {
                         configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
@@ -159,7 +158,7 @@ public class ConfigServletInner {
                                     lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                                 }
                             }
-                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                            if (PropertyUtil.isDirectRead()) {
                                 configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
@@ -170,7 +169,7 @@ public class ConfigServletInner {
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
-                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                            if (PropertyUtil.isDirectRead()) {
                                 configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
@@ -202,7 +201,7 @@ public class ConfigServletInner {
                                 }
                             }
                         }
-                        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                        if (PropertyUtil.isDirectRead()) {
                             configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
@@ -232,14 +231,14 @@ public class ConfigServletInner {
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
-                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                if (PropertyUtil.isDirectRead()) {
                     response.setDateHeader("Last-Modified", lastModified);
                 } else {
                     fis = new FileInputStream(file);
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
 
-                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                if (PropertyUtil.isDirectRead()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
                     out.flush();

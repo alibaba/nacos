@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.collect.Lists;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -34,7 +33,6 @@ import javax.annotation.PostConstruct;
 import java.sql.*;
 import java.util.List;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
@@ -51,13 +49,11 @@ public class GroupCapacityPersistService {
         GROUP_CAPACITY_ROW_MAPPER = new GroupCapacityRowMapper();
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
 
     @PostConstruct
     public void init() {
-        this.dataSourceService = dynamicDataSource.getDataSource();
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
     }
 
@@ -278,7 +274,7 @@ public class GroupCapacityPersistService {
     public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?";
 
-        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+        if (PropertyUtil.isEmbeddedStorage()) {
             sql = "SELECT id, group_id FROM group_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         }
         try {

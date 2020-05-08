@@ -27,9 +27,11 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,7 @@ import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,11 +53,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiaochun.xxc
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAPI_ITCase {
-    public static final long TIME_OUT = 2000;
-    public ConfigService iconfig = null;
-    HttpAgent agent = null;
+
+    public static final long TIME_OUT = 5000;
+    static ConfigService iconfig = null;
+    static HttpAgent agent = null;
 
     static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
@@ -64,13 +69,10 @@ public class ConfigAPI_ITCase {
     @LocalServerPort
     private int port;
 
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+7001);
         properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
 
@@ -273,16 +275,17 @@ public class ConfigAPI_ITCase {
      * @TCDescription : nacos_服务端有该配置项时，正常删除配置
      * @throws Exception
      */
-    @Test(timeout = 5*TIME_OUT)
+    @Test
     public void nacos_removeConfig_1() throws Exception {
         String content = "test";
         boolean result = iconfig.publishConfig(dataId, group, content);
-        Thread.sleep(TIME_OUT);
+
         Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
 
         result = iconfig.removeConfig(dataId, group);
-        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
         String value = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertNull(value);
     }
@@ -363,14 +366,9 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = TIME_OUT)
-    public void nacos_addListener_2() {
-        try {
-            iconfig.addListener(dataId, group, null);
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertFalse(false);
-        }
+    @Test(timeout = TIME_OUT, expected = IllegalArgumentException.class)
+    public void nacos_addListener_2() throws Exception {
+        iconfig.addListener(dataId, group, null);
     }
 
 
@@ -381,7 +379,7 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 5*TIME_OUT)
+    @Test(timeout = 5 * TIME_OUT)
     public void nacos_addListener_3() throws InterruptedException, NacosException {
         final AtomicInteger count = new AtomicInteger(0);
         final String content = "test-abc";
@@ -626,10 +624,9 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = TIME_OUT)
+    @Test(timeout = TIME_OUT, expected = IllegalArgumentException.class)
     public void nacos_removeListener_4() {
         iconfig.removeListener(dataId, group, null);
-        Assert.assertTrue(true);
     }
 
     /**
@@ -746,6 +743,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
         } catch (Exception e) {
+            e.printStackTrace();
             Assert.fail();
         }
     }
@@ -758,7 +756,7 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 3*TIME_OUT)
+    @Test(timeout = 5*TIME_OUT)
     public void nacos_openAPI_fuzzySearchConfig() {
         HttpResult result = null;
 
@@ -787,7 +785,7 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 3*TIME_OUT)
+    @Test(timeout = 5*TIME_OUT)
     public void nacos_openAPI_fuzzySearchConfig_1() {
         HttpResult result = null;
 
@@ -817,15 +815,15 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 3*TIME_OUT)
+    @Test(timeout = 5*TIME_OUT)
     public void nacos_openAPI_searchConfig() {
         HttpResult result = null;
 
         try {
             final String content = "test123";
             boolean ret = iconfig.publishConfig(dataId, group, content);
-            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
+            Thread.sleep(TIME_OUT);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
@@ -847,15 +845,15 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 3*TIME_OUT)
+    @Test(timeout = 5*TIME_OUT)
     public void nacos_openAPI_searchConfig_2() {
         HttpResult result = null;
 
         try {
             final String content = "test测试";
             boolean ret = iconfig.publishConfig(dataId, group, content);
-            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
+            Thread.sleep(TIME_OUT);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, "utf-8", TIME_OUT);

@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +38,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPollReturnChanges_ITCase {
+
     @LocalServerPort
     private int port;
 
@@ -65,16 +68,21 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(null, cci.getOldValue());
-                Assert.assertEquals(content, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(null, cci.getOldValue());
+                    Assert.assertEquals(content, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
-
         });
-        configService.publishConfig(dataId, group, content);
+        boolean result = configService.publishConfig(dataId, group, content);
+//        Assert.assertTrue(result);
+
+        configService.getConfig(dataId, group, 50);
 
         latch.await();
     }
@@ -88,7 +96,9 @@ public class ConfigLongPollReturnChanges_ITCase {
         final String oldData = "old data";
         final String newData = "new data";
 
-        configService.publishConfig(dataId, group, oldData);
+        boolean result = configService.publishConfig(dataId, group, oldData);
+
+        Assert.assertTrue(result);
 
         // query config immediately may return null
         String config = null;
@@ -100,12 +110,15 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(oldData, cci.getOldValue());
-                Assert.assertEquals(newData, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(oldData, cci.getOldValue());
+                    Assert.assertEquals(newData, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
 
         });
@@ -122,7 +135,8 @@ public class ConfigLongPollReturnChanges_ITCase {
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
 
-        configService.publishConfig(dataId, group, oldData);
+        boolean result = configService.publishConfig(dataId, group, oldData);
+        Assert.assertTrue(result);
 
         // query config immediately may return null
         String config = null;
@@ -134,12 +148,15 @@ public class ConfigLongPollReturnChanges_ITCase {
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                ConfigChangeItem cci = event.getChangeItem("content");
-                Assert.assertEquals(oldData, cci.getOldValue());
-                Assert.assertEquals(null, cci.getNewValue());
-                Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
-                System.out.println(cci);
-                latch.countDown();
+                try {
+                    ConfigChangeItem cci = event.getChangeItem("content");
+                    Assert.assertEquals(oldData, cci.getOldValue());
+                    Assert.assertEquals(null, cci.getNewValue());
+                    Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
+                    System.out.println(cci);
+                } finally {
+                    latch.countDown();
+                }
             }
 
         });

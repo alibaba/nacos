@@ -21,8 +21,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.core.cluster.NodeState;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
@@ -30,9 +31,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.*;
-import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -62,7 +60,7 @@ public class OperatorController {
     private ServiceManager serviceManager;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private ServerMemberManager memberManager;
 
     @Autowired
     private ServerStatusManager serverStatusManager;
@@ -146,9 +144,9 @@ public class OperatorController {
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIPCount);
-        result.put("cpu", SystemUtils.getCPU());
-        result.put("load", SystemUtils.getLoad());
-        result.put("mem", SystemUtils.getMem());
+        result.put("cpu", ApplicationUtils.getCPU());
+        result.put("load", ApplicationUtils.getLoad());
+        result.put("mem", ApplicationUtils.getMem());
 
         return result;
     }
@@ -176,12 +174,7 @@ public class OperatorController {
         JSONObject result = new JSONObject();
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
-            result.put("status", serverListManager.getDistroConfig());
-            return result;
-        }
-
-        if (StringUtils.equals(SwitchEntry.ACTION_CLEAN, action)) {
-            serverListManager.clean();
+            result.put("status", memberManager.allMembers());
             return result;
         }
 
@@ -193,58 +186,20 @@ public class OperatorController {
 
         JSONObject result = new JSONObject();
         if (healthy) {
-            result.put("servers", serverListManager.getHealthyServers());
+            result.put("servers", memberManager.allMembers().stream()
+            .filter(member -> member.getState() == NodeState.UP).collect(ArrayList::new,
+                            ArrayList::add, ArrayList::addAll));
         } else {
-            result.put("servers", serverListManager.getServers());
+            result.put("servers", memberManager.allMembers());
         }
 
         return result;
-    }
-
-    @RequestMapping("/server/status")
-    public String serverStatus(@RequestParam String serverStatus) {
-        serverListManager.onReceiveServerStatus(serverStatus);
-        return "ok";
     }
 
     @PutMapping("/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return "ok";
-    }
-
-    @GetMapping("/cluster/states")
-    public Object listStates(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                             @RequestParam int pageNo,
-                             @RequestParam int pageSize,
-                             @RequestParam(defaultValue = StringUtils.EMPTY) String keyword) {
-
-        JSONObject result = new JSONObject();
-
-        List<RaftPeer> raftPeerLists = new ArrayList<>();
-
-        int total = serviceManager.getPagedClusterState(namespaceId, pageNo - 1, pageSize, keyword, raftPeerLists);
-
-        if (CollectionUtils.isEmpty(raftPeerLists)) {
-            result.put("clusterStateList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray clusterStateJsonArray = new JSONArray();
-        for (RaftPeer raftPeer : raftPeerLists) {
-            ClusterStateView clusterStateView = new ClusterStateView();
-            clusterStateView.setClusterTerm(raftPeer.term.intValue());
-            clusterStateView.setNodeIp(raftPeer.ip);
-            clusterStateView.setNodeState(raftPeer.state.name());
-            clusterStateView.setVoteFor(raftPeer.voteFor);
-            clusterStateView.setHeartbeatDueMs(raftPeer.heartbeatDueMs);
-            clusterStateView.setLeaderDueMs(raftPeer.leaderDueMs);
-            clusterStateJsonArray.add(clusterStateView);
-        }
-        result.put("clusterStateList", clusterStateJsonArray);
-        result.put("count", total);
-        return result;
     }
 
     @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
