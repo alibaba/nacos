@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;

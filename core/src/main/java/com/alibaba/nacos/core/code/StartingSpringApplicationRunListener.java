@@ -114,9 +114,7 @@ public class StartingSpringApplicationRunListener
 
 		ConfigurableEnvironment env = context.getEnvironment();
 
-		if (scheduledExecutorService != null) {
-			scheduledExecutorService.shutdownNow();
-		}
+		closeExecutor();
 
 		logFilePath();
 
@@ -160,6 +158,8 @@ public class StartingSpringApplicationRunListener
 		ThreadPoolManager.shutdown();
 		WatchFileCenter.shutdown();
 		NotifyCenter.shutdown();
+
+		closeExecutor();
 	}
 
 	/**
@@ -196,6 +196,12 @@ public class StartingSpringApplicationRunListener
 			catch (Exception e) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+
+	private void closeExecutor() {
+		if (scheduledExecutorService != null) {
+			scheduledExecutorService.shutdownNow();
 		}
 	}
 

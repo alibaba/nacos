@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
+import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.remoting.ConnectionEventType;
 import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.AddLearnersRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.cli.AddPeerRequestProcessor;
@@ -39,6 +42,8 @@ import com.alipay.sofa.jraft.rpc.impl.core.ReadIndexRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.core.RequestVoteRequestProcessor;
 import com.alipay.sofa.jraft.rpc.impl.core.TimeoutNowRequestProcessor;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -48,6 +53,29 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("all")
 public class JRaftUtils {
+
+    public static final void initDirectory(String parentPath, String groupName, NodeOptions copy) {
+        final String logUri = Paths.get(parentPath, groupName, "log").toString();
+        final String snapshotUri = Paths.get(parentPath, groupName, "snapshot")
+                .toString();
+        final String metaDataUri = Paths.get(parentPath, groupName, "meta-data")
+                .toString();
+
+        // Initialize the raft file storage path for different services
+        try {
+            DiskUtils.forceMkdir(new File(logUri));
+            DiskUtils.forceMkdir(new File(snapshotUri));
+            DiskUtils.forceMkdir(new File(metaDataUri));
+        }
+        catch (Exception e) {
+            Loggers.RAFT.error("Init Raft-File dir have some error : {}", e);
+            throw new RuntimeException(e);
+        }
+
+        copy.setLogUri(logUri);
+        copy.setRaftMetaUri(metaDataUri);
+        copy.setSnapshotUri(snapshotUri);
+    }
 
     public static final Log injectExtendInfo(Log log, final String operate) {
         Log gLog = Log.newBuilder(log)

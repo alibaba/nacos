@@ -18,7 +18,14 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alipay.sofa.jraft.CliService;
+import com.alipay.sofa.jraft.Node;
+import com.alipay.sofa.jraft.RouteTable;
+import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
+import com.alipay.sofa.jraft.entity.PeerId;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,6 +34,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -50,11 +58,13 @@ public class EnlargeShrinksCapacity {
 	private final JRaftServer server;
 	private FutureTask<Boolean> task;
 	private Selector selector;
+	private final CliService cliService;
 
 	private AtomicBoolean isFirst = new AtomicBoolean(true);
 
 	public EnlargeShrinksCapacity(JRaftServer server) throws IOException {
 		this.server = server;
+		this.cliService = server.getCliService();
 		this.selector = Selector.open();
 	}
 
@@ -105,7 +115,7 @@ public class EnlargeShrinksCapacity {
 				LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "The probe port is accessible to the node : {}", alreadyConnect);
 
 				if (!alreadyConnect.isEmpty()) {
-					server.peersChange(alreadyConnect);
+					peersChange(alreadyConnect);
 				}
 
 				ThreadUtils.sleep(1000L);
@@ -114,6 +124,52 @@ public class EnlargeShrinksCapacity {
 			return true;
 
 		});
+	}
+
+	void peersChange(Set<String> addresses) {
+		for (Map.Entry<String, JRaftServer.RaftGroupTuple> entry : server.getMultiRaftGroup().entrySet()) {
+			final String groupId = entry.getKey();
+			final Node node = entry.getValue().getNode();
+
+			if (!node.isLeader()) {
+				return;
+			}
+
+			final Configuration oldConf = RouteTable.getInstance()
+					.getConfiguration(groupId);
+			final Configuration newConf = new Configuration();
+			for (String address : addresses) {
+				newConf.addPeer(PeerId.parsePeer(address));
+			}
+
+			if (Objects.equals(oldConf, newConf)) {
+				return;
+			}
+
+			for (int i = 0; i < 3; i++) {
+				try {
+					Status status = cliService.changePeers(groupId, oldConf, newConf);
+					if (status.isOk()) {
+						Loggers.RAFT
+								.info("Node update success, groupId : {}, oldConf : {}, newConf : {}, status : {}, Try again the {} time",
+										groupId, oldConf, newConf, status, i + 1);
+						RaftExecutor.executeByCommon(() -> server.refreshRouteTable(groupId));
+						return;
+					}
+					else {
+						Loggers.RAFT
+								.error("Nodes update failed, groupId : {}, oldConf : {}, newConf : {}, status : {}, Try again the {} time",
+										groupId, oldConf, newConf, status, i + 1);
+						ThreadUtils.sleep(500L);
+					}
+				}
+				catch (Exception e) {
+					Loggers.RAFT
+							.error("An exception occurred during the node change operation : {}",
+									e);
+				}
+			}
+		}
 	}
 
 	private Set<String> onConnect() {
@@ -171,5 +227,4 @@ public class EnlargeShrinksCapacity {
 		}
 
 	}
-
 }
