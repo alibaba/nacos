@@ -61,6 +61,7 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
+import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
@@ -69,6 +70,7 @@ import com.alipay.sofa.jraft.util.BytesUtil;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
+import org.slf4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
@@ -77,7 +79,6 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -236,34 +237,34 @@ public class JRaftServer {
 			if (multiRaftGroup.containsKey(groupName)) {
 				throw new DuplicateRaftGroupException(groupName);
 			}
-			final String logUri = Paths.get(parentPath, groupName, "log").toString();
-			final String snapshotUri = Paths.get(parentPath, groupName, "snapshot")
-					.toString();
-			final String metaDataUri = Paths.get(parentPath, groupName, "meta-data")
-					.toString();
-
-			// Initialize the raft file storage path for different services
-			try {
-				DiskUtils.forceMkdir(new File(logUri));
-				DiskUtils.forceMkdir(new File(snapshotUri));
-				DiskUtils.forceMkdir(new File(metaDataUri));
-			}
-			catch (Exception e) {
-				Loggers.RAFT.error("Init Raft-File dir have some error : {}", e);
-				throw new RuntimeException(e);
-			}
 
 			// Ensure that each Raft Group has its own configuration and NodeOptions
 			Configuration configuration = conf.copy();
 			NodeOptions copy = nodeOptions.copy();
 
+			JRaftUtils.initDirectory(parentPath, groupName, copy);
+
+			if (!registerSelfToCluster(groupName, localPeerId, configuration)) {
+				// If the registration fails, you need to remove yourself first and then
+				// turn on the repeat registration logic
+				configuration.removePeer(localPeerId);
+				RaftExecutor.executeByCommon(() -> {
+					Configuration c = configuration.copy();
+					c.addPeer(localPeerId);
+					for ( ; ; ) {
+						if (registerSelfToCluster(groupName, localPeerId, c)) {
+							break;
+						}
+						ThreadUtils.sleep(1000L);
+					}
+				});
+			}
+
 			// Here, the LogProcessor is passed into StateMachine, and when the StateMachine
 			// triggers onApply, the onApply of the LogProcessor is actually called
 			NacosStateMachine machine = new NacosStateMachine(this, processor);
 
-			copy.setLogUri(logUri);
-			copy.setRaftMetaUri(metaDataUri);
-			copy.setSnapshotUri(snapshotUri);
+
 			copy.setFsm(machine);
 			copy.setInitialConf(configuration);
 
@@ -399,45 +400,33 @@ public class JRaftServer {
 		return future;
 	}
 
-	void peersChange(Set<String> addresses) {
-		for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
-			final String groupId = entry.getKey();
-			final Node node = entry.getValue().node;
-			final Configuration oldConf = RouteTable.getInstance()
-					.getConfiguration(groupId);
-			final Configuration newConf = new Configuration();
-			for (String address : addresses) {
-				newConf.addPeer(PeerId.parsePeer(address));
+	boolean registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
+		PeerId leader = new PeerId();
+		for (int i = 0; i < 5; i ++) {
+			Status status = cliService.getLeader(groupId, conf, leader);
+			if (status.isOk()) {
+				break;
 			}
+			Loggers.RAFT.warn("get leader failed : {}", status);
+		}
 
-			if (Objects.equals(oldConf, newConf)) {
-				return;
-			}
+		// This means that this is a new cluster, following the normal initialization logic
+		if (leader.isEmpty()) {
+			return true;
+		}
 
-			for (int i = 0; i < 3; i++) {
-				try {
-					Status status = cliService.changePeers(groupId, oldConf, newConf);
-					if (status.isOk()) {
-						Loggers.RAFT
-								.info("Node update success, groupId : {}, oldConf : {}, newConf : {}, status : {}, Try again the {} time",
-										groupId, oldConf, newConf, status, i + 1);
-						RaftExecutor.executeByCommon(() -> refreshRouteTable(groupId));
-						return;
-					}
-					else {
-						Loggers.RAFT
-								.error("Nodes update failed, groupId : {}, oldConf : {}, newConf : {}, status : {}, Try again the {} time",
-										groupId, oldConf, newConf, status, i + 1);
-						ThreadUtils.sleep(500L);
-					}
-				}
-				catch (Exception e) {
-					Loggers.RAFT
-							.error("An exception occurred during the node change operation : {}",
-									e);
-				}
+		for (int i = 0; i < 5; i ++) {
+			Status status = cliService.addPeer(groupId, conf, selfIp);
+			if (status.isOk()) {
+				Loggers.RAFT.info("reigister self to cluster success");
+				return true;
+			} else {
+				Loggers.RAFT.error("register self to cluster has error : {}", status);
+				ThreadUtils.sleep(1000L);
 			}
 		}
+
+		return false;
 	}
 
 	protected PeerId getLeader(final String raftGroupId) {
@@ -469,8 +458,16 @@ public class JRaftServer {
 			Loggers.RAFT
 					.info("========= The raft protocol is starting to close =========");
 
+			RouteTable instance = RouteTable.getInstance();
+
 			for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 				final RaftGroupTuple tuple = entry.getValue();
+				final String groupId = entry.getKey();
+
+				final Configuration conf = instance.getConfiguration(groupId);
+
+				cliService.removePeer(groupId, conf, localPeerId);
+
 				tuple.node.shutdown();
 				tuple.raftGroupService.shutdown();
 				if (tuple.regionMetricsReporter != null) {
@@ -549,8 +546,7 @@ public class JRaftServer {
 		}
 	}
 
-	private void refreshRouteTable(String group) {
-
+	void refreshRouteTable(String group) {
 		if (isShutdown) {
 			return;
 		}
@@ -560,7 +556,7 @@ public class JRaftServer {
 		try {
 			RouteTable instance = RouteTable.getInstance();
 			Configuration oldConf = instance.getConfiguration(groupName);
-			String oldLeader = instance.selectLeader(groupName).getEndpoint().toString();
+			String oldLeader = Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer()).getEndpoint().toString();
 			status = instance.refreshConfiguration(this.cliClientService, groupName,
 					rpcRequestTimeoutMs);
 

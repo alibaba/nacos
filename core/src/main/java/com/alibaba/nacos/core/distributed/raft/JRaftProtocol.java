@@ -104,7 +104,6 @@ public class JRaftProtocol
 
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
-	private final EnlargeShrinksCapacity enlargeShrinksCapacity;
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
 	private JRaftOps jRaftOps;
@@ -118,7 +117,6 @@ public class JRaftProtocol
 		this.memberManager = memberManager;
 		this.raftServer = new JRaftServer(failoverRetries);
 		this.jRaftOps = new JRaftOps(raftServer);
-		this.enlargeShrinksCapacity = new EnlargeShrinksCapacity(raftServer);
 	}
 
 	@Override
@@ -224,7 +222,6 @@ public class JRaftProtocol
 	@Override
 	public void memberChange(Set<String> addresses) {
 		this.raftConfig.setMembers(raftConfig.getSelfMember(), addresses);
-		enlargeShrinksCapacity.execute(this.raftConfig.getMembers());
 	}
 
 	@Override

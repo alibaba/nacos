@@ -59,6 +59,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -93,6 +94,7 @@ public class TransferToLeaderFilter implements Filter {
 	protected void init() {
 		LogUtil.defaultLog.info("Open the request and forward it to the leader");
 		listenerLeaderStatus();
+		listenerSelfInCluster();
 		registerSubscribe();
 	}
 
@@ -214,7 +216,6 @@ public class TransferToLeaderFilter implements Filter {
 				new Observer() {
 					@Override
 					public void update(Observable o, Object arg) {
-						openService = true;
 						final String raftLeader = String.valueOf(arg);
 						boolean found = false;
 						for (Map.Entry<String, Member> entry : memberManager
@@ -231,6 +232,24 @@ public class TransferToLeaderFilter implements Filter {
 						if (!found) {
 							leaderServer = "";
 						}
+					}
+				});
+	}
+
+	private void listenerSelfInCluster() {
+		protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+				com.alibaba.nacos.consistency.cp.Constants.RAFT_GROUP_MEMBER,
+				new Observer() {
+					@Override
+					public void update(Observable o, Object arg) {
+						final List<String> peers = (List<String>) arg;
+						final Member self = memberManager.getSelf();
+						final String raftAddress = self.getIp() + ":" + self
+								.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
+						// Only when you are in the cluster and the current Leader is
+						// elected can you provide external services
+						openService = peers.contains(raftAddress)
+								&& StringUtils.isNotBlank(leaderServer);
 					}
 				});
 	}
