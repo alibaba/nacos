@@ -44,6 +44,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.remoting.InvokeCallback;
@@ -291,7 +292,7 @@ public class JRaftServer {
 			RaftExecutor.scheduleRaftMemberRefreshJob(() -> refreshRouteTable(groupName),
 					period, period, TimeUnit.MILLISECONDS);
 			multiRaftGroup.put(groupName,
-					new RaftGroupTuple(node, processor, raftGroupService));
+					new RaftGroupTuple(node, processor, raftGroupService, machine));
 		}
 	}
 
@@ -558,12 +559,25 @@ public class JRaftServer {
 		Status status = null;
 		try {
 			RouteTable instance = RouteTable.getInstance();
+			Configuration oldConf = instance.getConfiguration(groupName);
+			String oldLeader = instance.selectLeader(groupName).getEndpoint().toString();
 			status = instance.refreshConfiguration(this.cliClientService, groupName,
 					rpcRequestTimeoutMs);
+
 			if (status.isOk()) {
 				Configuration conf = instance.getConfiguration(groupName);
 				String leader = instance.selectLeader(groupName).getEndpoint().toString();
-				List<String> groupMembers = JRaftUtils.toStrings(conf.getPeers());
+				NacosStateMachine machine = findTupleByGroup(groupName).machine;
+
+				if (!Objects.equals(oldLeader, leader) || !Objects.equals(oldConf, conf)) {
+					NotifyCenter.publishEvent(RaftEvent.builder()
+							.leader(leader)
+							.groupId(groupName)
+							.term(machine.getTerm())
+							.raftClusterInfo(JRaftUtils.toStrings(conf.getPeers()))
+							.build());
+				}
+
 			}
 			else {
 				Loggers.RAFT
@@ -608,13 +622,15 @@ public class JRaftServer {
 		private final LogProcessor processor;
 		private final Node node;
 		private final RaftGroupService raftGroupService;
+		private final NacosStateMachine machine;
 		private ScheduledReporter regionMetricsReporter;
 
 		public RaftGroupTuple(Node node, LogProcessor processor,
-				RaftGroupService raftGroupService) {
+				RaftGroupService raftGroupService, NacosStateMachine machine) {
 			this.node = node;
 			this.processor = processor;
 			this.raftGroupService = raftGroupService;
+			this.machine = machine;
 
 			final MetricRegistry metricRegistry = this.node.getNodeMetrics()
 					.getMetricRegistry();

@@ -87,27 +87,27 @@ public class TransferToLeaderFilter implements Filter {
 	private final RestTemplate restTemplate = new RestTemplate();
 
 	private volatile boolean downgrading = false;
+	private volatile boolean openService = false;
 
 	@PostConstruct
 	protected void init() {
-		if (shouldProcessRequests()) {
-			LogUtil.defaultLog.info("Open the request and forward it to the leader");
-			listenerLeaderStatus();
-			registerSubscribe();
-		}
+		LogUtil.defaultLog.info("Open the request and forward it to the leader");
+		listenerLeaderStatus();
+		registerSubscribe();
 	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
 
-		if (!shouldProcessRequests()) {
-			chain.doFilter(request, response);
-			return;
-		}
-
 		ReuseHttpRequest req = null;
 		HttpServletResponse resp = (HttpServletResponse) response;
+
+		if (!openService) {
+			resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+					"In the node initialization, unable to process any requests at this time");
+			return;
+		}
 
 		String urlString = ((HttpServletRequest) request).getRequestURI();
 
@@ -214,6 +214,7 @@ public class TransferToLeaderFilter implements Filter {
 				new Observer() {
 					@Override
 					public void update(Observable o, Object arg) {
+						openService = true;
 						final String raftLeader = String.valueOf(arg);
 						boolean found = false;
 						for (Map.Entry<String, Member> entry : memberManager
@@ -256,7 +257,4 @@ public class TransferToLeaderFilter implements Filter {
 		});
 	}
 
-	private boolean shouldProcessRequests() {
-		return PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode();
-	}
 }

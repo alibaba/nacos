@@ -74,6 +74,10 @@ public class StringUtils {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
 
+    public static String trim(final String str) {
+        return str == null ? null : str.trim();
+    }
+
     public static String substringBetween(String str, String open, String close) {
         if (str == null || open == null || close == null) {
             return null;

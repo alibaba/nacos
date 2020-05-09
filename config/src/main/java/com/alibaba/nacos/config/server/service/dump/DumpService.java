@@ -40,6 +40,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
@@ -61,6 +62,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,18 +73,39 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@SuppressWarnings("all")
 @Service
 public class DumpService {
 
-	@Autowired
-	PersistService persistService;
+	private final PersistService persistService;
+	private final ServerMemberManager memberManager;
+	private final ProtocolManager protocolManager;
 
-	@Autowired
-	private ServerMemberManager memberManager;
+	/**
+	 * Here you inject the dependent objects constructively, ensuring that some
+	 * of the dependent functionality is initialized ahead of time
+	 *
+	 * @param persistService {@link PersistService}
+	 * @param memberManager {@link ServerMemberManager}
+	 * @param protocolManager {@link ProtocolManager}
+	 */
+	public DumpService(PersistService persistService, ServerMemberManager memberManager,
+			ProtocolManager protocolManager) {
+		this.persistService = persistService;
+		this.memberManager = memberManager;
+		this.protocolManager = protocolManager;
+	}
 
-	@Autowired
-	private CPProtocol protocol;
+	public PersistService getPersistService() {
+		return persistService;
+	}
+
+	public ServerMemberManager getMemberManager() {
+		return memberManager;
+	}
+
+	public ProtocolManager getProtocolManager() {
+		return protocolManager;
+	}
 
 	@PostConstruct
 	protected void init() throws Exception {
@@ -103,16 +126,26 @@ public class DumpService {
 		// underlying master to complete the selection
 		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
 
+			CPProtocol protocol = protocolManager.getCpProtocol();
+
 			LogUtil.dumpLog
 					.info("With embedded distributed storage, you need to wait for "
 							+ "the underlying master to complete before you can perform the dump operation.");
 
+			CountDownLatch waitHaveLeader = new CountDownLatch(1);
+
 			// watch path => /nacos_config/leader/ has value ?
 			Observer observer = new Observer() {
+
 				@Override
 				public void update(Observable o, Object arg) {
 					GlobalExecutor.executeByCommon(() -> {
-						dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+						try {
+							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
+									dumpAllTagProcessor);
+						} finally {
+							waitHaveLeader.countDown();
+						}
 					});
 					protocol.protocolMetaData()
 							.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
@@ -124,6 +157,8 @@ public class DumpService {
 			protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 					com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
 					observer);
+
+			// When all dump is complete, allow the following flow
 		}
 		else {
             dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
@@ -472,6 +507,7 @@ public class DumpService {
 
 	private boolean canExecute() {
 		try {
+			CPProtocol protocol = protocolManager.getCpProtocol();
 			// if is derby + raft mode, only leader can execute
 			if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils
 					.getStandaloneMode()) {

@@ -28,7 +28,7 @@ public final class ThreadUtils {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            Thread.interrupted();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -36,7 +36,7 @@ public final class ThreadUtils {
         try {
             latch.await();
         } catch (InterruptedException e) {
-            Thread.interrupted();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -44,7 +44,7 @@ public final class ThreadUtils {
         try {
             latch.await(time, unit);
         } catch (InterruptedException e) {
-            Thread.interrupted();
+            Thread.currentThread().interrupt();
         }
     }
 

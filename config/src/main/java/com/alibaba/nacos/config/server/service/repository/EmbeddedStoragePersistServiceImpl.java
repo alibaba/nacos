@@ -109,11 +109,21 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
     private DataSourceService dataSourceService;
 
-    @Autowired
-	private DatabaseOperate databaseOperate;
+    private final DatabaseOperate databaseOperate;
 
-	@Autowired
-	private IdGeneratorManager idGeneratorManager;
+	private final IdGeneratorManager idGeneratorManager;
+
+	/**
+	 * The constructor sets the dependency injection order
+	 *
+	 * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+	 * @param idGeneratorManager {@link IdGeneratorManager}
+	 */
+	public EmbeddedStoragePersistServiceImpl(DatabaseOperate databaseOperate,
+			IdGeneratorManager idGeneratorManager) {
+		this.databaseOperate = databaseOperate;
+		this.idGeneratorManager = idGeneratorManager;
+	}
 
 	@PostConstruct
 	public void init() {

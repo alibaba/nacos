@@ -46,8 +46,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date 2018/11/13
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AutoDeregisterInstance_ITCase {
 
     private NamingService naming;

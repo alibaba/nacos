@@ -45,8 +45,8 @@ import static org.junit.Assert.fail;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigAuth_ITCase extends AuthBase {
 
     @LocalServerPort

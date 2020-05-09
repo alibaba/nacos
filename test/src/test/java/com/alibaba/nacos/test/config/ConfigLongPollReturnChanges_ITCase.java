@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,8 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigLongPollReturnChanges_ITCase {
 
     @LocalServerPort
@@ -80,7 +79,7 @@ public class ConfigLongPollReturnChanges_ITCase {
             }
         });
         boolean result = configService.publishConfig(dataId, group, content);
-//        Assert.assertTrue(result);
+        Assert.assertTrue(result);
 
         configService.getConfig(dataId, group, 50);
 
@@ -99,13 +98,6 @@ public class ConfigLongPollReturnChanges_ITCase {
         boolean result = configService.publishConfig(dataId, group, oldData);
 
         Assert.assertTrue(result);
-
-        // query config immediately may return null
-        String config = null;
-        do {
-            TimeUnit.SECONDS.sleep(1);
-            config = configService.getConfig(dataId, group, 50);
-        } while(null == config);
 
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
@@ -137,13 +129,6 @@ public class ConfigLongPollReturnChanges_ITCase {
 
         boolean result = configService.publishConfig(dataId, group, oldData);
         Assert.assertTrue(result);
-
-        // query config immediately may return null
-        String config = null;
-        do {
-            TimeUnit.SECONDS.sleep(1);
-            config = configService.getConfig(dataId, group, 50);
-        } while(null == config);
 
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override

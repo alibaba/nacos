@@ -100,8 +100,8 @@ import static com.alibaba.nacos.config.server.service.RowMapperManager.TENANT_IN
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule"})
 @Conditional(value = ConditionOnExternalStorage.class)
-@SuppressWarnings(value = {"all", "PMD.MethodReturnWrapperTypeRule"})
 @Component
 public class ExternalStoragePersistServiceImpl implements PersistService {
 
@@ -163,8 +163,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 
 	@Override
 	public <E> PaginationHelper<E> createPaginationHelper() {
-		ExternalStoragePaginationHelperImpl<E> helper = new ExternalStoragePaginationHelperImpl<>(jt);
-		return helper;
+		return new ExternalStoragePaginationHelperImpl<E>(jt);
 	}
 
 	// ----------------------- config_info 表 insert update delete

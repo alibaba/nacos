@@ -71,11 +71,9 @@ public class MemberUtils {
 		Member target = Member.builder().ip(address).port(port)
 				.state(NodeState.UP).build();
 
-		int raftPort = calculateRaftPort(target);
-
 		Map<String, Object> extendInfo = new HashMap<>(4);
 		// The Raft Port information needs to be set by default
-		extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(raftPort));
+		extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
 		target.setExtendInfo(extendInfo);
 		return target;
 	}
@@ -158,7 +156,6 @@ public class MemberUtils {
 	}
 
 	// 默认配置格式解析，只有nacos-server的ip or ip:port or hostname:port 信息
-	// example 192.168.16.1:8848?raft_port=8849&key=value
 
 	public static Collection<Member> readServerConf(Collection<String> members) {
 		Set<Member> nodes = new HashSet<>();
