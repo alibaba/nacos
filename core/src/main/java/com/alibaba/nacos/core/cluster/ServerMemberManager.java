@@ -174,14 +174,16 @@ public class ServerMemberManager
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				String oldAddress = event.getOldIp() + ":" + port;
 				String newAddress = event.getNewIp() + ":" + port;
-				localAddress = newAddress;
+				ServerMemberManager.this.localAddress = newAddress;
+
 				Member self = ServerMemberManager.this.self;
 				self.setIp(event.getNewIp());
-				serverList.remove(oldAddress);
-				serverList.put(newAddress, self);
 
-				memberAddressInfos.remove(oldAddress);
-				memberAddressInfos.add(newAddress);
+				ServerMemberManager.this.serverList.remove(oldAddress);
+				ServerMemberManager.this.serverList.put(newAddress, self);
+
+				ServerMemberManager.this.memberAddressInfos.remove(oldAddress);
+				ServerMemberManager.this.memberAddressInfos.add(newAddress);
 			}
 
 			@Override
@@ -195,6 +197,12 @@ public class ServerMemberManager
 		Loggers.CLUSTER.debug("Node information update : {}", newMember);
 
 		String address = newMember.getAddress();
+
+		if (Objects.equals(newMember, self)) {
+			serverList.put(newMember.getAddress(), newMember);
+			return;
+		}
+
 		if (!serverList.containsKey(address)) {
 			memberJoin(Collections.singletonList(newMember));
 		}

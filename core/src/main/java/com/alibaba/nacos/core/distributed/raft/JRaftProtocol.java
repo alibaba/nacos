@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.consistency.LogFuture;
-import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
@@ -106,6 +104,7 @@ public class JRaftProtocol
 
 	private final AtomicBoolean initialized = new AtomicBoolean(false);
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
+	private final EnlargeShrinksCapacity enlargeShrinksCapacity;
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
 	private JRaftOps jRaftOps;
@@ -115,18 +114,11 @@ public class JRaftProtocol
 	private int failoverRetries = 1;
 	private String failoverRetriesStr = String.valueOf(failoverRetries);
 
-	@JustForTest
-	public static JRaftProtocol createNew() {
-		return new JRaftProtocol();
-	}
-
-	private JRaftProtocol() {
-	}
-
-	public JRaftProtocol(ServerMemberManager memberManager) {
+	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
 		this.memberManager = memberManager;
 		this.raftServer = new JRaftServer(failoverRetries);
 		this.jRaftOps = new JRaftOps(raftServer);
+		this.enlargeShrinksCapacity = new EnlargeShrinksCapacity(raftServer);
 	}
 
 	@Override
@@ -232,7 +224,7 @@ public class JRaftProtocol
 	@Override
 	public void memberChange(Set<String> addresses) {
 		this.raftConfig.setMembers(raftConfig.getSelfMember(), addresses);
-        this.raftServer.peersChange(addresses);
+		enlargeShrinksCapacity.execute(this.raftConfig.getMembers());
 	}
 
 	@Override

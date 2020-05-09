@@ -43,7 +43,7 @@ public class InetUtils_ITCase {
 
 	@Test
 	public void test_InternetAddress_Change() throws Exception {
-		String testIp = "192.168.11.101";
+		String testIp = "1.1.1.1";
 		System.setProperty(NACOS_SERVER_IP, testIp);
 		CountDownLatch latch = new CountDownLatch(1);
 

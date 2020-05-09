@@ -53,8 +53,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiaochun.xxc
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigAPI_ITCase {
 
     public static final long TIME_OUT = 5000;
@@ -69,10 +69,10 @@ public class ConfigAPI_ITCase {
     @LocalServerPort
     private int port;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+7001);
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
 
@@ -89,6 +89,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
         } catch (Exception e) {
+            e.printStackTrace();
             Assert.fail();
         }
     }
@@ -456,7 +457,6 @@ public class ConfigAPI_ITCase {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
-                System.out.println("Listener receive : [" + configInfo + "]");
                 Assert.assertEquals(content, newContent);
             }
         };

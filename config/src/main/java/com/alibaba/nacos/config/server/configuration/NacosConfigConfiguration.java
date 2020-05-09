@@ -19,6 +19,7 @@ import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.config.server.filter.TransferToLeaderFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -40,6 +41,7 @@ public class NacosConfigConfiguration {
 		return registration;
 	}
 
+	@Conditional(ConditionDistributedEmbedStorage.class)
 	@Bean
 	public FilterRegistrationBean transferToLeaderRegistration() {
 		FilterRegistrationBean<TransferToLeaderFilter> registration = new FilterRegistrationBean<>();
@@ -55,6 +57,7 @@ public class NacosConfigConfiguration {
 		return new NacosWebFilter();
 	}
 
+	@Conditional(ConditionDistributedEmbedStorage.class)
 	@Bean
 	public TransferToLeaderFilter transferToLeader() {
 		return new TransferToLeaderFilter();

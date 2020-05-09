@@ -211,13 +211,6 @@ class NacosStateMachine extends StateMachineAdapter {
 	}
 
 	@Override
-	public void onConfigurationCommitted(Configuration conf) {
-		NotifyCenter.publishEvent(
-				RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term)
-						.raftClusterInfo(JRaftUtils.toStrings(conf.getPeers())).build());
-	}
-
-	@Override
 	public void onError(RaftException e) {
 		super.onError(e);
 		processor.onError(e);
@@ -260,6 +253,10 @@ class NacosStateMachine extends StateMachineAdapter {
 		if (Objects.nonNull(closure)) {
 			closure.setObject(future);
 		}
+	}
+
+	public long getTerm() {
+		return term;
 	}
 
 	private void adapterToJRaftSnapshot(Collection<SnapshotOperation> userOperates) {

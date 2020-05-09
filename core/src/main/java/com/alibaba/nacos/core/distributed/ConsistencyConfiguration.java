@@ -21,7 +21,8 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftProtocol;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,12 +34,12 @@ import org.springframework.context.annotation.Configuration;
 public class ConsistencyConfiguration {
 
     @Bean(value = "strongAgreementProtocol")
-    public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager) {
+    public CPProtocol strongAgreementProtocol(ServerMemberManager memberManager) throws Exception {
         final CPProtocol protocol = getProtocol(CPProtocol.class, () -> new JRaftProtocol(memberManager));
         return protocol;
     }
 
-    private <T> T getProtocol(Class<T> cls, Supplier<T> builder) {
+    private <T> T getProtocol(Class<T> cls, Callable<T> builder) throws Exception {
         ServiceLoader<T> protocols = ServiceLoader
                 .load(cls);
 
@@ -48,7 +49,7 @@ public class ConsistencyConfiguration {
         if (iterator.hasNext()) {
             return iterator.next();
         } else {
-            return builder.get();
+            return builder.call();
         }
     }
 

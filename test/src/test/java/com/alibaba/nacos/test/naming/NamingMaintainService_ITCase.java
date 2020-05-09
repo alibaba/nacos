@@ -49,8 +49,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date 2019-05-07 10:13
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NamingMaintainService_ITCase extends BaseTest {
 
     private NamingMaintainService namingMaintainService;
