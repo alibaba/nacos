@@ -303,6 +303,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         public void completed(HttpResponse response) {
             if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
                 serverListUnhealth.remove(serverIp);
+                serverIp2unhealthCount.remove(serverIp);
                 HttpClientUtils.closeQuietly(response);
             }
         }
