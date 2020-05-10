@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.Commons;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,8 +34,11 @@ import java.util.Map;
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/ops")
 public class CoreOpsController {
 
-	@Autowired
-	private CPProtocol cpProtocol;
+	private final ProtocolManager protocolManager;
+
+	public CoreOpsController(ProtocolManager protocolManager) {
+		this.protocolManager = protocolManager;
+	}
 
 	// Temporarily overpassed the raft operations interface
 	// {
@@ -47,7 +50,8 @@ public class CoreOpsController {
 
 	@PostMapping(value = "/raft")
 	public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
-		return cpProtocol.execute(commands);
+		CPProtocol protocol = protocolManager.getCpProtocol();
+		return protocol.execute(commands);
 	}
 
 }

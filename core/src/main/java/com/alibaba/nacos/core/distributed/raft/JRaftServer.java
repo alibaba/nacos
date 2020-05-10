@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.LogProcessor;
@@ -47,9 +46,6 @@ import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.remoting.InvokeCallback;
-import com.alipay.remoting.rpc.RpcServer;
-import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -61,19 +57,21 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
-import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
-import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
+import com.alipay.sofa.jraft.rpc.InvokeCallback;
+import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
+import com.alipay.sofa.jraft.rpc.RpcProcessor;
+import com.alipay.sofa.jraft.rpc.RpcServer;
+import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
+import com.alipay.sofa.jraft.util.Endpoint;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import org.slf4j.Logger;
 import org.springframework.util.CollectionUtils;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -83,7 +81,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -113,7 +110,7 @@ public class JRaftServer {
 	// Existential life cycle
 
 	private RpcServer rpcServer;
-	private BoltCliClientService cliClientService;
+	private CliClientServiceImpl cliClientService;
 	private CliService cliService;
 	private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
 
@@ -123,7 +120,7 @@ public class JRaftServer {
 	private volatile boolean isShutdown = false;
 	private Configuration conf;
 
-	private AsyncUserProcessor userProcessor;
+	private RpcProcessor userProcessor;
 	private NodeOptions nodeOptions;
 	private Serializer serializer;
 	private Collection<LogProcessor4CP> processors = Collections
@@ -175,7 +172,7 @@ public class JRaftServer {
 
 		CliOptions cliOptions = new CliOptions();
 
-		this.cliClientService = new BoltCliClientService();
+		this.cliClientService = new CliClientServiceImpl();
 		this.cliClientService.init(cliOptions);
 		this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
 	}
@@ -197,14 +194,12 @@ public class JRaftServer {
 				}
 				nodeOptions.setInitialConf(conf);
 
-				rpcServer = new RpcServer(selfPort, true, false);
-				JRaftUtils.addRaftRequestProcessors(rpcServer,
+				rpcServer = RaftRpcServerFactory.createRaftRpcServer(new Endpoint(localPeerId.getIp(), localPeerId.getPort()),
 						RaftExecutor.getRaftCoreExecutor(),
 						RaftExecutor.getRaftCliServiceExecutor());
-				rpcServer.registerUserProcessor(
-						new NacosAsyncProcessor(this, failoverRetries));
+				rpcServer.registerProcessor(new NacosAsyncProcessor(this, failoverRetries));
 
-				if (!this.rpcServer.start()) {
+				if (!this.rpcServer.init(null)) {
 					Loggers.RAFT.error("Fail to init [RpcServer].");
 					throw new RuntimeException("Fail to init [RpcServer].");
 				}
@@ -477,7 +472,6 @@ public class JRaftServer {
 
 			cliService.shutdown();
 			cliClientService.shutdown();
-			rpcServer.stop();
 
 			Loggers.RAFT.info("========= The raft protocol has been closed =========");
 		}
@@ -507,21 +501,26 @@ public class JRaftServer {
 	private void invokeToLeader(final String group, final Log request,
 			final int timeoutMillis, FailoverClosure closure) {
 		try {
-			final String leaderIp = Optional.ofNullable(getLeader(group))
-					.orElseThrow(() -> new NoLeaderException(group)).getEndpoint()
-					.toString();
+			final Endpoint leaderIp = Optional.ofNullable(getLeader(group))
+					.orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
 			final BytesHolder holder = BytesHolder.create(request.toByteArray());
 			cliClientService.getRpcClient()
-					.invokeWithCallback(leaderIp, holder, new InvokeCallback() {
+					.invokeAsync(leaderIp, holder, new InvokeCallback() {
 						@Override
-						public void onResponse(Object o) {
+						public void complete(Object o, Throwable ex) {
+
+							if (Objects.nonNull(ex)) {
+								closure.setThrowable(ex);
+								closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
+							}
+
 							RestResult result = (RestResult) o;
 							if (result.ok()) {
 								closure.setData(result.getData());
 								closure.run(Status.OK());
 							}
 							else {
-								Throwable ex = (Throwable) result.getData();
+								ex = (Throwable) result.getData();
 								closure.setThrowable(ex);
 								closure.run(
 										new Status(RaftError.UNKNOWN, ex.getMessage()));
@@ -529,13 +528,7 @@ public class JRaftServer {
 						}
 
 						@Override
-						public void onException(Throwable e) {
-							closure.setThrowable(e);
-							closure.run(new Status(RaftError.UNKNOWN, e.getMessage()));
-						}
-
-						@Override
-						public Executor getExecutor() {
+						public Executor executor() {
 							return RaftExecutor.getRaftCliServiceExecutor();
 						}
 					}, timeoutMillis);
@@ -603,10 +596,6 @@ public class JRaftServer {
 
 	Map<String, RaftGroupTuple> getMultiRaftGroup() {
 		return multiRaftGroup;
-	}
-
-	BoltCliClientService getCliClientService() {
-		return cliClientService;
 	}
 
 	CliService getCliService() {
