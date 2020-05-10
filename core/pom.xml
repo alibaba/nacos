@@ -120,6 +120,13 @@
         <dependency>
             <groupId>com.alipay.sofa</groupId>
             <artifactId>jraft-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>rpc-grpc-impl</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -159,6 +166,5 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
-
     </dependencies>
 </project>

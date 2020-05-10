@@ -19,33 +19,12 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.remoting.ConnectionEventType;
-import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
-import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.AddLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.AddPeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ChangePeersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.GetLeaderRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.GetPeersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.RemoveLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.RemovePeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ResetLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ResetPeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.SnapshotRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.TransferLeaderRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.AppendEntriesRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.GetFileRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.InstallSnapshotRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.ReadIndexRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.RequestVoteRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.TimeoutNowRequestProcessor;
 
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -87,33 +66,6 @@ public class JRaftUtils {
     public static List<String> toStrings(List<PeerId> peerIds) {
         return peerIds.stream().map(peerId -> peerId.getEndpoint().toString())
                 .collect(Collectors.toList());
-    }
-
-    public static void addRaftRequestProcessors(final RpcServer rpcServer, final Executor raftExecutor,
-            final Executor cliExecutor) {
-        // raft core processors
-        final AppendEntriesRequestProcessor appendEntriesRequestProcessor = new AppendEntriesRequestProcessor(
-                raftExecutor);
-        rpcServer.addConnectionEventProcessor(ConnectionEventType.CLOSE, appendEntriesRequestProcessor);
-        rpcServer.registerUserProcessor(appendEntriesRequestProcessor);
-        rpcServer.registerUserProcessor(new GetFileRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new InstallSnapshotRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new RequestVoteRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new PingRequestProcessor());
-        rpcServer.registerUserProcessor(new TimeoutNowRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new ReadIndexRequestProcessor(raftExecutor));
-        // raft cli service
-        rpcServer.registerUserProcessor(new AddPeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new RemovePeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ResetPeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ChangePeersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new GetLeaderRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new SnapshotRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new TransferLeaderRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new GetPeersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new AddLearnersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new RemoveLearnersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ResetLearnersRequestProcessor(cliExecutor));
     }
 
 }

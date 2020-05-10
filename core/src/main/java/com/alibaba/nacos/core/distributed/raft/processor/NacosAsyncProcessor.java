@@ -28,9 +28,8 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
-import com.alipay.remoting.AsyncContext;
-import com.alipay.remoting.BizContext;
-import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
+import com.alipay.sofa.jraft.rpc.RpcContext;
+import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
+public class NacosAsyncProcessor implements RpcProcessor<BytesHolder> {
 
     private static final String INTEREST_NAME = BytesHolder.class.getName();
 
@@ -51,12 +50,12 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
     }
 
     @Override
-    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, BytesHolder holder) {
+    public void handleRequest(final RpcContext rpcCtx, BytesHolder holder) {
         try {
             Log log = Log.parseFrom(holder.getBytes());
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(log.getGroup());
             if (Objects.isNull(tuple)) {
-                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoSuchRaftGroupException(
+                rpcCtx.sendResponse(RestResultUtils.failedWithException(new NoSuchRaftGroupException(
                         "Could not find the corresponding Raft Group : " + log.getGroup())));
                 return;
             }
@@ -66,7 +65,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 server.commit(log, future, retryCnt).whenComplete((result, t) -> {
                     if (Objects.nonNull(t)) {
-                        asyncCtx.sendResponse(RestResultUtils.failedWithException(t));
+                        rpcCtx.sendResponse(RestResultUtils.failedWithException(t));
                         return;
                     }
                     if (result instanceof LogFuture) {
@@ -77,7 +76,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                         } else {
                             r = RestResultUtils.success(f.getError());
                         }
-                        asyncCtx.sendResponse(r);
+                        rpcCtx.sendResponse(r);
                         return;
                     }
                     if (result instanceof GetResponse) {
@@ -88,15 +87,15 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
                         } else {
                             r = RestResultUtils.success(response.toByteArray());
                         }
-                        asyncCtx.sendResponse(r);
+                        rpcCtx.sendResponse(r);
                     }
                 });
             }
             else {
-                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoLeaderException(log.getGroup())));
+                rpcCtx.sendResponse(RestResultUtils.failedWithException(new NoLeaderException(log.getGroup())));
             }
         } catch (Exception e) {
-            asyncCtx.sendResponse(RestResultUtils.failedWithException(e));
+            rpcCtx.sendResponse(RestResultUtils.failedWithException(e));
         }
     }
 
