@@ -32,8 +32,6 @@ import java.util.Objects;
  */
 public final class LookupFactory {
 
-	static final String DISCOVERY_SWITCH_NAME = "nacos.member.discovery";
-
 	static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
 
 	static MemberLookup LOOK_UP = null;
@@ -52,10 +50,7 @@ public final class LookupFactory {
 		 */
 		ADDRESS_SERVER(2, "address-server"),
 
-		/**
-		 * Self discovery addressing pattern
-		 */
-		DISCOVERY(3, "discovery");
+		;
 
 		private final int code;
 		private final String name;
@@ -139,10 +134,6 @@ public final class LookupFactory {
 			LOOK_UP = new AddressServerMemberLookup();
 			return LOOK_UP;
 		}
-		if (LookupType.DISCOVERY.equals(type)) {
-			LOOK_UP = new DiscoveryMemberLookup();
-			return LOOK_UP;
-		}
 		// unpossible to run here
 		throw new IllegalArgumentException();
 	}
@@ -155,10 +146,6 @@ public final class LookupFactory {
 			}
 		}
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
-		if (ApplicationUtils
-				.getProperty(DISCOVERY_SWITCH_NAME, Boolean.class, false)) {
-			return LookupType.DISCOVERY;
-		}
 		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
 			return LookupType.FILE_CONFIG;
 		}

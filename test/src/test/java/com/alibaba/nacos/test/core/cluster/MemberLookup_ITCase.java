@@ -18,12 +18,9 @@ package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.DiskUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
-import com.alibaba.nacos.core.cluster.lookup.DiscoveryMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.FileConfigMemberLookup;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.cluster.MemberLookup;
@@ -42,20 +39,10 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 
 import java.io.File;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -152,25 +139,6 @@ public class MemberLookup_ITCase extends BaseTest {
 			System.out.println(e.getErrMsg());
 			Assert.assertTrue(StringUtils.containsIgnoreCase(e.getErrMsg(), "jmenv.tbsite.net"));
 		}
-	}
-
-	@Test
-	public void test_d_lookup_discovery() throws Exception {
-		ApplicationUtils.setIsStandalone(false);
-		System.setProperty("nacos.member.discovery", "true");
-		System.out.println(ApplicationUtils.getClusterConfFilePath());
-		System.out.println(new File(ApplicationUtils.getClusterConfFilePath()).exists());
-		try {
-			LookupFactory.createLookUp(memberManager);
-		}
-		catch (Throwable ignore) {
-
-		}
-		System.setProperty("nacos.member.discovery", "false");
-		MemberLookup lookup = LookupFactory.getLookUp();
-		System.out.println(lookup);
-		Assert.assertTrue(lookup instanceof DiscoveryMemberLookup);
-		func(lookup);
 	}
 
 	private void func(MemberLookup lookup) throws Exception {
