@@ -152,14 +152,14 @@ public class StartingSpringApplicationRunListener
 
 		LOGGER.error("Startup errors : {}", exception);
 
-		LOGGER.error("Nacos failed to start, please see {} for more details.",
-				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
-
 		ThreadPoolManager.shutdown();
 		WatchFileCenter.shutdown();
 		NotifyCenter.shutdown();
 
 		closeExecutor();
+
+		LOGGER.error("Nacos failed to start, please see {} for more details.",
+				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
 	}
 
 	/**
