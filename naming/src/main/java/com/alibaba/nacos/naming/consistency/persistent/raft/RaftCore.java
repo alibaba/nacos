@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -52,11 +53,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-
 /**
  * @author nacos
  */
+@DependsOn("ProtocolManager")
 @Component
 public class RaftCore {
 
@@ -161,7 +161,9 @@ public class RaftCore {
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
-            raftProxy.proxyPostLarge(getLeader().ip, API_PUB, params.toJSONString(), parameters);
+            final RaftPeer leader = getLeader();
+
+            raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toJSONString(), parameters);
             return;
         }
 
@@ -481,7 +483,7 @@ public class RaftCore {
 
         public void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
+            if (local.state != RaftPeer.State.LEADER && !ApplicationUtils.getStandaloneMode()) {
                 return;
             }
 
@@ -839,9 +841,9 @@ public class RaftCore {
 
     public static String buildURL(String ip, String api) {
         if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        return "http://" + ip + RunningConfig.getContextPath() + api;
+        return "http://" + ip + ApplicationUtils.getContextPath() + api;
     }
 
     public Datum<?> getDatum(String key) {

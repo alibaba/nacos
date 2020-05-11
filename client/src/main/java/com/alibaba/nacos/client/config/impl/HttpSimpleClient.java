@@ -250,6 +250,12 @@ public class HttpSimpleClient {
             this.headers = headers;
             this.content = content;
         }
+
+        @Override
+        public String toString() {
+            return "HttpResult{" + "code=" + code + ", headers=" + headers + ", content='"
+                    + content + '\'' + '}';
+        }
     }
 
 }

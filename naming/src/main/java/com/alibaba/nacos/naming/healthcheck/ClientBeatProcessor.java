@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.healthcheck;
 
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -40,7 +40,7 @@ public class ClientBeatProcessor implements Runnable {
 
     @JSONField(serialize = false)
     public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+        return ApplicationUtils.getBean(PushService.class);
     }
 
     public RsInfo getRsInfo() {

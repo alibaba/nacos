@@ -21,8 +21,8 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
  */
 public class LeaderElectFinishedEvent extends BaseRaftEvent {
 
-    public LeaderElectFinishedEvent(Object source, RaftPeer raftPeer) {
-        super(source, raftPeer);
+    public LeaderElectFinishedEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
+        super(source, raftPeer, local);
     }
 
 }
