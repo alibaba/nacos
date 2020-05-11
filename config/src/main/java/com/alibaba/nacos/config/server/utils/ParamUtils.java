@@ -71,7 +71,11 @@ public class ParamUtils {
         } else if (StringUtils.isBlank(datumId) || !isValid(datumId)) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId : " + datumId);
         } else if (StringUtils.isBlank(content)) {
+<<<<<<< HEAD:config/src/main/java/com/alibaba/nacos/config/server/utils/ParamUtils.java
             throw new NacosException(NacosException.INVALID_PARAM, "content is blank : " + content);
+=======
+            throw new NacosException(NacosException.INVALID_PARAM, "content is blank");
+>>>>>>> [#2738]Put ParamUtils into origin place for tenant legality verification.:config/src/main/java/com/alibaba/nacos/config/server/utils/ParamUtils.java
         } else if (content.length() > PropertyUtil.getMaxContent()) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "invalid content, over " + PropertyUtil.getMaxContent());

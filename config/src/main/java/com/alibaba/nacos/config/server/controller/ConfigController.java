@@ -15,8 +15,12 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+<<<<<<< HEAD
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
+=======
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+>>>>>>> [#2738]Put ParamUtils into origin place for tenant legality verification.
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
