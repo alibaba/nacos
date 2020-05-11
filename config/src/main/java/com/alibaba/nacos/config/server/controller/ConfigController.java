@@ -338,8 +338,6 @@ public class ConfigController {
 			throw new IllegalArgumentException("invalid probeModify");
 		}
 
-		log.info("listen config id:" + probeModify);
-
 		probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
 
 		Map<String, String> clientMd5Map;
@@ -349,8 +347,6 @@ public class ConfigController {
 		catch (Throwable e) {
 			throw new IllegalArgumentException("invalid probeModify");
 		}
-
-		log.info("listen config id 2:" + probeModify);
 
 		// do long-polling
 		inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
