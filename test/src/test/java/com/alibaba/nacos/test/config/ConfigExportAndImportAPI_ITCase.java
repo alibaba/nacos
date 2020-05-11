@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
 import com.github.keran213539.commonOkHttp.UploadByteFile;
@@ -42,8 +43,10 @@ import java.util.*;
  * @date 2019/5/23 15:26
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigExportAndImportAPI_ITCase {
+
     private static final long TIME_OUT = 2000;
     private static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
 
@@ -128,8 +131,9 @@ public class ConfigExportAndImportAPI_ITCase {
         JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
         JSONObject config1 = resultConfigs.getJSONObject(0);
         JSONObject config2 = resultConfigs.getJSONObject(1);
-        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + config1.getIntValue("id")
-            + "," + config2.getIntValue("id");
+        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + config1.getLongValue("id")
+            + "," + config2.getLongValue("id");
+        System.out.println(exportByIdsUrl);
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();

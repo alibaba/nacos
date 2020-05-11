@@ -15,37 +15,27 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * @author nacos
  */
-public class Pair {
-    private String key;
-    private String value;
+public class Pair<A, B> {
+    private final A first;
+    private final B second;
 
-    public Pair(String key, String value) {
-        this.key = key;
-        this.value = value;
+    Pair(A first, B second) {
+        this.first = first;
+        this.second = second;
     }
 
-    public Pair() {
-        this(StringUtils.EMPTY, StringUtils.EMPTY);
+    public static <A, B> Pair<A, B> with(A first, B second) {
+        return new Pair<>(first, second);
     }
 
-    public String getKey() {
-        return key;
+    public A getFirst() {
+        return first;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    public B getSecond() {
+        return second;
     }
 }

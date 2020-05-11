@@ -16,10 +16,14 @@
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import org.springframework.core.annotation.Order;
 
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import java.io.IOException;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
@@ -29,8 +33,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  *
  * @author Nacos
  */
-@Order(1)
-@WebFilter(filterName = "webFilter", urlPatterns = "/*")
 public class NacosWebFilter implements Filter {
 
     static private String webRootPath;
@@ -62,12 +64,9 @@ public class NacosWebFilter implements Filter {
 
         try {
             chain.doFilter(request, response);
-        } catch (IOException ioe) {
+        } catch (IOException | ServletException ioe) {
             defaultLog.debug("Filter catch exception, " + ioe.toString(), ioe);
             throw ioe;
-        } catch (ServletException se) {
-            defaultLog.debug("Filter catch exception, " + se.toString(), se);
-            throw se;
         }
     }
 
