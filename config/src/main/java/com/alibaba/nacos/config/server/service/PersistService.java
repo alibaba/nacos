@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.common.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -3452,6 +3452,8 @@ public class PersistService {
         for (int i = 0; i < configInfoList.size(); i++) {
             ConfigAllInfo configInfo = configInfoList.get(i);
             try {
+                // check tenant
+                ParamUtils.checkTenant(configInfo.getTenant());
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
                 defaultLog.error("data verification failed", e);

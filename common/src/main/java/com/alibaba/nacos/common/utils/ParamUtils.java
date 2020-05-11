@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.common.utils;
 
 import java.util.Map;
 
@@ -33,6 +33,8 @@ public class ParamUtils {
     private final static int TAG_MAX_LEN = 16;
 
     private final static int TANANT_MAX_LEN = 128;
+
+    private static int MAX_CONTENT_SIZE = 10 * 1024 * 1024;
 
     /**
      * 白名单的方式检查, 合法的参数只能包含字母、数字、以及validChars中的字符, 并且不能为空
@@ -72,15 +74,15 @@ public class ParamUtils {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId");
         } else if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.INVALID_PARAM, "content is blank");
-        } else if (content.length() > PropertyUtil.getMaxContent()) {
+        } else if (content.length() > MAX_CONTENT_SIZE) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "invalid content, over " + PropertyUtil.getMaxContent());
+                "invalid content, over " + MAX_CONTENT_SIZE);
         }
     }
 
     public static void checkParam(String tag) {
         if (StringUtils.isNotBlank(tag)) {
-            if (!ParamUtils.isValid(tag.trim())) {
+            if (!isValid(tag.trim())) {
                 throw new IllegalArgumentException("invalid tag");
             }
             if (tag.length() > TAG_MAX_LEN) {
