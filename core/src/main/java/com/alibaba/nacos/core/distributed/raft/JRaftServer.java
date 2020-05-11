@@ -67,9 +67,6 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.alipay.sofa.jraft.util.Endpoint;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
 import org.springframework.util.CollectionUtils;
 
 import java.nio.ByteBuffer;
@@ -465,9 +462,6 @@ public class JRaftServer {
 
 				tuple.node.shutdown();
 				tuple.raftGroupService.shutdown();
-				if (tuple.regionMetricsReporter != null) {
-					tuple.regionMetricsReporter.close();
-				}
 			}
 
 			cliService.shutdown();
@@ -608,7 +602,6 @@ public class JRaftServer {
 		private final Node node;
 		private final RaftGroupService raftGroupService;
 		private final NacosStateMachine machine;
-		private ScheduledReporter regionMetricsReporter;
 
 		public RaftGroupTuple(Node node, LogProcessor processor,
 				RaftGroupService raftGroupService, NacosStateMachine machine) {
@@ -616,24 +609,6 @@ public class JRaftServer {
 			this.processor = processor;
 			this.raftGroupService = raftGroupService;
 			this.machine = machine;
-
-			final MetricRegistry metricRegistry = this.node.getNodeMetrics()
-					.getMetricRegistry();
-			if (metricRegistry != null) {
-
-				// auto start raft node metrics reporter
-
-				regionMetricsReporter = Slf4jReporter.forRegistry(metricRegistry)
-						.prefixedWith("nacos_raft_[" + node.getGroupId() + "]")
-						.withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
-						.outputTo(Loggers.RAFT)
-						.scheduleOn(RaftExecutor.getRaftCommonExecutor())
-						.shutdownExecutorOnStop(
-								RaftExecutor.getRaftCommonExecutor().isShutdown())
-						.build();
-				regionMetricsReporter.start(30, TimeUnit.SECONDS);
-			}
-
 		}
 
 		public Node getNode() {
