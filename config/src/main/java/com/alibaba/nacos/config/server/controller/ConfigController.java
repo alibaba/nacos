@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -136,8 +135,6 @@ public class ConfigController {
 			throws NacosException {
 		final String srcIp = RequestUtil.getRemoteIp(request);
 		String requestIpApp = RequestUtil.getAppName(request);
-        // check tenant
-        ParamUtils.checkTenant(tenant);
 		ParamUtils.checkParam(dataId, group, "datumId", content);
 		ParamUtils.checkParam(tag);
 
@@ -216,9 +213,7 @@ public class ConfigController {
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam(value = "tag", required = false) String tag)
 			throws IOException, ServletException, NacosException {
-        // check tenant
-        ParamUtils.checkTenant(tenant);
-	    tenant = processTenant(tenant);
+		tenant = processTenant(tenant);
 		// check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
 		ParamUtils.checkParam(tag);
@@ -239,9 +234,7 @@ public class ConfigController {
 			@RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
 			throws NacosException {
-        // check tenant
-        ParamUtils.checkTenant(tenant);
-	    // check params
+		// check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
 		return persistService.findConfigAllInfo(dataId, group, tenant);
 	}
@@ -260,9 +253,7 @@ public class ConfigController {
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam(value = "tag", required = false) String tag)
 			throws NacosException {
-        // check tenant
-        ParamUtils.checkTenant(tenant);
-	    ParamUtils.checkParam(dataId, group, "datumId", "rm");
+		ParamUtils.checkParam(dataId, group, "datumId", "rm");
 		ParamUtils.checkParam(tag);
 		String clientIp = RequestUtil.getRemoteIp(request);
 		if (StringUtils.isBlank(tag)) {
