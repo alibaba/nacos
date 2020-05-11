@@ -34,8 +34,6 @@ public class ParamUtils {
 
     private final static int TANANT_MAX_LEN = 128;
 
-    private static int MAX_CONTENT_SIZE = 10 * 1024 * 1024;
-
     /**
      * 白名单的方式检查, 合法的参数只能包含字母、数字、以及validChars中的字符, 并且不能为空
      *
