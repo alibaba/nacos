@@ -16,9 +16,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import java.util.Map;
-
 import com.alibaba.nacos.api.exception.NacosException;
-
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -64,11 +62,11 @@ public class ParamUtils {
     }
 
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
-        if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId.trim())) {
+        if (StringUtils.isBlank(dataId) || !isValid(dataId.trim())) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId : " + dataId);
-        } else if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+        } else if (StringUtils.isBlank(group) || !isValid(group)) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid group : " + group);
-        } else if (StringUtils.isBlank(datumId) || !ParamUtils.isValid(datumId)) {
+        } else if (StringUtils.isBlank(datumId) || !isValid(datumId)) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId : " + datumId);
         } else if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.INVALID_PARAM, "content is blank : " + content);
@@ -80,7 +78,7 @@ public class ParamUtils {
 
     public static void checkParam(String tag) {
         if (StringUtils.isNotBlank(tag)) {
-            if (!ParamUtils.isValid(tag.trim())) {
+            if (!isValid(tag.trim())) {
                 throw new IllegalArgumentException("invalid tag : " + tag);
             }
             if (tag.length() > TAG_MAX_LEN) {
@@ -91,7 +89,7 @@ public class ParamUtils {
 
     public static void checkTenant(String tenant) {
         if (StringUtils.isNotBlank(tenant)) {
-            if (!ParamUtils.isValid(tenant.trim())) {
+            if (!isValid(tenant.trim())) {
                 throw new IllegalArgumentException("invalid tenant");
             }
             if (tenant.length() > TANANT_MAX_LEN) {
