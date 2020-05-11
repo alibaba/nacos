@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.ParamUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -111,6 +112,8 @@ public class ConfigController {
         throws NacosException {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
+        // check tenant
+        ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
 
@@ -177,6 +180,8 @@ public class ConfigController {
                               String tenant,
                           @RequestParam(value = "tag", required = false) String tag)
         throws IOException, ServletException, NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
         tenant = processTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
@@ -198,6 +203,8 @@ public class ConfigController {
                                           @RequestParam(value = "tenant", required = false,
                                               defaultValue = StringUtils.EMPTY) String tenant)
         throws NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         return persistService.findConfigAllInfo(dataId, group, tenant);
@@ -216,6 +223,8 @@ public class ConfigController {
                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
                                     String tenant,
                                 @RequestParam(value = "tag", required = false) String tag) throws NacosException {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
         String clientIp = RequestUtil.getRemoteIp(request);
