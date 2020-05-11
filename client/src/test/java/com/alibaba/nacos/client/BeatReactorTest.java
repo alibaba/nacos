@@ -1,5 +1,6 @@
 package com.alibaba.nacos.client;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -38,7 +39,7 @@ public class BeatReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
 
-        Mockito.doReturn(0L).when(namingProxy).sendBeat(beatInfo, true);
+        Mockito.doReturn(new JSONObject()).when(namingProxy).sendBeat(beatInfo, true);
         beatReactor.addBeatInfo("testService", beatInfo);
 
         Assert.assertEquals(1, getActiveThread(beatReactor));
