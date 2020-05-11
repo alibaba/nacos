@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.common.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.config.server.utils;
 
 import java.util.Map;
 
@@ -74,9 +74,9 @@ public class ParamUtils {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId");
         } else if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.INVALID_PARAM, "content is blank");
-        } else if (content.length() > MAX_CONTENT_SIZE) {
+        } else if (content.length() > PropertyUtil.getMaxContent()) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                "invalid content, over " + MAX_CONTENT_SIZE);
+                "invalid content, over " + PropertyUtil.getMaxContent());
         }
     }
 

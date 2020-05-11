@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import com.alibaba.nacos.common.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
