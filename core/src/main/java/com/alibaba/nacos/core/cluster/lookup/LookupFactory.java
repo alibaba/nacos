@@ -146,7 +146,6 @@ public final class LookupFactory {
 			}
 		}
 		File file = new File(ApplicationUtils.getClusterConfFilePath());
-
 		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
 			return LookupType.FILE_CONFIG;
 		}
