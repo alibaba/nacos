@@ -258,6 +258,7 @@ public class CPInstancesAPI_ITCase {
     public void listService() throws Exception {
         String serviceName = NamingBase.randomDomainName();
         ListView<String> listView = naming.getServicesOfServer(1, 50);
+        System.out.println("listView : " + listView);
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
 
         //get service
@@ -273,7 +274,7 @@ public class CPInstancesAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
         int count = json.getIntValue("count");
-        Assert.assertEquals(listView.getCount()+1, count);
+        Assert.assertEquals(listView.getCount() + 1, count);
 
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
     }

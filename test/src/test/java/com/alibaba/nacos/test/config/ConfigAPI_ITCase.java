@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -146,11 +147,12 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5*TIME_OUT)
     public void nacos_getconfig_4() throws Exception {
+        final String dataId = "nacos_getconfig_4" + System.currentTimeMillis();
         final String content = "test";
 
         boolean result = iconfig.publishConfig(dataId, null, content);
-        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
 
         String value = iconfig.getConfig(dataId, null, TIME_OUT);
         Assert.assertEquals(content, value);
@@ -231,10 +233,11 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5*TIME_OUT)
     public void nacos_publishConfig_5() throws Exception {
+        final String dataId = "nacos_publishConfig_5";
         String content = "test";
         boolean result = iconfig.publishConfig(dataId, null, content);
-        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
+        Thread.sleep(TIME_OUT);
 
         String value = iconfig.getConfig(dataId, null, TIME_OUT);
         Assert.assertEquals(content, value);
@@ -334,6 +337,9 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5*TIME_OUT)
     public void nacos_addListener_1() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final String dataId = "nacos_addListener_1";
+        final String group = "nacos_addListener_1";
         final AtomicInteger count = new AtomicInteger(0);
         final String content = "test-abc";
         boolean result = iconfig.publishConfig(dataId, group, content);
@@ -342,9 +348,13 @@ public class ConfigAPI_ITCase {
         Listener ml = new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("recieve23:" + configInfo);
-                count.incrementAndGet();
-                Assert.assertEquals(content, configInfo);
+                try {
+                    System.out.println("recieve23:" + configInfo);
+                    count.incrementAndGet();
+                    Assert.assertEquals(content, configInfo);
+                } finally {
+                    latch.countDown();
+                }
             }
 
             @Override
@@ -353,9 +363,7 @@ public class ConfigAPI_ITCase {
             }
         };
         iconfig.addListener(dataId, group, ml);
-        while (count.get() == 0) {
-            Thread.sleep(2000);
-        }
+        latch.await(5000, TimeUnit.MILLISECONDS);
         Assert.assertTrue(count.get() >= 1);
         iconfig.removeListener(dataId, group, ml);
     }
@@ -382,7 +390,10 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5 * TIME_OUT)
     public void nacos_addListener_3() throws InterruptedException, NacosException {
+        final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger count = new AtomicInteger(0);
+        final String dataId = "nacos_addListener_3";
+        final String group = "nacos_addListener_3";
         final String content = "test-abc";
         boolean result = iconfig.publishConfig(dataId, group, content);
         Thread.sleep(TIME_OUT);
@@ -396,9 +407,7 @@ public class ConfigAPI_ITCase {
             }
         };
         iconfig.addListener(dataId, group, ml);
-        while (count.get() == 0) {
-            Thread.sleep(2000);
-        }
+        latch.await(5000, TimeUnit.MILLISECONDS);
         Assert.assertEquals(1, count.get());
         iconfig.removeListener(dataId, group, ml);
     }
@@ -446,6 +455,8 @@ public class ConfigAPI_ITCase {
     @Test
     public void nacos_addListener_5() throws InterruptedException, NacosException {
         final AtomicInteger count = new AtomicInteger(0);
+        final String dataId = "nacos_addListener_5";
+        final String group = "nacos_addListener_5";
         final String content = "test-abc";
         final String newContent = "new-test-def";
         boolean result = iconfig.publishConfig(dataId, group, content);
@@ -457,7 +468,7 @@ public class ConfigAPI_ITCase {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
-                Assert.assertEquals(content, newContent);
+                Assert.assertEquals(newContent, configInfo);
             }
         };
 
@@ -490,6 +501,8 @@ public class ConfigAPI_ITCase {
         ConfigService iconfig = NacosFactory.createConfigService(properties);
 
         final AtomicInteger count = new AtomicInteger(0);
+        final String dataId = "nacos_addListener_6";
+        final String group = "nacos_addListener_6";
         final String content = "test-abc";
         final String newContent = "new-test-def";
         boolean result = iconfig.publishConfig(dataId, group, content);
@@ -502,7 +515,7 @@ public class ConfigAPI_ITCase {
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
                 System.out.println("Listener receive : [" + configInfo + "]");
-                Assert.assertEquals(content, newContent);
+                Assert.assertEquals(newContent, configInfo);
             }
         };
 
@@ -624,7 +637,7 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = TIME_OUT, expected = IllegalArgumentException.class)
+    @Test(timeout = TIME_OUT)
     public void nacos_removeListener_4() {
         iconfig.removeListener(dataId, group, null);
     }

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author nkorange
@@ -38,7 +39,7 @@ public class NamingTest {
     public void testServiceList() throws Exception {
 
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "console.nacos.io:80");
         properties.put(PropertyKeyConst.USERNAME, "nacos");
         properties.put(PropertyKeyConst.PASSWORD, "nacos");
 
@@ -53,7 +54,7 @@ public class NamingTest {
         map.put("version", "2.0");
         instance.setMetadata(map);
 
-        namingService.registerInstance("nacos.test.1", instance);
+        namingService.registerInstance("nacos.test.1", "chuntaojun", instance);
 
         ThreadUtils.sleep(5_000L);
 
@@ -62,10 +63,8 @@ public class NamingTest {
         System.out.println(list);
 
         ThreadUtils.sleep(60_000L);
-//        ExpressionSelector expressionSelector = new ExpressionSelector();
-//        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
-//        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
-
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await();
     }
 
 
