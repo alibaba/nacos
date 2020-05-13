@@ -32,4 +32,6 @@ public class JRaftConstants {
 
 	public static final String DO_SNAPSHOT = "doSnapshot";
 
+	public static final String REMOVE_PEER = "removePeer";
+
 }
