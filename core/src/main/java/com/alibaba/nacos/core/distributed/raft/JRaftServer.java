@@ -129,7 +129,7 @@ public class JRaftServer {
 	private int failoverRetries;
 	private int rpcRequestTimeoutMs;
 
-	public JRaftServer(final int failoverRetries) {
+	public JRaftServer(final int failoverRetries) throws Exception {
 		this.failoverRetries = failoverRetries;
 		this.conf = new Configuration();
 	}
@@ -173,11 +173,8 @@ public class JRaftServer {
 	}
 
 	synchronized void start() {
-
 		if (!isStarted) {
-
 			Loggers.RAFT.info("========= The raft protocol is starting... =========");
-
 			try {
 				// init raft group node
 				com.alipay.sofa.jraft.NodeManager raftNodeManager = com.alipay.sofa.jraft.NodeManager
@@ -233,17 +230,15 @@ public class JRaftServer {
 			// Ensure that each Raft Group has its own configuration and NodeOptions
 			Configuration configuration = conf.copy();
 			NodeOptions copy = nodeOptions.copy();
-
 			JRaftUtils.initDirectory(parentPath, groupName, copy);
 
-			if (!registerSelfToCluster(groupName, localPeerId, configuration)) {
+			if (!registerSelfToCluster(groupName, localPeerId, configuration.copy())) {
 				// If the registration fails, you need to remove yourself first and then
 				// turn on the repeat registration logic
-				configuration.removePeer(localPeerId);
 				RaftExecutor.executeByCommon(() -> {
 					Configuration c = configuration.copy();
 					c.addPeer(localPeerId);
-					for ( ; ; ) {
+					for (; ; ) {
 						if (registerSelfToCluster(groupName, localPeerId, c)) {
 							break;
 						}
@@ -255,7 +250,6 @@ public class JRaftServer {
 			// Here, the LogProcessor is passed into StateMachine, and when the StateMachine
 			// triggers onApply, the onApply of the LogProcessor is actually called
 			NacosStateMachine machine = new NacosStateMachine(this, processor);
-
 
 			copy.setFsm(machine);
 			copy.setInitialConf(configuration);
@@ -325,7 +319,8 @@ public class JRaftServer {
 				return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
 			}
 			catch (Throwable ex) {
-				throw new ConsistencyException("Data acquisition failed : " + e.toString());
+				throw new ConsistencyException(
+						"Data acquisition failed : " + e.toString());
 			}
 		}
 		catch (Throwable e) {
@@ -369,7 +364,8 @@ public class JRaftServer {
 
 	public <T> CompletableFuture<T> commit(Log data, final CompletableFuture<T> future,
 			final int retryLeft) {
-		LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
+		LoggerUtils
+				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
 		final String group = data.getGroup();
 		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (tuple == null) {
@@ -387,18 +383,20 @@ public class JRaftServer {
 		}
 		else {
 			// Forward to Leader for request processing
-			future.completeExceptionally(new NoLeaderException("The current node is not a Leader"));
+			invokeToLeader(group, data, rpcRequestTimeoutMs, closure);
 		}
 		return future;
 	}
 
 	boolean registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
+		conf.removePeer(localPeerId);
 		PeerId leader = new PeerId();
-		for (int i = 0; i < 5; i ++) {
+		for (int i = 0; i < 5; i++) {
 			Status status = cliService.getLeader(groupId, conf, leader);
 			if (status.isOk()) {
 				break;
 			}
+			ThreadUtils.sleep(100L);
 			Loggers.RAFT.warn("get leader failed : {}", status);
 		}
 
@@ -407,14 +405,15 @@ public class JRaftServer {
 			return true;
 		}
 
-		for (int i = 0; i < 5; i ++) {
+		for (int i = 0; i < 5; i++) {
 			Status status = cliService.addPeer(groupId, conf, selfIp);
 			if (status.isOk()) {
 				Loggers.RAFT.info("reigister self to cluster success");
 				return true;
-			} else {
+			}
+			else {
 				Loggers.RAFT.error("register self to cluster has error : {}", status);
-				ThreadUtils.sleep(1000L);
+				ThreadUtils.sleep(1_000L);
 			}
 		}
 
@@ -439,13 +438,10 @@ public class JRaftServer {
 	}
 
 	synchronized void shutdown() {
-
 		if (isShutdown) {
 			return;
 		}
-
 		isShutdown = true;
-
 		try {
 			Loggers.RAFT
 					.info("========= The raft protocol is starting to close =========");
@@ -454,8 +450,7 @@ public class JRaftServer {
 
 			for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 				final RaftGroupTuple tuple = entry.getValue();
-				final String groupId = entry.getKey();
-
+				final Node node = tuple.getNode();
 				tuple.node.shutdown();
 				tuple.raftGroupService.shutdown();
 			}
@@ -506,17 +501,15 @@ public class JRaftServer {
 								closure.run(Status.OK());
 							}
 							else {
-								Throwable ex = (Throwable) result.getData();
-								closure.setThrowable(ex);
 								closure.run(
-										new Status(RaftError.UNKNOWN, ex.getMessage()));
+										new Status(RaftError.UNKNOWN, String.valueOf(result.getData())));
 							}
 						}
 
 						@Override
 						public void onException(Throwable e) {
 							closure.setThrowable(e);
-							closure.run(new Status(RaftError.UNKNOWN, e.getMessage()));
+							closure.run(new Status(RaftError.UNKNOWN, e.toString()));
 						}
 
 						@Override
@@ -527,7 +520,7 @@ public class JRaftServer {
 		}
 		catch (Exception e) {
 			closure.setThrowable(e);
-			closure.run(new Status(RaftError.UNKNOWN, e.getMessage()));
+			closure.run(new Status(RaftError.UNKNOWN, e.toString()));
 		}
 	}
 
@@ -541,7 +534,8 @@ public class JRaftServer {
 		try {
 			RouteTable instance = RouteTable.getInstance();
 			Configuration oldConf = instance.getConfiguration(groupName);
-			String oldLeader = Optional.ofNullable(instance.selectLeader(groupName)).orElse(PeerId.emptyPeer()).getEndpoint().toString();
+			String oldLeader = Optional.ofNullable(instance.selectLeader(groupName))
+					.orElse(PeerId.emptyPeer()).getEndpoint().toString();
 			status = instance.refreshConfiguration(this.cliClientService, groupName,
 					rpcRequestTimeoutMs);
 
@@ -549,16 +543,13 @@ public class JRaftServer {
 				Configuration conf = instance.getConfiguration(groupName);
 				String leader = instance.selectLeader(groupName).getEndpoint().toString();
 				NacosStateMachine machine = findTupleByGroup(groupName).machine;
-
-				if (!Objects.equals(oldLeader, leader) || !Objects.equals(oldConf, conf)) {
-					NotifyCenter.publishEvent(RaftEvent.builder()
-							.leader(leader)
-							.groupId(groupName)
-							.term(machine.getTerm())
-							.raftClusterInfo(JRaftUtils.toStrings(conf.getPeers()))
-							.build());
+				if (!Objects.equals(oldLeader, leader) || !Objects
+						.equals(oldConf, conf)) {
+					NotifyCenter.publishEvent(
+							RaftEvent.builder().leader(leader).groupId(groupName)
+									.term(machine.getTerm()).raftClusterInfo(
+									JRaftUtils.toStrings(conf.getPeers())).build());
 				}
-
 			}
 			else {
 				Loggers.RAFT

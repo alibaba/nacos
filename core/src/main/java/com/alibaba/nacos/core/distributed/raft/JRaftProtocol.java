@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -106,7 +105,7 @@ public class JRaftProtocol
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
-	private JRaftOps jRaftOps;
+	private JRaftMaintainService jRaftMaintainService;
 	private Node raftNode;
 	private ServerMemberManager memberManager;
 	private String selfAddress = InetUtils.getSelfIp();
@@ -116,7 +115,7 @@ public class JRaftProtocol
 	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
 		this.memberManager = memberManager;
 		this.raftServer = new JRaftServer(failoverRetries);
-		this.jRaftOps = new JRaftOps(raftServer);
+		this.jRaftMaintainService = new JRaftMaintainService(raftServer);
 	}
 
 	@Override
@@ -233,7 +232,7 @@ public class JRaftProtocol
 
 	@Override
 	public RestResult<String> execute(Map<String, String> args) {
-		return jRaftOps.execute(args);
+		return jRaftMaintainService.execute(args);
 	}
 
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
