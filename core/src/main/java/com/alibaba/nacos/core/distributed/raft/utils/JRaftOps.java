@@ -33,6 +33,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public enum JRaftOps {
 
 	TRANSFER_LEADER("transferLeader") {
