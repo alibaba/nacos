@@ -129,6 +129,15 @@ public class JRaftServer {
 	private int failoverRetries;
 	private int rpcRequestTimeoutMs;
 
+	static {
+		// Set bolt buffer
+		// System.getProperties().setProperty("bolt.channel_write_buf_low_water_mark", String.valueOf(64 * 1024 * 1024));
+		// System.getProperties().setProperty("bolt.channel_write_buf_high_water_mark", String.valueOf(256 * 1024 * 1024));
+
+		System.getProperties().setProperty("bolt.netty.buffer.low.watermark", String.valueOf(128 * 1024 * 1024));
+		System.getProperties().setProperty("bolt.netty.buffer.high.watermark", String.valueOf(256 * 1024 * 1024));
+	}
+
 	public JRaftServer(final int failoverRetries) throws Exception {
 		this.failoverRetries = failoverRetries;
 		this.conf = new Configuration();
@@ -164,6 +173,8 @@ public class JRaftServer {
 		nodeOptions.setElectionTimeoutMs(electionTimeout);
 		RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 		nodeOptions.setRaftOptions(raftOptions);
+		// open jraft node metrics record function
+		nodeOptions.setEnableMetrics(true);
 
 		CliOptions cliOptions = new CliOptions();
 
