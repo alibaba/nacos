@@ -81,13 +81,14 @@ public class ConfigOpsController {
     @GetMapping(value = "/derby")
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
+        String limitSign = "ROWS FETCH NEXT";
         String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
         try {
             if (PropertyUtil.isEmbeddedStorage()) {
                 LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
                         .getInstance().getDataSource();
                 if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
-                    if (!StringUtils.containsIgnoreCase(sql, "ROWS FETCH NEXT")) {
+                    if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
                         sql += limit;
                     }
                     JdbcTemplate template = dataSourceService.getJdbcTemplate();
