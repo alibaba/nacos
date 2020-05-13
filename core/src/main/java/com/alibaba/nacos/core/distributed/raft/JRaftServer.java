@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.LogProcessor;
@@ -61,19 +60,13 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
-import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import com.alipay.sofa.jraft.util.BytesUtil;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
-import org.slf4j.Logger;
 import org.springframework.util.CollectionUtils;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -83,7 +76,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -333,11 +325,11 @@ public class JRaftServer {
 				return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
 			}
 			catch (Throwable ex) {
-				throw new ConsistencyException("Data acquisition failed", e);
+				throw new ConsistencyException("Data acquisition failed : " + e.toString());
 			}
 		}
 		catch (Throwable e) {
-			throw new ConsistencyException("Data acquisition failed", e);
+			throw new ConsistencyException("Data acquisition failed : " + e.toString());
 		}
 	}
 
@@ -395,7 +387,7 @@ public class JRaftServer {
 		}
 		else {
 			// Forward to Leader for request processing
-			invokeToLeader(node.getGroupId(), data, rpcRequestTimeoutMs, closure);
+			future.completeExceptionally(new NoLeaderException("The current node is not a Leader"));
 		}
 		return future;
 	}
@@ -464,15 +456,8 @@ public class JRaftServer {
 				final RaftGroupTuple tuple = entry.getValue();
 				final String groupId = entry.getKey();
 
-				final Configuration conf = instance.getConfiguration(groupId);
-
-				cliService.removePeer(groupId, conf, localPeerId);
-
 				tuple.node.shutdown();
 				tuple.raftGroupService.shutdown();
-				if (tuple.regionMetricsReporter != null) {
-					tuple.regionMetricsReporter.close();
-				}
 			}
 
 			cliService.shutdown();
@@ -619,7 +604,6 @@ public class JRaftServer {
 		private final Node node;
 		private final RaftGroupService raftGroupService;
 		private final NacosStateMachine machine;
-		private ScheduledReporter regionMetricsReporter;
 
 		public RaftGroupTuple(Node node, LogProcessor processor,
 				RaftGroupService raftGroupService, NacosStateMachine machine) {
@@ -627,24 +611,6 @@ public class JRaftServer {
 			this.processor = processor;
 			this.raftGroupService = raftGroupService;
 			this.machine = machine;
-
-			final MetricRegistry metricRegistry = this.node.getNodeMetrics()
-					.getMetricRegistry();
-			if (metricRegistry != null) {
-
-				// auto start raft node metrics reporter
-
-				regionMetricsReporter = Slf4jReporter.forRegistry(metricRegistry)
-						.prefixedWith("nacos_raft_[" + node.getGroupId() + "]")
-						.withLoggingLevel(Slf4jReporter.LoggingLevel.INFO)
-						.outputTo(Loggers.RAFT)
-						.scheduleOn(RaftExecutor.getRaftCommonExecutor())
-						.shutdownExecutorOnStop(
-								RaftExecutor.getRaftCommonExecutor().isShutdown())
-						.build();
-				regionMetricsReporter.start(30, TimeUnit.SECONDS);
-			}
-
 		}
 
 		public Node getNode() {

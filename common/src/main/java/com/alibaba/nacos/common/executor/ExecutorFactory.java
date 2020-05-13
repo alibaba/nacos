@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.common.executor;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unified thread pool creation factory, and actively create thread
@@ -89,6 +93,19 @@ public final class ExecutorFactory {
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(nThreads, threadFactory);
         THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executorService);
         return executorService;
+    }
+
+    public static ThreadPoolExecutor newCustomerThreadExecutor(final String group,
+            final int coreThreads,
+            final int maxThreads,
+            final long keepAliveTimeMs,
+            final ThreadFactory threadFactory) {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(coreThreads, maxThreads,
+                keepAliveTimeMs, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                threadFactory);
+        THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
+        return executor;
     }
 
 }
