@@ -70,4 +70,7 @@ public class IdGeneratorManager {
                 "ID resource for the time being.");
     }
 
+    public Map<String, IdGenerator> getGeneratorMap() {
+        return generatorMap;
+    }
 }

@@ -17,10 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
-import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,17 +29,11 @@ import java.util.concurrent.CompletableFuture;
 public class FailoverClosureImpl<T> implements FailoverClosure<T> {
 
     private final CompletableFuture<T> future;
-    private final int retriesLeft;
-    private final RetryRunner retryRunner;
     private volatile T data;
     private volatile Throwable throwable;
 
-    public FailoverClosureImpl(final CompletableFuture<T> future,
-                               final int retriesLeft,
-                               final RetryRunner retryRunner) {
+    public FailoverClosureImpl(final CompletableFuture<T> future) {
         this.future = future;
-        this.retriesLeft = retriesLeft;
-        this.retryRunner = retryRunner;
     }
 
     @Override
@@ -62,31 +53,11 @@ public class FailoverClosureImpl<T> implements FailoverClosure<T> {
             return;
         }
         final Throwable throwable = this.throwable;
-        if (retriesLeft >= 0 && canRetryException(throwable)) {
-            Loggers.RAFT.warn("[Failover] status: {}, error: {}, [{}] retries left.", status,
-                    throwable, this.retriesLeft);
-            this.retryRunner.run();
+        if (Objects.nonNull(throwable)) {
+            future.completeExceptionally(new ConsistencyException(throwable));
         } else {
-            if (this.retriesLeft <= 0) {
-                Loggers.RAFT.error("[InvalidEpoch-Failover] status: {}, error: {}, {} retries left.",
-                        status, throwable,
-                        this.retriesLeft);
-            }
-            if (Objects.nonNull(throwable)) {
-                future.completeExceptionally(new ConsistencyException(throwable));
-            } else {
-                future.completeExceptionally(new ConsistencyException("Maximum number of retries has been reached"));
-            }
+            future.completeExceptionally(new ConsistencyException("operation failure"));
         }
     }
 
-    protected boolean canRetryException(Throwable throwable) {
-        if (throwable == null) {
-            return false;
-        }
-        if (throwable instanceof NoLeaderException) {
-            return true;
-        }
-        return throwable instanceof IOException;
-    }
 }

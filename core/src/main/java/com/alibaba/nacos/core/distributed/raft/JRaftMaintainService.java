@@ -70,13 +70,12 @@ public class JRaftMaintainService {
 			if (node == null) {
 				return RestResultUtils.failed("not this raft group : " + groupId);
 			}
-			final Configuration conf = node.getOptions().getInitialConf();
 			final String command = args.keySet().iterator().next();
-			JRaftOps commandEnums = JRaftOps.sourceOf(command);
-			if (Objects.isNull(commandEnums)) {
+			JRaftOps ops = JRaftOps.sourceOf(command);
+			if (Objects.isNull(ops)) {
 				return RestResultUtils.failed("Not support command");
 			}
-			return commandEnums.execute(cliService, groupId, node, args);
+			return ops.execute(cliService, groupId, node, args);
 		}
 		catch (Throwable ex) {
 			return RestResultUtils.failed(ex.getMessage());
