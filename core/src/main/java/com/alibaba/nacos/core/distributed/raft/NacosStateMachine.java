@@ -23,15 +23,14 @@ import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
-import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
+import com.alibaba.nacos.consistency.utils.ProtobufUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -47,6 +46,7 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
+import com.google.protobuf.Message;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.nio.ByteBuffer;
@@ -87,7 +87,7 @@ class NacosStateMachine extends StateMachineAdapter {
 	public void onApply(Iterator iter) {
 		int index = 0;
 		int applied = 0;
-		Log log = null;
+		Message message = null;
 		NacosClosure closure = null;
 		try {
 			while (iter.hasNext()) {
@@ -95,29 +95,23 @@ class NacosStateMachine extends StateMachineAdapter {
 				try {
 					if (iter.done() != null) {
 						closure = (NacosClosure) iter.done();
-						log = closure.getLog();
+						message = closure.getLog();
 					}
 					else {
 						final ByteBuffer data = iter.getData();
-						log = Log.parseFrom(data.array());
+						message = ProtobufUtils.parse(data.array());
 					}
-					LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", log);
 
-					final String type = log
-							.getExtendInfoOrDefault(JRaftConstants.JRAFT_EXTEND_INFO_KEY,
-									JRaftLogOperation.READ_OPERATION);
+					LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);
 
-					switch (type) {
-					case JRaftLogOperation.READ_OPERATION:
-						raftRead(closure, log);
-						break;
-					case JRaftLogOperation.MODIFY_OPERATION:
-						LogFuture future = processor.onApply(log);
-						futurePostProcessor(future, closure);
-						break;
-					default:
-						// It's impossible to get to this process
-						throw new UnsupportedOperationException(type);
+					if (message instanceof Log) {
+						LogFuture future = processor.onApply((Log) message);
+						postProcessor(future, closure);
+					}
+
+					if (message instanceof GetRequest) {
+						Response response = processor.getData((GetRequest) message);
+						postProcessor(response, closure);
 					}
 				}
 				catch (Throwable e) {
@@ -232,25 +226,9 @@ class NacosStateMachine extends StateMachineAdapter {
 				RouteTable.getInstance().getConfiguration(node.getGroupId()).getPeers());
 	}
 
-	private void raftRead(NacosClosure closure, Log log) {
-		final GetRequest request = GetRequest.newBuilder().setGroup(processor.group())
-				.setData(log.getData()).build();
-		try {
-			GetResponse result = processor.getData(request);
-			if (Objects.nonNull(closure)) {
-				closure.setObject(result);
-			}
-		}
-		catch (Throwable t) {
-			Loggers.RAFT
-					.error("There is an exception to the data acquisition : processor : {}, request : {}, error : {}",
-							processor, request, t);
-		}
-	}
-
-	private void futurePostProcessor(LogFuture future, NacosClosure closure) {
+	private void postProcessor(Object data, NacosClosure closure) {
 		if (Objects.nonNull(closure)) {
-			closure.setObject(future);
+			closure.setObject(data);
 		}
 	}
 

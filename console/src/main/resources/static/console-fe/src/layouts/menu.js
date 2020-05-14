@@ -57,6 +57,11 @@ export default function(model) {
         },
       ],
     },
+    globalAdmin ? authorityControlMenu : undefined,
+    {
+      key: 'namespace',
+      url: '/namespace',
+    },
     {
       key: 'clusterManagementVirtual',
       children: [
@@ -65,11 +70,6 @@ export default function(model) {
           url: '/clusterManagement',
         },
       ],
-    },
-    globalAdmin ? authorityControlMenu : undefined,
-    {
-      key: 'namespace',
-      url: '/namespace',
     },
   ].filter(item => item);
 }

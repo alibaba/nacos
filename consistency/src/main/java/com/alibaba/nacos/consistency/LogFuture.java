@@ -29,14 +29,22 @@ public class LogFuture implements Serializable {
 
 	// If an exception occurs during apply, response==null
 
-	private final Object response;
+	private Object response;
 
 	// If apply succeeds, error==null
 
-	private final Throwable error;
+	private Throwable error;
 
 	public LogFuture(Object response, Throwable error) {
 		this.response = response;
+		this.error = error;
+	}
+
+	public void setResponse(Object response) {
+		this.response = response;
+	}
+
+	public void setError(Throwable error) {
 		this.error = error;
 	}
 
@@ -53,17 +61,14 @@ public class LogFuture implements Serializable {
 	}
 
 	public static LogFuture success(Object data) {
-		LogFuture future = new LogFuture(data, null);
-		return future;
+		return new LogFuture(data, null);
 	}
 
 	public static LogFuture fail(Throwable error) {
-		LogFuture future = new LogFuture(null, error);
-		return future;
+		return new LogFuture(null, error);
 	}
 
 	public static LogFuture create(Object data, Throwable error) {
-		LogFuture future = new LogFuture(data, error);
-		return future;
+		return new LogFuture(data, error);
 	}
 }

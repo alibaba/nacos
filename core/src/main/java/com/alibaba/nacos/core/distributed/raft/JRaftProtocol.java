@@ -17,15 +17,18 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.Constants;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -49,7 +52,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -106,17 +108,18 @@ public class JRaftProtocol
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
-	private JRaftOps jRaftOps;
+	private JRaftMaintainService jRaftMaintainService;
 	private Node raftNode;
 	private ServerMemberManager memberManager;
 	private String selfAddress = InetUtils.getSelfIp();
 	private int failoverRetries = 1;
 	private String failoverRetriesStr = String.valueOf(failoverRetries);
+	private final Serializer serializer = SerializeFactory.getDefault();
 
 	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
 		this.memberManager = memberManager;
 		this.raftServer = new JRaftServer(failoverRetries);
-		this.jRaftOps = new JRaftOps(raftServer);
+		this.jRaftMaintainService = new JRaftMaintainService(raftServer);
 	}
 
 	@Override
@@ -178,7 +181,7 @@ public class JRaftProtocol
 	}
 
 	@Override
-	public GetResponse getData(GetRequest request) throws Exception {
+	public Response getData(GetRequest request) throws Exception {
 		int retryCnt = Integer.parseInt(
 				request.getExtendInfoOrDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES,
 						failoverRetriesStr));
@@ -200,13 +203,26 @@ public class JRaftProtocol
 		final Throwable[] throwable = new Throwable[] { null };
 		CompletableFuture<LogFuture> future = new CompletableFuture<>();
 		try {
-			CompletableFuture<Object> f = new CompletableFuture<>();
-			raftServer.commit(JRaftUtils
-							.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), f,
-					retryCnt).whenComplete(new BiConsumer<Object, Throwable>() {
+			CompletableFuture<Response> f = new CompletableFuture<>();
+			raftServer.commit(data.getGroup(), data, f,
+					retryCnt).whenComplete(new BiConsumer<Response, Throwable>() {
 				@Override
-				public void accept(Object o, Throwable throwable) {
-					future.complete(LogFuture.create(o, throwable));
+				public void accept(Response response, Throwable throwable) {
+
+					Object data = null;
+
+					if (Objects.isNull(throwable) && !response.getSuccess()) {
+						throwable = new ConsistencyException(response.getErrMsg());
+					}
+
+					if (response.getSuccess()) {
+						byte[] bytes = response.getData().toByteArray();
+						if (ByteUtils.isNotEmpty(bytes)) {
+							data = serializer.deserialize(bytes, "");
+						}
+					}
+
+					future.complete(LogFuture.create(data, throwable));
 				}
 			});
 		}
@@ -233,7 +249,7 @@ public class JRaftProtocol
 
 	@Override
 	public RestResult<String> execute(Map<String, String> args) {
-		return jRaftOps.execute(args);
+		return jRaftMaintainService.execute(args);
 	}
 
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
