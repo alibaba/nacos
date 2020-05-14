@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -106,17 +105,15 @@ public class JRaftProtocol
 	private final AtomicBoolean shutdowned = new AtomicBoolean(false);
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
-	private JRaftOps jRaftOps;
+	private JRaftMaintainService jRaftMaintainService;
 	private Node raftNode;
 	private ServerMemberManager memberManager;
 	private String selfAddress = InetUtils.getSelfIp();
-	private int failoverRetries = 1;
-	private String failoverRetriesStr = String.valueOf(failoverRetries);
 
 	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
 		this.memberManager = memberManager;
-		this.raftServer = new JRaftServer(failoverRetries);
-		this.jRaftOps = new JRaftOps(raftServer);
+		this.raftServer = new JRaftServer();
+		this.jRaftMaintainService = new JRaftMaintainService(raftServer);
 	}
 
 	@Override
@@ -125,10 +122,6 @@ public class JRaftProtocol
 			this.raftConfig = config;
 			this.selfAddress = memberManager.getSelf().getAddress();
 			NotifyCenter.registerToSharePublisher(RaftEvent.class);
-			this.failoverRetries = ConvertUtils
-					.toInt(config.getVal(RaftSysConstants.REQUEST_FAILOVER_RETRIES), 1);
-			this.failoverRetriesStr = String.valueOf(failoverRetries);
-			this.raftServer.setFailoverRetries(failoverRetries);
 			this.raftServer.init(this.raftConfig);
 			this.raftServer.start();
 
@@ -179,10 +172,7 @@ public class JRaftProtocol
 
 	@Override
 	public GetResponse getData(GetRequest request) throws Exception {
-		int retryCnt = Integer.parseInt(
-				request.getExtendInfoOrDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES,
-						failoverRetriesStr));
-		return raftServer.get(request, retryCnt);
+		return raftServer.get(request);
 	}
 
 	@Override
@@ -194,16 +184,12 @@ public class JRaftProtocol
 
 	@Override
 	public CompletableFuture<LogFuture> submitAsync(Log data) {
-		int retryCnt = Integer.parseInt(
-				data.getExtendInfoOrDefault(RaftSysConstants.REQUEST_FAILOVER_RETRIES,
-						failoverRetriesStr));
 		final Throwable[] throwable = new Throwable[] { null };
 		CompletableFuture<LogFuture> future = new CompletableFuture<>();
 		try {
 			CompletableFuture<Object> f = new CompletableFuture<>();
 			raftServer.commit(JRaftUtils
-							.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), f,
-					retryCnt).whenComplete(new BiConsumer<Object, Throwable>() {
+							.injectExtendInfo(data, JRaftLogOperation.MODIFY_OPERATION), f).whenComplete(new BiConsumer<Object, Throwable>() {
 				@Override
 				public void accept(Object o, Throwable throwable) {
 					future.complete(LogFuture.create(o, throwable));
@@ -221,7 +207,14 @@ public class JRaftProtocol
 
 	@Override
 	public void memberChange(Set<String> addresses) {
-		this.raftConfig.setMembers(raftConfig.getSelfMember(), addresses);
+		for (int i = 0; i < 5; i ++) {
+			if (this.raftServer.peerChange(jRaftMaintainService, addresses)) {
+				break;
+			} else {
+				Loggers.RAFT.warn("peer removal failed");
+			}
+			ThreadUtils.sleep(100L);
+		}
 	}
 
 	@Override
@@ -233,7 +226,7 @@ public class JRaftProtocol
 
 	@Override
 	public RestResult<String> execute(Map<String, String> args) {
-		return jRaftOps.execute(args);
+		return jRaftMaintainService.execute(args);
 	}
 
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
