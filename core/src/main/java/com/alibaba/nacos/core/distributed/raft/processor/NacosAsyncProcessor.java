@@ -28,9 +28,13 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
+import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
+import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
+import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
+import com.alipay.sofa.jraft.Status;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -56,48 +60,67 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<BytesHolder> {
             Log log = Log.parseFrom(holder.getBytes());
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(log.getGroup());
             if (Objects.isNull(tuple)) {
-                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoSuchRaftGroupException(
-                        "Could not find the corresponding Raft Group : " + log.getGroup())));
+                asyncCtx.sendResponse(RestResultUtils.failed(
+                        "Could not find the corresponding Raft Group : " + log.getGroup()));
                 return;
             }
             if (tuple.getNode().isLeader()) {
-                int retryCnt = Integer.parseInt(log.getExtendInfoOrDefault(
-                        RaftSysConstants.REQUEST_FAILOVER_RETRIES, String.valueOf(failoverRetries)));
-                CompletableFuture<Object> future = new CompletableFuture<>();
-                server.commit(log, future, retryCnt).whenComplete((result, t) -> {
-                    if (Objects.nonNull(t)) {
-                        asyncCtx.sendResponse(RestResultUtils.failedWithException(t));
-                        return;
-                    }
-                    if (result instanceof LogFuture) {
-                        LogFuture f = (LogFuture) result;
-                        RestResult r = null;
-                        if (f.isOk()) {
-                            r = RestResultUtils.success(f.getResponse());
-                        } else {
-                            r = RestResultUtils.success(f.getError());
-                        }
-                        asyncCtx.sendResponse(r);
-                        return;
-                    }
-                    if (result instanceof GetResponse) {
-                        GetResponse response = (GetResponse) result;
-                        RestResult r = null;
-                        if (StringUtils.isNotBlank(response.getErrMsg())) {
-                            r = RestResultUtils.failedWithException(new ConsistencyException(response.getErrMsg()));
-                        } else {
-                            r = RestResultUtils.success(response.toByteArray());
-                        }
-                        asyncCtx.sendResponse(r);
-                    }
-                });
+                execute(asyncCtx, log, tuple);
             }
             else {
-                asyncCtx.sendResponse(RestResultUtils.failedWithException(new NoLeaderException(log.getGroup())));
+                asyncCtx.sendResponse(RestResultUtils.failed("Could not find leader : " + log.getGroup()));
             }
         } catch (Exception e) {
-            asyncCtx.sendResponse(RestResultUtils.failedWithException(e));
+            asyncCtx.sendResponse(RestResultUtils.failed(e.toString()));
         }
+    }
+
+    private void execute(final AsyncContext asyncCtx, final Log log, final JRaftServer.RaftGroupTuple tuple) {
+        FailoverClosure<Object> closure = new FailoverClosure<Object>() {
+
+            Object data;
+            Throwable ex;
+
+            @Override
+            public void setData(Object data) {
+                this.data = data;
+            }
+
+            @Override
+            public void setThrowable(Throwable throwable) {
+                this.ex = throwable;
+            }
+
+            @Override
+            public void run(Status status) {
+                if (Objects.nonNull(ex)) {
+                    asyncCtx.sendResponse(RestResultUtils.failed(ex.toString()));
+                    return;
+                }
+                if (data instanceof LogFuture) {
+                    LogFuture f = (LogFuture) data;
+                    RestResult r = null;
+                    if (f.isOk()) {
+                        r = RestResultUtils.success(f.getResponse());
+                    } else {
+                        r = RestResultUtils.failed(f.getError().toString());
+                    }
+                    asyncCtx.sendResponse(r);
+                    return;
+                }
+                if (data instanceof GetResponse) {
+                    GetResponse response = (GetResponse) data;
+                    RestResult r = null;
+                    if (StringUtils.isNotBlank(response.getErrMsg())) {
+                        r = RestResultUtils.failed(response.getErrMsg());
+                    } else {
+                        r = RestResultUtils.success(response.toByteArray());
+                    }
+                    asyncCtx.sendResponse(r);
+                }
+            }
+        };
+        server.applyOperation(tuple.getNode(), log, closure);
     }
 
     @Override
