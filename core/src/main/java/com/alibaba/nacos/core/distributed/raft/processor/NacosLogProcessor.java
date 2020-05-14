@@ -27,7 +27,6 @@ import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
-import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
@@ -37,22 +36,21 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor implements RpcProcessor<BytesHolder> {
+public class NacosLogProcessor implements RpcProcessor<Log> {
 
-    private static final String INTEREST_NAME = BytesHolder.class.getName();
+    private static final String INTEREST_NAME = Log.class.getName();
 
     private final JRaftServer server;
     private final int failoverRetries;
 
-    public NacosAsyncProcessor(JRaftServer server, final int failoverRetries) {
+    public NacosLogProcessor(JRaftServer server, final int failoverRetries) {
         this.server = server;
         this.failoverRetries = failoverRetries;
     }
 
     @Override
-    public void handleRequest(final RpcContext rpcCtx, BytesHolder holder) {
+    public void handleRequest(final RpcContext rpcCtx, Log log) {
         try {
-            Log log = Log.parseFrom(holder.getBytes());
             final JRaftServer.RaftGroupTuple tuple = server.findTupleByGroup(log.getGroup());
             if (Objects.isNull(tuple)) {
                 rpcCtx.sendResponse(RestResultUtils.failedWithException(new NoSuchRaftGroupException(

@@ -33,8 +33,7 @@ import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupExcep
 import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
-import com.alibaba.nacos.core.distributed.raft.processor.NacosAsyncProcessor;
-import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosLogProcessor;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
@@ -61,7 +60,6 @@ import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
-import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
@@ -191,10 +189,8 @@ public class JRaftServer {
 				}
 				nodeOptions.setInitialConf(conf);
 
-				rpcServer = RaftRpcServerFactory.createRaftRpcServer(new Endpoint(localPeerId.getIp(), localPeerId.getPort()),
-						RaftExecutor.getRaftCoreExecutor(),
-						RaftExecutor.getRaftCliServiceExecutor());
-				rpcServer.registerProcessor(new NacosAsyncProcessor(this, failoverRetries));
+				rpcServer = JRaftUtils.initRpcServer(localPeerId);
+				rpcServer.registerProcessor(new NacosLogProcessor(this, failoverRetries));
 
 				if (!this.rpcServer.init(null)) {
 					Loggers.RAFT.error("Fail to init [RpcServer].");
@@ -497,9 +493,8 @@ public class JRaftServer {
 		try {
 			final Endpoint leaderIp = Optional.ofNullable(getLeader(group))
 					.orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
-			final BytesHolder holder = BytesHolder.create(request.toByteArray());
 			cliClientService.getRpcClient()
-					.invokeAsync(leaderIp, holder, new InvokeCallback() {
+					.invokeAsync(leaderIp, request, new InvokeCallback() {
 						@Override
 						public void complete(Object o, Throwable ex) {
 

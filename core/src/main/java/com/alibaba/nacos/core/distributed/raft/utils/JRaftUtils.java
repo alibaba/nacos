@@ -17,10 +17,16 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
+import com.alipay.sofa.jraft.rpc.RaftRpcFactory;
+import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
+import com.alipay.sofa.jraft.rpc.RpcServer;
+import com.alipay.sofa.jraft.util.Endpoint;
+import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -32,6 +38,18 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("all")
 public class JRaftUtils {
+
+    public static RpcServer initRpcServer(PeerId peerId) {
+        RaftRpcFactory raftRpcFactory = RpcFactoryHelper.rpcFactory();
+        raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(), GetRequest.getDefaultInstance());
+
+        final RpcServer rpcServer = raftRpcFactory.createRpcServer(new Endpoint(peerId.getIp(), peerId.getPort()));
+        RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
+                RaftExecutor.getRaftCliServiceExecutor());
+
+        return rpcServer;
+    }
 
     public static final void initDirectory(String parentPath, String groupName, NodeOptions copy) {
         final String logUri = Paths.get(parentPath, groupName, "log").toString();
