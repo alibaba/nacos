@@ -528,7 +528,8 @@ public class JRaftServer {
 			public void accept(String group, RaftGroupTuple tuple) {
 				Map<String, String> params = new HashMap<>();
 				params.put(JRaftConstants.GROUP_ID, group);
-				params.put(JRaftConstants.REMOVE_PEERS, Joiner.on(",").join(waitRemove));
+				params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
+				params.put(JRaftConstants.COMMAND_VALUE, Joiner.on(",").join(waitRemove));
 				RestResult<String> result = maintainService.execute(params);
 				if (result.ok()) {
 					successCnt.incrementAndGet();

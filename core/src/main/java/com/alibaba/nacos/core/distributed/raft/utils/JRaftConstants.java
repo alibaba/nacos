@@ -26,6 +26,10 @@ public class JRaftConstants {
 
 	public static final String GROUP_ID = "groupId";
 
+	public static final String COMMAND_NAME = "command";
+
+	public static final String COMMAND_VALUE = "value";
+
 	public static final String TRANSFER_LEADER = "transferLeader";
 
 	public static final String RESET_RAFT_CLUSTER = "restRaftCluster";
