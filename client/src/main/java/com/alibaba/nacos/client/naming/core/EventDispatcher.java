@@ -19,6 +19,8 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 
 import java.util.ArrayList;
@@ -38,11 +40,13 @@ public class EventDispatcher {
 
     private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
+    private BeatReactor beatReactor;
+
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
 
-    public EventDispatcher() {
-
+    public EventDispatcher(BeatReactor beatReactor) {
+        this.beatReactor = beatReactor;
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -121,6 +125,25 @@ public class EventDispatcher {
 
                 if (serviceInfo == null) {
                     continue;
+                }
+
+                List<Instance> instances = serviceInfo.getHosts();
+                if (!CollectionUtils.isEmpty(instances)) {
+                    for (Instance instance : instances) {
+                        String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+                        if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                            BeatInfo beatInfo = new BeatInfo();
+                            beatInfo.setServiceName(instance.getServiceName());
+                            beatInfo.setIp(instance.getIp());
+                            beatInfo.setPort(instance.getPort());
+                            beatInfo.setCluster(instance.getClusterName());
+                            beatInfo.setWeight(instance.getWeight());
+                            beatInfo.setMetadata(instance.getMetadata());
+                            beatInfo.setScheduled(false);
+                            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
+                            beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+                        }
+                    }
                 }
 
                 try {

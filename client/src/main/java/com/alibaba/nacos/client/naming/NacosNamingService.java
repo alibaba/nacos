@@ -93,11 +93,11 @@ public class NacosNamingService implements NamingService {
         initCacheDir();
         initLogName(properties);
 
-        eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
+        eventDispatcher = new EventDispatcher(beatReactor);
     }
 
     private int initClientBeatThreadCount(Properties properties) {
