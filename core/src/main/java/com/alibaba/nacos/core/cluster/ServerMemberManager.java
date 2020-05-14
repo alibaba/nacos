@@ -269,7 +269,7 @@ public class ServerMemberManager
 					.warn("[serverlist] self ip {} not in serverlist {}", self, members);
 		}
 
-		boolean hasChange = false;
+		boolean hasChange = members.size() == serverList.size();
 		ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap();
 		Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
 		for (Member member : members) {
