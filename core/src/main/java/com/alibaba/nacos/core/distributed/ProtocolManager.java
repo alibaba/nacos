@@ -157,7 +157,10 @@ public class ProtocolManager
 
 		Set<Member> copy = new HashSet<>(event.getMembers());
 
-		// Node change events between different protocols should not block each other
+		// Node change events between different protocols should not block each other.
+		// and we use a single thread pool to inform the consistency layer of node changes,
+		// to avoid multiple tasks simultaneously carrying out the consistency layer of
+		// node changes operation
 		if (Objects.nonNull(apProtocol)) {
 			ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
 		}

@@ -64,9 +64,8 @@ public class JRaftUtils {
         raftRpcFactory.registerProtobufSerializer(Response.class.getName(), Response.getDefaultInstance());
 
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
-        registry.registerResponseInstance(Log.class.getName(), Log.getDefaultInstance());
-        registry.registerResponseInstance(GetRequest.class.getName(), GetRequest.getDefaultInstance());
-        registry.registerResponseInstance(Response.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
 
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(new Endpoint(peerId.getIp(), peerId.getPort()));
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),

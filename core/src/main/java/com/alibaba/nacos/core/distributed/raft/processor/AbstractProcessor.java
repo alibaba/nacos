@@ -22,10 +22,12 @@ import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 
@@ -60,6 +62,7 @@ public abstract class AbstractProcessor {
 						.build());
 			}
 		} catch (Throwable e) {
+			Loggers.RAFT.error("handleRequest has error : {}", e);
 			rpcCtx.sendResponse(Response.newBuilder()
 					.setSuccess(false)
 					.setErrMsg(e.toString())
@@ -86,6 +89,7 @@ public abstract class AbstractProcessor {
 			@Override
 			public void run(Status status) {
 				if (Objects.nonNull(ex)) {
+					Loggers.RAFT.error("execute has error : {}", ex);
 					asyncCtx.sendResponse(Response.newBuilder().setErrMsg(ex.toString())
 							.setSuccess(false).build());
 				} else {
