@@ -356,8 +356,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				throw (ConsistencyException) e;
 			}
 			LogUtil.fatalLog
-					.error("An exception occurred during the update operation : {}", e.toString());
-			throw new NJdbcException(e);
+					.error("An exception occurred during the update operation : {}", e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 

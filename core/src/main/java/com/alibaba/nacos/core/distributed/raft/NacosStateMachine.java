@@ -130,7 +130,6 @@ class NacosStateMachine extends StateMachineAdapter {
 				index++;
 				iter.next();
 			}
-
 		}
 		catch (Throwable t) {
 			Loggers.RAFT.error("processor : {}, stateMachine meet critical error: {}.",
