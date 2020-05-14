@@ -193,18 +193,18 @@ public class ServerMemberManager
 		});
 	}
 
-	public void update(Member newMember) {
+	public boolean update(Member newMember) {
 		Loggers.CLUSTER.debug("Node information update : {}", newMember);
 
 		String address = newMember.getAddress();
 
 		if (Objects.equals(newMember, self)) {
 			serverList.put(newMember.getAddress(), newMember);
-			return;
+			return true;
 		}
 
 		if (!serverList.containsKey(address)) {
-			memberJoin(Collections.singletonList(newMember));
+			return false;
 		}
 		serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
 			@Override
@@ -216,6 +216,7 @@ public class ServerMemberManager
 				return member;
 			}
 		});
+		return true;
 	}
 
 	public boolean hasMember(String address) {

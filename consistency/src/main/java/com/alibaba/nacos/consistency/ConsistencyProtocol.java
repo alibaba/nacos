@@ -17,10 +17,9 @@
 package com.alibaba.nacos.consistency;
 
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 
 import java.util.Collection;
 import java.util.Set;
@@ -72,7 +71,7 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * @return data {@link GetRequest}
      * @throws Exception
      */
-    GetResponse getData(GetRequest request) throws Exception;
+    Response getData(GetRequest request) throws Exception;
 
     /**
      * Data operation, returning submission results synchronously

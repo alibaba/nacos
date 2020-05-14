@@ -41,26 +41,26 @@ public class NacosConfigConfiguration {
 		return registration;
 	}
 
-	@Conditional(ConditionDistributedEmbedStorage.class)
-	@Bean
-	public FilterRegistrationBean transferToLeaderRegistration() {
-		FilterRegistrationBean<TransferToLeaderFilter> registration = new FilterRegistrationBean<>();
-		registration.setFilter(transferToLeader());
-		registration.addUrlPatterns("/v1/cs/*");
-		registration.setName("transferToLeader");
-		registration.setOrder(6);
-		return registration;
-	}
-
 	@Bean
 	public NacosWebFilter nacosWebFilter() {
 		return new NacosWebFilter();
 	}
 
-	@Conditional(ConditionDistributedEmbedStorage.class)
-	@Bean
-	public TransferToLeaderFilter transferToLeader() {
-		return new TransferToLeaderFilter();
-	}
+//	@Conditional(ConditionDistributedEmbedStorage.class)
+//	@Bean
+//	public FilterRegistrationBean transferToLeaderRegistration() {
+//		FilterRegistrationBean<TransferToLeaderFilter> registration = new FilterRegistrationBean<>();
+//		registration.setFilter(transferToLeader());
+//		registration.addUrlPatterns("/v1/cs/*");
+//		registration.setName("transferToLeader");
+//		registration.setOrder(6);
+//		return registration;
+//	}
+//
+//	@Conditional(ConditionDistributedEmbedStorage.class)
+//	@Bean
+//	public TransferToLeaderFilter transferToLeader() {
+//		return new TransferToLeaderFilter();
+//	}
 
 }
