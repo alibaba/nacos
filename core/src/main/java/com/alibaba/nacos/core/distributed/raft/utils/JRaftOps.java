@@ -97,6 +97,46 @@ public enum JRaftOps {
 		}
 	},
 
+	REMOVE_PEERS("removePeers") {
+		@Override
+		public RestResult<String> execute(CliService cliService, String groupId,
+				Node node, Map<String, String> args) {
+			final Configuration conf = node.getOptions().getInitialConf();
+			final String peers = args.get(JRaftConstants.REMOVE_PEERS);
+			for (String s : peers.split(",")) {
+				final PeerId waitRemove = PeerId.parsePeer(s);
+				Status status = cliService.removePeer(groupId, conf, waitRemove);
+				if (!status.isOk()) {
+					return RestResultUtils.failed(status.getErrorMsg());
+				}
+			}
+			return RestResultUtils.success();
+		}
+	},
+
+	CHANGE_PEERS("changePeers") {
+		@Override
+		public RestResult<String> execute(CliService cliService, String groupId,
+				Node node, Map<String, String> args) {
+			final Configuration conf = node.getOptions().getInitialConf();
+			final Configuration newConf = new Configuration();
+			String peers = args.get(JRaftConstants.CHANGE_PEERS);
+			for (String peer : peers.split(",")) {
+				newConf.addPeer(PeerId.parsePeer(peer.trim()));
+			}
+
+			if (Objects.equals(conf, newConf)) {
+				return RestResultUtils.success();
+			}
+
+			Status status = cliService.changePeers(groupId, conf, newConf);
+			if (status.isOk()) {
+				return RestResultUtils.success();
+			}
+			return RestResultUtils.failed(status.getErrorMsg());
+		}
+	}
+
 	;
 
 	private String name;
