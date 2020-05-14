@@ -62,7 +62,7 @@ public class CoreOpsController {
 
 	@GetMapping(value = "/idInfo")
 	public RestResult<Map<String, Map<Object, Object>>> idInfo() {
-		Map<String, Map<Object, Object>> info = new HashMap<>();
+		Map<String, Map<Object, Object>> info = new HashMap<>(10);
 		idGeneratorManager.getGeneratorMap()
 				.forEach(
 						(resource, idGenerator) -> info.put(resource, idGenerator.info()));
