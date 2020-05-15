@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
@@ -50,7 +49,6 @@ public class DomainTest {
         service.setName("nacos.service.1");
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
-        new SpringContext().setApplicationContext(context);
         doReturn(pushService).when(context).getBean(PushService.class);
     }
 

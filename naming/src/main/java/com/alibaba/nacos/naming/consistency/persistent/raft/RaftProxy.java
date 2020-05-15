@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
@@ -33,9 +33,9 @@ public class RaftProxy {
     public void proxyGET(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + RunningConfig.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
 
         HttpClient.HttpResult result =  HttpClient.httpGet(url, null, params);
         if (result.code != HttpURLConnection.HTTP_OK) {
@@ -46,9 +46,9 @@ public class RaftProxy {
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + RunningConfig.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
         HttpClient.HttpResult result;
         switch (method) {
             case GET:
@@ -72,9 +72,9 @@ public class RaftProxy {
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
-        String url = "http://" + server + RunningConfig.getContextPath() + api;
+        String url = "http://" + server + ApplicationUtils.getContextPath() + api;
 
         HttpClient.HttpResult result =  HttpClient.httpPostLarge(url, headers, content);
         if (result.code != HttpURLConnection.HTTP_OK) {

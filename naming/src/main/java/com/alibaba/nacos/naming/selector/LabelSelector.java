@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import org.apache.commons.lang3.StringUtils;
 
@@ -94,7 +94,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
     }
 
     private CmdbReader getCmdbReader() {
-        return SpringContext.getAppContext().getBean(CmdbReader.class);
+        return ApplicationUtils.getBean(CmdbReader.class);
     }
 
     public static Set<String> parseExpression(String expression) throws NacosException {

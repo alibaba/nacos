@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -23,8 +24,9 @@ import java.util.List;
  * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class ACLInfo {
+public class ACLInfo implements Serializable {
 
+    private static final long serialVersionUID = 1383026926036269457L;
     private Boolean isOpen;
     private List<String> ips;
 
