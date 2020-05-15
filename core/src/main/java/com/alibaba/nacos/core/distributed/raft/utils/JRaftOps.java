@@ -27,6 +27,7 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -87,9 +88,17 @@ public enum JRaftOps {
 		public RestResult<String> execute(CliService cliService, String groupId,
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
-			final PeerId peerId = PeerId
+
+			List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+
+			final PeerId waitRemove = PeerId
 					.parsePeer(args.get(JRaftConstants.COMMAND_VALUE));
-			Status status = cliService.removePeer(groupId, conf, peerId);
+
+			if (!peerIds.contains(waitRemove)) {
+				return RestResultUtils.success();
+			}
+
+			Status status = cliService.removePeer(groupId, conf, waitRemove);
 			if (status.isOk()) {
 				return RestResultUtils.success();
 			}
@@ -104,7 +113,14 @@ public enum JRaftOps {
 			final Configuration conf = node.getOptions().getInitialConf();
 			final String peers = args.get(JRaftConstants.COMMAND_VALUE);
 			for (String s : peers.split(",")) {
+
+				List<PeerId> peerIds = cliService.getPeers(groupId, conf);
 				final PeerId waitRemove = PeerId.parsePeer(s);
+
+				if (!peerIds.contains(waitRemove)) {
+					continue;
+				}
+
 				Status status = cliService.removePeer(groupId, conf, waitRemove);
 				if (!status.isOk()) {
 					return RestResultUtils.failed(status.getErrorMsg());
