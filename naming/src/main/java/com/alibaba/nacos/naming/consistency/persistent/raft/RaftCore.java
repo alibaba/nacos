@@ -481,7 +481,10 @@ public class RaftCore {
 
         public void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
+            if (STANDALONE_MODE){
+                return;
+            }
+            if (local.state != RaftPeer.State.LEADER) {
                 return;
             }
 
