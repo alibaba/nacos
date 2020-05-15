@@ -38,7 +38,7 @@ public class ConfigDataChangeEvent implements Event {
 
     public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, String tenant, long gmtModified) {
         if (null == dataId || null == group) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("dataId is null or group is null");
         }
         this.isBeta = isBeta;
         this.dataId = dataId;
@@ -55,7 +55,7 @@ public class ConfigDataChangeEvent implements Event {
     public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, String tenant, String tag,
                                  long gmtModified) {
         if (null == dataId || null == group) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("dataId is null or group is null");
         }
         this.isBeta = isBeta;
         this.dataId = dataId;

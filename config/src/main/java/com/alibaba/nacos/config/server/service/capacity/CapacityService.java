@@ -19,7 +19,7 @@ import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;

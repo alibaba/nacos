@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -33,9 +34,8 @@ import java.net.URL;
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-    "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RestAPI_ITCase extends NamingBase {
 
     @LocalServerPort

@@ -15,10 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import java.io.IOException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.io.IOException;
 
 /**
  * datasource interface
@@ -26,6 +25,14 @@ import java.io.IOException;
  * @author Nacos
  */
 public interface DataSourceService {
+
+    /**
+     * Initialize the relevant resource information
+     *
+     * @throws Exception
+     */
+    void init() throws Exception;
+
     /**
      * reload
      *
@@ -67,4 +74,5 @@ public interface DataSourceService {
      * @return heath info
      */
     String getHealth();
+
 }

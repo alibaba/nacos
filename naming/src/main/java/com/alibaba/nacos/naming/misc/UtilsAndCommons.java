@@ -23,6 +23,7 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
@@ -32,8 +33,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author nacos
@@ -117,7 +116,7 @@ public class UtilsAndCommons {
 
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
-    public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
+    public static final String DATA_BASE_DIR = ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
 
     public static final String NUMBER_PATTERN = "^\\d+$";
 

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model.capacity;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -23,7 +24,9 @@ import java.sql.Timestamp;
  * @author hexu.hxy
  * @date 2018/3/13
  */
-public class Capacity {
+public class Capacity implements Serializable {
+
+    private static final long serialVersionUID = 77343194329627468L;
     private Long id;
     private Integer quota;
     private Integer usage;

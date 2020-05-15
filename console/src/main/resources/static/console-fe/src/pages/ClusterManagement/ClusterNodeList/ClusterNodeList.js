@@ -16,6 +16,9 @@ import PropTypes from 'prop-types';
 import {
   Button,
   Field,
+  Tag,
+  Icon,
+  Collapse,
   Form,
   Grid,
   Input,
@@ -32,6 +35,7 @@ import './ClusterNodeList.scss';
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
 const { Column } = Table;
+const { Panel } = Collapse;
 
 @ConfigProvider.config
 class ClusterNodeList extends React.Component {
@@ -77,11 +81,11 @@ class ClusterNodeList extends React.Component {
       `keyword=${keyword}`,
     ];
     request({
-      url: `v1/ns/operator/cluster/states?${parameter.join('&')}`,
+      url: `v1/core/cluster/nodes?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
-      success: ({ count = 0, clusterStateList = [] } = {}) => {
+      success: ({ count = 0, data = [] } = {}) => {
         this.setState({
-          dataSource: clusterStateList,
+          dataSource: data,
           total: count,
         });
       },
@@ -171,11 +175,51 @@ class ClusterNodeList extends React.Component {
                 locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
-                <Column title={locale.nodeIp} dataIndex="nodeIp" />
-                <Column title={locale.nodeState} dataIndex="nodeState" />
-                <Column title={locale.clusterTerm} dataIndex="clusterTerm" />
-                <Column title={locale.leaderDueMs} dataIndex="leaderDueMs" />
-                <Column title={locale.heartbeatDueMs} dataIndex="heartbeatDueMs" />
+                <Column title={locale.nodeIp} dataIndex="address" width="30%" />
+                <Column
+                  title={locale.nodeState}
+                  dataIndex="state"
+                  width="20%"
+                  cell={function(value, index, record) {
+                    if (value === 'UP') {
+                      return (<Tag key={`p_p_${value}`} type="primary" color="green">
+                        {value}
+                              </Tag>);
+                    }
+                    if (value === 'DOWN') {
+                      return (<Tag key={`p_p_${value}`} type="primary" color="red">
+                        {value}
+                              </Tag>);
+                    }
+                    if (value === 'SUSPICIOUS') {
+                      return (<Tag key={`p_p_${value}`} type="primary" color="orange">
+                        {value}
+                              </Tag>);
+                    }
+                    return (<Tag key={`p_p_${value}`} type="primary" color="turquoise">
+                      {value}
+                            </Tag>);
+                  }}
+                />
+                <Column
+                  title={locale.extendInfo}
+                  dataIndex="extendInfo"
+                  width="50%"
+                  cell={function(value, index, record) {
+                    function showCollapse() {
+                      const collapse = (<Collapse>
+                        <Panel title="节点元数据">
+                          <ul>
+                            <li><pre>{JSON.stringify(value, null, 4)}</pre></li>
+                          </ul>
+                        </Panel>
+                                        </Collapse>);
+                      return collapse;
+                    }
+
+                    return showCollapse();
+                  }}
+                />
               </Table>
             </Col>
           </Row>

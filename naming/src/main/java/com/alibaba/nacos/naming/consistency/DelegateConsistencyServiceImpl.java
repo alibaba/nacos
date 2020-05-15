@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyServic
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
  * @author nkorange
  * @since 1.0.0
  */
+@DependsOn("ProtocolManager")
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
 

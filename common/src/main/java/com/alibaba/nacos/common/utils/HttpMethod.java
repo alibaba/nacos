@@ -23,6 +23,10 @@ public class HttpMethod {
 
     public static final String GET = "GET";
 
+    // this is only use in nacos, Custom request type, essentially a get request
+
+    public static final String GET_LARGE = "GET-LARGE";
+
     public static final String HEAD = "HEAD";
 
     public static final String POST = "POST";
