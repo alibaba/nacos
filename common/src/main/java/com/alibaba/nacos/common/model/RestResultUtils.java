@@ -76,11 +76,4 @@ public class RestResultUtils {
 				.build();
 	}
 
-	public static RestResult<Throwable> failedWithException(Throwable data) {
-		return RestResult.<Throwable>builder()
-				.withCode(500)
-				.withData(data)
-				.build();
-	}
-
 }

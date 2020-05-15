@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -27,16 +28,13 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -149,7 +147,6 @@ public class ConfigAPI_ITCase {
     public void nacos_getconfig_4() throws Exception {
         final String dataId = "nacos_getconfig_4" + System.currentTimeMillis();
         final String content = "test";
-
         boolean result = iconfig.publishConfig(dataId, null, content);
         Assert.assertTrue(result);
         Thread.sleep(TIME_OUT);
@@ -390,11 +387,11 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5 * TIME_OUT)
     public void nacos_addListener_3() throws InterruptedException, NacosException {
-        final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger count = new AtomicInteger(0);
         final String dataId = "nacos_addListener_3";
         final String group = "nacos_addListener_3";
         final String content = "test-abc";
+        final String newContent = "nacos_addListener_3";
         boolean result = iconfig.publishConfig(dataId, group, content);
         Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
@@ -403,11 +400,18 @@ public class ConfigAPI_ITCase {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
-                Assert.assertEquals(content, configInfo);
+                Assert.assertEquals(newContent, configInfo);
             }
         };
         iconfig.addListener(dataId, group, ml);
-        latch.await(5000, TimeUnit.MILLISECONDS);
+        result = iconfig.publishConfig(dataId, group, newContent);
+        Assert.assertTrue(result);
+        while (count.get() == 0) {
+            Thread.sleep(2000);
+        }
+        // Get enough sleep to ensure that the monitor is triggered only once
+        // during the two long training sessions
+        ThreadUtils.sleep(Constants.CONFIG_LONG_POLL_TIMEOUT << 1);
         Assert.assertEquals(1, count.get());
         iconfig.removeListener(dataId, group, ml);
     }
@@ -449,7 +453,7 @@ public class ConfigAPI_ITCase {
      * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件(使用特定接口)
      * @TestStep : TODO Test steps
      * @ExpectResult : TODO expect results
-     * @author xiaochun.xxc
+     * @author chuntaojun
      * @since 3.6.8
      */
     @Test
@@ -489,7 +493,7 @@ public class ConfigAPI_ITCase {
      * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件(进行配置参数设置)
      * @TestStep : TODO Test steps
      * @ExpectResult : TODO expect results
-     * @author xiaochun.xxc
+     * @author chuntaojun
      * @since 3.6.8
      */
     @Test

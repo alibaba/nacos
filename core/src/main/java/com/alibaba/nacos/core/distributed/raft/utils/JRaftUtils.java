@@ -17,10 +17,17 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.remoting.ConnectionEventType;
 import com.alipay.remoting.rpc.RpcServer;
+import com.alipay.sofa.jraft.CliService;
+import com.alipay.sofa.jraft.RouteTable;
+import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
@@ -44,7 +51,11 @@ import com.alipay.sofa.jraft.rpc.impl.core.TimeoutNowRequestProcessor;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -87,6 +98,39 @@ public class JRaftUtils {
     public static List<String> toStrings(List<PeerId> peerIds) {
         return peerIds.stream().map(peerId -> peerId.getEndpoint().toString())
                 .collect(Collectors.toList());
+    }
+
+    public static void joinCluster(CliService cliService, Collection<String> members, Configuration conf, String group, PeerId self) {
+        ServerMemberManager memberManager = ApplicationUtils.getBean(ServerMemberManager.class);
+        if (!memberManager.isFirstIp()) {
+            return;
+        }
+        Set<PeerId> peerIds = new HashSet<>();
+        for (String s : members) {
+            peerIds.add(PeerId.parsePeer(s));
+        }
+        peerIds.remove(self);
+        for ( ; ; ) {
+            if (peerIds.isEmpty()) {
+                return;
+            }
+            conf = RouteTable.getInstance().getConfiguration(group);
+            Iterator<PeerId> iterator = peerIds.iterator();
+            while (iterator.hasNext()) {
+                final PeerId peerId = iterator.next();
+
+                if (conf.contains(peerId)) {
+                    iterator.remove();
+                    continue;
+                }
+
+                Status status = cliService.addPeer(group, conf, peerId);
+                if (status.isOk()) {
+                    iterator.remove();
+                }
+            }
+            ThreadUtils.sleep(1000L);
+        }
     }
 
     public static void addRaftRequestProcessors(final RpcServer rpcServer, final Executor raftExecutor,

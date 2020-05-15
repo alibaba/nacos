@@ -135,6 +135,8 @@ public class ConfigController {
 			throws NacosException {
 		final String srcIp = RequestUtil.getRemoteIp(request);
 		String requestIpApp = RequestUtil.getAppName(request);
+        // check tenant
+        ParamUtils.checkTenant(tenant);
 		ParamUtils.checkParam(dataId, group, "datumId", content);
 		ParamUtils.checkParam(tag);
 
@@ -213,7 +215,9 @@ public class ConfigController {
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam(value = "tag", required = false) String tag)
 			throws IOException, ServletException, NacosException {
-		tenant = processTenant(tenant);
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+	    tenant = processTenant(tenant);
 		// check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
 		ParamUtils.checkParam(tag);
@@ -234,7 +238,9 @@ public class ConfigController {
 			@RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
 			throws NacosException {
-		// check params
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        // check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
 		return persistService.findConfigAllInfo(dataId, group, tenant);
 	}
@@ -253,7 +259,9 @@ public class ConfigController {
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam(value = "tag", required = false) String tag)
 			throws NacosException {
-		ParamUtils.checkParam(dataId, group, "datumId", "rm");
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+	    ParamUtils.checkParam(dataId, group, "datumId", "rm");
 		ParamUtils.checkParam(tag);
 		String clientIp = RequestUtil.getRemoteIp(request);
 		if (StringUtils.isBlank(tag)) {
@@ -330,8 +338,6 @@ public class ConfigController {
 			throw new IllegalArgumentException("invalid probeModify");
 		}
 
-		log.info("listen config id:" + probeModify);
-
 		probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
 
 		Map<String, String> clientMd5Map;
@@ -341,8 +347,6 @@ public class ConfigController {
 		catch (Throwable e) {
 			throw new IllegalArgumentException("invalid probeModify");
 		}
-
-		log.info("listen config id 2:" + probeModify);
 
 		// do long-polling
 		inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());

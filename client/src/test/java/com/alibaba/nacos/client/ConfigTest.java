@@ -72,7 +72,8 @@ public class ConfigTest {
 	private void publish(String dataId, String group, String content, ConfigService configService) {
 		try {
 			configService.publishConfig(dataId, group, content + System.currentTimeMillis());
-		} catch (Throwable ignore) {
+		}
+		catch (Throwable ignore) {
 
 		}
 	}
