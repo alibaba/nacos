@@ -49,10 +49,8 @@ public class CoreOpsController {
 	// Temporarily overpassed the raft operations interface
 	// {
 	//		"groupId": "xxx",
-	//		"transferLeader": "ip:{raft_port}"
-	//		"doSnapshot": "ip:{raft_port}"
-	//		"resetRaftCluster": "ip:{raft_port},ip:{raft_port},ip:{raft_port},ip:{raft_port}"
-	//		"removePeer": "ip:{raft_port}"
+	//      "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer"
+	//		"value": "ip:{raft_port}"
 	// }
 
 	@PostMapping(value = "/raft")
