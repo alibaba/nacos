@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.exception;
 
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.auth.AccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +42,12 @@ public class ConsoleExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     private ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionUtil.getAllExceptionMsg(e));
     }
 
     @ExceptionHandler(Exception.class)
     private ResponseEntity<String> handleException(Exception e) {
         logger.error("CONSOLE", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
     }
 }

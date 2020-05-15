@@ -207,5 +207,11 @@ public class HttpClient {
         public String getHeader(String name) {
             return respHeaders.get(name);
         }
+
+        @Override
+        public String toString() {
+            return "HttpResult{" + "code=" + code + ", content='" + content + '\''
+                    + ", respHeaders=" + respHeaders + '}';
+        }
     }
 }

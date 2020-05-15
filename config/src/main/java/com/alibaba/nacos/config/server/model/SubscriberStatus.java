@@ -15,12 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
  * subcriber status
  *
  * @author Nacos
  */
-public class SubscriberStatus {
+public class SubscriberStatus implements Serializable {
+
+    private static final long serialVersionUID = 1065466896062351086L;
     String groupKey;
     String md5;
     Long lastTime;

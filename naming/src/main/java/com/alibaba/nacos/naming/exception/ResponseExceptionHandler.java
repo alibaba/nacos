@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.auth.AccessException;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,27 +31,27 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
-    private ResponseEntity<String> handleNacosException(NacosException e) {
-        Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), e);
+    public ResponseEntity<String> handleNacosException(NacosException e) {
+        Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
-        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ex);
+        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ExceptionUtil.getAllExceptionMsg(ex));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
-        Loggers.SRV_LOG.error("got exception.", ex);
+        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(ex));
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
     }
 
     @ExceptionHandler(Exception.class)
-    private ResponseEntity<String> handleException(Exception e) {
-        Loggers.SRV_LOG.error("got exception.", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
+    public ResponseEntity<String> handleException(Exception e) {
+        Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ExceptionUtil.getAllExceptionMsg(e));
     }
 }

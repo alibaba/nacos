@@ -16,11 +16,12 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberChangeListener;
+import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -29,59 +30,52 @@ import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
  */
 @Component
-@DependsOn("serverListManager")
-public class RaftPeerSet implements ServerChangeListener, ApplicationContextAware {
+@DependsOn("ProtocolManager")
+public class RaftPeerSet implements MemberChangeListener {
 
-    @Autowired
-    private ServerListManager serverListManager;
-
-    private ApplicationContext applicationContext;
+    private final ServerMemberManager memberManager;
 
     private AtomicLong localTerm = new AtomicLong(0L);
 
     private RaftPeer leader = null;
 
-    private Map<String, RaftPeer> peers = new HashMap<>();
+    private volatile Map<String, RaftPeer> peers = new HashMap<>(8);
 
     private Set<String> sites = new HashSet<>();
 
-    private boolean ready = false;
+    private volatile boolean ready = false;
 
-    public RaftPeerSet() {
-
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-
-        this.applicationContext = applicationContext;
+    public RaftPeerSet(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
     }
 
     @PostConstruct
     public void init() {
-        serverListManager.listen(this);
+        NotifyCenter.registerSubscribe(this);
+        changePeers(memberManager.allMembers());
     }
 
     public RaftPeer getLeader() {
-        if (STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return local();
         }
         return leader;
@@ -107,7 +101,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     public boolean isLeader(String ip) {
-        if (STANDALONE_MODE) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return true;
         }
 
@@ -164,7 +158,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
 
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
-                applicationContext.publishEvent(new LeaderElectFinishedEvent(this, leader));
+                ApplicationUtils.publishEvent(new LeaderElectFinishedEvent(this, leader, local()));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
         }
@@ -175,7 +169,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     public RaftPeer makeLeader(RaftPeer candidate) {
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
-            applicationContext.publishEvent(new MakeLeaderEvent(this, leader));
+            ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader, local()));
             Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
                 leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
         }
@@ -211,8 +205,8 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     public RaftPeer local() {
-        RaftPeer peer = peers.get(NetUtils.localServer());
-        if (peer == null && SystemUtils.STANDALONE_MODE) {
+        RaftPeer peer = peers.get(ApplicationUtils.getLocalAddress());
+        if (peer == null && ApplicationUtils.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
             localPeer.term.set(localTerm.get());
@@ -257,39 +251,43 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     @Override
-    public void onChangeServerList(List<Server> latestMembers) {
+    public void onEvent(MemberChangeEvent event) {
+        changePeers(event.getMembers());
+    }
 
-        Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
-        for (Server member : latestMembers) {
+    private void changePeers(Collection<Member> members) {
+        Map<String, RaftPeer> tmpPeers = new HashMap<>(members.size());
 
-            if (peers.containsKey(member.getKey())) {
-                tmpPeers.put(member.getKey(), peers.get(member.getKey()));
+        for (Member member : members) {
+
+
+            final String address = member.getAddress();
+            if (peers.containsKey(address)) {
+                tmpPeers.put(address, peers.get(address));
                 continue;
             }
 
             RaftPeer raftPeer = new RaftPeer();
-            raftPeer.ip = member.getKey();
+            raftPeer.ip = address;
 
             // first time meet the local server:
-            if (NetUtils.localServer().equals(member.getKey())) {
+            if (ApplicationUtils.getLocalAddress().equals(address)) {
                 raftPeer.term.set(localTerm.get());
             }
 
-            tmpPeers.put(member.getKey(), raftPeer);
+            tmpPeers.put(address, raftPeer);
         }
 
         // replace raft peer set:
         peers = tmpPeers;
 
-        if (RunningConfig.getServerPort() > 0) {
-            ready = true;
-        }
-
-        Loggers.RAFT.info("raft peers changed: " + latestMembers);
+        ready = true;
+        Loggers.RAFT.info("raft peers changed: " + members);
     }
 
     @Override
-    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
-
+    public String toString() {
+        return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader
+                + ", peers=" + peers + ", sites=" + sites + '}';
     }
 }
