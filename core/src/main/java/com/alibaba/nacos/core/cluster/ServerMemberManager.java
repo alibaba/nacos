@@ -269,7 +269,12 @@ public class ServerMemberManager
 					.warn("[serverlist] self ip {} not in serverlist {}", self, members);
 		}
 
-		boolean hasChange = false;
+		// If the number of old and new clusters is different, the cluster information
+		// must have changed; if the number of clusters is the same, then compare whether
+		// there is a difference; if there is a difference, then the cluster node changes
+		// are involved and all recipients need to be notified of the node change event
+
+		boolean hasChange = members.size() != serverList.size();
 		ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap();
 		Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
 		for (Member member : members) {
