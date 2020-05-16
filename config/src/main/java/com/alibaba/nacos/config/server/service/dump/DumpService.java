@@ -132,25 +132,23 @@ public class DumpService {
 					.info("With embedded distributed storage, you need to wait for "
 							+ "the underlying master to complete before you can perform the dump operation.");
 
-			CountDownLatch waitHaveLeader = new CountDownLatch(1);
-
 			// watch path => /nacos_config/leader/ has value ?
 			Observer observer = new Observer() {
 
 				@Override
 				public void update(Observable o, Object arg) {
 					GlobalExecutor.executeByCommon(() -> {
-						try {
-							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-									dumpAllTagProcessor);
-						} finally {
-							waitHaveLeader.countDown();
+						// must make sure that there is a value here to perform the correct operation that follows
+						if (Objects.isNull(arg)) {
+							return;
 						}
+						dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
+								dumpAllTagProcessor);
+						protocol.protocolMetaData()
+								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
+										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
+										this);
 					});
-					protocol.protocolMetaData()
-							.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-									com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-									this);
 				}
 			};
 

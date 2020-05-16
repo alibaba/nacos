@@ -70,10 +70,10 @@ public class JRaftMaintainService {
 			if (node == null) {
 				return RestResultUtils.failed("not this raft group : " + groupId);
 			}
-			final String command = args.keySet().iterator().next();
+			final String command = args.get(JRaftConstants.COMMAND_NAME);
 			JRaftOps ops = JRaftOps.sourceOf(command);
 			if (Objects.isNull(ops)) {
-				return RestResultUtils.failed("Not support command");
+				return RestResultUtils.failed("Not support command : " + command);
 			}
 			return ops.execute(cliService, groupId, node, args);
 		}
