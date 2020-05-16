@@ -80,7 +80,7 @@ public class InetUtils {
             + "\\." + NUM + "$";
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
 
-    private static String selfIp;
+    private volatile static String selfIp;
 
     private static boolean useOnlySiteLocalInterface = false;
 

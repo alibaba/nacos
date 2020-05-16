@@ -41,8 +41,6 @@ public class InetUtils_ITCase {
 
 	@Test
 	public void test_InternetAddress_Change() throws Exception {
-		String testIp = "1.1.1.1";
-		System.setProperty(NACOS_SERVER_IP, testIp);
 		CountDownLatch latch = new CountDownLatch(1);
 
 		AtomicReference<String> reference = new AtomicReference<>(null);
@@ -52,7 +50,7 @@ public class InetUtils_ITCase {
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				if (Objects.nonNull(event.getOldIp())) {
 					try {
-						System.out.println(event);
+						System.out.println("NewIp ： " + event);
 						reference.set(event.getNewIp());
 					}
 					finally {
@@ -68,6 +66,10 @@ public class InetUtils_ITCase {
 		};
 
 		NotifyCenter.registerSubscribe(subscribe);
+
+		String testIp = "1.1.1.1";
+		System.setProperty(NACOS_SERVER_IP, testIp);
+
 		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(testIp, reference.get());
