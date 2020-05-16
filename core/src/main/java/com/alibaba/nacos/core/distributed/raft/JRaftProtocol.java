@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -107,9 +108,7 @@ public class JRaftProtocol
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
 	private JRaftMaintainService jRaftMaintainService;
-	private Node raftNode;
 	private ServerMemberManager memberManager;
-	private String selfAddress = InetUtils.getSelfIp();
 	private final Serializer serializer = SerializeFactory.getDefault();
 
 	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
@@ -122,7 +121,6 @@ public class JRaftProtocol
 	public void init(RaftConfig config) {
 		if (initialized.compareAndSet(false, true)) {
 			this.raftConfig = config;
-			this.selfAddress = memberManager.getSelf().getAddress();
 			NotifyCenter.registerToSharePublisher(RaftEvent.class);
 			this.raftServer.init(this.raftConfig);
 			this.raftServer.start();
@@ -174,6 +172,12 @@ public class JRaftProtocol
 
 	@Override
 	public Response getData(GetRequest request) throws Exception {
+		CompletableFuture<Response> future = aGetData(request);
+		return future.get(5_000L, TimeUnit.MILLISECONDS);
+	}
+
+	@Override
+	public CompletableFuture<Response> aGetData(GetRequest request) {
 		return raftServer.get(request);
 	}
 
@@ -188,29 +192,28 @@ public class JRaftProtocol
 	public CompletableFuture<LogFuture> submitAsync(Log data) {
 		CompletableFuture<LogFuture> future = new CompletableFuture<>();
 		try {
-			CompletableFuture<Response> f = new CompletableFuture<>();
-			raftServer.commit(data.getGroup(), data, f).whenComplete(new BiConsumer<Response, Throwable>() {
-				@Override
-				public void accept(Response response, Throwable throwable) {
-					try {
-						Object data = null;
-						if (Objects.isNull(throwable)) {
-							if (!response.getSuccess()) {
-								throwable = new ConsistencyException(response.getErrMsg());
-							}
-							if (response.getSuccess()) {
-								byte[] bytes = response.getData().toByteArray();
-								if (ByteUtils.isNotEmpty(bytes)) {
-									data = serializer.deserialize(bytes, "");
+			raftServer.commit(data.getGroup(), data, new CompletableFuture<>())
+					.whenComplete((response, throwable) -> {
+						try {
+							Object data1 = null;
+							if (Objects.isNull(throwable)) {
+								if (!response.getSuccess()) {
+									throwable = new ConsistencyException(
+											response.getErrMsg());
+								}
+								if (response.getSuccess()) {
+									byte[] bytes = response.getData().toByteArray();
+									if (ByteUtils.isNotEmpty(bytes)) {
+										data1 = serializer.deserialize(bytes, "");
+									}
 								}
 							}
+							future.complete(LogFuture.create(data1, throwable));
 						}
-						future.complete(LogFuture.create(data, throwable));
-					} catch (Throwable ex) {
-						future.completeExceptionally(ex);
-					}
-				}
-			});
+						catch (Throwable ex) {
+							future.completeExceptionally(ex);
+						}
+					});
 		}
 		catch (Throwable e) {
 			future.completeExceptionally(e);
@@ -220,10 +223,11 @@ public class JRaftProtocol
 
 	@Override
 	public void memberChange(Set<String> addresses) {
-		for (int i = 0; i < 5; i ++) {
+		for (int i = 0; i < 5; i++) {
 			if (this.raftServer.peerChange(jRaftMaintainService, addresses)) {
 				break;
-			} else {
+			}
+			else {
 				Loggers.RAFT.warn("peer removal failed");
 			}
 			ThreadUtils.sleep(100L);

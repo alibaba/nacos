@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.ROLE_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key
@@ -93,30 +93,30 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
 		String sql = "INSERT into roles (role, username) VALUES (?, ?)";
 
 		try {
-			SqlContextUtils.addSqlContext(sql, role, userName);
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			EmbeddedStorageContextUtils.addSqlContext(sql, role, userName);
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
 	public void deleteRole(String role) {
 		String sql = "DELETE from roles WHERE role=?";
 		try {
-			SqlContextUtils.addSqlContext(sql, role);
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			EmbeddedStorageContextUtils.addSqlContext(sql, role);
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
 	public void deleteRole(String role, String username) {
 		String sql = "DELETE from roles WHERE role=? and username=?";
 		try {
-			SqlContextUtils.addSqlContext(sql, role, username);
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			EmbeddedStorageContextUtils.addSqlContext(sql, role, username);
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 

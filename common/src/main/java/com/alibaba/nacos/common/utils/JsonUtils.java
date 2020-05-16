@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class JacksonUtils {
+public final class JsonUtils {
 
 	static ObjectMapper mapper = new ObjectMapper();
 
@@ -34,6 +36,15 @@ public final class JacksonUtils {
 
 	public static String toJson(Object obj) throws Exception {
 		return mapper.writeValueAsString(obj);
+	}
+
+	public static String toJsonMaybeEmpty(Object obj) {
+		try {
+			return mapper.writeValueAsString(obj);
+		}
+		catch (JsonProcessingException e) {
+			return StringUtils.EMPTY;
+		}
 	}
 
 	public static byte[] toJsonBytes(Object obj) throws Exception {
@@ -54,5 +65,23 @@ public final class JacksonUtils {
 
 	public static <T> T toObj(String json, Type type) throws Exception {
 		return mapper.readValue(json, mapper.constructType(type));
+	}
+
+	public static <T> T toObjMaybeNull(String json, Class<T> cls) {
+		try {
+			return mapper.readValue(json, cls);
+		}
+		catch (IOException e) {
+			return null;
+		}
+	}
+
+	public static <T> T toObjMaybeNull(String json, Type type) {
+		try {
+			return mapper.readValue(json, mapper.constructType(type));
+		}
+		catch (IOException e) {
+			return null;
+		}
 	}
 }

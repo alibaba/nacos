@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.ClientTrackService;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +70,7 @@ class PrintMemoryTask implements Runnable {
 
     @Override
     public void run() {
-        int groupCount = ConfigService.groupCount();
+        int groupCount = ConfigCacheService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
         memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount,

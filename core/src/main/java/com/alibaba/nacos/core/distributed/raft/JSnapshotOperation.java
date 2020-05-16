@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.JsonUtils;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
@@ -63,7 +63,7 @@ interface JSnapshotOperation {
     default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) throws Exception {
         return metadata == null ? null
                 : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata)))
+                .setUserMeta(ZeroByteStringHelper.wrap(JsonUtils.toJsonBytes(metadata)))
                 .build();
     }
 

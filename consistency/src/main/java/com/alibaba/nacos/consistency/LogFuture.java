@@ -71,4 +71,9 @@ public class LogFuture implements Serializable {
 	public static LogFuture create(Object data, Throwable error) {
 		return new LogFuture(data, error);
 	}
+
+	@Override
+	public String toString() {
+		return "LogFuture{" + "response=" + response + ", error=" + error + '}';
+	}
 }
