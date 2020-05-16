@@ -27,6 +27,7 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -42,7 +43,7 @@ public enum JRaftOps {
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
 			final PeerId leader = PeerId
-					.parsePeer(args.get(JRaftConstants.TRANSFER_LEADER));
+					.parsePeer(args.get(JRaftConstants.COMMAND_VALUE));
 			Status status = cliService.transferLeader(groupId, conf, leader);
 			if (status.isOk()) {
 				return RestResultUtils.success();
@@ -57,7 +58,7 @@ public enum JRaftOps {
 		public RestResult<String> execute(CliService cliService, String groupId,
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
-			final String peerIds = args.get(JRaftConstants.RESET_RAFT_CLUSTER);
+			final String peerIds = args.get(JRaftConstants.COMMAND_VALUE);
 			Configuration newConf = JRaftUtils.getConfiguration(peerIds);
 			Status status = cliService.changePeers(groupId, conf, newConf);
 			if (status.isOk()) {
@@ -73,7 +74,7 @@ public enum JRaftOps {
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
 			final PeerId peerId = PeerId
-					.parsePeer(args.get(JRaftConstants.DO_SNAPSHOT));
+					.parsePeer(args.get(JRaftConstants.COMMAND_VALUE));
 			Status status = cliService.snapshot(groupId, peerId);
 			if (status.isOk()) {
 				return RestResultUtils.success();
@@ -87,9 +88,17 @@ public enum JRaftOps {
 		public RestResult<String> execute(CliService cliService, String groupId,
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
-			final PeerId peerId = PeerId
-					.parsePeer(args.get(JRaftConstants.REMOVE_PEER));
-			Status status = cliService.removePeer(groupId, conf, peerId);
+
+			List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+
+			final PeerId waitRemove = PeerId
+					.parsePeer(args.get(JRaftConstants.COMMAND_VALUE));
+
+			if (!peerIds.contains(waitRemove)) {
+				return RestResultUtils.success();
+			}
+
+			Status status = cliService.removePeer(groupId, conf, waitRemove);
 			if (status.isOk()) {
 				return RestResultUtils.success();
 			}
@@ -102,9 +111,16 @@ public enum JRaftOps {
 		public RestResult<String> execute(CliService cliService, String groupId,
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
-			final String peers = args.get(JRaftConstants.REMOVE_PEERS);
+			final String peers = args.get(JRaftConstants.COMMAND_VALUE);
 			for (String s : peers.split(",")) {
+
+				List<PeerId> peerIds = cliService.getPeers(groupId, conf);
 				final PeerId waitRemove = PeerId.parsePeer(s);
+
+				if (!peerIds.contains(waitRemove)) {
+					continue;
+				}
+
 				Status status = cliService.removePeer(groupId, conf, waitRemove);
 				if (!status.isOk()) {
 					return RestResultUtils.failed(status.getErrorMsg());
@@ -120,7 +136,7 @@ public enum JRaftOps {
 				Node node, Map<String, String> args) {
 			final Configuration conf = node.getOptions().getInitialConf();
 			final Configuration newConf = new Configuration();
-			String peers = args.get(JRaftConstants.CHANGE_PEERS);
+			String peers = args.get(JRaftConstants.COMMAND_VALUE);
 			for (String peer : peers.split(",")) {
 				newConf.addPeer(PeerId.parsePeer(peer.trim()));
 			}

@@ -479,8 +479,8 @@ public class JRaftServer {
 	}
 
 	boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
-		Set<String> oldPeers = this.raftConfig.getMembers();
-		oldPeers.remove(newPeers);
+		Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
+		oldPeers.removeAll(newPeers);
 
 		if (oldPeers.isEmpty()) {
 			return true;
@@ -491,16 +491,15 @@ public class JRaftServer {
 		multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
 			@Override
 			public void accept(String group, RaftGroupTuple tuple) {
-				final Node node = tuple.getNode();
-				if (!node.isLeader()) {
-					return;
-				}
 				Map<String, String> params = new HashMap<>();
 				params.put(JRaftConstants.GROUP_ID, group);
-				params.put(JRaftConstants.REMOVE_PEERS, Joiner.on(",").join(waitRemove));
+				params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
+				params.put(JRaftConstants.COMMAND_VALUE, Joiner.on(",").join(waitRemove));
 				RestResult<String> result = maintainService.execute(params);
 				if (result.ok()) {
 					successCnt.incrementAndGet();
+				} else {
+					Loggers.RAFT.error("Node removal failed : {}", result);
 				}
 			}
 		});
