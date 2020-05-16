@@ -44,7 +44,6 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -56,7 +55,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
-import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -441,9 +439,24 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final Timestamp time, final boolean notify) {
 		if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant()) == null) {
-			return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify)
-					.exceptionally(throwable -> updateConfigInfo4Beta(configInfo, betaIps, srcIp, null,
-							time, notify).join());
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+			addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify)
+					.whenComplete((result, ex) -> {
+						if (Objects.nonNull(ex)) {
+							updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time,
+									notify).whenComplete((response, throwable) -> {
+								if (Objects.nonNull(throwable)) {
+									future.completeExceptionally(throwable);
+								}
+								else {
+									future.complete(response);
+								}
+							});
+							return;
+						}
+						future.complete(result);
+					});
+			return future;
 		}
 		else {
 			return updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
@@ -455,9 +468,25 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final Timestamp time, final boolean notify) {
 		if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant(), tag) == null) {
-			return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify)
-					.exceptionally(throwable -> updateConfigInfo4Tag(configInfo, tag, srcIp, null,
-							time, notify).join());
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+			addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify)
+					.whenComplete((aBoolean, throwable) -> {
+						if (Objects.nonNull(throwable)) {
+							updateConfigInfo4Tag(configInfo, tag, srcIp, null, time,
+									notify).whenComplete((result, ex) -> {
+								if (Objects.nonNull(ex)) {
+									future.completeExceptionally(ex);
+								}
+								else {
+									future.complete(result);
+								}
+							});
+						}
+						else {
+							future.complete(aBoolean);
+						}
+					});
+			return future;
 		}
 		else {
 			return updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
@@ -496,9 +525,25 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			boolean notify) {
 		if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant()))) {
-			return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo,
-					notify).exceptionally(throwable -> updateConfigInfo(configInfo, srcIp, srcUser, time,
-					configAdvanceInfo, notify).join());
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+			addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify)
+					.whenComplete((aBoolean, throwable) -> {
+						if (Objects.nonNull(throwable)) {
+							updateConfigInfo(configInfo, srcIp, srcUser, time,
+									configAdvanceInfo, notify)
+									.whenComplete((aBoolean1, throwable1) -> {
+										if (Objects.nonNull(throwable1)) {
+											future.completeExceptionally(throwable1);
+											return;
+										}
+										future.complete(aBoolean1);
+									});
+						}
+						else {
+							future.complete(aBoolean);
+						}
+					});
+			return future;
 		}
 		else {
 			return updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo,
