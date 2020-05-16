@@ -132,55 +132,55 @@ public class TransferToLeaderFilter implements Filter {
 
 			// Determine if the system degradation was triggered
 			// System demotion is enabled and all requests are forwarded to the leader node
-			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+//			boolean isLeader = protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 
-			if (downgrading && isLeader) {
+			if (downgrading) {
 				resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 						"Unable to process the request at this time: System triggered degradation");
 				return;
 			}
 
-			if (downgrading || (method.isAnnotationPresent(ToLeader.class)
-					&& !isLeader)) {
-				if (StringUtils.isBlank(leaderServer)) {
-					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-							"Unable to process the request at this time: no Leader");
-					return;
-				}
-
-				final String val = req.getHeader(Constants.FORWARD_LEADER);
-				final int transferCnt =
-						Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
-
-				// Requests can only be forwarded once if a downgrade is not triggered
-				if (transferCnt > MAX_TRANSFER_CNT && !downgrading) {
-					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-							"Exceeded forwarding times:" + req.getMethod() + ":" + req
-									.getRequestURI());
-					return;
-				}
-
-				if (urlString.startsWith("/")) {
-					urlString = urlString.substring(1);
-				}
-
-				final String reqUrl =
-						req.getScheme() + "://" + leaderServer + "/" + urlString;
-
-				final HttpHeaders headers = new HttpHeaders();
-				final Enumeration<String> headerNames = req.getHeaderNames();
-				headers.set(Constants.FORWARD_LEADER, String.valueOf(transferCnt));
-				while (headerNames.hasMoreElements()) {
-					String headerName = headerNames.nextElement();
-					headers.set(headerName, req.getHeader(headerName));
-				}
-				HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
-				ResponseEntity<String> result = restTemplate
-						.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity,
-								String.class);
-				WebUtils.response(resp, result.getBody(), result.getStatusCodeValue());
-				return;
-			}
+//			if (downgrading || (method.isAnnotationPresent(ToLeader.class)
+//					&& !isLeader)) {
+//				if (StringUtils.isBlank(leaderServer)) {
+//					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+//							"Unable to process the request at this time: no Leader");
+//					return;
+//				}
+//
+//				final String val = req.getHeader(Constants.FORWARD_LEADER);
+//				final int transferCnt =
+//						Integer.parseInt(StringUtils.isEmpty(val) ? "0" : val) + 1;
+//
+//				// Requests can only be forwarded once if a downgrade is not triggered
+//				if (transferCnt > MAX_TRANSFER_CNT && !downgrading) {
+//					resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+//							"Exceeded forwarding times:" + req.getMethod() + ":" + req
+//									.getRequestURI());
+//					return;
+//				}
+//
+//				if (urlString.startsWith("/")) {
+//					urlString = urlString.substring(1);
+//				}
+//
+//				final String reqUrl =
+//						req.getScheme() + "://" + leaderServer + "/" + urlString;
+//
+//				final HttpHeaders headers = new HttpHeaders();
+//				final Enumeration<String> headerNames = req.getHeaderNames();
+//				headers.set(Constants.FORWARD_LEADER, String.valueOf(transferCnt));
+//				while (headerNames.hasMoreElements()) {
+//					String headerName = headerNames.nextElement();
+//					headers.set(headerName, req.getHeader(headerName));
+//				}
+//				HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
+//				ResponseEntity<String> result = restTemplate
+//						.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity,
+//								String.class);
+//				WebUtils.response(resp, result.getBody(), result.getStatusCodeValue());
+//				return;
+//			}
 			chain.doFilter(req, response);
 		}
 		catch (AccessControlException e) {

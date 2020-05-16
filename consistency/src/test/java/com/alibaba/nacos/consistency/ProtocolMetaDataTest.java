@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.JsonUtils;
 import org.junit.Test;
 
 public class ProtocolMetaDataTest {
@@ -22,7 +22,7 @@ public class ProtocolMetaDataTest {
 
         metaData.load(map);
 
-        String json = JacksonUtils.toJson(metaData);
+        String json = JsonUtils.toJson(metaData);
         System.out.println(json);
     }
 

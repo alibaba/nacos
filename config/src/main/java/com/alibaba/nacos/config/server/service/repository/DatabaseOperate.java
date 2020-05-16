@@ -18,9 +18,10 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -95,9 +96,20 @@ public interface DatabaseOperate {
      * data modify transaction
      *
      * @param modifyRequests {@link List<  ModifyRequest  >}
+     * @param consumer {@link BiConsumer}
      * @return is success
      */
-    Boolean update(List<ModifyRequest> modifyRequests);
+    Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
+
+    /**
+     * data modify transaction
+     *
+     * @param modifyRequests {@link List<  ModifyRequest  >}
+     * @return is success
+     */
+    default Boolean update(List<ModifyRequest> modifyRequests) {
+        return update(modifyRequests, null);
+    }
 
     /**
      * data modify transaction
@@ -107,9 +119,24 @@ public interface DatabaseOperate {
      */
     default Boolean smartUpdate() {
         try {
-            return update(SqlContextUtils.getCurrentSqlContext());
+            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), null);
         } finally {
-            SqlContextUtils.cleanCurrentSqlContext();
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+
+    /**
+     * data modify transaction
+     * The SqlContext to be executed in the current thread will be executed and automatically cleared
+     *
+     * @param consumer {@link BiConsumer}
+     * @return is success
+     */
+    default Boolean smartUpdate(BiConsumer<Boolean, Throwable> consumer) {
+        try {
+            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), consumer);
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
 

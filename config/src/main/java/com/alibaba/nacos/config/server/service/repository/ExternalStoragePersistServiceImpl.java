@@ -38,17 +38,18 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.DataSourceService;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -68,6 +69,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Connection;
@@ -80,22 +82,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4TAG_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_BASE_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_CHANGED_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_KEY_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4TAG_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BASE_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_CHANGED_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_KEY_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -171,38 +176,46 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+	public CompletableFuture<Boolean> addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
 			final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-		tjt.execute(new TransactionCallback<Boolean>() {
-			@Override
-			public Boolean doInTransaction(TransactionStatus status) {
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
+		try {
+			boolean result = tjt.execute(status -> {
 				try {
-					long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, time, configAdvanceInfo);
+					long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo,
+							time, configAdvanceInfo);
 					String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-					addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
-							configInfo.getTenant());
+					addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
+							configInfo.getGroup(), configInfo.getTenant());
 					insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
 					if (notify) {
 						EventDispatcher.fireEvent(
-								new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-										configInfo.getTenant(), time.getTime()));
+								new ConfigDataChangeEvent(false, configInfo.getDataId(),
+										configInfo.getGroup(), configInfo.getTenant(),
+										time.getTime()));
 					}
-				} catch (CannotGetJdbcConnectionException e) {
+				}
+				catch (CannotGetJdbcConnectionException e) {
 					LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 					throw e;
 				}
 				return Boolean.TRUE;
-			}
-		});
+			});
+			future.complete(result);
+		} catch (Throwable ex) {
+			future.completeExceptionally(ex);
+		}
+		return future;
 	}
 
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+	public CompletableFuture<Boolean> addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
 			String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 			jt.update(
@@ -210,25 +223,24 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 							+ "src_user,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
 					configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
 					betaIps, srcIp, srcUser, time, time);
-			if (notify) {
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
-						tenantTmp, time.getTime()));
-			}
+			future.complete(true);
 
 		} catch (CannotGetJdbcConnectionException e) {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
+			future.completeExceptionally(e);
 		}
+		return future;
 	}
 
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+	public CompletableFuture<Boolean> addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
 			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 			jt.update(
@@ -237,62 +249,64 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 					configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp, configInfo.getContent(),
 					md5,
 					srcIp, srcUser, time, time);
-			if (notify) {
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-						configInfo.getGroup(), tenantTmp, tagTmp, time.getTime()));
-			}
+			future.complete(true);
 		} catch (CannotGetJdbcConnectionException e) {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
+			future.completeExceptionally(e);
 		}
+		return future;
 	}
 
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+	public CompletableFuture<Boolean> updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
 			final Timestamp time, final Map<String, Object> configAdvanceInfo,
 			final boolean notify) {
-		tjt.execute(new TransactionCallback<Boolean>() {
-			@Override
-			public Boolean doInTransaction(TransactionStatus status) {
+		CompletableFuture<Boolean> future = null;
+		try {
+			boolean result = tjt.execute(status -> {
 				try {
-					ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
-							configInfo.getTenant());
+					ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(),
+							configInfo.getGroup(), configInfo.getTenant());
 					String appNameTmp = oldConfigInfo.getAppName();
 					// 用户传过来的appName不为空，则用持久化用户的appName，否则用db的;清空appName的时候需要传空串
 					if (configInfo.getAppName() == null) {
 						configInfo.setAppName(appNameTmp);
 					}
-					updateConfigInfoAtomic(configInfo, srcIp, srcUser, time, configAdvanceInfo);
+					updateConfigInfoAtomic(configInfo, srcIp, srcUser, time,
+							configAdvanceInfo);
 					String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
 					if (configTags != null) {
 						// 删除所有tag，然后再重新创建
 						removeTagByIdAtomic(oldConfigInfo.getId());
-						addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant());
+						addConfigTagsRelation(oldConfigInfo.getId(), configTags,
+								configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
 					}
-					insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
-					if (notify) {
-						EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
-					}
-				} catch (CannotGetJdbcConnectionException e) {
+					insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
+							srcUser, time, "U");
+				}
+				catch (CannotGetJdbcConnectionException e) {
 					LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 					throw e;
 				}
 				return Boolean.TRUE;
-			}
-		});
+			});
+			future.complete(result);
+		} catch (Throwable ex) {
+			future.completeExceptionally(ex);
+		}
+		return future;
 	}
 
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo4Beta(ConfigInfo configInfo, String srcIp, String srcUser, Timestamp time,
+	public CompletableFuture<Boolean> updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
 			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 			jt.update(
@@ -300,25 +314,25 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 							+ "data_id=? AND group_id=? AND tenant_id=?",
 					configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp);
-			if (notify) {
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
-						tenantTmp, time.getTime()));
-			}
+
+			future.complete(true);
 
 		} catch (CannotGetJdbcConnectionException e) {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
+			future.completeExceptionally(e);
 		}
+		return future;
 	}
 
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+	public CompletableFuture<Boolean> updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
 			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 			jt.update(
@@ -326,33 +340,52 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 							+ "data_id=? AND group_id=? AND tenant_id=? AND tag_id=?",
 					configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp, tagTmp);
-			if (notify) {
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(),
-						tenantTmp, tagTmp, time.getTime()));
-			}
-
+			future.complete(true);
 		} catch (CannotGetJdbcConnectionException e) {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
+			future.completeExceptionally(e);
 		}
+		return future;
 	}
 
-	public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+	public CompletableFuture<Boolean> insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
 			final String srcUser, final Timestamp time, final boolean notify) {
+		CompletableFuture<Boolean> future = null;
 		try {
-			addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+			future = addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-			updateConfigInfo4Beta(configInfo, srcIp, null, time, notify);
+			future = updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		}
+		return future.whenComplete(new BiConsumer<Boolean, Throwable>() {
+			@Override
+			public void accept(Boolean aBoolean, Throwable throwable) {
+				if (Objects.isNull(throwable)) {
+					EventDispatcher.fireEvent(
+							new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+									time.getTime()));
+				}
+			}
+		});
 	}
 
-	public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+	public CompletableFuture<Boolean> insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
 			final String srcUser, final Timestamp time, final boolean notify) {
+		CompletableFuture<Boolean> future = null;
 		try {
-			addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+			future = addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-			updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+			future = updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
 		}
+		return future.whenComplete(new BiConsumer<Boolean, Throwable>() {
+			@Override
+			public void accept(Boolean aBoolean, Throwable throwable) {
+				if (Objects.isNull(throwable)) {
+					EventDispatcher.fireEvent(
+							new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag,
+									time.getTime()));
+				}
+			}
+		});
 	}
 
 	/**
@@ -378,13 +411,19 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 写入主表，插入或更新
 	 */
-	public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+	public CompletableFuture<Boolean> insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
 			Map<String, Object> configAdvanceInfo, boolean notify) {
+		CompletableFuture<Boolean> future;
 		try {
-			addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+			future = addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-			updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+			future = updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
 		}
+		return future.whenComplete(((aBoolean, throwable) -> {
+			EventDispatcher.fireEvent(
+					new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
+							time.getTime()));
+		}));
 	}
 
 	/**
@@ -422,6 +461,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				return Boolean.TRUE;
 			}
 		});
+
+		EventDispatcher.fireEvent(
+				new ConfigDataChangeEvent(false, dataId, group, tenant, System.currentTimeMillis()));
 	}
 
 	/**
@@ -436,7 +478,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			return null;
 		}
 		ids.removeAll(Collections.singleton(null));
-		return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+		List<ConfigInfo> result = tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
 			final Timestamp time = new Timestamp(System.currentTimeMillis());
 
 			@Override
@@ -458,6 +500,22 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				}
 			}
 		});
+
+		if (!CollectionUtils.isEmpty(result)) {
+			long currentTime = System.currentTimeMillis();
+			for (ConfigInfo configInfo : result) {
+				ConfigTraceService.logPersistenceEvent(configInfo.getDataId(),
+						configInfo.getGroup(), configInfo.getTenant(), null,
+						currentTime, srcIp,
+						ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+				EventDispatcher.fireEvent(
+						new ConfigDataChangeEvent(false, configInfo.getDataId(),
+								configInfo.getGroup(), configInfo.getTenant(),
+								currentTime));
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -481,6 +539,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				return Boolean.TRUE;
 			}
 		});
+
+		EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant,
+				System.currentTimeMillis()));
 	}
 
 	// ----------------------- config_aggr_info 表 insert update delete
@@ -2462,6 +2523,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
 		}
+		EventDispatcher.fireEvent(
+				new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
+						System.currentTimeMillis()));
 	}
 
 	/**

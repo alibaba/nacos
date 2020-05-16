@@ -22,14 +22,14 @@ import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.USER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key
@@ -50,31 +50,31 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
 		String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
 
 		try {
-			SqlContextUtils.addSqlContext(sql, username, password, true);
+			EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
 			databaseOperate.smartUpdate();
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
 	public void deleteUser(String username) {
 		String sql = "DELETE from users WHERE username=?";
 		try {
-			SqlContextUtils.addSqlContext(sql, username);
+			EmbeddedStorageContextUtils.addSqlContext(sql, username);
 			databaseOperate.smartUpdate();
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
 	public void updateUserPassword(String username, String password) {
 		try {
-			SqlContextUtils.addSqlContext(
+			EmbeddedStorageContextUtils.addSqlContext(
 					"UPDATE users SET password = ? WHERE username=?",
 					password, username);
 			databaseOperate.smartUpdate();
 		} finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 

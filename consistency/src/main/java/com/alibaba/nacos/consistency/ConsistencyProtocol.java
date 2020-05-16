@@ -68,10 +68,18 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * Obtain data according to the request
      *
      * @param request request
-     * @return data {@link GetRequest}
+     * @return data {@link Response}
      * @throws Exception
      */
     Response getData(GetRequest request) throws Exception;
+
+    /**
+     * Get data asynchronously
+     *
+     * @param request request
+     * @return data {@link CompletableFuture<Response>}
+     */
+    CompletableFuture<Response> aGetData(GetRequest request);
 
     /**
      * Data operation, returning submission results synchronously

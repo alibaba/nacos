@@ -275,13 +275,13 @@ public class JRaftServer {
 		}
 	}
 
-	Response get(final GetRequest request) {
+	CompletableFuture<Response> get(final GetRequest request) {
 		final String group = request.getGroup();
 		CompletableFuture<Response> future = new CompletableFuture<>();
 		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (Objects.isNull(tuple)) {
 			future.completeExceptionally(new NoSuchRaftGroupException(group));
-			return future.join();
+			return future;
 		}
 		final Node node = tuple.node;
 
@@ -303,19 +303,13 @@ public class JRaftServer {
 							new ConsistencyException(status.getErrorMsg()));
 				}
 			});
-			return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
+			return future;
 		}
 		catch (Throwable e) {
 			Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}", e.toString());
 			// run raft read
 			readFromLeader(request, future);
-			try {
-				return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
-			}
-			catch (Throwable ex) {
-				throw new ConsistencyException(
-						"Data acquisition failed : " + e.toString() + ", read from leader has error : " + ex.toString());
-			}
+			return future;
 		}
 	}
 
@@ -340,7 +334,7 @@ public class JRaftServer {
 	}
 
 
-	public <T> CompletableFuture<T> commit(final String group, final Message data, final CompletableFuture<T> future) {
+	public CompletableFuture<Response> commit(final String group, final Message data, final CompletableFuture<Response> future) {
 		LoggerUtils
 				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
 		final RaftGroupTuple tuple = findTupleByGroup(group);

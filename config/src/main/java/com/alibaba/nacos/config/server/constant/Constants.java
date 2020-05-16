@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.constant;
 
+import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
+
 /**
  * Server Constants
  *
@@ -175,4 +177,10 @@ public class Constants {
     public static final int ATOMIC_MAX_SIZE = 1000;
     public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
     public static int DATA_IN_BODY_VERSION = 204;
+
+    /**
+     * Configure the dump event name
+     */
+    public static final String EXTEND_INFO_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName();
+    public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
 }

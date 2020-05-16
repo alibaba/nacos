@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.config.server.service.DataSourceService;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;

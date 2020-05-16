@@ -26,9 +26,9 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -48,7 +48,6 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -62,7 +61,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -300,7 +298,7 @@ public class DumpService {
 				dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
 				Runnable checkMd5Task = () -> {
 					LogUtil.defaultLog.error("start checkMd5Task");
-					List<String> diffList = ConfigService.checkMd5();
+					List<String> diffList = ConfigCacheService.checkMd5();
 					for (String groupKey : diffList) {
 						String[] dg = GroupKey.parseKey(groupKey);
 						String dataId = dg[0];
@@ -308,7 +306,7 @@ public class DumpService {
 						String tenant = dg[2];
 						ConfigInfoWrapper configInfo = persistService
 								.queryConfigInfo(dataId, group, tenant);
-						ConfigService.dumpChange(dataId, group, tenant,
+						ConfigCacheService.dumpChange(dataId, group, tenant,
 								configInfo.getContent(), configInfo.getLastModified());
 					}
 					LogUtil.defaultLog.error("end checkMd5Task");
@@ -465,7 +463,7 @@ public class DumpService {
 						ConfigInfo cf = MergeTaskProcessor
 								.merge(dataId, group, tenant, datumList);
 						String aggrContent = cf.getContent();
-						String localContentMD5 = ConfigService
+						String localContentMD5 = ConfigCacheService
 								.getContentMd5(GroupKey.getKey(dataId, group));
 						String aggrConetentMD5 = MD5Utils
 								.md5Hex(aggrContent, Constants.ENCODE);
