@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
@@ -105,8 +104,8 @@ class NacosStateMachine extends StateMachineAdapter {
 					LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);
 
 					if (message instanceof Log) {
-						LogFuture future = processor.onApply((Log) message);
-						postProcessor(future, closure);
+						Response response = processor.onApply((Log) message);
+						postProcessor(response, closure);
 					}
 
 					if (message instanceof GetRequest) {

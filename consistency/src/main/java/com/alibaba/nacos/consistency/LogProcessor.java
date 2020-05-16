@@ -44,7 +44,7 @@ public abstract class LogProcessor {
      * @param log {@link Log}
      * @return {@link boolean}
      */
-    public abstract LogFuture onApply(Log log);
+    public abstract Response onApply(Log log);
 
     /**
      * Irremediable errors that need to trigger business price cuts
