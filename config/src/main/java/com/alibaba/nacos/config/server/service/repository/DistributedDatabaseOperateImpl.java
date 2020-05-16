@@ -35,7 +35,6 @@ import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -58,7 +57,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -222,7 +220,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -248,7 +246,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -275,7 +273,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -302,7 +300,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -328,7 +326,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -355,7 +353,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -382,18 +380,18 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
 					.setType(sqlContext.getClass().getCanonicalName()).build();
 			if (Objects.isNull(consumer)) {
-				LogFuture future = this.protocol.submit(log);
-				if (future.isOk()) {
+				Response response = this.protocol.submit(log);
+				if (response.getSuccess()) {
 					return true;
-				} else {
-					throw future.getError();
 				}
+				LogUtil.defaultLog.error("execute sql modify operation failed : {}", response.getErrMsg());
+				return false;
 			} else {
-				this.protocol.submitAsync(log).whenComplete(new BiConsumer<LogFuture, Throwable>() {
+				this.protocol.submitAsync(log).whenComplete(new BiConsumer<Response, Throwable>() {
 					@Override
-					public void accept(LogFuture future, Throwable ex) {
-						future.setError(ex);
-						consumer.accept(true, future.getError());
+					public void accept(Response response, Throwable ex) {
+						String errMsg = Objects.isNull(ex) ? response.getErrMsg() : ex.getMessage();
+						consumer.accept(response.getSuccess(), StringUtils.isBlank(errMsg) ? null : new NJdbcException(errMsg));
 					}
 				});
 			}
@@ -476,7 +474,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
-	public LogFuture onApply(Log log) {
+	public Response onApply(Log log) {
 		LoggerUtils
 				.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
 
@@ -499,19 +497,13 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			// normal execution of the state machine
 			executor.execute(() -> handleExtendInfo(log.getExtendInfoMap()));
 
-			return LogFuture.success(isOk);
+			return Response.newBuilder().setSuccess(isOk).build();
 
 			// We do not believe that an error caused by a problem with an SQL error
 			// should trigger the stop operation of the raft state machine
 		}
-		catch (DuplicateKeyException e) {
-			return LogFuture.fail(e);
-		}
-		catch (DataIntegrityViolationException e) {
-			return LogFuture.fail(e);
-		}
-		catch (BadSqlGrammarException e) {
-			return LogFuture.fail(e);
+		catch (BadSqlGrammarException | DataIntegrityViolationException e) {
+			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
 		}
 		catch (DataAccessException e) {
 			throw new ConsistencyException(e);

@@ -17,9 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -29,7 +27,6 @@ import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.Response;
-import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
@@ -37,7 +34,6 @@ import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupExceptio
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
 import org.apache.commons.collections.CollectionUtils;
@@ -52,7 +48,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 /**
  * A concrete implementation of CP protocol: JRaft
@@ -182,43 +177,15 @@ public class JRaftProtocol
 	}
 
 	@Override
-	public LogFuture submit(Log data) throws Exception {
-		CompletableFuture<LogFuture> future = submitAsync(data);
-		LogFuture result = future.join();
-		return result;
+	public Response submit(Log data) throws Exception {
+		CompletableFuture<Response> future = submitAsync(data);
+		return future.join();
 	}
 
 	@Override
-	public CompletableFuture<LogFuture> submitAsync(Log data) {
-		CompletableFuture<LogFuture> future = new CompletableFuture<>();
-		try {
-			raftServer.commit(data.getGroup(), data, new CompletableFuture<>())
-					.whenComplete((response, throwable) -> {
-						try {
-							Object data1 = null;
-							if (Objects.isNull(throwable)) {
-								if (!response.getSuccess()) {
-									throwable = new ConsistencyException(
-											response.getErrMsg());
-								}
-								if (response.getSuccess()) {
-									byte[] bytes = response.getData().toByteArray();
-									if (ByteUtils.isNotEmpty(bytes)) {
-										data1 = serializer.deserialize(bytes, "");
-									}
-								}
-							}
-							future.complete(LogFuture.create(data1, throwable));
-						}
-						catch (Throwable ex) {
-							future.completeExceptionally(ex);
-						}
-					});
-		}
-		catch (Throwable e) {
-			future.completeExceptionally(e);
-		}
-		return future;
+	public CompletableFuture<Response> submitAsync(Log data) {
+		CompletableFuture<Response> future = new CompletableFuture<>();
+		return raftServer.commit(data.getGroup(), data, future);
 	}
 
 	@Override

@@ -44,6 +44,7 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -55,6 +56,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -67,7 +69,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -106,16 +107,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	private final String roleId = "role-id";
 	private final String permissionsId = "permissions_id";
 
-    private DataSourceService dataSourceService;
+	private DataSourceService dataSourceService;
 
-    private final DatabaseOperate databaseOperate;
+	private final DatabaseOperate databaseOperate;
 
 	private final IdGeneratorManager idGeneratorManager;
 
 	/**
 	 * The constructor sets the dependency injection order
 	 *
-	 * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+	 * @param databaseOperate    {@link EmbeddedStoragePersistServiceImpl}
 	 * @param idGeneratorManager {@link IdGeneratorManager}
 	 */
 	public EmbeddedStoragePersistServiceImpl(DatabaseOperate databaseOperate,
@@ -127,8 +128,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	@PostConstruct
 	public void init() {
 		dataSourceService = DynamicDataSource.getInstance().getDataSource();
-		idGeneratorManager.register(configInfoId, configHistoryId, configTagRelationId, appConfigDataRelationSubs,
-				configBetaId, namespaceId, userId, roleId, permissionsId);
+		idGeneratorManager.register(configInfoId, configHistoryId, configTagRelationId,
+				appConfigDataRelationSubs, configBetaId, namespaceId, userId, roleId,
+				permissionsId);
 	}
 
 	public boolean checkMasterWritable() {
@@ -169,8 +171,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		return new EmbeddedPaginationHelperImpl<E>(databaseOperate);
 	}
 
-	public CompletableFuture<Boolean> addConfigInfo(final String srcIp, final String srcUser,
-			final ConfigInfo configInfo, final Timestamp time,
+	public CompletableFuture<Boolean> addConfigInfo(final String srcIp,
+			final String srcUser, final ConfigInfo configInfo, final Timestamp time,
 			final Map<String, Object> configAdvanceInfo, final boolean notify) {
 
 		try {
@@ -191,8 +193,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 			addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 					configInfo.getGroup(), configInfo.getTenant());
-			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time,
-					"I");
+			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
 
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
 
@@ -212,8 +213,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public CompletableFuture<Boolean> addConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
+			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -232,7 +234,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
 					md5, betaIps, srcIp, srcUser, time, time };
 
-			EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
+			EmbeddedStorageContextUtils
+					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -251,8 +254,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public CompletableFuture<Boolean> addConfigInfo4Tag(ConfigInfo configInfo, String tag,
+			String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -273,7 +276,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp,
 					configInfo.getContent(), md5, srcIp, srcUser, time, time };
 
-			EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
+			EmbeddedStorageContextUtils
+					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -294,8 +298,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> updateConfigInfo(final ConfigInfo configInfo, final String srcIp,
-			final String srcUser, final Timestamp time,
+	public CompletableFuture<Boolean> updateConfigInfo(final ConfigInfo configInfo,
+			final String srcIp, final String srcUser, final Timestamp time,
 			final Map<String, Object> configAdvanceInfo, final boolean notify) {
 		try {
 			ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(),
@@ -330,9 +334,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
 					srcUser, time, "U");
 
-
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
-
 			EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
 
 			databaseOperate.smartUpdate((o, throwable) -> {
@@ -350,8 +352,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
-			Timestamp time, boolean notify) {
+	public CompletableFuture<Boolean> updateConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
+			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -370,7 +373,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp };
 
-			EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
+			EmbeddedStorageContextUtils
+					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -389,8 +393,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public CompletableFuture<Boolean> updateConfigInfo4Tag(ConfigInfo configInfo,
+			String tag, String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -411,7 +415,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp, tagTmp };
 
-			EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
+			EmbeddedStorageContextUtils
+					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -431,24 +436,28 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public CompletableFuture<Boolean> insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps,
-			final String srcIp, final String srcUser, final Timestamp time,
-			final boolean notify) {
+	public CompletableFuture<Boolean> insertOrUpdateBeta(final ConfigInfo configInfo,
+			final String betaIps, final String srcIp, final String srcUser,
+			final Timestamp time, final boolean notify) {
 		if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant()) == null) {
-			return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+			return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify)
+					.exceptionally(throwable -> updateConfigInfo4Beta(configInfo, betaIps, srcIp, null,
+							time, notify).join());
 		}
 		else {
 			return updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		}
 	}
 
-	public CompletableFuture<Boolean> insertOrUpdateTag(final ConfigInfo configInfo, final String tag,
-			final String srcIp, final String srcUser, final Timestamp time,
-			final boolean notify) {
+	public CompletableFuture<Boolean> insertOrUpdateTag(final ConfigInfo configInfo,
+			final String tag, final String srcIp, final String srcUser,
+			final Timestamp time, final boolean notify) {
 		if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant(), tag) == null) {
-			return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+			return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify)
+					.exceptionally(throwable -> updateConfigInfo4Tag(configInfo, tag, srcIp, null,
+							time, notify).join());
 		}
 		else {
 			return updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
@@ -482,14 +491,18 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
 	}
 
-	public CompletableFuture<Boolean> insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
-			Timestamp time, Map<String, Object> configAdvanceInfo, boolean notify) {
+	public CompletableFuture<Boolean> insertOrUpdate(String srcIp, String srcUser,
+			ConfigInfo configInfo, Timestamp time, Map<String, Object> configAdvanceInfo,
+			boolean notify) {
 		if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
 				configInfo.getTenant()))) {
-			return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+			return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo,
+					notify).exceptionally(throwable -> updateConfigInfo(configInfo, srcIp, srcUser, time,
+					configAdvanceInfo, notify).join());
 		}
 		else {
-			return updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+			return updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo,
+					notify);
 		}
 	}
 
@@ -497,7 +510,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		if (isAlreadyExist(subInfo)) {
 			updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(),
 					subInfo.getAppName(), subInfo.getDate());
-		} else {
+		}
+		else {
 			addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(),
 					subInfo.getAppName(), subInfo.getDate());
 		}
@@ -505,9 +519,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 	private boolean isAlreadyExist(SubInfo subInfo) {
 		final String sql = "SELECT * from app_configdata_relation_subs WHERE dara_id=? and group_id=? and app_name=?";
-		Map obj = databaseOperate.queryOne(sql, new Object[] {
-				subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName()
-		}, Map.class);
+		Map obj = databaseOperate.queryOne(sql,
+				new Object[] { subInfo.getDataId(), subInfo.getGroup(),
+						subInfo.getAppName() }, Map.class);
 		return obj != null;
 	}
 
@@ -517,14 +531,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		ConfigInfo configInfo = findConfigInfo(dataId, group, tenant);
 		if (Objects.nonNull(configInfo)) {
 			try {
-				String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+				String tenantTmp = StringUtils.isBlank(tenant) ?
+						StringUtils.EMPTY :
+						tenant;
 
 				removeConfigInfoAtomic(dataId, group, tenantTmp, srcIp, srcUser);
 				removeTagByIdAtomic(configInfo.getId());
 				insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser,
 						time, "D");
 
-				EmbeddedStorageContextUtils.onDeleteConfigInfo(tenantTmp, group, dataId, srcIp, time);
+				EmbeddedStorageContextUtils
+						.onDeleteConfigInfo(tenantTmp, group, dataId, srcIp, time);
 
 				boolean result = databaseOperate
 						.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
@@ -580,7 +597,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				final String sql = "DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?";
 				final Object[] args = new Object[] { dataId, group, tenantTmp };
 
-				EmbeddedStorageContextUtils.onDeleteConfigBetaInfo(tenantTmp, group, dataId, System.currentTimeMillis());
+				EmbeddedStorageContextUtils
+						.onDeleteConfigBetaInfo(tenantTmp, group, dataId,
+								System.currentTimeMillis());
 				EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 				boolean result = databaseOperate
@@ -742,7 +761,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 						entry.getValue());
 			}
 
-			isPublishOk = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+			isPublishOk = databaseOperate
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 
 			if (isPublishOk == null) {
 				return false;
@@ -773,7 +793,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 		}
 		try {
-			isReplaceOk = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+			isReplaceOk = databaseOperate
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 
 			if (isReplaceOk == null) {
 				return false;
@@ -2099,7 +2120,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final String sql = "DELETE FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
 		final Object[] args = new Object[] { dataId, group, tenantTmp, tagTmp };
 
-		EmbeddedStorageContextUtils.onDeleteConfigTagInfo(tenantTmp, group, dataId, tagTmp, srcIp);
+		EmbeddedStorageContextUtils
+				.onDeleteConfigTagInfo(tenantTmp, group, dataId, tagTmp, srcIp);
 		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 		try {
 			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
