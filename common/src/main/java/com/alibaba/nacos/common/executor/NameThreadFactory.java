@@ -29,6 +29,9 @@ public class NameThreadFactory implements ThreadFactory {
 	private String name;
 
 	public NameThreadFactory(String name) {
+		if (!name.endsWith(".")) {
+			name += ".";
+		}
 		this.name = name;
 	}
 
