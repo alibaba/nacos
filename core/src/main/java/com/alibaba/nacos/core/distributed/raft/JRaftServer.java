@@ -169,6 +169,11 @@ public class JRaftServer {
 				.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
 						RaftSysConstants.DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS);
 
+		nodeOptions.setSharedElectionTimer(true);
+		nodeOptions.setSharedVoteTimer(true);
+		nodeOptions.setSharedStepDownTimer(true);
+		nodeOptions.setSharedSnapshotTimer(true);
+
 		nodeOptions.setElectionTimeoutMs(electionTimeout);
 		RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 		nodeOptions.setRaftOptions(raftOptions);
@@ -340,7 +345,7 @@ public class JRaftServer {
 	}
 
 
-	public <T> CompletableFuture<T> commit(final String group, final Message data, final CompletableFuture<T> future) {
+	public CompletableFuture<Response> commit(final String group, final Message data, final CompletableFuture<Response> future) {
 		LoggerUtils
 				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
 		final RaftGroupTuple tuple = findTupleByGroup(group);

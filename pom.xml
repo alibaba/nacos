@@ -100,7 +100,7 @@
         <sonar.jacoco.itReportPath>${project.basedir}/../test/target/jacoco-it.exec</sonar.jacoco.itReportPath>
         <sonar.exclusions>file:**/generated-sources/**,**/test/**</sonar.exclusions>
         <protobuf-java.version>3.8.0</protobuf-java.version>
-        <grpc-java.version>1.28.0</grpc-java.version>
+        <grpc-java.version>1.24.0</grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
     </properties>
     <!-- == -->
@@ -849,20 +849,28 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- gRPC dependency start -->
+
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-netty-shaded</artifactId>
-                <version>1.17.0</version>
+                <version>${grpc-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf</artifactId>
-                <version>1.17.0</version>
+                <version>${grpc-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-stub</artifactId>
-                <version>1.17.0</version>
+                <version>${grpc-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>protoc-gen-grpc-java</artifactId>
+                <version>${grpc-java.version}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
@@ -870,16 +878,12 @@
                 <version>1.17.0</version>
             </dependency>
 
+            <!-- gRPC dependency end -->
+
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf-java.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>protoc-gen-grpc-java</artifactId>
-                <version>${grpc-java.version}</version>
-                <type>pom</type>
             </dependency>
 
             <dependency>

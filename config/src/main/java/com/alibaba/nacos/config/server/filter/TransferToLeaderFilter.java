@@ -174,6 +174,9 @@ public class TransferToLeaderFilter implements Filter {
 					String headerName = headerNames.nextElement();
 					headers.set(headerName, req.getHeader(headerName));
 				}
+
+				System.out.println(reqUrl);
+
 				HttpEntity<Object> httpEntity = new HttpEntity<>(req.getBody(), headers);
 				ResponseEntity<String> result = restTemplate
 						.exchange(reqUrl, HttpMethod.resolve(req.getMethod()), httpEntity,
