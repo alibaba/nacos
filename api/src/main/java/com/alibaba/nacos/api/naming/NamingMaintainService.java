@@ -32,15 +32,19 @@ import java.util.Map;
 public interface NamingMaintainService {
 
     /**
+     * {@link Deprecated} This is going to be transferred to {@link NamingService} since 1.3.1
      * update instance info
      *
      * @param serviceName
      * @param instance
      * @throws NacosException
      */
+    @Deprecated
     void updateInstance(String serviceName, Instance instance) throws NacosException;
 
     /**
+     * {@link Deprecated} This is going to be transferred to {@link NamingService} since 1.3.1
+     *
      * update instance info
      *
      * @param serviceName
@@ -48,6 +52,7 @@ public interface NamingMaintainService {
      * @param instance
      * @throws NacosException
      */
+    @Deprecated
     void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
 
     /**

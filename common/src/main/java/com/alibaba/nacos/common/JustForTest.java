@@ -17,6 +17,9 @@
 package com.alibaba.nacos.common;
 
 /**
+ * This means that this method or property is only used in unit test situations,
+ * and normal production code cannot call this annotation-decorated method or property
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public @interface JustForTest {

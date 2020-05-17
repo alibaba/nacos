@@ -36,6 +36,7 @@ import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.JustForTest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -190,24 +191,23 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-
-        if (instance.isEphemeral()) {
-            BeatInfo beatInfo = new BeatInfo();
-            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
-            beatInfo.setIp(instance.getIp());
-            beatInfo.setPort(instance.getPort());
-            beatInfo.setCluster(instance.getClusterName());
-            beatInfo.setWeight(instance.getWeight());
-            beatInfo.setMetadata(instance.getMetadata());
-            beatInfo.setScheduled(false);
-            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
-
-            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
-        }
-
+        setBetaInfo(serviceName, groupName, instance);
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
+    @Override
+    public void updateInstance(String serviceName, Instance instance)
+            throws NacosException {
+        updateInstance(serviceName, Constants.DEFAULT_GROUP, instance);
+    }
+
+    @Override
+    public void updateInstance(String serviceName, String groupName, Instance instance)
+            throws NacosException {
+        // When update the instance information, you need to reset the heartbeat packet
+        setBetaInfo(serviceName, groupName, instance);
+        serverProxy.updateInstance(serviceName, groupName, instance);
+    }
 
     @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
@@ -486,6 +486,23 @@ public class NacosNamingService implements NamingService {
         return list;
     }
 
+    private void setBetaInfo(final String serviceName, final String groupName, final Instance instance) {
+        if (instance.isEphemeral()) {
+            BeatInfo beatInfo = new BeatInfo();
+            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
+            beatInfo.setIp(instance.getIp());
+            beatInfo.setPort(instance.getPort());
+            beatInfo.setCluster(instance.getClusterName());
+            beatInfo.setWeight(instance.getWeight());
+            beatInfo.setMetadata(instance.getMetadata());
+            beatInfo.setScheduled(false);
+            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
+
+            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+        }
+    }
+
+    @JustForTest
     public BeatReactor getBeatReactor() {
         return beatReactor;
     }
