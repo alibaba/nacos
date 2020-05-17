@@ -30,7 +30,6 @@ import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -48,11 +47,9 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -345,11 +342,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			Log log = Log.newBuilder().setGroup(group()).setKey(key)
 					.setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
 					.setType(sqlContext.getClass().getCanonicalName()).build();
-			LogFuture future = this.protocol.submit(log);
-			if (future.isOk()) {
+			Response response = this.protocol.submit(log);
+			if (response.getSuccess()) {
 				return true;
 			}
-			throw future.getError();
+			throw new ConsistencyException(response.getErrMsg());
 		}
 		catch (Throwable e) {
 			if (e instanceof ConsistencyException) {
@@ -427,7 +424,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
-	public LogFuture onApply(Log log) {
+	public Response onApply(Log log) {
 		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
 
 		final ByteString byteString = log.getData();
@@ -443,19 +440,13 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				}
 			});
 			boolean isOk = onUpdate(sqlContext);
-			return LogFuture.success(isOk);
+			return Response.newBuilder().setSuccess(isOk).build();
 
 			// We do not believe that an error caused by a problem with an SQL error
 			// should trigger the stop operation of the raft state machine
 		}
-		catch (DuplicateKeyException e) {
-			return LogFuture.fail(e);
-		}
-		catch (DataIntegrityViolationException e) {
-			return LogFuture.fail(e);
-		}
-		catch (BadSqlGrammarException e) {
-			return LogFuture.fail(e);
+		catch (BadSqlGrammarException | DataIntegrityViolationException e) {
+			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
 		}
 		catch (DataAccessException e) {
 			throw new ConsistencyException(e);
