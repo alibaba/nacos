@@ -47,15 +47,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 /**
  * A concrete implementation of CP protocol: JRaft
  *
  * <pre>
  *                                           ┌──────────────────────┐
- *                                           │                      │
  *            ┌──────────────────────┐       │                      ▼
  *            │   ProtocolManager    │       │        ┌───────────────────────────┐
  *            └──────────────────────┘       │        │for p in [LogProcessor4CP] │
@@ -87,7 +86,6 @@ import java.util.function.BiConsumer;
  *             ┌────────────────────┐        │
  *             │JRaftServer.start() │        │
  *             └────────────────────┘        │
- *                        │                  │
  *                        │                  │
  *                        └──────────────────┘
  * </pre>
@@ -177,7 +175,8 @@ public class JRaftProtocol
 	@Override
 	public Response submit(Log data) throws Exception {
 		CompletableFuture<Response> future = submitAsync(data);
-		return future.get();
+		// Here you wait for 10 seconds, as long as possible, for the request to complete
+		return future.get(10_000L, TimeUnit.MILLISECONDS);
 	}
 
 	@Override
