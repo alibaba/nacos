@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -50,6 +52,8 @@ public class HostReactor {
 
     private EventDispatcher eventDispatcher;
 
+    private BeatReactor beatReactor;
+
     private NamingProxy serverProxy;
 
     private FailoverReactor failoverReactor;
@@ -58,11 +62,11 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
 
         executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
@@ -173,6 +177,7 @@ public class HostReactor {
 
             if (modHosts.size() > 0) {
                 changed = true;
+                updateBeatInfo(modHosts);
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
             }
@@ -204,6 +209,16 @@ public class HostReactor {
         return serviceInfo;
     }
 
+    private void updateBeatInfo(Set<Instance> modHosts) {
+        for (Instance instance : modHosts) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
+    }
+
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
 
         String key = ServiceInfo.getKey(serviceName, clusters);
@@ -211,7 +226,8 @@ public class HostReactor {
         return serviceInfoMap.get(key);
     }
 
-    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws
+        NacosException {
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
             return JSON.parseObject(result, ServiceInfo.class);
@@ -256,7 +272,6 @@ public class HostReactor {
 
         return serviceInfoMap.get(serviceObj.getKey());
     }
-
 
 
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {

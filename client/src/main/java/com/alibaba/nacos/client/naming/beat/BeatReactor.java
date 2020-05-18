@@ -62,6 +62,19 @@ public class BeatReactor {
         });
     }
 
+    public BeatInfo buildBeatInfo(Instance instance) {
+        BeatInfo beatInfo = new BeatInfo();
+        beatInfo.setServiceName(instance.getServiceName());
+        beatInfo.setIp(instance.getIp());
+        beatInfo.setPort(instance.getPort());
+        beatInfo.setCluster(instance.getClusterName());
+        beatInfo.setWeight(instance.getWeight());
+        beatInfo.setMetadata(instance.getMetadata());
+        beatInfo.setScheduled(false);
+        beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
+        return beatInfo;
+    }
+
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
         String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
@@ -85,7 +98,7 @@ public class BeatReactor {
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    private String buildKey(String serviceName, String ip, int port) {
+    public String buildKey(String serviceName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
