@@ -24,6 +24,14 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadUtils {
 
+    public static void objectWait(Object object) {
+        try {
+            object.wait();
+        } catch (InterruptedException ignore) {
+            Thread.interrupted();
+        }
+    }
+
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
