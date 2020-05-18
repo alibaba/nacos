@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
@@ -35,7 +36,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -111,8 +115,31 @@ public class StartingSpringApplicationRunListener
 	@Override
 	public void started(ConfigurableApplicationContext context) {
 		starting = false;
-
 		ConfigurableEnvironment env = context.getEnvironment();
+		Collection<ModuleInitializeReporter> reporters = context.getBeansOfType(
+				ModuleInitializeReporter.class).values();
+		Set<String> initializingModules = reporters.stream().collect(HashSet::new, (m, v) -> m.add(v.group()), HashSet::addAll);
+
+		for ( ; ; ) {
+			for (ModuleInitializeReporter reporter : reporters) {
+				if (reporter.hasException()) {
+					failed(context, new NacosException(NacosException.SERVER_ERROR, reporter.getError()));
+					return;
+				}
+
+				boolean finishInitialize = reporter.alreadyInitialized();
+
+				if (finishInitialize) {
+					LOGGER.info("{} finished initialize", reporter.group());
+					initializingModules.remove(reporter.group());
+				}
+			}
+
+			if (initializingModules.isEmpty()) {
+				break;
+			}
+
+		}
 
 		closeExecutor();
 
@@ -152,14 +179,16 @@ public class StartingSpringApplicationRunListener
 
 		LOGGER.error("Startup errors : {}", exception);
 
-		LOGGER.error("Nacos failed to start, please see {} for more details.",
-				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
-
 		ThreadPoolManager.shutdown();
 		WatchFileCenter.shutdown();
 		NotifyCenter.shutdown();
 
 		closeExecutor();
+
+		context.close();
+
+		LOGGER.error("Nacos failed to start, please see {} for more details.",
+				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
 	}
 
 	/**
