@@ -344,7 +344,6 @@ public class JRaftServer {
 				});
 	}
 
-
 	public CompletableFuture<Response> commit(final String group, final Message data, final CompletableFuture<Response> future) {
 		LoggerUtils
 				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
