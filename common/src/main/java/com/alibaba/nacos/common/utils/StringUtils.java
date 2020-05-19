@@ -30,6 +30,7 @@ import java.util.Locale;
  */
 public class StringUtils {
 
+    public static final String DOT = ".";
 
     private static final int INDEX_NOT_FOUND = -1;
 
