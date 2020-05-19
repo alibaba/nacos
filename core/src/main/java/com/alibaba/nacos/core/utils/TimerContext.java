@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import org.slf4j.Logger;
 

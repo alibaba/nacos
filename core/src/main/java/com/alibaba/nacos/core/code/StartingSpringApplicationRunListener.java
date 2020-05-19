@@ -120,10 +120,11 @@ public class StartingSpringApplicationRunListener
 				ModuleInitializeReporter.class).values();
 		Set<String> initializingModules = reporters.stream().collect(HashSet::new, (m, v) -> m.add(v.group()), HashSet::addAll);
 
-		for ( ; ; ) {
+		do {
 			for (ModuleInitializeReporter reporter : reporters) {
 				if (reporter.hasException()) {
-					failed(context, new NacosException(NacosException.SERVER_ERROR, reporter.getError()));
+					failed(context, new NacosException(NacosException.SERVER_ERROR,
+							reporter.getError()));
 					return;
 				}
 
@@ -135,11 +136,8 @@ public class StartingSpringApplicationRunListener
 				}
 			}
 
-			if (initializingModules.isEmpty()) {
-				break;
-			}
-
 		}
+		while (!initializingModules.isEmpty());
 
 		closeExecutor();
 
