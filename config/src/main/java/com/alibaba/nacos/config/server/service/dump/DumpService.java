@@ -19,6 +19,7 @@ import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigModuleInitializeReporter;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.DiskUtil;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
@@ -63,8 +63,10 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -76,7 +78,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service
 public class DumpService {
 
-	private final ConfigModuleInitializeReporter reporter;
 	private final PersistService persistService;
 	private final ServerMemberManager memberManager;
 	private final ProtocolManager protocolManager;
@@ -85,14 +86,12 @@ public class DumpService {
 	 * Here you inject the dependent objects constructively, ensuring that some
 	 * of the dependent functionality is initialized ahead of time
 	 *
-	 * @param reporter        {@link ConfigModuleInitializeReporter}
 	 * @param persistService  {@link PersistService}
 	 * @param memberManager   {@link ServerMemberManager}
 	 * @param protocolManager {@link ProtocolManager}
 	 */
-	public DumpService(ConfigModuleInitializeReporter reporter, PersistService persistService,
-			ServerMemberManager memberManager, ProtocolManager protocolManager) {
-		this.reporter = reporter;
+	public DumpService(PersistService persistService, ServerMemberManager memberManager,
+			ProtocolManager protocolManager) {
 		this.persistService = persistService;
 		this.memberManager = memberManager;
 		this.protocolManager = protocolManager;
@@ -111,10 +110,7 @@ public class DumpService {
 	}
 
 	@PostConstruct
-	protected void init() throws Exception {
-		// I haven't initialized myself yet
-		this.reporter.setSuccess(DumpService.class.getName(), false);
-
+	protected void init() throws Throwable {
 		DynamicDataSource.getInstance().getDataSource();
 
 		DumpProcessor processor = new DumpProcessor(this);
@@ -138,6 +134,9 @@ public class DumpService {
 					.info("With embedded distributed storage, you need to wait for "
 							+ "the underlying master to complete before you can perform the dump operation.");
 
+			AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
+			CountDownLatch waitDumpFinish = new CountDownLatch(1);
+
 			// watch path => /nacos_config/leader/ has value ?
 			Observer observer = new Observer() {
 
@@ -148,8 +147,16 @@ public class DumpService {
 						if (Objects.isNull(arg)) {
 							return;
 						}
-						dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-								dumpAllTagProcessor);
+						try {
+							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
+									dumpAllTagProcessor);
+						}
+						catch (Throwable ex) {
+							errorReference.set(ex);
+						}
+						finally {
+							waitDumpFinish.countDown();
+						}
 						protocol.protocolMetaData()
 								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
@@ -161,6 +168,17 @@ public class DumpService {
 			protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 					com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
 					observer);
+
+			// We must wait for the dump task to complete the callback operation before
+			// continuing with the initialization
+			ThreadUtils.latchAwait(waitDumpFinish);
+
+			// If an exception occurs during the execution of the dump task, the exception
+			// needs to be thrown, triggering the node to start the failed process
+			final Throwable ex = errorReference.get();
+			if (Objects.nonNull(ex)) {
+				throw ex;
+			}
 
 		}
 		else {
@@ -275,11 +293,8 @@ public class DumpService {
 
 			TimerTaskService
 					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
-			reporter.setSuccess(DumpService.class.getName(), true);
 		}
-		catch (Throwable ex) {
-			reporter.setEx(DumpService.class.getName(), ex);
-		} finally {
+		finally {
 			TimerContext.end(LogUtil.defaultLog);
 		}
 
