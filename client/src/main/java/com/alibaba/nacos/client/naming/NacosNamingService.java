@@ -209,31 +209,6 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public void updateInstance(String serviceName, Instance instance)
-            throws NacosException {
-        updateInstance(serviceName, Constants.DEFAULT_GROUP, instance);
-    }
-
-    @Override
-    public void updateInstance(String serviceName, String groupName, Instance instance)
-            throws NacosException {
-        if (instance.isEphemeral()) {
-            BeatInfo beatInfo = new BeatInfo();
-            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
-            beatInfo.setIp(instance.getIp());
-            beatInfo.setPort(instance.getPort());
-            beatInfo.setCluster(instance.getClusterName());
-            beatInfo.setWeight(instance.getWeight());
-            beatInfo.setMetadata(instance.getMetadata());
-            beatInfo.setScheduled(false);
-            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
-            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
-            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
-        }
-        serverProxy.updateInstance(serviceName, groupName, instance);
-    }
-
-    @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
         deregisterInstance(serviceName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }

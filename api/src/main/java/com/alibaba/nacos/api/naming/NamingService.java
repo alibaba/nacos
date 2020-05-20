@@ -95,25 +95,6 @@ public interface NamingService {
     void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException;
 
     /**
-     * update instance info
-     *
-     * @param serviceName
-     * @param instance
-     * @throws NacosException
-     */
-    void updateInstance(String serviceName, Instance instance) throws NacosException;
-
-    /**
-     * update instance info
-     *
-     * @param serviceName
-     * @param groupName
-     * @param instance
-     * @throws NacosException
-     */
-    void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
-
-    /**
      * deregister instance from a service
      *
      * @param serviceName name of service
