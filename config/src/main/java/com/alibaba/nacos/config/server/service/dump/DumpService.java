@@ -105,10 +105,6 @@ public class DumpService {
 		return memberManager;
 	}
 
-	public ProtocolManager getProtocolManager() {
-		return protocolManager;
-	}
-
 	@PostConstruct
 	protected void init() throws Throwable {
 		DynamicDataSource.getInstance().getDataSource();
@@ -295,7 +291,7 @@ public class DumpService {
 					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 		}
 		finally {
-			TimerContext.end(LogUtil.defaultLog);
+			TimerContext.end(LogUtil.dumpLog);
 		}
 
 	}
