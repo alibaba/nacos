@@ -38,7 +38,6 @@ public interface NamingMaintainService {
      * @param instance
      * @throws NacosException
      */
-    @Deprecated
     void updateInstance(String serviceName, Instance instance) throws NacosException;
 
     /**
@@ -49,7 +48,6 @@ public interface NamingMaintainService {
      * @param instance
      * @throws NacosException
      */
-    @Deprecated
     void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
 
     /**
