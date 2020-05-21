@@ -44,7 +44,7 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
         Map<String, ConfigChangeItem> result = new HashMap<String, ConfigChangeItem>(16);
         for (Iterator<Map.Entry<String, Object>> entryItr = oldMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
-            ConfigChangeItem cci = null;
+            ConfigChangeItem cci;
             if (newMap.containsKey(e.getKey()))  {
                 if (e.getValue().equals(newMap.get(e.getKey()))) {
                     continue;
