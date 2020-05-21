@@ -18,19 +18,46 @@
 
 package com.alibaba.nacos.client;
 
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.common.utils.ThreadUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Ignore
 public class ConfigTest {
 
-	private ConfigService config7;
-	private ConfigService config8;
-	private ConfigService config9;
+	private ConfigService configService;
 
-	public void test() {
+	@Before
+	public void before() throws Exception {
+		Properties properties = new Properties();
+		properties.setProperty(PropertyKeyConst.NAMESPACE, "bebf0150-e1ea-47e2-81fe-6814caf2b952");
+		properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+		properties.setProperty(PropertyKeyConst.USERNAME, "chuntaojun");
+		properties.setProperty(PropertyKeyConst.PASSWORD, "1017");
+		configService = NacosFactory.createConfigService(properties);
+	}
 
+	@Test
+	public void test() throws Exception {
+		final String dataId = "lessspring";
+		final String group = "lessspring";
+		final String content = "lessspring-" + System.currentTimeMillis();
+		boolean result = configService.publishConfig(dataId, group, content);
+		Assert.assertTrue(result);
+
+		ThreadUtils.sleep(10_000);
+		String response = configService.getConfig(dataId, group, 5000);
+		System.out.println(response);
 	}
 
 }

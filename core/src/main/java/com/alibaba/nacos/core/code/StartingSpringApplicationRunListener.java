@@ -112,7 +112,6 @@ public class StartingSpringApplicationRunListener
 	@Override
 	public void started(ConfigurableApplicationContext context) {
 		starting = false;
-
 		ConfigurableEnvironment env = context.getEnvironment();
 
 		closeExecutor();
@@ -160,10 +159,10 @@ public class StartingSpringApplicationRunListener
 
 		closeExecutor();
 
+		context.close();
+
 		LOGGER.error("Nacos failed to start, please see {} for more details.",
 				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
-
-		context.close();
 	}
 
 	/**
