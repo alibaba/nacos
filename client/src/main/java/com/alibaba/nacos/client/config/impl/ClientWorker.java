@@ -27,6 +27,7 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -519,7 +520,10 @@ public class ClientWorker {
 
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
-                LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
+                if (!CollectionUtils.isEmpty(changedGroupKeys)) {
+                    LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
+                }
+
 
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);
