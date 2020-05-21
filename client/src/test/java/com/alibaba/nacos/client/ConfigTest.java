@@ -73,8 +73,8 @@ public class ConfigTest {
 		try {
 			configService.publishConfig(dataId, group, content + System.currentTimeMillis());
 		}
-		catch (Throwable ignore) {
-
+		catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 	}
 

@@ -67,6 +67,9 @@ public class InetUtils_ITCase {
 
 		NotifyCenter.registerSubscribe(subscribe);
 
+		// to trigger static code
+		InetUtils.getSelfIp();
+
 		String testIp = "1.1.1.1";
 		System.setProperty(NACOS_SERVER_IP, testIp);
 

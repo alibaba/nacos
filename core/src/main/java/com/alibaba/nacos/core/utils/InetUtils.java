@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.SlowEvent;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +50,9 @@ public class InetUtils {
 
         private String oldIp;
         private String newIp;
+
+        public IPChangeEvent() {
+        }
 
         public String getOldIp() {
             return oldIp;
@@ -143,10 +147,11 @@ public class InetUtils {
                         }
                     }
 
-                    if (!Objects.equals(selfIp, tmpSelfIp) && Objects.nonNull(selfIp)) {
+                    // If executed for the first time, selfIp is empty and no event is published
+                    if (!Objects.equals(selfIp, tmpSelfIp) && StringUtils.isNotBlank(selfIp)) {
                         IPChangeEvent event = new IPChangeEvent();
-                        event.setOldIp(selfIp);
-                        event.setNewIp(tmpSelfIp);
+                        event.setOldIp(Optional.ofNullable(selfIp).orElse(StringUtils.EMPTY));
+                        event.setNewIp(Optional.ofNullable(tmpSelfIp).orElse(StringUtils.EMPTY));
                         NotifyCenter.publishEvent(event);
                     }
                     selfIp = tmpSelfIp;
