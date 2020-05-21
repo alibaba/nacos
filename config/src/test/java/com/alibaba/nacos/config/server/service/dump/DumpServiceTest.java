@@ -16,7 +16,7 @@ public class DumpServiceTest {
     DumpService service;
 
     @Test
-    public void init() throws Exception {
+    public void init() throws Throwable {
         service.init();
     }
 }
