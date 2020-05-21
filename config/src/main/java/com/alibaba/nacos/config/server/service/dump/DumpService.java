@@ -120,6 +120,10 @@ public class DumpService {
 		dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
 		dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
 
+        dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        dumpAllTaskMgr.addProcessor(DumpAllBetaTask.TASK_ID, dumpAllBetaProcessor);
+        dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
+
 		// If using embedded distributed storage, you need to wait for the
 		// underlying master to complete the selection
 		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
@@ -195,6 +199,9 @@ public class DumpService {
 
 			Runnable dumpAllBeta = () -> dumpAllTaskMgr
 					.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+
+            Runnable dumpAllTag = () -> dumpAllTaskMgr
+                .addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
 
 			Runnable clearConfigHistory = () -> {
 				log.warn("clearConfigHistory start");
@@ -285,6 +292,9 @@ public class DumpService {
 
 				TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+
+                TimerTaskService.scheduleWithFixedDelay(dumpAllTag, initialDelay,
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
 			TimerTaskService
