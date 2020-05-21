@@ -190,12 +190,11 @@ public class JRaftProtocol
 	public void memberChange(Set<String> addresses) {
 		for (int i = 0; i < 5; i ++) {
 			if (this.raftServer.peerChange(jRaftMaintainService, addresses)) {
-				break;
-			} else {
-				Loggers.RAFT.warn("peer removal failed");
+				return;
 			}
 			ThreadUtils.sleep(100L);
 		}
+		Loggers.RAFT.warn("peer removal failed");
 	}
 
 	@Override
