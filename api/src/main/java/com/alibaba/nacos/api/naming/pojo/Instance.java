@@ -187,8 +187,7 @@ public class Instance {
         }
 
         Instance host = (Instance) obj;
-
-        return strEquals(toString(), host.toString());
+        return strEquals(host.toString(), toString());
     }
 
     @Override

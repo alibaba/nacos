@@ -37,7 +37,7 @@ public class RaftPeer {
 
     public volatile long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
 
-    public State state = State.FOLLOWER;
+    public volatile State state = State.FOLLOWER;
 
     public void resetLeaderDue() {
         leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RANDOM_MS);
@@ -80,5 +80,12 @@ public class RaftPeer {
         RaftPeer other = (RaftPeer) obj;
 
         return StringUtils.equals(ip, other.ip);
+    }
+
+    @Override
+    public String toString() {
+        return "RaftPeer{" + "ip='" + ip + '\'' + ", voteFor='" + voteFor + '\''
+                + ", term=" + term + ", leaderDueMs=" + leaderDueMs + ", heartbeatDueMs="
+                + heartbeatDueMs + ", state=" + state + '}';
     }
 }

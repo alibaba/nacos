@@ -45,7 +45,7 @@ public class AggrWhitelist {
      */
      public static boolean isAggrDataId(String dataId) {
         if (null == dataId) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("dataId is null");
         }
 
         for (Pattern pattern : AGGR_DATAID_WHITELIST.get()) {

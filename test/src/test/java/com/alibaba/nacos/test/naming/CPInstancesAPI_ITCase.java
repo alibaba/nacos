@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.After;
 import org.junit.Assert;
@@ -53,8 +54,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author nkorange
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        "server.port=7001"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CPInstancesAPI_ITCase {
 
@@ -410,6 +410,7 @@ public class CPInstancesAPI_ITCase {
                 .done(),
             String.class,
             HttpMethod.POST);
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
     }
@@ -428,8 +429,7 @@ public class CPInstancesAPI_ITCase {
                 .done(),
             String.class,
             HttpMethod.DELETE);
-        System.out.print("resp = " + response.getBody());
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
     }

@@ -17,18 +17,16 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
@@ -40,17 +38,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Base data source
  *
  * @author Nacos
  */
-@Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
     private static final Logger log = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
@@ -79,11 +75,6 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     volatile private List<Boolean> isHealthList;
     private volatile int masterIndex;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-
-
-    @Autowired
-    private Environment env;
-
 
     static {
         try {
@@ -126,7 +117,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
+        if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
             } catch (IOException e) {
@@ -146,7 +137,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
         try {
             String val = null;
-            val = env.getProperty("db.num");
+            val = ApplicationUtils.getProperty("db.num");
             if (null == val) {
                 throw new IllegalArgumentException("db.num is null");
             }
@@ -156,34 +147,34 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 BasicDataSource ds = new BasicDataSource();
                 ds.setDriverClassName(JDBC_DRIVER_NAME);
 
-                val = env.getProperty("db.url." + i);
+                val = ApplicationUtils.getProperty("db.url." + i);
                 if (null == val) {
                     fatalLog.error("db.url." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.url." + i + " is null");
                 }
                 ds.setUrl(val.trim());
 
-                val = env.getProperty("db.user." + i, env.getProperty("db.user"));
+                val = ApplicationUtils.getProperty("db.user." + i, ApplicationUtils.getProperty("db.user"));
                 if (null == val) {
                     fatalLog.error("db.user." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.user." + i + " is null");
                 }
                 ds.setUsername(val.trim());
 
-                val = env.getProperty("db.password." + i, env.getProperty("db.password"));
+                val = ApplicationUtils.getProperty("db.password." + i, ApplicationUtils.getProperty("db.password"));
                 if (null == val) {
                     fatalLog.error("db.password." + i + " is null");
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("db.password." + i + " is null");
                 }
                 ds.setPassword(val.trim());
 
-                val = env.getProperty("db.initialSize." + i, env.getProperty("db.initialSize"));
+                val = ApplicationUtils.getProperty("db.initialSize." + i, ApplicationUtils.getProperty("db.initialSize"));
                 ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
 
-                val = env.getProperty("db.maxActive." + i, env.getProperty("db.maxActive"));
+                val = ApplicationUtils.getProperty("db.maxActive." + i, ApplicationUtils.getProperty("db.maxActive"));
                 ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
 
-                val = env.getProperty("db.maxIdle." + i, env.getProperty("db.maxIdle"));
+                val = ApplicationUtils.getProperty("db.maxIdle." + i, ApplicationUtils.getProperty("db.maxIdle"));
                 ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
                 ds.setMaxWait(3000L);

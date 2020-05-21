@@ -32,7 +32,6 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
-
         return registration;
     }
 
@@ -43,7 +42,6 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("trafficReviseFilter");
         registration.setOrder(1);
-
         return registration;
     }
 

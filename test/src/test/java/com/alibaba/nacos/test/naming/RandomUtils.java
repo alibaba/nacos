@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.test.BaseTest;
+
 import java.util.*;
 
 /**
@@ -23,7 +25,7 @@ import java.util.*;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-public class RandomUtils {
+public class RandomUtils extends BaseTest {
     private static Random rd = new Random();
     private static int UNICODE_START = 19968;
     private static int UNICODE_END = 40864;

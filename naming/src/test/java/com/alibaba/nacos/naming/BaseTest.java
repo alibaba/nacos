@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
@@ -64,7 +63,6 @@ public class BaseTest {
         Mockito.when(peerSet.getLeader()).thenReturn(peer);
         Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
 
-        new SpringContext().setApplicationContext(context);
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
         doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
         doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);

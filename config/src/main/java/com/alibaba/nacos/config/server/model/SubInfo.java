@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -22,8 +23,9 @@ import java.sql.Timestamp;
  *
  * @author Nacos
  */
-public class SubInfo {
+public class SubInfo implements Serializable {
 
+    private static final long serialVersionUID = -3900485932969066685L;
     private String appName;
     private String dataId;
     private String group;
