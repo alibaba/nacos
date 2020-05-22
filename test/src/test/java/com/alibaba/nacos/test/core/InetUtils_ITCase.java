@@ -73,7 +73,7 @@ public class InetUtils_ITCase {
 		String testIp = "1.1.1.1";
 		System.setProperty(NACOS_SERVER_IP, testIp);
 
-		latch.await(10_000L, TimeUnit.MILLISECONDS);
+		latch.await();
 
 		Assert.assertEquals(testIp, reference.get());
 		Assert.assertEquals(testIp, InetUtils.getSelfIp());

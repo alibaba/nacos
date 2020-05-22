@@ -317,10 +317,7 @@ public class ApplicationUtils
 	private static String localAddress = "";
 
 	public static String getLocalAddress() {
-		if (StringUtils.isBlank(localAddress)) {
-			localAddress = InetUtils.getSelfIp() + ":" + getPort();
-		}
-		return localAddress;
+		return InetUtils.getSelfIp() + ":" + getPort();
 	}
 
 	public static void setLocalAddress(String localAddress) {

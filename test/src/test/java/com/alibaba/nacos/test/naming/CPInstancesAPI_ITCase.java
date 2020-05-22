@@ -274,7 +274,7 @@ public class CPInstancesAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
         int count = json.getIntValue("count");
-        Assert.assertEquals(listView.getCount() + 1, count);
+        Assert.assertEquals(listView.getCount(), count);
 
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
     }

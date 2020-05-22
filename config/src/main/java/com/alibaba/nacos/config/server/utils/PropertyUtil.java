@@ -277,6 +277,13 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
                     setUseExternalDB(true);
                 }
             }
+
+            if (isDirectRead()) {
+                logger.info("The current client read operation is a direct operation on the database");
+            } else {
+                logger.info("The current client read operation is to read the disk file");
+            }
+
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
             throw e;

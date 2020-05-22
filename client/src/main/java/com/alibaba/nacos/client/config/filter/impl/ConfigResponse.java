@@ -74,4 +74,9 @@ public class ConfigResponse implements IConfigResponse {
         return configContext;
     }
 
+    @Override
+    public String toString() {
+        return "ConfigResponse{" + "param=" + param + ", configContext=" + configContext
+                + '}';
+    }
 }
