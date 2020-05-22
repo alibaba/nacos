@@ -63,8 +63,8 @@ public class CurcuitFilter implements Filter {
 	@Autowired
 	private ControllerMethodsCache controllerMethodsCache;
 
-	private volatile boolean downgrading = false;
-	private volatile boolean openService = false;
+	private volatile boolean isDowngrading = false;
+	private volatile boolean isOpenService = false;
 
 	@PostConstruct
 	protected void init() {
@@ -79,7 +79,7 @@ public class CurcuitFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 
-		if (!openService) {
+		if (!isOpenService) {
 			resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 					"In the node initialization, unable to process any requests at this time");
 			return;
@@ -88,7 +88,7 @@ public class CurcuitFilter implements Filter {
 		try {
 			// If an unrecoverable exception occurs on this node, the write request operation shall not be processed
 			// This is a very important warning message !!!
-			if (downgrading) {
+			if (isDowngrading) {
 				resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
 						"Unable to process the request at this time: System triggered degradation");
 				return;
@@ -125,7 +125,7 @@ public class CurcuitFilter implements Filter {
 								.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
 						// Only when you are in the cluster and the current Leader is
 						// elected can you provide external services
-						openService = peers.contains(raftAddress);
+						isOpenService = peers.contains(raftAddress);
 					}
 				});
 	}
@@ -138,11 +138,11 @@ public class CurcuitFilter implements Filter {
 				// @JustForTest
 				// This event only happens in the case of unit tests
 				if (event instanceof RaftDBErrorRecoverEvent) {
-					downgrading = false;
+					isDowngrading = false;
 					return;
 				}
 				if (event instanceof RaftDBErrorEvent) {
-					downgrading = true;
+					isDowngrading = true;
 				}
 			}
 
