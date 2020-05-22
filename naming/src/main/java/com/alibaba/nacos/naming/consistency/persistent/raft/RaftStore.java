@@ -301,7 +301,7 @@ public class RaftStore {
         return datumKey.replace(':', '#');
     }
 
-    private static String decodeDatumKey(String DatumKey) {
-        return DatumKey.replace("#", ":");
+    private static String decodeDatumKey(String datumKey) {
+        return datumKey.replace("#", ":");
     }
 }
