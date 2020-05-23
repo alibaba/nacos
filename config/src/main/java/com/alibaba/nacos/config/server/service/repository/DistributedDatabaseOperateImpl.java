@@ -365,7 +365,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@SuppressWarnings("all")
 	@Override
-	public Response getData(final GetRequest request) {
+	public Response onRequest(final GetRequest request) {
 		final SelectRequest selectRequest = serializer
 				.deserialize(request.getData().toByteArray(), SelectRequest.class);
 

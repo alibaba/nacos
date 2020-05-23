@@ -296,7 +296,7 @@ public class JRaftServer {
 				public void run(Status status, long index, byte[] reqCtx) {
 					if (status.isOk()) {
 						try {
-							Response response = tuple.processor.getData(request);
+							Response response = tuple.processor.onRequest(request);
 							future.complete(response);
 						}
 						catch (Throwable t) {

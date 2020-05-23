@@ -108,7 +108,7 @@ class NacosStateMachine extends StateMachineAdapter {
 					}
 
 					if (message instanceof GetRequest) {
-						Response response = processor.getData((GetRequest) message);
+						Response response = processor.onRequest((GetRequest) message);
 						postProcessor(response, closure);
 					}
 				}
