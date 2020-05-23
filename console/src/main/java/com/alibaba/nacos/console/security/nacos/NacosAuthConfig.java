@@ -20,7 +20,7 @@ import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.auth.AuthSystemTypes;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

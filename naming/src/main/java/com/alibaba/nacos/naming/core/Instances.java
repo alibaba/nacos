@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

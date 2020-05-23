@@ -16,7 +16,7 @@
 package com.alibaba.nacos.address.controller;
 
 import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;

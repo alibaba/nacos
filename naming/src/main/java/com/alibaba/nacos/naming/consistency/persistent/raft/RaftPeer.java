@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.utils.RandomUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;

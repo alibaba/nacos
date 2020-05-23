@@ -17,12 +17,13 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.fastjson.serializer.SerializeWriter;
-import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.api.Constants;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.base.Objects;
 
 /**

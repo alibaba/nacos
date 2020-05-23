@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.client.logging;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.BooleanUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>

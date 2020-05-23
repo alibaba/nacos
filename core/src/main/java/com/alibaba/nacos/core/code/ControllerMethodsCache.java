@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.core.code;
 
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.reflections.Reflections;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;

@@ -17,12 +17,12 @@ package com.alibaba.nacos.api.config.annotation;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.annotation.NacosProperties;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 
 import java.lang.annotation.*;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
+import static com.alibaba.nacos.common.api.Constants.DEFAULT_GROUP;
 
 /**
  * An annotation for Nacos configuration Properties for binding POJO as Properties Object.

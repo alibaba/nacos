@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -202,8 +202,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
 
             String[] sqlArr = sqlSb.toString().split(";");
-            for (int i = 0; i < sqlArr.length; i++) {
-                String sql = sqlArr[i].replaceAll("--.*", "").trim();
+            for (String s : sqlArr) {
+                String sql = s.replaceAll("--.*", "").trim();
                 if (StringUtils.isNotEmpty(sql)) {
                     sqlList.add(sql);
                 }

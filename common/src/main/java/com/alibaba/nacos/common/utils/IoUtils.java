@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.api.Constants;
 
 import java.io.*;
 import java.net.HttpURLConnection;

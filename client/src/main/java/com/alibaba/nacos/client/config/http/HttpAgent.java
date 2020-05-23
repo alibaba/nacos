@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.config.http;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 
 import java.io.IOException;

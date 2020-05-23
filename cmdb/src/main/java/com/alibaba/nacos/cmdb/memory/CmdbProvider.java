@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.cmdb.spi.CmdbService;
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
 import com.alibaba.nacos.api.cmdb.pojo.Label;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.cmdb.core.SwitchAndOptions;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.cmdb.service.CmdbWriter;

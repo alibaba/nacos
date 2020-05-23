@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.api.Constants;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;

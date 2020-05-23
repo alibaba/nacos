@@ -15,10 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.*;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -45,10 +42,8 @@ import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupExceptio
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -271,7 +266,7 @@ public class DumpService {
 
 	private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
 		int timeStep = 6;
-		Boolean isAllDump = true;
+		boolean isAllDump = true;
 		// initial dump all
 		FileInputStream fis = null;
 		Timestamp heartheatLastStamp = null;
@@ -351,7 +346,7 @@ public class DumpService {
 		try {
 			String val = null;
 			val = ApplicationUtils.getProperty("isQuickStart");
-			if (val != null && TRUE_STR.equals(val)) {
+			if (TRUE_STR.equals(val)) {
 				isQuickStart = true;
 			}
 			fatalLog.warn("isQuickStart:{}", isQuickStart);

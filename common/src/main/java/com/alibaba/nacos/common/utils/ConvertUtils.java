@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

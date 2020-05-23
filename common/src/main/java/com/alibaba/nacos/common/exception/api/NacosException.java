@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.exception;
+package com.alibaba.nacos.common.exception.api;
 
-import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.api.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Nacos Exception

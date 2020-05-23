@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.auth.Resource;
 import com.alibaba.nacos.core.auth.ResourceParser;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Config resource parser

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.BooleanUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.consistency.LogFuture;
@@ -40,7 +41,6 @@ import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
-import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
@@ -48,7 +48,6 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

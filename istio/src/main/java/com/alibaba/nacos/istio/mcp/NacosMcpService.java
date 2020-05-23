@@ -16,7 +16,7 @@
 package com.alibaba.nacos.istio.mcp;
 
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
@@ -29,7 +29,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.google.protobuf.Any;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -162,7 +162,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             .setLocation(ServiceEntry.Location.MESH_INTERNAL)
             .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER)
             .addPorts(Port.newBuilder().setNumber(8848).setName("http").setProtocol("HTTP").build());
-        
+
         for (Instance instance : service.allIPs()) {
 
             if (!instance.isHealthy() || !instance.isEnabled()) {

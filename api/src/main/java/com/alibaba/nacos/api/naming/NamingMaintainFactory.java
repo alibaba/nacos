@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.naming;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 
 import java.lang.reflect.Constructor;
 import java.util.Properties;

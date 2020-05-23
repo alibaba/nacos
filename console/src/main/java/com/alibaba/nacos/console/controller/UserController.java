@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;

@@ -16,7 +16,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

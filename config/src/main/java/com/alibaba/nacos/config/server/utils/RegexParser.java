@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.CharUtils;
-
 /**
  * 用于ConfigCenter可支持的通配字符通配判定以及标准正则转换的通用类
  *

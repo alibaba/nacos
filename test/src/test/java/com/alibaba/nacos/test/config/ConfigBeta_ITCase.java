@@ -18,9 +18,7 @@ package com.alibaba.nacos.test.config;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,8 +35,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author xiaochun.xxc

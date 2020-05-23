@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -47,8 +48,6 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -171,8 +170,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
-			final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
+	@Override
+    public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+                              final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
 		tjt.execute(new TransactionCallback<Boolean>() {
 			@Override
 			public Boolean doInTransaction(TransactionStatus status) {
@@ -199,8 +199,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
-			String srcIp, String srcUser, Timestamp time, boolean notify) {
+	@Override
+    public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+                                   String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		try {
@@ -224,8 +225,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-			boolean notify) {
+	@Override
+    public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+                                  boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
@@ -250,9 +252,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-			final Timestamp time, final Map<String, Object> configAdvanceInfo,
-			final boolean notify) {
+	@Override
+    public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+                                 final Timestamp time, final Map<String, Object> configAdvanceInfo,
+                                 final boolean notify) {
 		tjt.execute(new TransactionCallback<Boolean>() {
 			@Override
 			public Boolean doInTransaction(TransactionStatus status) {
@@ -289,8 +292,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo4Beta(ConfigInfo configInfo, String srcIp, String srcUser, Timestamp time,
-			boolean notify) {
+	@Override
+    public void updateConfigInfo4Beta(ConfigInfo configInfo, String srcIp, String srcUser, Timestamp time,
+                                      boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		try {
@@ -314,8 +318,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 更新配置信息
 	 */
-	public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-			boolean notify) {
+	@Override
+    public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+                                     boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
@@ -337,8 +342,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
-			final String srcUser, final Timestamp time, final boolean notify) {
+	@Override
+    public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+                                   final String srcUser, final Timestamp time, final boolean notify) {
 		try {
 			addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
@@ -346,8 +352,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
-			final String srcUser, final Timestamp time, final boolean notify) {
+	@Override
+    public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+                                  final String srcUser, final Timestamp time, final boolean notify) {
 		try {
 			addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
@@ -358,7 +365,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 更新md5
 	 */
-	public void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime) {
+	@Override
+    public void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			jt.update(
@@ -370,16 +378,18 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-			Map<String, Object> configAdvanceInfo) {
+	@Override
+    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+                               Map<String, Object> configAdvanceInfo) {
 		insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
 	}
 
 	/**
 	 * 写入主表，插入或更新
 	 */
-	public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-			Map<String, Object> configAdvanceInfo, boolean notify) {
+	@Override
+    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+                               Map<String, Object> configAdvanceInfo, boolean notify) {
 		try {
 			addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
@@ -390,7 +400,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 写入主表，插入或更新
 	 */
-	public void insertOrUpdateSub(SubInfo subInfo) {
+	@Override
+    public void insertOrUpdateSub(SubInfo subInfo) {
 		try {
 			addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
 		} catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
@@ -401,8 +412,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 删除配置信息, 物理删除
 	 */
-	public void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
-			final String srcUser) {
+	@Override
+    public void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
+                                 final String srcUser) {
 		tjt.execute(new TransactionCallback<Boolean>() {
 			final Timestamp time = new Timestamp(System.currentTimeMillis());
 
@@ -431,7 +443,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @Param [ids, srcIp, srcUser]
 	 * @return List<ConfigInfo> deleted configInfos
 	 */
-	public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+	@Override
+    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
 		if(CollectionUtils.isEmpty(ids)){
 			return null;
 		}
@@ -463,7 +476,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 删除beta配置信息, 物理删除
 	 */
-	public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+	@Override
+    public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		tjt.execute(new TransactionCallback<Boolean>() {
 			@Override
@@ -488,8 +502,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 增加聚合前数据到数据库, select -> update or insert
 	 */
-	public boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
-			String appName, final String content) {
+	@Override
+    public boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
+                                     String appName, final String content) {
 		String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
@@ -525,8 +540,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 删除单条聚合前数据
 	 */
-	public void removeSingleAggrConfigInfo(final String dataId,
-			final String group, final String tenant, final String datumId) {
+	@Override
+    public void removeSingleAggrConfigInfo(final String dataId,
+                                           final String group, final String tenant, final String datumId) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?";
 
@@ -550,7 +566,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 删除一个dataId下面所有的聚合前数据
 	 */
-	public void removeAggrConfigInfo(final String dataId, final String group, final String tenant) {
+	@Override
+    public void removeAggrConfigInfo(final String dataId, final String group, final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?";
 
@@ -577,8 +594,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group
 	 * @param datumList
 	 */
-	public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
-			final List<String> datumList) {
+	@Override
+    public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
+                                   final List<String> datumList) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final StringBuilder datumString = new StringBuilder();
 		for (String datum : datumList) {
@@ -600,7 +618,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 删除startTime前的数据
 	 */
-	public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
+	@Override
+    public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
 		String sql = "delete from his_config_info where gmt_modified < ? limit ?";
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -614,19 +633,21 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 获取指定时间前配置条数
 	 */
-	public int findConfigHistoryCountByTime(final Timestamp startTime) {
+	@Override
+    public int findConfigHistoryCountByTime(final Timestamp startTime) {
 		String sql = "SELECT COUNT(*) FROM his_config_info WHERE gmt_modified < ?";
 		Integer result = jt.queryForObject(sql, Integer.class, new Object[]{startTime});
 		if (result == null) {
 			throw new IllegalArgumentException("configInfoBetaCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
 	/**
 	 * 获取最大maxId
 	 */
-	public long findConfigMaxId() {
+	@Override
+    public long findConfigMaxId() {
 		String sql = "SELECT max(id) FROM config_info";
 		try {
 			return jt.queryForObject(sql, Integer.class);
@@ -643,8 +664,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param datumMap
 	 * @return
 	 */
-	public boolean batchPublishAggr(final String dataId, final String group, final String tenant,
-			final Map<String, String> datumMap, final String appName) {
+	@Override
+    public boolean batchPublishAggr(final String dataId, final String group, final String tenant,
+                                    final Map<String, String> datumMap, final String appName) {
 		try {
 			Boolean isPublishOk = tjt.execute(new TransactionCallback<Boolean>() {
 				@Override
@@ -681,8 +703,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param datumMap
 	 * @return
 	 */
-	public boolean replaceAggr(final String dataId, final String group, final String tenant,
-			final Map<String, String> datumMap, final String appName) {
+	@Override
+    public boolean replaceAggr(final String dataId, final String group, final String tenant,
+                               final Map<String, String> datumMap, final String appName) {
 		try {
 			Boolean isReplaceOk = tjt.execute(new TransactionCallback<Boolean>() {
 				@Override
@@ -719,7 +742,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 查找所有的dataId和group。保证不返回NULL。
 	 */
-	@Deprecated
+	@Override
+    @Deprecated
 	public List<ConfigInfo> findAllDataIdAndGroup() {
 		String sql = "SELECT DISTINCT data_id, group_id FROM config_info";
 
@@ -739,7 +763,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 根据dataId和group查询配置信息
 	 */
-	public ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+	@Override
+    public ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			return this.jt.queryForObject(
@@ -757,8 +782,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 根据dataId和group查询配置信息
 	 */
-	public ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
-			final String tag) {
+	@Override
+    public ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
+                                             final String tag) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
 		try {
@@ -777,8 +803,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 根据dataId和group查询配置信息
 	 */
-	public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
-			final String appName) {
+	@Override
+    public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
+                                        final String appName) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			return this.jt.queryForObject(
@@ -796,8 +823,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 根据dataId和group查询配置信息
 	 */
-	public ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
+                                                final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
 		final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
@@ -849,7 +877,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 根据dataId和group查询配置信息
 	 */
-	public ConfigInfoBase findConfigInfoBase(final String dataId, final String group) {
+	@Override
+    public ConfigInfoBase findConfigInfoBase(final String dataId, final String group) {
 		try {
 			return this.jt
 					.queryForObject(
@@ -871,7 +900,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param id
 	 * @return
 	 */
-	public ConfigInfo findConfigInfo(long id) {
+	@Override
+    public ConfigInfo findConfigInfo(long id) {
 		try {
 			return this.jt
 					.queryForObject(
@@ -893,8 +923,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param dataId
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
-			final String tenant) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
+                                                   final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -916,8 +947,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param dataId
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
-			final String tenant, final String appName) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
+                                                         final String tenant, final String appName) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -932,9 +964,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
-			final String tenant,
-			final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
+                                                             final String tenant,
+                                                             final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
@@ -990,9 +1023,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
-			final String group,
-			final String tenant, final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
+                                                final String group,
+                                                final String tenant, final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
@@ -1065,8 +1099,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param dataId
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo,
-			final int pageSize, final String dataId) {
+	@Override
+    public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo,
+                                                           final int pageSize, final String dataId) {
 		PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
 		try {
 			return helper
@@ -1089,8 +1124,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
-			final String tenant) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
+                                                  final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -1112,9 +1148,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo,
-			final int pageSize, final String group, final String tenant,
-			final String appName) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo,
+                                                        final int pageSize, final String group, final String tenant,
+                                                        final String appName) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -1129,9 +1166,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo,
-			final int pageSize, final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo,
+                                                            final int pageSize, final String group, final String tenant,
+                                                            final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 
@@ -1196,8 +1234,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize 每页大小(必须大于0)
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
-			final int pageSize, final String tenant, final String appName) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
+                                                final int pageSize, final String tenant, final String appName) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		try {
@@ -1212,9 +1251,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo,
-			final int pageSize, final String tenant,
-			final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo,
+                                                    final int pageSize, final String tenant,
+                                                    final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
@@ -1278,8 +1318,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo,
-			final int pageSize, final String group) {
+	@Override
+    public Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo,
+                                                          final int pageSize, final String group) {
 		PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
 		try {
 			return helper
@@ -1297,83 +1338,93 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 返回配置项个数
 	 */
-	public int configInfoCount() {
+	@Override
+    public int configInfoCount() {
 		String sql = " SELECT COUNT(ID) FROM config_info ";
 		Integer result = jt.queryForObject(sql, Integer.class);
 		if (result == null) {
 			throw new IllegalArgumentException("configInfoCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
 	/**
 	 * 返回配置项个数
 	 */
-	public int configInfoCount(String tenant) {
+	@Override
+    public int configInfoCount(String tenant) {
 		String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like '" + tenant + "'";
 		Integer result = jt.queryForObject(sql, Integer.class);
 		if (result == null) {
 			throw new IllegalArgumentException("configInfoCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
 	/**
 	 * 返回beta配置项个数
 	 */
-	public int configInfoBetaCount() {
+	@Override
+    public int configInfoBetaCount() {
 		String sql = " SELECT COUNT(ID) FROM config_info_beta ";
 		Integer result = jt.queryForObject(sql, Integer.class);
 		if (result == null) {
 			throw new IllegalArgumentException("configInfoBetaCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
 	/**
 	 * 返回beta配置项个数
 	 */
-	public int configInfoTagCount() {
+	@Override
+    public int configInfoTagCount() {
 		String sql = " SELECT COUNT(ID) FROM config_info_tag ";
 		Integer result = jt.queryForObject(sql, Integer.class);
 		if (result == null) {
 			throw new IllegalArgumentException("configInfoBetaCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
-	public List<String> getTenantIdList(int page, int pageSize) {
+	@Override
+    public List<String> getTenantIdList(int page, int pageSize) {
 		String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
 		int from = (page - 1) * pageSize;
 		return jt.queryForList(sql, String.class, from, pageSize);
 	}
 
-	public List<String> getGroupIdList(int page, int pageSize) {
+	@Override
+    public List<String> getGroupIdList(int page, int pageSize) {
 		String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
 		int from = (page - 1) * pageSize;
 		return jt.queryForList(sql, String.class, from, pageSize);
 	}
 
-	public int aggrConfigInfoCount(String dataId, String group, String tenant) {
+	@Override
+    public int aggrConfigInfoCount(String dataId, String group, String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sql = " SELECT COUNT(ID) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
 		Integer result = jt.queryForObject(sql, Integer.class, new Object[]{dataId, group, tenantTmp});
 		if (result == null) {
 			throw new IllegalArgumentException("aggrConfigInfoCount error");
 		}
-		return result.intValue();
+		return result;
 	}
 
-	public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
+	@Override
+    public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
 		return aggrConfigInfoCount(dataId, group, tenant, datumIds, true);
 	}
 
-	public int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds) {
+	@Override
+    public int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds) {
 		return aggrConfigInfoCount(dataId, group, tenant, datumIds, false);
 	}
 
-	public int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds,
-			boolean isIn) {
+	@Override
+    public int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds,
+                                   boolean isIn) {
 		if (datumIds == null || datumIds.isEmpty()) {
 			return 0;
 		}
@@ -1410,7 +1461,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize 每页大小(必须大于0)
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
+	@Override
+    public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows = "SELECT COUNT(*) FROM config_info";
 		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
@@ -1439,7 +1491,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize 每页大小(必须大于0)
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
+	@Override
+    public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String select = " SELECT data_id,group_id,app_name "
 				+ " FROM (                               "
@@ -1489,7 +1542,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize 每页大小(必须大于0)
 	 * @return ConfigInfo对象的集合
 	 */
-	@Deprecated
+	@Override
+    @Deprecated
 	public Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo,
 			final int pageSize) {
 		String sqlCountRows = "SELECT COUNT(*) FROM config_info";
@@ -1510,7 +1564,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(
+	@Override
+    public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(
 			final int pageNo, final int pageSize) {
 		String sqlCountRows = "select count(*) from config_info";
 		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
@@ -1532,7 +1587,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
+	@Override
+    public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
 		String select
 				= "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? "
 				+ "order by id asc limit ?,?";
@@ -1546,7 +1602,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(
+	@Override
+    public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(
 			final int pageNo, final int pageSize) {
 		String sqlCountRows = "SELECT COUNT(*) FROM config_info_beta";
 		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
@@ -1566,7 +1623,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(
+	@Override
+    public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(
 			final int pageNo, final int pageSize) {
 		String sqlCountRows = "SELECT COUNT(*) FROM config_info_tag";
 		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
@@ -1589,8 +1647,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 通过select in方式实现db记录的批量查询； subQueryLimit指定in中条件的个数，上限20
 	 */
-	public List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds,
-			final String group, final String tenant, int subQueryLimit) {
+	@Override
+    public List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds,
+                                                  final String group, final String tenant, int subQueryLimit) {
 		// assert dataids group not null
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		// if dataids empty return empty list
@@ -1633,7 +1692,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 					params.toArray(), CONFIG_INFO_ROW_MAPPER);
 
 			// assert not null
-			if (r != null && r.size() > 0) {
+			if (r.size() > 0) {
 				result.addAll(r);
 			}
 		}
@@ -1650,9 +1709,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenant   支持模糊查询
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId,
-			final String group, final String tenant, final String appName,
-			final String content) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId,
+                                               final String group, final String tenant, final String appName,
+                                               final String content) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
 			if (StringUtils.isBlank(appName)) {
@@ -1700,9 +1760,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
-			final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+                                                    final String group, final String tenant,
+                                                    final Map<String, Object> configAdvanceInfo) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
 		final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
@@ -1786,9 +1847,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param blacklist  是否黑名单
 	 * @return ConfigInfo对象的集合
 	 */
-	public Page<ConfigInfo> findConfigInfoLike(final int pageNo,
-			final int pageSize, final ConfigKey[] configKeys,
-			final boolean blacklist) {
+	@Override
+    public Page<ConfigInfo> findConfigInfoLike(final int pageNo,
+                                               final int pageSize, final ConfigKey[] configKeys,
+                                               final boolean blacklist) {
 		String sqlCountRows = "select count(*) from config_info where ";
 		String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
 		String where = " 1=1 ";
@@ -1898,9 +1960,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @return ConfigInfo对象的集合
 	 * @throws IOException
 	 */
-	public Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo,
-			final int pageSize, final String dataId, final String group,
-			final String content) throws IOException {
+	@Override
+    public Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo,
+                                                       final int pageSize, final String dataId, final String group,
+                                                       final String content) throws IOException {
 		if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
 			throw new IOException("invalid param");
 		}
@@ -1943,7 +2006,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param datumId
 	 * @return
 	 */
-	public ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId) {
+	@Override
+    public ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sql
 				= "SELECT id,data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? "
@@ -1967,7 +2031,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 查找一个dataId下面的所有聚合前的数据. 保证不返回NULL.
 	 */
-	public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
+	@Override
+    public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sql
 				= "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
@@ -1987,8 +2052,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
-			final int pageSize) {
+	@Override
+    public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
+                                                         final int pageSize) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows
 				= "SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ?";
@@ -2016,15 +2082,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param blacklist  黑名单
 	 * @return
 	 */
-	public Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
-			boolean blacklist) {
+	@Override
+    public Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
+                                                       boolean blacklist) {
 
 		String sqlCountRows = "select count(*) from config_info_aggr where ";
 		String sqlFetchRows
 				= "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where ";
 		String where = " 1=1 ";
 		// 白名单，请同步条件为空，则没有符合条件的配置
-		if (configKeys.length == 0 && blacklist == false) {
+		if (configKeys.length == 0 && !blacklist) {
 			Page<ConfigInfoAggr> page = new Page<ConfigInfoAggr>();
 			page.setTotalCount(0);
 			return page;
@@ -2109,10 +2176,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 
 		try {
-			Page<ConfigInfoAggr> result = helper.fetchPage(sqlCountRows
-							+ where, sqlFetchRows + where, params.toArray(), pageNo,
-					pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
-			return result;
+            return helper.fetchPage(sqlCountRows
+                            + where, sqlFetchRows + where, params.toArray(), pageNo,
+                    pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
 		} catch (CannotGetJdbcConnectionException e) {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
@@ -2122,7 +2188,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	/**
 	 * 找到所有聚合数据组。
 	 */
-	public List<ConfigInfoChanged> findAllAggrGroup() {
+	@Override
+    public List<ConfigInfoChanged> findAllAggrGroup() {
 		String sql = "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
 
 		try {
@@ -2147,15 +2214,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param content content
 	 * @return datum keys
 	 */
-	public List<String> findDatumIdByContent(String dataId, String groupId,
-			String content) {
+	@Override
+    public List<String> findDatumIdByContent(String dataId, String groupId,
+                                             String content) {
 		String sql = "SELECT datum_id FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND content = ? ";
 
 		try {
 			return this.jt.queryForList(sql, new Object[]{dataId, groupId,
 					content}, String.class);
-		} catch (EmptyResultDataAccessException e) {
-			return null;
 		} catch (IncorrectResultSizeDataAccessException e) {
 			return null;
 		} catch (CannotGetJdbcConnectionException e) {
@@ -2164,8 +2230,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime,
-			final Timestamp endTime) {
+	@Override
+    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime,
+                                                    final Timestamp endTime) {
 		try {
 			List<Map<String, Object>> list = jt
 					.queryForList(
@@ -2191,10 +2258,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize  pageSize
 	 * @return
 	 */
-	public Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
-			final String appName, final Timestamp startTime,
-			final Timestamp endTime, final int pageNo,
-			final int pageSize, final long lastMaxId) {
+	@Override
+    public Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
+                                                    final String appName, final Timestamp startTime,
+                                                    final Timestamp endTime, final int pageNo,
+                                                    final int pageSize, final long lastMaxId) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows = "select count(*) from config_info where ";
 		String sqlFetchRows
@@ -2239,8 +2307,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public List<ConfigInfo> findDeletedConfig(final Timestamp startTime,
-			final Timestamp endTime) {
+	@Override
+    public List<ConfigInfo> findDeletedConfig(final Timestamp startTime,
+                                              final Timestamp endTime) {
 		try {
 			List<Map<String, Object>> list = jt.queryForList(
 							"SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
@@ -2263,9 +2332,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param configAdvanceInfo advance info
 	 * @return excute sql result
 	 */
-	public long addConfigInfoAtomic(final long configId, final String srcIp, final String srcUser, final ConfigInfo configInfo,
-			final Timestamp time,
-			Map<String, Object> configAdvanceInfo) {
+	@Override
+    public long addConfigInfoAtomic(final long configId, final String srcIp, final String srcUser, final ConfigInfo configInfo,
+                                    final Timestamp time,
+                                    Map<String, Object> configAdvanceInfo) {
 		final String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY
 				: configInfo.getAppName();
 		final String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY
@@ -2328,17 +2398,19 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group      group
 	 * @param tenant     tenant
 	 */
-	public void addConfigTagsRelation(long configId, String configTags, String dataId, String group,
-			String tenant) {
+	@Override
+    public void addConfigTagsRelation(long configId, String configTags, String dataId, String group,
+                                      String tenant) {
 		if (StringUtils.isNotBlank(configTags)) {
 			String[] tagArr = configTags.split(",");
-			for (int i = 0; i < tagArr.length; i++) {
-				addConfigTagRelationAtomic(configId, tagArr[i], dataId, group, tenant);
-			}
+            for (String s : tagArr) {
+                addConfigTagRelationAtomic(configId, s, dataId, group, tenant);
+            }
 		}
 	}
 
-	public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
+	@Override
+    public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
 		try {
 			jt.update(
 					"INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)",
@@ -2349,7 +2421,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public void removeTagByIdAtomic(long id) {
+	@Override
+    public void removeTagByIdAtomic(long id) {
 		try {
 			jt.update("DELETE FROM config_tags_relation WHERE id=?", id);
 		} catch (CannotGetJdbcConnectionException e) {
@@ -2358,7 +2431,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public List<String> getConfigTagsByTenant(String tenant) {
+	@Override
+    public List<String> getConfigTagsByTenant(String tenant) {
 		String sql = "SELECT tag_name FROM config_tags_relation WHERE tenant_id = ? ";
 		try {
 			return jt.queryForList(sql, new Object[]{tenant}, String.class);
@@ -2376,8 +2450,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		String sql = "SELECT tag_name FROM config_tags_relation WHERE data_id=? AND group_id=? AND tenant_id = ? ";
 		try {
 			return jt.queryForList(sql, new Object[]{dataId, group, tenant}, String.class);
-		} catch (EmptyResultDataAccessException e) {
-			return null;
 		} catch (IncorrectResultSizeDataAccessException e) {
 			return null;
 		} catch (CannotGetJdbcConnectionException e) {
@@ -2395,9 +2467,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param srcIp   ip
 	 * @param srcUser user
 	 */
-	public void removeConfigInfoAtomic(final String dataId, final String group, final String tenant,
-			final String srcIp,
-			final String srcUser) {
+	@Override
+    public void removeConfigInfoAtomic(final String dataId, final String group, final String tenant,
+                                       final String srcIp,
+                                       final String srcUser) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			jt.update("DELETE FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?", dataId, group,
@@ -2415,7 +2488,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @Param [id]
 	 * @return void
 	 */
-	public void removeConfigInfoByIdsAtomic(final String ids) {
+	@Override
+    public void removeConfigInfoByIdsAtomic(final String ids) {
 		if(StringUtils.isBlank(ids)){
 			return;
 		}
@@ -2449,9 +2523,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param srcIp   ip
 	 * @param srcUser user
 	 */
-	public void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
-			final String srcIp,
-			final String srcUser) {
+	@Override
+    public void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
+                                    final String srcIp,
+                                    final String srcUser) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag;
 		try {
@@ -2473,8 +2548,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param time              time
 	 * @param configAdvanceInfo advance info
 	 */
-	public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-			final Timestamp time, Map<String, Object> configAdvanceInfo) {
+	@Override
+    public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+                                       final Timestamp time, Map<String, Object> configAdvanceInfo) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
@@ -2503,7 +2579,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenant tenant
 	 * @return config info
 	 */
-	public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
+	@Override
+    public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			return this.jt.queryForObject(
@@ -2524,7 +2601,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @Param [ids]
 	 * @return java.util.List<com.alibaba.nacos.config.server.model.ConfigInfo>
 	 */
-	public List<ConfigInfo> findConfigInfosByIds(final String ids) {
+	@Override
+    public List<ConfigInfo> findConfigInfosByIds(final String ids) {
 		if(StringUtils.isBlank(ids)){
 			return null;
 		}
@@ -2558,7 +2636,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenant tenant
 	 * @return advance info
 	 */
-	public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant) {
+	@Override
+    public ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
@@ -2593,7 +2672,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenant tenant
 	 * @return advance info
 	 */
-	public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
+	@Override
+    public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
@@ -2630,8 +2710,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param time       time
 	 * @param ops        ops type
 	 */
-	public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-			final Timestamp time, String ops) {
+	@Override
+    public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
+                                          final Timestamp time, String ops) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
 		final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
@@ -2656,8 +2737,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param pageSize size
 	 * @return history info
 	 */
-	public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
-			int pageSize) {
+	@Override
+    public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
+                                                     int pageSize) {
 		PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows
@@ -2685,8 +2767,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param appName appName
 	 * @param date    date
 	 */
-	public void addConfigSubAtomic(final String dataId, final String group, final String appName,
-			final Timestamp date) {
+	@Override
+    public void addConfigSubAtomic(final String dataId, final String group, final String appName,
+                                   final Timestamp date) {
 		final String appNameTmp = appName == null ? "" : appName;
 		try {
 			jt.update(
@@ -2706,8 +2789,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param appName app name
 	 * @param time    time
 	 */
-	public void updateConfigSubAtomic(final String dataId, final String group, final String appName,
-			final Timestamp time) {
+	@Override
+    public void updateConfigSubAtomic(final String dataId, final String group, final String appName,
+                                      final Timestamp time) {
 		final String appNameTmp = appName == null ? "" : appName;
 		try {
 			jt.update(
@@ -2719,7 +2803,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public ConfigHistoryInfo detailConfigHistory(Long nid) {
+	@Override
+    public ConfigHistoryInfo detailConfigHistory(Long nid) {
 		String sqlFetchRows
 				= "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
 		try {
@@ -2741,8 +2826,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenantDesc tenant description
 	 * @param time       time
 	 */
-	public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-			String createResoure, final long time) {
+	@Override
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+                                       String createResoure, final long time) {
 		try {
 			jt.update(
 					"INSERT INTO tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?)",
@@ -2761,7 +2847,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenantName tenant name
 	 * @param tenantDesc tenant description
 	 */
-	public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+	@Override
+    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
 		try {
 			jt.update(
 					"UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?",
@@ -2772,7 +2859,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public List<TenantInfo> findTenantByKp(String kp) {
+	@Override
+    public List<TenantInfo> findTenantByKp(String kp) {
 		String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=?";
 		try {
 			return this.jt.query(sql, new Object[]{kp}, TENANT_INFO_ROW_MAPPER);
@@ -2787,7 +2875,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public TenantInfo findTenantByKp(String kp, String tenantId) {
+	@Override
+    public TenantInfo findTenantByKp(String kp, String tenantId) {
 		String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=? AND tenant_id=?";
 		try {
 			return jt.queryForObject(sql, new Object[]{kp, tenantId}, TENANT_INFO_ROW_MAPPER);
@@ -2802,7 +2891,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public void removeTenantInfoAtomic(final String kp, final String tenantId) {
+	@Override
+    public void removeTenantInfoAtomic(final String kp, final String tenantId) {
 		try {
 			jt.update("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);
 		} catch (CannotGetJdbcConnectionException e) {
@@ -2811,7 +2901,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
+	@Override
+    public List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
 		List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
 		for (Map<String, Object> map : list) {
 			String dataId = (String) map.get("data_id");
@@ -2826,7 +2917,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		return configs;
 	}
 
-	public List<ConfigInfoWrapper> convertChangeConfig(
+	@Override
+    public List<ConfigInfoWrapper> convertChangeConfig(
 			List<Map<String, Object>> list) {
 		List<ConfigInfoWrapper> configs = new ArrayList<ConfigInfoWrapper>();
 		for (Map<String, Object> map : list) {
@@ -2851,7 +2943,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 *
 	 * @return
 	 */
-	public List<ConfigInfoWrapper> listAllGroupKeyMd5() {
+	@Override
+    public List<ConfigInfoWrapper> listAllGroupKeyMd5() {
 		final int pageSize = 10000;
 		int totalCount = configInfoCount();
 		int pageCount = (int) Math.ceil(totalCount * 1.0 / pageSize);
@@ -2863,7 +2956,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		return allConfigInfo;
 	}
 
-	public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
+	@Override
+    public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
 		String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
 		String sqlFetchRows
 				= " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
@@ -2879,7 +2973,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public String generateLikeArgument(String s) {
+	@Override
+    public String generateLikeArgument(String s) {
 		String fuzzySearchSign = "\\*";
 		String sqlLikePercentSign = "%";
 		if (s.contains(PATTERN_STR)) {
@@ -2889,7 +2984,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant) {
+	@Override
+    public ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		try {
 			return this.jt
@@ -2904,7 +3000,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public boolean isExistTable(String tableName) {
+	@Override
+    public boolean isExistTable(String tableName) {
 		String sql = "SELECT COUNT(*) FROM " + tableName;
 		try {
 			jt.queryForObject(sql, Integer.class);
@@ -2914,7 +3011,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		}
 	}
 
-	public Boolean completeMd5() {
+	@Override
+    public Boolean completeMd5() {
 		LogUtil.defaultLog.info("[start completeMd5]");
 		int perPageSize = 1000;
 		int rowCount = configInfoCount();
@@ -2935,11 +3033,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 						} catch (Exception e) {
 							LogUtil.defaultLog
 									.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-											new Object[]{
-													cf.getDataId(),
-													cf.getGroup(),
-													new Timestamp(cf
-															.getLastModified())});
+                                        cf.getDataId(),
+                                        cf.getGroup(),
+                                        new Timestamp(cf
+                                                .getLastModified()));
 						}
 					} else {
 						if (!md5InDb.equals(md5)) {
@@ -2948,8 +3045,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 										new Timestamp(cf.getLastModified()));
 							} catch (Exception e) {
 								LogUtil.defaultLog.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-										new Object[]{cf.getDataId(), cf.getGroup(),
-												new Timestamp(cf.getLastModified())});
+                                    cf.getDataId(), cf.getGroup(),
+                                    new Timestamp(cf.getLastModified()));
 							}
 						}
 					}
@@ -2968,8 +3065,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param group
 	 * @return Collection of ConfigInfo objects
 	 */
-	public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-			final String appName, final List<Long> ids) {
+	@Override
+    public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
+                                                        final String appName, final List<Long> ids) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		StringBuilder where = new StringBuilder(" where ");
 		List<Object> paramList = new ArrayList<>();
@@ -3015,8 +3113,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * failData: import failed data (only with abort for the same configs)
 	 * skipData: data skipped at import  (only with skip for the same configs)
 	 */
-	public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-			Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws
+	@Override
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
+                                                   Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws
 			NacosException {
 		int succCount = 0;
 		int skipCount = 0;
@@ -3104,13 +3203,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	 * @param tenantId
 	 * @return count by tenantId
 	 */
-	public int tenantInfoCountByTenantId(String tenantId) {
+	@Override
+    public int tenantInfoCountByTenantId(String tenantId) {
 		Assert.hasText(tenantId, "tenantId can not be null");
 		Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[]{tenantId}, Integer.class);
 		if (result == null) {
 			return 0;
 		}
-		return result.intValue();
+		return result;
 	}
 
 }

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.exception;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;

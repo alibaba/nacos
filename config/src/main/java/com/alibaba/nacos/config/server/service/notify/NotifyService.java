@@ -16,9 +16,9 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletResponse;

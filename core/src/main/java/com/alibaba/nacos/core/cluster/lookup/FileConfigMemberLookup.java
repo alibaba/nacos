@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.file.FileChangeEvent;
 import com.alibaba.nacos.common.file.FileWatcher;
 import com.alibaba.nacos.common.file.WatchFileCenter;
@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -17,11 +17,11 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +122,7 @@ public class DiskUtil {
      * 返回服务端beta缓存文件的路径
      */
     static public File targetBetaFile(String dataId, String group, String tenant) {
-        File file = null;
+        File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
         } else {

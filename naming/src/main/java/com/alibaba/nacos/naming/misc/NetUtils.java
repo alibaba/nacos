@@ -17,7 +17,6 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 
 /**

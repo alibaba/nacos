@@ -15,10 +15,9 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.time.FastDateFormat;
-
 import java.sql.Timestamp;
-import java.util.Calendar;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Time util
@@ -32,9 +31,7 @@ public class TimeUtils {
     }
 
      public static String getCurrentTimeStr() {
-        Calendar c = Calendar.getInstance();
-        c.setTimeInMillis(System.currentTimeMillis());
-        FastDateFormat format = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
-        return format.format(c.getTime());
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
+
 }

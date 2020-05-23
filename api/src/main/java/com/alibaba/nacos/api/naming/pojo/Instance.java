@@ -16,14 +16,14 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
+import static com.alibaba.nacos.common.api.Constants.NUMBER_PATTERN;
 
 /**
  * Instance

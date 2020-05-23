@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -116,9 +116,7 @@ public class ConfigSubService {
                                 member);
                     }
                 } catch (TimeoutException e) {
-                    if (f != null) {
-                        f.cancel(true);
-                    }
+                    f.cancel(true);
                     LogUtil.defaultLog.warn(
                         "get task result with TimeoutException: {} ", e
                             .getMessage());
@@ -190,10 +188,9 @@ public class ConfigSubService {
                  */
                 if (result.code == HttpURLConnection.HTTP_OK) {
                     String json = result.content;
-                    SampleResult resultObj = JSONUtils.deserializeObject(json,
+                    return JSONUtils.deserializeObject(json,
                         new TypeReference<SampleResult>() {
                         });
-                    return resultObj;
 
                 } else {
 
@@ -229,9 +226,7 @@ public class ConfigSubService {
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }
@@ -250,9 +245,7 @@ public class ConfigSubService {
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }

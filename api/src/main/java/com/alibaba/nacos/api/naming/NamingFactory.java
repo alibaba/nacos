@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.naming;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 
 /**
  * Naming Factory

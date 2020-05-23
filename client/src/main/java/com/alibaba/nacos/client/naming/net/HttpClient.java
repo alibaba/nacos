@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.client.naming.net;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
