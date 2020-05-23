@@ -53,6 +53,7 @@ public class FailoverClosureImpl<T> implements FailoverClosure<T> {
         if (status.isOk()) {
             boolean success = future.complete(data);
             LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "future.complete execute {}", success);
+            return;
         }
         final Throwable throwable = this.throwable;
         if (Objects.nonNull(throwable)) {
