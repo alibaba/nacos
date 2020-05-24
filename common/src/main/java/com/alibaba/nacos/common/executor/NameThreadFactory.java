@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.executor;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,6 +31,9 @@ public class NameThreadFactory implements ThreadFactory {
 	private String name;
 
 	public NameThreadFactory(String name) {
+		if (!name.endsWith(StringUtils.DOT)) {
+			name += StringUtils.DOT;
+		}
 		this.name = name;
 	}
 

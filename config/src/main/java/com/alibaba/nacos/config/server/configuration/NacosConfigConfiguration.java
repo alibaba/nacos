@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
-import com.alibaba.nacos.config.server.filter.TransferToLeaderFilter;
+import com.alibaba.nacos.config.server.filter.CurcuitFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -41,17 +41,6 @@ public class NacosConfigConfiguration {
 		return registration;
 	}
 
-	@Conditional(ConditionDistributedEmbedStorage.class)
-	@Bean
-	public FilterRegistrationBean transferToLeaderRegistration() {
-		FilterRegistrationBean<TransferToLeaderFilter> registration = new FilterRegistrationBean<>();
-		registration.setFilter(transferToLeader());
-		registration.addUrlPatterns("/v1/cs/*");
-		registration.setName("transferToLeader");
-		registration.setOrder(6);
-		return registration;
-	}
-
 	@Bean
 	public NacosWebFilter nacosWebFilter() {
 		return new NacosWebFilter();
@@ -59,8 +48,19 @@ public class NacosConfigConfiguration {
 
 	@Conditional(ConditionDistributedEmbedStorage.class)
 	@Bean
-	public TransferToLeaderFilter transferToLeader() {
-		return new TransferToLeaderFilter();
+	public FilterRegistrationBean transferToLeaderRegistration() {
+		FilterRegistrationBean<CurcuitFilter> registration = new FilterRegistrationBean<>();
+		registration.setFilter(transferToLeader());
+		registration.addUrlPatterns("/v1/cs/*");
+		registration.setName("curcuitFilter");
+		registration.setOrder(6);
+		return registration;
+	}
+
+	@Conditional(ConditionDistributedEmbedStorage.class)
+	@Bean
+	public CurcuitFilter transferToLeader() {
+		return new CurcuitFilter();
 	}
 
 }
