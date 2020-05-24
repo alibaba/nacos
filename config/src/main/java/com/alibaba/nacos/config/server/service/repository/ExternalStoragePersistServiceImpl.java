@@ -48,7 +48,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -1513,7 +1512,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(
 			final int pageNo, final int pageSize) {
 		String sqlCountRows = "select count(*) from config_info";
-		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
+		String sqlFetchRows = " SELECT t.id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
 				+ " FROM (                               "
 				+ "   SELECT id FROM config_info         "
 				+ "   ORDER BY id LIMIT ?,?             "
@@ -2198,7 +2197,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows = "select count(*) from config_info where ";
 		String sqlFetchRows
-				= "select id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where ";
+				= "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
 		String where = " 1=1 ";
 		List<Object> params = new ArrayList<Object>();
 
@@ -2866,7 +2865,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
 		String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
 		String sqlFetchRows
-				= " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+				= " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
 		PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
 		try {
 			Page<ConfigInfoWrapper> page = helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{
@@ -2894,7 +2893,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		try {
 			return this.jt
 					.queryForObject(
-							"SELECT ID,data_id,group_id,tenant_id,app_name,content,gmt_modified,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+							"SELECT ID,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
 							new Object[]{dataId, group, tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
 		} catch (EmptyResultDataAccessException e) {
 			return null;
