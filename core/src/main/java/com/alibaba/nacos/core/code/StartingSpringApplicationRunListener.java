@@ -19,6 +19,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.utils.DiskUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -151,6 +152,7 @@ public class StartingSpringApplicationRunListener
 
 		LOGGER.error("Startup errors : {}", exception);
 
+		HttpClientManager.shutdown();
 		ThreadPoolManager.shutdown();
 		WatchFileCenter.shutdown();
 		NotifyCenter.shutdown();

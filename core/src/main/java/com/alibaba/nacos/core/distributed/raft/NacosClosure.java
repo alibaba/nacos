@@ -16,21 +16,21 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.consistency.entity.Log;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
+import com.google.protobuf.Message;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosClosure implements Closure {
 
-    private final Log log;
+    private final Message log;
     private final Closure closure;
     private Throwable throwable;
     private Object object;
 
-    public NacosClosure(Log log, Closure closure) {
+    public NacosClosure(Message log, Closure closure) {
         this.log = log;
         this.closure = closure;
     }
@@ -60,7 +60,7 @@ public class NacosClosure implements Closure {
         return closure;
     }
 
-    public Log getLog() {
+    public Message getLog() {
         return log;
     }
 

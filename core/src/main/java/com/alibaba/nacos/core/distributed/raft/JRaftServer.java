@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -26,29 +25,21 @@ import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
-import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.exception.DuplicateRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.exception.JRaftException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
-import com.alibaba.nacos.core.distributed.raft.processor.NacosAsyncProcessor;
-import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
-import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.remoting.InvokeCallback;
-import com.alipay.remoting.rpc.RpcServer;
-import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -63,10 +54,14 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.option.RaftOptions;
-import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
+import com.alipay.sofa.jraft.rpc.InvokeCallback;
+import com.alipay.sofa.jraft.rpc.RpcProcessor;
+import com.alipay.sofa.jraft.rpc.RpcServer;
+import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
+import com.alipay.sofa.jraft.util.Endpoint;
+import com.google.protobuf.Message;
 import com.google.common.base.Joiner;
-import org.slf4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import java.nio.ByteBuffer;
@@ -110,7 +105,7 @@ public class JRaftServer {
 	// Existential life cycle
 
 	private RpcServer rpcServer;
-	private BoltCliClientService cliClientService;
+	private CliClientServiceImpl cliClientService;
 	private CliService cliService;
 	private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
 
@@ -120,7 +115,7 @@ public class JRaftServer {
 	private volatile boolean isShutdown = false;
 	private Configuration conf;
 
-	private AsyncUserProcessor userProcessor;
+	private RpcProcessor userProcessor;
 	private NodeOptions nodeOptions;
 	private Serializer serializer;
 	private Collection<LogProcessor4CP> processors = Collections
@@ -174,6 +169,11 @@ public class JRaftServer {
 				.toInt(raftConfig.getVal(RaftSysConstants.RAFT_RPC_REQUEST_TIMEOUT_MS),
 						RaftSysConstants.DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS);
 
+		nodeOptions.setSharedElectionTimer(true);
+		nodeOptions.setSharedVoteTimer(true);
+		nodeOptions.setSharedStepDownTimer(true);
+		nodeOptions.setSharedSnapshotTimer(true);
+
 		nodeOptions.setElectionTimeoutMs(electionTimeout);
 		RaftOptions raftOptions = RaftOptionsBuilder.initRaftOptions(raftConfig);
 		nodeOptions.setRaftOptions(raftOptions);
@@ -182,7 +182,7 @@ public class JRaftServer {
 
 		CliOptions cliOptions = new CliOptions();
 
-		this.cliClientService = new BoltCliClientService();
+		this.cliClientService = new CliClientServiceImpl();
 		this.cliClientService.init(cliOptions);
 		this.cliService = RaftServiceFactory.createAndInitCliService(cliOptions);
 	}
@@ -201,14 +201,9 @@ public class JRaftServer {
 				}
 				nodeOptions.setInitialConf(conf);
 
-				rpcServer = new RpcServer(selfPort, true, false);
-				JRaftUtils.addRaftRequestProcessors(rpcServer,
-						RaftExecutor.getRaftCoreExecutor(),
-						RaftExecutor.getRaftCliServiceExecutor());
-				rpcServer.registerUserProcessor(
-						new NacosAsyncProcessor(this, failoverRetries));
+				rpcServer = JRaftUtils.initRpcServer(this, localPeerId);
 
-				if (!this.rpcServer.start()) {
+				if (!this.rpcServer.init(null)) {
 					Loggers.RAFT.error("Fail to init [RpcServer].");
 					throw new RuntimeException("Fail to init [RpcServer].");
 				}
@@ -285,39 +280,40 @@ public class JRaftServer {
 		}
 	}
 
-	GetResponse get(final GetRequest request) {
+	Response get(final GetRequest request) {
 		final String group = request.getGroup();
-		CompletableFuture<GetResponse> future = new CompletableFuture<>();
+		CompletableFuture<Response> future = new CompletableFuture<>();
 		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (Objects.isNull(tuple)) {
 			future.completeExceptionally(new NoSuchRaftGroupException(group));
 			return future.join();
 		}
 		final Node node = tuple.node;
-		node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
-			@Override
-			public void run(Status status, long index, byte[] reqCtx) {
-				if (status.isOk()) {
-					try {
-						GetResponse response = tuple.processor.getData(request);
-						future.complete(response);
-					}
-					catch (Throwable t) {
-						future.completeExceptionally(t);
-					}
-					return;
-				}
-				future.completeExceptionally(
-						new ConsistencyException(status.getErrorMsg()));
-			}
-		});
+
 		try {
+			node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
+				@Override
+				public void run(Status status, long index, byte[] reqCtx) {
+					if (status.isOk()) {
+						try {
+							Response response = tuple.processor.onRequest(request);
+							future.complete(response);
+						}
+						catch (Throwable t) {
+							future.completeExceptionally(t);
+						}
+						return;
+					}
+					future.completeExceptionally(
+							new ConsistencyException(status.getErrorMsg()));
+				}
+			});
 			return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
 		}
 		catch (Throwable e) {
 			Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}", e.toString());
 			// run raft read
-			readThrouthRaftLog(request, future);
+			readFromLeader(request, future);
 			try {
 				return future.get(rpcRequestTimeoutMs, TimeUnit.MILLISECONDS);
 			}
@@ -328,50 +324,36 @@ public class JRaftServer {
 		}
 	}
 
-	public void readThrouthRaftLog(final GetRequest request,
-			final CompletableFuture<GetResponse> future) {
-
-		Log readLog = Log.newBuilder().setGroup(request.getGroup())
-				.setData(request.getData())
-				.putExtendInfo(JRaftConstants.JRAFT_EXTEND_INFO_KEY,
-						JRaftLogOperation.READ_OPERATION).build();
-		CompletableFuture<byte[]> f = new CompletableFuture<byte[]>();
-		commit(readLog, f)
-				.whenComplete(new BiConsumer<byte[], Throwable>() {
+	public void readFromLeader(final GetRequest request,
+			final CompletableFuture<Response> future) {
+		commit(request.getGroup(), request, future)
+				.whenComplete(new BiConsumer<Response, Throwable>() {
 					@Override
-					public void accept(byte[] result, Throwable throwable) {
+					public void accept(Response response, Throwable throwable) {
 						if (Objects.nonNull(throwable)) {
-							future.completeExceptionally(
-									new ConsistencyException(throwable));
+							future.completeExceptionally(throwable);
 							return;
 						}
-						try {
-							GetResponse r = null;
-							if (ByteUtils.isNotEmpty(result)) {
-								r = GetResponse.parseFrom(result);
-							}
-							else {
-								r = GetResponse.newBuilder().build();
-							}
-							future.complete(r);
-						}
-						catch (Throwable ex) {
-							future.completeExceptionally(ex);
+						if (response.getSuccess()) {
+							future.complete(response);
+						} else {
+							future.completeExceptionally(
+									new ConsistencyException(response.getErrMsg()));
 						}
 					}
 				});
 	}
 
-	public <T> CompletableFuture<T> commit(Log data, final CompletableFuture<T> future) {
+	public CompletableFuture<Response> commit(final String group, final Message data, final CompletableFuture<Response> future) {
 		LoggerUtils
 				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
-		final String group = data.getGroup();
 		final RaftGroupTuple tuple = findTupleByGroup(group);
 		if (tuple == null) {
 			future.completeExceptionally(new IllegalArgumentException(
 					"No corresponding Raft Group found : " + group));
 			return future;
 		}
+
 		FailoverClosureImpl closure = new FailoverClosureImpl(future);
 
 		final Node node = tuple.node;
@@ -435,8 +417,6 @@ public class JRaftServer {
 			Loggers.RAFT
 					.info("========= The raft protocol is starting to close =========");
 
-			RouteTable instance = RouteTable.getInstance();
-
 			for (Map.Entry<String, RaftGroupTuple> entry : multiRaftGroup.entrySet()) {
 				final RaftGroupTuple tuple = entry.getValue();
 				final Node node = tuple.getNode();
@@ -446,7 +426,6 @@ public class JRaftServer {
 
 			cliService.shutdown();
 			cliClientService.shutdown();
-			rpcServer.stop();
 
 			Loggers.RAFT.info("========= The raft protocol has been closed =========");
 		}
@@ -457,7 +436,7 @@ public class JRaftServer {
 		}
 	}
 
-	public void applyOperation(Node node, Log data, FailoverClosure closure) {
+	public void applyOperation(Node node, Message data, FailoverClosure closure) {
 		final Task task = new Task();
 		task.setDone(new NacosClosure(data, status -> {
 			NacosClosure.NStatus nStatus = (NacosClosure.NStatus) status;
@@ -473,36 +452,26 @@ public class JRaftServer {
 		node.apply(task);
 	}
 
-	private void invokeToLeader(final String group, final Log request,
+	private void invokeToLeader(final String group, final Message request,
 			final int timeoutMillis, FailoverClosure closure) {
 		try {
-			final String leaderIp = Optional.ofNullable(getLeader(group))
-					.orElseThrow(() -> new NoLeaderException(group)).getEndpoint()
-					.toString();
-			final BytesHolder holder = BytesHolder.create(request.toByteArray());
+			final Endpoint leaderIp = Optional.ofNullable(getLeader(group))
+					.orElseThrow(() -> new NoLeaderException(group)).getEndpoint();
 			cliClientService.getRpcClient()
-					.invokeWithCallback(leaderIp, holder, new InvokeCallback() {
+					.invokeAsync(leaderIp, request, new InvokeCallback() {
 						@Override
-						public void onResponse(Object o) {
-							RestResult result = (RestResult) o;
-							if (result.ok()) {
-								closure.setData(result.getData());
-								closure.run(Status.OK());
+						public void complete(Object o, Throwable ex) {
+							if (Objects.nonNull(ex)) {
+								closure.setThrowable(ex);
+								closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
+								return;
 							}
-							else {
-								closure.run(
-										new Status(RaftError.UNKNOWN, String.valueOf(result.getData())));
-							}
+							closure.setData(o);
+							closure.run(Status.OK());
 						}
 
 						@Override
-						public void onException(Throwable e) {
-							closure.setThrowable(e);
-							closure.run(new Status(RaftError.UNKNOWN, e.toString()));
-						}
-
-						@Override
-						public Executor getExecutor() {
+						public Executor executor() {
 							return RaftExecutor.getRaftCliServiceExecutor();
 						}
 					}, timeoutMillis);
@@ -598,10 +567,6 @@ public class JRaftServer {
 
 	Map<String, RaftGroupTuple> getMultiRaftGroup() {
 		return multiRaftGroup;
-	}
-
-	BoltCliClientService getCliClientService() {
-		return cliClientService;
 	}
 
 	CliService getCliService() {
