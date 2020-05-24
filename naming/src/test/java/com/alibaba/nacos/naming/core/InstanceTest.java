@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -120,16 +120,16 @@ public class InstanceTest {
     }
 
     @Test
-    public void rsInfo() {
+    public void rsInfo() throws Exception {
 
         RsInfo info = new RsInfo();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("version", "2222");
         info.setMetadata(metadata);
-        System.out.println(JSON.toJSONString(info));
+        System.out.println(JacksonUtils.toJson(info));
 
-        String json = JSON.toJSONString(info);
-        RsInfo info1 = JSON.parseObject(json, RsInfo.class);
+        String json = JacksonUtils.toJson(info);
+        RsInfo info1 = JacksonUtils.toObj(json, RsInfo.class);
         System.out.println(info1);
     }
 }

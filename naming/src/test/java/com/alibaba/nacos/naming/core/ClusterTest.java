@@ -15,13 +15,19 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import org.junit.Assert;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author nkorange
@@ -50,7 +56,7 @@ public class ClusterTest {
         Cluster newCluster = new Cluster("nacos-cluster-1", service);
         newCluster.setDefCkport(8888);
         newCluster.setDefIPPort(9999);
-        AbstractHealthChecker.Http healthCheckConfig = new AbstractHealthChecker.Http();
+        Http healthCheckConfig = new Http();
         healthCheckConfig.setPath("/nacos-path-1");
         healthCheckConfig.setExpectedResponseCode(500);
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
@@ -58,13 +64,13 @@ public class ClusterTest {
 
         cluster.update(newCluster);
 
-        Assert.assertEquals(8888, cluster.getDefCkport());
-        Assert.assertEquals(9999, cluster.getDefIPPort());
-        Assert.assertTrue(cluster.getHealthChecker() instanceof AbstractHealthChecker.Http);
-        AbstractHealthChecker.Http httpHealthCheck = (AbstractHealthChecker.Http) (cluster.getHealthChecker());
-        Assert.assertEquals("/nacos-path-1", httpHealthCheck.getPath());
-        Assert.assertEquals(500, httpHealthCheck.getExpectedResponseCode());
-        Assert.assertEquals("Client-Version:nacos-test-1", httpHealthCheck.getHeaders());
+        assertEquals(8888, cluster.getDefCkport());
+        assertEquals(9999, cluster.getDefIPPort());
+        assertTrue(cluster.getHealthChecker() instanceof Http);
+        Http httpHealthCheck = (Http) (cluster.getHealthChecker());
+        assertEquals("/nacos-path-1", httpHealthCheck.getPath());
+        assertEquals(500, httpHealthCheck.getExpectedResponseCode());
+        assertEquals("Client-Version:nacos-test-1", httpHealthCheck.getHeaders());
     }
 
     @Test
@@ -85,12 +91,12 @@ public class ClusterTest {
         cluster.updateIPs(list, false);
 
         List<Instance> ips = cluster.allIPs();
-        Assert.assertNotNull(ips);
-        Assert.assertEquals(2, ips.size());
-        Assert.assertEquals("1.1.1.1", ips.get(0).getIp());
-        Assert.assertEquals(1234, ips.get(0).getPort());
-        Assert.assertEquals("1.1.1.1", ips.get(1).getIp());
-        Assert.assertEquals(2345, ips.get(1).getPort());
+        assertNotNull(ips);
+        assertEquals(2, ips.size());
+        assertEquals("1.1.1.1", ips.get(0).getIp());
+        assertEquals(1234, ips.get(0).getPort());
+        assertEquals("1.1.1.1", ips.get(1).getIp());
+        assertEquals(2345, ips.get(1).getPort());
     }
 
     @Test
@@ -113,4 +119,21 @@ public class ClusterTest {
         cluster.validate();
     }
 
+    @Test
+    public void testSerializeToJson() {
+        String actual = JSON.toJSONString(cluster);
+        assertTrue(actual.contains("\"defaultPort\":80"));
+        assertTrue(actual.contains("\"defIPPort\":8080"));
+        assertTrue(actual.contains("\"healthChecker\":{\"type\":\"TCP\"}"));
+        assertTrue(actual.contains("\"metadata\":{}"));
+        assertTrue(actual.contains("\"defCkport\":80"));
+        assertTrue(actual.contains("\"name\":\"nacos-cluster-1\""));
+        assertTrue(actual.contains("\"defaultCheckPort\":80"));
+        assertTrue(actual.contains("\"serviceName\":\"nacos.service.1\""));
+        assertTrue(actual.contains("\"useIPPort4Check\":true"));
+        assertTrue(actual.contains("\"sitegroup\":\"\""));
+        assertTrue(actual.contains("\"empty\":true"));
+        assertFalse(actual.contains("\"service\""));
+
+    }
 }

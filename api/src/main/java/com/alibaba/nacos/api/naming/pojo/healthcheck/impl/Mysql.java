@@ -1,0 +1,84 @@
+package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.google.common.base.Objects;
+
+/**
+ * Implementation of health checker for MYSQL.
+ *
+ * @author yangyi
+ */
+public class Mysql extends AbstractHealthChecker {
+    public static final String TYPE = "MYSQL";
+
+    private String user;
+
+    private String pwd;
+
+    private String cmd;
+
+    public Mysql() {
+        this.type = TYPE;
+    }
+
+    public String getCmd() {
+        return cmd;
+    }
+
+    public String getPwd() {
+        return pwd;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public void setCmd(String cmd) {
+        this.cmd = cmd;
+    }
+
+    public void setPwd(String pwd) {
+        this.pwd = pwd;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(user, pwd, cmd);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql)) {
+            return false;
+        }
+
+        com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql other = (com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql) obj;
+
+        if (!StringUtils.equals(user, other.getUser())) {
+            return false;
+        }
+
+        if (!StringUtils.equals(pwd, other.getPwd())) {
+            return false;
+        }
+
+        return StringUtils.equals(cmd, other.getCmd());
+    }
+
+    @Override
+    public com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql clone() throws CloneNotSupportedException {
+        com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql config = new com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql();
+        config.setUser(this.getUser());
+        config.setPwd(this.getPwd());
+        config.setCmd(this.getCmd());
+        config.setType(this.getType());
+
+        return config;
+    }
+}

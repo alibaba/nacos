@@ -97,7 +97,7 @@ public class InstancesTest {
     }
 
     @Test
-    public void testDeserialzeFromJson() throws Exception {
+    public void testDeserializeFromJson() throws Exception {
         Collection<Instance> expected = createInstancesCase();
         String instancesJson = "{\"instanceList\":[" + StringUtils.join(expected.stream().map(Instance::toJSON).collect(Collectors.toList()), ",") + "]}";
         Instances actual = JacksonUtils.toObj(instancesJson, Instances.class);
