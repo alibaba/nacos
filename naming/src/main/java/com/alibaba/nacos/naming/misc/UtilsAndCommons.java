@@ -21,10 +21,8 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
@@ -131,11 +129,6 @@ public class UtilsAndCommons {
     static {
 
         // custom serializer and deserializer for fast-json
-        SerializeConfig.getGlobalInstance()
-            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
-        ParserConfig.getGlobalInstance()
-            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
-
         SerializeConfig.getGlobalInstance()
             .put(Selector.class, SelectorJsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()

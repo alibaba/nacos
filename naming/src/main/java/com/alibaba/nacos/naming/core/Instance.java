@@ -190,7 +190,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
         try {
             ip = JacksonUtils.toObj(json, Instance.class);
-//            ip = JSON.parseObject(json, Instance.class);
         } catch (Exception e) {
             ip = fromString(json);
         }
