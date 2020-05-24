@@ -31,7 +31,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.util.EntityUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 

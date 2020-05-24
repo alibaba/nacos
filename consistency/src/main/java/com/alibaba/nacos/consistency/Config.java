@@ -17,8 +17,6 @@
 package com.alibaba.nacos.consistency;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 /**

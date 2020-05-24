@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.api.config;
 
-import com.alibaba.nacos.api.config.ConfigChangeItem;
 
 import java.util.Collection;
 import java.util.Map;

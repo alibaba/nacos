@@ -16,7 +16,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;

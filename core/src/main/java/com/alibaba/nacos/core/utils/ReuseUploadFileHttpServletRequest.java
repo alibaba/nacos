@@ -17,8 +17,6 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartException;
@@ -27,8 +25,6 @@ import org.springframework.web.multipart.support.StandardMultipartHttpServletReq
 
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 

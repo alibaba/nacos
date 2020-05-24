@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import java.util.concurrent.ScheduledExecutorService;

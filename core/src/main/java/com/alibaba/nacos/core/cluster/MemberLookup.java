@@ -17,8 +17,6 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 
 import java.util.Collection;
 import java.util.Collections;

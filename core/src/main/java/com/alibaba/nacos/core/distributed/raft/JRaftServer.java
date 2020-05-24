@@ -42,7 +42,6 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftLogOperation;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
-import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -66,7 +65,6 @@ import com.alipay.sofa.jraft.option.RaftOptions;
 import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.google.common.base.Joiner;
-import org.slf4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import java.nio.ByteBuffer;

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.file;
 
 import java.io.Serializable;
-import java.nio.file.WatchEvent;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

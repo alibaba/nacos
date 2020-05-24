@@ -22,22 +22,15 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
-import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
-import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
-import com.alibaba.nacos.core.distributed.raft.exception.NoLeaderException;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.distributed.raft.utils.BytesHolder;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
-import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
-import com.alibaba.nacos.core.distributed.raft.utils.RetryRunner;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 import com.alipay.sofa.jraft.Status;
 
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

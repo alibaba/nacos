@@ -22,8 +22,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;

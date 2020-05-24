@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftOps;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
-import com.alipay.sofa.jraft.conf.Configuration;
 
 import java.util.Map;
 import java.util.Objects;

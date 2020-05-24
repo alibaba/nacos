@@ -27,7 +27,6 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 

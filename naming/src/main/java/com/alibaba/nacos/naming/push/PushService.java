@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -39,7 +38,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;

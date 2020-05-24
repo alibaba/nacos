@@ -1099,7 +1099,7 @@ private static final long serialVersionUID = 0L;
     }
     private com.google.protobuf.MapField<String, String>
     internalGetMutableExtendInfo() {
-      onChanged();;
+      onChanged();
       if (extendInfo_ == null) {
         extendInfo_ = com.google.protobuf.MapField.newMapField(
             ExtendInfoDefaultEntryHolder.defaultEntry);
