@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.alibaba.nacos.core.notify.NotifyCenter.RING_BUFFER_SIZE;
 
@@ -51,7 +52,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 	private final ConcurrentHashSet<Subscribe> subscribes = new ConcurrentHashSet<>();
 	private int queueMaxSize = -1;
 	private BlockingQueue<Event> queue;
-	private long lastEventSequence = -1L;
+	private volatile Long lastEventSequence = -1L;
+	private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater.newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
 
 	@Override
 	public void init(Class<? extends Event> type, int bufferSize) {
@@ -102,7 +104,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 				}
 				final Event event = queue.take();
 				receiveEvent(event);
-				lastEventSequence = Math.max(lastEventSequence, event.sequence());
+				updater.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
 			}
 		}
 		catch (Throwable ex) {
@@ -124,22 +126,15 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 	@Override
 	public boolean publish(Event event) {
 		checkIsStart();
-		try {
-			this.queue.put(event);
-			return true;
-		}
-		catch (InterruptedException ignore) {
-			Thread.interrupted();
+		boolean success = this.queue.offer(event);
+		if (!success) {
 			LOGGER.warn(
 					"Unable to plug in due to interruption, synchronize sending time, event : {}",
 					event);
 			receiveEvent(event);
 			return true;
 		}
-		catch (Throwable ex) {
-			LOGGER.error("[NotifyCenter] publish {} has error : {}", event, ex);
-			return false;
-		}
+		return true;
 	}
 
 	void checkIsStart() {
@@ -192,7 +187,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 		LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
 				subscribe);
 
-		final Runnable job = () -> subscribe.onEvent(event);
+		final Runnable job = () -> {
+			try {
+				subscribe.onEvent(event);
+			}
+			catch (ClassCastException ignore) { }
+		};
 		final Executor executor = subscribe.executor();
 		if (Objects.nonNull(executor)) {
 			executor.execute(job);
