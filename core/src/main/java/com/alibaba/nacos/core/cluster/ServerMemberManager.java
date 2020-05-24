@@ -175,6 +175,7 @@ public class ServerMemberManager
 				String oldAddress = event.getOldIp() + ":" + port;
 				String newAddress = event.getNewIp() + ":" + port;
 				ServerMemberManager.this.localAddress = newAddress;
+				ApplicationUtils.setLocalAddress(localAddress);
 
 				Member self = ServerMemberManager.this.self;
 				self.setIp(event.getNewIp());
