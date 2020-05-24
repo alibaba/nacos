@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -50,48 +51,6 @@ public class NotifyCenter {
 	private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
 	private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
-
-	static {
-		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
-		// this value needs to be increased appropriately. default value is 16384
-		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
-		RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
-
-		// The size of the public publisher's message staging queue buffer
-		String shareBufferSizeProperty = "com.alibaba.nacos.core.notify.shareBufferSize";
-		SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
-
-		ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
-		Iterator<EventPublisher> iterator = loader.iterator();
-
-		if (iterator.hasNext()) {
-			BUILD_FACTORY = (cls, buffer) -> {
-				loader.reload();
-				EventPublisher publisher = ServiceLoader.load(EventPublisher.class).iterator().next();
-				publisher.init(cls, buffer);
-				return publisher;
-			};
-		} else {
-			BUILD_FACTORY = (cls, buffer) -> {
-				EventPublisher publisher = new DefaultPublisher();
-				publisher.init(cls, buffer);
-				return publisher;
-			};
-		}
-
-	}
-
-	private static final NotifyCenter INSTANCE = new NotifyCenter();
-
-	/**
-	 * Publisher management container
-	 */
-	private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
-
-	/**
-	 * Multi-event listening list
-	 */
-	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
 
 	private final EventPublisher sharePublisher = new EventPublisher() {
 
@@ -138,13 +97,60 @@ public class NotifyCenter {
 		}
 
 		private boolean filter(final Subscribe subscribe, final Event event) {
-			final String sourceName = event.getClass().getCanonicalName();
-			final String targetName = subscribe.subscribeType()
-					.getCanonicalName();
+			final String sourceName = event.getClass().getName();
+			final String targetName = subscribe.subscribeType().getName();
+			LoggerUtils.printIfDebugEnabled(LOGGER, "source event name : {}, target event name : {}", sourceName, targetName);
 			return !Objects.equals(sourceName, targetName);
 		}
 
 	};
+
+	private static final NotifyCenter INSTANCE = new NotifyCenter();
+
+	/**
+	 * Publisher management container
+	 */
+	private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
+
+	/**
+	 * Multi-event listening list
+	 */
+	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
+
+	static {
+		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
+		// this value needs to be increased appropriately. default value is 16384
+		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+		RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
+
+		// The size of the public publisher's message staging queue buffer
+		String shareBufferSizeProperty = "com.alibaba.nacos.core.notify.shareBufferSize";
+		SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
+
+		ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
+		Iterator<EventPublisher> iterator = loader.iterator();
+
+		if (iterator.hasNext()) {
+			BUILD_FACTORY = (cls, buffer) -> {
+				loader.reload();
+				EventPublisher publisher = ServiceLoader.load(EventPublisher.class).iterator().next();
+				publisher.init(cls, buffer);
+				return publisher;
+			};
+		} else {
+			BUILD_FACTORY = (cls, buffer) -> {
+				EventPublisher publisher = new DefaultPublisher();
+				publisher.init(cls, buffer);
+				return publisher;
+			};
+		}
+
+		INSTANCE.sharePublisher.init(SlowEvent.class, SHATE_BUFFER_SIZE);
+		ShutdownUtils.addShutdownHook(new Thread(() -> {
+			shutdown();
+		}));
+
+	}
 
 	@JustForTest
 	public static Map<String, EventPublisher> getPublisherMap() {
@@ -167,13 +173,6 @@ public class NotifyCenter {
 	@JustForTest
 	public static EventPublisher getSharePublisher() {
 		return INSTANCE.sharePublisher;
-	}
-
-	static {
-		INSTANCE.sharePublisher.init(SlowEvent.class, SHATE_BUFFER_SIZE);
-		ShutdownUtils.addShutdownHook(new Thread(() -> {
-			shutdown();
-		}));
 	}
 
 	private static final AtomicBoolean closed = new AtomicBoolean(false);

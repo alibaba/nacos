@@ -155,7 +155,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		this.transactionTemplate = dataSourceService.getTransactionTemplate();
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
-		NotifyCenter.registerToPublisher(RaftDBErrorEvent.class, 8);
+		NotifyCenter.registerToSharePublisher(RaftDBErrorEvent.class);
 
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
