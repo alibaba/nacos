@@ -130,7 +130,8 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
         HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
-        //inputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
+        
+        //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
         //so needs to close it manually 
         if (inputStream instanceof GZIPInputStream) {
             inputStream.close();
