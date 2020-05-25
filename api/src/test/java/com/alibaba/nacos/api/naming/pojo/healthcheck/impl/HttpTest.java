@@ -68,20 +68,9 @@ public class HttpTest {
     }
 
     @Test
-    public void testDeserializeWithFullInfo() throws IOException {
-        String testChecker = "{\"type\":\"HTTP\",\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
-        Http actual = objectMapper.readValue(testChecker, Http.class);
-        assertHttp(actual);
-    }
-
-    @Test
-    public void testDeserializeWithoutFullInfo() throws IOException {
+    public void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
         Http actual = objectMapper.readValue(testChecker, Http.class);
-        assertHttp(actual);
-    }
-
-    private void assertHttp(Http actual) {
         assertEquals("x:a|y:", actual.getHeaders());
         assertEquals("/x", actual.getPath());
         assertEquals(200, actual.getExpectedResponseCode());

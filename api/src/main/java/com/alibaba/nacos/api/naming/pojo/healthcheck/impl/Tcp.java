@@ -25,10 +25,11 @@ import com.google.common.base.Objects;
  * @author yangyi
  */
 public class Tcp extends AbstractHealthChecker {
+
     public static final String TYPE = "TCP";
 
     public Tcp() {
-        this.type = TYPE;
+        super(TYPE);
     }
 
     @Override
@@ -43,8 +44,6 @@ public class Tcp extends AbstractHealthChecker {
 
     @Override
     public Tcp clone() throws CloneNotSupportedException {
-        Tcp config = new Tcp();
-        config.setType(this.type);
-        return config;
+        return new Tcp();
     }
 }

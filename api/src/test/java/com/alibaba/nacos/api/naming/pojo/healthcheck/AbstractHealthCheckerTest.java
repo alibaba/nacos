@@ -48,15 +48,7 @@ public class AbstractHealthCheckerTest {
     }
 
     @Test
-    public void testDeserializeWithFullInfo() throws IOException {
-        String testChecker = "{\"type\":\"TEST\",\"type\":\"TEST\",\"testValue\":\"\"}";
-        TestChecker actual = objectMapper.readValue(testChecker, TestChecker.class);
-        assertEquals("", actual.getTestValue());
-        assertEquals(TestChecker.TYPE, actual.getType());
-    }
-
-    @Test
-    public void testDeserializeWithoutFullInfo() throws IOException {
+    public void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"TEST\",\"testValue\":\"\"}";
         TestChecker actual = objectMapper.readValue(testChecker, TestChecker.class);
         assertEquals("", actual.getTestValue());

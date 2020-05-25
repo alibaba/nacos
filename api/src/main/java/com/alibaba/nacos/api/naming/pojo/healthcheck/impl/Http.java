@@ -41,7 +41,7 @@ public class Http extends AbstractHealthChecker {
     private int expectedResponseCode = 200;
 
     public Http() {
-        this.type = TYPE;
+        super(TYPE);
     }
 
     public int getExpectedResponseCode() {
@@ -113,12 +113,9 @@ public class Http extends AbstractHealthChecker {
     @Override
     public Http clone() throws CloneNotSupportedException {
         Http config = new Http();
-
         config.setPath(this.getPath());
         config.setHeaders(this.getHeaders());
-        config.setType(this.getType());
         config.setExpectedResponseCode(this.getExpectedResponseCode());
-
         return config;
     }
 }
