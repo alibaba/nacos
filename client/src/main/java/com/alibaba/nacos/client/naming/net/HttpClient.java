@@ -133,7 +133,7 @@ public class HttpClient {
         //inputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
         //so needs to close it manually 
         if (inputStream instanceof GZIPInputStream) {
-        	inputStream.close();
+            inputStream.close();
         }
         return httpResult;
     }
