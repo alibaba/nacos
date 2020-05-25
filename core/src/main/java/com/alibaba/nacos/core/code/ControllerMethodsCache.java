@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.code;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +36,9 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 public class ControllerMethodsCache {
 
+    @Value("${server.servlet.contextPath:/nacos}")
+    private String contextPath;
+
     private ConcurrentMap<String, Method> methods = new
         ConcurrentHashMap<>();
 
@@ -43,7 +47,7 @@ public class ControllerMethodsCache {
     }
 
     public Method getMethod(String httpMethod, String path) {
-        String key = httpMethod + "-->" + path.replace("/nacos", "");
+        String key = httpMethod + "-->" + path.replace(contextPath, "");
         return methods.get(key);
     }
 

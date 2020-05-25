@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -49,12 +51,13 @@ public class FailoverClosureImpl<T> implements FailoverClosure<T> {
     @Override
     public void run(Status status) {
         if (status.isOk()) {
-            future.complete(data);
+            boolean success = future.complete(data);
+            LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "future.complete execute {}", success);
             return;
         }
         final Throwable throwable = this.throwable;
         if (Objects.nonNull(throwable)) {
-            future.completeExceptionally(new ConsistencyException(throwable));
+            future.completeExceptionally(new ConsistencyException(throwable.toString()));
         } else {
             future.completeExceptionally(new ConsistencyException("operation failure"));
         }
