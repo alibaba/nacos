@@ -52,60 +52,9 @@ public class NotifyCenter {
 
 	private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
 
-	private final EventPublisher sharePublisher = new EventPublisher() {
-
-		private EventPublisher target;
-
-		@Override
-		public void init(Class<? extends Event> type, int bufferSize) {
-			target = BUILD_FACTORY.apply(type, bufferSize);
-		}
-
-		@Override
-		public long currentEventSize() {
-			return target.currentEventSize();
-		}
-
-		@Override
-		public void addSubscribe(Subscribe subscribe) {
-			target.addSubscribe(subscribe);
-		}
-
-		@Override
-		public void unSubscribe(Subscribe subscribe) {
-			target.unSubscribe(subscribe);
-		}
-
-		@Override
-		public boolean publish(Event event) {
-			return target.publish(event);
-		}
-
-		@Override
-		public void notifySubscriber(Subscribe subscribe, Event event) {
-			// Is to handle a SlowEvent, because the event shares an event
-			// queue and requires additional filtering logic
-			if (filter(subscribe, event)) {
-				return;
-			}
-			target.notifySubscriber(subscribe, event);
-		}
-
-		@Override
-		public void shutdown() {
-			target.shutdown();
-		}
-
-		private boolean filter(final Subscribe subscribe, final Event event) {
-			final String sourceName = event.getClass().getName();
-			final String targetName = subscribe.subscribeType().getName();
-			LoggerUtils.printIfDebugEnabled(LOGGER, "source event name : {}, target event name : {}", sourceName, targetName);
-			return !Objects.equals(sourceName, targetName);
-		}
-
-	};
-
 	private static final NotifyCenter INSTANCE = new NotifyCenter();
+
+	private EventPublisher sharePublisher;
 
 	/**
 	 * Publisher management container
@@ -145,7 +94,7 @@ public class NotifyCenter {
 			};
 		}
 
-		INSTANCE.sharePublisher.init(SlowEvent.class, SHATE_BUFFER_SIZE);
+		INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
 		ShutdownUtils.addShutdownHook(new Thread(() -> {
 			shutdown();
 		}));
