@@ -308,17 +308,15 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (changed) {
             pushService.serviceChanged(service);
-        }
-
-        StringBuilder stringBuilder = new StringBuilder();
-        List<Instance> allIps = service.allIPs();
-        for (Instance instance : allIps) {
-            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
-        }
-
-        if (changed && Loggers.EVT_LOG.isDebugEnabled()) {
-            Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
-                service.getNamespaceId(), service.getName(), stringBuilder.toString());
+            if (Loggers.EVT_LOG.isDebugEnabled()){
+                StringBuilder stringBuilder = new StringBuilder();
+                List<Instance> allIps = service.allIPs();
+                for (Instance instance : allIps) {
+                    stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
+                }
+                Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
+                    service.getNamespaceId(), service.getName(), stringBuilder.toString());
+            }
         }
 
     }
