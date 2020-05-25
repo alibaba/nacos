@@ -19,6 +19,7 @@
 package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -57,6 +58,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
 	@Override
 	public void init(Class<? extends Event> type, int bufferSize) {
+		setDaemon(true);
+		setName("nacos.publisher-" + type.getName());
 		this.eventType = type;
 		this.queueMaxSize = bufferSize;
 		this.queue = new ArrayBlockingQueue<>(bufferSize);
@@ -184,15 +187,18 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
 	@Override
 	public void notifySubscriber(final Subscribe subscribe, final Event event) {
+
+		final String sourceName = event.getClass().getName();
+		final String targetName = subscribe.subscribeType().getName();
+
+		if (!Objects.equals(sourceName, targetName)) {
+			return;
+		}
+
 		LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
 				subscribe);
 
-		final Runnable job = () -> {
-			try {
-				subscribe.onEvent(event);
-			}
-			catch (ClassCastException ignore) { }
-		};
+		final Runnable job = () -> subscribe.onEvent(event);
 		final Executor executor = subscribe.executor();
 		if (Objects.nonNull(executor)) {
 			executor.execute(job);
