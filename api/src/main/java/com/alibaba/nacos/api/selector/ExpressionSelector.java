@@ -29,7 +29,7 @@ public class ExpressionSelector extends AbstractSelector {
     private String expression;
 
     public ExpressionSelector() {
-        this.setType(SelectorType.label.name());
+        super(SelectorType.label.name());
     }
 
     public String getExpression() {

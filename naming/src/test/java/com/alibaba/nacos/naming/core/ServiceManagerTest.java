@@ -49,6 +49,9 @@ public class ServiceManagerTest extends BaseTest {
     @Before
     public void before() {
         super.before();
+        mockInjectHealthCheckProcessor();
+        mockInjectDistroMapper();
+        mockInjectSwitchDomain();
     }
 
     @Test
