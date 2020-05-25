@@ -18,8 +18,8 @@ package com.alibaba.nacos.consistency;
 
 
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 
 import java.util.Collection;
 import java.util.Set;
@@ -71,7 +71,7 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * @return data {@link GetRequest}
      * @throws Exception
      */
-    GetResponse getData(GetRequest request) throws Exception;
+    Response getData(GetRequest request) throws Exception;
 
     /**
      * Data operation, returning submission results synchronously
@@ -81,17 +81,17 @@ public interface ConsistencyProtocol<T extends Config, P extends LogProcessor> e
      * @return submit operation result
      * @throws Exception
      */
-    LogFuture submit(Log data) throws Exception;
+    Response submit(Log data) throws Exception;
 
     /**
      * Data submission operation, returning submission results asynchronously
      * 异步数据提交，在 Datum 中已携带相应的数据操作信息，返回一个Future，自行操作，提交发生的异常会在CompleteFuture中
      *
      * @param data {@link Log}
-     * @return {@link CompletableFuture<LogFuture>} submit result
+     * @return {@link CompletableFuture<Response>} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<LogFuture> submitAsync(Log data);
+    CompletableFuture<Response> submitAsync(Log data);
 
     /**
      * New member list

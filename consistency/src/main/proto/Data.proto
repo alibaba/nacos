@@ -34,8 +34,9 @@ message GetRequest {
     map<string, string> extendInfo = 3;
 }
 
-message GetResponse {
+message Response {
     bytes data = 1;
     string errMsg = 2;
+    bool success = 3;
 }
 

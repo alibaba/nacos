@@ -35,10 +35,10 @@ public final class Data {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_GetRequest_ExtendInfoEntry_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_GetResponse_descriptor;
+    internal_static_Response_descriptor;
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_GetResponse_fieldAccessorTable;
+      internal_static_Response_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -56,9 +56,10 @@ public final class Data {
       "est\022\r\n\005group\030\001 \001(\t\022\014\n\004data\030\002 \001(\014\022/\n\nexte" +
       "ndInfo\030\003 \003(\0132\033.GetRequest.ExtendInfoEntr" +
       "y\0321\n\017ExtendInfoEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005val" +
-      "ue\030\002 \001(\t:\0028\001\"+\n\013GetResponse\022\014\n\004data\030\001 \001(" +
-      "\014\022\016\n\006errMsg\030\002 \001(\tB(\n$com.alibaba.nacos.c" +
-      "onsistency.entityP\001b\006proto3"
+      "ue\030\002 \001(\t:\0028\001\"9\n\010Response\022\014\n\004data\030\001 \001(\014\022\016" +
+      "\n\006errMsg\030\002 \001(\t\022\017\n\007success\030\003 \001(\010B(\n$com.a" +
+      "libaba.nacos.consistency.entityP\001b\006proto" +
+      "3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -88,12 +89,12 @@ public final class Data {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_GetRequest_ExtendInfoEntry_descriptor,
         new String[] { "Key", "Value", });
-    internal_static_GetResponse_descriptor =
+    internal_static_Response_descriptor =
       getDescriptor().getMessageTypes().get(2);
-    internal_static_GetResponse_fieldAccessorTable = new
+    internal_static_Response_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_GetResponse_descriptor,
-        new String[] { "Data", "ErrMsg", });
+        internal_static_Response_descriptor,
+        new String[] { "Data", "ErrMsg", "Success", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

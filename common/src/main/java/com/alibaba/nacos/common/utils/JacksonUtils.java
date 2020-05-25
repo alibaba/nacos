@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 
 import java.lang.reflect.Type;
 
@@ -55,4 +56,8 @@ public final class JacksonUtils {
 	public static <T> T toObj(String json, Type type) throws Exception {
 		return mapper.readValue(json, mapper.constructType(type));
 	}
+
+        public static void registerSubtype(Class<?> clz, String type) {
+	    mapper.registerSubtypes(new NamedType(clz, type));
+    }
 }

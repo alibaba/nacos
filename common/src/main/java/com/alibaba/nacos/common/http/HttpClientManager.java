@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Use the same HttpClient object in the same space
@@ -44,18 +47,13 @@ public class HttpClientManager {
 	private static final NAsyncHttpClient ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
 
+	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
+
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
-				logger.warn("[HttpClientManager] Start destroying HttpClient");
-				try {
-					SYNC_HTTP_CLIENT.close();
-					ASYNC_HTTP_CLIENT.close();
-				}
-				catch (Exception ignore) {
-				}
-				logger.warn("[HttpClientManager] Destruction of the end");
+				shutdown();
 			}
 		});
 
@@ -67,6 +65,22 @@ public class HttpClientManager {
 
 	public static NAsyncHttpClient getAsyncHttpClient() {
 		return ASYNC_HTTP_CLIENT;
+	}
+
+	public static void shutdown() {
+		if (!alreadyShutdown.compareAndSet(false, true)) {
+			return;
+		}
+		logger.warn("[HttpClientManager] Start destroying HttpClient");
+		try {
+			SYNC_HTTP_CLIENT.close();
+			ASYNC_HTTP_CLIENT.close();
+		}
+		catch (Exception ex) {
+			logger.error("An exception occurred when the HTTP client was closed : {}",
+					ExceptionUtil.getStackTrace(ex));
+		}
+		logger.warn("[HttpClientManager] Destruction of the end");
 	}
 
 }
