@@ -51,20 +51,9 @@ public class MysqlTest {
     }
 
     @Test
-    public void testDeserializeWithFullInfo() throws IOException {
-        String testChecker = "{\"type\":\"MYSQL\",\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
-        Mysql actual = objectMapper.readValue(testChecker, Mysql.class);
-        assertMysql(actual);
-    }
-
-    @Test
-    public void testDeserializeWithoutFullInfo() throws IOException {
+    public void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
         Mysql actual = objectMapper.readValue(testChecker, Mysql.class);
-        assertMysql(actual);
-    }
-
-    private void assertMysql(Mysql actual) {
         assertEquals("cmd", actual.getCmd());
         assertEquals("pwd", actual.getPwd());
         assertEquals("user", actual.getUser());

@@ -35,7 +35,7 @@ public class TestChecker extends AbstractHealthChecker {
     }
 
     public TestChecker() {
-        setType(TYPE);
+        super(TYPE);
     }
 
     @Override

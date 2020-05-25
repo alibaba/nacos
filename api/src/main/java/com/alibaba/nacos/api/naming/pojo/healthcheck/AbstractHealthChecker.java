@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -35,14 +36,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 })
 public abstract class AbstractHealthChecker implements Cloneable {
 
-    protected String type = "unknown";
+    @JsonIgnore
+    protected final String type;
+
+    protected AbstractHealthChecker(String type) {
+        this.type = type;
+    }
 
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     /**
@@ -62,7 +64,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
         public static final String TYPE = "NONE";
 
         public None() {
-            this.setType(TYPE);
+            super(TYPE);
         }
 
         @Override

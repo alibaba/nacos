@@ -36,7 +36,7 @@ public class Mysql extends AbstractHealthChecker {
     private String cmd;
 
     public Mysql() {
-        this.type = TYPE;
+        super(TYPE);
     }
 
     public String getCmd() {
@@ -70,11 +70,11 @@ public class Mysql extends AbstractHealthChecker {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql)) {
+        if (!(obj instanceof Mysql)) {
             return false;
         }
 
-        com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql other = (com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql) obj;
+        Mysql other = (Mysql) obj;
 
         if (!StringUtils.equals(user, other.getUser())) {
             return false;
@@ -88,13 +88,11 @@ public class Mysql extends AbstractHealthChecker {
     }
 
     @Override
-    public com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql clone() throws CloneNotSupportedException {
-        com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql config = new com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql();
+    public Mysql clone() throws CloneNotSupportedException {
+        Mysql config = new Mysql();
         config.setUser(this.getUser());
         config.setPwd(this.getPwd());
         config.setCmd(this.getCmd());
-        config.setType(this.getType());
-
         return config;
     }
 }
