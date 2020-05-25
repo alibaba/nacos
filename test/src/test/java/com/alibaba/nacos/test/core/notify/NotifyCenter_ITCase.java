@@ -46,6 +46,10 @@ public class NotifyCenter_ITCase {
 
 	}
 
+	static {
+		System.setProperty("com.alibaba.nacos.core.notify.shareBufferSize", "8");
+	}
+
 	@Test
 	public void test_a_event_can_listen() throws Exception {
 
@@ -91,8 +95,6 @@ public class NotifyCenter_ITCase {
 
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
-
-		NotifyCenter.stopDeferPublish();
 
 		ThreadUtils.sleep(5_000L);
 
@@ -218,14 +220,15 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerToSharePublisher(SlowE1.class);
 		NotifyCenter.registerToSharePublisher(SlowE2.class);
 
-		CountDownLatch latch1 = new CountDownLatch(1);
-		CountDownLatch latch2 = new CountDownLatch(1);
+		CountDownLatch latch1 = new CountDownLatch(30);
+		CountDownLatch latch2 = new CountDownLatch(30);
 
 		String[] values = new String[] {null, null};
 
 		NotifyCenter.registerSubscribe(new Subscribe<SlowE1>() {
 			@Override
 			public void onEvent(SlowE1 event) {
+				System.out.println(event);
 				values[0] = event.info;
 				latch1.countDown();
 			}
@@ -239,6 +242,7 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerSubscribe(new Subscribe<SlowE2>() {
 			@Override
 			public void onEvent(SlowE2 event) {
+				System.out.println(event);
 				values[1] = event.info;
 				latch2.countDown();
 			}
@@ -249,11 +253,13 @@ public class NotifyCenter_ITCase {
 			}
 		});
 
-		NotifyCenter.publishEvent(new SlowE1());
-		NotifyCenter.publishEvent(new SlowE2());
+		for (int i = 0; i < 30; i ++) {
+			NotifyCenter.publishEvent(new SlowE1());
+			NotifyCenter.publishEvent(new SlowE2());
+		}
 
-		latch1.await(10_000L, TimeUnit.MILLISECONDS);
-		latch2.await(10_000L, TimeUnit.MILLISECONDS);
+		latch1.await();
+		latch2.await();
 
 		Assert.assertEquals("SlowE1", values[0]);
 		Assert.assertEquals("SlowE2", values[1]);

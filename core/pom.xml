@@ -117,10 +117,17 @@
             <artifactId>tomcat-embed-core</artifactId>
         </dependency>
 
+        <!-- JRaft dependency start -->
         <dependency>
             <groupId>com.alipay.sofa</groupId>
             <artifactId>jraft-core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.alipay.sofa</groupId>
+            <artifactId>rpc-grpc-impl</artifactId>
+        </dependency>
+        <!-- JRaft dependency end -->
 
         <dependency>
             <groupId>org.aspectj</groupId>
@@ -159,6 +166,5 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
-
     </dependencies>
 </project>

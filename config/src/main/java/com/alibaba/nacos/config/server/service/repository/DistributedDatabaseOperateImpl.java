@@ -19,8 +19,6 @@ package com.alibaba.nacos.config.server.service.repository;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
@@ -32,39 +30,32 @@ import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.LogFuture;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.id.SnakeFlowerIdGenerator;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -164,7 +155,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		this.transactionTemplate = dataSourceService.getTransactionTemplate();
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
-		NotifyCenter.registerToPublisher(RaftDBErrorEvent.class, 8);
+		NotifyCenter.registerToSharePublisher(RaftDBErrorEvent.class);
 
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
@@ -195,10 +186,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
 					.className(cls.getCanonicalName()).build());
 
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(), cls);
 			}
 			throw new NJdbcException(response.getErrMsg(), response.getErrMsg());
@@ -219,10 +210,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(cls.getCanonicalName()).build());
 
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(), cls);
 			}
 			throw new NJdbcException(response.getErrMsg(), response.getErrMsg());
@@ -243,10 +234,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(mapper.getClass().getCanonicalName()).build());
 
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(),
 						ClassUtils.resolveGenericTypeByInterface(mapper.getClass()));
 			}
@@ -268,10 +259,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(mapper.getClass().getCanonicalName()).build());
 
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
 			}
@@ -292,10 +283,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(rClass.getCanonicalName()).build());
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
 			}
@@ -317,10 +308,10 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql)
 					.args(args).build());
 
-			GetResponse response = protocol.getData(
+			Response response = protocol.getData(
 					GetRequest.newBuilder().setGroup(group())
 							.setData(ByteString.copyFrom(data)).build());
-			if (StringUtils.isEmpty(response.getErrMsg())) {
+			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
 			}
@@ -351,19 +342,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			Log log = Log.newBuilder().setGroup(group()).setKey(key)
 					.setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
 					.setType(sqlContext.getClass().getCanonicalName()).build();
-			LogFuture future = this.protocol.submit(log);
-			if (future.isOk()) {
+			Response response = this.protocol.submit(log);
+			if (response.getSuccess()) {
 				return true;
 			}
-			throw future.getError();
+			throw new ConsistencyException(response.getErrMsg());
 		}
 		catch (Throwable e) {
 			if (e instanceof ConsistencyException) {
 				throw (ConsistencyException) e;
 			}
 			LogUtil.fatalLog
-					.error("An exception occurred during the update operation : {}", e.toString());
-			throw new NJdbcException(e);
+					.error("An exception occurred during the update operation : {}", e);
+			throw new NJdbcException(e.toString());
 		}
 	}
 
@@ -374,7 +365,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@SuppressWarnings("all")
 	@Override
-	public GetResponse getData(final GetRequest request) {
+	public Response onRequest(final GetRequest request) {
 		final SelectRequest selectRequest = serializer
 				.deserialize(request.getData().toByteArray(), SelectRequest.class);
 
@@ -416,13 +407,14 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			ByteString bytes = data == null ?
 					ByteString.EMPTY :
 					ByteString.copyFrom(serializer.serialize(data));
-			return GetResponse.newBuilder().setData(bytes).build();
+			return Response.newBuilder().setSuccess(true).setData(bytes).build();
 		}
 		catch (Exception e) {
 			LogUtil.fatalLog
 					.error("There was an error querying the data, request : {}, error : {}",
 							selectRequest, e.toString());
-			return GetResponse.newBuilder()
+			return Response.newBuilder()
+					.setSuccess(false)
 					.setErrMsg(e.getClass().getSimpleName() + ":" + e.getMessage())
 					.build();
 		}
@@ -432,7 +424,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
-	public LogFuture onApply(Log log) {
+	public Response onApply(Log log) {
 		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
 
 		final ByteString byteString = log.getData();
@@ -448,19 +440,13 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				}
 			});
 			boolean isOk = onUpdate(sqlContext);
-			return LogFuture.success(isOk);
+			return Response.newBuilder().setSuccess(isOk).build();
 
 			// We do not believe that an error caused by a problem with an SQL error
 			// should trigger the stop operation of the raft state machine
 		}
-		catch (DuplicateKeyException e) {
-			return LogFuture.fail(e);
-		}
-		catch (DataIntegrityViolationException e) {
-			return LogFuture.fail(e);
-		}
-		catch (BadSqlGrammarException e) {
-			return LogFuture.fail(e);
+		catch (BadSqlGrammarException | DataIntegrityViolationException e) {
+			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
 		}
 		catch (DataAccessException e) {
 			throw new ConsistencyException(e);

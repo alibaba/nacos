@@ -24,6 +24,14 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadUtils {
 
+    public static void objectWait(Object object) {
+        try {
+            object.wait();
+        } catch (InterruptedException ignore) {
+            Thread.interrupted();
+        }
+    }
+
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
@@ -49,7 +57,8 @@ public final class ThreadUtils {
     }
 
     /**
-     * 通过内核数，算出合适的线程数；1.5-2倍cpu内核数
+     * Through the number of cores, calculate the appropriate number of threads;
+     * 1.5-2 times the number of CPU cores
      *
      * @return thread count
      */
