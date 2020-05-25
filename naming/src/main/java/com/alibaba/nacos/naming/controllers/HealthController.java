@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -26,7 +26,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
@@ -121,11 +121,11 @@ public class HealthController {
 
     @GetMapping("checkers")
     public ResponseEntity checkers() {
-        List<Class> classes = HealthCheckType.getLoadedHealthCheckerClasses();
+        List<Class<? extends AbstractHealthChecker>> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
-        for (Class clazz : classes) {
+        for (Class<? extends AbstractHealthChecker> clazz : classes) {
             try {
-                AbstractHealthChecker checker = (AbstractHealthChecker) clazz.newInstance();
+                AbstractHealthChecker checker = clazz.newInstance();
                 checkerMap.put(checker.getType(), checker);
             } catch (InstantiationException | IllegalAccessException e) {
                 Loggers.EVT_LOG.error("checkers error ", e);
