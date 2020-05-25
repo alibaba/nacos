@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -120,8 +121,9 @@ public class ClusterTest {
     }
 
     @Test
-    public void testSerializeToJson() {
-        String actual = JSON.toJSONString(cluster);
+    public void testSerialize() throws Exception {
+        String actual = JacksonUtils.toJson(cluster);
+        System.out.println(actual);
         assertTrue(actual.contains("\"defaultPort\":80"));
         assertTrue(actual.contains("\"defIPPort\":8080"));
         assertTrue(actual.contains("\"healthChecker\":{\"type\":\"TCP\"}"));
@@ -135,5 +137,22 @@ public class ClusterTest {
         assertTrue(actual.contains("\"empty\":true"));
         assertFalse(actual.contains("\"service\""));
 
+    }
+
+    @Test
+    public void testDeserialize() throws Exception {
+        String example = "{\"defCkport\":80,\"defIPPort\":8080,\"defaultCheckPort\":80,\"defaultPort\":80,\"empty\":true,\"healthChecker\":{\"type\":\"TCP\"},\"metadata\":{},\"name\":\"nacos-cluster-1\",\"serviceName\":\"nacos.service.1\",\"sitegroup\":\"\",\"useIPPort4Check\":true}";
+        Cluster actual = JacksonUtils.toObj(example, Cluster.class);
+        assertEquals(80, actual.getDefCkport());
+        assertEquals(8080, actual.getDefIPPort());
+        assertEquals(80, actual.getDefaultCheckPort());
+        assertEquals(80, actual.getDefaultPort());
+        assertTrue(actual.isEmpty());
+        assertTrue(actual.getMetadata().isEmpty());
+        assertTrue(actual.isUseIPPort4Check());
+        assertEquals("nacos-cluster-1", actual.getName());
+        assertEquals("nacos.service.1", actual.getServiceName());
+        assertEquals("", actual.getSitegroup());
+        assertNull(actual.getHealthCheckTask());
     }
 }
