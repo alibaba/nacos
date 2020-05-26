@@ -15,13 +15,14 @@
  */
 package com.alibaba.nacos.client.naming.backups;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -180,7 +181,7 @@ public class FailoverReactor {
                         String json;
                         if ((json = reader.readLine()) != null) {
                             try {
-                                dom = JSON.parseObject(json, ServiceInfo.class);
+                                dom = JacksonUtils.toObj(json, ServiceInfo.class);
                             } catch (Exception e) {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
