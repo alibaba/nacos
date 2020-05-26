@@ -628,7 +628,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	public long findConfigMaxId() {
 		String sql = "SELECT max(id) FROM config_info";
 		try {
-			return jt.queryForObject(sql, Integer.class);
+			return jt.queryForObject(sql, Long.class);
 		} catch (NullPointerException e) {
 			return 0;
 		}
