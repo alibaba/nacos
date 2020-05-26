@@ -36,7 +36,7 @@ public abstract class LogProcessor {
      * @param request request {@link GetRequest}
      * @return target type data
      */
-    public abstract Response getData(GetRequest request);
+    public abstract Response onRequest(GetRequest request);
 
     /**
      * Process Submitted Log

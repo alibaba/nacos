@@ -102,16 +102,6 @@ public class ProtocolManager
 
 	@Override
 	public void onApplicationEvent(ContextStartedEvent event) {
-		stopDeferPublish();
-	}
-
-	public void stopDeferPublish() {
-		if (Objects.nonNull(apProtocol)) {
-			apProtocol.protocolMetaData().stopDeferPublish();
-		}
-		if (Objects.nonNull(cpProtocol)) {
-			cpProtocol.protocolMetaData().stopDeferPublish();
-		}
 	}
 
 	private void initAPProtocol() {

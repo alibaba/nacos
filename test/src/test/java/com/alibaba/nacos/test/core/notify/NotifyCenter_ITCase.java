@@ -92,8 +92,6 @@ public class NotifyCenter_ITCase {
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
 
-		NotifyCenter.stopDeferPublish();
-
 		ThreadUtils.sleep(5_000L);
 
 		System.out.println("TestEvent event num : " + NotifyCenter.getPublisher(TestEvent.class).currentEventSize());

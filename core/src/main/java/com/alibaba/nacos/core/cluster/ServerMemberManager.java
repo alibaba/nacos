@@ -341,8 +341,6 @@ public class ServerMemberManager
 	@Override
 	public void onApplicationEvent(WebServerInitializedEvent event) {
 		getSelf().setState(NodeState.UP);
-		// For containers that have started, stop all messages from being published late
-		NotifyCenter.stopDeferPublish();
 		if (!ApplicationUtils.getStandaloneMode()) {
 			GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
 		}

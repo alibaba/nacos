@@ -29,7 +29,6 @@ import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
-import com.alibaba.nacos.consistency.utils.ProtobufUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -98,7 +97,7 @@ class NacosStateMachine extends StateMachineAdapter {
 					}
 					else {
 						final ByteBuffer data = iter.getData();
-						message = ProtobufUtils.parse(data.array());
+						message = parse(data.array());
 					}
 
 					LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);
@@ -109,7 +108,7 @@ class NacosStateMachine extends StateMachineAdapter {
 					}
 
 					if (message instanceof GetRequest) {
-						Response response = processor.getData((GetRequest) message);
+						Response response = processor.onRequest((GetRequest) message);
 						postProcessor(response, closure);
 					}
 				}
@@ -136,6 +135,21 @@ class NacosStateMachine extends StateMachineAdapter {
 			iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
 					"StateMachine meet critical error: %s.", ExceptionUtil.getStackTrace(t)));
 		}
+	}
+
+	private Message parse(byte[] bytes) {
+		Message result = null;
+		try {
+			result = Log.parseFrom(bytes);
+			return result;
+		} catch (Throwable ignore) { }
+
+		try {
+			result = GetRequest.parseFrom(bytes);
+			return result;
+		} catch (Throwable ignore) {}
+
+		throw new ConsistencyException("The current array cannot be serialized to the corresponding object");
 	}
 
 	public void setNode(Node node) {
