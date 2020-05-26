@@ -57,7 +57,7 @@ public final class JacksonUtils {
 		return mapper.readValue(json, mapper.constructType(type));
 	}
 
-        public static void registerSubtype(Class<?> clz, String type) {
+	public static void registerSubtype(Class<?> clz, String type) {
 	    mapper.registerSubtypes(new NamedType(clz, type));
     }
 }
