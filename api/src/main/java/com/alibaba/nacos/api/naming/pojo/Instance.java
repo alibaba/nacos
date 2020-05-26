@@ -19,9 +19,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -179,13 +176,18 @@ public class Instance {
 
     @Override
     public String toString() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        try {
-            return objectMapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Instance toJson failed", e);
-        }
+        return "Instance{" +
+            "instanceId='" + instanceId + '\'' +
+            ", ip='" + ip + '\'' +
+            ", port=" + port +
+            ", weight=" + weight +
+            ", healthy=" + healthy +
+            ", enabled=" + enabled +
+            ", ephemeral=" + ephemeral +
+            ", clusterName='" + clusterName + '\'' +
+            ", serviceName='" + serviceName + '\'' +
+            ", metadata=" + metadata +
+            '}';
     }
 
     public String toInetAddr() {
