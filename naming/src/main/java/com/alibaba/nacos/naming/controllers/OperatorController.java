@@ -126,7 +126,6 @@ public class OperatorController {
         return "ok";
     }
 
-    @Secured(resource = "naming/metrics", action = ActionTypes.READ)
     @GetMapping("/metrics")
     public JSONObject metrics(HttpServletRequest request) {
 
