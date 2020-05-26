@@ -53,7 +53,6 @@ import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -379,6 +378,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
 					.putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
 					.setType(sqlContext.getClass().getCanonicalName()).build();
+<<<<<<< HEAD
 			if (Objects.isNull(consumer)) {
 				Response response = this.protocol.submit(log);
 				if (response.getSuccess()) {
@@ -396,6 +396,13 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				});
 			}
 			return true;
+=======
+			Response response = this.protocol.submit(log);
+			if (response.getSuccess()) {
+				return true;
+			}
+			throw new ConsistencyException(response.getErrMsg());
+>>>>>>> develop
 		}
 		catch (Throwable e) {
 			if (e instanceof ConsistencyException) {
@@ -414,7 +421,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@SuppressWarnings("all")
 	@Override
-	public Response getData(final GetRequest request) {
+	public Response onRequest(final GetRequest request) {
 		final SelectRequest selectRequest = serializer
 				.deserialize(request.getData().toByteArray(), SelectRequest.class);
 
@@ -475,8 +482,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@Override
 	public Response onApply(Log log) {
+<<<<<<< HEAD
 		LoggerUtils
 				.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
+=======
+		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
+>>>>>>> develop
 
 		final ByteString byteString = log.getData();
 		Preconditions.checkArgument(byteString != null, "Log.getData() must not null");
@@ -491,12 +502,15 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				}
 			});
 			boolean isOk = onUpdate(sqlContext);
+<<<<<<< HEAD
 
 			// If there is additional information, post processing
 			// Put into the asynchronous thread pool for processing to avoid blocking the
 			// normal execution of the state machine
 			executor.execute(() -> handleExtendInfo(log.getExtendInfoMap()));
 
+=======
+>>>>>>> develop
 			return Response.newBuilder().setSuccess(isOk).build();
 
 			// We do not believe that an error caused by a problem with an SQL error

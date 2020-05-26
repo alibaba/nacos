@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
@@ -75,7 +76,9 @@ public class HttpClientManager {
 			SYNC_HTTP_CLIENT.close();
 			ASYNC_HTTP_CLIENT.close();
 		}
-		catch (Exception ignore) {
+		catch (Exception ex) {
+			logger.error("An exception occurred when the HTTP client was closed : {}",
+					ExceptionUtil.getStackTrace(ex));
 		}
 		logger.warn("[HttpClientManager] Destruction of the end");
 	}

@@ -54,7 +54,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <pre>
  *                                           ┌──────────────────────┐
- *                                           │                      │
  *            ┌──────────────────────┐       │                      ▼
  *            │   ProtocolManager    │       │        ┌───────────────────────────┐
  *            └──────────────────────┘       │        │for p in [LogProcessor4CP] │
@@ -86,7 +85,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *             ┌────────────────────┐        │
  *             │JRaftServer.start() │        │
  *             └────────────────────┘        │
- *                        │                  │
  *                        │                  │
  *                        └──────────────────┘
  * </pre>
@@ -179,26 +177,26 @@ public class JRaftProtocol
 	@Override
 	public Response submit(Log data) throws Exception {
 		CompletableFuture<Response> future = submitAsync(data);
-		return future.join();
+		// Here you wait for 10 seconds, as long as possible, for the request to complete
+		return future.get(10_000L, TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public CompletableFuture<Response> submitAsync(Log data) {
 		CompletableFuture<Response> future = new CompletableFuture<>();
-		return raftServer.commit(data.getGroup(), data, future);
+		raftServer.commit(data.getGroup(), data, future);
+		return future;
 	}
 
 	@Override
 	public void memberChange(Set<String> addresses) {
 		for (int i = 0; i < 5; i++) {
 			if (this.raftServer.peerChange(jRaftMaintainService, addresses)) {
-				break;
-			}
-			else {
-				Loggers.RAFT.warn("peer removal failed");
+				return;
 			}
 			ThreadUtils.sleep(100L);
 		}
+		Loggers.RAFT.warn("peer removal failed");
 	}
 
 	@Override
