@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.NacosDeserializationException;
-import com.alibaba.nacos.api.exception.NacosSerializationException;
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -43,7 +43,7 @@ public final class JacksonUtils {
         try {
             return mapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            throw new NacosSerializationException(obj.getClass());
+            throw new NacosSerializationException(obj.getClass(), e);
         }
     }
 
@@ -51,7 +51,7 @@ public final class JacksonUtils {
         try {
             return ByteUtils.toBytes(mapper.writeValueAsString(obj));
         } catch (JsonProcessingException e) {
-            throw new NacosSerializationException(obj.getClass());
+            throw new NacosSerializationException(obj.getClass(), e);
         }
     }
 
@@ -59,7 +59,7 @@ public final class JacksonUtils {
         try {
             return toObj(StringUtils.newString4UTF8(json), cls);
         } catch (Exception e) {
-            throw new NacosDeserializationException(cls);
+            throw new NacosDeserializationException(cls, e);
         }
     }
 
@@ -67,7 +67,7 @@ public final class JacksonUtils {
         try {
             return toObj(StringUtils.newString4UTF8(json), cls);
         } catch (Exception e) {
-            throw new NacosDeserializationException();
+            throw new NacosDeserializationException(e);
         }
     }
 
@@ -75,7 +75,7 @@ public final class JacksonUtils {
         try {
             return mapper.readValue(json, typeReference);
         } catch (IOException e) {
-            throw new NacosDeserializationException(typeReference.getClass());
+            throw new NacosDeserializationException(typeReference.getClass(), e);
         }
     }
 
@@ -83,7 +83,7 @@ public final class JacksonUtils {
         try {
             return mapper.readValue(json, cls);
         } catch (IOException e) {
-            throw new NacosDeserializationException(cls);
+            throw new NacosDeserializationException(cls, e);
         }
     }
 
@@ -91,7 +91,7 @@ public final class JacksonUtils {
         try {
             return mapper.readValue(json, mapper.constructType(type));
         } catch (IOException e) {
-            throw new NacosDeserializationException();
+            throw new NacosDeserializationException(e);
         }
     }
 
@@ -99,7 +99,7 @@ public final class JacksonUtils {
         try {
             return mapper.readTree(json);
         } catch (IOException e) {
-            throw new NacosDeserializationException();
+            throw new NacosDeserializationException(e);
         }
     }
 

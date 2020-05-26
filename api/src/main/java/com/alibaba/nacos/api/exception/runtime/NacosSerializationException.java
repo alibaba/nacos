@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.exception;
+package com.alibaba.nacos.api.exception.runtime;
 
 /**
  * Nacos serialization exception.
  *
  * @author yangyi
  */
-public class NacosSerializationException extends RuntimeException {
+public class NacosSerializationException extends NacosRuntimeException {
+
+    public static final int ERROR_CODE = 100;
 
     private static final long serialVersionUID = -4308536346316915612L;
 
@@ -32,19 +34,24 @@ public class NacosSerializationException extends RuntimeException {
     private Class<?> serializedClass;
 
     public NacosSerializationException() {
+        super(ERROR_CODE);
     }
 
     public NacosSerializationException(Class<?> serializedClass) {
-        super(String.format(MSG_FOR_SPECIFIED_CLASS, serializedClass.getName()));
+        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, serializedClass.getName()));
         this.serializedClass = serializedClass;
     }
 
     public NacosSerializationException(Throwable throwable) {
-        super(DEFAULT_MSG, throwable);
+        super(ERROR_CODE, DEFAULT_MSG, throwable);
     }
 
     public NacosSerializationException(Class<?> serializedClass, Throwable throwable) {
-        super(String.format(MSG_FOR_SPECIFIED_CLASS, serializedClass.getName()), throwable);
+        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, serializedClass.getName()), throwable);
         this.serializedClass = serializedClass;
+    }
+
+    public Class<?> getSerializedClass() {
+        return serializedClass;
     }
 }
