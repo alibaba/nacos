@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.cmdb.memory;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.cmdb.spi.CmdbService;
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
@@ -26,6 +25,8 @@ import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.cmdb.service.CmdbWriter;
 import com.alibaba.nacos.cmdb.utils.Loggers;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -166,7 +167,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                     }
 
                     if (Loggers.MAIN.isDebugEnabled()) {
-                        Loggers.MAIN.debug("LABEL-TASK {}", "got label map:" + JSON.toJSONString(tmpLabelMap));
+                        Loggers.MAIN.debug("LABEL-TASK {}", "got label map:" + JacksonUtils.toJson(tmpLabelMap));
                     }
 
                     labelMap = tmpLabelMap;
@@ -219,7 +220,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 eventTimestamp = current;
 
                 if (Loggers.MAIN.isDebugEnabled()) {
-                    Loggers.MAIN.debug("EVENT-TASK {}", "got events size:" + ", events:" + JSON.toJSONString(events));
+                    Loggers.MAIN.debug("EVENT-TASK {}", "got events size:" + ", events:" + JacksonUtils.toJson(events));
                 }
 
                 if (events != null && !events.isEmpty()) {
