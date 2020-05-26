@@ -51,6 +51,7 @@ public class NamingBase extends HttpClient4Test {
 
     public static final String TEST_NAMESPACE_1 = "namespace-1";
     public static final String TEST_NAMESPACE_2 = "namespace-2";
+    public static final String TEST_NAMESPACE_3 = "namespace-3";
 
     static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
