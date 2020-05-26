@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.nacos.common.utils.JsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
@@ -30,11 +30,11 @@ public final class ResponseHandler {
     private static final Logger logger = LoggerFactory.getLogger(ResponseHandler.class);
 
     public static <T> T convert(String s, Class<T> cls) throws Exception {
-        return JsonUtils.toObj(s, cls);
+        return JacksonUtils.toObj(s, cls);
     }
 
     public static <T> T convert(String s, Type type) throws Exception {
-        return JsonUtils.toObj(s, type);
+        return JacksonUtils.toObj(s, type);
     }
 
 }

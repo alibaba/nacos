@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.common.utils.JsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 
@@ -95,7 +95,7 @@ public class RaftConfig implements Config<LogProcessor4CP> {
     @Override
     public String toString() {
         try {
-            return JsonUtils.toJson(data);
+            return JacksonUtils.toJson(data);
         } catch (Exception e) {
             return String.valueOf(data);
         }

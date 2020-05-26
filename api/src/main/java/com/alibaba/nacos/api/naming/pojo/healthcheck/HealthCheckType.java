@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.healthcheck;
+package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,37 +31,36 @@ public enum HealthCheckType {
     /**
      * TCP type
      */
-    TCP("tcp", AbstractHealthChecker.Tcp.class),
+    TCP(Tcp.class),
     /**
      * HTTP type
      */
-    HTTP("http", AbstractHealthChecker.Http.class),
+    HTTP(Http.class),
     /**
      * MySQL type
      */
-    MYSQL("mysql", AbstractHealthChecker.Mysql.class),
+    MYSQL(Mysql.class),
     /**
      * No check
      */
-    NONE("none", AbstractHealthChecker.None.class);
+    NONE(AbstractHealthChecker.None.class);
 
-    private String name;
+    private final Class<? extends AbstractHealthChecker> healthCheckerClass;
 
-    private Class healthCheckerClass;
+    private static final Map<String, Class<? extends AbstractHealthChecker>> EXTEND = new ConcurrentHashMap<String, Class<? extends AbstractHealthChecker>>();
 
-    private static Map<String, Class> EXTEND =
-        new ConcurrentHashMap<>();
-
-    HealthCheckType(String name, Class healthCheckerClass) {
-        this.name = name;
+    HealthCheckType(Class<? extends AbstractHealthChecker> healthCheckerClass) {
         this.healthCheckerClass = healthCheckerClass;
     }
 
-    public static void registerHealthChecker(String type, Class healthCheckerClass){
-        EXTEND.putIfAbsent(type, healthCheckerClass);
+    public static void registerHealthChecker(String type, Class<? extends AbstractHealthChecker> healthCheckerClass){
+        if (!EXTEND.containsKey(type)) {
+            EXTEND.put(type, healthCheckerClass);
+            HealthCheckerFactory.registerSubType(healthCheckerClass, type);
+        }
     }
 
-    public static Class ofHealthCheckerClass(String type){
+    public static Class<? extends AbstractHealthChecker> ofHealthCheckerClass(String type){
         HealthCheckType enumType;
         try {
             enumType = valueOf(type);
@@ -69,12 +70,12 @@ public enum HealthCheckType {
         return enumType.healthCheckerClass;
     }
 
-    public static List<Class> getLoadedHealthCheckerClasses(){
-        List<Class> all = new ArrayList<>();
+    public static List<Class<? extends AbstractHealthChecker>> getLoadedHealthCheckerClasses(){
+        List<Class<? extends AbstractHealthChecker>> all = new ArrayList<Class<? extends AbstractHealthChecker>>();
         for(HealthCheckType type : values()){
             all.add(type.healthCheckerClass);
         }
-        for(Map.Entry<String, Class> entry : EXTEND.entrySet()){
+        for(Map.Entry<String, Class<? extends AbstractHealthChecker>> entry : EXTEND.entrySet()){
             all.add(entry.getValue());
         }
         return all;

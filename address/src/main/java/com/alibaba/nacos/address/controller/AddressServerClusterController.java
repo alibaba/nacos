@@ -21,7 +21,7 @@ import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.address.misc.Loggers;
 import com.alibaba.nacos.address.util.AddressServerParamCheckUtil;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;

@@ -28,9 +28,9 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
@@ -63,6 +63,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -273,20 +274,20 @@ public class DumpService {
 					}
 				};
 
-				TimerTaskService
+				ConfigExecutor
 						.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 
 				long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
 				LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
-				TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay,
+				ConfigExecutor.scheduleWithFixedDelay(dumpAll, initialDelay,
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-				TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
+				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
-			TimerTaskService
+			ConfigExecutor
 					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 		}
 		finally {
@@ -339,7 +340,7 @@ public class DumpService {
 					}
 					LogUtil.defaultLog.error("end checkMd5Task");
 				};
-				TimerTaskService
+				ConfigExecutor
 						.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
 			}
 		}
@@ -531,10 +532,10 @@ public class DumpService {
 
 	private boolean canExecute() {
 		try {
-			CPProtocol protocol = protocolManager.getCpProtocol();
 			// if is derby + raft mode, only leader can execute
 			if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils
 					.getStandaloneMode()) {
+				CPProtocol protocol = protocolManager.getCpProtocol();
 				return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 			}
 			// If it is external storage, it determines whether it is the first node of the cluster

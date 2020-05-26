@@ -17,13 +17,13 @@
  */
 package com.alibaba.nacos.config.server.service.datasource;
 
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -50,9 +50,10 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-public class BasicDataSourceServiceImpl implements DataSourceService {
+public class ExternalDataSourceServiceImpl implements DataSourceService {
 
-    private static final Logger log = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(
+            ExternalDataSourceServiceImpl.class);
     private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
     private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static String JDBC_DRIVER_NAME;
@@ -66,7 +67,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
 
-    private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
+    private List<HikariDataSource> dataSourceList = new ArrayList<>();
     private JdbcTemplate jt;
     private DataSourceTransactionManager tm;
     private TransactionTemplate tjt;
@@ -92,7 +93,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     @PostConstruct
     public void init() {
-        queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
+        queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
         jt = new JdbcTemplate();
         /**
          *  设置最大记录数，防止内存膨胀
@@ -128,16 +129,16 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 
-            TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
+            ConfigExecutor.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
                 TimeUnit.SECONDS);
-            TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
+            ConfigExecutor.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
                 TimeUnit.SECONDS);
         }
     }
 
     @Override
     public synchronized void reload() throws IOException {
-        List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
+        List<HikariDataSource> dblist = new ArrayList<>();
         try {
             String val = null;
             val = ApplicationUtils.getProperty("db.num");
@@ -147,7 +148,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             int dbNum = Integer.parseInt(val.trim());
 
             for (int i = 0; i < dbNum; i++) {
-                BasicDataSource ds = new BasicDataSource();
+                HikariDataSource ds = new HikariDataSource();
                 ds.setDriverClassName(JDBC_DRIVER_NAME);
 
                 val = ApplicationUtils.getProperty("db.url." + i);
@@ -155,7 +156,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                     fatalLog.error("db.url." + i + " is null");
                     throw new IllegalArgumentException("db.url." + i + " is null");
                 }
-                ds.setUrl(val.trim());
+                ds.setJdbcUrl(val.trim());
 
                 val = ApplicationUtils.getProperty("db.user." + i, ApplicationUtils.getProperty("db.user"));
                 if (null == val) {
@@ -171,23 +172,17 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 }
                 ds.setPassword(val.trim());
 
-                val = ApplicationUtils.getProperty("db.initialSize." + i, ApplicationUtils.getProperty("db.initialSize"));
-                ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
+                val = ApplicationUtils.getProperty("db.maxPoolSize." + i, ApplicationUtils.getProperty("db.maxPoolSize"));
+                ds.setMaximumPoolSize(Integer.parseInt(defaultIfNull(val, "20")));
 
-                val = ApplicationUtils.getProperty("db.maxActive." + i, ApplicationUtils.getProperty("db.maxActive"));
-                ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
+                val = ApplicationUtils.getProperty("db.minIdle." + i, ApplicationUtils.getProperty("db.minIdle"));
+                ds.setMinimumIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
-                val = ApplicationUtils.getProperty("db.maxIdle." + i, ApplicationUtils.getProperty("db.maxIdle"));
-                ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
-
-                ds.setMaxWait(3000L);
-                ds.setPoolPreparedStatements(true);
+                ds.setConnectionTimeout(3000L);
 
                 // 每10分钟检查一遍连接池
-                ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                    .toMillis(10L));
-                ds.setTestWhileIdle(true);
-                ds.setValidationQuery("SELECT 1 FROM dual");
+                ds.setValidationTimeout(TimeUnit.MINUTES.toMillis(10L));
+                ds.setConnectionTestQuery("SELECT 1 FROM dual");
 
                 dblist.add(ds);
 
@@ -253,8 +248,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         if (ds == null) {
             return StringUtils.EMPTY;
         }
-        BasicDataSource bds = (BasicDataSource) ds;
-        return bds.getUrl();
+        HikariDataSource bds = (HikariDataSource) ds;
+        return bds.getJdbcUrl();
     }
 
     @Override
@@ -265,12 +260,12 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                     /**
                      * 主库不健康
                      */
-                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     /**
                      * 从库不健康
                      */
-                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 }
             }
         }
@@ -302,7 +297,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             boolean isFound = false;
 
             int index = -1;
-            for (BasicDataSource ds : dataSourceList) {
+            for (HikariDataSource ds : dataSourceList) {
                 index++;
                 testMasterJT.setDataSource(ds);
                 testMasterJT.setQueryTimeout(queryTimeout);
@@ -311,7 +306,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                         .update(
                             "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
-                        fatalLog.warn("[master-db] {}", ds.getUrl());
+                        fatalLog.warn("[master-db] {}", ds.getJdbcUrl());
                     }
                     jt.setDataSource(ds);
                     tm.setDataSource(ds);
@@ -348,10 +343,10 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         fatalLog.error("[db-error] master db {} down.",
-                            getIpFromUrl(dataSourceList.get(i).getUrl()));
+                            getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         fatalLog.error("[db-error] slave db {} down.",
-                            getIpFromUrl(dataSourceList.get(i).getUrl()));
+                            getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
 

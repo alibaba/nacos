@@ -7,7 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.alibaba.nacos.common.utils.JsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ public class ProtocolMetaDataTest {
 
         metaData.load(map);
 
-        String json = JsonUtils.toJson(metaData);
+        String json = JacksonUtils.toJson(metaData);
         AtomicInteger count = new AtomicInteger(0);
 
         CountDownLatch latch = new CountDownLatch(2);
@@ -46,7 +46,7 @@ public class ProtocolMetaDataTest {
 
         metaData.load(map);
 
-        json = JsonUtils.toJson(metaData);
+        json = JacksonUtils.toJson(metaData);
         System.out.println(json);
 
         latch.await(10_000L, TimeUnit.MILLISECONDS);

@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -26,7 +27,7 @@ import java.lang.reflect.Type;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class JsonUtils {
+public final class JacksonUtils {
 
 	static ObjectMapper mapper = new ObjectMapper();
 
@@ -83,5 +84,9 @@ public final class JsonUtils {
 		catch (IOException e) {
 			return null;
 		}
+	}
+
+	public static void registerSubtype(Class<?> clz, String type) {
+		mapper.registerSubtypes(new NamedType(clz, type));
 	}
 }

@@ -17,11 +17,10 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.utils.JsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
 import com.alibaba.nacos.config.server.service.sql.SelectRequest;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -68,7 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -142,10 +142,6 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 	private ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
 	private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-	private final Executor executor = ExecutorFactory.newFixExecutorService(
-			DistributedDatabaseOperateImpl.class.getCanonicalName(),
-			1,
-			new NameThreadFactory("nacos.config.embedded.dump"));
 
 	public DistributedDatabaseOperateImpl(ServerMemberManager memberManager,
 			ProtocolManager protocolManager) throws Exception {
@@ -170,7 +166,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		this.transactionTemplate = dataSourceService.getTransactionTemplate();
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
-		NotifyCenter.registerToPublisher(RaftDBErrorEvent.class, 8);
+		NotifyCenter.registerToSharePublisher(RaftDBErrorEvent.class);
 
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
@@ -378,7 +374,6 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
 					.putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
 					.setType(sqlContext.getClass().getCanonicalName()).build();
-<<<<<<< HEAD
 			if (Objects.isNull(consumer)) {
 				Response response = this.protocol.submit(log);
 				if (response.getSuccess()) {
@@ -396,13 +391,6 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				});
 			}
 			return true;
-=======
-			Response response = this.protocol.submit(log);
-			if (response.getSuccess()) {
-				return true;
-			}
-			throw new ConsistencyException(response.getErrMsg());
->>>>>>> develop
 		}
 		catch (Throwable e) {
 			if (e instanceof ConsistencyException) {
@@ -482,18 +470,14 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 	@Override
 	public Response onApply(Log log) {
-<<<<<<< HEAD
 		LoggerUtils
 				.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
-=======
-		LoggerUtils.printIfDebugEnabled(LogUtil.defaultLog, "onApply info : log : {}", log);
->>>>>>> develop
-
 		final ByteString byteString = log.getData();
 		Preconditions.checkArgument(byteString != null, "Log.getData() must not null");
 		List<ModifyRequest> sqlContext = serializer
 				.deserialize(byteString.toByteArray(), List.class);
-		readLock.lock();
+		final Lock lock = readLock;
+		lock.lock();
 		try {
 			Collections.sort(sqlContext, new Comparator<ModifyRequest>() {
 				@Override
@@ -502,15 +486,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				}
 			});
 			boolean isOk = onUpdate(sqlContext);
-<<<<<<< HEAD
 
 			// If there is additional information, post processing
 			// Put into the asynchronous thread pool for processing to avoid blocking the
 			// normal execution of the state machine
-			executor.execute(() -> handleExtendInfo(log.getExtendInfoMap()));
+			ConfigExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
 
-=======
->>>>>>> develop
 			return Response.newBuilder().setSuccess(isOk).build();
 
 			// We do not believe that an error caused by a problem with an SQL error
@@ -520,13 +501,13 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
 		}
 		catch (DataAccessException e) {
-			throw new ConsistencyException(e);
+			throw new ConsistencyException(e.toString());
 		}
 		catch (Throwable t) {
 			throw t;
 		}
 		finally {
-			readLock.unlock();
+			lock.unlock();
 		}
 	}
 
@@ -574,20 +555,21 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
 				Optional.ofNullable(
-						JsonUtils.toObjMaybeNull(jsonVal, ConfigDumpEvent.class))
+						JacksonUtils.toObjMaybeNull(jsonVal, ConfigDumpEvent.class))
 						.ifPresent(NotifyCenter::publishEvent);
 			}
+			return;
 		}
 		if (extendInfo.containsKey(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT)) {
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
-				Optional.ofNullable(JsonUtils.toObjMaybeNull(jsonVal,
+				List<ConfigDumpEvent> list = JacksonUtils.toObjMaybeNull(jsonVal,
 						new GenericType<List<ConfigDumpEvent>>() {
-						}.getType())).ifPresent(new Consumer<Object>() {
+						}.getType());
+				Optional.ofNullable(list).ifPresent(new Consumer<List<ConfigDumpEvent>>() {
 					@Override
-					public void accept(Object o) {
-						List<ConfigDumpEvent> list = (List<ConfigDumpEvent>) o;
-						list.stream().filter(Objects::nonNull)
+					public void accept(List<ConfigDumpEvent> o) {
+						o.stream().filter(Objects::nonNull)
 								.forEach(NotifyCenter::publishEvent);
 					}
 				});
