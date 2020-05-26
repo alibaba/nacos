@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
-
 import java.util.List;
 
 /**
@@ -47,6 +45,9 @@ public class ListView<T> {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "ListView{" +
+            "data=" + data +
+            ", count=" + count +
+            '}';
     }
 }
