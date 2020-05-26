@@ -15,9 +15,6 @@
  */
 package com.alibaba.nacos.core.auth;
 
-
-import com.alibaba.fastjson.JSON;
-
 import java.io.Serializable;
 
 /**
@@ -51,6 +48,8 @@ public class Resource implements Serializable {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "Resource{" +
+            "key='" + key + '\'' +
+            '}';
     }
 }
