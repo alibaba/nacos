@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -105,5 +107,17 @@ public final class JacksonUtils {
 
 	public static void registerSubtype(Class<?> clz, String type) {
 	    mapper.registerSubtypes(new NamedType(clz, type));
+    }
+
+    public static ObjectNode createEmptyJsonNode() {
+	    return new ObjectNode(mapper.getNodeFactory());
+    }
+
+    public static ArrayNode createEmptyArrayNode() {
+	    return new ArrayNode(mapper.getNodeFactory());
+    }
+
+    public static JsonNode transferToJsonNode(Object obj) {
+	    return mapper.valueToTree(obj);
     }
 }
