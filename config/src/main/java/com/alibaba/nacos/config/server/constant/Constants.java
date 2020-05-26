@@ -182,5 +182,8 @@ public class Constants {
      * Configure the dump event name
      */
     public static final String EXTEND_INFO_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName();
+    /**
+     * Configure the dump event-list name
+     */
     public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
 }

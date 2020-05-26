@@ -13,31 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.core.Instance;
+package com.alibaba.nacos.api.naming.pojo.healthcheck;
+
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-import java.util.List;
+public class TestChecker extends AbstractHealthChecker {
 
-/**
- * Selector with no filtering.
- *
- * @author nkorange
- * @since 0.7.0
- */
-@JsonTypeInfo(use = Id.NAME, property = "type")
-public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
+    @JsonTypeInfo(use = Id.NAME, property = "type")
+    public static final String TYPE = "TEST";
 
-    static {
-        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
+    private String testValue;
+
+    public String getTestValue() {
+        return testValue;
+    }
+
+    public void setTestValue(String testValue) {
+        this.testValue = testValue;
+    }
+
+    public TestChecker() {
+        super(TYPE);
     }
 
     @Override
-    public List<Instance> select(String consumer, List<Instance> providers) {
-        return providers;
+    public AbstractHealthChecker clone() throws CloneNotSupportedException {
+        return null;
     }
 }

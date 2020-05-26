@@ -29,4 +29,10 @@ public final class LoggerUtils {
 		}
 	}
 
+	public static void printIfInfoEnabled(Logger logger, String s, Object... args) {
+		if (logger.isInfoEnabled()) {
+			logger.info(s, args);
+		}
+	}
+
 }

@@ -192,19 +192,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 					configInfo.getGroup(), configInfo.getTenant());
 			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
-
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
-
 			EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
 
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-			return future;
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -236,16 +226,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-
-			return future;
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -278,18 +259,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-
-			return future;
-
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -332,18 +302,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
 					srcUser, time, "U");
 
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
 			EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
-
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-
-			return future;
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -375,16 +335,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-
-			return future;
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -417,17 +368,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
 			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-			databaseOperate.smartUpdate((o, throwable) -> {
-				if (Objects.nonNull(throwable)) {
-					future.completeExceptionally(throwable);
-					return;
-				}
-				future.complete(o);
-			});
-
-			return future;
+			return databaseOperate.asyncSmartUpdate();
 		}
 		finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
@@ -1474,7 +1415,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final int pageSize) {
 		String sqlCountRows = "select count(*) from config_info";
 		String sqlFetchRows =
-				" SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
+				" SELECT t.id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
 						+ " FROM (                               "
 						+ "   SELECT id FROM config_info         "
 						+ "   ORDER BY id LIMIT ?,?             "
@@ -2011,7 +1952,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final int pageSize, final long lastMaxId) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows = "select count(*) from config_info where ";
-		String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where ";
+		String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
 		String where = " 1=1 ";
 		List<Object> params = new ArrayList<Object>();
 
@@ -2486,7 +2427,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 	public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
 		String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
-		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
 		PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
 		Page<ConfigInfoWrapper> page = helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
 				new Object[] { (pageNo - 1) * pageSize, pageSize }, pageNo, pageSize,
@@ -2510,7 +2451,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final String sql =
-				"SELECT ID,data_id,group_id,tenant_id,app_name,content,gmt_modified,md5 FROM "
+				"SELECT ID,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5 FROM "
 						+ "config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
 
 		return databaseOperate.queryOne(sql, new Object[] { dataId, group, tenantTmp },

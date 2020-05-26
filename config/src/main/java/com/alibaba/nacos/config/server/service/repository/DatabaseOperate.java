@@ -18,6 +18,9 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
@@ -135,6 +138,28 @@ public interface DatabaseOperate {
     default Boolean smartUpdate(BiConsumer<Boolean, Throwable> consumer) {
         try {
             return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), consumer);
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+
+    /**
+     * data modify transaction
+     * The SqlContext to be executed in the current thread will be executed and automatically cleared
+     *
+     * @return is success
+     */
+    default CompletableFuture<Boolean> asyncSmartUpdate() {
+        try {
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            update(EmbeddedStorageContextUtils.getCurrentSqlContext(), (o, throwable) -> {
+                if (Objects.nonNull(throwable)) {
+                    future.completeExceptionally(throwable);
+                    return;
+                }
+                future.complete(o);
+            });
+            return future;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -51,6 +52,20 @@ public class NotifyCenter {
 
 	private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
 
+	private static final NotifyCenter INSTANCE = new NotifyCenter();
+
+	private EventPublisher sharePublisher;
+
+	/**
+	 * Publisher management container
+	 */
+	private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
+
+	/**
+	 * Multi-event listening list
+	 */
+	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
+
 	static {
 		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 		// this value needs to be increased appropriately. default value is 16384
@@ -79,72 +94,12 @@ public class NotifyCenter {
 			};
 		}
 
+		INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
+		ShutdownUtils.addShutdownHook(new Thread(() -> {
+			shutdown();
+		}));
+
 	}
-
-	private static final NotifyCenter INSTANCE = new NotifyCenter();
-
-	/**
-	 * Publisher management container
-	 */
-	private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
-
-	/**
-	 * Multi-event listening list
-	 */
-	private final Set<SmartSubscribe> smartSubscribes = new ConcurrentHashSet<>();
-
-	private final EventPublisher sharePublisher = new EventPublisher() {
-
-		private EventPublisher target;
-
-		@Override
-		public void init(Class<? extends Event> type, int bufferSize) {
-			target = BUILD_FACTORY.apply(type, bufferSize);
-		}
-
-		@Override
-		public long currentEventSize() {
-			return target.currentEventSize();
-		}
-
-		@Override
-		public void addSubscribe(Subscribe subscribe) {
-			target.addSubscribe(subscribe);
-		}
-
-		@Override
-		public void unSubscribe(Subscribe subscribe) {
-			target.unSubscribe(subscribe);
-		}
-
-		@Override
-		public boolean publish(Event event) {
-			return target.publish(event);
-		}
-
-		@Override
-		public void notifySubscriber(Subscribe subscribe, Event event) {
-			// Is to handle a SlowEvent, because the event shares an event
-			// queue and requires additional filtering logic
-			if (filter(subscribe, event)) {
-				return;
-			}
-			target.notifySubscriber(subscribe, event);
-		}
-
-		@Override
-		public void shutdown() {
-			target.shutdown();
-		}
-
-		private boolean filter(final Subscribe subscribe, final Event event) {
-			final String sourceName = event.getClass().getCanonicalName();
-			final String targetName = subscribe.subscribeType()
-					.getCanonicalName();
-			return !Objects.equals(sourceName, targetName);
-		}
-
-	};
 
 	@JustForTest
 	public static Map<String, EventPublisher> getPublisherMap() {
@@ -167,13 +122,6 @@ public class NotifyCenter {
 	@JustForTest
 	public static EventPublisher getSharePublisher() {
 		return INSTANCE.sharePublisher;
-	}
-
-	static {
-		INSTANCE.sharePublisher.init(SlowEvent.class, SHATE_BUFFER_SIZE);
-		ShutdownUtils.addShutdownHook(new Thread(() -> {
-			shutdown();
-		}));
 	}
 
 	private static final AtomicBoolean closed = new AtomicBoolean(false);

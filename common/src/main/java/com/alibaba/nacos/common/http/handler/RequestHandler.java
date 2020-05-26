@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.nacos.common.utils.JsonUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.utils.JsonUtils;
 public final class RequestHandler {
 
     public static String parse(Object object) throws Exception {
-        return JsonUtils.toJson(object);
+        return JacksonUtils.toJson(object);
     }
 
 }

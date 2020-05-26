@@ -42,7 +42,7 @@ public final class ConvertUtils {
         return Long.parseLong(val);
     }
 
-    public static boolean toBoolean(String val, boolean defaultValue) {
+    public static boolean toBool(String val, boolean defaultValue) {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }

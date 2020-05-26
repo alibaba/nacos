@@ -183,9 +183,7 @@ public class JRaftProtocol
 
 	@Override
 	public CompletableFuture<Response> submitAsync(Log data) {
-		CompletableFuture<Response> future = new CompletableFuture<>();
-		raftServer.commit(data.getGroup(), data, future);
-		return future;
+		return raftServer.commit(data.getGroup(), data, new CompletableFuture<>());
 	}
 
 	@Override

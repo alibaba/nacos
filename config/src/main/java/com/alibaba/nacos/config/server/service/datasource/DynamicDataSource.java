@@ -50,7 +50,7 @@ public class DynamicDataSource {
             }
             else {
                 if (basicDataSourceService == null) {
-                    basicDataSourceService = new BasicDataSourceServiceImpl();
+                    basicDataSourceService = new ExternalDataSourceServiceImpl();
                     basicDataSourceService.init();
                 }
                 return basicDataSourceService;
