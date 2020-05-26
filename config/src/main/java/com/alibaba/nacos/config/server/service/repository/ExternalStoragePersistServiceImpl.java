@@ -630,7 +630,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		try {
 			return jt.queryForObject(sql, Long.class);
 		} catch (NullPointerException e) {
-			return 0l;
+			return 0;
 		}
 	}
 
