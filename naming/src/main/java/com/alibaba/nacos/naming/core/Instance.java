@@ -177,11 +177,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     public String toJSON() {
-        try {
-            return JacksonUtils.toJson(this);
-        } catch (Exception e) {
-            throw new RuntimeException("Instance toJSON failed", e);
-        }
+        return JacksonUtils.toJson(this);
     }
 
 
