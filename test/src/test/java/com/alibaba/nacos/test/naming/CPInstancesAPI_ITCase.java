@@ -55,12 +55,13 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CPInstancesAPI_ITCase {
 
     private NamingService naming;
     private NamingService naming1;
     private NamingService naming2;
+    private NamingService naming3;
 
     @LocalServerPort
     private int port;
@@ -244,7 +245,7 @@ public class CPInstancesAPI_ITCase {
         TimeUnit.SECONDS.sleep(5L);
 
         ListView<String> listView1 = naming1.getServicesOfServer(1, 20);
-        Assert.assertEquals(listView.getCount()+1, listView1.getCount());
+        Assert.assertEquals(listView.getCount() + 1, listView1.getCount());
 
         namingServiceDelete(serviceName, TEST_NAMESPACE_1);
     }
@@ -273,7 +274,7 @@ public class CPInstancesAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
         int count = json.getIntValue("count");
-        Assert.assertEquals(listView.getCount()+1, count);
+        Assert.assertEquals(listView.getCount() + 1, count);
 
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
     }
@@ -361,6 +362,57 @@ public class CPInstancesAPI_ITCase {
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_1);
     }
 
+
+    /**
+     * @TCDescription : serviceName带有@或者groupName带有@，校验无法create naming
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void create_illegal_naming() throws Exception {
+
+        String randomName;
+        ResponseEntity<String> response = null;
+        // ILLEAGL GROUP TEST
+        try {
+            randomName = NamingBase.randomDomainName();
+            response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+                Params.newParams()
+                    .appendParam("serviceName", randomName)
+                    .appendParam("protectThreshold", "0.3")
+                    .appendParam("namespaceId", TEST_NAMESPACE_3)
+                    .appendParam("groupName", randomName + Constants.SERVICE_INFO_SPLITER_SINGLE)
+                    .done(),
+                String.class,
+                HttpMethod.POST);
+            System.out.print(response + "\n");
+        } catch (Exception e) {
+            Assert.assertTrue(response.getStatusCode().is4xxClientError());
+        }
+
+        // ILLEAGL SERVER_NAME TEST
+        try {
+            randomName = NamingBase.randomDomainName();
+            response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+                Params.newParams()
+                    .appendParam("serviceName", Constants.SERVICE_INFO_SPLITER_SINGLE + randomName)
+                    .appendParam("protectThreshold", "0.3")
+                    .appendParam("namespaceId", TEST_NAMESPACE_3)
+                    .appendParam("groupName", randomName )
+                    .done(),
+                String.class,
+                HttpMethod.POST);
+            System.out.print(response);
+        } catch (Exception e) {
+            Assert.assertTrue(response.getStatusCode().is4xxClientError());
+        }
+
+        // LLEAGLE TEST
+        randomName = NamingBase.randomDomainName();
+        namingServiceCreate(randomName, Constants.DEFAULT_NAMESPACE_ID, randomName);
+        namingServiceDelete(randomName, Constants.DEFAULT_NAMESPACE_ID, randomName);
+    }
+
     private void instanceDeregister(String serviceName, String namespace, String ip, String port) {
         instanceDeregister(serviceName, namespace, Constants.DEFAULT_GROUP, ip, port);
     }
@@ -392,6 +444,7 @@ public class CPInstancesAPI_ITCase {
             HttpMethod.POST);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
     }
+
     private void instanceRegister(String serviceName, String namespace, String ip, String port) {
         instanceRegister(serviceName, namespace, Constants.DEFAULT_GROUP, ip, port);
     }
@@ -441,10 +494,10 @@ public class CPInstancesAPI_ITCase {
         HttpEntity<?> entity = new HttpEntity<T>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-                .queryParams(params);
+            .queryParams(params);
 
         return this.restTemplate.exchange(
-                builder.toUriString(), HttpMethod.GET, entity, clazz);
+            builder.toUriString(), HttpMethod.GET, entity, clazz);
     }
 
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
@@ -463,12 +516,12 @@ public class CPInstancesAPI_ITCase {
     private void prepareData() {
 
         ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/regDom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("cktype", "TCP")
-                        .appendParam("token", "abc")
-                        .done(),
-                String.class);
+            Params.newParams()
+                .appendParam("dom", NamingBase.TEST_DOM_1)
+                .appendParam("cktype", "TCP")
+                .appendParam("token", "abc")
+                .done(),
+            String.class);
 
         if (responseEntity.getStatusCode().isError()) {
             throw new RuntimeException("before test: register domain failed!" + responseEntity.toString());
@@ -481,11 +534,11 @@ public class CPInstancesAPI_ITCase {
         }
 
         responseEntity = request("/nacos/v1/ns/api/addIP4Dom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT_4_DOM_1)
-                        .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1).done(),
-                String.class);
+            Params.newParams()
+                .appendParam("dom", NamingBase.TEST_DOM_1)
+                .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT_4_DOM_1)
+                .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1).done(),
+            String.class);
 
         if (responseEntity.getStatusCode().isError()) {
             throw new RuntimeException("before test: add ip for domain failed!" + responseEntity.toString());
@@ -495,11 +548,11 @@ public class CPInstancesAPI_ITCase {
     private void removeData() {
 
         ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/remvDom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("token", "abc")
-                        .done(),
-                String.class);
+            Params.newParams()
+                .appendParam("dom", NamingBase.TEST_DOM_1)
+                .appendParam("token", "abc")
+                .done(),
+            String.class);
 
         if (responseEntity.getStatusCode().isError()) {
             throw new RuntimeException("before test: remove domain failed!" + responseEntity.toString());

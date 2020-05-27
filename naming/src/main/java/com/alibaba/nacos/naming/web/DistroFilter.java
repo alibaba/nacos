@@ -92,6 +92,9 @@ public class DistroFilter implements Filter {
 
 			if (StringUtils.isNotBlank(serviceName)) {
 				serviceName = serviceName.trim();
+                if (serviceName.contains(Constants.SERVICE_INFO_SPLITER_SINGLE)) {
+                    throw new IllegalArgumentException("serviceName includes illegal char");
+                }
 			}
 			Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
 
@@ -102,7 +105,9 @@ public class DistroFilter implements Filter {
 			String groupName = req.getParameter(CommonParams.GROUP_NAME);
 			if (StringUtils.isBlank(groupName)) {
 				groupName = Constants.DEFAULT_GROUP;
-			}
+			} else if (groupName.contains(Constants.SERVICE_INFO_SPLITER_SINGLE)) {
+                throw new IllegalArgumentException("groupName includes illegal char");
+            }
 
 			// use groupName@@serviceName as new service name:
 			String groupedServiceName = serviceName;
@@ -172,6 +177,10 @@ public class DistroFilter implements Filter {
 			resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
 					"no such api:" + req.getMethod() + ":" + req.getRequestURI());
 		}
+		catch (IllegalArgumentException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                "illeagl args:" + req.getMethod() + ":" + req.getRequestURI());
+        }
 		catch (Exception e) {
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
 					"Server failed," + ExceptionUtil.getAllExceptionMsg(e));
