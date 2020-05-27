@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -48,7 +47,6 @@ public class ServiceTest extends BaseTest {
         mockInjectHealthCheckProcessor();
         mockInjectDistroMapper();
         mockInjectSwitchDomain();
-        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
     }
 
     @Test
@@ -120,5 +118,11 @@ public class ServiceTest extends BaseTest {
         assertTrue(actual.contains("\"owners\":[]"));
         assertTrue(actual.contains("\"protectThreshold\":0.0"));
         assertTrue(actual.contains("\"clusters\":[]"));
+    }
+
+    @Test
+    public void test() {
+        String a = "{\"appName\":\"\",\"checksum\":\"d9ce515b2d3f26a06cd7ba43a4cba1a7\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"groupName\":\"\",\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":1590401570517,\"metadata\":{},\"name\":\"DEFAULT_GROUP@@nacos.test\",\"namespaceId\":\"public\",\"owners\":[],\"protectThreshold\":0.5,\"pushService\":{\"failedPushCount\":0,\"totalPush\":0},\"resetWeight\":false,\"selector\":{\"type\":\"none\"},\"serviceString\":\"{\\\"invalidIPCount\\\":0,\\\"name\\\":\\\"DEFAULT_GROUP@@nacos.test\\\",\\\"ipCount\\\":0,\\\"owners\\\":[],\\\"protectThreshold\\\":0.5,\\\"clusters\\\":[],\\\"token\\\":null}\",\"token\":\"\"}";
+//        JacksonUtils.toObj(a, Service.class);
     }
 }

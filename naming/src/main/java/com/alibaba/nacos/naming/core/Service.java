@@ -326,11 +326,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public String toJSON() {
-        try {
-            return JacksonUtils.toJson(this);
-        } catch (Exception e) {
-            throw new RuntimeException("Service toJson failed", e);
-        }
+        return JacksonUtils.toJson(this);
     }
 
     @JsonIgnore
