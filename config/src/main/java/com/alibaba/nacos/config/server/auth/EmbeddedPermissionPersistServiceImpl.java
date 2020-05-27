@@ -74,13 +74,13 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
 	public void addPermission(String role, String resource, String action) {
 		String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
 		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.smartUpdate();
+		databaseOperate.blockUpdate();
 	}
 
 	public void deletePermission(String role, String resource, String action) {
 		String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
 		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.smartUpdate();
+		databaseOperate.blockUpdate();
 	}
 
 }

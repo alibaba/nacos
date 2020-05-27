@@ -51,7 +51,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
 
 		try {
 			EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
-			databaseOperate.smartUpdate();
+			databaseOperate.blockUpdate();
 		} finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
 		}
@@ -61,7 +61,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
 		String sql = "DELETE from users WHERE username=?";
 		try {
 			EmbeddedStorageContextUtils.addSqlContext(sql, username);
-			databaseOperate.smartUpdate();
+			databaseOperate.blockUpdate();
 		} finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
 		}
@@ -72,7 +72,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
 			EmbeddedStorageContextUtils.addSqlContext(
 					"UPDATE users SET password = ? WHERE username=?",
 					password, username);
-			databaseOperate.smartUpdate();
+			databaseOperate.blockUpdate();
 		} finally {
 			EmbeddedStorageContextUtils.cleanAllContext();
 		}

@@ -87,8 +87,8 @@ public class EmbeddedStorageContextUtils {
                     .lastModifiedTs(time.getTime())
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -117,8 +117,8 @@ public class EmbeddedStorageContextUtils {
                     .lastModifiedTs(time.getTime())
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -147,8 +147,8 @@ public class EmbeddedStorageContextUtils {
                     .lastModifiedTs(time.getTime())
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -175,8 +175,8 @@ public class EmbeddedStorageContextUtils {
                     .lastModifiedTs(time.getTime())
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -203,8 +203,8 @@ public class EmbeddedStorageContextUtils {
                 events.add(event);
             }
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(events));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT, JacksonUtils.toJson(events));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -228,8 +228,8 @@ public class EmbeddedStorageContextUtils {
                     .isBeta(true)
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
@@ -256,8 +256,8 @@ public class EmbeddedStorageContextUtils {
                     .handleIp(srcIp)
                     .build();
 
-            Map<String, String> extendInfo = new HashMap<>(4);
-            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJsonMaybeEmpty(event));
+            Map<String, String> extendInfo = new HashMap<>(2);
+            extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
             EmbeddedStorageContextUtils.putAllExtendInfo(extendInfo);
         }
     }
