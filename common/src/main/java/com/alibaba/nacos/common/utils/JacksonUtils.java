@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -39,6 +40,7 @@ public final class JacksonUtils {
 
 	static {
 		mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+		mapper.setSerializationInclusion(Include.NON_NULL);
 	}
 
 	public static String toJson(Object obj) {
@@ -73,11 +75,11 @@ public final class JacksonUtils {
         }
     }
 
-    public static <T> T toObj(String json, TypeReference<T> typeReference) {
+    public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
         try {
-            return mapper.readValue(json, typeReference);
-        } catch (IOException e) {
-            throw new NacosDeserializationException(typeReference.getClass(), e);
+            return toObj(StringUtils.newString4UTF8(json), typeReference);
+        } catch (Exception e) {
+            throw new NacosDeserializationException(e);
         }
     }
 
@@ -94,6 +96,14 @@ public final class JacksonUtils {
             return mapper.readValue(json, mapper.constructType(type));
         } catch (IOException e) {
             throw new NacosDeserializationException(e);
+        }
+    }
+
+    public static <T> T toObj(String json, TypeReference<T> typeReference) {
+        try {
+            return mapper.readValue(json, typeReference);
+        } catch (IOException e) {
+            throw new NacosDeserializationException(typeReference.getClass(), e);
         }
     }
 
