@@ -15,12 +15,10 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -32,14 +30,14 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.google.common.collect.Maps;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +60,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -274,13 +271,13 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-        JSONObject serviceJson = JSON.parseObject(msg.getData());
+        JsonNode serviceJson = JacksonUtils.toObj(msg.getData());
 
-        JSONArray ipList = serviceJson.getJSONArray("ips");
+        ArrayNode ipList = (ArrayNode) serviceJson.get("ips");
         Map<String, String> ipsMap = new HashMap<>(ipList.size());
         for (int i = 0; i < ipList.size(); i++) {
 
-            String ip = ipList.getString(i);
+            String ip = ipList.get(i).asText();
             String[] strings = ip.split("_");
             ipsMap.put(strings[0], strings[1]);
         }
@@ -565,7 +562,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (instanceMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
             throw new IllegalArgumentException("ip list can not be empty, service: " + service.getName() + ", ip list: "
-                + JSON.toJSONString(instanceMap.values()));
+                + JacksonUtils.toJson(instanceMap.values()));
         }
 
         return new ArrayList<>(instanceMap.values());
@@ -839,7 +836,7 @@ public class ServiceManager implements RecordListener<Service> {
 
                     Message msg = new Message();
 
-                    msg.setData(JSON.toJSONString(checksum));
+                    msg.setData(JacksonUtils.toJson(checksum));
 
                     Collection<Member> sameSiteServers = memberManager.allMembers();
 
@@ -893,7 +890,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         @Override
         public String toString() {
-            return JSON.toJSONString(this);
+            return JacksonUtils.toJson(this);
         }
     }
 }
