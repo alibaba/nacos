@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -51,7 +51,7 @@ public class NamingProxy {
 
             HttpClient.asyncHttpPutLarge("http://" + server + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
-                headers, JSON.toJSONBytes(checksumMap),
+                headers, JacksonUtils.toJsonBytes(checksumMap),
                 new AsyncCompletionHandler() {
                     @Override
                     public Object onCompleted(Response response) throws Exception {
@@ -81,7 +81,7 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
         HttpClient.HttpResult result = HttpClient.httpGetLarge("http://" + server + ApplicationUtils.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JSON.toJSONString(params));
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JacksonUtils.toJson(params));
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content.getBytes();
@@ -112,7 +112,7 @@ public class NamingProxy {
 
     public static boolean syncData(byte[] data, String curServer) {
         Map<String, String> headers = new HashMap<>(128);
-        
+
         headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
         headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         headers.put("Accept-Encoding", "gzip,deflate,sdch");
