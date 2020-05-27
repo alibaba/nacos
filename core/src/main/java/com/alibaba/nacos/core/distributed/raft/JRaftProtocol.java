@@ -23,7 +23,7 @@ import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.Constants;
+import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
@@ -37,14 +37,11 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -134,9 +131,11 @@ public class JRaftProtocol
 
 					// Leader information needs to be selectively updated. If it is valid data,
 					// the information in the protocol metadata is updated.
-					MapUtils.putIfValNoEmpty(properties, Constants.LEADER_META_DATA, leader);
-					MapUtils.putIfValNoNull(properties, Constants.TERM_META_DATA, term);
-					MapUtils.putIfValNoEmpty(properties, Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
+					MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
+					MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
+					MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+
+					System.out.println(properties);
 
 					value.put(groupId, properties);
 					metaData.load(value);

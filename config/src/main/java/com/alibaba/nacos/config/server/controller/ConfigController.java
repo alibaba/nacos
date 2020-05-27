@@ -124,7 +124,7 @@ public class ConfigController {
 	@PostMapping
 	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-	public DeferredResult<Boolean> publishConfig(HttpServletRequest request, HttpServletResponse response,
+	public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam("content") String content,
@@ -138,8 +138,6 @@ public class ConfigController {
 			@RequestParam(value = "type", required = false) String type,
 			@RequestParam(value = "schema", required = false) String schema)
 			throws NacosException {
-
-		DeferredResult<Boolean> deferredResult = new DeferredResult<>();
 
 		final String srcIp = RequestUtil.getRemoteIp(request);
 		String requestIpApp = RequestUtil.getAppName(request);
@@ -167,33 +165,22 @@ public class ConfigController {
 		String betaIps = request.getHeader("betaIps");
 		ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
 		configInfo.setType(type);
-		CompletableFuture<Boolean> future;
 		if (StringUtils.isBlank(betaIps)) {
 			if (StringUtils.isBlank(tag)) {
-				future = persistService.insertOrUpdate(srcIp, srcUser, configInfo, time,
+				persistService.insertOrUpdate(srcIp, srcUser, configInfo, time,
 						configAdvanceInfo, true);
 			}
 			else {
-				future = persistService
+				persistService
 						.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
 			}
 		}
 		else {
 			// beta publish
-			future = persistService
+			persistService
 					.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
 		}
-
-		WebUtils.process(deferredResult, future, () -> {
-			ConfigTraceService
-					.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-							InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
-		}, throwable -> {
-			LogUtil.fatalLog.error("");
-			return false;
-		});
-
-		return deferredResult;
+		return true;
 	}
 
 	/**

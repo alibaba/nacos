@@ -18,10 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -39,21 +36,14 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -62,12 +52,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -76,14 +63,15 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@Service
-public class DumpService {
+public abstract class DumpService {
 
-	private final PersistService persistService;
-	private final ServerMemberManager memberManager;
-	private final ProtocolManager protocolManager;
+	protected DumpProcessor processor;
+	protected DumpAllProcessor dumpAllProcessor;
+	protected DumpAllBetaProcessor dumpAllBetaProcessor;
+	protected DumpAllTagProcessor dumpAllTagProcessor;
 
-	private static final String READ_FAILED_NO_LEADER_MSG = "Fail to run ReadIndex task, maybe the leader stepped down.";
+	protected final PersistService persistService;
+	protected final ServerMemberManager memberManager;
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
@@ -91,13 +79,20 @@ public class DumpService {
 	 *
 	 * @param persistService  {@link PersistService}
 	 * @param memberManager   {@link ServerMemberManager}
-	 * @param protocolManager {@link ProtocolManager}
 	 */
-	public DumpService(PersistService persistService, ServerMemberManager memberManager,
-			ProtocolManager protocolManager) {
+	public DumpService(PersistService persistService, ServerMemberManager memberManager) {
 		this.persistService = persistService;
 		this.memberManager = memberManager;
-		this.protocolManager = protocolManager;
+		this.processor = new DumpProcessor(this);
+		this.dumpAllProcessor = new DumpAllProcessor(this);
+		this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
+		this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+		this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
+		this.dumpTaskMgr.setDefaultTaskProcessor(processor);
+
+		this.dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
+		this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
+		DynamicDataSource.getInstance().getDataSource();
 	}
 
 	public PersistService getPersistService() {
@@ -108,92 +103,9 @@ public class DumpService {
 		return memberManager;
 	}
 
-	@PostConstruct
-	protected void init() throws Throwable {
-		DynamicDataSource.getInstance().getDataSource();
+	protected abstract void init() throws Throwable;
 
-		DumpProcessor processor = new DumpProcessor(this);
-		DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
-		DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-		DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-
-		dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
-		dumpTaskMgr.setDefaultTaskProcessor(processor);
-
-		dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
-		dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
-
-		// If using embedded distributed storage, you need to wait for the
-		// underlying master to complete the selection
-		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
-
-			CPProtocol protocol = protocolManager.getCpProtocol();
-
-			LogUtil.dumpLog
-					.info("With embedded distributed storage, you need to wait for "
-							+ "the underlying master to complete before you can perform the dump operation.");
-
-			AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
-			CountDownLatch waitDumpFinish = new CountDownLatch(1);
-
-			// watch path => /nacos_config/leader/ has value ?
-			Observer observer = new Observer() {
-
-				@Override
-				public void update(Observable o, Object arg) {
-					GlobalExecutor.executeByCommon(() -> {
-						// must make sure that there is a value here to perform the correct operation that follows
-						if (Objects.isNull(arg)) {
-							return;
-						}
-						for ( ; ; ) {
-							try {
-								dumpOperate(processor, dumpAllProcessor,
-										dumpAllBetaProcessor, dumpAllTagProcessor);
-								break;
-							}
-							catch (Throwable ex) {
-								// This means that exceptions thrown because the conformance layer is temporarily
-								// unable to provide read operations need to be handled separately
-								if (StringUtils.containsIgnoreCase(ex.getMessage(), READ_FAILED_NO_LEADER_MSG)) {
-									continue;
-								}
-								errorReference.set(ex);
-								break;
-							}
-						}
-						waitDumpFinish.countDown();
-						protocol.protocolMetaData()
-								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-										this);
-					});
-				}
-			};
-
-			protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-					com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-					observer);
-
-			// We must wait for the dump task to complete the callback operation before
-			// continuing with the initialization
-			ThreadUtils.latchAwait(waitDumpFinish);
-
-			// If an exception occurs during the execution of the dump task, the exception
-			// needs to be thrown, triggering the node to start the failed process
-			final Throwable ex = errorReference.get();
-			if (Objects.nonNull(ex)) {
-				throw ex;
-			}
-
-		}
-		else {
-			dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-					dumpAllTagProcessor);
-		}
-	}
-
-	private void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
+	protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
 			DumpAllBetaProcessor dumpAllBetaProcessor,
 			DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
 		TimerContext.start("config dump job");
@@ -267,10 +179,10 @@ public class DumpService {
 			catch (Exception e) {
 				LogUtil.fatalLog
 						.error("Nacos Server did not start because dumpservice bean construction failure :\n"
-								+ e.getMessage(), e.getCause());
+								+ e.toString());
 				throw new NacosException(NacosException.SERVER_ERROR,
 						"Nacos Server did not start because dumpservice bean construction failure :\n"
-								+ e.getMessage());
+								+ e.getMessage(), e);
 			}
 			if (!ApplicationUtils.getStandaloneMode()) {
 				Runnable heartbeat = () -> {
@@ -540,25 +452,7 @@ public class DumpService {
 		}
 	}
 
-	private boolean canExecute() {
-		try {
-			// if is derby + raft mode, only leader can execute
-			if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils
-					.getStandaloneMode()) {
-				CPProtocol protocol = protocolManager.getCpProtocol();
-				return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
-			}
-			// If it is external storage, it determines whether it is the first node of the cluster
-			return memberManager.isFirstIp();
-		}
-		catch (NoSuchRaftGroupException e) {
-			return true;
-		}
-		catch (Throwable e) {
-			// It's impossible to get to this point
-			throw new RuntimeException(e);
-		}
-	}
+	protected abstract boolean canExecute();
 
 	/**
 	 * 全量dump间隔

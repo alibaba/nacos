@@ -19,7 +19,7 @@ package com.alibaba.nacos.consistency.cp;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Constants {
+public class MetadataKey {
 
     public static final String LEADER_META_DATA = "leader";
 

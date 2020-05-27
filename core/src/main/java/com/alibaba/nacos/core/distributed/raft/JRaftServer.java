@@ -301,13 +301,13 @@ public class JRaftServer {
 							future.complete(response);
 						}
 						catch (Throwable t) {
-							future.completeExceptionally(t);
+							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", t));
 						}
 						return;
 					}
 					Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
 					future.completeExceptionally(
-							new ConsistencyException("The conformance protocol is temporarily unavailable for reading"));
+							new ConsistencyException("The conformance protocol is temporarily unavailable for reading, " + status.getErrorMsg()));
 				}
 			});
 			return future;
@@ -327,7 +327,7 @@ public class JRaftServer {
 					@Override
 					public void accept(Response response, Throwable throwable) {
 						if (Objects.nonNull(throwable)) {
-							future.completeExceptionally(throwable);
+							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", throwable));
 							return;
 						}
 						if (response.getSuccess()) {

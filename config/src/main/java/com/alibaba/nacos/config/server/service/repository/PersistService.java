@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
@@ -69,44 +68,45 @@ public interface PersistService {
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	CompletableFuture<Boolean> addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+	void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
 			final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
 
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	CompletableFuture<Boolean> addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+	void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
 			String srcIp, String srcUser, Timestamp time, boolean notify);
 
 	/**
 	 * 添加普通配置信息，发布数据变更事件
 	 */
-	CompletableFuture<Boolean> addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+	void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
 			boolean notify);
 
 	/**
 	 * 更新配置信息
 	 */
-	CompletableFuture<Boolean> updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+	void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
 			final Timestamp time, final Map<String, Object> configAdvanceInfo,
 			final boolean notify);
 
 	/**
 	 * 更新配置信息
 	 */
-	CompletableFuture<Boolean> updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+	void updateConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
 			boolean notify);
 
 	/**
 	 * 更新配置信息
 	 */
-	CompletableFuture<Boolean> updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+	void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
 			boolean notify);
 
-	CompletableFuture<Boolean> insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+	void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
 			final String srcUser, final Timestamp time, final boolean notify);
 
-	CompletableFuture<Boolean> insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+	void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
 			final String srcUser, final Timestamp time, final boolean notify);
 
 	/**
@@ -120,7 +120,7 @@ public interface PersistService {
 	/**
 	 * 写入主表，插入或更新
 	 */
-	CompletableFuture<Boolean> insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+	void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
 			Map<String, Object> configAdvanceInfo, boolean notify);
 
 	// ----------------------- config_aggr_info 表 insert update delete

@@ -120,7 +120,7 @@ public interface DatabaseOperate {
      *
      * @return is success
      */
-    default Boolean smartUpdate() {
+    default Boolean blockUpdate() {
         try {
             return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), null);
         } finally {
@@ -132,24 +132,9 @@ public interface DatabaseOperate {
      * data modify transaction
      * The SqlContext to be executed in the current thread will be executed and automatically cleared
      *
-     * @param consumer {@link BiConsumer}
      * @return is success
      */
-    default Boolean smartUpdate(BiConsumer<Boolean, Throwable> consumer) {
-        try {
-            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), consumer);
-        } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
-        }
-    }
-
-    /**
-     * data modify transaction
-     * The SqlContext to be executed in the current thread will be executed and automatically cleared
-     *
-     * @return is success
-     */
-    default CompletableFuture<Boolean> asyncSmartUpdate() {
+    default CompletableFuture<Boolean> futureUpdate() {
         try {
             CompletableFuture<Boolean> future = new CompletableFuture<>();
             update(EmbeddedStorageContextUtils.getCurrentSqlContext(), (o, throwable) -> {

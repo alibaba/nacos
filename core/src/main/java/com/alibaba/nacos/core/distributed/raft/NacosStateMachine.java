@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;

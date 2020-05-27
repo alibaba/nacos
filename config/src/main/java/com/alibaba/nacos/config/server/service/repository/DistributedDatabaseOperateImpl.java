@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -215,7 +217,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -241,7 +243,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -268,7 +270,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -295,7 +297,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -321,7 +323,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -348,7 +350,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -393,12 +395,9 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			return true;
 		}
 		catch (Throwable e) {
-			if (e instanceof ConsistencyException) {
-				throw (ConsistencyException) e;
-			}
 			LogUtil.fatalLog
 					.error("An exception occurred during the update operation : {}", e);
-			throw new NJdbcException(e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -554,25 +553,18 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		if (extendInfo.containsKey(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT)) {
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
-				Optional.ofNullable(
-						JacksonUtils.toObjMaybeNull(jsonVal, ConfigDumpEvent.class))
-						.ifPresent(NotifyCenter::publishEvent);
+				NotifyCenter.publishEvent(JacksonUtils.toObj(jsonVal, ConfigDumpEvent.class));
 			}
 			return;
 		}
 		if (extendInfo.containsKey(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT)) {
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
-				List<ConfigDumpEvent> list = JacksonUtils.toObjMaybeNull(jsonVal,
+				List<ConfigDumpEvent> list = JacksonUtils.toObj(jsonVal,
 						new GenericType<List<ConfigDumpEvent>>() {
 						}.getType());
-				Optional.ofNullable(list).ifPresent(new Consumer<List<ConfigDumpEvent>>() {
-					@Override
-					public void accept(List<ConfigDumpEvent> o) {
-						o.stream().filter(Objects::nonNull)
-								.forEach(NotifyCenter::publishEvent);
-					}
-				});
+				list.stream().filter(Objects::nonNull)
+						.forEach(NotifyCenter::publishEvent);
 			}
 		}
 	}
