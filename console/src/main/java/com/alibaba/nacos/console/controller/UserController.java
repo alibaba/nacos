@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
@@ -28,6 +28,8 @@ import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImp
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.core.auth.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -172,7 +174,8 @@ public class UserController {
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER,
                 NacosAuthConfig.TOKEN_PREFIX + user.getToken());
 
-            JSONObject result = new JSONObject();
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+//            JSONObject result = new JSONObject();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());

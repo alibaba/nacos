@@ -387,7 +387,7 @@ public class NamingProxy {
         JsonNode json = JacksonUtils.toObj(result);
         ListView<String> listView = new ListView<>();
         listView.setCount(json.get("count").asInt());
-        listView.setData(JacksonUtils.toObj(json.get("doms").asText(), new TypeReference<List<String>>() {}));
+        listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {}));
 
         return listView;
     }
