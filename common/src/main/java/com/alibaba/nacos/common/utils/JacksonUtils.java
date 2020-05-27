@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.utils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
@@ -47,6 +48,10 @@ public final class JacksonUtils {
 	public static <T> T toObj(byte[] json, Type cls) throws Exception {
 		return toObj(StringUtils.newString4UTF8(json), cls);
 	}
+
+	public static <T> T toObj(InputStream inputStream, Class<T> tClass) throws Exception {
+	    return mapper.readValue(inputStream, tClass);
+    }
 
 	public static <T> T toObj(String json, Class<T> cls) throws Exception {
 		return mapper.readValue(json, cls);

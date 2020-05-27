@@ -167,6 +167,20 @@ public class IoUtils {
         }
     }
 
+    public static void copy(byte[] in, OutputStream out) throws IOException {
+
+        try {
+            out.write(in);
+        } finally {
+            try {
+                out.close();
+            } catch (IOException io) {
+            }
+
+        }
+
+    }
+
     static public long copy(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;

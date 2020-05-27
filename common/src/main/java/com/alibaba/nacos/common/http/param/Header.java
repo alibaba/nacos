@@ -17,6 +17,10 @@
 package com.alibaba.nacos.common.http.param;
 
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -49,7 +53,7 @@ public class Header {
         return this;
     }
 
-    public Header builded() {
+    public Header build() {
         return this;
     }
 
@@ -76,13 +80,14 @@ public class Header {
         return list;
     }
 
-    public void addAll(List<String> list) {
+    public Header addAll(List<String> list) {
         if ((list.size() & 1) != 0) {
             throw new IllegalArgumentException("list size must be a multiple of 2");
         }
         for (int i = 0; i < list.size();) {
             header.put(list.get(i++), list.get(i++));
         }
+        return this;
     }
 
     public void addAll(Map<String, String> params) {
@@ -91,9 +96,37 @@ public class Header {
         }
     }
 
+    public String getCharset() {
+        String value = getValue(HttpHeaderConsts.CONTENT_TYPE);
+        return (StringUtils.isNotBlank(value) ? analysisCharset(value) : Constants.ENCODE);
+    }
+
+    private String analysisCharset(String contentType) {
+        String[] values = contentType.split(";");
+        String charset = Constants.ENCODE;
+        if (values.length == 0) {
+            return charset;
+        }
+        for (String value : values) {
+            if (value.startsWith("charset=")) {
+                charset = value.substring("charset=".length());
+            }
+        }
+        return charset;
+    }
+
+
+
     public void clear() {
         header.clear();
     }
 
+
+    @Override
+    public String toString() {
+        return "Header{" +
+            "headerToMap=" + header +
+            '}';
+    }
 }
 
