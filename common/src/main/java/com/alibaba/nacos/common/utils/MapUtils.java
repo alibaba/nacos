@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.util.Collection;
+import java.util.Dictionary;
 import java.util.Map;
 import java.util.Objects;
 
@@ -31,6 +33,28 @@ public class MapUtils {
 		if (value != null) {
 			target.put(key, value);
 		}
+	}
+
+	public static void putIfValNoEmpty(Map target, Object key, Object value) {
+		Objects.requireNonNull(key, "key");
+		if (value instanceof String) {
+			if (StringUtils.isNotBlank((String) value)) {
+				target.put(key, value);
+			}
+		}
+		if (value instanceof Collection) {
+			if (CollectionUtils.isNotEmpty((Collection) value)) {
+				target.put(key, value);
+			}
+		}
+		if (value instanceof Dictionary) {
+			if (CollectionUtils.isNotEmpty((Dictionary) value)) {
+				target.put(key, value);
+			}
+		}
+
+		// If you cannot determine if it is empty, null is returned
+		putIfValNoNull(target, key, value);
 	}
 
 }

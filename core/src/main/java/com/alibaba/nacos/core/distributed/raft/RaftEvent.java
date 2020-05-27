@@ -30,7 +30,7 @@ public class RaftEvent implements SlowEvent {
 
     private String groupId;
 
-    private String leader;
+    private String leader = null;
 
     private Long term = null;
 
