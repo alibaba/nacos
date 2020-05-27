@@ -15,10 +15,12 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
@@ -28,12 +30,12 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -47,7 +49,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -81,6 +82,8 @@ public class DumpService {
 	private final PersistService persistService;
 	private final ServerMemberManager memberManager;
 	private final ProtocolManager protocolManager;
+
+	private static final String READ_FAILED_NO_LEADER_MSG = "Fail to run ReadIndex task, maybe the leader stepped down.";
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
@@ -143,16 +146,23 @@ public class DumpService {
 						if (Objects.isNull(arg)) {
 							return;
 						}
-						try {
-							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-									dumpAllTagProcessor);
+						for ( ; ; ) {
+							try {
+								dumpOperate(processor, dumpAllProcessor,
+										dumpAllBetaProcessor, dumpAllTagProcessor);
+								break;
+							}
+							catch (Throwable ex) {
+								// This means that exceptions thrown because the conformance layer is temporarily
+								// unable to provide read operations need to be handled separately
+								if (StringUtils.containsIgnoreCase(ex.getMessage(), READ_FAILED_NO_LEADER_MSG)) {
+									continue;
+								}
+								errorReference.set(ex);
+								break;
+							}
 						}
-						catch (Throwable ex) {
-							errorReference.set(ex);
-						}
-						finally {
-							waitDumpFinish.countDown();
-						}
+						waitDumpFinish.countDown();
 						protocol.protocolMetaData()
 								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
@@ -185,7 +195,7 @@ public class DumpService {
 
 	private void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
 			DumpAllBetaProcessor dumpAllBetaProcessor,
-			DumpAllTagProcessor dumpAllTagProcessor) {
+			DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
 		TimerContext.start("config dump job");
 		try {
 			LogUtil.defaultLog.warn("DumpService start");
@@ -258,7 +268,7 @@ public class DumpService {
 				LogUtil.fatalLog
 						.error("Nacos Server did not start because dumpservice bean construction failure :\n"
 								+ e.getMessage(), e.getCause());
-				throw new RuntimeException(
+				throw new NacosException(NacosException.SERVER_ERROR,
 						"Nacos Server did not start because dumpservice bean construction failure :\n"
 								+ e.getMessage());
 			}

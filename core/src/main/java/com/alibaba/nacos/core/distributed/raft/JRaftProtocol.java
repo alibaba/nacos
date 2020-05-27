@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -133,15 +134,10 @@ public class JRaftProtocol
 
 					// Leader information needs to be selectively updated. If it is valid data,
 					// the information in the protocol metadata is updated.
-					if (StringUtils.isNotBlank(leader)) {
-						properties.put(Constants.LEADER_META_DATA, leader);
-					}
-					if (Objects.nonNull(term)) {
-						properties.put(Constants.TERM_META_DATA, term);
-					}
-					if (CollectionUtils.isNotEmpty(raftClusterInfo)) {
-						properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
-					}
+					MapUtils.putIfValNoEmpty(properties, Constants.LEADER_META_DATA, leader);
+					MapUtils.putIfValNoNull(properties, Constants.TERM_META_DATA, term);
+					MapUtils.putIfValNoEmpty(properties, Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
+
 					value.put(groupId, properties);
 					metaData.load(value);
 
