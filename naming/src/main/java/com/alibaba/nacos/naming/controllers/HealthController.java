@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,8 +66,8 @@ public class HealthController {
     private PushService pushService;
 
     @RequestMapping("/server")
-    public JSONObject server() {
-        JSONObject result = new JSONObject();
+    public ObjectNode server() {
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
             + ", local port:" + ApplicationUtils.getPort());
         return result;
