@@ -22,6 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.After;
@@ -43,8 +44,8 @@ import java.util.concurrent.TimeUnit;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class Role_ITCase extends HttpClient4Test {
 
     @LocalServerPort

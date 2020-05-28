@@ -15,8 +15,10 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -29,10 +31,12 @@ import java.util.List;
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private String jsonFromServer = EMPTY;
+
     public static final String SPLITER = "@@";
 
     private String name;
@@ -43,7 +47,6 @@ public class ServiceInfo {
 
     private long cacheMillis = 1000L;
 
-    @JSONField(name = "hosts")
     private List<Instance> hosts = new ArrayList<Instance>();
 
     private long lastRefTime = 0L;
@@ -162,7 +165,7 @@ public class ServiceInfo {
         return true;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getJsonFromServer() {
         return jsonFromServer;
     }
@@ -171,12 +174,12 @@ public class ServiceInfo {
         this.jsonFromServer = jsonFromServer;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getKey() {
         return getKey(name, clusters);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getKeyEncoded() {
         try {
             return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
@@ -185,7 +188,6 @@ public class ServiceInfo {
         }
     }
 
-    @JSONField(serialize = false)
     public static ServiceInfo fromKey(String key) {
         ServiceInfo serviceInfo = new ServiceInfo();
         int maxSegCount = 3;
@@ -201,7 +203,7 @@ public class ServiceInfo {
         return serviceInfo;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public static String getKey(String name, String clusters) {
 
         if (!isEmpty(clusters)) {

@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
@@ -41,16 +41,16 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         params.put("clientIP", NetUtils.localServer());
 
 
-        String url = "http://" + serverIP + ":" + RunningConfig.getServerPort() + RunningConfig.getContextPath() +
+        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath() +
                 UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
 
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            url = "http://" + serverIP + RunningConfig.getContextPath() +
+            url = "http://" + serverIP + ApplicationUtils.getContextPath() +
                     UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
         }
 
         try {
-            HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(params), new AsyncCompletionHandler() {
+            HttpClient.asyncHttpPostLarge(url, null, JacksonUtils.toJson(params), new AsyncCompletionHandler() {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
@@ -73,7 +73,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             return null;
         }
 
-        Map<String,String> params = new HashMap<>(10);
+        Map<String,String> params = new HashMap<>(1);
 
         params.put("key", key);
 
@@ -82,7 +82,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
             }
-            result = NamingProxy.reqAPI(RunningConfig.getContextPath()
+            result = NamingProxy.reqAPI(ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "statuses", params, serverIP);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);

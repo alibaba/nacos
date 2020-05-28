@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
 import java.util.regex.Matcher;

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.result;
 
-import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.result.core.IResultCode;
 import org.springframework.util.Assert;
@@ -23,7 +23,7 @@ import org.springframework.util.Assert;
 /**
  * @author klw
  * @ClassName: ResultBuilder
- * @Description: util for generating com.alibaba.nacos.config.server.model.RestResult
+ * @Description: util for generating {@link RestResult}
  * @date 2019/6/28 14:47
  */
 public class ResultBuilder {
