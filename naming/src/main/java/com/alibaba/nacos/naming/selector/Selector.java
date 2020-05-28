@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.naming.core.Instance;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
