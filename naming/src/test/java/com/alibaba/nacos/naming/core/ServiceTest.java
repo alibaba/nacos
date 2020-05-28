@@ -71,7 +71,8 @@ public class ServiceTest extends BaseTest {
     @Test
     public void testSerialize() throws Exception {
         String actual = new Service("test-service").toJSON();
-        assertTrue(actual.contains("\"checksum\":\"cb129dc536a387e791ee6f63251c816b\""));
+        System.out.println(actual);
+        assertTrue(actual.contains("\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\""));
         assertTrue(actual.contains("\"clusterMap\":{}"));
         assertTrue(actual.contains("\"empty\":true"));
         assertTrue(actual.contains("\"enabled\":true"));
@@ -91,9 +92,9 @@ public class ServiceTest extends BaseTest {
 
     @Test
     public void testDeserialize() throws Exception {
-        String example = "{\"checksum\":\"cb129dc536a387e791ee6f63251c816b\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
+        String example = "{\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
         Service actual = JacksonUtils.toObj(example, Service.class);
-        assertEquals("cb129dc536a387e791ee6f63251c816b", actual.getChecksum());
+        assertEquals("394c845e1160bb880e7f26fb2149ed6d", actual.getChecksum());
         assertEquals("test-service", actual.getName());
         assertTrue(actual.getClusterMap().isEmpty());
         assertTrue(actual.isEmpty());

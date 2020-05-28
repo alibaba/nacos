@@ -447,7 +447,7 @@ public class ServiceController {
             case none:
                 return new NoneSelector();
             case label:
-                String expression = selectorJson.get("expression").toString();
+                String expression = selectorJson.get("expression").asText();
                 Set<String> labels = LabelSelector.parseExpression(expression);
                 LabelSelector labelSelector = new LabelSelector();
                 labelSelector.setExpression(expression);
