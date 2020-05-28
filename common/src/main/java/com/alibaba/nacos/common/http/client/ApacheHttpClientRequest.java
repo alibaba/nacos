@@ -16,13 +16,9 @@
 
 package com.alibaba.nacos.common.http.client;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.google.common.net.HttpHeaders;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,16 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
 /**
  * {@link HttpClientRequest} implementation that uses apache http client to
