@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,8 +52,8 @@ public class RaftListener implements SmartApplicationListener {
 		if (event instanceof BaseRaftEvent) {
 			BaseRaftEvent raftEvent = (BaseRaftEvent) event;
 			RaftPeer local = raftEvent.getLocal();
-			String json = JSON.toJSONString(local);
-			Map map = JSON.parseObject(json, HashMap.class);
+			String json = JacksonUtils.toJson(local);
+			Map map = JacksonUtils.toObj(json, HashMap.class);
 			Member self = memberManager.getSelf();
 			self.setExtendVal(GROUP, map);
 			memberManager.update(self);
