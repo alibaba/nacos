@@ -37,6 +37,8 @@ public class InetUtils_ITCase {
 
 	static {
 		System.setProperty("nacos.core.inet.auto-refresh", "3");
+		// For load InetUtils.class
+		InetUtils.getSelfIp();
 	}
 
 	@Test
