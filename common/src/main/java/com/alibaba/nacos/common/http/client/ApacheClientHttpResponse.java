@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.param.Header;
-import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.utils.HttpClientUtils;
 

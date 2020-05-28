@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 
 import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
 
 /**
