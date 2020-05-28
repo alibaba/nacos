@@ -25,7 +25,7 @@ public final class MediaType {
 
     public static final String APPLICATION_ATOM_XML = "application/atom+xml";
 
-    public static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
+    public static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded;charset=utf-8";
 
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 

@@ -16,19 +16,19 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import org.apache.http.HttpEntity;
-import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * {@link HttpClientRequest} implementation that uses apache http client to
@@ -37,6 +37,7 @@ import java.net.URI;
  * @author mai.jh
  * @date 2020/5/24
  */
+@SuppressWarnings({"unchecked", "rawtypes", "resource"})
 public class ApacheHttpClientRequest implements HttpClientRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
@@ -64,7 +65,12 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         httpMethod.init(uri.toString());
         httpMethod.initHeader(headers);
-        httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue("Content-Type"));
+        if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
+            && requestHttpEntity.getBody() instanceof Map) {
+            httpMethod.initFromEntity((Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+        } else {
+            httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        }
         return httpMethod.getRequestBase();
     }
 }

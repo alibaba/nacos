@@ -16,14 +16,22 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.HttpMethod;
+
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -34,6 +42,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -157,11 +166,25 @@ public enum BaseHttpMethod {
         if (body == null) {
             return;
         }
-
         if (requestBase instanceof HttpEntityEnclosingRequest) {
             HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
             ContentType contentType = ContentType.create(mediaType);
             StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
+            request.setEntity(entity);
+        }
+    }
+
+    public void initFromEntity(Map<String, String> body, String charset) throws Exception{
+        if (body.isEmpty()) {
+            return;
+        }
+        List<NameValuePair> params = new ArrayList<>(body.size());
+        for (Map.Entry<String, String> entry : body.entrySet()) {
+            params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        }
+        if (requestBase instanceof HttpEntityEnclosingRequest) {
+            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
+            HttpEntity entity = new UrlEncodedFormEntity(params, charset);
             request.setEntity(entity);
         }
     }

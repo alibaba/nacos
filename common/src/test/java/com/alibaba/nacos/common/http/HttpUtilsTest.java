@@ -8,6 +8,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.google.common.reflect.TypeToken;
+import org.junit.Assert;
 import org.junit.Test;
 import sun.tools.jstat.Token;
 
@@ -26,23 +27,64 @@ public class HttpUtilsTest<T> {
 
 
     @Test
-    public void test_url_post() throws Exception{
+    public void test_url_get() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
+        Query query = Query.newInstance().addParam("serviceName", "app-test");
+        RestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), query, Map.class);
+        Assert.assertTrue(restResult.ok());
+        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        System.out.println(JSON.toJSONString(restResult));
+    }
+
+    @Test
+    public void test_url_get_by_map() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test");
+        RestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), param, Map.class);
+        Assert.assertTrue(restResult.ok());
+        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        System.out.println(JSON.toJSONString(restResult));
+    }
+
+    @Test
+    public void test_url_delete() throws Exception{
         String url = IP + CONFIG_INSTANCE_PATH + "/instance";
         Query query = Query.newInstance()
             .addParam("ip", "11.11.11.11")
             .addParam("port", "8080")
             .addParam("serviceName", "app-test");
-
-        RestResult post = nacosRestTemplate.post(url, Header.newInstance(), query, null, RestResult.class);
-        System.out.println(JSON.toJSONString(post));
+        RestResult<Object> restResult = nacosRestTemplate.delete(url, Header.newInstance(), query,  RestResult.class);
+        Assert.assertTrue(restResult.ok());
+        System.out.println(JSON.toJSONString(restResult));
     }
 
     @Test
-    public void test_url_get() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
-        Query query = Query.newInstance().addParam("serviceName", "app-test");
-        RestResult<Map> get = nacosRestTemplate.get(url, Header.newInstance(), query, Map.class);
-        System.out.println(JSON.toJSONString(get));
+    public void test_url_put_from() throws Exception{
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test-change");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        RestResult<String> restResult = nacosRestTemplate.putFrom(url, Header.newInstance(), Query.newInstance(), param, String.class);
+        Assert.assertTrue(restResult.ok());
+        System.out.println(JSON.toJSONString(restResult));
     }
+
+
+    @Test
+    public void test_url_post_from() throws Exception{
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        RestResult<String> restResult = nacosRestTemplate.postFrom(url, Header.newInstance(), Query.newInstance(), param, String.class);
+        Assert.assertTrue(restResult.ok());
+        System.out.println(JSON.toJSONString(restResult));
+    }
+
+
+
 
 }

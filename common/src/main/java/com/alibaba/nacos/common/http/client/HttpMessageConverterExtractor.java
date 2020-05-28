@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.IoUtils;
+import org.apache.http.HttpStatus;
 
 import java.lang.reflect.Type;
 
@@ -45,7 +46,7 @@ public class HttpMessageConverterExtractor<T> implements ResponseExtractor<T>{
         Header headers = clientHttpResponse.getHeaders();
         String value = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         String body = IoUtils.toString(clientHttpResponse.getBody(), headers.getCharset());
-        if (MediaType.APPLICATION_JSON.equals(value)) {
+        if (MediaType.APPLICATION_JSON.equals(value) && HttpStatus.SC_OK == clientHttpResponse.getStatusCode()) {
             return ResponseHandler.convert(body, responseType);
         }
         return (T) body;

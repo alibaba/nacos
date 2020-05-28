@@ -29,6 +29,7 @@ import java.net.URI;
  */
 public interface HttpClientRequest {
 
+
     /**
      * execute http request
      * @param uri http url
