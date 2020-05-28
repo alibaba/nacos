@@ -16,36 +16,49 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
  * Represents a client-side HTTP response.
  * Obtained via an calling of the
- * {@link ClientHttpRequest#execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)}.
+ * {@link HttpClientRequest#execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)}.
  *
  *
  * @author mai.jh
  * @date 2020/5/23
  */
-public interface ClientHttpResponse extends HttpMessage, Closeable{
+public interface HttpClientResponse extends Closeable{
+
+    /**
+     * Return the headers of this message.
+     * @return a corresponding HttpHeaders object (never {@code null})
+     */
+    Header getHeaders();
+
+    /**
+     * Return the body of the message as an input stream.
+     * @return String response body
+     * @throws IOException IOException
+     */
+    InputStream getBody() throws IOException;
 
     /**
      * Return the HTTP status code
      * @return the HTTP status as an integer
-     * @throws IOException in case of I/O errors
      */
-    int getStatusCode() throws IOException;
+    int getStatusCode();
 
     /**
      * Return the HTTP status text of the response.
      * @return the HTTP status text
-     * @throws IOException in case of I/O errors
      */
-    String getStatusText() throws IOException;
+    String getStatusText();
 
     /**
      * close response InputStream

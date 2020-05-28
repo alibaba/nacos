@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.http.client.ApacheHttpClientRequest;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
@@ -44,6 +46,9 @@ public class HttpClientManager {
 	private static final NAsyncHttpClient ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
 
+	private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate
+        (new ApacheHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
+
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
@@ -68,5 +73,9 @@ public class HttpClientManager {
 	public static NAsyncHttpClient getAsyncHttpClient() {
 		return ASYNC_HTTP_CLIENT;
 	}
+
+	public static NacosRestTemplate getNacosRestTemplate() {
+	    return NACOS_REST_TEMPLATE;
+    }
 
 }

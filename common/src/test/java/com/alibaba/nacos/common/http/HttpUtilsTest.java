@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class HttpUtilsTest<T> {
 
-    private NacosRestTemplate nacosRestTemplate = new NacosRestTemplate();
+    private NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
 
 
     private final String CONFIG_CONTROLLER_PATH = "/nacos/v1/cs";

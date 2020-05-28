@@ -18,5 +18,5 @@ public interface ResponseExtractor<T> {
      * @return the extracted data
      * @throws Exception ex
      */
-    T extractData(ClientHttpResponse clientHttpResponse) throws Exception;
+    T extractData(HttpClientResponse clientHttpResponse) throws Exception;
 }

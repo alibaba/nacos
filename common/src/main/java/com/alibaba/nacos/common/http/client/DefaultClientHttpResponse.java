@@ -27,12 +27,12 @@ import java.io.InputStream;
 
 
 /**
- * DefaultClientHttpResponse implementation {@link ClientHttpResponse}
+ * DefaultClientHttpResponse implementation {@link HttpClientResponse}
  *
  * @author mai.jh
  * @date 2020/5/25
  */
-public class DefaultClientHttpResponse implements ClientHttpResponse {
+public class DefaultClientHttpResponse implements HttpClientResponse {
 
     private Header header;
 
@@ -50,12 +50,12 @@ public class DefaultClientHttpResponse implements ClientHttpResponse {
     }
 
     @Override
-    public int getStatusCode() throws IOException {
+    public int getStatusCode() {
         return responseCode;
     }
 
     @Override
-    public String getStatusText() throws IOException {
+    public String getStatusText() {
         return responseCodeMessage;
     }
 
