@@ -17,6 +17,9 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.param.Header;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.utils.HttpClientUtils;
 
 
 import java.io.IOException;
@@ -24,53 +27,53 @@ import java.io.InputStream;
 
 
 /**
- * DefaultClientHttpResponse implementation {@link HttpClientResponse}
+ * ApacheClientHttpResponse implementation {@link HttpClientResponse}
  *
  * @author mai.jh
  * @date 2020/5/25
  */
-public class DefaultClientHttpResponse implements HttpClientResponse {
+public class ApacheClientHttpResponse implements HttpClientResponse {
 
-    private Header header;
+    private CloseableHttpResponse response;
 
-    private int responseCode;
+    private Header responseHeader;
 
-    private String responseCodeMessage;
-
-    private InputStream responseBody;
-
-    public DefaultClientHttpResponse(Header header, int responseCode, String responseCodeMessage, InputStream responseBody) {
-        this.header = header;
-        this.responseCode = responseCode;
-        this.responseCodeMessage = responseCodeMessage;
-        this.responseBody = responseBody;
+    public ApacheClientHttpResponse(CloseableHttpResponse response) {
+        this.response = response;
     }
 
     @Override
     public int getStatusCode() {
-        return responseCode;
+        return this.response.getStatusLine().getStatusCode();
     }
 
     @Override
     public String getStatusText() {
-        return responseCodeMessage;
+        return this.response.getStatusLine().getReasonPhrase();
     }
 
     @Override
     public Header getHeaders() {
-        return header;
+        if (this.responseHeader == null) {
+            this.responseHeader = Header.newInstance();
+            org.apache.http.Header[] allHeaders = response.getAllHeaders();
+            for (org.apache.http.Header header : allHeaders) {
+                this.responseHeader.addParam(header.getName(), header.getValue());
+            }
+        }
+        return this.responseHeader;
     }
 
     @Override
     public InputStream getBody() throws IOException{
-        return this.responseBody;
+        return response.getEntity().getContent();
     }
 
     @Override
     public void close() {
         try {
-            if (this.responseBody != null) {
-                this.responseBody.close();
+            if (this.response != null) {
+                HttpClientUtils.closeQuietly(response);
             }
         }
         catch (Exception ex) {

@@ -1,15 +1,8 @@
 package com.alibaba.nacos.common.model;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.IoUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -25,14 +18,14 @@ public class RequestHttpEntity {
 
     private Query query;
 
-    private byte[] body;
+    private Object body;
 
     public RequestHttpEntity(Header header, Query query) {
         handleHeader(header);
         this.query = query;
     }
 
-    public RequestHttpEntity(Header header, Query query, byte[] body) throws Exception {
+    public RequestHttpEntity(Header header, Query query, Object body) throws Exception {
         handleHeader(header);
         this.query = query;
         this.body = body;
@@ -53,12 +46,12 @@ public class RequestHttpEntity {
         return query;
     }
 
-    public byte[] getBody() {
+    public Object getBody() {
         return body;
     }
 
     public boolean isEmptyBody() {
-        return body == null || body.length == 0;
+        return body == null;
     }
 
 
