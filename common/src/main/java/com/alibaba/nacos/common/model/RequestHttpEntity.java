@@ -1,6 +1,8 @@
 package com.alibaba.nacos.common.model;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 
 import java.util.Map;
@@ -16,7 +18,7 @@ public class RequestHttpEntity {
 
     private final Header headers = Header.newInstance();
 
-    private Query query;
+    private final Query query;
 
     private Object body;
 
@@ -25,7 +27,7 @@ public class RequestHttpEntity {
         this.query = query;
     }
 
-    public RequestHttpEntity(Header header, Query query, Object body) throws Exception {
+    public RequestHttpEntity(Header header, Query query, Object body) {
         handleHeader(header);
         this.query = query;
         this.body = body;
@@ -53,6 +55,5 @@ public class RequestHttpEntity {
     public boolean isEmptyBody() {
         return body == null;
     }
-
 
 }

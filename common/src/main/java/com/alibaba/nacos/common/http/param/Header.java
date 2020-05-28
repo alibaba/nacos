@@ -38,7 +38,7 @@ public class Header {
 
     private Header() {
         header = new LinkedHashMap<String, String>();
-        addParam("Content-Type", "application/json");
+        addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam("Accept-Charset", "UTF-8");
         addParam("Accept-Encoding", "gzip");
         addParam("Content-Encoding", "gzip");
@@ -114,6 +114,7 @@ public class Header {
         }
         return charset;
     }
+
 
 
 

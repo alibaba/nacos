@@ -42,31 +42,19 @@ public interface RestOperations {
      * @return the RestResult
      * @throws Exception ex
      */
-    <T> RestResult<T> get(String url, Type responseType, Header header, Query query) throws Exception;
+    <T> RestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception;
 
     /**
      * http get
      *
      * @param url          url
      * @param responseType return type
-     * @param headers      headers
+     * @param header       headers
      * @param paramValues  paramValues
      * @return the RestResult
      * @throws Exception ex
      */
-    <T> RestResult<T> get(String url, Type responseType, List<String> headers, Map<String, String> paramValues) throws Exception;
-
-    /**
-     * http get
-     *
-     * @param url          url
-     * @param responseType return type
-     * @param header       http header param
-     * @param query        http query param
-     * @return the RestResult
-     * @throws Exception ex
-     */
-    <T> RestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception;
+    <T> RestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception;
 
     /**
      * get request, may be pulling a lot of data
@@ -114,7 +102,7 @@ public interface RestOperations {
      * http put Json
      *
      * @param url          url
-     * @param header      http header param
+     * @param header       http header param
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
@@ -124,12 +112,26 @@ public interface RestOperations {
     <T> RestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body,
                               Type responseType) throws Exception;
 
+    /**
+     * http put from
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param query  http query param
+     * @param bodyValues   http body param
+     * @param responseType return type
+     * @return {@link RestResult}
+     * @throws Exception ex
+     */
+    <T> RestResult<T> putFrom(String url, Header header, Query query,
+                              Map<String, String> bodyValues, Type responseType) throws Exception;
+
 
     /**
      * http put from
      *
      * @param url          url
-     * @param header      http header param
+     * @param header       http header param
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
@@ -158,7 +160,7 @@ public interface RestOperations {
      * http post Json
      *
      * @param url          url
-     * @param header      http header param
+     * @param header       http header param
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
@@ -173,7 +175,21 @@ public interface RestOperations {
      * http post from
      *
      * @param url          url
-     * @param header      http header param
+     * @param header       http header param
+     * @param query  http query param
+     * @param bodyValues   http body param
+     * @param responseType return type
+     * @return {@link RestResult}
+     * @throws Exception ex
+     */
+    <T> RestResult<T> postFrom(String url, Header header, Query query,
+                               Map<String, String> bodyValues, Type responseType) throws Exception;
+
+    /**
+     * http post from
+     *
+     * @param url          url
+     * @param header       http header param
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
