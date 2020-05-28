@@ -61,7 +61,6 @@ public class NacosRestTemplate implements RestOperations {
         return execute(url, HttpMethod.GET, requestHttpEntity, responseExtractor);
     }
 
-
     @Override
     public <T> RestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType) throws Exception {
         ResponseExtractor<RestResult<T>> responseExtractor = responseEntityExtractor(responseType);
