@@ -46,9 +46,6 @@ public class RequestHttpEntity {
     }
 
     public Header getHeaders() {
-        if (!isEmptyBody()) {
-            headers.addParam(HttpHeaderConsts.CONTENT_LENGTH, String.valueOf(body.length));
-        }
         return headers;
     }
 

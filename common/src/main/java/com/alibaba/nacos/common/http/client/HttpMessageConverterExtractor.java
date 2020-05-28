@@ -26,7 +26,7 @@ public class HttpMessageConverterExtractor<T> implements ResponseExtractor<T>{
     }
 
     @Override
-    public T extractData(ClientHttpResponse clientHttpResponse) throws Exception {
+    public T extractData(HttpClientResponse clientHttpResponse) throws Exception {
         Header headers = clientHttpResponse.getHeaders();
         String value = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         String body = IoUtils.toString(clientHttpResponse.getBody(), headers.getCharset());

@@ -23,7 +23,7 @@ public class ResponseEntityExtractor<T> implements ResponseExtractor<T> {
     }
 
     @Override
-    public T extractData(ClientHttpResponse response) throws Exception {
+    public T extractData(HttpClientResponse response) throws Exception {
         T body = this.delegate.extractData(response);
         if (body instanceof RestResult) {
             return body;

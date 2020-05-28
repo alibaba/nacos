@@ -2,20 +2,15 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.http.handler.RequestHandler;
-import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.UriUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
@@ -27,15 +22,14 @@ import java.util.Map;
  * @author mai.jh
  * @date 2020/5/24
  */
-public class NacosRestTemplate extends HttpAccessor implements RestOperations {
+public class NacosRestTemplate implements RestOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
 
-    public NacosRestTemplate(ClientHttpRequest clientHttpRequest) {
-        super.setRequestClient(clientHttpRequest);
-    }
+    private HttpClientRequest requestClient;
 
-    public NacosRestTemplate() {
+    public NacosRestTemplate(HttpClientRequest requestClient) {
+       this.requestClient = requestClient;
     }
 
     @Override
@@ -135,9 +129,8 @@ public class NacosRestTemplate extends HttpAccessor implements RestOperations {
         if (logger.isDebugEnabled()) {
             logger.debug("HTTP " + httpMethod + " " + url);
         }
-        ClientHttpResponse response = null;
+        HttpClientResponse response = null;
         try {
-            ClientHttpRequest requestClient = getRequestClient();
             response = requestClient.execute(uri, httpMethod, requestEntity);
             return responseExtractor.extractData(response);
         } finally {

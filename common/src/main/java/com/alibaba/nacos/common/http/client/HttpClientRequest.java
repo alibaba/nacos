@@ -16,31 +16,26 @@
 
 package com.alibaba.nacos.common.http.client;
 
-import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.model.RequestHttpEntity;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
 
 /**
- * Represents the base interface for HTTP request and response messages.
- * Consists of {@link Header}, retrievable via {@link #getHeaders()}.
+ * Represents a client-side HTTP request.
+ * Created via an implementation execute.
  *
  * @author mai.jh
  * @date 2020/5/23
  */
-public interface HttpMessage {
-
-	/**
-	 * Return the headers of this message.
-	 * @return a corresponding HttpHeaders object (never {@code null})
-	 */
-	 Header getHeaders();
+public interface HttpClientRequest {
 
     /**
-     * Return the body of the message as an input stream.
-     * @return String response body
-     * @throws IOException IOException
+     * execute http request
+     * @param uri http url
+     * @param httpMethod http request method
+     * @param requestHttpEntity http request entity
+     * @return HttpClientResponse
+     * @throws Exception ex
      */
-	 InputStream getBody() throws IOException;
-
+    HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception;
 }
