@@ -55,26 +55,11 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
         if (logger.isDebugEnabled()) {
             logger.debug("Request from server: " + request.getURI().toString());
         }
-        return handleResponse(response);
-    }
-
-    private HttpClientResponse handleResponse(CloseableHttpResponse response) throws IOException{
-        StatusLine statusLine = response.getStatusLine();
-        HttpEntity entity = response.getEntity();
-        int responseCode = statusLine.getStatusCode();
-        String responseMessage = statusLine.getReasonPhrase();
-        org.apache.http.Header[] allHeaders = response.getAllHeaders();
-        Header responseHeader = Header.newInstance();
-
-        for (org.apache.http.Header header : allHeaders) {
-            responseHeader.addParam(header.getName(), header.getValue());
-        }
-
-        return new DefaultClientHttpResponse(responseHeader,responseCode, responseMessage, entity.getContent());
+        return new ApacheClientHttpResponse(response);
     }
 
 
-    protected HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
+    private HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
         Header headers = requestHttpEntity.getHeaders();
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         httpMethod.init(uri.toString());

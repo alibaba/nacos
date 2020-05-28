@@ -114,14 +114,14 @@ public interface RestOperations {
      * http put Json
      *
      * @param url          url
-     * @param headers      http header param
+     * @param header      http header param
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
      * @return {@link RestResult}
      * @throws Exception ex
      */
-    <T> RestResult<T> putJson(String url, List<String> headers, Map<String, String> paramValues, String body,
+    <T> RestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body,
                               Type responseType) throws Exception;
 
 
@@ -129,14 +129,14 @@ public interface RestOperations {
      * http put from
      *
      * @param url          url
-     * @param headers      http header param
+     * @param header      http header param
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @return {@link RestResult}
      * @throws Exception ex
      */
-    <T> RestResult<T> putFrom(String url, List<String> headers, Map<String, String> paramValues,
+    <T> RestResult<T> putFrom(String url, Header header, Map<String, String> paramValues,
                               Map<String, String> bodyValues, Type responseType) throws Exception;
 
 
@@ -158,14 +158,14 @@ public interface RestOperations {
      * http post Json
      *
      * @param url          url
-     * @param headers      http header param
+     * @param header      http header param
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
      * @return {@link RestResult}
      * @throws Exception ex
      */
-    <T> RestResult<T> postJson(String url, List<String> headers, Map<String, String> paramValues, String body,
+    <T> RestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body,
                                Type responseType) throws Exception;
 
 
@@ -173,13 +173,13 @@ public interface RestOperations {
      * http post from
      *
      * @param url          url
-     * @param headers      http header param
+     * @param header      http header param
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @return {@link RestResult}
      * @throws Exception ex
      */
-    <T> RestResult<T> postFrom(String url, List<String> headers, Map<String, String> paramValues,
+    <T> RestResult<T> postFrom(String url, Header header, Map<String, String> paramValues,
                                Map<String, String> bodyValues, Type responseType) throws Exception;
 }
