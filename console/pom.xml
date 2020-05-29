@@ -21,15 +21,17 @@
         <version>1.2.0</version>
     </parent>
     <artifactId>nacos-console</artifactId>
-    <!--<packaging>war</packaging>-->
     <packaging>jar</packaging>
     <name>nacos-console ${project.version}</name>
     <url>http://maven.apache.org</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-    <dependencies>
 
+    <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-config</artifactId>
@@ -37,7 +39,6 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
-            <version>7.0.59</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -107,7 +108,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.4</version>
             </plugin>
         </plugins>
     </reporting>
@@ -132,7 +132,6 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
-                        <version>2.1.1.RELEASE</version>
                         <configuration>
                             <mainClass>com.alibaba.nacos.Nacos</mainClass>
                             <layout>ZIP</layout>
