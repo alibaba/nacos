@@ -86,7 +86,7 @@ public class RaftController {
 
         JsonNode json = JacksonUtils.toObj(value);
 
-        RaftPeer peer = raftCore.receivedBeat(json.get("beat"));
+        RaftPeer peer = raftCore.receivedBeat(JacksonUtils.toObj(json.get("beat").asText()));
 
         return JacksonUtils.transferToJsonNode(peer);
     }
@@ -128,7 +128,7 @@ public class RaftController {
         String value = URLDecoder.decode(entity, "UTF-8");
         JsonNode json = JacksonUtils.toObj(value);
 
-        String key = json.get("key").toString();
+        String key = json.get("key").asText();
         if (KeyBuilder.matchInstanceListKey(key)) {
             raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Instances.class));
             return "ok";
@@ -233,7 +233,7 @@ public class RaftController {
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
-        JsonNode jsonObject = JacksonUtils.createEmptyJsonNode();
+        JsonNode jsonObject = JacksonUtils.toObj(value);
 
         Datum datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), Datum.class);
         RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
