@@ -30,6 +30,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -54,10 +57,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>taglibs</groupId>-->
-        <!--<artifactId>standard</artifactId>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
@@ -69,7 +68,6 @@
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -129,7 +127,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -177,18 +174,6 @@
                 </configuration>
             </plugin>
         </plugins>
-        <!-- <resources>
-                <resource>
-                    <filtering>true</filtering>
-                    <directory>src/main/resources</directory>
-                    <excludes>
-                        <exclude>application.properties</exclude>
-                        <exclude>banner.txt</exclude>
-                        <exclude>schema.sql</exclude>
-                        <exclude>nacos-db.sql</exclude>
-                    </excludes>
-                </resource>
-            </resources> -->
     </build>
     <profiles>
         <profile>
