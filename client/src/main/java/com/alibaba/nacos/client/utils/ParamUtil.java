@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import org.slf4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -174,12 +175,12 @@ public class ParamUtil {
                 @Override
                 public String call() {
                     String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                    return org.apache.commons.lang3.StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
+                    return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
                 }
             });
         }
 
-        if (org.apache.commons.lang3.StringUtils.isBlank(namespaceTmp)) {
+        if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
         return StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : StringUtils.EMPTY;
