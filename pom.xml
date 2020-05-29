@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -146,7 +146,7 @@
         <cglib-nodep.version>2.1</cglib-nodep.version>
         <jcip-annotations.version>1.0</jcip-annotations.version>
         <jackson-core.version>2.9.10</jackson-core.version>
-        <jackson-databind.version>2.9.10.1</jackson-databind.version>
+        <jackson-databind.version>2.9.10.3</jackson-databind.version>
         <jackson-core-asl.version>1.9.10</jackson-core-asl.version>
         <jjwt.version>0.10.5</jjwt.version>
         <netty-all.version>4.1.42.Final</netty-all.version>
