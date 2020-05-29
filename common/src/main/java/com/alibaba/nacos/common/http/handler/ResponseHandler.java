@@ -16,7 +16,14 @@
 
 package com.alibaba.nacos.common.http.handler;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.client.HttpClientResponse;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.MediaType;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
@@ -40,6 +47,21 @@ public final class ResponseHandler {
 
     public static <T> T convert(InputStream inputStream, Class<T> tClass) throws Exception{
         return JacksonUtils.toObj(inputStream, tClass);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes", "resource"})
+    public static <T> RestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception{
+        Header headers = response.getHeaders();
+        String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
+        String body = IoUtils.toString(response.getBody(), headers.getCharset());
+        T extractBody = (T) body;
+        if (MediaType.APPLICATION_JSON.equals(contentType) && HttpStatus.SC_OK == response.getStatusCode()) {
+            extractBody = convert(body, type);
+        }
+        if (extractBody instanceof RestResult) {
+            return (RestResult<T>) extractBody;
+        }
+        return new RestResult<>(response.getHeaders(), response.getStatusCode(), extractBody);
     }
 
 }

@@ -2,17 +2,12 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.google.common.reflect.TypeToken;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.tools.jstat.Token;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 

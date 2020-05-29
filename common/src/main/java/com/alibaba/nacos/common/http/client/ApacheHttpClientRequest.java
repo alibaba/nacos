@@ -27,6 +27,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 
@@ -42,8 +43,7 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
 
-
-    private CloseableHttpClient client;
+    private final CloseableHttpClient client;
 
     public ApacheHttpClientRequest(CloseableHttpClient client) {
         this.client = client;
@@ -60,7 +60,7 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
     }
 
 
-    private HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
+    static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
         Header headers = requestHttpEntity.getHeaders();
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         httpMethod.init(uri.toString());
@@ -72,5 +72,10 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
             httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
         return httpMethod.getRequestBase();
+    }
+
+    @Override
+    public void close() throws IOException {
+        client.close();
     }
 }

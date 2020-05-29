@@ -16,28 +16,33 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.Closeable;
+import java.lang.reflect.Type;
 import java.net.URI;
 
 /**
- * Represents a client-side HTTP request.
+ * Represents a client-side Async HTTP request.
  * Created via an implementation execute.
  *
  * @author mai.jh
- * @date 2020/5/23
+ * @date 2020/5/29
  */
-public interface HttpClientRequest extends Closeable {
+public interface AsyncHttpClientRequest extends Closeable {
 
 
     /**
-     * execute http request
-     * @param uri http url
-     * @param httpMethod http request method
+     * execute async http request
+     *
+     * @param uri               http url
+     * @param httpMethod        http request method
      * @param requestHttpEntity http request entity
-     * @return HttpClientResponse
+     * @param responseType      http response type
+     * @param callback          http response callback
      * @throws Exception ex
      */
-    HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception;
+    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
+                     final Type responseType, final Callback<T> callback) throws Exception;
 }

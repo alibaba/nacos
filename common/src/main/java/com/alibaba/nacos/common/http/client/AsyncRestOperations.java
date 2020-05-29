@@ -16,32 +16,32 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RestResult;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * Interface specifying a basic set of RESTful operations.
+ * Interface specifying a basic set of async http operations.
  *
  * @author mai.jh
  * @date 2020/5/23
  */
-public interface RestOperations {
+public interface AsyncRestOperations {
 
     /**
      * http get
      *
      * @param url          url
+     * @param responseType return type
      * @param header       http header param
      * @param query        http query param
-     * @param responseType return type
-     * @return the RestResult
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception;
+    <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http get
@@ -50,10 +50,11 @@ public interface RestOperations {
      * @param header       headers
      * @param paramValues  paramValues
      * @param responseType return type
-     * @return the RestResult
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception;
+    <T> void get(String url, Header header, Map<String, String> paramValues,
+                 Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * get request, may be pulling a lot of data
@@ -63,11 +64,11 @@ public interface RestOperations {
      * @param query        http query param
      * @param body         get with body
      * @param responseType return type
-     * @return {@link RestResult <T>}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> getLarge(String url, Header header, Query query, Object body,
-                               Type responseType) throws Exception;
+    <T> void getLarge(String url, Header header, Query query, Object body,
+                      Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http delete
@@ -76,11 +77,11 @@ public interface RestOperations {
      * @param header       http header param
      * @param query        http query param
      * @param responseType return type
-     * @return {@link RestResult <T>}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> delete(String url, Header header, Query query,
-                             Type responseType) throws Exception;
+    <T> void delete(String url, Header header, Query query,
+                    Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http put
@@ -90,11 +91,11 @@ public interface RestOperations {
      * @param query        http query param
      * @param body         http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> put(String url, Header header, Query query, Object body,
-                          Type responseType) throws Exception;
+    <T> void put(String url, Header header, Query query, Object body,
+                 Type responseType, Callback<T> callback) throws Exception;
 
 
     /**
@@ -105,25 +106,25 @@ public interface RestOperations {
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body,
-                              Type responseType) throws Exception;
+    <T> void putJson(String url, Header header, Map<String, String> paramValues, String body,
+                     Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http put from
      *
      * @param url          url
      * @param header       http header param
-     * @param query  http query param
+     * @param query        http query param
      * @param bodyValues   http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> putFrom(String url, Header header, Query query,
-                              Map<String, String> bodyValues, Type responseType) throws Exception;
+    <T> void putFrom(String url, Header header, Query query,
+                     Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception;
 
 
     /**
@@ -134,11 +135,11 @@ public interface RestOperations {
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> putFrom(String url, Header header, Map<String, String> paramValues,
-                              Map<String, String> bodyValues, Type responseType) throws Exception;
+    <T> void putFrom(String url, Header header, Map<String, String> paramValues,
+                              Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception;
 
 
     /**
@@ -149,11 +150,11 @@ public interface RestOperations {
      * @param query        http query param
      * @param body         http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> post(String url, Header header, Query query, Object body,
-                           Type responseType) throws Exception;
+    <T> void post(String url, Header header, Query query, Object body,
+                           Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http post Json
@@ -163,11 +164,11 @@ public interface RestOperations {
      * @param paramValues  http query param
      * @param body         http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body,
-                               Type responseType) throws Exception;
+    <T> void postJson(String url, Header header, Map<String, String> paramValues, String body,
+                               Type responseType, Callback<T> callback) throws Exception;
 
 
     /**
@@ -175,14 +176,14 @@ public interface RestOperations {
      *
      * @param url          url
      * @param header       http header param
-     * @param query  http query param
+     * @param query        http query param
      * @param bodyValues   http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> postFrom(String url, Header header, Query query,
-                               Map<String, String> bodyValues, Type responseType) throws Exception;
+    <T> void postFrom(String url, Header header, Query query,
+                               Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception;
 
     /**
      * http post from
@@ -192,9 +193,9 @@ public interface RestOperations {
      * @param paramValues  http query param
      * @param bodyValues   http body param
      * @param responseType return type
-     * @return {@link RestResult}
+     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      * @throws Exception ex
      */
-    <T> RestResult<T> postFrom(String url, Header header, Map<String, String> paramValues,
-                               Map<String, String> bodyValues, Type responseType) throws Exception;
+    <T> void postFrom(String url, Header header, Map<String, String> paramValues,
+                               Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception;
 }
