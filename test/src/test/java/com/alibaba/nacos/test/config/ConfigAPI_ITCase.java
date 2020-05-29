@@ -51,12 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAPI_ITCase {
 
     public static final long TIME_OUT = 5000;
     static ConfigService iconfig = null;
-    static HttpAgent agent = null;
+    static MetricsHttpAgent agent = null;
 
     static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
@@ -72,8 +72,8 @@ public class ConfigAPI_ITCase {
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
-
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+        agent.fetchServerIpList();
         agent.start();
     }
 
@@ -89,6 +89,7 @@ public class ConfigAPI_ITCase {
             e.printStackTrace();
             Assert.fail();
         }
+        agent.stop();
     }
 
     /**
@@ -96,7 +97,7 @@ public class ConfigAPI_ITCase {
      * @TestStep :
      * @ExpectResult :
      */
-    @Test(timeout = 3*TIME_OUT)
+    @Test(timeout = 3 * TIME_OUT)
     public void nacos_getconfig_1() throws Exception {
         final String content = "test";
         boolean result = iconfig.publishConfig(dataId, group, content);

@@ -57,7 +57,7 @@ public class ConfigExportAndImportAPI_ITCase {
 
     private String SERVER_ADDR = null;
 
-    private HttpAgent agent = null;
+    private MetricsHttpAgent agent = null;
 
 
     @Before
@@ -67,6 +67,7 @@ public class ConfigExportAndImportAPI_ITCase {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+        agent.fetchServerIpList();
         agent.start();
 
         Map<String, String> prarm = new HashMap<>(7);
@@ -92,7 +93,7 @@ public class ConfigExportAndImportAPI_ITCase {
     }
 
     @After
-    public void cleanup(){
+    public void cleanup() throws Exception{
         HttpSimpleClient.HttpResult result;
         try {
             List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
@@ -121,6 +122,7 @@ public class ConfigExportAndImportAPI_ITCase {
         } catch (Exception e) {
             Assert.fail();
         }
+        agent.stop();
     }
 
     @Test(timeout = 3*TIME_OUT)

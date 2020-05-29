@@ -34,6 +34,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -56,10 +57,12 @@ public class NacosConfigService implements ConfigService {
 
     private static final long POST_TIMEOUT = 3000L;
 
+    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
+
     /**
      * http agent
      */
-    private HttpAgent agent;
+    private MetricsHttpAgent agent;
     /**
      * longpolling
      */
@@ -78,7 +81,14 @@ public class NacosConfigService implements ConfigService {
         }
         initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.start();
+        agent.fetchServerIpList();
+        try {
+            agent.start();
+        }catch (Exception e) {
+            LOGGER.error("An exception occurred during resource start : {}", e);
+        }
+        RESOURCE_MANAGER.register(agent);
+
         worker = new ClientWorker(agent, configFilterChainManager, properties);
     }
 

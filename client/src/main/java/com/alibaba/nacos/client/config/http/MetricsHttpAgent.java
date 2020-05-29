@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
 import io.prometheus.client.Histogram;
 
 import java.io.IOException;
@@ -28,16 +29,16 @@ import java.util.List;
  *
  * @author Nacos
  */
-public class MetricsHttpAgent implements HttpAgent {
-    private HttpAgent httpAgent;
+public class MetricsHttpAgent extends AbstractLifeCycle implements HttpAgent {
 
-    public MetricsHttpAgent(HttpAgent httpAgent) {
-        this.httpAgent = httpAgent;
+    private ServerHttpAgent serverHttpAgent;
+
+    public MetricsHttpAgent(ServerHttpAgent serverHttpAgent) {
+        this.serverHttpAgent = serverHttpAgent;
     }
 
-    @Override
-    public void start() throws NacosException {
-        httpAgent.start();
+    public void fetchServerIpList() throws NacosException {
+        this.serverHttpAgent.fetchServerIpList();
     }
 
     @Override
@@ -45,7 +46,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.serverHttpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -61,7 +62,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.serverHttpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -77,7 +78,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.serverHttpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
 
             throw e;
@@ -91,22 +92,32 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public String getName() {
-        return httpAgent.getName();
+        return this.serverHttpAgent.getName();
     }
 
     @Override
     public String getNamespace() {
-        return httpAgent.getNamespace();
+        return this.serverHttpAgent.getNamespace();
     }
 
     @Override
     public String getTenant() {
-        return httpAgent.getTenant();
+        return this.serverHttpAgent.getTenant();
     }
 
     @Override
     public String getEncode() {
-        return httpAgent.getEncode();
+        return this.serverHttpAgent.getEncode();
+    }
+
+    @Override
+    public void doStart() throws Exception {
+        this.serverHttpAgent.doStart();
+    }
+
+    @Override
+    public void doStop() throws Exception {
+        this.serverHttpAgent.doStop();
     }
 }
 

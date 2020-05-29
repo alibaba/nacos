@@ -28,6 +28,7 @@ import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -51,7 +52,7 @@ import java.util.concurrent.*;
  *
  * @author water.lyl
  */
-public class ServerHttpAgent implements HttpAgent {
+public class ServerHttpAgent extends AbstractLifeCycle implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
 
@@ -60,6 +61,8 @@ public class ServerHttpAgent implements HttpAgent {
     private String namespaceId;
 
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+
+    private ScheduledExecutorService executorService;
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -258,23 +261,6 @@ public class ServerHttpAgent implements HttpAgent {
         namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
         securityProxy.login(serverListMgr.getServerUrls());
-
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.config.security.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(serverListMgr.getServerUrls());
-            }
-        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
     }
 
     private void injectSecurityInfo(List<String> params) {
@@ -329,7 +315,57 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     @Override
-    public synchronized void start() throws NacosException {
+    protected void doStart() throws Exception {
+        LOGGER.info("do start begin");
+
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        this.executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+
+        LOGGER.info("do start end");
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        LOGGER.info("do stop begin");
+
+        this.executorService.shutdown();
+        int retry = 3;
+        while (retry > 0) {
+            retry --;
+            try {
+                if (this.executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                this.executorService.shutdownNow();
+                Thread.interrupted();
+            } catch (Throwable ex) {
+                LOGGER.error("shutdown the executor has error : {}", ex);
+            }
+            this.executorService.shutdownNow();
+        }
+
+        LOGGER.info("do stop end");
+    }
+
+    @Override
+    public void fetchServerIpList() throws NacosException {
+        // fetch server address urls list
         serverListMgr.start();
     }
 
