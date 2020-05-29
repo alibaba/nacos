@@ -24,5 +24,6 @@ public interface HttpHeaderConsts {
 
     String CLIENT_VERSION_HEADER = "Client-Version";
     String USER_AGENT_HEADER = "User-Agent";
+    String REQUEST_SOURCE_HEADER = "Request-Source";
 
 }

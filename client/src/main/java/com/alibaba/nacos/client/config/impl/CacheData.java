@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
-import com.alibaba.nacos.client.config.utils.MD5;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
@@ -242,7 +242,7 @@ public class CacheData {
     }
 
     static public String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5.getInstance().getMD5String(config);
+        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
     }
 
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {

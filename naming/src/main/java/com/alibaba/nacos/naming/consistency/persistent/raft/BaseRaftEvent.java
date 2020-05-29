@@ -23,14 +23,20 @@ import org.springframework.context.ApplicationEvent;
  */
 public abstract class BaseRaftEvent extends ApplicationEvent {
 
-    private RaftPeer raftPeer;
+    private final RaftPeer raftPeer;
+    private final RaftPeer local;
 
-    public BaseRaftEvent(Object source, RaftPeer raftPeer) {
+    public BaseRaftEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
         super(source);
         this.raftPeer = raftPeer;
+        this.local = local;
     }
 
     public RaftPeer getRaftPeer() {
         return raftPeer;
+    }
+
+    public RaftPeer getLocal() {
+        return local;
     }
 }

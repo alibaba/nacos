@@ -24,11 +24,11 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
@@ -207,8 +207,10 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
+                ce.printStackTrace();
                 LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
+                stoe.printStackTrace();
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
                 LOGGER.error("[NACOS IOException httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
@@ -364,8 +366,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = JSONUtils.deserializeObject(stsResponse,
-            new TypeReference<STSCredential>() {
+        STSCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<STSCredential>() {
             });
         sTSCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", sTSCredential.getCode(),

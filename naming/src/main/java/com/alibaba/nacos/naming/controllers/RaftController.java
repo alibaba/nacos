@@ -15,12 +15,9 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -34,6 +31,11 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -67,31 +69,30 @@ public class RaftController {
     private RaftCore raftCore;
 
     @PostMapping("/vote")
-    public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public JsonNode vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         RaftPeer peer = raftCore.receivedVote(
-            JSON.parseObject(WebUtils.required(request, "vote"), RaftPeer.class));
+            JacksonUtils.toObj(WebUtils.required(request, "vote"), RaftPeer.class));
 
-        return JSON.parseObject(JSON.toJSONString(peer));
+        return JacksonUtils.transferToJsonNode(peer);
     }
 
     @PostMapping("/beat")
-    public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public JsonNode beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
-        JSONObject json = JSON.parseObject(value);
-        JSONObject beat = JSON.parseObject(json.getString("beat"));
+        JsonNode json = JacksonUtils.toObj(value);
 
-        RaftPeer peer = raftCore.receivedBeat(beat);
+        RaftPeer peer = raftCore.receivedBeat(JacksonUtils.toObj(json.get("beat").asText()));
 
-        return JSON.parseObject(JSON.toJSONString(peer));
+        return JacksonUtils.transferToJsonNode(peer);
     }
 
     @GetMapping("/peer")
-    public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
+    public JsonNode getPeer(HttpServletRequest request, HttpServletResponse response) {
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
 
@@ -106,7 +107,7 @@ public class RaftController {
             peer.ip = NetUtils.localServer();
         }
 
-        return JSON.parseObject(JSON.toJSONString(peer));
+        return JacksonUtils.transferToJsonNode(peer);
     }
 
     @PutMapping("/datum/reload")
@@ -125,21 +126,21 @@ public class RaftController {
 
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
-        JSONObject json = JSON.parseObject(value);
+        JsonNode json = JacksonUtils.toObj(value);
 
-        String key = json.getString("key");
+        String key = json.get("key").asText();
         if (KeyBuilder.matchInstanceListKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Instances.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Instances.class));
             return "ok";
         }
 
         if (KeyBuilder.matchSwitchKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), SwitchDomain.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), SwitchDomain.class));
             return "ok";
         }
 
         if (KeyBuilder.matchServiceMetaKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Service.class));
+            raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Service.class));
             return "ok";
         }
 
@@ -172,19 +173,19 @@ public class RaftController {
             datums.add(datum);
         }
 
-        return JSON.toJSONString(datums);
+        return JacksonUtils.toJson(datums);
     }
 
     @GetMapping("/state")
-    public JSONObject state(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public JsonNode state(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("services", serviceManager.getServiceCount());
-        result.put("peers", raftCore.getPeers());
+        result.replace("peers", JacksonUtils.transferToJsonNode(raftCore.getPeers()));
 
         return result;
     }
@@ -198,21 +199,22 @@ public class RaftController {
 
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
-        JSONObject jsonObject = JSON.parseObject(value);
+
+        JsonNode jsonObject = JacksonUtils.toObj(value);
         String key = "key";
 
-        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
-        JSONObject datumJson = jsonObject.getJSONObject("datum");
+        RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
+        JsonNode datumJson = jsonObject.get("datum");
 
         Datum datum = null;
-        if (KeyBuilder.matchInstanceListKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Instances>>() {
+        if (KeyBuilder.matchInstanceListKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<Instances>>() {
             });
-        } else if (KeyBuilder.matchSwitchKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<SwitchDomain>>() {
+        } else if (KeyBuilder.matchSwitchKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<SwitchDomain>>() {
             });
-        } else if (KeyBuilder.matchServiceMetaKey(datumJson.getString(key))) {
-            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Service>>() {
+        } else if (KeyBuilder.matchServiceMetaKey(datumJson.get(key).asText())) {
+            datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), new TypeReference<Datum<Service>>() {
             });
         }
 
@@ -230,34 +232,35 @@ public class RaftController {
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
-        JSONObject jsonObject = JSON.parseObject(value);
 
-        Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
-        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
+        JsonNode jsonObject = JacksonUtils.toObj(value);
+
+        Datum datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), Datum.class);
+        RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
 
         raftConsistencyService.onRemove(datum, source);
         return "ok";
     }
 
     @GetMapping("/leader")
-    public JSONObject getLeader(HttpServletRequest request, HttpServletResponse response) {
+    public JsonNode getLeader(HttpServletRequest request, HttpServletResponse response) {
 
-        JSONObject result = new JSONObject();
-        result.put("leader", JSONObject.toJSONString(raftCore.getLeader()));
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put("leader", JacksonUtils.toJson(raftCore.getLeader()));
         return result;
     }
 
     @GetMapping("/listeners")
-    public JSONObject getAllListeners(HttpServletRequest request, HttpServletResponse response) {
+    public JsonNode getAllListeners(HttpServletRequest request, HttpServletResponse response) {
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Map<String, List<RecordListener>> listeners = raftCore.getListeners();
 
-        JSONArray listenerArray = new JSONArray();
+        ArrayNode listenerArray = JacksonUtils.createEmptyArrayNode();
         for (String key : listeners.keySet()) {
             listenerArray.add(key);
         }
-        result.put("listeners", listenerArray);
+        result.replace("listeners", listenerArray);
 
         return result;
     }

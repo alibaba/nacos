@@ -25,6 +25,7 @@ class EditInstanceDialog extends React.Component {
   static propTypes = {
     serviceName: PropTypes.string,
     clusterName: PropTypes.string,
+    groupName: PropTypes.string,
     openLoading: PropTypes.string,
     closeLoading: PropTypes.string,
     getInstanceList: PropTypes.func,
@@ -54,7 +55,14 @@ class EditInstanceDialog extends React.Component {
   }
 
   onConfirm() {
-    const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props;
+    const {
+      serviceName,
+      clusterName,
+      groupName,
+      getInstanceList,
+      openLoading,
+      closeLoading,
+    } = this.props;
     const { ip, port, ephemeral, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'PUT',
@@ -62,6 +70,7 @@ class EditInstanceDialog extends React.Component {
       data: {
         serviceName,
         clusterName,
+        groupName,
         ip,
         port,
         ephemeral,
