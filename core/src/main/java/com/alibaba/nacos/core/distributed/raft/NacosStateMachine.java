@@ -302,7 +302,6 @@ class NacosStateMachine extends StateMachineAdapter {
 
 				@Override
 				public boolean onSnapshotLoad(SnapshotReader reader) {
-					System.out.println("snapshot load");
 					final Map<String, LocalFileMeta> metaMap = new HashMap<>(
 							reader.listFiles().size());
 					for (String fileName : reader.listFiles()) {
