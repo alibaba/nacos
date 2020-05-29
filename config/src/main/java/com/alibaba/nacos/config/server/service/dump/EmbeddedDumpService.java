@@ -96,22 +96,25 @@ public class EmbeddedDumpService extends DumpService {
 							.putExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
 									"true");
 					// Remove your own listening to avoid task accumulation
+					boolean canEnd = false;
 					for (; ; ) {
 						try {
 							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
 									dumpAllTagProcessor);
-							waitDumpFinish.countDown();
 							protocol.protocolMetaData()
 									.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
 											MetadataKey.LEADER_META_DATA, this);
-							return;
+							canEnd = true;
 						}
 						catch (Throwable ex) {
 							if (!shouldRetry(ex)) {
-								waitDumpFinish.countDown();
 								errorReference.set(ex);
-								break;
+								canEnd = true;
 							}
+						}
+						if (canEnd) {
+							ThreadUtils.countDown(waitDumpFinish);
+							break;
 						}
 						ThreadUtils.sleep(500L);
 					}

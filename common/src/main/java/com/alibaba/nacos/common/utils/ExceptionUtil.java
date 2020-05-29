@@ -46,13 +46,10 @@ public class ExceptionUtil {
             return "";
         }
 
-        try (final ByteArrayOutputStream out = new ByteArrayOutputStream(); final PrintStream ps = new PrintStream(out)) {
-            t.printStackTrace(ps);
-            ps.flush();
-            return new String(out.toByteArray());
-        } catch (final IOException ignored) {
-            // ignored
-        }
-        return "";
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final PrintStream ps = new PrintStream(out);
+        t.printStackTrace(ps);
+        ps.flush();
+        return new String(out.toByteArray());
     }
 }
