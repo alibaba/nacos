@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.service.repository.DerbyLoadEvent;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;

@@ -262,6 +262,13 @@ public class EmbeddedStorageContextUtils {
         }
     }
 
+    public static boolean containsExtendInfo(String key) {
+        Map<String, String> extendInfo = EXTEND_INFO_CONTEXT.get();
+        boolean exist = extendInfo.containsKey(key);
+        EXTEND_INFO_CONTEXT.set(extendInfo);
+        return exist;
+    }
+
     public static List<ModifyRequest> getCurrentSqlContext() {
         return SQL_CONTEXT.get();
     }

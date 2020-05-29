@@ -69,11 +69,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * <pre>
@@ -149,10 +148,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			ProtocolManager protocolManager) throws Exception {
 		this.memberManager = memberManager;
 		this.protocol = protocolManager.getCpProtocol();
-
 		init();
-
-		this.protocol.addLogProcessors(Collections.singletonList(this));
 	}
 
 	protected void init() throws Exception {
@@ -169,6 +165,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 
 		// Registers a Derby Raft state machine failure event for node degradation processing
 		NotifyCenter.registerToSharePublisher(RaftDBErrorEvent.class);
+		// Register the snapshot load event
+		NotifyCenter.registerToSharePublisher(DerbyLoadEvent.class);
 
 		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
 			@Override
@@ -186,6 +184,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				NotifyCenter.RING_BUFFER_SIZE);
 		NotifyCenter.registerSubscribe(new DumpConfigHandler());
 
+		this.protocol.addLogProcessors(Collections.singletonList(this));
 		LogUtil.defaultLog.info("use DistributedTransactionServicesImpl");
 	}
 
@@ -205,9 +204,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
 					.className(cls.getCanonicalName()).build());
 
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(), cls);
 			}
@@ -231,9 +232,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(cls.getCanonicalName()).build());
 
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(), cls);
 			}
@@ -257,9 +260,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(mapper.getClass().getCanonicalName()).build());
 
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer.deserialize(response.getData().toByteArray(),
 						ClassUtils.resolveGenericTypeByInterface(mapper.getClass()));
@@ -284,9 +289,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(mapper.getClass().getCanonicalName()).build());
 
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
@@ -310,9 +317,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			byte[] data = serializer.serialize(SelectRequest.builder()
 					.queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql)
 					.args(args).className(rClass.getCanonicalName()).build());
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
@@ -337,9 +347,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql)
 					.args(args).build());
 
-			Response response = protocol.getData(
-					GetRequest.newBuilder().setGroup(group())
-							.setData(ByteString.copyFrom(data)).build());
+			final boolean blockRead = EmbeddedStorageContextUtils.containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+			Response response = innerRead(GetRequest.newBuilder().setGroup(group())
+					.setData(ByteString.copyFrom(data))
+					.build(), blockRead);
 			if (response.getSuccess()) {
 				return serializer
 						.deserialize(response.getData().toByteArray(), List.class);
@@ -354,8 +366,25 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		}
 	}
 
+	/**
+	 * In some business situations, you need to avoid the timeout issue, so blockRead is used to determine this
+	 *
+	 * @param request {@link GetRequest}
+	 * @param blockRead
+	 * @return {@link Response}
+	 * @throws Exception
+	 */
+	private Response innerRead(GetRequest request, boolean blockRead) throws Exception {
+		if (blockRead) {
+			return (Response) protocol.aGetData(request).join();
+		}
+		Response response = protocol.getData(request);
+		return response;
+	}
+
 	@Override
-	public Boolean update(List<ModifyRequest> sqlContext, BiConsumer<Boolean, Throwable> consumer) {
+	public Boolean update(List<ModifyRequest> sqlContext,
+			BiConsumer<Boolean, Throwable> consumer) {
 		try {
 
 			// Since the SQL parameter is Object[], in order to ensure that the types of
@@ -381,18 +410,31 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 				if (response.getSuccess()) {
 					return true;
 				}
-				LogUtil.defaultLog.error("execute sql modify operation failed : {}", response.getErrMsg());
+				LogUtil.defaultLog.error("execute sql modify operation failed : {}",
+						response.getErrMsg());
 				return false;
-			} else {
-				this.protocol.submitAsync(log).whenComplete(new BiConsumer<Response, Throwable>() {
-					@Override
-					public void accept(Response response, Throwable ex) {
-						String errMsg = Objects.isNull(ex) ? response.getErrMsg() : ex.getMessage();
-						consumer.accept(response.getSuccess(), StringUtils.isBlank(errMsg) ? null : new NJdbcException(errMsg));
-					}
-				});
+			}
+			else {
+				this.protocol.submitAsync(log)
+						.whenComplete(new BiConsumer<Response, Throwable>() {
+							@Override
+							public void accept(Response response, Throwable ex) {
+								String errMsg = Objects.isNull(ex) ?
+										response.getErrMsg() :
+										ex.getMessage();
+								consumer.accept(response.getSuccess(),
+										StringUtils.isBlank(errMsg) ?
+												null :
+												new NJdbcException(errMsg));
+							}
+						});
 			}
 			return true;
+		}
+		catch (TimeoutException e) {
+			LogUtil.fatalLog
+					.error("An timeout exception occurred during the update operation");
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 		catch (Throwable e) {
 			LogUtil.fatalLog
@@ -457,8 +499,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("There was an error querying the data, request : {}, error : {}",
 							selectRequest, e.toString());
-			return Response.newBuilder()
-					.setSuccess(false)
+			return Response.newBuilder().setSuccess(false)
 					.setErrMsg(e.getClass().getSimpleName() + ":" + e.getMessage())
 					.build();
 		}
@@ -489,7 +530,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			// If there is additional information, post processing
 			// Put into the asynchronous thread pool for processing to avoid blocking the
 			// normal execution of the state machine
-			ConfigExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
+			ConfigExecutor
+					.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
 
 			return Response.newBuilder().setSuccess(isOk).build();
 
@@ -497,7 +539,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			// should trigger the stop operation of the raft state machine
 		}
 		catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
+			return Response.newBuilder().setSuccess(false).setErrMsg(e.toString())
+					.build();
 		}
 		catch (DataAccessException e) {
 			throw new ConsistencyException(e.toString());
@@ -553,15 +596,16 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		if (extendInfo.containsKey(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT)) {
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
-				NotifyCenter.publishEvent(JacksonUtils.toObj(jsonVal, ConfigDumpEvent.class));
+				NotifyCenter
+						.publishEvent(JacksonUtils.toObj(jsonVal, ConfigDumpEvent.class));
 			}
 			return;
 		}
 		if (extendInfo.containsKey(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT)) {
 			String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
 			if (StringUtils.isNotBlank(jsonVal)) {
-				List<ConfigDumpEvent> list = JacksonUtils.toObj(jsonVal,
-						new GenericType<List<ConfigDumpEvent>>() {
+				List<ConfigDumpEvent> list = JacksonUtils
+						.toObj(jsonVal, new GenericType<List<ConfigDumpEvent>>() {
 						}.getType());
 				list.stream().filter(Objects::nonNull)
 						.forEach(NotifyCenter::publishEvent);

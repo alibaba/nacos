@@ -135,8 +135,6 @@ public class JRaftProtocol
 					MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
 					MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
 
-					System.out.println(properties);
-
 					value.put(groupId, properties);
 					metaData.load(value);
 

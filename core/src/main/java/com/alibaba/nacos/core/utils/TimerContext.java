@@ -16,13 +16,18 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * Simple task time calculation
+ * Simple task time calculation，Currently only the task time statistics task that
+ * supports synchronizing code blocks is supported
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -30,7 +35,7 @@ public class TimerContext {
 
     private static final ThreadLocal<Pair<String, Long>> TIME_RECORD = new ThreadLocal<>();
 
-    public static void start(String name) {
+    public static void start(final String name) {
         long startTime = System.currentTimeMillis();
         TIME_RECORD.set(Pair.with(name, startTime));
     }
@@ -38,7 +43,7 @@ public class TimerContext {
     public static void end(final Logger logger) {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        logger.info("{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
         TIME_RECORD.remove();
     }
 
@@ -51,10 +56,28 @@ public class TimerContext {
         }
     }
 
-    public static <V> V run(final Callable<V> job, final String name, final Logger logger) throws Exception {
+    public static <V> V run(final Supplier<V> job, final String name, final Logger logger) {
         start(name);
         try {
-            return job.call();
+            return job.get();
+        } finally {
+            end(logger);
+        }
+    }
+
+    public static <T, R> R run(final Function<T, R> job, T args, final String name, final Logger logger) {
+        start(name);
+        try {
+            return job.apply(args);
+        } finally {
+            end(logger);
+        }
+    }
+
+    public static <T> void run(final Consumer<T> job, T args, final String name, final Logger logger) {
+        start(name);
+        try {
+            job.accept(args);
         } finally {
             end(logger);
         }
