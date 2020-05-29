@@ -23,12 +23,14 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -48,8 +50,7 @@ public class EmbeddedDumpService extends DumpService {
 	private final ProtocolManager protocolManager;
 
 	final String[] failedMsgs = new String[] {
-			"The conformance protocol is temporarily unavailable for reading"
-	};
+			"The conformance protocol is temporarily unavailable for reading" };
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
@@ -68,12 +69,15 @@ public class EmbeddedDumpService extends DumpService {
 	@PostConstruct
 	@Override
 	protected void init() throws Throwable {
+		if (ApplicationUtils.getStandaloneMode()) {
+			dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
+					dumpAllTagProcessor);
+			return;
+		}
+
 		CPProtocol protocol = protocolManager.getCpProtocol();
-
-		LogUtil.dumpLog
-				.info("With embedded distributed storage, you need to wait for "
-						+ "the underlying master to complete before you can perform the dump operation.");
-
+		LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for "
+				+ "the underlying master to complete before you can perform the dump operation.");
 		AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
 		CountDownLatch waitDumpFinish = new CountDownLatch(1);
 
@@ -87,16 +91,19 @@ public class EmbeddedDumpService extends DumpService {
 					if (Objects.isNull(arg)) {
 						return;
 					}
+					// Identify without a timeout mechanism
+					EmbeddedStorageContextUtils
+							.putExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
+									"true");
 					// Remove your own listening to avoid task accumulation
-					for ( ; ; ) {
+					for (; ; ) {
 						try {
-							dumpOperate(processor, dumpAllProcessor,
-									dumpAllBetaProcessor, dumpAllTagProcessor);
+							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
+									dumpAllTagProcessor);
 							waitDumpFinish.countDown();
 							protocol.protocolMetaData()
 									.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-											MetadataKey.LEADER_META_DATA,
-											this);
+											MetadataKey.LEADER_META_DATA, this);
 							return;
 						}
 						catch (Throwable ex) {
@@ -108,13 +115,13 @@ public class EmbeddedDumpService extends DumpService {
 						}
 						ThreadUtils.sleep(500L);
 					}
+					EmbeddedStorageContextUtils.cleanAllContext();
 				});
 			}
 		};
 
 		protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-				MetadataKey.LEADER_META_DATA,
-				observer);
+				MetadataKey.LEADER_META_DATA, observer);
 
 		// We must wait for the dump task to complete the callback operation before
 		// continuing with the initialization

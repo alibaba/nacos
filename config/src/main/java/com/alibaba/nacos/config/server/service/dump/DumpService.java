@@ -63,6 +63,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DumpService {
 
 	protected DumpProcessor processor;
@@ -103,12 +104,17 @@ public abstract class DumpService {
 		return memberManager;
 	}
 
+	/**
+	 * initialize
+	 *
+	 * @throws Throwable
+	 */
 	protected abstract void init() throws Throwable;
 
 	protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
 			DumpAllBetaProcessor dumpAllBetaProcessor,
 			DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
-		TimerContext.start("config dump job");
+		TimerContext.start("CONFIG_DUMP_TO_FILE");
 		try {
 			LogUtil.defaultLog.warn("DumpService start");
 
@@ -140,7 +146,7 @@ public abstract class DumpService {
 						}
 					}
 					catch (Throwable e) {
-						log.error("clearConfigHistory error", e);
+						log.error("clearConfigHistory error : {}", e.toString());
 					}
 				}
 			};
@@ -452,6 +458,11 @@ public abstract class DumpService {
 		}
 	}
 
+	/**
+	 * Used to determine whether the aggregation task, configuration history cleanup task can be performed
+	 *
+	 * @return {@link Boolean}
+	 */
 	protected abstract boolean canExecute();
 
 	/**

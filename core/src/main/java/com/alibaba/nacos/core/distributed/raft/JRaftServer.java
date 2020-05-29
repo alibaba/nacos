@@ -38,9 +38,12 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -290,21 +293,27 @@ public class JRaftServer {
 			return future;
 		}
 		final Node node = tuple.node;
-
+		final LogProcessor processor = tuple.processor;
 		try {
 			node.readIndex(BytesUtil.EMPTY_BYTES, new ReadIndexClosure() {
 				@Override
 				public void run(Status status, long index, byte[] reqCtx) {
 					if (status.isOk()) {
+						TimerContext.start("RAFT_READ_INDEX-" + ClassUtils.getSimplaName(processor));
 						try {
-							Response response = tuple.processor.onRequest(request);
+							Response response = processor.onRequest(request);
 							future.complete(response);
 						}
 						catch (Throwable t) {
+							MetricsMonitor.raftReadIndexFailed();
 							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", t));
+						}
+						finally {
+							TimerContext.end(Loggers.RAFT);
 						}
 						return;
 					}
+					MetricsMonitor.raftReadIndexFailed();
 					Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
 					future.completeExceptionally(
 							new ConsistencyException("The conformance protocol is temporarily unavailable for reading, " + status.getErrorMsg()));
@@ -313,6 +322,7 @@ public class JRaftServer {
 			return future;
 		}
 		catch (Throwable e) {
+			MetricsMonitor.raftReadFromLeader();
 			Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}", e.toString());
 			// run raft read
 			readFromLeader(request, future);

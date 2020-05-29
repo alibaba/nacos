@@ -32,6 +32,7 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Node;
@@ -78,7 +79,6 @@ class NacosStateMachine extends StateMachineAdapter {
 		this.server = server;
 		this.processor = processor;
 		this.groupId = processor.group();
-
 		adapterToJRaftSnapshot(processor.loadSnapshotOperate());
 	}
 
@@ -91,6 +91,7 @@ class NacosStateMachine extends StateMachineAdapter {
 		try {
 			while (iter.hasNext()) {
 				Status status = Status.OK();
+				TimerContext.start("RAFT_STATEMACHINE_ON_APPLY");
 				try {
 					if (iter.done() != null) {
 						closure = (NacosClosure) iter.done();
@@ -123,6 +124,7 @@ class NacosStateMachine extends StateMachineAdapter {
 				finally {
 					Optional.ofNullable(closure)
 							.ifPresent(closure1 -> closure1.run(status));
+					TimerContext.end(Loggers.RAFT);
 				}
 
 				applied++;
@@ -300,6 +302,7 @@ class NacosStateMachine extends StateMachineAdapter {
 
 				@Override
 				public boolean onSnapshotLoad(SnapshotReader reader) {
+					System.out.println("snapshot load");
 					final Map<String, LocalFileMeta> metaMap = new HashMap<>(
 							reader.listFiles().size());
 					for (String fileName : reader.listFiles()) {

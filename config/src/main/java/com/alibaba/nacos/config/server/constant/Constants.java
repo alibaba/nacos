@@ -182,8 +182,14 @@ public class Constants {
      * Configure the dump event name
      */
     public static final String EXTEND_INFO_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName();
+
     /**
      * Configure the dump event-list name
      */
     public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
+
+    /**
+     * Specifies that reads wait without timeout
+     */
+    public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
 }

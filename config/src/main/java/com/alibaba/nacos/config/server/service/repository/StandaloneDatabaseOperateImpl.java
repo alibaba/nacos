@@ -30,6 +30,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -85,15 +87,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate, Datab
 	@Override
 	public Boolean update(List<ModifyRequest> modifyRequests,
 			BiConsumer<Boolean, Throwable> consumer) {
-		Boolean result = false;
-		Throwable ex = null;
-		try {
-			result = update(transactionTemplate, jdbcTemplate, modifyRequests);
-		} catch (Throwable e) {
-			ex = e;
-		}
-		consumer.accept(result, ex);
-		return result;
+		return update(modifyRequests);
 	}
 
 	@Override
