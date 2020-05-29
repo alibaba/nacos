@@ -24,52 +24,46 @@ public interface LifeCycle {
     public void stop() throws Exception;
 
     /**
+     * This method will return the service whether is running or not.
+     *
      * @return true if the component is starting or has been started.
      */
     public boolean isRunning();
 
     /**
+     * This method will return the service whether is started or not.
+     *
      * @return true if the service has been started.
      *
      */
     public boolean isStarted();
 
     /**
+     * This method will return the service whether is starting or not.
+     *
      * @return true if the component is starting.
      *
      */
     public boolean isStarting();
 
     /**
-     * @return true if the service is stopping.
+     * This method will return the service whether is stopping or not.
      *
+     * @return true if the service is stopping.
      */
     public boolean isStopping();
 
     /**
-     * @return true if the service has been stopped.
+     * This method will return the service whether is stopped or not.
      *
+     * @return true if the service has been stopped.
      */
     public boolean isStopped();
 
     /**
-     * @return true if the component has failed to start or has failed to stop.
+     * This method will return the service whether is failed or not.
+     *
+     * @return true if the service has failed to start or has failed to stop.
      */
     public boolean isFailed();
-
-    /**
-     * add a LifeCycleListener.
-     *
-     * @param listener event listener
-     * @return the result whether to add LifeCycleListener or not.
-     */
-    public boolean addLifeCycleListener(LifeCycleListener listener);
-
-    /**
-     * remove a LifeCycleListener.
-     *
-     * @param listener event listener
-     * @return the result whether to remove LifeCycleListener or not.
-     */
-    public boolean removeLifeCycleListener(LifeCycleListener listener);
 }

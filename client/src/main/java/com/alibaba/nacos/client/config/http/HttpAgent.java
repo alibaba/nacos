@@ -28,12 +28,13 @@ import java.util.List;
  * @author Nacos
  */
 public interface HttpAgent {
+
     /**
      * start to get nacos ip list
      * @return Nothing.
      * @throws NacosException on get ip list error.
      */
-    void start() throws NacosException;
+    void fetchServerIpList() throws NacosException;
 
     /**
      * invoke http get method

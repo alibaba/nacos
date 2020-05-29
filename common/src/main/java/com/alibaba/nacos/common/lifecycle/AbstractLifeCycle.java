@@ -12,13 +12,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author zongtanghu
  */
-public abstract class AbstractLifeCycle implements LifeCycle{
+public abstract class AbstractLifeCycle implements LifeCycle {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractLifeCycle.class);
 
     private final Object lock = new Object();
     private volatile LifeCycleState state = LifeCycleState.STOPPED;
-    private final List<EventListener>  eventListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Method to override to start the lifecycle.
@@ -54,8 +53,9 @@ public abstract class AbstractLifeCycle implements LifeCycle{
                             doStart();
                             setStarted();
                         } catch (Exception e) {
-                            if (LOG.isDebugEnabled())
+                            if (LOG.isDebugEnabled()) {
                                 LOG.debug("Unable to stop", e);
+                            }
                             setStopping();
                             doStop();
                             setStopped();
@@ -128,19 +128,6 @@ public abstract class AbstractLifeCycle implements LifeCycle{
         return this.state == LifeCycleState.FAILED;
     }
 
-    @Override
-    public boolean addLifeCycleListener(LifeCycleListener listener) {
-        if (this.eventListeners.contains(listener)) {
-            return false;
-        }
-        return this.eventListeners.add(listener);
-    }
-
-    @Override
-    public boolean removeLifeCycleListener(LifeCycleListener listener) {
-        return this.eventListeners.remove(listener);
-    }
-
     /**
      * Get the service's current state and return.
      *
@@ -152,82 +139,61 @@ public abstract class AbstractLifeCycle implements LifeCycle{
 
     /**
      * If the service's current status is STARTING state, it will set STOPPED state.
-     * And the method will execute lifeCycleStopped event if it has already been registered before.
      *
      */
     private void setStarted() {
         if (this.state == LifeCycleState.STARTING) {
             this.state = LifeCycleState.STARTED;
-            if (LOG.isDebugEnabled())
+            if (LOG.isDebugEnabled()) {
                 LOG.debug("STARTED {}", this);
-
-            for (EventListener listener : eventListeners)
-                if (listener instanceof LifeCycleListener)
-                    ((LifeCycleListener)listener).lifeCycleStarted(this);
-        }
-    }
-
-    /**
-     * The service which implement AbstractLifeCycle will set STARTING state.
-     * And it will execute lifeCycleStarting event if it has already been registered before.
-     *
-     */
-    private void setStarting() {
-        if (LOG.isDebugEnabled())
-            LOG.debug("STARTING {}", this);
-        this.state = LifeCycleState.STARTING;
-
-        for (EventListener listener : this.eventListeners) {
-            if (listener instanceof LifeCycleListener)
-                ((LifeCycleListener) listener).lifeCycleStarting(this);
-        }
-    }
-
-    /**
-     * The service which implement AbstractLifeCycle will set STOPPING state.
-     * And it will execute lifeCycleStopping event if it has been registered before.
-     *
-     */
-    private void setStopping() {
-        if (LOG.isDebugEnabled())
-            LOG.debug("STOPPING {}", this);
-        this.state = LifeCycleState.STOPPING;
-        for (EventListener listener : this.eventListeners) {
-            if (listener instanceof LifeCycleListener)
-                ((LifeCycleListener) listener).lifeCycleStopping(this);
-        }
-    }
-
-    /**
-     * If the service's current status is STARTING state, it will set STOPPED state.
-     * And the method will execute lifeCycleStopped event if it has already been registered before.
-     *
-     */
-    private void setStopped() {
-        if (this.state == LifeCycleState.STOPPING) {
-            this.state = LifeCycleState.STOPPED;
-            if (LOG.isDebugEnabled())
-                LOG.debug("STOPPED {}", this);
-            for (EventListener listener : this.eventListeners) {
-                if (listener instanceof LifeCycleListener)
-                    ((LifeCycleListener) listener).lifeCycleStopped(this);
             }
         }
     }
 
     /**
-     * If some exceptions happen, the service will set FAILED state. And it will
-     * execute lifeCycleFailure event if it has already been registered before.
+     * The service which implement AbstractLifeCycle will set STARTING state.
+     *
+     */
+    private void setStarting() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("STARTING {}", this);
+        }
+        this.state = LifeCycleState.STARTING;
+    }
+
+    /**
+     * The service which implement AbstractLifeCycle will set STOPPING state.
+     *
+     */
+    private void setStopping() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("STOPPING {}", this);
+        }
+        this.state = LifeCycleState.STOPPING;
+    }
+
+    /**
+     * If the service's current status is STARTING state, it will set STOPPED state.
+     *
+     */
+    private void setStopped() {
+        if (this.state == LifeCycleState.STOPPING) {
+            this.state = LifeCycleState.STOPPED;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("STOPPED {}", this);
+            }
+        }
+    }
+
+    /**
+     * If some exceptions happen, the service will set FAILED state.
      *
      * @param tb Exception which happens.
      */
     private void setFailed(Throwable tb) {
         this.state = LifeCycleState.FAILED;
-        if (LOG.isDebugEnabled())
+        if (LOG.isDebugEnabled()) {
             LOG.warn("FAILED " + this + ": " + tb, tb);
-        for (EventListener listener : this.eventListeners) {
-            if (listener instanceof LifeCycleListener)
-                ((LifeCycleListener)listener).lifeCycleFailure(this, tb);
         }
     }
 }

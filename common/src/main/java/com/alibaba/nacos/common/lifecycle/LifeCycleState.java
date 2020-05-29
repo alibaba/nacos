@@ -7,10 +7,29 @@ package com.alibaba.nacos.common.lifecycle;
  */
 public enum LifeCycleState {
 
+    /**
+     * The service's current state is STOPPED.
+     */
     STOPPED("STOPPED"),
+
+    /**
+     * The service's current state is STARTING.
+     */
     STARTING("STARTING"),
+
+    /**
+     * The service's current state is STARTED.
+     */
     STARTED("STARTED"),
+
+    /**
+     * The service's current state is STOPPING.
+     */
     STOPPING("STOPPING"),
+
+    /**
+     * The service's current state is FAILED.
+     */
     FAILED("FAILED");
 
     private String name;
