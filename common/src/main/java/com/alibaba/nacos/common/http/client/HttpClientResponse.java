@@ -33,7 +33,7 @@ import java.net.URI;
  * @author mai.jh
  * @date 2020/5/23
  */
-public interface HttpClientResponse extends Closeable{
+public interface HttpClientResponse extends Closeable {
 
     /**
      * Return the headers of this message.

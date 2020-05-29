@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.param.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.utils.HttpClientUtils;
 
 
@@ -33,11 +33,11 @@ import java.io.InputStream;
  */
 public class ApacheClientHttpResponse implements HttpClientResponse {
 
-    private CloseableHttpResponse response;
+    private HttpResponse response;
 
     private Header responseHeader;
 
-    public ApacheClientHttpResponse(CloseableHttpResponse response) {
+    public ApacheClientHttpResponse(HttpResponse response) {
         this.response = response;
     }
 
