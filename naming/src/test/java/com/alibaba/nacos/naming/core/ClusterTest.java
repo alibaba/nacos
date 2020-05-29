@@ -17,9 +17,16 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.SwitchDomain.TcpHealthParams;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,23 +36,34 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * @author nkorange
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ClusterTest {
 
     private Cluster cluster;
 
+    @Mock
+    private ConfigurableApplicationContext context;
+
+    @Mock
+    private SwitchDomain switchDomain;
+
     @Before
     public void before() {
-
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(SwitchDomain.class)).thenReturn(switchDomain);
+        when(switchDomain.getTcpHealthParams()).thenReturn(new TcpHealthParams());
         Service service = new Service();
         service.setName("nacos.service.1");
 
         cluster = new Cluster("nacos-cluster-1", service);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
+        cluster.init();
     }
 
 
