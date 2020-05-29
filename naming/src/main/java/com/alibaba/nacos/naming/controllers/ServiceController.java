@@ -288,8 +288,8 @@ public class ServiceController {
         JsonNode json = JacksonUtils.toObj(value);
 
         //format: service1@@checksum@@@service2@@checksum
-        String statuses = json.get("statuses").toString();
-        String serverIp = json.get("clientIP").toString();
+        String statuses = json.get("statuses").asText();
+        String serverIp = json.get("clientIP").asText();
 
         if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
