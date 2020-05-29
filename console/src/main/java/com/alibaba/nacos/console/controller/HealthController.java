@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

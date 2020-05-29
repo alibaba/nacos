@@ -16,45 +16,46 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.stereotype.Component;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * datasource adapter
  *
  * @author Nacos
  */
-@Component
-public class DynamicDataSource implements ApplicationContextAware {
+public class DynamicDataSource {
 
-    @Autowired
-    private PropertyUtil propertyUtil;
+    private DataSourceService localDataSourceService = null;
+    private DataSourceService basicDataSourceService = null;
 
-    private ApplicationContext applicationContext;
+    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    public static DynamicDataSource getInstance() {
+        return INSTANCE;
     }
 
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
+    public synchronized DataSourceService getDataSource() {
+        try {
 
-    public DataSourceService getDataSource() {
-        DataSourceService dataSourceService = null;
+            // Embedded storage is used by default in stand-alone mode
+            // In cluster mode, external databases are used by default
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
-            dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");
-        } else {
-            dataSourceService = (DataSourceService)applicationContext.getBean("basicDataSourceService");
+            if (PropertyUtil.isEmbeddedStorage()) {
+                if (localDataSourceService == null) {
+                    localDataSourceService = new LocalDataSourceServiceImpl();
+                    localDataSourceService.init();
+                }
+                return localDataSourceService;
+            }
+            else {
+                if (basicDataSourceService == null) {
+                    basicDataSourceService = new BasicDataSourceServiceImpl();
+                    basicDataSourceService.init();
+                }
+                return basicDataSourceService;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return dataSourceService;
     }
 
 }

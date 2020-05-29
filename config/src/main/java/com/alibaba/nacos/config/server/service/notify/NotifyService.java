@@ -17,7 +17,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.service.ServerListService;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -36,9 +36,9 @@ import java.util.List;
 public class NotifyService {
 
     @Autowired
-    public NotifyService(ServerListService serverListService) {
+    public NotifyService(ServerMemberManager memberManager) {
         notifyTaskManager = new TaskManager("com.alibaba.nacos.NotifyTaskManager");
-        notifyTaskManager.setDefaultTaskProcessor(new NotifyTaskProcessor(serverListService));
+        notifyTaskManager.setDefaultTaskProcessor(new NotifyTaskProcessor(memberManager));
     }
 
     protected NotifyService() {

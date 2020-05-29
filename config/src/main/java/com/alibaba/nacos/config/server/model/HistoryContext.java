@@ -15,12 +15,16 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
  * history context
  *
  * @author Nacos
  */
-public class HistoryContext {
+public class HistoryContext implements Serializable {
+
+    private static final long serialVersionUID = -8400843549603420766L;
     public String serverId;
     public String dataId;
     public String group;
