@@ -233,7 +233,7 @@ public class RaftController {
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
-        JsonNode jsonObject = JacksonUtils.createEmptyJsonNode();
+        JsonNode jsonObject = JacksonUtils.toObj(value);
 
         Datum datum = JacksonUtils.toObj(jsonObject.get("datum").toString(), Datum.class);
         RaftPeer source = JacksonUtils.toObj(jsonObject.get("source").toString(), RaftPeer.class);
