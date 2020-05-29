@@ -91,7 +91,6 @@ class NacosStateMachine extends StateMachineAdapter {
 		try {
 			while (iter.hasNext()) {
 				Status status = Status.OK();
-				TimerContext.start("RAFT_STATEMACHINE_ON_APPLY");
 				try {
 					if (iter.done() != null) {
 						closure = (NacosClosure) iter.done();
@@ -124,7 +123,6 @@ class NacosStateMachine extends StateMachineAdapter {
 				finally {
 					Optional.ofNullable(closure)
 							.ifPresent(closure1 -> closure1.run(status));
-					TimerContext.end(Loggers.RAFT);
 				}
 
 				applied++;
