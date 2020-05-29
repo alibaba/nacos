@@ -128,7 +128,7 @@ public class RaftController {
         String value = URLDecoder.decode(entity, "UTF-8");
         JsonNode json = JacksonUtils.toObj(value);
 
-        String key = json.get("key").toString();
+        String key = json.get("key").asText();
         if (KeyBuilder.matchInstanceListKey(key)) {
             raftConsistencyService.put(key, JacksonUtils.toObj(json.get("value").toString(), Instances.class));
             return "ok";
