@@ -299,7 +299,6 @@ public class JRaftServer {
 				@Override
 				public void run(Status status, long index, byte[] reqCtx) {
 					if (status.isOk()) {
-						TimerContext.start("RAFT_READ_INDEX-" + ClassUtils.getSimplaName(processor));
 						try {
 							Response response = processor.onRequest(request);
 							future.complete(response);
@@ -307,9 +306,6 @@ public class JRaftServer {
 						catch (Throwable t) {
 							MetricsMonitor.raftReadIndexFailed();
 							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", t));
-						}
-						finally {
-							TimerContext.end(Loggers.RAFT);
 						}
 						return;
 					}

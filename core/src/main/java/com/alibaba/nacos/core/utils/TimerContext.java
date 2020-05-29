@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
@@ -41,9 +42,27 @@ public class TimerContext {
     }
 
     public static void end(final Logger logger) {
+        end(logger, LoggerUtils.DEBUG);
+    }
+
+    public static void end(final Logger logger, final String level) {
         long endTime = System.currentTimeMillis();
         Pair<String, Long> record = TIME_RECORD.get();
-        LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        if (StringUtils.equals(level, LoggerUtils.DEBUG)) {
+            LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        }
+        if (StringUtils.equals(level, LoggerUtils.INFO)) {
+            LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        }
+        if (StringUtils.equals(level, LoggerUtils.TRACE)) {
+            LoggerUtils.printIfTraceEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        }
+        if (StringUtils.equals(level, LoggerUtils.ERROR)) {
+            LoggerUtils.printIfErrorEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        }
+        if (StringUtils.equals(level, LoggerUtils.WARN)) {
+            LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", record.getFirst(), (endTime - record.getSecond()));
+        }
         TIME_RECORD.remove();
     }
 
