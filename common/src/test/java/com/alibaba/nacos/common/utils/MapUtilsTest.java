@@ -11,7 +11,7 @@ public class MapUtilsTest {
 
 	@Test
 	public void test_map() {
-		Map<Object, Object> map = new HashMap<>();
+		Map<Object, Object> map = new HashMap<Object, Object>();
 
 		MapUtils.putIfValNoNull(map, "key-1", null);
 		Assert.assertFalse(map.containsKey("key-1"));
@@ -40,7 +40,7 @@ public class MapUtilsTest {
 		MapUtils.putIfValNoEmpty(map, "key-map", Collections.emptyMap());
 		Assert.assertFalse(map.containsKey("key-map"));
 
-		Map<String, String> map1 = new HashMap<>();
+		Map<String, String> map1 = new HashMap<String, String>();
 		map1.put("1123", "123");
 
 		MapUtils.putIfValNoEmpty(map, "key-map", map1);
