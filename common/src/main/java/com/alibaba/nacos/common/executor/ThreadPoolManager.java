@@ -70,7 +70,7 @@ public final class ThreadPoolManager {
     private ThreadPoolManager() {}
 
     private void init() {
-        resourcesManager = new ConcurrentHashMap<>(8);
+        resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
     }
 
     /**
@@ -90,7 +90,7 @@ public final class ThreadPoolManager {
         synchronized (monitor) {
             Map<String, Set<ExecutorService>> map = resourcesManager.get(namespace);
             if (map == null) {
-            	map = new HashMap<>(8);
+            	map = new HashMap<String, Set<ExecutorService>>(8);
             	map.put(group, new HashSet<ExecutorService>());
 				map.get(group).add(executor);
 				resourcesManager.put(namespace, map);
