@@ -86,7 +86,7 @@ public class RaftController {
 
         JsonNode json = JacksonUtils.toObj(value);
 
-        RaftPeer peer = raftCore.receivedBeat(json.get("beat"));
+        RaftPeer peer = raftCore.receivedBeat(JacksonUtils.toObj(json.get("beat").asText()));
 
         return JacksonUtils.transferToJsonNode(peer);
     }
