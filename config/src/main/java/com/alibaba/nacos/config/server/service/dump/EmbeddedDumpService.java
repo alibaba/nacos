@@ -24,7 +24,6 @@ import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -49,8 +48,15 @@ public class EmbeddedDumpService extends DumpService {
 
 	private final ProtocolManager protocolManager;
 
-	final String[] failedMsgs = new String[] {
+	/** If it's just a normal reading failure, it can be resolved by retrying */
+	final String[] retryMessages = new String[] {
 			"The conformance protocol is temporarily unavailable for reading" };
+
+	/**If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying */
+	final String[] errorMessages = new String[] {
+			"FSMCaller is overload.",
+			"STATE_ERROR"
+	};
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
@@ -76,8 +82,6 @@ public class EmbeddedDumpService extends DumpService {
 		}
 
 		CPProtocol protocol = protocolManager.getCpProtocol();
-		LogUtil.dumpLog.info("With embedded distributed storage, you need to wait for "
-				+ "the underlying master to complete before you can perform the dump operation.");
 		AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
 		CountDownLatch waitDumpFinish = new CountDownLatch(1);
 
@@ -140,8 +144,14 @@ public class EmbeddedDumpService extends DumpService {
 
 	private boolean shouldRetry(Throwable ex) {
 		final String errMsg = ex.getMessage();
-		for (final String failedMsg : failedMsgs) {
+
+		for (String failedMsg : errorMessages) {
 			if (StringUtils.containsIgnoreCase(errMsg, failedMsg)) {
+				return false;
+			}
+		}
+		for (final String retryMsg : retryMessages) {
+			if (StringUtils.containsIgnoreCase(errMsg, retryMsg)) {
 				return true;
 			}
 		}
