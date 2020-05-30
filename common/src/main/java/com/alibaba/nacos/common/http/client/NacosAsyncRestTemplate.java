@@ -43,7 +43,6 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosAsyncRestTemplate.class);
 
-
     private AsyncHttpClientRequest clientRequest;
 
     public NacosAsyncRestTemplate(AsyncHttpClientRequest clientRequest) {
