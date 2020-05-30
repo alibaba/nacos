@@ -26,9 +26,6 @@ import java.net.URI;
 
 /**
  * Represents a client-side HTTP response.
- * Obtained via an calling of the
- * {@link HttpClientRequest#execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)}.
- *
  *
  * @author mai.jh
  * @date 2020/5/23
