@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
@@ -40,15 +41,18 @@ import java.util.Map;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @FixMethodOrder(MethodSorters.JVM)
 public class NacosRestTemplate_ITCase {
+
+    @LocalServerPort
+    private int port;
 
     private NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
 
 
     private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
-    private final String IP = "http://127.0.0.1:8848";
+    private final String IP = "http://127.0.0.1:" + port;
 
     @Test
     public void test_url_post_from() throws Exception{
