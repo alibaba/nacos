@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.InputStream;
-import java.io.IOException
+import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
@@ -81,11 +81,8 @@ public final class JacksonUtils {
 	    return mapper.readValue(inputStream, tClass);
     }
 
-	public static <T> T toObj(String json, Class<T> cls) throws Exception {
-		return mapper.readValue(json, cls);
-	  }
 
-  public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
+    public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
         try {
             return toObj(StringUtils.newString4UTF8(json), typeReference);
         } catch (Exception e) {

@@ -50,13 +50,13 @@ public class HttpClientManager {
 
 	private static final NAsyncHttpClient ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
-  
-  private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
+
+    private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
 	    new ApacheHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
 
-  private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
+    private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
         new ApacheAsyncHttpClientRequest(HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
-  
+
 	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
 
 
@@ -80,11 +80,11 @@ public class HttpClientManager {
 
 	public static NacosRestTemplate getNacosRestTemplate() {
 	    return NACOS_REST_TEMPLATE;
-  }
+    }
 
-  public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
+    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
 	    return NACOS_ASYNC_REST_TEMPLATE;
-  }
+    }
 
 	public static void shutdown() {
 		if (!alreadyShutdown.compareAndSet(false, true)) {
