@@ -3,8 +3,8 @@
 
 package com.alibaba.nacos.consistency.entity;
 
-public interface GetResponseOrBuilder extends
-    // @@protoc_insertion_point(interface_extends:GetResponse)
+public interface ResponseOrBuilder extends
+    // @@protoc_insertion_point(interface_extends:Response)
     com.google.protobuf.MessageOrBuilder {
 
   /**
@@ -21,4 +21,9 @@ public interface GetResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getErrMsgBytes();
+
+  /**
+   * <code>bool success = 3;</code>
+   */
+  boolean getSuccess();
 }

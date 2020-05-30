@@ -15,18 +15,15 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
-import com.alibaba.fastjson.parser.ParserConfig;
-import com.alibaba.fastjson.serializer.SerializeConfig;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
-import com.alibaba.nacos.naming.selector.Selector;
-import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
+import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -130,23 +127,21 @@ public class UtilsAndCommons {
 
     static {
 
-        // custom serializer and deserializer for fast-json
-        SerializeConfig.getGlobalInstance()
-            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
-        ParserConfig.getGlobalInstance()
-            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+        /*
+            Register subType for serialization
 
-        SerializeConfig.getGlobalInstance()
-            .put(Selector.class, SelectorJsonAdapter.getInstance());
-        ParserConfig.getGlobalInstance()
-            .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
+            Now these subType implementation class has registered in static code.
+            But there are some problem for classloader. The implementation class
+            will be loaded when they are used, which will make deserialize
+            before register.
 
-        // write null values, otherwise will cause compatibility issues
-        JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
-        JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullListAsEmpty.getMask();
-        JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullBooleanAsFalse.getMask();
-        JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteMapNullValue.getMask();
-        JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
+            子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当
+            该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致
+            反序列化失败。
+         */
+        // TODO register in implementation class or remove subType
+        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
+        JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
 
         SERVICE_SYNCHRONIZATION_EXECUTOR
             = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -207,8 +202,7 @@ public class UtilsAndCommons {
         }
 
         try {
-            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>() {
-            });
+            metadataMap = JacksonUtils.toObj(metadata, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
             String[] datas = metadata.split(",");
             if (datas.length > 0) {

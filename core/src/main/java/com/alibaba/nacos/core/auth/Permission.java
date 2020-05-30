@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.fastjson.JSON;
-
 import java.io.Serializable;
 
 /**
@@ -66,6 +64,9 @@ public class Permission implements Serializable {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "Permission{" +
+            "resource='" + resource + '\'' +
+            ", action='" + action + '\'' +
+            '}';
     }
 }
