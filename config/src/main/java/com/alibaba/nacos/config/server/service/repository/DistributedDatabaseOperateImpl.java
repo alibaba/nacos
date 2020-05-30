@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.repository;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -218,7 +219,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -246,7 +247,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -275,7 +276,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -304,7 +305,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -333,7 +334,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -362,7 +363,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -416,30 +417,28 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			}
 			else {
 				this.protocol.submitAsync(log)
-						.whenComplete(new BiConsumer<Response, Throwable>() {
-							@Override
-							public void accept(Response response, Throwable ex) {
-								String errMsg = Objects.isNull(ex) ?
-										response.getErrMsg() :
-										ex.getMessage();
-								consumer.accept(response.getSuccess(),
-										StringUtils.isBlank(errMsg) ?
-												null :
-												new NJdbcException(errMsg));
-							}
-						});
+						.whenComplete(
+								(BiConsumer<Response, Throwable>) (response, ex) -> {
+									String errMsg = Objects.isNull(ex) ?
+											response.getErrMsg() :
+											ExceptionUtil.getCause(ex).getMessage();
+									consumer.accept(response.getSuccess(),
+											StringUtils.isBlank(errMsg) ?
+													null :
+													new NJdbcException(errMsg));
+								});
 			}
 			return true;
 		}
 		catch (TimeoutException e) {
 			LogUtil.fatalLog
 					.error("An timeout exception occurred during the update operation");
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 		catch (Throwable e) {
 			LogUtil.fatalLog
 					.error("An exception occurred during the update operation : {}", e);
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
 		}
 	}
 
@@ -500,7 +499,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 					.error("There was an error querying the data, request : {}, error : {}",
 							selectRequest, e.toString());
 			return Response.newBuilder().setSuccess(false)
-					.setErrMsg(e.getClass().getSimpleName() + ":" + e.getMessage())
+					.setErrMsg(ClassUtils.getSimplaName(e) + ":" + ExceptionUtil.getCause(e).getMessage())
 					.build();
 		}
 		finally {
@@ -519,12 +518,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		final Lock lock = readLock;
 		lock.lock();
 		try {
-			Collections.sort(sqlContext, new Comparator<ModifyRequest>() {
-				@Override
-				public int compare(ModifyRequest pre, ModifyRequest next) {
-					return pre.getExecuteNo() - next.getExecuteNo();
-				}
-			});
+			sqlContext.sort(Comparator.comparingInt(ModifyRequest::getExecuteNo));
 			boolean isOk = onUpdate(sqlContext);
 
 			// If there is additional information, post processing

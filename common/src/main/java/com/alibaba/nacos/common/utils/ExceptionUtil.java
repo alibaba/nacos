@@ -41,6 +41,14 @@ public class ExceptionUtil {
         return strBuilder.toString();
     }
 
+    public static Throwable getCause(final Throwable t) {
+        final Throwable cause = t.getCause();
+        if (Objects.isNull(cause)) {
+            return t;
+        }
+        return cause;
+    }
+
     public static String getStackTrace(final Throwable t) {
         if (t == null) {
             return "";
