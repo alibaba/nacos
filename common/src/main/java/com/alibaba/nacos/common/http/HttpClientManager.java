@@ -21,11 +21,14 @@ import com.alibaba.nacos.common.http.client.ApacheHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Use the same HttpClient object in the same space
@@ -47,28 +50,21 @@ public class HttpClientManager {
 
 	private static final NAsyncHttpClient ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
-
-	private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
+  
+  private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
 	    new ApacheHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
 
-    private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
+  private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
         new ApacheAsyncHttpClientRequest(HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
+  
+	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
 
 
 	static {
 		ShutdownUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
-				logger.warn("[HttpClientManager] Start destroying HttpClient");
-				try {
-					SYNC_HTTP_CLIENT.close();
-					ASYNC_HTTP_CLIENT.close();
-                    NACOS_REST_TEMPLATE.close();
-                    NACOS_ASYNC_REST_TEMPLATE.close();
-				}
-				catch (Exception ignore) {
-				}
-				logger.warn("[HttpClientManager] Destruction of the end");
+				shutdown();
 			}
 		});
 
@@ -84,10 +80,29 @@ public class HttpClientManager {
 
 	public static NacosRestTemplate getNacosRestTemplate() {
 	    return NACOS_REST_TEMPLATE;
-    }
+  }
 
-    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
+  public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
 	    return NACOS_ASYNC_REST_TEMPLATE;
-    }
+  }
+
+	public static void shutdown() {
+		if (!alreadyShutdown.compareAndSet(false, true)) {
+			return;
+		}
+		logger.warn("[HttpClientManager] Start destroying HttpClient");
+		try {
+			SYNC_HTTP_CLIENT.close();
+			ASYNC_HTTP_CLIENT.close();
+      NACOS_REST_TEMPLATE.close();
+      NACOS_ASYNC_REST_TEMPLATE.close();
+		}
+		catch (Exception ex) {
+			logger.error("An exception occurred when the HTTP client was closed : {}",
+					ExceptionUtil.getStackTrace(ex));
+		}
+		logger.warn("[HttpClientManager] Destruction of the end");
+	}
+
 
 }

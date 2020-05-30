@@ -46,7 +46,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class JscksonUtils {
+public class JacksonUtils {
 
 	static ObjectMapper mapper = new ObjectMapper();
 
