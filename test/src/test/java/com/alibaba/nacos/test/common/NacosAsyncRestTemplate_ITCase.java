@@ -16,6 +16,7 @@
 package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
@@ -23,6 +24,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,7 +55,12 @@ public class NacosAsyncRestTemplate_ITCase {
     private NacosAsyncRestTemplate nacosRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
 
     private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
-    private final String IP = "http://127.0.0.1:" + port;
+    private String IP = null;
+
+    @Before
+    public void init() throws NacosException {
+        IP = String.format("http://localhost:%d", port);
+    }
 
     private class CallbackMap<T> implements Callback<T> {
 
