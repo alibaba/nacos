@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.common.http.client;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.UriUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,36 +50,36 @@ public class NacosRestTemplate implements RestOperations {
     }
 
     @Override
-    public <T> RestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception {
         return execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType);
     }
 
     @Override
-    public <T> RestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, Query.newInstance().initParams(paramValues));
 
         return execute(url, HttpMethod.GET, requestHttpEntity, responseType);
     }
 
     @Override
-    public <T> RestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType) throws Exception {
         return execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType);
     }
 
     @Override
-    public <T> RestResult<T> delete(String url, Header header, Query query, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> delete(String url, Header header, Query query, Type responseType) throws Exception {
         return execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType);
     }
 
     @Override
-    public <T> RestResult<T> put(String url, Header header, Query query, Object body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> put(String url, Header header, Query query, Object body, Type responseType) throws Exception {
         return execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType);
     }
 
     @Override
-    public <T> RestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header,
+            header.setContentType(MediaType.APPLICATION_JSON),
             Query.newInstance().initParams(paramValues),
             body);
 
@@ -88,16 +87,16 @@ public class NacosRestTemplate implements RestOperations {
     }
 
     @Override
-    public <T> RestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
     @Override
-    public <T> RestResult<T> putFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED),
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
             bodyValues);
 
@@ -105,14 +104,15 @@ public class NacosRestTemplate implements RestOperations {
     }
 
     @Override
-    public <T> RestResult<T> post(String url, Header header, Query query, Object body, Type responseType) throws Exception {
-        return execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType);
+    public <T> HttpRestResult<T> post(String url, Header header, Query query, Object body, Type responseType) throws Exception {
+        return execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body),
+            responseType);
     }
 
     @Override
-    public <T> RestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header,
+            header.setContentType(MediaType.APPLICATION_JSON),
             Query.newInstance().initParams(paramValues),
             body);
 
@@ -120,16 +120,17 @@ public class NacosRestTemplate implements RestOperations {
     }
 
     @Override
-    public <T> RestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
     @Override
-    public <T> RestResult<T> postFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED),
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
             bodyValues);
 
@@ -137,9 +138,9 @@ public class NacosRestTemplate implements RestOperations {
     }
 
 
-    private <T> RestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
+    private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
                           Type responseType) throws Exception {
-        URI uri = UriUtils.buildUri(url, requestEntity.getQuery());
+        URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (logger.isDebugEnabled()) {
             logger.debug("HTTP " + httpMethod + " " + url);
         }

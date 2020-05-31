@@ -18,9 +18,9 @@ package com.alibaba.nacos.common.http.client;
 
 
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.model.RestResult;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.concurrent.FutureCallback;
@@ -56,8 +56,8 @@ public class ApacheAsyncHttpClientRequest implements AsyncHttpClientRequest {
             public void completed(HttpResponse result) {
                 ApacheClientHttpResponse response = new ApacheClientHttpResponse(result);
                 try {
-                    RestResult<T> restResult = ResponseHandler.responseEntityExtractor(response, responseType);
-                    callback.onReceive(restResult);
+                    HttpRestResult<T> httpRestResult = ResponseHandler.responseEntityExtractor(response, responseType);
+                    callback.onReceive(httpRestResult);
                 } catch (Exception e) {
                     callback.onError(e);
                 }

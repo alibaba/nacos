@@ -19,6 +19,7 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -64,12 +65,12 @@ public class NacosAsyncRestTemplate_ITCase {
 
     private class CallbackMap<T> implements Callback<T> {
 
-        private RestResult<T> restResult;
+        private HttpRestResult<T> restResult;
         private Throwable throwable;
 
         @Override
         public void onReceive(RestResult<T> result) {
-            restResult = result;
+            restResult = (HttpRestResult<T>) result;
         }
 
         @Override
@@ -77,7 +78,7 @@ public class NacosAsyncRestTemplate_ITCase {
             throwable = throwable;
         }
 
-        public RestResult<T> getRestResult() {
+        public HttpRestResult<T> getRestResult() {
             return restResult;
         }
 
@@ -96,8 +97,9 @@ public class NacosAsyncRestTemplate_ITCase {
         CallbackMap<String> callbackMap = new CallbackMap<>();
         nacosRestTemplate.postFrom(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
         Thread.sleep(2000);
-        RestResult<String> restResult = callbackMap.getRestResult();
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
     }
 
@@ -111,8 +113,9 @@ public class NacosAsyncRestTemplate_ITCase {
         CallbackMap<String> callbackMap = new CallbackMap<>();
         nacosRestTemplate.putFrom(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
         Thread.sleep(2000);
-        RestResult<String> restResult = callbackMap.getRestResult();
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
     }
 
@@ -124,8 +127,9 @@ public class NacosAsyncRestTemplate_ITCase {
         CallbackMap<Map> callbackMap = new CallbackMap<>();
         nacosRestTemplate.get(url, Header.newInstance(), query, Map.class, callbackMap);
         Thread.sleep(2000);
-        RestResult<Map> restResult = callbackMap.getRestResult();
+        HttpRestResult<Map> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
 
@@ -139,8 +143,9 @@ public class NacosAsyncRestTemplate_ITCase {
         CallbackMap<Map> callbackMap = new CallbackMap<>();
         nacosRestTemplate.get(url, Header.newInstance(), param, Map.class, callbackMap);
         Thread.sleep(2000);
-        RestResult<Map> restResult = callbackMap.getRestResult();
+        HttpRestResult<Map> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
 
@@ -156,8 +161,9 @@ public class NacosAsyncRestTemplate_ITCase {
         CallbackMap<String> callbackMap = new CallbackMap<>();
         nacosRestTemplate.delete(url, Header.newInstance(), query,  RestResult.class, callbackMap);
         Thread.sleep(2000);
-        RestResult<String> restResult = callbackMap.getRestResult();
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
 
     }

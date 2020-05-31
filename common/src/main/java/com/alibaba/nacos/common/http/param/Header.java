@@ -53,6 +53,13 @@ public class Header {
         return this;
     }
 
+    public Header setContentType(String contentType) {
+        if (contentType == null) {
+            contentType = MediaType.APPLICATION_JSON;
+        }
+        return addParam(HttpHeaderConsts.CONTENT_TYPE, contentType);
+    }
+
     public Header build() {
         return this;
     }

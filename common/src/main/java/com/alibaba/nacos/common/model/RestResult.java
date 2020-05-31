@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.model;
 
-import com.alibaba.nacos.common.http.param.Header;
-
 import java.io.Serializable;
 
 /**
@@ -27,18 +25,11 @@ public class RestResult<T> implements Serializable {
 
     private static final long serialVersionUID = 6095433538316185017L;
 
-    private Header header;
     private int code;
     private String message;
     private T data;
 
     public RestResult() {
-    }
-
-    public RestResult(Header header, int code, T data) {
-        this.header = header;
-        this.code = code;
-        this.data = data;
     }
 
     public RestResult(int code, String message, T data) {
@@ -55,14 +46,6 @@ public class RestResult<T> implements Serializable {
     public RestResult(int code, String message) {
         this.code = code;
         this.setMessage(message);
-    }
-
-    public Header getHeader() {
-        return header;
-    }
-
-    public void setHeader(Header header) {
-        this.header = header;
     }
 
     public int getCode() {
@@ -96,8 +79,7 @@ public class RestResult<T> implements Serializable {
     @Override
     public String toString() {
         return "RestResult{" +
-                "header=" + header +
-                ", code=" + code +
+                "code=" + code +
                 ", message='" + message + '\'' +
                 ", data=" + data +
                 '}';
@@ -108,17 +90,11 @@ public class RestResult<T> implements Serializable {
     }
 
     public static final class ResResultBuilder<T> {
-        private Header header;
         private int code;
         private String errMsg;
         private T data;
 
         private ResResultBuilder() {
-        }
-
-        public ResResultBuilder<T> withHeader(Header header) {
-            this.header = header;
-            return this;
         }
 
         public ResResultBuilder<T> withCode(int code) {
@@ -138,7 +114,6 @@ public class RestResult<T> implements Serializable {
 
         public RestResult<T> build() {
             RestResult<T> restResult = new RestResult<T>();
-            restResult.setHeader(header);
             restResult.setCode(code);
             restResult.setMessage(errMsg);
             restResult.setData(data);
