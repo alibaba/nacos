@@ -85,6 +85,8 @@ public final class ResourceLifeCycleManager {
                     LOGGER.debug("Life cycle resources do stop");
                 }
                 instance.stop();
+                INSTANCE.lifeCycleResources.remove(instance);
+                INSTANCE.lockers.remove(instance);
             } catch (Exception e) {
                 LOGGER.error("An exception occurred during resource do stop : {}", e);
             }
@@ -103,6 +105,7 @@ public final class ResourceLifeCycleManager {
             final Object monitor = lockers.get(instance);
             synchronized (monitor) {
                 this.lifeCycleResources.remove(instance);
+                this.lockers.remove(instance);
             }
         }
     }
