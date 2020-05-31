@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.http.handler;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
+
 import org.slf4j.Logger;
 
 /**
@@ -45,12 +47,12 @@ public final class ResponseHandler {
         return JacksonUtils.toObj(s, type);
     }
 
-    public static <T> T convert(InputStream inputStream, Class<T> tClass) throws Exception{
+    public static <T> T convert(InputStream inputStream, Class<T> tClass) throws Exception {
         return JacksonUtils.toObj(inputStream, tClass);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes", "resource"})
-    public static <T> RestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception{
+    public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception {
         Header headers = response.getHeaders();
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         String body = IoUtils.toString(response.getBody(), headers.getCharset());
@@ -59,9 +61,19 @@ public final class ResponseHandler {
             extractBody = convert(body, type);
         }
         if (extractBody instanceof RestResult) {
-            return (RestResult<T>) extractBody;
+            HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
+            httpRestResult.setHeader(headers);
+            return httpRestResult;
         }
-        return new RestResult<>(response.getHeaders(), response.getStatusCode(), extractBody);
+        return new HttpRestResult<>(response.getHeaders(), response.getStatusCode(), extractBody);
+    }
+
+    private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
+        HttpRestResult<T> httpRestResult = new HttpRestResult<>();
+        httpRestResult.setCode(restResult.getCode());
+        httpRestResult.setData(restResult.getData());
+        httpRestResult.setMessage(restResult.getMessage());
+        return httpRestResult;
     }
 
 }

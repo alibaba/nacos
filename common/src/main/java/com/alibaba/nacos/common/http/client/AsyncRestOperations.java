@@ -32,7 +32,11 @@ import java.util.Map;
 public interface AsyncRestOperations {
 
     /**
-     * http get
+     * async http get
+     * URL request params are expanded using the given query {@link Query}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param responseType return type
@@ -44,7 +48,11 @@ public interface AsyncRestOperations {
     <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http get
+     * async http get
+     * URL request params are expanded using the given map {@code paramValues}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       headers
@@ -57,7 +65,12 @@ public interface AsyncRestOperations {
                  Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * get request, may be pulling a lot of data
+     * async get request, may be pulling a lot of data
+     * URL request params are expanded using the given query {@link Query},
+     * More request parameters can be set via body.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -71,7 +84,11 @@ public interface AsyncRestOperations {
                       Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http delete
+     * async http delete
+     * URL request params are expanded using the given query {@link Query},
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -84,7 +101,12 @@ public interface AsyncRestOperations {
                     Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http put
+     * async http put
+     * Create a new resource by PUTting the given body to http request.
+     * <p>URL request params are expanded using the given query {@link Query}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -99,7 +121,13 @@ public interface AsyncRestOperations {
 
 
     /**
-     * http put Json
+     * async http put Json
+     * Create a new resource by PUTting the given body to http request,
+     * http header contentType default 'application/json;charset=UTF-8'.
+     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -113,7 +141,13 @@ public interface AsyncRestOperations {
                      Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http put from
+     * async http put from
+     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
+     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * <p>URL request params are expanded using the given query {@link Query}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -128,7 +162,13 @@ public interface AsyncRestOperations {
 
 
     /**
-     * http put from
+     * async http put from
+     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
+     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -143,7 +183,12 @@ public interface AsyncRestOperations {
 
 
     /**
-     * http post
+     * async http post
+     * Create a new resource by POSTing the given object to the http request.
+     * <p>URL request params are expanded using the given query {@link Query}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -157,7 +202,13 @@ public interface AsyncRestOperations {
                            Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http post Json
+     * async http post Json
+     * Create a new resource by POSTing the given object to the http request,
+     * http header contentType default 'application/json;charset=UTF-8'.
+     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -172,7 +223,13 @@ public interface AsyncRestOperations {
 
 
     /**
-     * http post from
+     * async http post from
+     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
+     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * <p>URL request params are expanded using the given query {@link Query}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param
@@ -186,7 +243,13 @@ public interface AsyncRestOperations {
                                Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception;
 
     /**
-     * http post from
+     * async http post from
+     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
+     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * <p>URL request params are expanded using the given map {@code paramValues}.
+     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
+     * <p>{@code callback} Result callback execution,
+     * if you need response headers, you can convert the received RestResult to HttpRestResult.
      *
      * @param url          url
      * @param header       http header param

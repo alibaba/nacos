@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.common.http.client;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.UriUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +92,9 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                             String body, Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
-            header, Query.newInstance().initParams(paramValues), body), responseType, callback);
+            header.setContentType(MediaType.APPLICATION_JSON),
+                Query.newInstance().initParams(paramValues), body),
+            responseType, callback);
 
     }
 
@@ -102,7 +103,7 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                             Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED),
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             query, bodyValues), responseType, callback);
     }
 
@@ -111,7 +112,7 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                             Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED),
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
     }
 
@@ -128,7 +129,9 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                              String body, Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.POST, new RequestHttpEntity(
-            header, Query.newInstance().initParams(paramValues), body), responseType, callback);
+            header.setContentType(MediaType.APPLICATION_JSON),
+            Query.newInstance().initParams(paramValues), body),
+            responseType, callback);
     }
 
     @Override
@@ -136,7 +139,7 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                              Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.POST, new RequestHttpEntity(
-                header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
             responseType, callback);
     }
 
@@ -145,7 +148,7 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
                              Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception {
 
         execute(url, HttpMethod.POST, new RequestHttpEntity(
-            header.addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED),
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
             bodyValues), responseType, callback);
 
@@ -154,7 +157,7 @@ public class NacosAsyncRestTemplate implements AsyncRestOperations {
     private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity,
                              Type responseType, Callback<T> callback) throws Exception {
 
-        URI uri = UriUtils.buildUri(url, requestEntity.getQuery());
+        URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (logger.isDebugEnabled()) {
             logger.debug("HTTP " + httpMethod + " " + url);
         }
