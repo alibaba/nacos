@@ -16,13 +16,19 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadUtils.class);
 
     public static void objectWait(Object object) {
         try {
@@ -69,6 +75,25 @@ public final class ThreadUtils {
             workerCount <<= 1;
         }
         return workerCount;
+    }
+
+    public static void shutdown(ExecutorService executor) {
+        executor.shutdown();
+        int retry = 3;
+        while (retry > 0) {
+            retry --;
+            try {
+                if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.interrupted();
+            } catch (Throwable ex) {
+                LOGGER.error("shutdown the executor has error : {}", ex);
+            }
+            executor.shutdownNow();
+        }
     }
 
     private final static int THREAD_MULTIPLER = 2;

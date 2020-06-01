@@ -25,12 +25,14 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -55,7 +57,7 @@ import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
  *
  * @author Nacos
  */
-public class ClientWorker {
+public class ClientWorker implements Closeable {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
@@ -488,6 +490,19 @@ public class ClientWorker {
         taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
         enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+    }
+
+    @Override
+    public void close() throws IOException {
+
+    }
+
+    @Override
+    public void shutdown() throws InterruptedException {
+        LOGGER.info("do shutdown begin");
+        ThreadUtils.shutdown(this.executorService);
+        ThreadUtils.shutdown(this.executor);
+        LOGGER.info("do shutdown stop");
     }
 
     class LongPollingRunnable implements Runnable {
