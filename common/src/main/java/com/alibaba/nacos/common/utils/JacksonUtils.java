@@ -92,22 +92,6 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-		try {
-			return toObj(StringUtils.newString4UTF8(json), cls);
-		}
-		catch (Exception e) {
-			throw new NacosDeserializationException(e);
-		}
-	}
-
-	public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
-		try {
-			return toObj(StringUtils.newString4UTF8(json), typeReference);
-		}
-		catch (Exception e) {
-			throw new NacosDeserializationException(e);
-		}
-	}
 
 	public static <T> T toObj(String json, Class<T> cls) {
 		try {
