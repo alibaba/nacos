@@ -49,56 +49,67 @@ public final class RaftSysConstants {
     public static final int DEFAULT_RAFT_RPC_REQUEST_TIMEOUT_MS = 5000;
 
     /**
+     * The maximum size of each file RPC (snapshot copy) request between nodes is 128 K by default
      * 节点之间每次文件 RPC (snapshot拷贝）请求的最大大小，默认为 128 K
      */
     public static final int DEFAULT_MAX_BYTE_COUNT_PER_RPC = 128 * 1024;
     /**
+     * The maximum number of logs sent from the leader to the followers is 1024 by default
      * 从 leader 往 follower 发送的最大日志个数，默认 1024
      */
     public static final int DEFAULT_MAX_ENTRIES_SIZE = 1024;
     /**
+     * The maximum body size of the log sent from the leader to the followers is 512K by default
      * 从 leader 往 follower 发送日志的最大 body 大小，默认 512K
      */
     public static final int DEFAULT_MAX_BODY_SIZE = 512 * 1024;
     /**
+     * The maximum size of the log storage buffer is 256K by default
      * 日志存储缓冲区最大大小，默认256K
      */
     public static final int DEFAULT_MAX_APPEND_BUFFER_SIZE = 256 * 1024;
     /**
+     * The election timer interval will be a random maximum outside the specified time, 1 second by default
      * 选举定时器间隔会在指定时间之外随机的最大范围，默认1秒
      */
     public static final int DEFAULT_MAX_ELECTION_DELAY_MS = 1000;
     /**
-     * 指定选举超时时间和心跳间隔时间之间的比值。心跳间隔等于
-     * electionTimeoutMs/electionHeartbeatFactor，默认10分之一。
+     * Specifies the ratio of the election timeout to the heartbeat interval. Heartbeat interval is equal to the electionTimeoutMs/electionHeartbeatFactor, default one of 10 points.
+     * 指定选举超时时间和心跳间隔时间之间的比值。心跳间隔等于electionTimeoutMs/electionHeartbeatFactor，默认10分之一。
      */
     public static final int DEFAULT_ELECTION_HEARTBEAT_FACTOR = 10;
     /**
+     * The tasks submitted to the leader will accumulate one batch into the maximum batch size stored in the log, and 32 tasks will be assigned by default
      * 向 leader 提交的任务累积一个批次刷入日志存储的最大批次大小，默认 32 个任务
      */
     public static final int DEFAULT_APPLY_BATCH = 32;
     /**
+     * Call fsync when necessary when writing log, meta information, and it should always be true
      * 写入日志、元信息的时候必要的时候调用 fsync，通常都应该为 true
      */
     public static final boolean DEFAULT_SYNC = true;
     /**
-     * 写入 snapshot/raft 元信息是否调用 fsync，默认为 false，
-     * 在 sync 为 true 的情况下，优选尊重 sync
+     * If fsync is called by writing snapshot/raft information, the default is false. If sync is true, it is better to respect sync
+     * 写入 snapshot/raft 元信息是否调用 fsync，默认为 false，在 sync 为 true 的情况下，优选尊重 sync
      */
     public static final boolean DEFAULT_SYNC_META = false;
     /**
+     * Internal disruptor buffer size, need to be appropriately adjusted for high write throughput applications, default 16384
      * 内部 disruptor buffer 大小，如果是写入吞吐量较高的应用，需要适当调高该值，默认 16384
      */
     public static final int DEFAULT_DISRUPTOR_BUFFER_SIZE = 16384;
     /**
+     * Whether to enable replicated pipeline request optimization by default
      * 是否启用复制的 pipeline 请求优化，默认打开
      */
     public static final boolean DEFAULT_REPLICATOR_PIPELINE = true;
     /**
+     * Maximum in-flight requests with pipeline requests enabled, 256 by default
      * 在启用 pipeline 请求情况下，最大 in-flight 请求数，默认256
      */
     public static final int DEFAULT_MAX_REPLICATOR_INFLIGHT_MSGS = 256;
     /**
+     * Whether LogEntry checksum is enabled
      * 是否启用 LogEntry checksum
      */
     public static final boolean DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM = false;

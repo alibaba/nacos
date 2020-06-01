@@ -32,11 +32,13 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
@@ -77,7 +79,6 @@ class NacosStateMachine extends StateMachineAdapter {
 		this.server = server;
 		this.processor = processor;
 		this.groupId = processor.group();
-
 		adapterToJRaftSnapshot(processor.loadSnapshotOperate());
 	}
 
@@ -213,6 +214,13 @@ class NacosStateMachine extends StateMachineAdapter {
 		NotifyCenter.publishEvent(
 				RaftEvent.builder().groupId(groupId).leader(leaderIp).term(ctx.getTerm())
 						.raftClusterInfo(allPeers()).build());
+	}
+
+	@Override
+	public void onConfigurationCommitted(Configuration conf) {
+		NotifyCenter.publishEvent(
+				RaftEvent.builder().groupId(groupId)
+						.raftClusterInfo(JRaftUtils.toStrings(conf.getPeers())).build());
 	}
 
 	@Override

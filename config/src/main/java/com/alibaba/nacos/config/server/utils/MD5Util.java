@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,7 +52,8 @@ public class MD5Util {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
             String ip = RequestUtil.getRemoteIp(request);
-            boolean isUptodate = ConfigService.isUptodate(groupKey, clientMd5, ip, tag);
+            boolean isUptodate = ConfigCacheService
+					.isUptodate(groupKey, clientMd5, ip, tag);
             if (!isUptodate) {
                 changedGroupKeys.add(groupKey);
             }

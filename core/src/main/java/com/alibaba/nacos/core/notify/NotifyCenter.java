@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -208,7 +206,12 @@ public class NotifyCenter {
 	 * @param event
 	 */
 	public static boolean publishEvent(final Event event) {
-		return publishEvent(event.getClass(), event);
+		try {
+			return publishEvent(event.getClass(), event);
+		} catch (Throwable ex) {
+			LOGGER.error("There was an exception to the message publishing : {}", ex);
+			return false;
+		}
 	}
 
 	/**
