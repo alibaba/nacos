@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.utils;
 
 import org.springframework.core.ResolvableType;
 
+import java.util.Objects;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -38,6 +40,36 @@ public final class ClassUtils {
 		} catch (Exception e) {
 			throw new RuntimeException("this class name not found");
 		}
+	}
+
+	public static String getName(Object obj) {
+		Objects.requireNonNull(obj, "obj");
+		return obj.getClass().getName();
+	}
+
+	public static String getCanonicalName(Object obj) {
+		Objects.requireNonNull(obj, "obj");
+		return obj.getClass().getCanonicalName();
+	}
+
+	public static String getSimplaName(Object obj) {
+		Objects.requireNonNull(obj, "obj");
+		return obj.getClass().getSimpleName();
+	}
+
+	public static String getName(Class cls) {
+		Objects.requireNonNull(cls, "cls");
+		return cls.getName();
+	}
+
+	public static String getCanonicalName(Class cls) {
+		Objects.requireNonNull(cls, "cls");
+		return cls.getCanonicalName();
+	}
+
+	public static String getSimplaName(Class cls) {
+		Objects.requireNonNull(cls, "cls");
+		return cls.getSimpleName();
 	}
 
 }

@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.common.utils;
 
+import org.apache.commons.lang3.CharSequenceUtils;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -214,4 +216,89 @@ public class StringUtils {
             }
         }
     }
+
+    //    The following utility functions are extracted from <link>org.apache.commons.lang3</link>
+    //    start
+
+    /**
+     * <p>Checks if CharSequence contains a search CharSequence irrespective of case,
+     * handling {@code null}. Case-insensitivity is defined as by
+     * {@link String#equalsIgnoreCase(String)}.
+     *
+     * <p>A {@code null} CharSequence will return {@code false}.</p>
+     *
+     * <pre>
+     * StringUtils.contains(null, *) = false
+     * StringUtils.contains(*, null) = false
+     * StringUtils.contains("", "") = true
+     * StringUtils.contains("abc", "") = true
+     * StringUtils.contains("abc", "a") = true
+     * StringUtils.contains("abc", "z") = false
+     * StringUtils.contains("abc", "A") = true
+     * StringUtils.contains("abc", "Z") = false
+     * </pre>
+     *
+     * @param str  the CharSequence to check, may be null
+     * @param searchStr  the CharSequence to find, may be null
+     * @return true if the CharSequence contains the search CharSequence irrespective of
+     * case or false if not or {@code null} string input
+     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence, CharSequence)
+     */
+    public static boolean containsIgnoreCase(final CharSequence str, final CharSequence searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        final int len = searchStr.length();
+        final int max = str.length() - len;
+        for (int i = 0; i <= max; i++) {
+            if (regionMatches(str, true, i, searchStr, 0, len)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Green implementation of regionMatches.
+     *
+     * @param cs the {@code CharSequence} to be processed
+     * @param ignoreCase whether or not to be case insensitive
+     * @param thisStart the index to start on the {@code cs} CharSequence
+     * @param substring the {@code CharSequence} to be looked for
+     * @param start the index to start on the {@code substring} CharSequence
+     * @param length character length of the region
+     * @return whether the region matched
+     */
+    static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
+            final CharSequence substring, final int start, final int length)    {
+        if (cs instanceof String && substring instanceof String) {
+            return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
+        }
+        int index1 = thisStart;
+        int index2 = start;
+        int tmpLen = length;
+
+        while (tmpLen-- > 0) {
+            final char c1 = cs.charAt(index1++);
+            final char c2 = substring.charAt(index2++);
+
+            if (c1 == c2) {
+                continue;
+            }
+
+            if (!ignoreCase) {
+                return false;
+            }
+
+            // The same check as in String.regionMatches():
+            if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
+                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    //    end
 }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -34,7 +34,6 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
-import com.alipay.sofa.jraft.rpc.RaftRpcFactory;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
