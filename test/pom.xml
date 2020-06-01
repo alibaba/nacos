@@ -26,7 +26,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-test ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>http://nacos.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
