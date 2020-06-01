@@ -178,7 +178,7 @@ public enum BaseHttpMethod {
         if (body.isEmpty()) {
             return;
         }
-        List<NameValuePair> params = new ArrayList<>(body.size());
+        List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());
         for (Map.Entry<String, String> entry : body.entrySet()) {
             params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
