@@ -199,11 +199,7 @@ public class ServerMemberManager
 		Loggers.CLUSTER.debug("Node information update : {}", newMember);
 
 		String address = newMember.getAddress();
-
-		if (Objects.equals(newMember, self)) {
-			serverList.put(newMember.getAddress(), newMember);
-			return true;
-		}
+		newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
 
 		if (!serverList.containsKey(address)) {
 			return false;
