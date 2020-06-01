@@ -67,11 +67,11 @@ public class NotifyCenter {
 	static {
 		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 		// this value needs to be increased appropriately. default value is 16384
-		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+		String ringBufferSizeProperty = "nacos.core.notify.ring-buffer-size";
 		RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
 
 		// The size of the public publisher's message staging queue buffer
-		String shareBufferSizeProperty = "com.alibaba.nacos.core.notify.shareBufferSize";
+		String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
 		SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
 
 		ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);

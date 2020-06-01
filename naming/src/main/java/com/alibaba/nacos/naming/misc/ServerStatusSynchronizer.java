@@ -55,7 +55,6 @@ public class ServerStatusSynchronizer implements Synchronizer {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
                             serverIP);
-
                         return 1;
                     }
                     return 0;
