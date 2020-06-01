@@ -65,11 +65,11 @@ public final class ResponseHandler {
             httpRestResult.setHeader(headers);
             return httpRestResult;
         }
-        return new HttpRestResult<>(response.getHeaders(), response.getStatusCode(), extractBody);
+        return new HttpRestResult<T>(response.getHeaders(), response.getStatusCode(), extractBody);
     }
 
     private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
-        HttpRestResult<T> httpRestResult = new HttpRestResult<>();
+        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
         httpRestResult.setCode(restResult.getCode());
         httpRestResult.setData(restResult.getData());
         httpRestResult.setMessage(restResult.getMessage());
