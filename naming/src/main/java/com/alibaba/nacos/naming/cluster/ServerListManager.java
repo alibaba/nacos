@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The manager to globally refresh and operate server list.
@@ -97,6 +98,11 @@ public class ServerListManager implements MemberChangeListener {
 		this.servers = new ArrayList<>(event.getMembers());
 	}
 
+	/**
+	 * Compatible with older version logic, In version 1.2.1 and before
+	 *
+	 * @param configInfo site:ip:lastReportTime:weight
+	 */
 	public synchronized void onReceiveServerStatus(String configInfo) {
 
 		Loggers.SRV_LOG.info("receive config info: {}", configInfo);
@@ -114,11 +120,11 @@ public class ServerListManager implements MemberChangeListener {
 				continue;
 			}
 
-			Member server = Member.builder()
+			Member server = Optional.ofNullable(memberManager.find(params[1])).orElse(Member.builder()
 					.ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0])
 					.state(NodeState.UP)
 					.port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1]))
-					.build();
+					.build());
 
 			server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
 			server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
@@ -143,12 +149,19 @@ public class ServerListManager implements MemberChangeListener {
 
 			this.cursor = (this.cursor + 1) % members.size();
 			Member target = members.get(cursor);
-			String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
-			Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
-			String server = target.getAddress();
 			if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
-				server = UtilsAndCommons.LOCAL_HOST_IP + ":" + target.getPort();
+				return;
 			}
+
+			// This metadata information exists from 1.3.0 onwards "version"
+			if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+				return;
+			}
+
+			final String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
+			final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+			final String server = target.getAddress();
+
 			try {
 				String content = NamingProxy.reqCommon(path, params, server, false);
 				if (!StringUtils.EMPTY.equals(content)) {
@@ -195,6 +208,11 @@ public class ServerListManager implements MemberChangeListener {
 					for (Member server : allServers) {
 						if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
 							continue;
+						}
+
+						// This metadata information exists from 1.3.0 onwards "version"
+						if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+							return;
 						}
 
 						Message msg = new Message();

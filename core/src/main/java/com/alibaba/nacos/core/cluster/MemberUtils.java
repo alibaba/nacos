@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import java.util.concurrent.ThreadLocalRandom;
@@ -74,6 +75,7 @@ public class MemberUtils {
 		Map<String, Object> extendInfo = new HashMap<>(4);
 		// The Raft Port information needs to be set by default
 		extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
+		extendInfo.put(MemberMetaDataConstants.VERSION, VersionUtils.VERSION);
 		target.setExtendInfo(extendInfo);
 		return target;
 	}

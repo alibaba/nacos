@@ -35,12 +35,15 @@ public class MemberMetaDataConstants {
 
 	public static final String LAST_REFRESH_TIME = "lastRefreshTime";
 
+	public static final String VERSION = "version";
+
 	public static final String[] META_KEY_LIST = new String[]{
 			RAFT_PORT,
 			SITE_KEY,
 			AD_WEIGHT,
 			WEIGHT,
 			LAST_REFRESH_TIME,
+			VERSION,
 	};
 
 }

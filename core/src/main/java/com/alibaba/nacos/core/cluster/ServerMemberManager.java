@@ -27,12 +27,14 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -40,6 +42,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -235,6 +238,10 @@ public class ServerMemberManager
 		return this.self;
 	}
 
+	public Member find(String address) {
+		return serverList.get(address);
+	}
+
 	public Collection<Member> allMembers() {
 		// We need to do a copy to avoid affecting the real data
 		HashSet<Member> set = new HashSet<>(serverList.values());
@@ -405,10 +412,15 @@ public class ServerMemberManager
 					"/cluster/report");
 
 			try {
-				asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, getSelf(),
+				asyncHttpClient.post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER,
+						VersionUtils.VERSION), Query.EMPTY, getSelf(),
 						reference.getType(), new Callback<String>() {
 							@Override
 							public void onReceive(RestResult<String> result) {
+								if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value() || result.getCode() == HttpStatus.NOT_FOUND.value()) {
+									Loggers.CLUSTER.warn("{} version is too low, it is recommended to upgrade the version : {}", target, VersionUtils.VERSION);
+									return;
+								}
 								if (result.ok()) {
 									MemberUtils.onSuccess(target);
 								}
