@@ -39,13 +39,13 @@ import java.util.Map;
  * @date 2020/5/24
  */
 @SuppressWarnings({"unchecked", "rawtypes", "resource"})
-public class ApacheHttpClientRequest implements HttpClientRequest {
+public class DefaultHttpClientRequest implements HttpClientRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
 
     private final CloseableHttpClient client;
 
-    public ApacheHttpClientRequest(CloseableHttpClient client) {
+    public DefaultHttpClientRequest(CloseableHttpClient client) {
         this.client = client;
     }
 
@@ -56,7 +56,7 @@ public class ApacheHttpClientRequest implements HttpClientRequest {
         if (logger.isDebugEnabled()) {
             logger.debug("Request from server: " + request.getURI().toString());
         }
-        return new ApacheClientHttpResponse(response);
+        return new DefaultClientHttpResponse(response);
     }
 
 

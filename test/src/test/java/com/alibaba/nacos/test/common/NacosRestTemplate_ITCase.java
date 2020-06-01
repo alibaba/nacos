@@ -58,6 +58,7 @@ public class NacosRestTemplate_ITCase {
     private final String CONFIG_PATH = "/nacos/v1/cs";
     private String IP = null;
 
+
     @Before
     public void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
@@ -126,7 +127,7 @@ public class NacosRestTemplate_ITCase {
             .addParam("ip", "11.11.11.11")
             .addParam("port", "8080")
             .addParam("serviceName", "app-test");
-        HttpRestResult<String> restResult = nacosRestTemplate.delete(url, Header.newInstance(), query,  RestResult.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.delete(url, Header.newInstance(), query,  String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult);
     }

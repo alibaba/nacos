@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.http.handler;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.HttpClientResponse;
@@ -47,18 +48,26 @@ public final class ResponseHandler {
         return JacksonUtils.toObj(s, type);
     }
 
-    public static <T> T convert(InputStream inputStream, Class<T> tClass) throws Exception {
-        return JacksonUtils.toObj(inputStream, tClass);
+    public static <T> T convert(InputStream inputStream, Type type) throws Exception {
+        return JacksonUtils.toObj(inputStream, type);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes", "resource"})
     public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception {
         Header headers = response.getHeaders();
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-        String body = IoUtils.toString(response.getBody(), headers.getCharset());
-        T extractBody = (T) body;
+        InputStream body = response.getBody();
+        T extractBody = null;
         if (MediaType.APPLICATION_JSON.equals(contentType) && HttpStatus.SC_OK == response.getStatusCode()) {
             extractBody = convert(body, type);
+        }
+        if (extractBody == null) {
+            if (!String.class.toString().equals(type.toString())) {
+                logger.error("if the response contentType is not [application/json]," +
+                    " only support to java.lang.String");
+                throw new NacosDeserializationException(type);
+            }
+            extractBody = (T)IoUtils.toString(body, headers.getCharset());
         }
         if (extractBody instanceof RestResult) {
             HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
@@ -75,5 +84,6 @@ public final class ResponseHandler {
         httpRestResult.setMessage(restResult.getMessage());
         return httpRestResult;
     }
+
 
 }

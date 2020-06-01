@@ -31,13 +31,13 @@ import java.io.InputStream;
  * @author mai.jh
  * @date 2020/5/25
  */
-public class ApacheClientHttpResponse implements HttpClientResponse {
+public class DefaultClientHttpResponse implements HttpClientResponse {
 
     private HttpResponse response;
 
     private Header responseHeader;
 
-    public ApacheClientHttpResponse(HttpResponse response) {
+    public DefaultClientHttpResponse(HttpResponse response) {
         this.response = response;
     }
 
