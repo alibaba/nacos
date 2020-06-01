@@ -37,11 +37,11 @@ import java.net.URI;
  * @author mai.jh
  * @date 2020/5/29
  */
-public class ApacheAsyncHttpClientRequest implements AsyncHttpClientRequest {
+public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
 
     private final CloseableHttpAsyncClient asyncClient;
 
-    public ApacheAsyncHttpClientRequest(CloseableHttpAsyncClient asyncClient) {
+    public DefaultAsyncHttpClientRequest(CloseableHttpAsyncClient asyncClient) {
         this.asyncClient = asyncClient;
         if (!this.asyncClient.isRunning()) {
             this.asyncClient.start();
@@ -50,11 +50,11 @@ public class ApacheAsyncHttpClientRequest implements AsyncHttpClientRequest {
 
     @Override
     public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType, final Callback<T> callback) throws Exception {
-        HttpRequestBase httpRequestBase = ApacheHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
+        HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
         asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
             @Override
             public void completed(HttpResponse result) {
-                ApacheClientHttpResponse response = new ApacheClientHttpResponse(result);
+                DefaultClientHttpResponse response = new DefaultClientHttpResponse(result);
                 try {
                     HttpRestResult<T> httpRestResult = ResponseHandler.responseEntityExtractor(response, responseType);
                     callback.onReceive(httpRestResult);

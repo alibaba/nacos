@@ -159,7 +159,7 @@ public class NacosAsyncRestTemplate_ITCase {
             .addParam("port", "8080")
             .addParam("serviceName", "app-test");
         CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.delete(url, Header.newInstance(), query,  RestResult.class, callbackMap);
+        nacosRestTemplate.delete(url, Header.newInstance(), query,  String.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());

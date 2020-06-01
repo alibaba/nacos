@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.client.ApacheAsyncHttpClientRequest;
-import com.alibaba.nacos.common.http.client.ApacheHttpClientRequest;
+import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
+import com.alibaba.nacos.common.http.client.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
@@ -52,10 +52,10 @@ public class HttpClientManager {
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
 
     private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
-	    new ApacheHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
+	    new DefaultHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
 
     private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
-        new ApacheAsyncHttpClientRequest(HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
+        new DefaultAsyncHttpClientRequest(HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
 
 	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
 

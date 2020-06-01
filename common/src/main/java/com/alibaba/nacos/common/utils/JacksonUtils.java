@@ -120,6 +120,15 @@ public final class JacksonUtils {
 		}
 	}
 
+	public static <T> T toObj(InputStream inputStream, Type type) {
+        try {
+            return mapper.readValue(inputStream, mapper.constructType(type));
+        }
+        catch (IOException e) {
+            throw new NacosDeserializationException(type, e);
+        }
+    }
+
 	public static JsonNode toObj(String json) {
 		try {
 			return mapper.readTree(json);
