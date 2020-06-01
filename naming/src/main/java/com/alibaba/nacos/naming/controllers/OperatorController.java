@@ -23,9 +23,9 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -53,29 +52,30 @@ import java.util.List;
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
 
-    @Autowired
-    private PushService pushService;
+    private final PushService pushService;
+    private final SwitchManager switchManager;
+    private final ServerListManager serverListManager;
+    private final ServiceManager serviceManager;
+    private final ServerMemberManager memberManager;
+    private final ServerStatusManager serverStatusManager;
+    private final SwitchDomain switchDomain;
+    private final DistroMapper distroMapper;
+    private final RaftCore raftCore;
 
-    @Autowired
-    private SwitchManager switchManager;
-
-    @Autowired
-    private ServiceManager serviceManager;
-
-    @Autowired
-    private ServerMemberManager memberManager;
-
-    @Autowired
-    private ServerStatusManager serverStatusManager;
-
-    @Autowired
-    private SwitchDomain switchDomain;
-
-    @Autowired
-    private DistroMapper distroMapper;
-
-    @Autowired
-    private RaftCore raftCore;
+    public OperatorController(PushService pushService, SwitchManager switchManager,
+            ServerListManager serverListManager, ServiceManager serviceManager, ServerMemberManager memberManager,
+            ServerStatusManager serverStatusManager, SwitchDomain switchDomain,
+            DistroMapper distroMapper, RaftCore raftCore) {
+        this.pushService = pushService;
+        this.switchManager = switchManager;
+        this.serverListManager = serverListManager;
+        this.serviceManager = serviceManager;
+        this.memberManager = memberManager;
+        this.serverStatusManager = serverStatusManager;
+        this.switchDomain = switchDomain;
+        this.distroMapper = distroMapper;
+        this.raftCore = raftCore;
+    }
 
     @RequestMapping("/push/state")
     public ObjectNode pushState(@RequestParam(required = false) boolean detail, @RequestParam(required = false) boolean reset) {
@@ -198,6 +198,22 @@ public class OperatorController {
         }
 
         return result;
+    }
+
+    /**
+     * This interface will be removed in a future release
+     *
+     * // TODO This object will be deleted sometime after version 1.3.0
+     *
+     * @deprecated 1.3.0
+     * @param serverStatus server status
+     * @return "ok"
+     */
+    @Deprecated
+    @RequestMapping("/server/status")
+    public String serverStatus(@RequestParam String serverStatus) {
+        serverListManager.onReceiveServerStatus(serverStatus);
+        return "ok";
     }
 
     @PutMapping("/log")
