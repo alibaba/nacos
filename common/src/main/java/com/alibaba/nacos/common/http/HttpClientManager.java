@@ -94,8 +94,8 @@ public class HttpClientManager {
 		try {
 			SYNC_HTTP_CLIENT.close();
 			ASYNC_HTTP_CLIENT.close();
-      NACOS_REST_TEMPLATE.close();
-      NACOS_ASYNC_REST_TEMPLATE.close();
+            NACOS_REST_TEMPLATE.close();
+            NACOS_ASYNC_REST_TEMPLATE.close();
 		}
 		catch (Exception ex) {
 			logger.error("An exception occurred when the HTTP client was closed : {}",
