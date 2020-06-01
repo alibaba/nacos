@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;

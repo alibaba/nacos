@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.test.common;
 
-import com.alibaba.nacos.common.file.FileChangeEvent;
-import com.alibaba.nacos.common.file.FileWatcher;
-import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.core.file.FileChangeEvent;
+import com.alibaba.nacos.core.file.FileWatcher;
+import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;

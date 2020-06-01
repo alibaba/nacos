@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.configuration.ConditionStandaloneEmbedStorage;
-import com.alibaba.nacos.config.server.service.DataSourceService;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.context.annotation.Conditional;
@@ -30,6 +30,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -79,6 +82,12 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate, Datab
 	@Override
 	public List<Map<String, Object>> queryMany(String sql, Object[] args) {
 		return queryMany(jdbcTemplate, sql, args);
+	}
+
+	@Override
+	public Boolean update(List<ModifyRequest> modifyRequests,
+			BiConsumer<Boolean, Throwable> consumer) {
+		return update(modifyRequests);
 	}
 
 	@Override
