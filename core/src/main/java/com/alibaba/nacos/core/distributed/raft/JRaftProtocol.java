@@ -204,7 +204,7 @@ public class JRaftProtocol
 
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
 		Member member = memberManager.getSelf();
-		member.setExtendVal("raft_meta_data", metaData);
+		member.setExtendVal("raftMetaData", metaData);
 		memberManager.update(member);
 	}
 
