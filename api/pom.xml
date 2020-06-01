@@ -25,7 +25,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-api ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>http://nacos.io</url>
     <build>
         <plugins>
             <plugin>
