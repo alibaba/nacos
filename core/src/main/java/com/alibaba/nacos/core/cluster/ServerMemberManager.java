@@ -123,14 +123,15 @@ public class ServerMemberManager
 	 */
 	private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
 
-	public ServerMemberManager(ServletContext servletContext) {
+	public ServerMemberManager(ServletContext servletContext) throws Exception {
 		this.serverList = new ConcurrentSkipListMap();
 		ApplicationUtils.setContextPath(servletContext.getContextPath());
 		MemberUtils.setManager(this);
+
+		init();
 	}
 
-	@PostConstruct
-	public void init() throws NacosException {
+	protected void init() throws NacosException {
 		Loggers.CORE.info("Nacos-related cluster resource initialization");
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;

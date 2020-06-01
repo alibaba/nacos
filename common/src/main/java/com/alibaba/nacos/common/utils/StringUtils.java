@@ -15,13 +15,10 @@
  */
 package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.lang3.CharSequenceUtils;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -41,7 +38,7 @@ public class StringUtils {
     public static final String EMPTY = "";
 
     public static String newString4UTF8(byte[] bytes) {
-        return new String(bytes, Charset.forName(StandardCharsets.UTF_8.name()));
+        return new String(bytes, Charset.forName("UTF-8"));
     }
 
     public static boolean isBlank(String str) {
