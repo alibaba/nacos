@@ -34,12 +34,15 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
+import com.alibaba.nacos.common.lifecycle.LifeCycleState;
 import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.rmi.server.ExportException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,18 +54,16 @@ import java.util.Properties;
  * @author Nacos
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosConfigService implements ConfigService {
+public class NacosConfigService extends AbstractLifeCycle implements ConfigService {
 
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
     private static final long POST_TIMEOUT = 3000L;
 
-    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
-
     /**
      * http agent
      */
-    private MetricsHttpAgent agent;
+    private HttpAgent agent;
     /**
      * longpolling
      */
@@ -72,6 +73,8 @@ public class NacosConfigService implements ConfigService {
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     public NacosConfigService(Properties properties) throws NacosException {
+        super();
+
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
@@ -82,13 +85,6 @@ public class NacosConfigService implements ConfigService {
         initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.fetchServerIpList();
-        try {
-            agent.start();
-        }catch (Exception e) {
-            LOGGER.error("An exception occurred during resource start : {}", e);
-        }
-        RESOURCE_MANAGER.register(agent);
-
         worker = new ClientWorker(agent, configFilterChainManager, properties);
     }
 
@@ -291,4 +287,18 @@ public class NacosConfigService implements ConfigService {
         }
     }
 
+    @Override
+    public void shutdown() throws Exception {
+        this.stop();
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        this.agent.shutdown();
+        this.worker.shutdown();
+    }
 }

@@ -56,7 +56,7 @@ public class ConfigAPI_ITCase {
 
     public static final long TIME_OUT = 5000;
     static ConfigService iconfig = null;
-    static MetricsHttpAgent agent = null;
+    static HttpAgent agent = null;
 
     static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
@@ -74,7 +74,6 @@ public class ConfigAPI_ITCase {
         iconfig = NacosFactory.createConfigService(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.fetchServerIpList();
-        agent.start();
     }
 
     @After
@@ -89,7 +88,7 @@ public class ConfigAPI_ITCase {
             e.printStackTrace();
             Assert.fail();
         }
-        agent.stop();
+        agent.shutdown();
     }
 
     /**

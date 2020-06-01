@@ -28,7 +28,14 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractLifeCycle.class);
 
     private final Object lock = new Object();
-    private volatile LifeCycleState state = LifeCycleState.STOPPED;
+    private volatile LifeCycleState state;
+    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
+
+
+    public AbstractLifeCycle() {
+        this.state = LifeCycleState.STOPPED;
+        RESOURCE_MANAGER.register(this);
+    }
 
     /**
      * Method to override to start the lifecycle.

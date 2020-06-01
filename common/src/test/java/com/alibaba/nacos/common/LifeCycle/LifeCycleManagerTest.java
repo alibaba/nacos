@@ -16,6 +16,7 @@
 package com.alibaba.nacos.common.LifeCycle;
 
 import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
+import com.alibaba.nacos.common.lifecycle.LifeCycleState;
 import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -78,8 +79,10 @@ public class LifeCycleManagerTest {
         private int counter;
 
         public Resource(int counter) {
+            super();
             this.counter = counter;
         }
+
 
         public int getCounter() {
             return counter;
