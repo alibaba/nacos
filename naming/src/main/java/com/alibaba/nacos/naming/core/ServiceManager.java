@@ -58,7 +58,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -85,33 +84,38 @@ public class ServiceManager implements RecordListener<Service> {
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
 
-    @Autowired
-    private DistroMapper distroMapper;
+    private final DistroMapper distroMapper;
 
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
 
-    @Autowired
-    private PushService pushService;
+    private final PushService pushService;
 
-    @Autowired
-    private RaftPeerSet raftPeerSet;
-
-    @Value("${nacos.naming.empty-service.auto-clean:false}")
-    private boolean emptyServiceAutoClean;
+    private final RaftPeerSet raftPeerSet;
 
     private int maxFinalizeCount = 3;
 
     private final Object putServiceLock = new Object();
+
+    @Value("${nacos.naming.empty-service.auto-clean:false}")
+    private boolean emptyServiceAutoClean;
 
     @Value("${nacos.naming.empty-service.clean.initial-delay-ms:60000}")
     private int cleanEmptyServiceDelay;
 
     @Value("${nacos.naming.empty-service.clean.period-time-ms:20000}")
     private int cleanEmptyServicePeriod;
+
+    public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper,
+            ServerMemberManager memberManager, PushService pushService,
+            RaftPeerSet raftPeerSet) {
+        this.switchDomain = switchDomain;
+        this.distroMapper = distroMapper;
+        this.memberManager = memberManager;
+        this.pushService = pushService;
+        this.raftPeerSet = raftPeerSet;
+    }
 
     @PostConstruct
     public void init() {

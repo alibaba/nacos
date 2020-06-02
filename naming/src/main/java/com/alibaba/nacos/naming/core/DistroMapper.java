@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -31,7 +30,6 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @author nkorange
@@ -85,8 +83,8 @@ public class DistroMapper implements MemberChangeListener {
             return false;
         }
 
-        int index = servers.indexOf(NetUtils.localServer());
-        int lastIndex = servers.lastIndexOf(NetUtils.localServer());
+        int index = servers.indexOf(ApplicationUtils.getLocalAddress());
+        int lastIndex = servers.lastIndexOf(ApplicationUtils.getLocalAddress());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
@@ -99,24 +97,30 @@ public class DistroMapper implements MemberChangeListener {
         final List<String> servers = healthyList;
 
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
-            return NetUtils.localServer();
+            return ApplicationUtils.getLocalAddress();
         }
 
         try {
-            return servers.get(distroHash(serviceName) % servers.size());
+            int index = distroHash(serviceName) % servers.size();
+            return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + NetUtils.localServer(), e);
-            return NetUtils.localServer();
+            Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + ApplicationUtils.getLocalAddress(), e);
+            return ApplicationUtils.getLocalAddress();
         }
     }
 
     public int distroHash(String serviceName) {
-        return Math.abs(Objects.hash(serviceName) % Integer.MAX_VALUE);
+        return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
 
     @Override
     public void onEvent(MemberChangeEvent event) {
-        healthyList = Collections.unmodifiableList(MemberUtils.simpleMembers(event.getMembers()));
+        // Here, the node list must be sorted to ensure that all nacos-server's
+        // node list is in the same order
+        List<String> list = MemberUtils.simpleMembers(event.getMembers());
+        Collections.sort(list);
+        healthyList = Collections.unmodifiableList(list);
+        System.out.println(healthyList);
     }
 
     @Override
