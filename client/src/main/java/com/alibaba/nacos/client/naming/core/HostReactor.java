@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -24,6 +23,8 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -98,7 +99,7 @@ public class HostReactor {
     }
 
     public ServiceInfo processServiceJSON(String json) {
-        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+        ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
@@ -162,19 +163,19 @@ public class HostReactor {
             if (newHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(newHosts));
             }
 
             if (remvHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(remvHosts));
             }
 
             if (modHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(modHosts));
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -186,8 +187,8 @@ public class HostReactor {
 
         } else {
             changed = true;
-            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " + JSON
-                .toJSONString(serviceInfo.getHosts()));
+            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " +
+                JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
             serviceInfo.setJsonFromServer(json);
@@ -198,7 +199,7 @@ public class HostReactor {
 
         if (changed) {
             NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() +
-                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+                " -> " + JacksonUtils.toJson(serviceInfo.getHosts()));
         }
 
         return serviceInfo;
@@ -214,7 +215,7 @@ public class HostReactor {
     public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
-            return JSON.parseObject(result, ServiceInfo.class);
+            return JacksonUtils.toObj(result, ServiceInfo.class);
         }
         return null;
     }

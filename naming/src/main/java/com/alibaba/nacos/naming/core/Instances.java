@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -47,11 +48,15 @@ public class Instances implements Record {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        try {
+            return JacksonUtils.toJson(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Instances toJSON failed", e);
+        }
     }
 
     @Override
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getChecksum() {
 
         return recalculateChecksum();
