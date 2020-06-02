@@ -34,6 +34,7 @@ import java.util.List;
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
+
     private HttpAgent httpAgent;
 
     public MetricsHttpAgent(HttpAgent httpAgent) {
@@ -42,7 +43,7 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public void fetchServerIpList() throws NacosException {
-        httpAgent.fetchServerIpList();
+        this.httpAgent.fetchServerIpList();
     }
 
     @Override
@@ -50,7 +51,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -66,7 +67,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -82,7 +83,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
         HttpResult result;
         try {
-            result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
+            result = this.httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
 
             throw e;
@@ -96,32 +97,27 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public String getName() {
-        return httpAgent.getName();
+        return this.httpAgent.getName();
     }
 
     @Override
     public String getNamespace() {
-        return httpAgent.getNamespace();
+        return this.httpAgent.getNamespace();
     }
 
     @Override
     public String getTenant() {
-        return httpAgent.getTenant();
+        return this.httpAgent.getTenant();
     }
 
     @Override
     public String getEncode() {
-        return httpAgent.getEncode();
+        return this.httpAgent.getEncode();
     }
 
     @Override
-    public void close() throws IOException {
-
-    }
-
-    @Override
-    public void shutdown() throws InterruptedException {
-        httpAgent.shutdown();
+    public void shutdown() throws NacosException{
+        this.httpAgent.shutdown();
     }
 }
 

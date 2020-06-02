@@ -98,4 +98,24 @@ public class NacosFactory {
         return NamingMaintainFactory.createMaintainService(properties);
     }
 
+    /**
+     * Destroy config service instance.
+     *
+     * @param configService
+     * @throws NacosException Exception.
+     */
+    public static void destroyConfigService(ConfigService configService) throws NacosException{
+        ConfigFactory.destroyConfigService(configService);
+    }
+
+    /**
+     * Destroy naming service instance.
+     *
+     * @param namingService
+     * @throws NacosException Exception.
+     */
+    public static void destroyNamingService(NamingService namingService) throws NacosException{
+        NamingFactory.destroyNamingService(namingService);
+    }
+
 }

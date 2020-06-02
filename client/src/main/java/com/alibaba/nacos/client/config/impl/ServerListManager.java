@@ -18,20 +18,23 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.*;
 
 
 /**
@@ -39,11 +42,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Nacos
  */
-public class ServerListManager {
+public class ServerListManager implements Closeable {
 
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     private static final String HTTPS = "https://";
     private static final String HTTP = "http://";
+    private ScheduledExecutorService executorService;
 
     public ServerListManager() {
         isFixed = false;
@@ -94,6 +98,7 @@ public class ServerListManager {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
+        initExecutor();
 
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -114,11 +119,15 @@ public class ServerListManager {
         }
     }
 
+
+
     public ServerListManager(Properties properties) throws NacosException {
         isStarted = false;
         serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
+        initExecutor();
+
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
@@ -208,6 +217,19 @@ public class ServerListManager {
         return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
+    private void initExecutor() {
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.ServerListManager");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+    }
+
     public synchronized void start() throws NacosException {
 
         if (isStarted || isFixed) {
@@ -231,7 +253,8 @@ public class ServerListManager {
                 "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
         }
 
-        TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
+        // executor schedules the timer task
+        this.executorService.scheduleWithFixedDelay(getServersTask,0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }
 
@@ -244,6 +267,13 @@ public class ServerListManager {
             LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
         }
         return new ServerAddressIterator(serverUrls);
+    }
+
+    @Override
+    public void shutdown() throws NacosException{
+        LOGGER.info("do shutdown begin");
+        ThreadUtils.shutdown(this.executorService);
+        LOGGER.info("do shutdown stop");
     }
 
     class GetServerListTask implements Runnable {

@@ -113,26 +113,26 @@ public class ClientWorker implements Closeable {
 
     void removeCache(String dataId, String group) {
         String groupKey = GroupKey.getKey(dataId, group);
-        synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+        synchronized (this.cacheMap) {
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
             copy.remove(groupKey);
-            cacheMap.set(copy);
+            this.cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
 
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(this.cacheMap.get().size());
     }
 
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-        synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+        synchronized (this.cacheMap) {
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
             copy.remove(groupKey);
-            cacheMap.set(copy);
+            this.cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
 
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(this.cacheMap.get().size());
     }
 
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
@@ -142,9 +142,9 @@ public class ClientWorker implements Closeable {
         }
 
         String key = GroupKey.getKey(dataId, group);
-        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+        cache = new CacheData(this.configFilterChainManager, this.agent.getName(), dataId, group);
 
-        synchronized (cacheMap) {
+        synchronized (this.cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group);
             // multiple listeners on the same dataid+group and race condition,so double check again
             //other listener thread beat me to set to cacheMap
@@ -153,18 +153,18 @@ public class ClientWorker implements Closeable {
                 //reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                int taskId = this.cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
                 cache.setTaskId(taskId);
             }
 
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
             copy.put(key, cache);
-            cacheMap.set(copy);
+            this.cacheMap.set(copy);
         }
 
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
 
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(this.cacheMap.get().size());
 
         return cache;
     }
@@ -175,7 +175,7 @@ public class ClientWorker implements Closeable {
             return cache;
         }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        synchronized (cacheMap) {
+        synchronized (this.cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group, tenant);
             // multiple listeners on the same dataid+group and race condition,so
             // double check again
@@ -185,21 +185,21 @@ public class ClientWorker implements Closeable {
                 // reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                cache = new CacheData(this.configFilterChainManager, this.agent.getName(), dataId, group, tenant);
                 // fix issue # 1317
-                if (enableRemoteSyncConfig) {
+                if (this.enableRemoteSyncConfig) {
                     String[] ct = getServerConfig(dataId, group, tenant, 3000L);
                     cache.setContent(ct[0]);
                 }
             }
 
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
             copy.put(key, cache);
-            cacheMap.set(copy);
+            this.cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
 
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(this.cacheMap.get().size());
 
         return cache;
     }
@@ -230,10 +230,10 @@ public class ClientWorker implements Closeable {
             } else {
                 params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group, "tenant", tenant));
             }
-            result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
+            result = this.agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, this.agent.getEncode(), readTimeout);
         } catch (IOException e) {
             String message = String.format(
-                "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
+                "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", this.agent.getName(),
                 dataId, group, tenant);
             LOGGER.error(message, e);
             throw new NacosException(NacosException.SERVER_ERROR, e);
@@ -241,7 +241,7 @@ public class ClientWorker implements Closeable {
 
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);
+                LocalConfigInfoProcessor.saveSnapshot(this.agent.getName(), dataId, group, tenant, result.content);
                 ct[0] = result.content;
                 if (result.headers.containsKey(CONFIG_TYPE)) {
                     ct[1] = result.headers.get(CONFIG_TYPE).get(0);
@@ -250,22 +250,22 @@ public class ClientWorker implements Closeable {
                 }
                 return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:
-                LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
+                LocalConfigInfoProcessor.saveSnapshot(this.agent.getName(), dataId, group, tenant, null);
                 return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
                     "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                        + "tenant={}", agent.getName(), dataId, group, tenant);
+                        + "tenant={}", this.agent.getName(), dataId, group, tenant);
                 throw new NacosException(NacosException.CONFLICT,
                     "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
             case HttpURLConnection.HTTP_FORBIDDEN: {
-                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(), dataId,
+                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", this.agent.getName(), dataId,
                     group, tenant);
                 throw new NacosException(result.code, result.content);
             }
             default: {
-                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
+                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", this.agent.getName(), dataId,
                     group, tenant, result.code);
                 throw new NacosException(result.code,
                     "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
@@ -277,25 +277,25 @@ public class ClientWorker implements Closeable {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
         final String tenant = cacheData.tenant;
-        File path = LocalConfigInfoProcessor.getFailoverFile(agent.getName(), dataId, group, tenant);
+        File path = LocalConfigInfoProcessor.getFailoverFile(this.agent.getName(), dataId, group, tenant);
 
         // 没有 -> 有
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(this.agent.getName(), dataId, group, tenant);
             String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
 
             LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                this.agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
 
         // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
-            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
+            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", this.agent.getName(),
                 dataId, group, tenant);
             return;
         }
@@ -303,13 +303,13 @@ public class ClientWorker implements Closeable {
         // 有变更
         if (cacheData.isUseLocalConfigInfo() && path.exists()
             && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
-            String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
+            String content = LocalConfigInfoProcessor.getFailover(this.agent.getName(), dataId, group, tenant);
             String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                this.agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
 
@@ -319,15 +319,15 @@ public class ClientWorker implements Closeable {
 
     public void checkConfigInfo() {
         // 分任务
-        int listenerSize = cacheMap.get().size();
+        int listenerSize = this.cacheMap.get().size();
         // 向上取整为批数
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
-        if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
+        if (longingTaskCount > this.currentLongingTaskCount) {
+            for (int i = (int) this.currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
-                executorService.execute(new LongPollingRunnable(i));
+                this.executorService.execute(new LongPollingRunnable(i));
             }
-            currentLongingTaskCount = longingTaskCount;
+            this.currentLongingTaskCount = longingTaskCount;
         }
     }
 
@@ -369,7 +369,7 @@ public class ClientWorker implements Closeable {
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
-        headers.add("" + timeout);
+        headers.add("" + this.timeout);
 
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
@@ -385,20 +385,20 @@ public class ClientWorker implements Closeable {
             // In order to prevent the server from handling the delay of the client's long task,
             // increase the client's read timeout to avoid this problem.
 
-            long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
-            HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), readTimeoutMs);
+            long readTimeoutMs = this.timeout + (long) Math.round(this.timeout >> 1);
+            HttpResult result = this.agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
+                this.agent.getEncode(), readTimeoutMs);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
                 return parseUpdateDataIdResponse(result.content);
             } else {
                 setHealthServer(false);
-                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(), result.code);
+                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", this.agent.getName(), result.code);
             }
         } catch (IOException e) {
             setHealthServer(false);
-            LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
+            LOGGER.error("[" + this.agent.getName() + "] [check-update] get changed dataId exception", e);
             throw e;
         }
         return Collections.emptyList();
@@ -415,7 +415,7 @@ public class ClientWorker implements Closeable {
         try {
             response = URLDecoder.decode(response, "UTF-8");
         } catch (Exception e) {
-            LOGGER.error("[" + agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
+            LOGGER.error("[" + this.agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
         }
 
         List<String> updateList = new LinkedList<String>();
@@ -427,14 +427,14 @@ public class ClientWorker implements Closeable {
                 String group = keyArr[1];
                 if (keyArr.length == 2) {
                     updateList.add(GroupKey.getKey(dataId, group));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId, group);
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", this.agent.getName(), dataId, group);
                 } else if (keyArr.length == 3) {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", this.agent.getName(),
                         dataId, group, tenant);
                 } else {
-                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(), dataIdAndGroup);
+                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", this.agent.getName(), dataIdAndGroup);
                 }
             }
         }
@@ -450,7 +450,7 @@ public class ClientWorker implements Closeable {
 
         init(properties);
 
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -460,7 +460,7 @@ public class ClientWorker implements Closeable {
             }
         });
 
-        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        this.executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -470,7 +470,7 @@ public class ClientWorker implements Closeable {
             }
         });
 
-        executor.scheduleWithFixedDelay(new Runnable() {
+        this.executor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -484,21 +484,16 @@ public class ClientWorker implements Closeable {
 
     private void init(Properties properties) {
 
-        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+        this.timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
             Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
-        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+        this.taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
-        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        this.enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
 
     @Override
-    public void close() throws IOException {
-
-    }
-
-    @Override
-    public void shutdown() throws InterruptedException {
+    public void shutdown() throws NacosException {
         LOGGER.info("do shutdown begin");
         ThreadUtils.shutdown(this.executorService);
         ThreadUtils.shutdown(this.executor);
@@ -520,7 +515,7 @@ public class ClientWorker implements Closeable {
             try {
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
-                    if (cacheData.getTaskId() == taskId) {
+                    if (cacheData.getTaskId() == this.taskId) {
                         cacheDatas.add(cacheData);
                         try {
                             checkLocalConfig(cacheData);

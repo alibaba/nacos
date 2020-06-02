@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.naming;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
+import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -46,6 +47,21 @@ public class NamingFactory {
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+        }
+    }
+
+    /**
+     * Destroy Config Instance's Resources.
+     *
+     * @param namingService
+     * @throws NacosException
+     */
+    public static void destroyNamingService(NamingService namingService) throws NacosException{
+        try {
+            namingService.shutDown();
+            namingService = null;
+        }catch (Throwable e) {
+            throw new NacosException(NacosException.RESOURCE_DESTROY_FAILED, e);
         }
     }
 }

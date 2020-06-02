@@ -59,4 +59,19 @@ public class ConfigFactory {
         return createConfigService(properties);
     }
 
+    /**
+     * Destroy Config Instance's Resources.
+     *
+     * @param configService
+     * @throws NacosException
+     */
+    public static void destroyConfigService(ConfigService configService) throws NacosException{
+        try {
+            configService.shutDown();
+            configService = null;
+        }catch (Throwable e) {
+            throw new NacosException(NacosException.RESOURCE_DESTROY_FAILED, e);
+        }
+    }
+
 }

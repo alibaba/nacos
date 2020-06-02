@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +78,7 @@ public final class ThreadUtils {
         return workerCount;
     }
 
-    public static void shutdown(ExecutorService executor) {
+    public static void shutdown(ExecutorService executor) throws NacosException {
         executor.shutdown();
         int retry = 3;
         while (retry > 0) {
@@ -91,6 +92,7 @@ public final class ThreadUtils {
                 Thread.interrupted();
             } catch (Throwable ex) {
                 LOGGER.error("shutdown the executor has error : {}", ex);
+                throw new NacosException(NacosException.RESOURCE_DESTROY_FAILED, ex);
             }
             executor.shutdownNow();
         }

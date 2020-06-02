@@ -15,11 +15,14 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +35,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author xuanyin
  */
-public class EventDispatcher {
+public class EventDispatcher implements Closeable {
 
     private ExecutorService executor = null;
 
@@ -107,6 +110,13 @@ public class EventDispatcher {
         }
 
         changedServices.add(serviceInfo);
+    }
+
+    @Override
+    public void shutdown() throws NacosException {
+        NAMING_LOGGER.info("do shutdown begin");
+        ThreadUtils.shutdown(this.executor);
+        NAMING_LOGGER.info("do shutdown stop");
     }
 
     private class Notifier implements Runnable {
