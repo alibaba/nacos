@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Service;
 
@@ -48,6 +47,9 @@ public class ServiceDetailView {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "ServiceDetailView{" +
+            "service=" + service +
+            ", clusters=" + clusters +
+            '}';
     }
 }

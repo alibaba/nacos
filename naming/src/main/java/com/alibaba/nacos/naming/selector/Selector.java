@@ -16,6 +16,8 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.naming.core.Instance;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 import java.util.List;
 
@@ -30,12 +32,15 @@ import java.util.List;
  * <p>
  * Every extended selector should also register its type to class SelectorType so Nacos
  * recognizes it and can correctly create this type of selector.
+ * <p>
+ * Sub class should register their type to JacksonUtil.
  *
  * @author nkorange
  * @see com.alibaba.nacos.api.selector.SelectorType
- * @see SelectorJsonAdapter
+ * @see com.alibaba.nacos.common.utils.JacksonUtils
  * @since 0.7.0
  */
+@JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
 public interface Selector {
 
     /**

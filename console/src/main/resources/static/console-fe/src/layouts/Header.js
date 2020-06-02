@@ -18,6 +18,8 @@ import { connect } from 'react-redux';
 import { ConfigProvider, Dropdown, Menu } from '@alifd/next';
 import siteConfig from '../config';
 import { changeLanguage } from '@/reducers/locale';
+import PasswordReset from '../pages/AuthorityControl/UserManagement/PasswordReset';
+import { passwordReset } from '../reducers/authority';
 
 import './index.scss';
 
@@ -35,6 +37,8 @@ class Header extends React.Component {
     changeLanguage: PropTypes.func,
   };
 
+  state = { passwordResetUser: '' };
+
   switchLang = () => {
     const { language = 'en-US', changeLanguage } = this.props;
     const currentLanguage = language === 'en-US' ? 'zh-CN' : 'en-US';
@@ -47,7 +51,9 @@ class Header extends React.Component {
   };
 
   changePassword = () => {
-    this.props.history.push('/password');
+    this.setState({
+      passwordResetUser: this.getUsername(),
+    });
   };
 
   getUsername = () => {
@@ -73,6 +79,7 @@ class Header extends React.Component {
       location: { pathname },
     } = this.props;
     const { home, docs, blog, community, languageSwitchButton } = locale;
+    const { passwordResetUser = '' } = this.state;
     const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
     const NAV_MENU = [
       { id: 1, title: home, link: BASE_URL },
@@ -81,45 +88,56 @@ class Header extends React.Component {
       { id: 4, title: community, link: `${BASE_URL}community/index.html` },
     ];
     return (
-      <header className="header-container header-container-primary">
-        <div className="header-body">
-          <a
-            href={`https://nacos.io/${language.toLocaleLowerCase()}/`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="img/logo-2000-390.svg"
-              className="logo"
-              alt={siteConfig.name}
-              title={siteConfig.name}
-            />
-          </a>
-          {/* if is login page, we will show logout */}
-          {pathname !== '/login' && (
-            <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
-              <Menu>
-                <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
-                <Menu.Item onClick={this.changePassword}>{locale.changePassword}</Menu.Item>
-              </Menu>
-            </Dropdown>
-          )}
-          <span className="language-switch language-switch-primary" onClick={this.switchLang}>
-            {languageSwitchButton}
-          </span>
-          <div className="header-menu header-menu-open">
-            <ul>
-              {NAV_MENU.map(item => (
-                <li key={item.id} className="menu-item menu-item-primary">
-                  <a href={item.link} target="_blank" rel="noopener noreferrer">
-                    {item.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
+      <>
+        <header className="header-container header-container-primary">
+          <div className="header-body">
+            <a
+              href={`https://nacos.io/${language.toLocaleLowerCase()}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="img/logo-2000-390.svg"
+                className="logo"
+                alt={siteConfig.name}
+                title={siteConfig.name}
+              />
+            </a>
+            {/* if is login page, we will show logout */}
+            {pathname !== '/login' && (
+              <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
+                <Menu>
+                  <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
+                  <Menu.Item onClick={this.changePassword}>{locale.changePassword}</Menu.Item>
+                </Menu>
+              </Dropdown>
+            )}
+            <span className="language-switch language-switch-primary" onClick={this.switchLang}>
+              {languageSwitchButton}
+            </span>
+            <div className="header-menu header-menu-open">
+              <ul>
+                {NAV_MENU.map(item => (
+                  <li key={item.id} className="menu-item menu-item-primary">
+                    <a href={item.link} target="_blank" rel="noopener noreferrer">
+                      {item.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+        <PasswordReset
+          username={passwordResetUser}
+          onOk={user =>
+            passwordReset(user).then(res => {
+              return res;
+            })
+          }
+          onCancel={() => this.setState({ passwordResetUser: undefined })}
+        />
+      </>
     );
   }
 }

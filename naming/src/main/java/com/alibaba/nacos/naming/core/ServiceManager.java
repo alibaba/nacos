@@ -15,14 +15,12 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -32,16 +30,17 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.google.common.collect.Maps;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,9 +58,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -71,7 +68,6 @@ import org.springframework.util.CollectionUtils;
  * @author nkorange
  */
 @Component
-@DependsOn("nacosApplicationContext")
 public class ServiceManager implements RecordListener<Service> {
 
     /**
@@ -88,33 +84,38 @@ public class ServiceManager implements RecordListener<Service> {
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
 
-    @Autowired
-    private DistroMapper distroMapper;
+    private final DistroMapper distroMapper;
 
-    @Autowired
-    private ServerListManager serverListManager;
+    private final ServerMemberManager memberManager;
 
-    @Autowired
-    private PushService pushService;
+    private final PushService pushService;
 
-    @Autowired
-    private RaftPeerSet raftPeerSet;
-
-    @Value("${nacos.naming.empty-service.auto-clean:false}")
-    private boolean emptyServiceAutoClean;
+    private final RaftPeerSet raftPeerSet;
 
     private int maxFinalizeCount = 3;
 
     private final Object putServiceLock = new Object();
+
+    @Value("${nacos.naming.empty-service.auto-clean:false}")
+    private boolean emptyServiceAutoClean;
 
     @Value("${nacos.naming.empty-service.clean.initial-delay-ms:60000}")
     private int cleanEmptyServiceDelay;
 
     @Value("${nacos.naming.empty-service.clean.period-time-ms:20000}")
     private int cleanEmptyServicePeriod;
+
+    public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper,
+            ServerMemberManager memberManager, PushService pushService,
+            RaftPeerSet raftPeerSet) {
+        this.switchDomain = switchDomain;
+        this.distroMapper = distroMapper;
+        this.memberManager = memberManager;
+        this.pushService = pushService;
+        this.raftPeerSet = raftPeerSet;
+    }
 
     @PostConstruct
     public void init() {
@@ -268,74 +269,19 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
-
-        List<RaftPeer> matchList = new ArrayList<>();
-        RaftPeer localRaftPeer = raftPeerSet.local();
-        matchList.add(localRaftPeer);
-        Set<String> otherServerSet = raftPeerSet.allServersWithoutMySelf();
-        if (null != otherServerSet && otherServerSet.size() > 0) {
-            for (String server: otherServerSet) {
-                String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
-                Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
-                try {
-                    String content = NamingProxy.reqCommon(path, params, server, false);
-                    if (!StringUtils.EMPTY.equals(content)) {
-                        RaftPeer raftPeer = JSONObject.parseObject(content, RaftPeer.class);
-                        if (null != raftPeer) {
-                            matchList.add(raftPeer);
-                        }
-                    }
-                } catch (Exception e) {
-                    Loggers.SRV_LOG.warn("[QUERY-CLUSTER-STATE] Exception while query cluster state from {}, error: {}",
-                        server, e);
-                }
-            }
-        }
-        List<RaftPeer> tempList = new ArrayList<>();
-        if (StringUtils.isNotBlank(keyword)) {
-            for (RaftPeer raftPeer : matchList) {
-                String ip = raftPeer.ip.split(":")[0];
-                if (keyword.equals(ip)) {
-                    tempList.add(raftPeer);
-                }
-            }
-            matchList = tempList;
-        }
-
-        if (pageSize >= matchList.size()) {
-            raftPeerList.addAll(matchList);
-            return matchList.size();
-        }
-
-        for (int i = 0; i < matchList.size(); i++) {
-            if (i < startPage * pageSize) {
-                continue;
-            }
-
-            raftPeerList.add(matchList.get(i));
-
-            if (raftPeerList.size() >= pageSize) {
-                break;
-            }
-        }
-
-        return matchList.size();
-    }
-
     public RaftPeer getMySelfClusterState() {
         return raftPeerSet.local();
     }
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-        JSONObject serviceJson = JSON.parseObject(msg.getData());
+        JsonNode serviceJson = JacksonUtils.toObj(msg.getData());
 
-        JSONArray ipList = serviceJson.getJSONArray("ips");
+        ArrayNode ipList = (ArrayNode) serviceJson.get("ips");
         Map<String, String> ipsMap = new HashMap<>(ipList.size());
         for (int i = 0; i < ipList.size(); i++) {
 
-            String ip = ipList.getString(i);
+            String ip = ipList.get(i).asText();
             String[] strings = ip.split("_");
             ipsMap.put(strings[0], strings[1]);
         }
@@ -363,17 +309,15 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (changed) {
             pushService.serviceChanged(service);
-        }
-
-        StringBuilder stringBuilder = new StringBuilder();
-        List<Instance> allIps = service.allIPs();
-        for (Instance instance : allIps) {
-            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
-        }
-
-        if (changed && Loggers.EVT_LOG.isDebugEnabled()) {
-            Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
-                service.getNamespaceId(), service.getName(), stringBuilder.toString());
+            if (Loggers.EVT_LOG.isDebugEnabled()){
+                StringBuilder stringBuilder = new StringBuilder();
+                List<Instance> allIps = service.allIPs();
+                for (Instance instance : allIps) {
+                    stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
+                }
+                Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
+                    service.getNamespaceId(), service.getName(), stringBuilder.toString());
+            }
         }
 
     }
@@ -622,7 +566,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         if (instanceMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
             throw new IllegalArgumentException("ip list can not be empty, service: " + service.getName() + ", ip list: "
-                + JSON.toJSONString(instanceMap.values()));
+                + JacksonUtils.toJson(instanceMap.values()));
         }
 
         return new ArrayList<>(instanceMap.values());
@@ -896,19 +840,19 @@ public class ServiceManager implements RecordListener<Service> {
 
                     Message msg = new Message();
 
-                    msg.setData(JSON.toJSONString(checksum));
+                    msg.setData(JacksonUtils.toJson(checksum));
 
-                    List<Server> sameSiteServers = serverListManager.getServers();
+                    Collection<Member> sameSiteServers = memberManager.allMembers();
 
                     if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (Server server : sameSiteServers) {
-                        if (server.getKey().equals(NetUtils.localServer())) {
+                    for (Member server : sameSiteServers) {
+                        if (server.getAddress().equals(NetUtils.localServer())) {
                             continue;
                         }
-                        synchronizer.send(server.getKey(), msg);
+                        synchronizer.send(server.getAddress(), msg);
                     }
                 }
             } catch (Exception e) {
@@ -950,7 +894,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         @Override
         public String toString() {
-            return JSON.toJSONString(this);
+            return JacksonUtils.toJson(this);
         }
     }
 }

@@ -38,8 +38,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int READ_TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     private static final boolean ENABLE_HTTPS = Boolean
@@ -73,7 +73,7 @@ public class HttpClient {
 
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
+            conn.setReadTimeout(READ_TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
             if (StringUtils.isNotBlank(body)) {
@@ -129,8 +129,14 @@ public class HttpClient {
         if (encodingGzip.equals(respHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             inputStream = new GZIPInputStream(inputStream);
         }
-
-        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        
+        //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
+        //so needs to close it manually 
+        if (inputStream instanceof GZIPInputStream) {
+            inputStream.close();
+        }
+        return httpResult;
     }
 
     private static String getCharset(HttpURLConnection conn) {
@@ -206,6 +212,12 @@ public class HttpClient {
 
         public String getHeader(String name) {
             return respHeaders.get(name);
+        }
+
+        @Override
+        public String toString() {
+            return "HttpResult{" + "code=" + code + ", content='" + content + '\''
+                    + ", respHeaders=" + respHeaders + '}';
         }
     }
 }

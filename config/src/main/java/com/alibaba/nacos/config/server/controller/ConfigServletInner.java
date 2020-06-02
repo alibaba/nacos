@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
@@ -26,6 +25,10 @@ import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoBetaMapStruct
 import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoMapStruct;
 import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoTagMapStruct;
 import com.alibaba.nacos.config.server.service.*;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.service.LongPollingService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -47,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * ConfigServlet inner for aop
@@ -68,7 +70,7 @@ public class ConfigServletInner {
 
     private static final int TRY_GET_LOCK_TIMES = 9;
 
-    private static final int START_LONGPOLLING_VERSION_NUM = 204;
+    private static final int START_LONG_POLLING_VERSION_NUM = 204;
 
     /**
      * 轮询接口
@@ -99,7 +101,7 @@ public class ConfigServletInner {
         /**
          * 2.0.4版本以前, 返回值放入header中
          */
-        if (versionNum < START_LONGPOLLING_VERSION_NUM) {
+        if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
         } else {
@@ -133,7 +135,7 @@ public class ConfigServletInner {
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
-                CacheItem cacheItem = ConfigService.getContentCache(groupKey);
+                CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
                 if (cacheItem != null) {
                     if (cacheItem.isBeta()) {
                         if (cacheItem.getIps4Beta().contains(clientIp)) {
@@ -149,7 +151,7 @@ public class ConfigServletInner {
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
-                    if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                    if (PropertyUtil.isDirectRead()) {
                         ConfigInfoBeta configInfoBeta = persistServiceTmp.findConfigInfo4Beta(dataId, group, tenant);
                         configInfoBase = ConfigInfoBetaMapStruct.MAPPER.convertConfigInfoBase(configInfoBeta);
                     } else {
@@ -167,7 +169,7 @@ public class ConfigServletInner {
                                     lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                                 }
                             }
-                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                            if (PropertyUtil.isDirectRead()) {
                                 ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                                 configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
                             } else {
@@ -179,7 +181,7 @@ public class ConfigServletInner {
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
-                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                            if (PropertyUtil.isDirectRead()) {
                                 ConfigInfo configInfo = persistServiceTmp.findConfigInfo(dataId, group, tenant);
                                 configInfoBase = ConfigInfoMapStruct.MAPPER.convertConfigInfoBase(configInfo);
                             } else {
@@ -212,7 +214,7 @@ public class ConfigServletInner {
                                 }
                             }
                         }
-                        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                        if (PropertyUtil.isDirectRead()) {
                             ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, tag);
                             configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
                         } else {
@@ -243,14 +245,14 @@ public class ConfigServletInner {
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
-                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                if (PropertyUtil.isDirectRead()) {
                     response.setDateHeader("Last-Modified", lastModified);
                 } else {
                     fis = new FileInputStream(file);
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
 
-                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                if (PropertyUtil.isDirectRead()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
                     out.flush();
@@ -300,7 +302,7 @@ public class ConfigServletInner {
     }
 
     private static void releaseConfigReadLock(String groupKey) {
-        ConfigService.releaseReadLock(groupKey);
+        ConfigCacheService.releaseReadLock(groupKey);
     }
 
     private static int tryConfigReadLock(String groupKey) {
@@ -312,7 +314,7 @@ public class ConfigServletInner {
          *  尝试加锁，最多10次
          */
         for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
-            lockResult = ConfigService.tryReadLock(groupKey);
+            lockResult = ConfigCacheService.tryReadLock(groupKey);
             /**
              *  数据不存在
              */
@@ -350,5 +352,4 @@ public class ConfigServletInner {
     private static boolean fileNotExist(File file) {
         return file == null || !file.exists();
     }
-
 }

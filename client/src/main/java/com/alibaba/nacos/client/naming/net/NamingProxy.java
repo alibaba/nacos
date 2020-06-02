@@ -15,9 +15,6 @@
  */
 package com.alibaba.nacos.client.naming.net;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
@@ -42,13 +39,19 @@ import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -205,7 +208,7 @@ public class NamingProxy {
         params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
-        params.put("metadata", JSON.toJSONString(instance.getMetadata()));
+        params.put("metadata", JacksonUtils.toJson(instance.getMetadata()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
@@ -241,7 +244,7 @@ public class NamingProxy {
         params.put("weight", String.valueOf(instance.getWeight()));
         params.put("enabled", String.valueOf(instance.isEnabled()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
-        params.put("metadata", JSON.toJSONString(instance.getMetadata()));
+        params.put("metadata", JacksonUtils.toJson(instance.getMetadata()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.PUT);
     }
@@ -256,8 +259,7 @@ public class NamingProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
 
         String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.GET);
-        JSONObject jsonObject = JSON.parseObject(result);
-        return jsonObject.toJavaObject(Service.class);
+        return JacksonUtils.toObj(result, Service.class);
     }
 
     public void createService(Service service, AbstractSelector selector) throws NacosException {
@@ -270,8 +272,8 @@ public class NamingProxy {
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
         params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
-        params.put("metadata", JSON.toJSONString(service.getMetadata()));
-        params.put("selector", JSON.toJSONString(selector));
+        params.put("metadata", JacksonUtils.toJson(service.getMetadata()));
+        params.put("selector", JacksonUtils.toJson(selector));
 
         reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.POST);
 
@@ -299,8 +301,8 @@ public class NamingProxy {
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
         params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
-        params.put("metadata", JSON.toJSONString(service.getMetadata()));
-        params.put("selector", JSON.toJSONString(selector));
+        params.put("metadata", JacksonUtils.toJson(service.getMetadata()));
+        params.put("selector", JacksonUtils.toJson(selector));
 
         reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.PUT);
     }
@@ -319,7 +321,7 @@ public class NamingProxy {
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
-    public JSONObject sendBeat(BeatInfo beatInfo, boolean lightBeatEnabled) throws NacosException {
+    public JsonNode sendBeat(BeatInfo beatInfo, boolean lightBeatEnabled) throws NacosException {
 
         if (NAMING_LOGGER.isDebugEnabled()) {
             NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
@@ -327,7 +329,11 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<String, String>(8);
         String body = StringUtils.EMPTY;
         if (!lightBeatEnabled) {
-            body = "beat=" + JSON.toJSONString(beatInfo);
+            try {
+                body = "beat=" + URLEncoder.encode(JacksonUtils.toJson(beatInfo), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new NacosException(NacosException.SERVER_ERROR, "encode beatInfo error", e);
+            }
         }
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
@@ -335,7 +341,7 @@ public class NamingProxy {
         params.put("ip", beatInfo.getIp());
         params.put("port", String.valueOf(beatInfo.getPort()));
         String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, body, HttpMethod.PUT);
-        return JSON.parseObject(result);
+        return JacksonUtils.toObj(result);
     }
 
     public boolean serverHealthy() {
@@ -343,8 +349,8 @@ public class NamingProxy {
         try {
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/operator/metrics",
                 new HashMap<String, String>(2), HttpMethod.GET);
-            JSONObject json = JSON.parseObject(result);
-            String serverStatus = json.getString("status");
+            JsonNode json = JacksonUtils.toObj(result);
+            String serverStatus = json.get("status").asText();
             return "UP".equals(serverStatus);
         } catch (Exception e) {
             return false;
@@ -369,7 +375,7 @@ public class NamingProxy {
                     break;
                 case label:
                     ExpressionSelector expressionSelector = (ExpressionSelector) selector;
-                    params.put("selector", JSON.toJSONString(expressionSelector));
+                    params.put("selector", JacksonUtils.toJson(expressionSelector));
                     break;
                 default:
                     break;
@@ -378,11 +384,10 @@ public class NamingProxy {
 
         String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params, HttpMethod.GET);
 
-        JSONObject json = JSON.parseObject(result);
-        ListView<String> listView = new ListView<String>();
-        listView.setCount(json.getInteger("count"));
-        listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>() {
-        }));
+        JsonNode json = JacksonUtils.toObj(result);
+        ListView<String> listView = new ListView<>();
+        listView.setCount(json.get("count").asInt());
+        listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {}));
 
         return listView;
     }
@@ -486,7 +491,7 @@ public class NamingProxy {
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}",
             api, servers, exception.getErrCode(), exception.getErrMsg());
 
-        throw new NacosException(exception.getErrCode(), "failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
+        throw new NacosException(exception.getErrCode(), "failed to req API:" + api + " after all servers(" + servers + ") tried: "
             + exception.getMessage());
 
     }

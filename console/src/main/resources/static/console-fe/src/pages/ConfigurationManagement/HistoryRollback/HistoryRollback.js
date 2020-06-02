@@ -15,7 +15,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ConfigProvider, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
-import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
+import { getParams, setParams, request } from '@/globalLib';
 
 import './index.scss';
 
@@ -83,31 +83,6 @@ class HistoryRollback extends React.Component {
     });
   }
 
-  /**
-   * 回车事件
-   */
-  keyDownSearch(e) {
-    const theEvent = e || window.event;
-    const code = theEvent.keyCode || theEvent.which || theEvent.charCode;
-    if (code === 13) {
-      this.getData();
-      return false;
-    }
-    return true;
-  }
-
-  UNSAFE_componentWillMount() {
-    window.addEventListener('keydown', this.keyDownSearch.bind(this), false);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.keyDownSearch.bind(this));
-  }
-
-  onSearch() {}
-
-  onChange() {}
-
   cleanAndGetData(needclean = false) {
     if (needclean) {
       this.dataId = '';
@@ -149,8 +124,6 @@ class HistoryRollback extends React.Component {
     });
   }
 
-  showMore() {}
-
   renderCol(value, index, record) {
     const { locale = {} } = this.props;
     return (
@@ -173,57 +146,9 @@ class HistoryRollback extends React.Component {
     this.getData(value);
   }
 
-  onInputUpdate() {}
-
   chooseFieldChange(fieldValue) {
     this.setState({
       fieldValue,
-    });
-  }
-
-  showSelect(value) {
-    this.setState({
-      selectValue: value,
-    });
-    if (value.indexOf('appName') !== -1) {
-      this.setState({
-        showAppName: true,
-      });
-    } else {
-      this.setState({
-        showAppName: false,
-      });
-    }
-    if (value.indexOf('group') !== -1) {
-      this.setState({
-        showgroup: true,
-      });
-    } else {
-      this.setState({
-        showgroup: false,
-      });
-    }
-    this.chooseFieldChange(value);
-  }
-
-  getAppName(value) {
-    this.appName = value;
-    this.setState({
-      appName: value,
-    });
-  }
-
-  getDataId(value) {
-    this.dataId = value;
-    this.setState({
-      dataId: value,
-    });
-  }
-
-  getGroup(value) {
-    this.group = value;
-    this.setState({
-      group: value,
     });
   }
 
@@ -262,10 +187,6 @@ class HistoryRollback extends React.Component {
   }
 
   chooseEnv(value) {}
-
-  renderLastTime(value, index, record) {
-    return aliwareIntl.intlTimeFormat(record.lastModifiedTime);
-  }
 
   goDetail(record) {
     this.serverId = getParams('serverId') || 'center';
@@ -371,8 +292,18 @@ class HistoryRollback extends React.Component {
               <Table.Column title="Group" dataIndex="group" />
               <Table.Column
                 title={locale.lastUpdateTime}
-                dataIndex="time"
-                cell={this.renderLastTime.bind(this)}
+                dataIndex="lastModifiedTime"
+                cell={val => {
+                  if (!val) {
+                    return '';
+                  }
+                  try {
+                    const date = new Date(val);
+                    return date.toLocaleString();
+                  } catch (e) {
+                    return '';
+                  }
+                }}
               />
               <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
             </Table>
