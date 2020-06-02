@@ -17,12 +17,14 @@
 package com.alibaba.nacos.common.utils;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+
+import com.alibaba.nacos.api.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public final class ByteUtils {
 
     public static final byte[] EMPTY = new byte[0];
@@ -31,7 +33,7 @@ public final class ByteUtils {
         if (s == null) {
             return EMPTY;
         }
-        return s.getBytes(Charset.forName(StandardCharsets.UTF_8.name()));
+        return s.getBytes(Charset.forName(Constants.ENCODE));
     }
 
     public static byte[] toBytes(Object s) {
@@ -45,7 +47,7 @@ public final class ByteUtils {
         if (bytes == null) {
             return StringUtils.EMPTY;
         }
-        return new String(bytes, Charset.forName(StandardCharsets.UTF_8.name()));
+        return new String(bytes, Charset.forName(Constants.ENCODE));
     }
 
     public static boolean isEmpty(byte[] data) {

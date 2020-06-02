@@ -21,7 +21,6 @@ package com.alibaba.nacos.common.utils;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
