@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -104,7 +105,7 @@ public class DistroMapper implements MemberChangeListener {
             int index = distroHash(serviceName) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + ApplicationUtils.getLocalAddress(), e);
+            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils.getLocalAddress(), e);
             return ApplicationUtils.getLocalAddress();
         }
     }
@@ -119,8 +120,9 @@ public class DistroMapper implements MemberChangeListener {
         // node list is in the same order
         List<String> list = MemberUtils.simpleMembers(event.getMembers());
         Collections.sort(list);
+        Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);
-        System.out.println(healthyList);
+        Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
     }
 
     @Override
