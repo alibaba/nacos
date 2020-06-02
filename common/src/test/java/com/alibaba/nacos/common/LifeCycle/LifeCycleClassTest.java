@@ -15,9 +15,7 @@
  */
 package com.alibaba.nacos.common.LifeCycle;
 
-import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
-import com.alibaba.nacos.common.lifecycle.LifeCycleState;
-
+import com.alibaba.nacos.common.lifecycle.LifeCycle;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,39 +33,28 @@ public class LifeCycleClassTest {
     @Before
     public void setup() throws Exception{
         this.res = new Resource(0);
-        this.res.start();
-        Assert.assertEquals(this.res.getCounter(), 1);
+        Assert.assertEquals(this.res.getCounter(), 0);
     }
 
     @After
     public void cleanup() throws Exception{
-        this.res.stop();
+        this.res.destroy();
         Assert.assertEquals(this.res.getCounter(), 0);
-        Assert.assertTrue(this.res.isStopped());
     }
 
     @Test
     public void testResource_LifeCycleMethod() throws Exception{
-        this.res.doStart();
-        Assert.assertEquals(this.res.getCounter(), 2);
-        this.res.doStart();
-        Assert.assertEquals(this.res.getCounter(), 3);
-        this.res.doStop();
-        Assert.assertEquals(this.res.getCounter(), 2);
-        this.res.doStop();
+        this.res.increament();
         Assert.assertEquals(this.res.getCounter(), 1);
+        this.res.increament();
+        Assert.assertEquals(this.res.getCounter(), 2);
+        this.res.increament();
+        Assert.assertEquals(this.res.getCounter(), 3);
+        this.res.increament();
+        Assert.assertEquals(this.res.getCounter(), 4);
     }
 
-    @Test
-    public void testResource_GetState() throws Exception{
-        Assert.assertEquals(this.res.getState(), LifeCycleState.STARTED.toString());
-        Assert.assertTrue(this.res.isStarted());
-        Assert.assertFalse(this.res.isFailed());
-        Assert.assertTrue(this.res.isRunning());
-        Assert.assertFalse(this.res.isStopped());
-    }
-
-    class Resource extends AbstractLifeCycle {
+    class Resource implements LifeCycle {
 
         private int counter;
 
@@ -83,14 +70,13 @@ public class LifeCycleClassTest {
             this.counter = counter;
         }
 
-        @Override
-        protected void doStart() throws Exception {
-            counter++;
+        public void increament() {
+            this.counter++;
         }
 
         @Override
-        protected void doStop() throws Exception {
-            counter--;
+        public void destroy() {
+            this.counter = 0;
         }
     }
 }

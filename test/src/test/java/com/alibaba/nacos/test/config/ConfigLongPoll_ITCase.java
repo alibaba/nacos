@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +57,14 @@ public class ConfigLongPoll_ITCase {
         properties.put(PropertyKeyConst.CONFIG_RETRY_TIME, "3000");
         properties.put(PropertyKeyConst.MAX_RETRY, "5");
         configService = NacosFactory.createConfigService(properties);
+    }
+
+    @After
+    public void destroy(){
+        try {
+            NacosFactory.destroyConfigService(configService);
+        }catch (NacosException ex) {
+        }
     }
 
     @Test

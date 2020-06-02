@@ -84,11 +84,12 @@ public class ConfigAPI_ITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
+            NacosFactory.destroyConfigService(iconfig);
+            agent.shutdown();
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
         }
-        agent.shutdown();
     }
 
     /**

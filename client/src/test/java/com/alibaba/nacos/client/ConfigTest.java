@@ -22,10 +22,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Properties;
 
@@ -46,6 +43,11 @@ public class ConfigTest {
 		properties.setProperty(PropertyKeyConst.PASSWORD, "1017");
 		configService = NacosFactory.createConfigService(properties);
 	}
+
+    @After
+    public void cleanup() throws Exception {
+	    configService.shutDown();
+    }
 
 	@Test
 	public void test() throws Exception {

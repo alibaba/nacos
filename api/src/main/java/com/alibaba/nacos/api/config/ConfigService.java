@@ -106,14 +106,9 @@ public interface ConfigService {
     String getServerStatus();
 
     /**
-     * Shutdown the resouces which are managed by config service object instance.
+     * Shutdown the resource service
      *
+     * @throws NacosException exception.
      */
-    /**
-     * Close the resouces which are managed by config service object instance.
-     *
-     * @throws Exception Exception occours when executing close operation.
-     */
-    void shutdown() throws Exception;
-
+    void shutDown() throws NacosException;
 }

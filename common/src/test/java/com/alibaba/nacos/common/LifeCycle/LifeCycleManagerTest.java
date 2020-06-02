@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.common.LifeCycle;
 
-import com.alibaba.nacos.common.lifecycle.AbstractLifeCycle;
-import com.alibaba.nacos.common.lifecycle.LifeCycleState;
+import com.alibaba.nacos.common.lifecycle.LifeCycle;
 import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -37,8 +36,8 @@ public class LifeCycleManagerTest {
     @Before
     public void setup() throws Exception{
         this.res = new Resource(0);
-        this.res.start();
         RESOURCE_MANAGER.register(this.res);
+        this.res.increament();
         Assert.assertEquals(this.res.getCounter(), 1);
     }
 
@@ -56,30 +55,31 @@ public class LifeCycleManagerTest {
 
     @Test
     public void testLifeCycleManager() throws Exception{
-        this.res.doStart();
+        this.res.increament();
         Assert.assertEquals(this.res.getCounter(), 2);
-        this.res.doStop();
-        Assert.assertEquals(this.res.getCounter(), 1);
+        this.res.increament();
+        Assert.assertEquals(this.res.getCounter(), 3);
     }
 
     @Test
     public void testLifeCycleManager_deregister() throws Exception{
 
         Resource temp = new Resource(0);
-        temp.start();
         RESOURCE_MANAGER.register(temp);
+        temp.increament();
         RESOURCE_MANAGER.deregister(temp);
         RESOURCE_MANAGER.destroy(temp);
 
         Assert.assertEquals(temp.getCounter(), 1);
+        temp.destroy();
+        Assert.assertEquals(temp.getCounter(), 0);
     }
 
-    class Resource extends AbstractLifeCycle {
+    class Resource implements LifeCycle {
 
         private int counter;
 
         public Resource(int counter) {
-            super();
             this.counter = counter;
         }
 
@@ -92,14 +92,13 @@ public class LifeCycleManagerTest {
             this.counter = counter;
         }
 
-        @Override
-        protected void doStart() throws Exception {
-            counter++;
+        public void increament() {
+            this.counter++;
         }
 
         @Override
-        protected void doStop() throws Exception {
-            counter--;
+        public void destroy() {
+            this.counter = 0;
         }
     }
 }

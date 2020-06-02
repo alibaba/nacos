@@ -37,12 +37,12 @@ public final class ResourceLifeCycleManager {
     /**
      * <Object instance...>
      */
-    private List<AbstractLifeCycle> lifeCycleResources;
+    private List<LifeCycle> lifeCycleResources;
 
     /**
      * Map<Object instance, Object>
      */
-    private Map<AbstractLifeCycle, Object> lockers = new ConcurrentHashMap<AbstractLifeCycle, Object>(8);
+    private Map<LifeCycle, Object> lockers = new ConcurrentHashMap<LifeCycle, Object>(8);
 
     private static final ResourceLifeCycleManager INSTANCE = new ResourceLifeCycleManager();
 
@@ -61,7 +61,7 @@ public final class ResourceLifeCycleManager {
     }
 
     private void init() {
-        this.lifeCycleResources = new CopyOnWriteArrayList<AbstractLifeCycle>();
+        this.lifeCycleResources = new CopyOnWriteArrayList<LifeCycle>();
     }
 
     public static ResourceLifeCycleManager getInstance() {
@@ -76,9 +76,8 @@ public final class ResourceLifeCycleManager {
         if (!CLOSED.compareAndSet(false, true)) {
             return;
         }
-
-        List<AbstractLifeCycle> instances = INSTANCE.lifeCycleResources;
-        for (AbstractLifeCycle instance : instances) {
+        List<LifeCycle> instances = INSTANCE.lifeCycleResources;
+        for (LifeCycle instance : instances) {
             INSTANCE.destroy(instance);
         }
     }
@@ -88,8 +87,8 @@ public final class ResourceLifeCycleManager {
      *
      * @param instance the life cycle resource instance which is need to be destroyed.
      */
-    public void destroy(AbstractLifeCycle instance) {
-        final Object monitor = lockers.get(instance);
+    public void destroy(LifeCycle instance) {
+        final Object monitor = this.lockers.get(instance);
         if (monitor == null) {
             return;
         }
@@ -99,9 +98,15 @@ public final class ResourceLifeCycleManager {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Life cycle resources do stop");
                 }
-                instance.stop();
-                INSTANCE.lifeCycleResources.remove(instance);
-                INSTANCE.lockers.remove(instance);
+
+                // here, double check if lockers contains or not
+                if (!this.lockers.containsKey(instance)) {
+                    return;
+                }
+
+                instance.destroy();
+                this.lifeCycleResources.remove(instance);
+                this.lockers.remove(instance);
             } catch (Exception e) {
                 LOGGER.error("An exception occurred during resource do stop : {}", e);
             }
@@ -115,12 +120,14 @@ public final class ResourceLifeCycleManager {
      * @param instance the management life cycle resource instances;
      *
      */
-    public void deregister(AbstractLifeCycle instance) {
+    public void deregister(LifeCycle instance) {
         if (this.lifeCycleResources.contains(instance)) {
-            final Object monitor = lockers.get(instance);
+            final Object monitor = this.lockers.get(instance);
             synchronized (monitor) {
-                this.lifeCycleResources.remove(instance);
-                this.lockers.remove(instance);
+                if (this.lockers.containsKey(instance)) {
+                    this.lockers.remove(instance);
+                    this.lifeCycleResources.remove(instance);
+                }
             }
         }
     }
@@ -130,12 +137,14 @@ public final class ResourceLifeCycleManager {
      *
      * @param instance the management life cycle resource instances.
      */
-    public void register(AbstractLifeCycle instance) {
-        if (!lifeCycleResources.contains(instance)) {
+    public void register(LifeCycle instance) {
+        if (!this.lifeCycleResources.contains(instance)) {
             synchronized(this) {
-                lockers.put(instance, new Object());
+                if (!this.lockers.containsKey(instance)) {
+                    this.lockers.put(instance, new Object());
+                    this.lifeCycleResources.add(instance);
+                }
             }
-            this.lifeCycleResources.add(instance);
         }
     }
 }

@@ -15,9 +15,12 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -31,7 +34,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author xuanyin
  */
-public class PushReceiver implements Runnable {
+public class PushReceiver implements Runnable, Closeable {
 
     private ScheduledExecutorService executorService;
 
@@ -44,9 +47,9 @@ public class PushReceiver implements Runnable {
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
-            udpSocket = new DatagramSocket();
+            this.udpSocket = new DatagramSocket();
 
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r);
@@ -56,7 +59,7 @@ public class PushReceiver implements Runnable {
                 }
             });
 
-            executorService.execute(this);
+            this.executorService.execute(this);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
@@ -70,7 +73,7 @@ public class PushReceiver implements Runnable {
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-                udpSocket.receive(packet);
+                this.udpSocket.receive(packet);
 
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
@@ -78,7 +81,7 @@ public class PushReceiver implements Runnable {
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
-                    hostReactor.processServiceJSON(pushPacket.data);
+                    this.hostReactor.processServiceJSON(pushPacket.data);
 
                     // send ack to server
                     ack = "{\"type\": \"push-ack\""
@@ -89,7 +92,7 @@ public class PushReceiver implements Runnable {
                     ack = "{\"type\": \"dump-ack\""
                         + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
                         + "\", \"data\":" + "\""
-                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
+                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(this.hostReactor.getServiceInfoMap()))
                         + "\"}";
                 } else {
                     // do nothing send ack only
@@ -98,12 +101,19 @@ public class PushReceiver implements Runnable {
                         + "\", \"data\":" + "\"\"}";
                 }
 
-                udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
+                this.udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
                     ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }
+    }
+
+    @Override
+    public void shutdown() throws NacosException {
+        NAMING_LOGGER.info("do shutdown begin");
+        ThreadUtils.shutdown(this.executorService);
+        NAMING_LOGGER.info("do shutdown stop");
     }
 
     public static class PushPacket {
@@ -113,6 +123,6 @@ public class PushReceiver implements Runnable {
     }
 
     public int getUDPPort() {
-        return udpSocket.getLocalPort();
+        return this.udpSocket.getLocalPort();
     }
 }

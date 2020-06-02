@@ -35,6 +35,8 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.lifecycle.LifeCycle;
+import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -50,7 +52,7 @@ import java.util.Properties;
  * @author nkorange
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosNamingService implements NamingService {
+public class NacosNamingService implements NamingService, LifeCycle {
 
     /**
      * Each Naming service should have different namespace.
@@ -72,6 +74,9 @@ public class NacosNamingService implements NamingService {
     private EventDispatcher eventDispatcher;
 
     private NamingProxy serverProxy;
+
+    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
+
 
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
@@ -96,6 +101,7 @@ public class NacosNamingService implements NamingService {
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
+        RESOURCE_MANAGER.register(this);
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -485,5 +491,18 @@ public class NacosNamingService implements NamingService {
 
     public BeatReactor getBeatReactor() {
         return beatReactor;
+    }
+
+    @Override
+    public void shutDown() throws NacosException{
+        destroy();
+    }
+
+    @Override
+    public void destroy() throws NacosException{
+        this.beatReactor.shutdown();
+        this.eventDispatcher.shutdown();
+        this.hostReactor.shutdown();
+        this.serverProxy.shutdown();
     }
 }

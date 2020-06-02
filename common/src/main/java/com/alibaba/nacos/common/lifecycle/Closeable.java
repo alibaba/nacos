@@ -1,6 +1,7 @@
 package com.alibaba.nacos.common.lifecycle;
 
-import java.io.IOException;
+
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
  * An interface is used to define the resource's close and shutdown,
@@ -12,17 +13,10 @@ import java.io.IOException;
 public interface Closeable {
 
     /**
-     * Close the Resources, such as IO Connection resourcese.
-     *
-     * @throws IOException
-     */
-    public void close() throws IOException;
-
-    /**
      * Shutdown the Resources, such as Thread Pool.
      *
-     * @throws InterruptedException
+     * @throws NacosException exception.
      */
-    public void shutdown() throws InterruptedException;
+    public void shutdown() throws NacosException;
 
 }
