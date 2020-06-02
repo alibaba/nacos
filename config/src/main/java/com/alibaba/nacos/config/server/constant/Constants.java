@@ -213,4 +213,31 @@ public class Constants {
     public static final String ACL_RESPONSE = "ACL-Response";
 
     public static final int ATOMIC_MAX_SIZE = 1000;
+
+
+
+
+    public static final String CONFIG_INFO_TABLE_NAME = "config_info";
+
+    public static final String CONFIG_INFO_AGGR_TABLE_NAME = "config_info_aggr";
+
+    public static final String CONFIG_INFO_BETA_TABLE_NAME = "config_info_beta";
+
+    public static final String CONFIG_INFO_TAG_TABLE_NAME = "config_info_tag";
+
+    public static final String CONFIG_TAGS_RELATION_TABLE_NAME = "config_tags_relation";
+
+    public static final String GROUP_CAPACITY_TABLE_NAME = "group_capacity";
+
+    public static final String HIS_CONFIG_INFO_TABLE_NAME = "his_config_info";
+
+    public static final String PERMISSIONS_TABLE_NAME = "permissions";
+
+    public static final String ROLES_TABLE_NAME = "roles";
+
+    public static final String TENANT_CAPACITY_TABLE_NAME = "tenant_capacity";
+
+    public static final String TENANT_INFO_TABLE_NAME = "tenant_info";
+
+    public static final String USERS_TABLE_NAME = "users";
 }

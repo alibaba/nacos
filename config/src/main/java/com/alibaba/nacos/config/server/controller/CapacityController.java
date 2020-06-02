@@ -17,8 +17,9 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.RestResult;
-import com.alibaba.nacos.config.server.model.capacity.Capacity;
+import com.alibaba.nacos.config.server.modules.entity.Capacity;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.capacity.CapacityServiceTmp;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +41,15 @@ public class CapacityController {
 
     private final CapacityService capacityService;
 
+    private final CapacityServiceTmp capacityServiceTmp;
+
     @Autowired
-    public CapacityController(CapacityService capacityService) {
+    public CapacityController(CapacityService capacityService, CapacityServiceTmp capacityServiceTmp) {
         this.capacityService = capacityService;
+        this.capacityServiceTmp = capacityServiceTmp;
     }
 
+    //TODO 注意返回值已修改
     @GetMapping
     public RestResult<Capacity> getCapacity(HttpServletResponse response,
                                             @RequestParam(required = false) String group,
@@ -67,11 +72,13 @@ public class CapacityController {
         try {
             response.setStatus(200);
             restResult.setCode(200);
-            Capacity capacity = capacityService.getCapacityWithDefault(group, tenant);
+//            Capacity capacity = capacityService.getCapacityWithDefault(group, tenant);
+            Capacity capacity = capacityServiceTmp.getCapacityWithDefault(group, tenant);
             if (capacity == null) {
                 LOGGER.warn("[getCapacity] capacity不存在，需初始化 group: {}, tenant: {}", group, tenant);
                 capacityService.initCapacity(group, tenant);
-                capacity = capacityService.getCapacityWithDefault(group, tenant);
+//                capacity = capacityService.getCapacityWithDefault(group, tenant);
+                capacity = capacityServiceTmp.getCapacityWithDefault(group, tenant);
             }
             if (capacity != null) {
                 restResult.setData(capacity);
@@ -97,7 +104,8 @@ public class CapacityController {
                                               @RequestParam(required = false) Integer maxAggrCount,
                                               @RequestParam(required = false) Integer maxAggrSize) {
         if (StringUtils.isBlank(group) && StringUtils.isBlank(tenant)) {
-            capacityService.initAllCapacity();
+//            capacityService.initAllCapacity();
+            capacityServiceTmp.initAllCapacity();
             RestResult<Boolean> restResult = new RestResult<Boolean>();
             setFailResult(response, restResult, 400);
             restResult.setMessage("参数group和tenant不能同时为空");
@@ -125,7 +133,9 @@ public class CapacityController {
             return restResult;
         }
         try {
-            boolean insertOrUpdateResult = capacityService.insertOrUpdateCapacity(group, tenant, quota, maxSize,
+//            boolean insertOrUpdateResult = capacityService.insertOrUpdateCapacity(group, tenant, quota, maxSize,
+//                maxAggrCount, maxAggrSize);
+            boolean insertOrUpdateResult = capacityServiceTmp.insertOrUpdateCapacity(group, tenant, quota, maxSize,
                 maxAggrCount, maxAggrSize);
             if (insertOrUpdateResult) {
                 setSuccessResult(response, restResult);

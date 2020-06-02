@@ -17,11 +17,15 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.LongPollingService;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTag;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoBetaMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoTagMapStruct;
+import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -58,6 +62,9 @@ public class ConfigServletInner {
 
     @Autowired
     private PersistService persistService;
+
+    @Autowired
+    private PersistServiceTmp persistServiceTmp;
 
     private static final int TRY_GET_LOCK_TIMES = 9;
 
@@ -143,7 +150,8 @@ public class ConfigServletInner {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
+                        ConfigInfoBeta configInfoBeta = persistServiceTmp.findConfigInfo4Beta(dataId, group, tenant);
+                        configInfoBase = ConfigInfoBetaMapStruct.MAPPER.convertConfigInfoBase(configInfoBeta);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
@@ -160,7 +168,8 @@ public class ConfigServletInner {
                                 }
                             }
                             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
@@ -171,7 +180,8 @@ public class ConfigServletInner {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
+                                ConfigInfo configInfo = persistServiceTmp.findConfigInfo(dataId, group, tenant);
+                                configInfoBase = ConfigInfoMapStruct.MAPPER.convertConfigInfoBase(configInfo);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
@@ -203,7 +213,8 @@ public class ConfigServletInner {
                             }
                         }
                         if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }

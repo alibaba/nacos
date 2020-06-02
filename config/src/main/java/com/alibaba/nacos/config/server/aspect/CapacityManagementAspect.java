@@ -17,10 +17,12 @@ package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.CounterMode;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.capacity.Capacity;
+import com.alibaba.nacos.config.server.modules.entity.Capacity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.capacity.CapacityServiceTmp;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -57,6 +59,12 @@ public class CapacityManagementAspect {
     @Autowired
     private PersistService persistService;
 
+    @Autowired
+    private CapacityServiceTmp capacityServiceTmp;
+
+    @Autowired
+    private PersistServiceTmp persistServiceTmp;
+
     /**
      * 更新也需要判断content内容是否超过大小限制
      */
@@ -73,7 +81,7 @@ public class CapacityManagementAspect {
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 // 只对写入或更新config_info表的做容量管理的限制检验
-                if (persistService.findConfigInfo(dataId, group, tenant) == null) {
+                if (persistServiceTmp.findConfigInfo(dataId, group, tenant) == null) {
                     // 写入操作
                     return do4Insert(pjp, request, response, group, tenant, content);
                 }
@@ -149,7 +157,7 @@ public class CapacityManagementAspect {
             return pjp.proceed();
         }
         LOGGER.info("[capacityManagement] aroundDeleteConfig");
-        ConfigInfo configInfo = persistService.findConfigInfo(dataId, group, tenant);
+        ConfigInfo configInfo = persistServiceTmp.findConfigInfo(dataId, group, tenant);
         if (configInfo == null) {
             return pjp.proceed();
         }
@@ -183,10 +191,10 @@ public class CapacityManagementAspect {
         try {
             if (hasTenant) {
                 LOGGER.info("主动修正usage, tenant: {}", tenant);
-                capacityService.correctTenantUsage(tenant);
+                capacityServiceTmp.correctTenantUsage(tenant);
             } else {
                 LOGGER.info("主动修正usage, group: {}", group);
-                capacityService.correctGroupUsage(group);
+                capacityServiceTmp.correctGroupUsage(group);
             }
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] correctUsage ", e);
@@ -214,11 +222,11 @@ public class CapacityManagementAspect {
      */
     private void insertOrUpdateUsage(String group, String tenant, CounterMode counterMode, boolean hasTenant) {
         try {
-            capacityService.insertAndUpdateClusterUsage(counterMode, true);
+            capacityServiceTmp.insertAndUpdateClusterUsage(counterMode, true);
             if (hasTenant) {
-                capacityService.insertAndUpdateTenantUsage(counterMode, tenant, true);
+                capacityServiceTmp.insertAndUpdateTenantUsage(counterMode, tenant, true);
             } else {
-                capacityService.insertAndUpdateGroupUsage(counterMode, group, true);
+                capacityServiceTmp.insertAndUpdateGroupUsage(counterMode, group, true);
             }
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] insertOrUpdateUsage ", e);
@@ -228,7 +236,7 @@ public class CapacityManagementAspect {
     private LimitType getLimitType(CounterMode counterMode, String group, String tenant, String content, boolean
         hasTenant) {
         try {
-            boolean clusterLimited = !capacityService.insertAndUpdateClusterUsage(counterMode, false);
+            boolean clusterLimited = !capacityServiceTmp.insertAndUpdateClusterUsage(counterMode, false);
             if (clusterLimited) {
                 LOGGER.warn("[capacityManagement] cluster capacity reaches quota.");
                 return LimitType.OVER_CLUSTER_QUOTA;
@@ -286,12 +294,12 @@ public class CapacityManagementAspect {
     private boolean isUpdateSuccess(CounterMode counterMode, String group, String tenant, boolean hasTenant) {
         boolean updateSuccess;
         if (hasTenant) {
-            updateSuccess = capacityService.updateTenantUsage(counterMode, tenant);
+            updateSuccess = capacityServiceTmp.updateTenantUsage(counterMode, tenant);
             if (!updateSuccess) {
                 LOGGER.warn("[capacityManagement] tenant capacity reaches quota, tenant: {}", tenant);
             }
         } else {
-            updateSuccess = capacityService.updateGroupUsage(counterMode, group);
+            updateSuccess = capacityServiceTmp.updateGroupUsage(counterMode, group);
             if (!updateSuccess) {
                 LOGGER.warn("[capacityManagement] group capacity reaches quota, group: {}", group);
             }
@@ -301,7 +309,7 @@ public class CapacityManagementAspect {
 
     private void insertCapacity(String group, String tenant, boolean hasTenant) {
         if (hasTenant) {
-            capacityService.initTenantCapacity(tenant);
+            capacityServiceTmp.initTenantCapacity(tenant);
         } else {
             capacityService.initGroupCapacity(group);
         }
@@ -310,9 +318,9 @@ public class CapacityManagementAspect {
     private Capacity getCapacity(String group, String tenant, boolean hasTenant) {
         Capacity capacity;
         if (hasTenant) {
-            capacity = capacityService.getTenantCapacity(tenant);
+            capacity = capacityServiceTmp.getTenantCapacity(tenant);
         } else {
-            capacity = capacityService.getGroupCapacity(group);
+            capacity = capacityServiceTmp.getGroupCapacity(group);
         }
         return capacity;
     }
@@ -391,9 +399,10 @@ public class CapacityManagementAspect {
         try {
             rollbackClusterUsage(counterMode);
             if (hasTenant) {
-                capacityService.updateTenantUsage(counterMode.reverse(), tenant);
+                capacityServiceTmp.updateTenantUsage(counterMode.reverse(), tenant);
             } else {
                 capacityService.updateGroupUsage(counterMode.reverse(), group);
+                capacityServiceTmp.updateGroupUsage(counterMode.reverse(), group);
             }
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] rollback ", e);
@@ -402,7 +411,8 @@ public class CapacityManagementAspect {
 
     private void rollbackClusterUsage(CounterMode counterMode) {
         try {
-            if (!capacityService.updateClusterUsage(counterMode.reverse())) {
+
+            if (!capacityServiceTmp.updateClusterUsage(counterMode.reverse())) {
                 LOGGER.error("[capacityManagement] cluster usage rollback fail counterMode: {}", counterMode);
             }
         } catch (Exception e) {

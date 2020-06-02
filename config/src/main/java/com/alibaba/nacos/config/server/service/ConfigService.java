@@ -46,6 +46,9 @@ public class ConfigService {
     @Autowired
     private static PersistService persistService;
 
+    @Autowired
+    private static PersistServiceTmp persistServiceTmp;
+
     static public int groupCount() {
         return CACHE.size();
     }
@@ -218,7 +221,9 @@ public class ConfigService {
         String aggreds = null;
         try {
             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                ConfigInfoBase config = persistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
+//                ConfigInfoBase config = persistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
+//                    "DEFAULT_GROUP");
+                ConfigInfoBase config = persistServiceTmp.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
                     "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
@@ -237,7 +242,9 @@ public class ConfigService {
         String clientIpWhitelist = null;
         try {
             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                ConfigInfoBase config = persistService.findConfigInfoBase(
+//                ConfigInfoBase config = persistService.findConfigInfoBase(
+//                    ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
+                ConfigInfoBase config = persistServiceTmp.findConfigInfoBase(
                     ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
@@ -257,7 +264,9 @@ public class ConfigService {
         String switchContent = null;
         try {
             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
-                ConfigInfoBase config = persistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+//                ConfigInfoBase config = persistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+//                    "DEFAULT_GROUP");
+                ConfigInfoBase config = persistServiceTmp.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
                     "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
