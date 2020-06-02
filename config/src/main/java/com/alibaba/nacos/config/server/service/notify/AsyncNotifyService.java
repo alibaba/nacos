@@ -115,8 +115,6 @@ public class AsyncNotifyService extends AbstractEventListener {
 	private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom()
 			.setDefaultRequestConfig(requestConfig).build();
 
-	private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
-
 	private ServerMemberManager memberManager;
 
 	class AsyncTask implements Runnable {
@@ -163,7 +161,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 								new AsyncNotifyCallBack(httpclient, task));
 					}
 				} else {
-					log.warn("The current node is not in the cluster list : {}", targetIp);
+					LogUtil.notifyLog.warn("The current node is not in the cluster list : {}", targetIp);
 				}
 			}
 		}
@@ -202,9 +200,6 @@ public class AsyncNotifyService extends AbstractEventListener {
 						delayed, task.target);
 			}
 			else {
-				log.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}",
-						task.target, task.getDataId(), task.getGroup(),
-						task.getLastModified(), response.getStatusLine().getStatusCode());
 				ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(),
 						task.getTenant(), null, task.getLastModified(),
 						InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR,
@@ -213,10 +208,9 @@ public class AsyncNotifyService extends AbstractEventListener {
 				//get delay time and set fail count to the task
 				asyncTaskExecute(task);
 
-				LogUtil.notifyLog
-						.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
-								task.target, task.getDataId(), task.getGroup(),
-								task.getLastModified());
+				LogUtil.notifyLog.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}",
+						task.target, task.getDataId(), task.getGroup(),
+						task.getLastModified(), response.getStatusLine().getStatusCode());
 
 				MetricsMonitor.getConfigNotifyException().increment();
 			}
@@ -227,9 +221,6 @@ public class AsyncNotifyService extends AbstractEventListener {
 		public void failed(Exception ex) {
 
 			long delayed = System.currentTimeMillis() - task.getLastModified();
-			log.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}",
-					task.target, task.getDataId(), task.getGroup(),
-					task.getLastModified(), ex.toString());
 			ConfigTraceService
 					.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(),
 							null, task.getLastModified(), InetUtils.getSelfIp(),
@@ -238,9 +229,9 @@ public class AsyncNotifyService extends AbstractEventListener {
 
 			//get delay time and set fail count to the task
 			asyncTaskExecute(task);
-			LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
+			LogUtil.notifyLog.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}",
 					task.target, task.getDataId(), task.getGroup(),
-					task.getLastModified());
+					task.getLastModified(), ex.toString());
 
 			MetricsMonitor.getConfigNotifyException().increment();
 		}
@@ -299,7 +290,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 				group = URLEncoder.encode(group, Constants.ENCODE);
 			}
 			catch (UnsupportedEncodingException e) {
-				log.error("URLEncoder encode error", e);
+				LogUtil.notifyLog.error("URLEncoder encode error", e);
 			}
 			if (StringUtils.isBlank(tenant)) {
 				this.url = MessageFormat
