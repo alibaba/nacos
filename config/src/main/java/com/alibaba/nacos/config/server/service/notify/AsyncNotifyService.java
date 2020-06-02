@@ -162,6 +162,8 @@ public class AsyncNotifyService extends AbstractEventListener {
 						httpclient.execute(request,
 								new AsyncNotifyCallBack(httpclient, task));
 					}
+				} else {
+					log.warn("The current node is not in the cluster list : {}", targetIp);
 				}
 			}
 		}
