@@ -1,6 +1,5 @@
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -9,7 +8,6 @@ import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTag;
 import com.alibaba.nacos.config.server.modules.entity.HisConfigInfo;
-import com.alibaba.nacos.config.server.utils.MD5;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -208,22 +206,6 @@ public class PersistServiceTest {
 
     private ConfigInfo buildConfigInfo() {
         ConfigInfo configInfo = new ConfigInfo();
-        configInfo.setDataId("userService1");
-        configInfo.setGroupId("DEFAULT_GROUP1");
-        configInfo.setContent("logEnable=true1");
-        configInfo.setMd5(MD5.getInstance().getMD5String("logEnable=true"));
-        configInfo.setGmtCreate(new Date());
-        configInfo.setGmtModified(new Date());
-        configInfo.setSrcUser("zhangsan");
-        configInfo.setSrcIp("127.0.0.1");
-        configInfo.setAppName("userService1");
-        configInfo.setTenantId("zhangsan");
-        configInfo.setCDesc("用户系统");
-        configInfo.setCUse("");
-        configInfo.setEffect("");
-        configInfo.setType("properties");
-        configInfo.setCSchema("");
-        JSON.toJSONString(configInfo);
         return configInfo;
     }
 

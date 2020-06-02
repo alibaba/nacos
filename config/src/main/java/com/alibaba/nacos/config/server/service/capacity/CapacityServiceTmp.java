@@ -4,7 +4,8 @@ import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.modules.entity.Capacity;
 import com.alibaba.nacos.config.server.modules.entity.GroupCapacity;
 import com.alibaba.nacos.config.server.modules.entity.TenantCapacity;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,9 @@ public class CapacityServiceTmp {
 
     @Autowired
     private GroupCapacityPersistServiceTmp groupCapacityPersistService;
+
+    @Autowired
+    private PersistServiceTmp persistServiceTmp;
 
     @Autowired
     private PersistService persistService;
@@ -58,7 +62,7 @@ public class CapacityServiceTmp {
         while (true) {
             List<String> list;
             if (isTenant) {
-                list = persistService.getTenantIdList(page, INIT_PAGE_SIZE);
+                list = persistServiceTmp.getTenantIdList(page, INIT_PAGE_SIZE);
             } else {
                 list = persistService.getGroupIdList(page, INIT_PAGE_SIZE);
             }

@@ -17,15 +17,10 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-<<<<<<< HEAD
 import com.alibaba.nacos.config.server.modules.entity.HisConfigInfo;
 import com.alibaba.nacos.config.server.modules.mapstruct.HisConfigInfoMapStruct;
-import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.PersistServiceTmp;
-=======
-import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
->>>>>>> upstream/develop
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

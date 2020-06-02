@@ -1,21 +1,21 @@
 package com.alibaba.nacos.config.server.service;
 
-import java.util.Date;
 
 import java.util.*;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.modules.entity.*;
 import com.alibaba.nacos.config.server.modules.repository.*;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.google.common.base.Joiner;
 import com.querydsl.core.BooleanBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -34,7 +34,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
 
-import static com.alibaba.nacos.config.server.service.PersistService.SPOT;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -62,6 +61,13 @@ public class PersistServiceTmp {
 
     @Autowired
     private TransactionTemplate tjt;
+
+
+    /**
+     * @author klw
+     * @Description: constant variables
+     */
+    public static final String SPOT = ".";
 
 
     /**
@@ -151,13 +157,13 @@ public class PersistServiceTmp {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
-        if (StringUtils.isNotBlank(configInfo.getDataId())){
+        if (StringUtils.isNotBlank(configInfo.getDataId())) {
             booleanBuilder.and(qConfigInfoBeta.dataId.eq(configInfo.getDataId()));
         }
-        if (StringUtils.isNotBlank(configInfo.getGroupId())){
+        if (StringUtils.isNotBlank(configInfo.getGroupId())) {
             booleanBuilder.and(qConfigInfoBeta.groupId.eq(configInfo.getGroupId()));
         }
-        if (StringUtils.isNotBlank(tenantTmp)){
+        if (StringUtils.isNotBlank(tenantTmp)) {
             booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenantTmp));
         }
         ConfigInfoBeta configInfoBeta = configInfoBetaRepository.findOne(booleanBuilder)
@@ -178,7 +184,7 @@ public class PersistServiceTmp {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             configInfoBeta.setAppName(appNameTmp);
             configInfoBeta.setContent(configInfo.getContent());
             configInfoBeta.setMd5(md5);
@@ -204,7 +210,7 @@ public class PersistServiceTmp {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBeta configInfoBeta = new ConfigInfoBeta();
             configInfoBeta.setDataId(configInfo.getDataId());
             configInfoBeta.setGroupId(configInfo.getGroupId());
@@ -237,7 +243,7 @@ public class PersistServiceTmp {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoTag configInfoTag = new ConfigInfoTag();
             configInfoTag.setDataId(configInfo.getDataId());
             configInfoTag.setGroupId(configInfo.getGroupId());
@@ -271,7 +277,7 @@ public class PersistServiceTmp {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            String md5 = MD5.getInstance().getMD5String(configInfo.getContent());
+            String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             configInfoTag.setDataId(configInfo.getDataId());
             configInfoTag.setGroupId(configInfo.getGroupId());
             configInfoTag.setTenantId(tenantTmp);
@@ -495,7 +501,7 @@ public class PersistServiceTmp {
     private void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
                                            final Timestamp time, String ops) {
 
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         HisConfigInfo hisConfigInfo = new HisConfigInfo();
         hisConfigInfo.setId(id);
         hisConfigInfo.setDataId(configInfo.getDataId());
@@ -761,7 +767,7 @@ public class PersistServiceTmp {
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
         configInfo.setCDesc(desc);
         configInfo.setCUse(use);
@@ -870,7 +876,7 @@ public class PersistServiceTmp {
      */
     private void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
                                         final Timestamp time, Map<String, Object> configAdvanceInfo) {
-        final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");

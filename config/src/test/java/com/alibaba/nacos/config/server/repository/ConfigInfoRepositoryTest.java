@@ -3,11 +3,9 @@ package com.alibaba.nacos.config.server.repository;
 import java.util.Date;
 import java.util.List;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
 import com.alibaba.nacos.config.server.modules.entity.QConfigInfo;
 import com.alibaba.nacos.config.server.modules.repository.ConfigInfoRepository;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import org.junit.Assert;
@@ -59,22 +57,6 @@ public class ConfigInfoRepositoryTest {
 
     private ConfigInfo buildConfigInfo() {
         ConfigInfo configInfo = new ConfigInfo();
-        configInfo.setDataId("userService");
-        configInfo.setGroupId("DEFAULT_GROUP");
-        configInfo.setContent("logEnable=true");
-        configInfo.setMd5(MD5.getInstance().getMD5String("logEnable=true"));
-        configInfo.setGmtCreate(new Date());
-        configInfo.setGmtModified(new Date());
-        configInfo.setSrcUser("zhangsan");
-        configInfo.setSrcIp("127.0.0.1");
-        configInfo.setAppName("userService");
-        configInfo.setTenantId("zhangsan");
-        configInfo.setCDesc("用户系统");
-        configInfo.setCUse("");
-        configInfo.setEffect("");
-        configInfo.setType("properties");
-        configInfo.setCSchema("");
-        JSON.toJSONString(configInfo);
         return configInfo;
     }
 
