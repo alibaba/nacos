@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -38,7 +40,7 @@ public class StringUtils {
     public static final String EMPTY = "";
 
     public static String newString4UTF8(byte[] bytes) {
-        return new String(bytes, Charset.forName("UTF-8"));
+        return new String(bytes, Charset.forName(Constants.ENCODE));
     }
 
     public static boolean isBlank(String str) {

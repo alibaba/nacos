@@ -27,6 +27,7 @@ import java.util.Map;
 /**
  * Report local server status to other server
  *
+ * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  * @author nacos
  */
 public class ServerStatusSynchronizer implements Synchronizer {
