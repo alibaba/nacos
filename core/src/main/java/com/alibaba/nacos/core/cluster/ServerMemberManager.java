@@ -139,6 +139,7 @@ public class ServerMemberManager
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
 		this.self = MemberUtils.singleParse(this.localAddress);
+		this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.VERSION);
 		serverList.put(self.getAddress(), self);
 
 		// register NodeChangeEvent publisher to NotifyManager
