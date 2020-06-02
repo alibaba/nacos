@@ -203,9 +203,7 @@ public class OperatorController {
     /**
      * This interface will be removed in a future release
      *
-     * // TODO This object will be deleted sometime after version 1.3.0
-     *
-     * @deprecated 1.3.0
+     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
      * @param serverStatus server status
      * @return "ok"
      */
@@ -225,9 +223,7 @@ public class OperatorController {
     /**
      * This interface will be removed in a future release
      *
-     * // TODO This object will be deleted sometime after version 1.3.0
-     *
-     * @deprecated 1.3.0
+     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
      * @return {@link JsonNode}
      */
     @Deprecated

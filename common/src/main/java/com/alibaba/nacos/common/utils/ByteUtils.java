@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.nio.charset.Charset;
 
+import com.alibaba.nacos.api.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -32,7 +33,7 @@ public final class ByteUtils {
         if (s == null) {
             return EMPTY;
         }
-        return s.getBytes(Charset.forName("UTF-8"));
+        return s.getBytes(Charset.forName(Constants.ENCODE));
     }
 
     public static byte[] toBytes(Object s) {
@@ -46,7 +47,7 @@ public final class ByteUtils {
         if (bytes == null) {
             return StringUtils.EMPTY;
         }
-        return new String(bytes, Charset.forName("UTF-8"));
+        return new String(bytes, Charset.forName(Constants.ENCODE));
     }
 
     public static boolean isEmpty(byte[] data) {

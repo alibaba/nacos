@@ -49,11 +49,9 @@ import java.util.Optional;
 /**
  * The manager to globally refresh and operate server list.
  *
- * // TODO This object will be deleted sometime after version 1.3.0
- *
  * @author nkorange
  * @since 1.0.0
- * @deprecated 1.3.0
+ * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
 public class ServerListManager implements MemberChangeListener {
