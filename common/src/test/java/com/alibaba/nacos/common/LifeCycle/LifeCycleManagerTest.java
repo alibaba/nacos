@@ -31,26 +31,25 @@ import org.junit.Test;
 public class LifeCycleManagerTest {
 
     private Resource res;
-    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
-
     @Before
     public void setup() throws Exception{
         this.res = new Resource(0);
-        RESOURCE_MANAGER.register(this.res);
+        ResourceLifeCycleManager.register(this.res);
         this.res.increament();
         Assert.assertEquals(this.res.getCounter(), 1);
     }
 
     @After
     public void cleanup() throws Exception{
-        RESOURCE_MANAGER.shutdown();
+        ResourceLifeCycleManager.shutdown();
         Assert.assertEquals(this.res.getCounter(), 0);
         // here, double check shutdown called by two times whether the result is ok.
-        RESOURCE_MANAGER.shutdown();
+        ResourceLifeCycleManager.shutdown();
         Assert.assertEquals(this.res.getCounter(), 0);
         // here, check whether the buffer data in resource manager is correct.
-        RESOURCE_MANAGER.destroy(this.res);
+        ResourceLifeCycleManager.getInstance().destroy(this.res);
         Assert.assertEquals(this.res.getCounter(), 0);
+        Assert.assertEquals(ResourceLifeCycleManager.getRegisterResourceNum(), 0);
     }
 
     @Test
@@ -65,10 +64,10 @@ public class LifeCycleManagerTest {
     public void testLifeCycleManager_deregister() throws Exception{
 
         Resource temp = new Resource(0);
-        RESOURCE_MANAGER.register(temp);
+        ResourceLifeCycleManager.register(temp);
         temp.increament();
-        RESOURCE_MANAGER.deregister(temp);
-        RESOURCE_MANAGER.destroy(temp);
+        ResourceLifeCycleManager.deregister(temp);
+        ResourceLifeCycleManager.getInstance().destroy(temp);
 
         Assert.assertEquals(temp.getCounter(), 1);
         temp.destroy();

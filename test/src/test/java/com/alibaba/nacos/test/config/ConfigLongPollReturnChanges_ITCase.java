@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigLongPollReturnChanges_ITCase {
 
     @LocalServerPort
@@ -61,6 +62,7 @@ public class ConfigLongPollReturnChanges_ITCase {
     public void destroy(){
         try {
             NacosFactory.destroyConfigService(configService);
+            Assert.assertEquals(ResourceLifeCycleManager.getRegisterResourceNum(), 0);
         }catch (NacosException ex) {
         }
     }

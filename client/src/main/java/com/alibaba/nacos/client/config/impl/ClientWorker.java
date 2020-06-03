@@ -26,6 +26,7 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -279,7 +280,6 @@ public class ClientWorker implements Closeable {
         final String tenant = cacheData.tenant;
         File path = LocalConfigInfoProcessor.getFailoverFile(this.agent.getName(), dataId, group, tenant);
 
-        // 没有 -> 有
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
             String content = LocalConfigInfoProcessor.getFailover(this.agent.getName(), dataId, group, tenant);
             String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
@@ -292,7 +292,7 @@ public class ClientWorker implements Closeable {
             return;
         }
 
-        // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
+        // If use local config info, then it doesn't notify business listener and notify after getting from server.
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
             LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", this.agent.getName(),
@@ -300,7 +300,7 @@ public class ClientWorker implements Closeable {
             return;
         }
 
-        // 有变更
+        // When it changed.
         if (cacheData.isUseLocalConfigInfo() && path.exists()
             && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
             String content = LocalConfigInfoProcessor.getFailover(this.agent.getName(), dataId, group, tenant);
@@ -318,13 +318,13 @@ public class ClientWorker implements Closeable {
     }
 
     public void checkConfigInfo() {
-        // 分任务
+        // Dispatch taskes.
         int listenerSize = this.cacheMap.get().size();
-        // 向上取整为批数
+        // Round up the longingTaskCount.
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > this.currentLongingTaskCount) {
             for (int i = (int) this.currentLongingTaskCount; i < longingTaskCount; i++) {
-                // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
+                // The task list is no order.So it maybe has issues when changing.
                 this.executorService.execute(new LongPollingRunnable(i));
             }
             this.currentLongingTaskCount = longingTaskCount;
@@ -332,7 +332,13 @@ public class ClientWorker implements Closeable {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * Fetch the dataId list from server.
+     *
+     * @param cacheDatas CacheDatas for config infomations.
+     * @param inInitializingCacheList initial cache lists.
+     * @return String include dataId and group (ps: it maybe null).
+     *
+     * @throws IOException Exception.
      */
     List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -347,7 +353,7 @@ public class ClientWorker implements Closeable {
                     sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
                 }
                 if (cacheData.isInitializing()) {
-                    // cacheData 首次出现在cacheMap中&首次check更新
+                    // It updates when cacheData occours in cacheMap by first time.
                     inInitializingCacheList
                         .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
@@ -358,7 +364,13 @@ public class ClientWorker implements Closeable {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * Fetch the updated dataId list from server.
+     *
+     *
+     * @param probeUpdateString updated attribute string value.
+     * @param isInitializingCacheList initial cache lists.
+     * @return The updated dataId list(ps: it maybe null).
+     * @throws IOException Exception.
      */
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
@@ -405,7 +417,10 @@ public class ClientWorker implements Closeable {
     }
 
     /**
-     * 从HTTP响应拿到变化的groupKey。保证不返回NULL。
+     * Get the groupKey list from the http response.
+     *
+     * @param response Http response.
+     * @return GroupKey List, (ps: it maybe null).
      */
     private List<String> parseUpdateDataIdResponse(String response) {
         if (StringUtils.isBlank(response)) {
@@ -484,7 +499,7 @@ public class ClientWorker implements Closeable {
 
     private void init(Properties properties) {
 
-        this.timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+        this.timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
             Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
         this.taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
@@ -494,10 +509,11 @@ public class ClientWorker implements Closeable {
 
     @Override
     public void shutdown() throws NacosException {
-        LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executorService);
         ThreadUtils.shutdown(this.executor);
-        LOGGER.info("do shutdown stop");
+        LOGGER.info("{} do shutdown stop", className);
     }
 
     class LongPollingRunnable implements Runnable {

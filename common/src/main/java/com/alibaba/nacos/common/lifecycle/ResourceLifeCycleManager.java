@@ -42,14 +42,15 @@ public final class ResourceLifeCycleManager {
     /**
      * Map<Object instance, Object>
      */
-    private Map<LifeCycle, Object> lockers = new ConcurrentHashMap<LifeCycle, Object>(8);
+    private Map<LifeCycle, Object> lockers;
 
     private static final ResourceLifeCycleManager INSTANCE = new ResourceLifeCycleManager();
 
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
     static {
-        INSTANCE.init();
+        INSTANCE.lifeCycleResources = new CopyOnWriteArrayList<LifeCycle>();
+        INSTANCE.lockers = new ConcurrentHashMap<LifeCycle, Object>(8);
         ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -58,10 +59,6 @@ public final class ResourceLifeCycleManager {
                 LOGGER.warn("[LifeCycleManager] Destruction of the end");
             }
         }));
-    }
-
-    private void init() {
-        this.lifeCycleResources = new CopyOnWriteArrayList<LifeCycle>();
     }
 
     public static ResourceLifeCycleManager getInstance() {
@@ -120,13 +117,13 @@ public final class ResourceLifeCycleManager {
      * @param instance the management life cycle resource instances;
      *
      */
-    public void deregister(LifeCycle instance) {
-        if (this.lifeCycleResources.contains(instance)) {
-            final Object monitor = this.lockers.get(instance);
+    public static void deregister(LifeCycle instance) {
+        if (INSTANCE.lifeCycleResources.contains(instance)) {
+            final Object monitor = INSTANCE.lockers.get(instance);
             synchronized (monitor) {
-                if (this.lockers.containsKey(instance)) {
-                    this.lockers.remove(instance);
-                    this.lifeCycleResources.remove(instance);
+                if (INSTANCE.lockers.containsKey(instance)) {
+                    INSTANCE.lockers.remove(instance);
+                    INSTANCE.lifeCycleResources.remove(instance);
                 }
             }
         }
@@ -137,14 +134,23 @@ public final class ResourceLifeCycleManager {
      *
      * @param instance the management life cycle resource instances.
      */
-    public void register(LifeCycle instance) {
-        if (!this.lifeCycleResources.contains(instance)) {
-            synchronized(this) {
-                if (!this.lockers.containsKey(instance)) {
-                    this.lockers.put(instance, new Object());
-                    this.lifeCycleResources.add(instance);
+    public static void register(LifeCycle instance) {
+        if (!INSTANCE.lifeCycleResources.contains(instance)) {
+            synchronized(INSTANCE) {
+                if (!INSTANCE.lockers.containsKey(instance)) {
+                    INSTANCE.lockers.put(instance, new Object());
+                    INSTANCE.lifeCycleResources.add(instance);
                 }
             }
         }
+    }
+
+    /**
+     * Get the life cycle resource number which registered into the Resource Life Cycle Manager.
+     *
+     * @return
+     */
+    public static int getRegisterResourceNum() {
+        return INSTANCE.lifeCycleResources.size();
     }
 }

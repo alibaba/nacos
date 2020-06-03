@@ -111,9 +111,10 @@ public class PushReceiver implements Runnable, Closeable {
 
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executorService);
-        NAMING_LOGGER.info("do shutdown stop");
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
     public static class PushPacket {

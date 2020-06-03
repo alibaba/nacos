@@ -75,9 +75,6 @@ public class NacosNamingService implements NamingService, LifeCycle {
 
     private NamingProxy serverProxy;
 
-    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
-
-
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -101,7 +98,7 @@ public class NacosNamingService implements NamingService, LifeCycle {
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
-        RESOURCE_MANAGER.register(this);
+        ResourceLifeCycleManager.register(this);
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -496,6 +493,7 @@ public class NacosNamingService implements NamingService, LifeCycle {
     @Override
     public void shutDown() throws NacosException{
         destroy();
+        ResourceLifeCycleManager.deregister(this);
     }
 
     @Override
