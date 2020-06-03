@@ -18,12 +18,16 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * @author nkorange
@@ -89,5 +93,32 @@ public class WebUtils {
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(body);
         response.setStatus(code);
+    }
+
+    public static  <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Function<Throwable, T> errorHandler) {
+
+        deferredResult.onTimeout(future::join);
+
+        future.whenComplete((t, throwable) -> {
+            if (Objects.nonNull(throwable)) {
+                deferredResult.setResult(errorHandler.apply(throwable));
+                return;
+            }
+            deferredResult.setResult(t);
+        });
+    }
+
+    public static  <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success, Function<Throwable, T> errorHandler) {
+
+        deferredResult.onTimeout(future::join);
+
+        future.whenComplete((t, throwable) -> {
+            if (Objects.nonNull(throwable)) {
+                deferredResult.setResult(errorHandler.apply(throwable));
+                return;
+            }
+            success.run();
+            deferredResult.setResult(t);
+        });
     }
 }

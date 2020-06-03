@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
@@ -171,7 +171,7 @@ public class RaftPeerSet implements MemberChangeListener {
             leader = candidate;
             ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader, local()));
             Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
-                leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
+                leader.ip, JacksonUtils.toJson(local()), JacksonUtils.toJson(leader));
         }
 
         for (final RaftPeer peer : peers.values()) {
@@ -189,7 +189,7 @@ public class RaftPeerSet implements MemberChangeListener {
                                 return 1;
                             }
 
-                            update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
+                            update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
 
                             return 0;
                         }

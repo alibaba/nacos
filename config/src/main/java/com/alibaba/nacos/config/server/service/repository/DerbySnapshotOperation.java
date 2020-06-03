@@ -16,17 +16,19 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.config.server.service.DataSourceService;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;
 
 import java.io.File;
@@ -35,6 +37,7 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.zip.Checksum;
@@ -60,7 +63,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
         RaftExecutor.doSnapshot(() -> {
-            writeLock.lock();
+
+            TimerContext.start("CONFIG_DERBY_SNAPSHOT_SAVE");
+
+            final Lock lock = writeLock;
+            lock.lock();
             try {
                 final String writePath = writer.getPath();
                 final String parentPath = Paths.get(writePath, snapshotDir).toString();
@@ -83,7 +90,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                         writer.getPath(), writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
-                writeLock.unlock();
+                lock.unlock();
+                TimerContext.end(LogUtil.fatalLog);
             }
         });
     }
@@ -92,7 +100,10 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     public boolean onSnapshotLoad(Reader reader) {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, snapshotArchive).toString();
-        writeLock.lock();
+
+        TimerContext.start("CONFIG_DERBY_SNAPSHOT_LOAD");
+        final Lock lock = writeLock;
+        lock.lock();
         try {
             final Checksum checksum = new CRC64();
             DiskUtils.decompress(sourceFile, readerPath, checksum);
@@ -118,20 +129,22 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 return null;
             });
             DiskUtils.deleteDirectory(loadPath);
+            NotifyCenter.publishEvent(DerbyLoadEvent.INSTANCE);
             return true;
         } catch (final Throwable t) {
             LogUtil.fatalLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
                     reader.listFiles(), t);
             return false;
         } finally {
-            writeLock.unlock();
+            lock.unlock();
+            TimerContext.end(LogUtil.fatalLog);
         }
     }
 
     private void doDerbyBackup(String backupDirectory) throws Exception {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
-        try (Connection holder = Objects.requireNonNull(dataSource).getConnection()) {
+        try (Connection holder = Objects.requireNonNull(dataSource, "dataSource").getConnection()) {
             CallableStatement cs = holder.prepareCall(backupSql);
             cs.setString(1, backupDirectory);
             cs.execute();

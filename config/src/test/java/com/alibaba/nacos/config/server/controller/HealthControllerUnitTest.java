@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 
 /**
  * Created by qingliang on 2017/8/14.

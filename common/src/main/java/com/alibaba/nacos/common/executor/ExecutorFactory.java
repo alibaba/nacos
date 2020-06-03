@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.common.executor;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -38,19 +36,6 @@ public final class ExecutorFactory {
     private static final ThreadPoolManager THREAD_POOL_MANAGER = ThreadPoolManager.getInstance();
 
     public static final String DEFAULT_NAMESPACE = "nacos";
-
-    public static ForkJoinPool newForkJoinPool(final String group) {
-        ForkJoinPool forkJoinPool = new ForkJoinPool();
-        THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, forkJoinPool);
-        return forkJoinPool;
-    }
-
-    public static ForkJoinPool newForkJoinPool(final String group,
-                                               final int nThreads) {
-        ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
-        THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, forkJoinPool);
-        return forkJoinPool;
-    }
 
     public static ExecutorService newSingleExecutorService(final String group) {
         ExecutorService executorService = Executors.newFixedThreadPool(1);

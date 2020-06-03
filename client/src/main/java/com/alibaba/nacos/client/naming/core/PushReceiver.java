@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 
@@ -75,7 +75,7 @@ public class PushReceiver implements Runnable {
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
 
-                PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
+                PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
                     hostReactor.processServiceJSON(pushPacket.data);
@@ -89,7 +89,7 @@ public class PushReceiver implements Runnable {
                     ack = "{\"type\": \"dump-ack\""
                         + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
                         + "\", \"data\":" + "\""
-                        + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
+                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
                         + "\"}";
                 } else {
                     // do nothing send ack only
