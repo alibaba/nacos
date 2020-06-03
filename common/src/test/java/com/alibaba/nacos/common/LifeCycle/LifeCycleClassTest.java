@@ -33,25 +33,25 @@ public class LifeCycleClassTest {
     @Before
     public void setup() throws Exception{
         this.res = new Resource(0);
-        Assert.assertEquals(this.res.getCounter(), 0);
+        Assert.assertEquals(0, this.res.getCounter());
     }
 
     @After
     public void cleanup() throws Exception{
         this.res.destroy();
-        Assert.assertEquals(this.res.getCounter(), 0);
+        Assert.assertEquals(0, this.res.getCounter());
     }
 
     @Test
     public void testResource_LifeCycleMethod() throws Exception{
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 1);
+        Assert.assertEquals(1, this.res.getCounter());
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 2);
+        Assert.assertEquals(2, this.res.getCounter());
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 3);
+        Assert.assertEquals(3, this.res.getCounter());
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 4);
+        Assert.assertEquals(4, this.res.getCounter());
     }
 
     class Resource implements LifeCycle {
