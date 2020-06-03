@@ -67,9 +67,8 @@ public class ConfigAuth_ITCase extends AuthBase {
 
     @After
     public void destroy(){
-        super.destroy();
         try {
-            NacosFactory.destroyConfigService(iconfig);
+            iconfig.shutDown();
             Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
         }catch (NacosException ex) {
 
