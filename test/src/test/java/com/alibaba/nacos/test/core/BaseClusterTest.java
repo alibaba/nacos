@@ -157,14 +157,13 @@ public class BaseClusterTest extends HttpClient4Test {
 				try {
 					System.out.println("start close : " + context);
 					context.close();
-                    NacosFactory.destroyConfigService(iconfig7);
-                    NacosFactory.destroyConfigService(iconfig8);
-                    NacosFactory.destroyConfigService(iconfig9);
+                    iconfig7.shutDown();
+                    iconfig8.shutDown();
+                    iconfig9.shutDown();
 
-                    NacosFactory.destroyNamingService(inaming7);
-                    NacosFactory.destroyNamingService(inaming8);
-                    NacosFactory.destroyNamingService(inaming9);
-
+                    inaming7.shutDown();
+                    inaming8.shutDown();
+                    inaming9.shutDown();
                 } catch (Exception ignore) {
 				} finally {
 					System.out.println("finished close : " + context);

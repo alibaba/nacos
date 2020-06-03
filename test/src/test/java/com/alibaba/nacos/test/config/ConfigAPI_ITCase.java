@@ -85,7 +85,7 @@ public class ConfigAPI_ITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
-            NacosFactory.destroyConfigService(iconfig);
+            iconfig.shutDown();
             agent.shutdown();
             // Judge whether the register life cycle resource number equals to zero or not.
             Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());

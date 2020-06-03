@@ -49,19 +49,4 @@ public class NamingFactory {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
-
-    /**
-     * Destroy Config Instance's Resources.
-     *
-     * @param namingService
-     * @throws NacosException
-     */
-    public static void destroyNamingService(NamingService namingService) throws NacosException{
-        try {
-            namingService.shutDown();
-            namingService = null;
-        }catch (Throwable e) {
-            throw new NacosException(NacosException.RESOURCE_DESTROY_FAILED, e);
-        }
-    }
 }
