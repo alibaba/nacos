@@ -2548,7 +2548,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 						notify);
 				succCount++;
 			}
-			catch (DataIntegrityViolationException ive) {
+			catch (Throwable e) {
+				if (!StringUtils.contains("DuplicateKeyException", e.toString())) {
+					throw e;
+				}
 				// uniqueness constraint conflict
 				if (SameConfigPolicy.ABORT.equals(policy)) {
 					failData = new ArrayList<>();
