@@ -368,9 +368,10 @@ public class ConfigController {
 			configAdvanceInfo.put("config_tags", configTags);
 		}
 		try {
-			return persistService
+			Page<ConfigInfo> page = persistService
 					.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
 							configAdvanceInfo);
+			return page;
 		}
 		catch (Exception e) {
 			String errorMsg =
