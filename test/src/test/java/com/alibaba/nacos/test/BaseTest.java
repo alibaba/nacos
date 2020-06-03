@@ -22,7 +22,11 @@ import org.junit.Test;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author yangyi
+ *
+ * @deprecated It seems no necessary for super test class, will be removed.
  */
+@Deprecated
 public class BaseTest {
 
 	@Test

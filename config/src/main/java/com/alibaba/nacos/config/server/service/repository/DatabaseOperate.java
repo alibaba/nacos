@@ -18,9 +18,13 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -95,9 +99,20 @@ public interface DatabaseOperate {
      * data modify transaction
      *
      * @param modifyRequests {@link List<  ModifyRequest  >}
+     * @param consumer {@link BiConsumer}
      * @return is success
      */
-    Boolean update(List<ModifyRequest> modifyRequests);
+    Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
+
+    /**
+     * data modify transaction
+     *
+     * @param modifyRequests {@link List<  ModifyRequest  >}
+     * @return is success
+     */
+    default Boolean update(List<ModifyRequest> modifyRequests) {
+        return update(modifyRequests, null);
+    }
 
     /**
      * data modify transaction
@@ -105,11 +120,33 @@ public interface DatabaseOperate {
      *
      * @return is success
      */
-    default Boolean smartUpdate() {
+    default Boolean blockUpdate() {
         try {
-            return update(SqlContextUtils.getCurrentSqlContext());
+            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), null);
         } finally {
-            SqlContextUtils.cleanCurrentSqlContext();
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+
+    /**
+     * data modify transaction
+     * The SqlContext to be executed in the current thread will be executed and automatically cleared
+     *
+     * @return is success
+     */
+    default CompletableFuture<Boolean> futureUpdate() {
+        try {
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            update(EmbeddedStorageContextUtils.getCurrentSqlContext(), (o, throwable) -> {
+                if (Objects.nonNull(throwable)) {
+                    future.completeExceptionally(throwable);
+                    return;
+                }
+                future.complete(o);
+            });
+            return future;
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
 

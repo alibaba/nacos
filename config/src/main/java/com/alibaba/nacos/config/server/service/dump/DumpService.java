@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
-import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -27,32 +26,24 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -61,12 +52,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -75,12 +63,16 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@Service
-public class DumpService {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class DumpService {
 
-	private final PersistService persistService;
-	private final ServerMemberManager memberManager;
-	private final ProtocolManager protocolManager;
+	protected DumpProcessor processor;
+	protected DumpAllProcessor dumpAllProcessor;
+	protected DumpAllBetaProcessor dumpAllBetaProcessor;
+	protected DumpAllTagProcessor dumpAllTagProcessor;
+
+	protected final PersistService persistService;
+	protected final ServerMemberManager memberManager;
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
@@ -88,13 +80,26 @@ public class DumpService {
 	 *
 	 * @param persistService  {@link PersistService}
 	 * @param memberManager   {@link ServerMemberManager}
-	 * @param protocolManager {@link ProtocolManager}
 	 */
-	public DumpService(PersistService persistService, ServerMemberManager memberManager,
-			ProtocolManager protocolManager) {
+	public DumpService(PersistService persistService, ServerMemberManager memberManager) {
 		this.persistService = persistService;
 		this.memberManager = memberManager;
-		this.protocolManager = protocolManager;
+		this.processor = new DumpProcessor(this);
+		this.dumpAllProcessor = new DumpAllProcessor(this);
+		this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
+		this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+		this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
+		this.dumpTaskMgr.setDefaultTaskProcessor(processor);
+
+		this.dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
+		this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
+
+        this.dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllBetaTask.TASK_ID, dumpAllBetaProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
+
+
+		DynamicDataSource.getInstance().getDataSource();
 	}
 
 	public PersistService getPersistService() {
@@ -105,92 +110,17 @@ public class DumpService {
 		return memberManager;
 	}
 
-	@PostConstruct
-	protected void init() throws Throwable {
-		DynamicDataSource.getInstance().getDataSource();
+	/**
+	 * initialize
+	 *
+	 * @throws Throwable
+	 */
+	protected abstract void init() throws Throwable;
 
-		DumpProcessor processor = new DumpProcessor(this);
-		DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
-		DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-		DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-
-		dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
-		dumpTaskMgr.setDefaultTaskProcessor(processor);
-
-		dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
-		dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
-
-        dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
-        dumpAllTaskMgr.addProcessor(DumpAllBetaTask.TASK_ID, dumpAllBetaProcessor);
-        dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
-
-		// If using embedded distributed storage, you need to wait for the
-		// underlying master to complete the selection
-		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
-
-			CPProtocol protocol = protocolManager.getCpProtocol();
-
-			LogUtil.dumpLog
-					.info("With embedded distributed storage, you need to wait for "
-							+ "the underlying master to complete before you can perform the dump operation.");
-
-			AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
-			CountDownLatch waitDumpFinish = new CountDownLatch(1);
-
-			// watch path => /nacos_config/leader/ has value ?
-			Observer observer = new Observer() {
-
-				@Override
-				public void update(Observable o, Object arg) {
-					GlobalExecutor.executeByCommon(() -> {
-						// must make sure that there is a value here to perform the correct operation that follows
-						if (Objects.isNull(arg)) {
-							return;
-						}
-						try {
-							dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-									dumpAllTagProcessor);
-						}
-						catch (Throwable ex) {
-							errorReference.set(ex);
-						}
-						finally {
-							waitDumpFinish.countDown();
-						}
-						protocol.protocolMetaData()
-								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-										this);
-					});
-				}
-			};
-
-			protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-					com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-					observer);
-
-			// We must wait for the dump task to complete the callback operation before
-			// continuing with the initialization
-			ThreadUtils.latchAwait(waitDumpFinish);
-
-			// If an exception occurs during the execution of the dump task, the exception
-			// needs to be thrown, triggering the node to start the failed process
-			final Throwable ex = errorReference.get();
-			if (Objects.nonNull(ex)) {
-				throw ex;
-			}
-
-		}
-		else {
-			dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-					dumpAllTagProcessor);
-		}
-	}
-
-	private void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
+	protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
 			DumpAllBetaProcessor dumpAllBetaProcessor,
-			DumpAllTagProcessor dumpAllTagProcessor) {
-		TimerContext.start("config dump job");
+			DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
+		TimerContext.start("CONFIG_DUMP_TO_FILE");
 		try {
 			LogUtil.defaultLog.warn("DumpService start");
 
@@ -225,7 +155,7 @@ public class DumpService {
 						}
 					}
 					catch (Throwable e) {
-						log.error("clearConfigHistory error", e);
+						log.error("clearConfigHistory error : {}", e.toString());
 					}
 				}
 			};
@@ -264,10 +194,10 @@ public class DumpService {
 			catch (Exception e) {
 				LogUtil.fatalLog
 						.error("Nacos Server did not start because dumpservice bean construction failure :\n"
-								+ e.getMessage(), e.getCause());
-				throw new RuntimeException(
+								+ e.toString());
+				throw new NacosException(NacosException.SERVER_ERROR,
 						"Nacos Server did not start because dumpservice bean construction failure :\n"
-								+ e.getMessage());
+								+ e.getMessage(), e);
 			}
 			if (!ApplicationUtils.getStandaloneMode()) {
 				Runnable heartbeat = () -> {
@@ -281,23 +211,23 @@ public class DumpService {
 					}
 				};
 
-				TimerTaskService
+				ConfigExecutor
 						.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 
 				long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
 				LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
-				TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay,
+				ConfigExecutor.scheduleWithFixedDelay(dumpAll, initialDelay,
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-				TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
-						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
+                    DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-                TimerTaskService.scheduleWithFixedDelay(dumpAllTag, initialDelay,
-                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleWithFixedDelay(dumpAllTag, initialDelay,
+                    DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
-			TimerTaskService
+			ConfigExecutor
 					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 		}
 		finally {
@@ -337,7 +267,7 @@ public class DumpService {
 				dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
 				Runnable checkMd5Task = () -> {
 					LogUtil.defaultLog.error("start checkMd5Task");
-					List<String> diffList = ConfigService.checkMd5();
+					List<String> diffList = ConfigCacheService.checkMd5();
 					for (String groupKey : diffList) {
 						String[] dg = GroupKey.parseKey(groupKey);
 						String dataId = dg[0];
@@ -345,12 +275,12 @@ public class DumpService {
 						String tenant = dg[2];
 						ConfigInfoWrapper configInfo = persistService
 								.queryConfigInfo(dataId, group, tenant);
-						ConfigService.dumpChange(dataId, group, tenant,
+						ConfigCacheService.dumpChange(dataId, group, tenant,
 								configInfo.getContent(), configInfo.getLastModified());
 					}
 					LogUtil.defaultLog.error("end checkMd5Task");
 				};
-				TimerTaskService
+				ConfigExecutor
 						.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
 			}
 		}
@@ -502,7 +432,7 @@ public class DumpService {
 						ConfigInfo cf = MergeTaskProcessor
 								.merge(dataId, group, tenant, datumList);
 						String aggrContent = cf.getContent();
-						String localContentMD5 = ConfigService
+						String localContentMD5 = ConfigCacheService
 								.getContentMd5(GroupKey.getKey(dataId, group));
 						String aggrConetentMD5 = MD5Utils
 								.md5Hex(aggrContent, Constants.ENCODE);
@@ -540,25 +470,12 @@ public class DumpService {
 		}
 	}
 
-	private boolean canExecute() {
-		try {
-			CPProtocol protocol = protocolManager.getCpProtocol();
-			// if is derby + raft mode, only leader can execute
-			if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils
-					.getStandaloneMode()) {
-				return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
-			}
-			// If it is external storage, it determines whether it is the first node of the cluster
-			return memberManager.isFirstIp();
-		}
-		catch (NoSuchRaftGroupException e) {
-			return true;
-		}
-		catch (Throwable e) {
-			// It's impossible to get to this point
-			throw new RuntimeException(e);
-		}
-	}
+	/**
+	 * Used to determine whether the aggregation task, configuration history cleanup task can be performed
+	 *
+	 * @return {@link Boolean}
+	 */
+	protected abstract boolean canExecute();
 
 	/**
 	 * 全量dump间隔

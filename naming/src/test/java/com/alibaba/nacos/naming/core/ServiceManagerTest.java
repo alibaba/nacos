@@ -17,10 +17,14 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.core.ServiceManager.ServiceChecksum;
+import com.alibaba.nacos.naming.misc.Message;
+import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.google.common.collect.Maps;
 import org.junit.Assert;
@@ -33,6 +37,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,9 +51,15 @@ public class ServiceManagerTest extends BaseTest {
     @Mock
     private ConsistencyService consistencyService;
 
+    @Mock
+    private Synchronizer synchronizer;
+
     @Before
     public void before() {
         super.before();
+        mockInjectHealthCheckProcessor();
+        mockInjectDistroMapper();
+        mockInjectSwitchDomain();
     }
 
     @Test
@@ -112,5 +123,27 @@ public class ServiceManagerTest extends BaseTest {
         int instanceId1 = Integer.parseInt(instance1.getInstanceId());
         int instanceId2 = Integer.parseInt(instance2.getInstanceId());
         Assert.assertNotEquals(instanceId1, instanceId2);
+    }
+
+    @Test
+    public void testUpdatedHealthStatus() {
+        ReflectionTestUtils.setField(serviceManager, "synchronizer", synchronizer);
+        String namespaceId = "namespaceId";
+        String serviceName = "testService";
+        String serverIp = "127.0.0.1";
+        String example = "{\"ips\":[\"127.0.0.1:8848_true\"]}";
+        Message message = new Message();
+        message.setData(example);
+        when(synchronizer.get(serverIp, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))).thenReturn(message);
+        serviceManager.updatedHealthStatus(namespaceId, serviceName, serverIp);
+    }
+
+    @Test
+    public void testSerializeServiceChecksum() {
+        ServiceChecksum checksum = new ServiceChecksum();
+        checksum.addItem("test", "1234567890");
+        String actual = JacksonUtils.toJson(checksum);
+        assertTrue(actual.contains("\"namespaceId\":\"public\""));
+        assertTrue(actual.contains("\"serviceName2Checksum\":{\"test\":\"1234567890\"}"));
     }
 }

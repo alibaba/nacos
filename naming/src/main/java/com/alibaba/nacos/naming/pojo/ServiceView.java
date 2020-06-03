@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
-
 /**
  * @author nkorange
  */
@@ -79,6 +77,13 @@ public class ServiceView {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "ServiceView{" +
+            "name='" + name + '\'' +
+            ", groupName='" + groupName + '\'' +
+            ", clusterCount=" + clusterCount +
+            ", ipCount=" + ipCount +
+            ", healthyInstanceCount=" + healthyInstanceCount +
+            ", triggerFlag='" + triggerFlag + '\'' +
+            '}';
     }
 }

@@ -86,23 +86,6 @@
         </encoder>
     </appender>
 
-    <appender name="id-generator"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/id-generator.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/id-generator.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <MaxHistory>7</MaxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
     <appender name="nacos-cluster"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/nacos-cluster.log</file>
@@ -162,11 +145,6 @@
         <appender-ref ref="protocol-distro"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.core.id-generator" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="id-generator"/>
-    </logger>
-
     <logger name="com.alibaba.nacos.core.cluster" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="nacos-cluster"/>
@@ -211,7 +189,7 @@
         <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.common.file.WatchFileCenter">
+    <logger name="com.alibaba.nacos.core.file.WatchFileCenter">
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>
