@@ -440,9 +440,10 @@ public class ServerHttpAgent implements HttpAgent {
 
     @Override
     public void shutdown() throws NacosException{
-        LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executorService);
-        LOGGER.info("do shutdown stop");
+        LOGGER.info("{} do shutdown stop", className);
     }
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

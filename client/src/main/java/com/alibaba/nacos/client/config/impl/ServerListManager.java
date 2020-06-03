@@ -18,12 +18,12 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.utils.*;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.client.utils.EnvUtil;
+import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -33,9 +33,18 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Properties;
+import java.util.Iterator;
+import java.util.Collections;
+import java.util.Random;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Serverlist Manager
@@ -271,9 +280,10 @@ public class ServerListManager implements Closeable {
 
     @Override
     public void shutdown() throws NacosException{
-        LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executorService);
-        LOGGER.info("do shutdown stop");
+        LOGGER.info("{} do shutdown stop", className);
     }
 
     class GetServerListTask implements Runnable {

@@ -94,9 +94,10 @@ public class BeatReactor implements Closeable {
 
     @Override
     public void shutdown() throws NacosException{
-        NAMING_LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executorService);
-        NAMING_LOGGER.info("do shutdown stop");
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
     class BeatTask implements Runnable {

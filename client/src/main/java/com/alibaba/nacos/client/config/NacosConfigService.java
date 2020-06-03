@@ -70,8 +70,6 @@ public class NacosConfigService implements ConfigService, LifeCycle {
     private String encode;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
-    private static final ResourceLifeCycleManager RESOURCE_MANAGER = ResourceLifeCycleManager.getInstance();
-
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -85,7 +83,7 @@ public class NacosConfigService implements ConfigService, LifeCycle {
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.fetchServerIpList();
         worker = new ClientWorker(agent, configFilterChainManager, properties);
-        RESOURCE_MANAGER.register(this);
+        ResourceLifeCycleManager.register(this);
     }
 
     private void initNamespace(Properties properties) {
@@ -290,6 +288,7 @@ public class NacosConfigService implements ConfigService, LifeCycle {
     @Override
     public void shutDown() throws NacosException{
         destroy();
+        ResourceLifeCycleManager.deregister(this);
     }
 
     @Override

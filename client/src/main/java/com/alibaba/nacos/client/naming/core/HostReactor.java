@@ -307,9 +307,10 @@ public class HostReactor implements Closeable {
 
     @Override
     public void shutdown() throws NacosException{
-        NAMING_LOGGER.info("do shutdown begin");
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdown(this.executor);
-        NAMING_LOGGER.info("do shutdown stop");
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
     public class UpdateTask implements Runnable {
