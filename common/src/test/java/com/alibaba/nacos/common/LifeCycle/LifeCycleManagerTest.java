@@ -35,29 +35,22 @@ public class LifeCycleManagerTest {
     public void setup() throws Exception{
         this.res = new Resource(0);
         ResourceLifeCycleManager.register(this.res);
-        this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 1);
+        Assert.assertEquals(0, this.res.getCounter());
+        Assert.assertEquals(1, ResourceLifeCycleManager.getRegisterResourceNum());
     }
 
     @After
     public void cleanup() throws Exception{
         ResourceLifeCycleManager.shutdown();
-        Assert.assertEquals(this.res.getCounter(), 0);
-        // here, double check shutdown called by two times whether the result is ok.
-        ResourceLifeCycleManager.shutdown();
-        Assert.assertEquals(this.res.getCounter(), 0);
-        // here, check whether the buffer data in resource manager is correct.
-        ResourceLifeCycleManager.getInstance().destroy(this.res);
-        Assert.assertEquals(this.res.getCounter(), 0);
-        Assert.assertEquals(ResourceLifeCycleManager.getRegisterResourceNum(), 0);
+        Assert.assertEquals(0, this.res.getCounter());
     }
 
     @Test
     public void testLifeCycleManager() throws Exception{
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 2);
+        Assert.assertEquals(1, this.res.getCounter());
         this.res.increament();
-        Assert.assertEquals(this.res.getCounter(), 3);
+        Assert.assertEquals(2, this.res.getCounter());
     }
 
     @Test
@@ -69,9 +62,10 @@ public class LifeCycleManagerTest {
         ResourceLifeCycleManager.deregister(temp);
         ResourceLifeCycleManager.getInstance().destroy(temp);
 
-        Assert.assertEquals(temp.getCounter(), 1);
+        Assert.assertEquals(1, temp.getCounter());
         temp.destroy();
-        Assert.assertEquals(temp.getCounter(), 0);
+        Assert.assertEquals(0, temp.getCounter());
+        Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
     }
 
     class Resource implements LifeCycle {

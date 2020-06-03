@@ -69,17 +69,17 @@ public class BeatReactor implements Closeable {
         String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
         BeatInfo existBeat = null;
         //fix #1733
-        if ((existBeat = this.dom2Beat.remove(key)) != null) {
+        if ((existBeat = dom2Beat.remove(key)) != null) {
             existBeat.setStopped(true);
         }
-        this.dom2Beat.put(key, beatInfo);
-        this.executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
-        MetricsMonitor.getDom2BeatSizeMonitor().set(this.dom2Beat.size());
+        dom2Beat.put(key, beatInfo);
+        executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
+        MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
-        BeatInfo beatInfo = this.dom2Beat.remove(buildKey(serviceName, ip, port));
+        BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
         if (beatInfo == null) {
             return;
         }
@@ -96,7 +96,7 @@ public class BeatReactor implements Closeable {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(this.executorService, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
@@ -110,12 +110,12 @@ public class BeatReactor implements Closeable {
 
         @Override
         public void run() {
-            if (this.beatInfo.isStopped()) {
+            if (beatInfo.isStopped()) {
                 return;
             }
-            long nextTime = this.beatInfo.getPeriod();
+            long nextTime = beatInfo.getPeriod();
             try {
-                JsonNode result = serverProxy.sendBeat(this.beatInfo, BeatReactor.this.lightBeatEnabled);
+                JsonNode result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
                 long interval = result.get("clientBeatInterval").asInt();
                 boolean lightBeatEnabled = false;
                 if (result.has(CommonParams.LIGHT_BEAT_ENABLED)) {
@@ -131,26 +131,26 @@ public class BeatReactor implements Closeable {
                 }
                 if (code == NamingResponseCode.RESOURCE_NOT_FOUND) {
                     Instance instance = new Instance();
-                    instance.setPort(this.beatInfo.getPort());
-                    instance.setIp(this.beatInfo.getIp());
-                    instance.setWeight(this.beatInfo.getWeight());
-                    instance.setMetadata(this.beatInfo.getMetadata());
-                    instance.setClusterName(this.beatInfo.getCluster());
-                    instance.setServiceName(this.beatInfo.getServiceName());
+                    instance.setPort(beatInfo.getPort());
+                    instance.setIp(beatInfo.getIp());
+                    instance.setWeight(beatInfo.getWeight());
+                    instance.setMetadata(beatInfo.getMetadata());
+                    instance.setClusterName(beatInfo.getCluster());
+                    instance.setServiceName(beatInfo.getServiceName());
                     instance.setInstanceId(instance.getInstanceId());
                     instance.setEphemeral(true);
                     try {
-                        serverProxy.registerService(this.beatInfo.getServiceName(),
-                            NamingUtils.getGroupName(this.beatInfo.getServiceName()), instance);
+                        serverProxy.registerService(beatInfo.getServiceName(),
+                            NamingUtils.getGroupName(beatInfo.getServiceName()), instance);
                     } catch (Exception ignore) {
                     }
                 }
             } catch (NacosException ne) {
                 NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, code: {}, msg: {}",
-                    JacksonUtils.toJson(this.beatInfo), ne.getErrCode(), ne.getErrMsg());
+                    JacksonUtils.toJson(beatInfo), ne.getErrCode(), ne.getErrMsg());
 
             }
-            executorService.schedule(new BeatTask(this.beatInfo), nextTime, TimeUnit.MILLISECONDS);
+            executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }
 }

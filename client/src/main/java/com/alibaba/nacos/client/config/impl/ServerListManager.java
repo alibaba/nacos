@@ -59,9 +59,9 @@ public class ServerListManager implements Closeable {
     private ScheduledExecutorService executorService;
 
     public ServerListManager() {
-        isFixed = false;
-        isStarted = false;
-        name = DEFAULT_NAME;
+        this.isFixed = false;
+        this.isStarted = false;
+        this.name = DEFAULT_NAME;
     }
 
     public ServerListManager(List<String> fixed) {
@@ -69,8 +69,8 @@ public class ServerListManager implements Closeable {
     }
 
     public ServerListManager(List<String> fixed, String namespace) {
-        isFixed = true;
-        isStarted = true;
+        this.isFixed = true;
+        this.isStarted = true;
         List<String> serverAddrs = new ArrayList<String>();
         for (String serverAddr : fixed) {
             String[] serverAddrArr = serverAddr.split(":");
@@ -80,21 +80,21 @@ public class ServerListManager implements Closeable {
                 serverAddrs.add(serverAddr);
             }
         }
-        serverUrls = new ArrayList<String>(serverAddrs);
+        this.serverUrls = new ArrayList<String>(serverAddrs);
         if (StringUtils.isBlank(namespace)) {
-            name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
+            this.name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
         } else {
             this.namespace = namespace;
-            name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()])) + "-"
+            this.name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()])) + "-"
                 + namespace;
         }
     }
 
     public ServerListManager(String host, int port) {
-        isFixed = false;
-        isStarted = false;
-        name = CUSTOM_NAME + "-" + host + "-" + port;
-        addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, contentPath, serverListName);
+        this.isFixed = false;
+        this.isStarted = false;
+        this.name = CUSTOM_NAME + "-" + host + "-" + port;
+        this.addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, this.contentPath, this.serverListName);
     }
 
     public ServerListManager(String endpoint) throws NacosException {
@@ -102,8 +102,8 @@ public class ServerListManager implements Closeable {
     }
 
     public ServerListManager(String endpoint, String namespace) throws NacosException {
-        isFixed = false;
-        isStarted = false;
+        this.isFixed = false;
+        this.isStarted = false;
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
@@ -113,34 +113,34 @@ public class ServerListManager implements Closeable {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
         }
         if (StringUtils.isBlank(namespace)) {
-            name = endpoint;
-            addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
-                serverListName);
+            this.name = endpoint;
+            this.addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, this.endpointPort, this.contentPath,
+                this.serverListName);
         } else {
             if (StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
             }
-            name = endpoint + "-" + namespace;
+            this.name = endpoint + "-" + namespace;
             this.namespace = namespace;
             this.tenant = namespace;
-            addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort, contentPath,
-                serverListName, namespace);
+            this.addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, this.endpointPort, this.contentPath,
+                this.serverListName, namespace);
         }
     }
 
 
 
     public ServerListManager(Properties properties) throws NacosException {
-        isStarted = false;
-        serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        this.isStarted = false;
+        this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         initExecutor();
 
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
-            isFixed = true;
+            this.isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
-            String[] serverAddrsArr = serverAddrsStr.split(",");
+            String[] serverAddrsArr = this.serverAddrsStr.split(",");
             for (String serverAddr: serverAddrsArr) {
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
@@ -153,45 +153,44 @@ public class ServerListManager implements Closeable {
                     }
                 }
             }
-            serverUrls = serverAddrs;
+            this.serverUrls = serverAddrs;
             if (StringUtils.isBlank(namespace)) {
-                name = FIXED_NAME + "-" + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
+                this.name = FIXED_NAME + "-" + getFixedNameSuffix(this.serverUrls.toArray(new String[this.serverUrls.size()]));
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
-                name = FIXED_NAME + "-" + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()])) + "-"
+                this.name = FIXED_NAME + "-" + getFixedNameSuffix(this.serverUrls.toArray(new String[this.serverUrls.size()])) + "-"
                     + namespace;
             }
         } else {
             if (StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
             }
-            isFixed = false;
+            this.isFixed = false;
             if (StringUtils.isBlank(namespace)) {
-                name = endpoint;
-                addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
-                    serverListName);
+                this.name = endpoint;
+                this.addressServerUrl = String.format("http://%s:%d/%s/%s", this.endpoint, this.endpointPort, this.contentPath,
+                    this.serverListName);
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
-                name = endpoint + "-" + namespace;
-                addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort,
-                    contentPath, serverListName, namespace);
+                this.name = this.endpoint + "-" + namespace;
+                this.addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", this.endpoint, this.endpointPort,
+                    this.contentPath, this.serverListName, namespace);
             }
         }
-
     }
 
     private void initParam(Properties properties) {
-        endpoint = initEndpoint(properties);
+        this.endpoint = initEndpoint(properties);
 
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
-            contentPath = contentPathTmp;
+            this.contentPath = contentPathTmp;
         }
         String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
         if (!StringUtils.isBlank(serverListNameTmp)) {
-            serverListName = serverListNameTmp;
+            this.serverListName = serverListNameTmp;
         }
     }
 
@@ -205,7 +204,7 @@ public class ServerListManager implements Closeable {
         });
 
         if (StringUtils.isNotBlank(endpointPortTmp)) {
-            endpointPort = Integer.parseInt(endpointPortTmp);
+            this.endpointPort = Integer.parseInt(endpointPortTmp);
         }
 
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
@@ -218,7 +217,7 @@ public class ServerListManager implements Closeable {
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
-                serverAddrsStr = "";
+                this.serverAddrsStr = "";
             }
             return endpointUrl;
         }
@@ -282,7 +281,7 @@ public class ServerListManager implements Closeable {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(this.executorService, LOGGER);
+        ThreadUtils.shutdownThreadPool(executorService, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
     }
 

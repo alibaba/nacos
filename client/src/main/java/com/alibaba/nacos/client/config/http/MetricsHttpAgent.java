@@ -43,7 +43,7 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public void fetchServerIpList() throws NacosException {
-        this.httpAgent.fetchServerIpList();
+        httpAgent.fetchServerIpList();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
         HttpResult result;
         try {
-            result = this.httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -67,7 +67,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
         HttpResult result;
         try {
-            result = this.httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -83,7 +83,7 @@ public class MetricsHttpAgent implements HttpAgent {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
         HttpResult result;
         try {
-            result = this.httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
 
             throw e;
@@ -97,27 +97,27 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public String getName() {
-        return this.httpAgent.getName();
+        return httpAgent.getName();
     }
 
     @Override
     public String getNamespace() {
-        return this.httpAgent.getNamespace();
+        return httpAgent.getNamespace();
     }
 
     @Override
     public String getTenant() {
-        return this.httpAgent.getTenant();
+        return httpAgent.getTenant();
     }
 
     @Override
     public String getEncode() {
-        return this.httpAgent.getEncode();
+        return httpAgent.getEncode();
     }
 
     @Override
     public void shutdown() throws NacosException{
-        this.httpAgent.shutdown();
+        httpAgent.shutdown();
     }
 }
 

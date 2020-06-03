@@ -87,17 +87,17 @@ public class NacosNamingService implements NamingService, LifeCycle {
 
     private void init(Properties properties) {
         ValidatorUtils.checkInitParam(properties);
-        namespace = InitUtils.initNamespaceForNaming(properties);
+        this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
 
-        eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
-        beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
+        this.eventDispatcher = new EventDispatcher();
+        this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
+        this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
+        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, this.cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
         ResourceLifeCycleManager.register(this);
     }
@@ -499,9 +499,9 @@ public class NacosNamingService implements NamingService, LifeCycle {
 
     @Override
     public void destroy() throws NacosException{
-        this.beatReactor.shutdown();
-        this.eventDispatcher.shutdown();
-        this.hostReactor.shutdown();
-        this.serverProxy.shutdown();
+        beatReactor.shutdown();
+        eventDispatcher.shutdown();
+        hostReactor.shutdown();
+        serverProxy.shutdown();
     }
 }

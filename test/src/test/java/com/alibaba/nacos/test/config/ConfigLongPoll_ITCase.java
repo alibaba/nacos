@@ -65,7 +65,7 @@ public class ConfigLongPoll_ITCase {
     public void destroy(){
         try {
             NacosFactory.destroyConfigService(configService);
-            Assert.assertEquals(ResourceLifeCycleManager.getRegisterResourceNum(), 0);
+            Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
         }catch (NacosException ex) {
         }
     }

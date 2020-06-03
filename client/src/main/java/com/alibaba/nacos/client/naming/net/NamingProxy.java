@@ -98,8 +98,7 @@ public class NamingProxy implements Closeable {
                 this.nacosDomain = serverList;
             }
         }
-
-        initRefreshTask();
+        this.initRefreshTask();
     }
 
     private void initRefreshTask() {
@@ -586,7 +585,7 @@ public class NamingProxy implements Closeable {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(this.executorService, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

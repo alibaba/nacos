@@ -46,7 +46,7 @@ public class EventDispatcher implements Closeable {
 
     public EventDispatcher() {
 
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
@@ -56,7 +56,7 @@ public class EventDispatcher implements Closeable {
             }
         });
 
-        executor.execute(new Notifier());
+        this.executor.execute(new Notifier());
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
@@ -116,7 +116,7 @@ public class EventDispatcher implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(this.executor, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 

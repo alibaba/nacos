@@ -88,7 +88,7 @@ public class ConfigAPI_ITCase {
             NacosFactory.destroyConfigService(iconfig);
             agent.shutdown();
             // Judge whether the register life cycle resource number equals to zero or not.
-            Assert.assertEquals(ResourceLifeCycleManager.getRegisterResourceNum(), 0);
+            Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
