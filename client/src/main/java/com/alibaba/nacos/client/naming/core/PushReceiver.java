@@ -73,7 +73,7 @@ public class PushReceiver implements Runnable, Closeable {
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-                this.udpSocket.receive(packet);
+                udpSocket.receive(packet);
 
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
@@ -81,7 +81,7 @@ public class PushReceiver implements Runnable, Closeable {
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
-                    this.hostReactor.processServiceJSON(pushPacket.data);
+                    hostReactor.processServiceJSON(pushPacket.data);
 
                     // send ack to server
                     ack = "{\"type\": \"push-ack\""
@@ -92,7 +92,7 @@ public class PushReceiver implements Runnable, Closeable {
                     ack = "{\"type\": \"dump-ack\""
                         + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
                         + "\", \"data\":" + "\""
-                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(this.hostReactor.getServiceInfoMap()))
+                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
                         + "\"}";
                 } else {
                     // do nothing send ack only
@@ -101,7 +101,7 @@ public class PushReceiver implements Runnable, Closeable {
                         + "\", \"data\":" + "\"\"}";
                 }
 
-                this.udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
+                udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
                     ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] error while receiving push data", e);
@@ -113,7 +113,7 @@ public class PushReceiver implements Runnable, Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(this.executorService, NAMING_LOGGER);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 

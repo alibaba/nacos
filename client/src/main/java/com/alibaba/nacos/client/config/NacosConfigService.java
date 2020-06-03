@@ -74,15 +74,15 @@ public class NacosConfigService implements ConfigService, LifeCycle {
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
-            encode = Constants.ENCODE;
+            this.encode = Constants.ENCODE;
         } else {
-            encode = encodeTmp.trim();
+            this.encode = encodeTmp.trim();
         }
         initNamespace(properties);
 
-        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.fetchServerIpList();
-        worker = new ClientWorker(agent, configFilterChainManager, properties);
+        this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+        this.agent.fetchServerIpList();
+        this.worker = new ClientWorker(this.agent, this.configFilterChainManager, properties);
         ResourceLifeCycleManager.register(this);
     }
 
@@ -293,7 +293,7 @@ public class NacosConfigService implements ConfigService, LifeCycle {
 
     @Override
     public void destroy() throws NacosException{
-        this.agent.shutdown();
-        this.worker.shutdown();
+        agent.shutdown();
+        worker.shutdown();
     }
 }
