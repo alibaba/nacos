@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -63,11 +63,11 @@ public class RestAPI_ITCase extends NamingBase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.getIntValue("serviceCount") > 0);
-        Assert.assertTrue(json.getIntValue("instanceCount") > 0);
-        Assert.assertTrue(json.getIntValue("responsibleServiceCount") > 0);
-        Assert.assertTrue(json.getIntValue("responsibleInstanceCount") > 0);
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertTrue(json.get("serviceCount").asInt() > 0);
+        Assert.assertTrue(json.get("instanceCount").asInt() > 0);
+        Assert.assertTrue(json.get("responsibleServiceCount").asInt() > 0);
+        Assert.assertTrue(json.get("responsibleInstanceCount").asInt() > 0);
     }
 
     /**
@@ -119,8 +119,8 @@ public class RestAPI_ITCase extends NamingBase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(serviceName, json.getString("name"));
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertEquals(serviceName, json.get("name").asText());
 
         namingServiceDelete(serviceName);
     }
@@ -143,8 +143,8 @@ public class RestAPI_ITCase extends NamingBase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
-        int count = json.getIntValue("count");
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        int count = json.get("count").asInt();
         Assert.assertTrue(count >= 0);
 
         response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
@@ -166,8 +166,8 @@ public class RestAPI_ITCase extends NamingBase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(count + 1, json.getIntValue("count"));
+        json = JacksonUtils.toObj(response.getBody());
+        Assert.assertEquals(count + 1, json.get("count").asInt());
 
         namingServiceDelete(serviceName);
     }
@@ -211,9 +211,9 @@ public class RestAPI_ITCase extends NamingBase {
             String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
+        JsonNode json = JacksonUtils.toObj(response.getBody());
         System.out.println(json);
-        Assert.assertEquals(0.3f, json.getFloatValue("protectThreshold"), 0.0f);
+        Assert.assertEquals(0.3f, json.get("protectThreshold").floatValue(), 0.0f);
 
         namingServiceDelete(serviceName);
     }

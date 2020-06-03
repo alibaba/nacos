@@ -15,17 +15,15 @@
  */
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
 import com.github.keran213539.commonOkHttp.UploadByteFile;
@@ -127,19 +125,19 @@ public class ConfigExportAndImportAPI_ITCase {
     public void testExportByIds(){
         String getDataUrl = "?search=accurate&dataId=&group=&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
-        JSONObject resultObj = JSON.parseObject(queryResult);
-        JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
-        JSONObject config1 = resultConfigs.getJSONObject(0);
-        JSONObject config2 = resultConfigs.getJSONObject(1);
-        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + config1.getLongValue("id")
-            + "," + config2.getLongValue("id");
+        JsonNode resultObj = JacksonUtils.toObj(queryResult);
+        JsonNode resultConfigs = resultObj.get("pageItems");
+        JsonNode config1 = resultConfigs.get(0);
+        JsonNode config2 = resultConfigs.get(1);
+        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + config1.get("id").longValue()
+            + "," + config2.get("id").longValue();
         System.out.println(exportByIdsUrl);
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
         Assert.assertEquals(2, zipItemList.size());
-        String config1Name = config1.getString("group") + "/" + config1.getString("dataId");
-        String config2Name = config2.getString("group") + "/" + config2.getString("dataId");
+        String config1Name = config1.get("group").textValue() + "/" + config1.get("dataId").textValue();
+        String config2Name = config2.get("group").textValue() + "/" + config2.get("dataId").textValue();
         for(ZipUtils.ZipItem zipItem : zipItemList){
             if(!(config1Name.equals(zipItem.getItemName()) || config2Name.equals(zipItem.getItemName()))){
                 Assert.fail();
@@ -151,18 +149,18 @@ public class ConfigExportAndImportAPI_ITCase {
     public void testExportByGroup(){
         String getDataUrl = "?search=accurate&dataId=&group=EXPORT_IMPORT_TEST_GROUP&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
-        JSONObject resultObj = JSON.parseObject(queryResult);
-        JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
+        JsonNode resultObj = JacksonUtils.toObj(queryResult);
+        JsonNode resultConfigs = resultObj.get("pageItems");
         Assert.assertEquals(2, resultConfigs.size());
-        JSONObject config1 = resultConfigs.getJSONObject(0);
-        JSONObject config2 = resultConfigs.getJSONObject(1);
+        JsonNode config1 = resultConfigs.get(0);
+        JsonNode config2 = resultConfigs.get(1);
         String exportByIdsUrl = "?export=true&tenant=&group=EXPORT_IMPORT_TEST_GROUP&appName=&ids=";
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
         Assert.assertEquals(2, zipItemList.size());
-        String config1Name = config1.getString("group") + "/" + config1.getString("dataId");
-        String config2Name = config2.getString("group") + "/" + config2.getString("dataId");
+        String config1Name = config1.get("group").textValue() + "/" + config1.get("dataId").textValue();
+        String config2Name = config2.get("group").textValue() + "/" + config2.get("dataId").textValue();
 
         for(ZipUtils.ZipItem zipItem : zipItemList){
             if(!(config1Name.equals(zipItem.getItemName())
@@ -182,16 +180,16 @@ public class ConfigExportAndImportAPI_ITCase {
     public void testExportByGroupAndApp(){
         String getDataUrl = "?search=accurate&dataId=&group=EXPORT_IMPORT_TEST_GROUP&appName=testApp1&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
-        JSONObject resultObj = JSON.parseObject(queryResult);
-        JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
+        JsonNode resultObj = JacksonUtils.toObj(queryResult);
+        JsonNode resultConfigs = resultObj.get("pageItems");
         Assert.assertEquals(1, resultConfigs.size());
-        JSONObject config1 = resultConfigs.getJSONObject(0);
+        JsonNode config1 = resultConfigs.get(0);
         String exportByIdsUrl = "?export=true&tenant=&group=EXPORT_IMPORT_TEST_GROUP&appName=testApp1&ids=";
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
         Assert.assertEquals(1, zipItemList.size());
-        String config1Name = config1.getString("group") + "/" + config1.getString("dataId");
+        String config1Name = config1.get("group").textValue() + "/" + config1.get("dataId").textValue();
         for(ZipUtils.ZipItem zipItem : zipItemList){
             if(!config1Name.equals(zipItem.getItemName())){
                 Assert.fail();
@@ -249,15 +247,15 @@ public class ConfigExportAndImportAPI_ITCase {
         httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, Collections.singletonList(uploadByteFile), null);
         String getDataUrl = "?search=accurate&dataId=&group=TEST_IMPORT&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
-        JSONObject resultObj = JSON.parseObject(queryResult);
-        JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
+        JsonNode resultObj = JacksonUtils.toObj(queryResult);
+        JsonNode resultConfigs = resultObj.get("pageItems");
         Assert.assertEquals(3, resultConfigs.size());
         for(int i = 0; i < resultConfigs.size(); i++){
-            JSONObject config = resultConfigs.getJSONObject(i);
-            if(!"TEST_IMPORT".equals(config.getString("group"))){
+            JsonNode config = resultConfigs.get(i);
+            if(!"TEST_IMPORT".equals(config.get("group").textValue())){
                 Assert.fail();
             }
-            switch (config.getString("dataId")){
+            switch (config.get("dataId").textValue()){
                 case "test1.yml":
                 case "test2.txt":
                 case "test3.properties":
