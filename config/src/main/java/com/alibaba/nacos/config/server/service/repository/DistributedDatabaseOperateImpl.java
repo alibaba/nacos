@@ -219,7 +219,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -247,7 +247,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -276,7 +276,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -305,7 +305,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -334,7 +334,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -363,7 +363,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			LogUtil.fatalLog
 					.error("An exception occurred during the query operation : {}",
 							e.toString());
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
@@ -433,12 +433,12 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		catch (TimeoutException e) {
 			LogUtil.fatalLog
 					.error("An timeout exception occurred during the update operation");
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 		catch (Throwable e) {
 			LogUtil.fatalLog
 					.error("An exception occurred during the update operation : {}", e);
-			throw new NacosRuntimeException(NacosException.SERVER_ERROR, ExceptionUtil.getCause(e).toString());
+			throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
 		}
 	}
 
