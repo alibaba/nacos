@@ -16,6 +16,8 @@
 package com.alibaba.nacos.api.selector;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 /**
  * Abstract selector that only contains a type
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author nkorange
  * @since 0.7.0
  */
+@JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
 public abstract class AbstractSelector {
 
     /**

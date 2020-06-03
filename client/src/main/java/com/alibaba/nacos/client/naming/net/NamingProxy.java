@@ -386,7 +386,7 @@ public class NamingProxy implements Closeable {
         JsonNode json = JacksonUtils.toObj(result);
         ListView<String> listView = new ListView<>();
         listView.setCount(json.get("count").asInt());
-        listView.setData(JacksonUtils.toObj(json.get("doms").asText(), new TypeReference<List<String>>() {}));
+        listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {}));
 
         return listView;
     }
@@ -586,7 +586,7 @@ public class NamingProxy implements Closeable {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdown(this.executorService);
+        ThreadUtils.shutdownThreadPool(this.executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

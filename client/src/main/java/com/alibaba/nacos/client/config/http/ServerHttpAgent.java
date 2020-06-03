@@ -24,11 +24,11 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -45,7 +45,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Callable;
 
 /**
  * Server Agent
@@ -373,8 +377,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = JSONUtils.deserializeObject(stsResponse,
-            new TypeReference<STSCredential>() {
+        STSCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<STSCredential>() {
             });
         this.sTSCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", this.sTSCredential.getCode(),
@@ -442,7 +445,7 @@ public class ServerHttpAgent implements HttpAgent {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdown(this.executorService);
+        ThreadUtils.shutdownThreadPool(this.executorService, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
     }
 

@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,11 +67,11 @@ public class NotifyCenter {
 	static {
 		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 		// this value needs to be increased appropriately. default value is 16384
-		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+		String ringBufferSizeProperty = "nacos.core.notify.ring-buffer-size";
 		RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
 
 		// The size of the public publisher's message staging queue buffer
-		String shareBufferSizeProperty = "com.alibaba.nacos.core.notify.shareBufferSize";
+		String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
 		SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
 
 		ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
@@ -208,7 +206,12 @@ public class NotifyCenter {
 	 * @param event
 	 */
 	public static boolean publishEvent(final Event event) {
-		return publishEvent(event.getClass(), event);
+		try {
+			return publishEvent(event.getClass(), event);
+		} catch (Throwable ex) {
+			LOGGER.error("There was an exception to the message publishing : {}", ex);
+			return false;
+		}
 	}
 
 	/**

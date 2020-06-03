@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -48,7 +47,6 @@ public class ServiceTest extends BaseTest {
         mockInjectHealthCheckProcessor();
         mockInjectDistroMapper();
         mockInjectSwitchDomain();
-        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
     }
 
     @Test
@@ -73,7 +71,8 @@ public class ServiceTest extends BaseTest {
     @Test
     public void testSerialize() throws Exception {
         String actual = new Service("test-service").toJSON();
-        assertTrue(actual.contains("\"checksum\":\"cb129dc536a387e791ee6f63251c816b\""));
+        System.out.println(actual);
+        assertTrue(actual.contains("\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\""));
         assertTrue(actual.contains("\"clusterMap\":{}"));
         assertTrue(actual.contains("\"empty\":true"));
         assertTrue(actual.contains("\"enabled\":true"));
@@ -93,9 +92,9 @@ public class ServiceTest extends BaseTest {
 
     @Test
     public void testDeserialize() throws Exception {
-        String example = "{\"checksum\":\"cb129dc536a387e791ee6f63251c816b\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
+        String example = "{\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
         Service actual = JacksonUtils.toObj(example, Service.class);
-        assertEquals("cb129dc536a387e791ee6f63251c816b", actual.getChecksum());
+        assertEquals("394c845e1160bb880e7f26fb2149ed6d", actual.getChecksum());
         assertEquals("test-service", actual.getName());
         assertTrue(actual.getClusterMap().isEmpty());
         assertTrue(actual.isEmpty());
@@ -120,5 +119,11 @@ public class ServiceTest extends BaseTest {
         assertTrue(actual.contains("\"owners\":[]"));
         assertTrue(actual.contains("\"protectThreshold\":0.0"));
         assertTrue(actual.contains("\"clusters\":[]"));
+    }
+
+    @Test
+    public void test() {
+        String a = "{\"appName\":\"\",\"checksum\":\"d9ce515b2d3f26a06cd7ba43a4cba1a7\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"groupName\":\"\",\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":1590401570517,\"metadata\":{},\"name\":\"DEFAULT_GROUP@@nacos.test\",\"namespaceId\":\"public\",\"owners\":[],\"protectThreshold\":0.5,\"pushService\":{\"failedPushCount\":0,\"totalPush\":0},\"resetWeight\":false,\"selector\":{\"type\":\"none\"},\"serviceString\":\"{\\\"invalidIPCount\\\":0,\\\"name\\\":\\\"DEFAULT_GROUP@@nacos.test\\\",\\\"ipCount\\\":0,\\\"owners\\\":[],\\\"protectThreshold\\\":0.5,\\\"clusters\\\":[],\\\"token\\\":null}\",\"token\":\"\"}";
+//        JacksonUtils.toObj(a, Service.class);
     }
 }

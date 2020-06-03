@@ -1,5 +1,6 @@
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.config.server.model.User;
 import org.junit.Assert;

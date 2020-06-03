@@ -47,7 +47,7 @@ public class NotifyCenter_ITCase {
 	}
 
 	static {
-		System.setProperty("com.alibaba.nacos.core.notify.shareBufferSize", "8");
+		System.setProperty("nacos.core.notify.share-buffer-size", "8");
 	}
 
 	@Test

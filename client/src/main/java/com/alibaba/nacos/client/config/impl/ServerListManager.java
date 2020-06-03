@@ -282,7 +282,7 @@ public class ServerListManager implements Closeable {
     public void shutdown() throws NacosException{
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdown(this.executorService);
+        ThreadUtils.shutdownThreadPool(this.executorService, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
     }
 

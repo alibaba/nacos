@@ -15,9 +15,6 @@
  */
 package com.alibaba.nacos.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
-
-
 /**
  * @author: universefeeler
  * @Date: 2019/05/19 15:51
@@ -89,6 +86,13 @@ public class ClusterStateView{
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "ClusterStateView{" +
+            "nodeIp='" + nodeIp + '\'' +
+            ", nodeState='" + nodeState + '\'' +
+            ", clusterTerm=" + clusterTerm +
+            ", leaderDueMs=" + leaderDueMs +
+            ", voteFor='" + voteFor + '\'' +
+            ", heartbeatDueMs=" + heartbeatDueMs +
+            '}';
     }
 }

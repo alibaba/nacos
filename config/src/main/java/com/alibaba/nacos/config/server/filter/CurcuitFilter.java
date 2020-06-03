@@ -22,7 +22,9 @@ import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.service.repository.DerbyLoadEvent;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -115,7 +117,7 @@ public class CurcuitFilter implements Filter {
 
 	private void listenerSelfInCluster() {
 		protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-				com.alibaba.nacos.consistency.cp.Constants.RAFT_GROUP_MEMBER,
+				MetadataKey.RAFT_GROUP_MEMBER,
 				new Observer() {
 					@Override
 					public void update(Observable o, Object arg) {

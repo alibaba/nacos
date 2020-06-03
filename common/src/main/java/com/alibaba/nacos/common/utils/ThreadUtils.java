@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -28,8 +26,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadUtils.class);
 
     public static void objectWait(Object object) {
         try {
@@ -45,6 +41,11 @@ public final class ThreadUtils {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    public static void countDown(CountDownLatch latch) {
+        Objects.requireNonNull(latch, "latch");
+        latch.countDown();
     }
 
     public static void latchAwait(CountDownLatch latch) {
@@ -78,7 +79,11 @@ public final class ThreadUtils {
         return workerCount;
     }
 
-    public static void shutdown(ExecutorService executor) throws NacosException {
+    public static void shutdownThreadPool(ExecutorService executor) {
+        shutdownThreadPool(executor, null);
+    }
+
+    public static void shutdownThreadPool(ExecutorService executor, Logger logger) {
         executor.shutdown();
         int retry = 3;
         while (retry > 0) {
@@ -91,11 +96,12 @@ public final class ThreadUtils {
                 executor.shutdownNow();
                 Thread.interrupted();
             } catch (Throwable ex) {
-                LOGGER.error("shutdown the executor has error : {}", ex);
-                throw new NacosException(NacosException.RESOURCE_DESTROY_FAILED, ex);
+                if (logger != null) {
+                    logger.error("ThreadPoolManager shutdown executor has error : {}", ex);
+                }
             }
-            executor.shutdownNow();
         }
+        executor.shutdownNow();
     }
 
     private final static int THREAD_MULTIPLER = 2;
