@@ -131,7 +131,7 @@ public abstract class DumpService {
 					.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
 
             Runnable dumpAllTag = () -> dumpAllTaskMgr
-                .addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+                    .addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
 
 			Runnable clearConfigHistory = () -> {
 				log.warn("clearConfigHistory start");
@@ -221,10 +221,10 @@ public abstract class DumpService {
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
 				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
-                    DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
                 ConfigExecutor.scheduleWithFixedDelay(dumpAllTag, initialDelay,
-                    DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
 			ConfigExecutor
