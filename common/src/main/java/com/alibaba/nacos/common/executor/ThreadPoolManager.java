@@ -17,6 +17,7 @@ package com.alibaba.nacos.common.executor;
 
 
 import com.alibaba.nacos.common.utils.ShutdownUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public final class ThreadPoolManager {
     private ThreadPoolManager() {}
 
     private void init() {
-        resourcesManager = new ConcurrentHashMap<>(8);
+        resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
     }
 
     /**
@@ -89,7 +90,7 @@ public final class ThreadPoolManager {
         synchronized (monitor) {
             Map<String, Set<ExecutorService>> map = resourcesManager.get(namespace);
             if (map == null) {
-            	map = new HashMap<>(8);
+            	map = new HashMap<String, Set<ExecutorService>>(8);
             	map.put(group, new HashSet<ExecutorService>());
 				map.get(group).add(executor);
 				resourcesManager.put(namespace, map);
@@ -136,7 +137,12 @@ public final class ThreadPoolManager {
         }
     }
 
-    public void destroy(String namespace) {
+	/**
+	 * Destroys all thread pool resources under this namespace
+	 *
+	 * @param namespace namespace
+	 */
+	public void destroy(final String namespace) {
 	    final Object monitor = lockers.get(namespace);
 	    if (monitor == null) {
 	        return;
@@ -148,7 +154,7 @@ public final class ThreadPoolManager {
 			}
 	        for (Map.Entry<String, Set<ExecutorService>> entry : subResource.entrySet()) {
 	            for (ExecutorService executor : entry.getValue()) {
-					shutdownThreadPool(executor);
+					ThreadUtils.shutdownThreadPool(executor);
 				}
             }
             resourcesManager.get(namespace).clear();
@@ -156,23 +162,28 @@ public final class ThreadPoolManager {
         }
     }
 
-    private void shutdownThreadPool(ExecutorService executor) {
-		executor.shutdown();
-		int retry = 3;
-		while (retry > 0) {
-			retry --;
-			try {
-				if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
-					return;
-				}
-			} catch (InterruptedException e) {
-				executor.shutdownNow();
-				Thread.interrupted();
-			} catch (Throwable ex) {
-				LOGGER.error("ThreadPoolManager shutdown executor has error : {}", ex);
-			}
+	/**
+	 * This namespace destroys all thread pool resources under the grouping
+	 *
+	 * @param namespace namespace
+	 * @param group group
+	 */
+	public void destroy(final String namespace, final String group) {
+		final Object monitor = lockers.get(namespace);
+		if (monitor == null) {
+			return;
 		}
-		executor.shutdownNow();
+		synchronized (monitor) {
+			Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
+			if (subResource == null) {
+				return;
+			}
+			Set<ExecutorService> waitDestroy = subResource.get(group);
+			for (ExecutorService executor : waitDestroy) {
+				ThreadUtils.shutdownThreadPool(executor);
+			}
+			resourcesManager.get(namespace).remove(group);
+		}
 	}
 
     public static void shutdown() {

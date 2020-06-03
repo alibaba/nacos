@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -27,6 +27,8 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -90,9 +92,10 @@ public class DistroController {
     }
 
     @GetMapping("/datum")
-    public ResponseEntity get(@RequestBody JSONObject body) throws Exception {
+    public ResponseEntity get(@RequestBody String body) throws Exception {
 
-        String keys = body.getString("keys");
+        JsonNode bodyNode = JacksonUtils.toObj(body);
+        String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {

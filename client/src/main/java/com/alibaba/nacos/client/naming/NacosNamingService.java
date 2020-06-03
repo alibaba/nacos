@@ -88,6 +88,7 @@ public class NacosNamingService implements NamingService, LifeCycle {
     private void init(Properties properties) {
         ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
+        InitUtils.initSerialization();
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();

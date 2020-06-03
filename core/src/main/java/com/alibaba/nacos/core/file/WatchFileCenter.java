@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.file;
+package com.alibaba.nacos.core.file;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;

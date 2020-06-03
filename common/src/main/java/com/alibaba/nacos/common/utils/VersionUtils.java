@@ -28,7 +28,7 @@ public class VersionUtils {
     /**
      * 获取当前version
      */
-    public static final String VERSION_DEFAULT = "${project.version}";
+    public static final String VERSION_PLACEHOLDER = "${project.version}";
 
 
     static {
@@ -39,7 +39,7 @@ public class VersionUtils {
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
-            if (val != null && !VERSION_DEFAULT.equals(val)) {
+            if (val != null && !VERSION_PLACEHOLDER.equals(val)) {
                 VERSION = val;
             }
         } catch (Exception e) {

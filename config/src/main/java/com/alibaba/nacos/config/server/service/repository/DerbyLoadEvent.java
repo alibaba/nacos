@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.consistency.cp;
+package com.alibaba.nacos.config.server.service.repository;
+
+import com.alibaba.nacos.core.notify.SlowEvent;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Constants {
+public class DerbyLoadEvent implements SlowEvent {
 
-    public static final String LEADER_META_DATA = "leader";
+	public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
 
-    public static final String TERM_META_DATA = "term";
-
-    public static final String RAFT_GROUP_MEMBER = "raftGroupMember";
+	private static final long serialVersionUID = 875401667921565121L;
 
 }

@@ -45,22 +45,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @DependsOn("ProtocolManager")
 public class DataSyncer {
 
-    @Autowired
-    private DataStore dataStore;
+    private final DataStore dataStore;
+    private final GlobalConfig partitionConfig;
+    private final Serializer serializer;
+    private final DistroMapper distroMapper;
+    private final ServerMemberManager memberManager;
 
-    @Autowired
-    private GlobalConfig partitionConfig;
+    private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
 
-    @Autowired
-    private Serializer serializer;
-
-    @Autowired
-    private DistroMapper distroMapper;
-
-    @Autowired
-    private ServerMemberManager memberManager;
-
-    private Map<String, String> taskMap = new ConcurrentHashMap<>();
+    public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig,
+            Serializer serializer, DistroMapper distroMapper,
+            ServerMemberManager memberManager) {
+        this.dataStore = dataStore;
+        this.partitionConfig = partitionConfig;
+        this.serializer = serializer;
+        this.distroMapper = distroMapper;
+        this.memberManager = memberManager;
+    }
 
     @PostConstruct
     public void init() {

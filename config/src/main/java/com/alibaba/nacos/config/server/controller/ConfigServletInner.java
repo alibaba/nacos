@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -60,7 +60,7 @@ public class ConfigServletInner {
 
     private static final int TRY_GET_LOCK_TIMES = 9;
 
-    private static final int START_LONGPOLLING_VERSION_NUM = 204;
+    private static final int START_LONG_POLLING_VERSION_NUM = 204;
 
     /**
      * 轮询接口
@@ -91,7 +91,7 @@ public class ConfigServletInner {
         /**
          * 2.0.4版本以前, 返回值放入header中
          */
-        if (versionNum < START_LONGPOLLING_VERSION_NUM) {
+        if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
         } else {
@@ -125,7 +125,7 @@ public class ConfigServletInner {
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
-                CacheItem cacheItem = ConfigService.getContentCache(groupKey);
+                CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
                 if (cacheItem != null) {
                     if (cacheItem.isBeta()) {
                         if (cacheItem.getIps4Beta().contains(clientIp)) {
@@ -288,7 +288,7 @@ public class ConfigServletInner {
     }
 
     private static void releaseConfigReadLock(String groupKey) {
-        ConfigService.releaseReadLock(groupKey);
+        ConfigCacheService.releaseReadLock(groupKey);
     }
 
     private static int tryConfigReadLock(String groupKey) {
@@ -300,7 +300,7 @@ public class ConfigServletInner {
          *  尝试加锁，最多10次
          */
         for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
-            lockResult = ConfigService.tryReadLock(groupKey);
+            lockResult = ConfigCacheService.tryReadLock(groupKey);
             /**
              *  数据不存在
              */

@@ -30,7 +30,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-consistency ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>http://nacos.io</url>
     <build>
         <extensions>
             <extension>

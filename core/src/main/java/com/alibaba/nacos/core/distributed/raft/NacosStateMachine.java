@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
@@ -32,11 +32,13 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import com.alipay.sofa.jraft.entity.LocalFileMetaOutter;
@@ -77,7 +79,6 @@ class NacosStateMachine extends StateMachineAdapter {
 		this.server = server;
 		this.processor = processor;
 		this.groupId = processor.group();
-
 		adapterToJRaftSnapshot(processor.loadSnapshotOperate());
 	}
 
@@ -216,6 +217,13 @@ class NacosStateMachine extends StateMachineAdapter {
 	}
 
 	@Override
+	public void onConfigurationCommitted(Configuration conf) {
+		NotifyCenter.publishEvent(
+				RaftEvent.builder().groupId(groupId)
+						.raftClusterInfo(JRaftUtils.toStrings(conf.getPeers())).build());
+	}
+
+	@Override
 	public void onError(RaftException e) {
 		super.onError(e);
 		processor.onError(e);
@@ -305,7 +313,7 @@ class NacosStateMachine extends StateMachineAdapter {
 							fileMeta = new LocalFileMeta();
 						}
 						else {
-							fileMeta = JSON.parseObject(bytes, LocalFileMeta.class);
+							fileMeta = JacksonUtils.toObj(bytes, LocalFileMeta.class);
 						}
 
 						metaMap.put(fileName, fileMeta);

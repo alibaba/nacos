@@ -511,8 +511,8 @@ public class ClientWorker implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdown(this.executorService);
-        ThreadUtils.shutdown(this.executor);
+        ThreadUtils.shutdownThreadPool(this.executorService, LOGGER);
+        ThreadUtils.shutdownThreadPool(this.executor, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
     }
 

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class SqlContextUtils_ITCase {
+public class EmbeddedStorageContextUtils_ITCase {
 
 	@Test
 	public void test_multi_thread_sql_contexts() throws Exception {
@@ -40,10 +40,10 @@ public class SqlContextUtils_ITCase {
 			final int j = i;
 			service.submit(() -> {
 				try {
-					SqlContextUtils.addSqlContext("test_" + j, j);
-					SqlContextUtils.addSqlContext("test_" + j * 10, j);
+					EmbeddedStorageContextUtils.addSqlContext("test_" + j, j);
+					EmbeddedStorageContextUtils.addSqlContext("test_" + j * 10, j);
 
-					List<ModifyRequest> list = SqlContextUtils.getCurrentSqlContext();
+					List<ModifyRequest> list = EmbeddedStorageContextUtils.getCurrentSqlContext();
 					System.out.println(list);
 					Assert.assertEquals("test_" + j, list.get(0).getSql());
 					Assert.assertEquals("test_" + j * 10, list.get(0).getSql());

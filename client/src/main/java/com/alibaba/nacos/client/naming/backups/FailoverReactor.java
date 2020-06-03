@@ -108,7 +108,7 @@ public class FailoverReactor implements Closeable {
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdown(this.executorService);
+        ThreadUtils.shutdownThreadPool(this.executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 

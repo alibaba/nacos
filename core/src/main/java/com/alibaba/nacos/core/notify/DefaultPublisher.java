@@ -158,6 +158,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
 	void receiveEvent(Event event) {
 		final long currentEventSequence = event.sequence();
+		final String sourceName = event.getClass().getName();
 
 		// Notification single event listener
 		for (Subscribe subscribe : subscribes) {
@@ -169,6 +170,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 						event.getClass());
 				continue;
 			}
+
+			final String targetName = subscribe.subscribeType().getName();
+			if (!Objects.equals(sourceName, targetName)) {
+				continue;
+			}
+
 			notifySubscriber(subscribe, event);
 		}
 
@@ -187,13 +194,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
 	@Override
 	public void notifySubscriber(final Subscribe subscribe, final Event event) {
-
-		final String sourceName = event.getClass().getName();
-		final String targetName = subscribe.subscribeType().getName();
-
-		if (!Objects.equals(sourceName, targetName)) {
-			return;
-		}
 
 		LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
 				subscribe);
