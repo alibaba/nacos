@@ -187,6 +187,23 @@
         </encoder>
     </appender>
 
+    <appender name="naming-distro"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-distro.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-distro.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <MaxHistory>7</MaxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="naming-server"/>
@@ -194,6 +211,10 @@
     <logger name="com.alibaba.nacos.naming.raft" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="naming-raft"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.distro" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-distro"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.event" additivity="false">
         <level value="INFO"/>

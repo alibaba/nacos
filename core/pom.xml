@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-core ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>http://nacos.io</url>
     <build>
         <plugins>
             <plugin>
@@ -166,5 +166,21 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
+
+        <!--   micrometer  start   -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-influx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-elastic</artifactId>
+        </dependency>
+        <!--   micrometer end    -->
+
     </dependencies>
 </project>

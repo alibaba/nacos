@@ -93,7 +93,6 @@ public abstract class AbstractProcessor {
 					asyncCtx.sendResponse(Response.newBuilder().setErrMsg(ex.toString())
 							.setSuccess(false).build());
 				} else {
-
 					ByteString bytes = Objects.nonNull(data) ? ByteString.copyFrom(serializer.serialize(data)) : ByteString.EMPTY;
 
 					Response response = Response.newBuilder()

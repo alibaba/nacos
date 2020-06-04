@@ -19,7 +19,9 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -41,7 +43,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.*;
  *
  * @author Nacos
  */
-public class ConfigService {
+public class ConfigCacheService {
 
     @Autowired
     private static PersistService persistService;
@@ -72,11 +74,11 @@ public class ConfigService {
         try {
             final String md5 =  MD5Utils.md5Hex(content, Constants.ENCODE);
 
-            if (md5.equals(ConfigService.getContentMd5(groupKey))) {
+            if (md5.equals(ConfigCacheService.getContentMd5(groupKey))) {
                 dumpLog.warn(
                     "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                    groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
@@ -117,11 +119,11 @@ public class ConfigService {
 
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            if (md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
+            if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey))) {
                 dumpLog.warn(
                     "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                    groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
@@ -156,11 +158,11 @@ public class ConfigService {
 
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            if (md5.equals(ConfigService.getContentTagMd5(groupKey, tag))) {
+            if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag))) {
                 dumpLog.warn(
                     "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
-                    groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                    groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
@@ -199,7 +201,7 @@ public class ConfigService {
                     dumpLog.warn(
                         "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                             + "lastModifiedNew={}",
-                        groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+                        groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey), lastModifiedTs);
                 } else {
                     DiskUtil.saveToDisk(dataId, group, tenant, content);
                 }
@@ -517,12 +519,12 @@ public class ConfigService {
     }
 
     static public boolean isUptodate(String groupKey, String md5) {
-        String serverMd5 = ConfigService.getContentMd5(groupKey);
+        String serverMd5 = ConfigCacheService.getContentMd5(groupKey);
         return StringUtils.equals(md5, serverMd5);
     }
 
     static public boolean isUptodate(String groupKey, String md5, String ip, String tag) {
-        String serverMd5 = ConfigService.getContentMd5(groupKey, ip, tag);
+        String serverMd5 = ConfigCacheService.getContentMd5(groupKey, ip, tag);
         return StringUtils.equals(md5, serverMd5);
     }
 
@@ -584,7 +586,7 @@ public class ConfigService {
     private final static String NO_SPACE_EN = "No space left on device";
     private final static String DISK_QUATA_CN = "超出磁盘限额";
     private final static String DISK_QUATA_EN = "Disk quota exceeded";
-    static final Logger log = LoggerFactory.getLogger(ConfigService.class);
+    static final Logger log = LoggerFactory.getLogger(ConfigCacheService.class);
     /**
      * groupKey -> cacheItem
      */

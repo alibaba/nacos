@@ -17,12 +17,13 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.Constants;
+import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.consistency.entity.Log;
@@ -34,17 +35,13 @@ import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupExceptio
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
-import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -102,9 +99,7 @@ public class JRaftProtocol
 	private RaftConfig raftConfig;
 	private JRaftServer raftServer;
 	private JRaftMaintainService jRaftMaintainService;
-	private Node raftNode;
 	private ServerMemberManager memberManager;
-	private String selfAddress = InetUtils.getSelfIp();
 	private final Serializer serializer = SerializeFactory.getDefault();
 
 	public JRaftProtocol(ServerMemberManager memberManager) throws Exception {
@@ -117,7 +112,6 @@ public class JRaftProtocol
 	public void init(RaftConfig config) {
 		if (initialized.compareAndSet(false, true)) {
 			this.raftConfig = config;
-			this.selfAddress = memberManager.getSelf().getAddress();
 			NotifyCenter.registerToSharePublisher(RaftEvent.class);
 			this.raftServer.init(this.raftConfig);
 			this.raftServer.start();
@@ -137,15 +131,10 @@ public class JRaftProtocol
 
 					// Leader information needs to be selectively updated. If it is valid data,
 					// the information in the protocol metadata is updated.
-					if (StringUtils.isNotBlank(leader)) {
-						properties.put(Constants.LEADER_META_DATA, leader);
-					}
-					if (Objects.nonNull(term)) {
-						properties.put(Constants.TERM_META_DATA, term);
-					}
-					if (CollectionUtils.isNotEmpty(raftClusterInfo)) {
-						properties.put(Constants.RAFT_GROUP_MEMBER, raftClusterInfo);
-					}
+					MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
+					MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
+					MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+
 					value.put(groupId, properties);
 					metaData.load(value);
 
@@ -169,6 +158,12 @@ public class JRaftProtocol
 
 	@Override
 	public Response getData(GetRequest request) throws Exception {
+		CompletableFuture<Response> future = aGetData(request);
+		return future.get(5_000L, TimeUnit.MILLISECONDS);
+	}
+
+	@Override
+	public CompletableFuture<Response> aGetData(GetRequest request) {
 		return raftServer.get(request);
 	}
 
@@ -181,14 +176,12 @@ public class JRaftProtocol
 
 	@Override
 	public CompletableFuture<Response> submitAsync(Log data) {
-		CompletableFuture<Response> future = new CompletableFuture<>();
-		raftServer.commit(data.getGroup(), data, future);
-		return future;
+		return raftServer.commit(data.getGroup(), data, new CompletableFuture<>());
 	}
 
 	@Override
 	public void memberChange(Set<String> addresses) {
-		for (int i = 0; i < 5; i ++) {
+		for (int i = 0; i < 5; i++) {
 			if (this.raftServer.peerChange(jRaftMaintainService, addresses)) {
 				return;
 			}
@@ -211,7 +204,7 @@ public class JRaftProtocol
 
 	private void injectProtocolMetaData(ProtocolMetaData metaData) {
 		Member member = memberManager.getSelf();
-		member.setExtendVal("raft_meta_data", metaData);
+		member.setExtendVal("raftMetaData", metaData);
 		memberManager.update(member);
 	}
 
