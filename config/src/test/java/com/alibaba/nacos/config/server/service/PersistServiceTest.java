@@ -137,7 +137,7 @@ public class PersistServiceTest {
 
     @Test
     public void addConfiTagsRelationAtomicTest() {
-        persistService.addConfiTagsRelationAtomic(1l, "tagA,tagB",
+        persistService.addConfigTagsRelationAtomic(1l, "tagA,tagB",
             "userService", "DEFAULT_GROUP", "1");
     }
 

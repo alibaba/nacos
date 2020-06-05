@@ -7,12 +7,12 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
-import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.SameConfigPolicy;
+import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.modules.entity.*;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.modules.entity.TenantInfo;
 import com.alibaba.nacos.config.server.modules.repository.*;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -24,6 +24,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
@@ -32,7 +33,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.sql.Timestamp;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
@@ -60,6 +66,9 @@ public class PersistServiceTmp {
     private TenantInfoRepository tenantInfoRepository;
 
     @Autowired
+    private ConfigInfoAggrRepository configInfoAggrRepository;
+
+    @Autowired
     private TransactionTemplate tjt;
 
 
@@ -68,6 +77,8 @@ public class PersistServiceTmp {
      * @Description: constant variables
      */
     public static final String SPOT = ".";
+
+    private static String PATTERN_STR = "*";
 
 
     /**
@@ -117,6 +128,11 @@ public class PersistServiceTmp {
                 }
             }
         });
+    }
+
+    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+                               Map<String, Object> configAdvanceInfo) {
+        insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
     }
 
 
@@ -731,7 +747,7 @@ public class PersistServiceTmp {
                 try {
                     long configId = addConfigInfoAtomic(srcIp, srcUser, configInfo, time, configAdvanceInfo);
                     String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-                    addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroupId(),
+                    addConfigTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroupId(),
                         configInfo.getTenantId());
                     insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
                     if (notify) {
@@ -795,8 +811,8 @@ public class PersistServiceTmp {
      * @param group      group
      * @param tenant     tenant
      */
-    public void addConfiTagsRelationAtomic(long configId, String configTags, String dataId, String group,
-                                           String tenant) {
+    public void addConfigTagsRelationAtomic(long configId, String configTags, String dataId, String group,
+                                            String tenant) {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             for (String tag : tagArr) {
@@ -847,7 +863,7 @@ public class PersistServiceTmp {
                     if (configTags != null) {
                         // 删除所有tag，然后再重新创建
                         removeTagByIdAtomic(oldConfigInfo.getId());
-                        addConfiTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
+                        addConfigTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                             configInfo.getGroupId(), configInfo.getTenantId());
                     }
                     insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
@@ -1010,12 +1026,284 @@ public class PersistServiceTmp {
             .orElseThrow(() -> new RuntimeException("findById hisConfigInfo data null nid=" + nid));
     }
 
-
-    public List<String> getTenantIdList(int page, int pageSize) {
-//        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
-//        int from = (page - 1) * pageSize;
-//        return jt.queryForList(sql, String.class, from, pageSize);
-        return null;
+    /**
+     * insert tenant info
+     *
+     * @param kp         kp
+     * @param tenantId   tenant Id
+     * @param tenantName tenant name
+     * @param tenantDesc tenant description
+     * @param time       time
+     */
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+                                       String createResoure, final long time) {
+        TenantInfo tenantInfo = new TenantInfo();
+        tenantInfo.setKp(kp);
+        tenantInfo.setTenantId(tenantId);
+        tenantInfo.setTenantName(tenantName);
+        tenantInfo.setTenantDesc(tenantDesc);
+        tenantInfo.setCreateSource(createResoure);
+        tenantInfo.setGmtCreate(time);
+        tenantInfo.setGmtModified(time);
+        tenantInfoRepository.save(tenantInfo);
     }
+
+    /**
+     * Update tenantInfo showname
+     *
+     * @param kp         kp
+     * @param tenantId   tenant Id
+     * @param tenantName tenant name
+     * @param tenantDesc tenant description
+     */
+    public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+        QTenantInfo qTenantInfo = QTenantInfo.tenantInfo;
+        tenantInfoRepository.findOne(qTenantInfo.kp.eq(kp)
+            .and(qTenantInfo.tenantId.eq(tenantId)))
+            .ifPresent(s -> {
+                s.setTenantName(tenantName);
+                s.setTenantDesc(tenantDesc);
+                tenantInfoRepository.save(s);
+            });
+    }
+
+
+    public List<TenantInfo> findTenantByKp(String kp) {
+        return tenantInfoRepository.findByKp(kp);
+    }
+
+    public TenantInfo findTenantByKp(String kp, String tenantId) {
+        return tenantInfoRepository.findByKpAndTenantId(kp, tenantId);
+    }
+
+    public void removeTenantInfoAtomic(final String kp, final String tenantId) {
+        TenantInfo tenantInfo = findTenantByKp(kp, tenantId);
+        tenantInfoRepository.delete(tenantInfo);
+    }
+
+
+    /**
+     * 获取所有的配置的Md5值，通过分页方式获取。
+     *
+     * @return
+     */
+    public List<ConfigInfo> listAllGroupKeyMd5() {
+        final int pageSize = 10000;
+        int totalCount = configInfoCount();
+        int pageCount = (int) Math.ceil(totalCount * 1.0 / pageSize);
+        List<ConfigInfo> allConfigInfo = new ArrayList<ConfigInfo>();
+        for (int pageNo = 0; pageNo <= pageCount; pageNo++) {
+            Iterable<ConfigInfo> iterable = configInfoRepository.findAll(new BooleanBuilder(), PageRequest.of(pageNo, pageSize));
+            allConfigInfo.addAll(((List<ConfigInfo>) iterable));
+        }
+        return allConfigInfo;
+    }
+
+    /**
+     * 返回配置项个数
+     */
+    public int configInfoCount() {
+        Long result = configInfoRepository.count();
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoCount error");
+        }
+        return result.intValue();
+    }
+
+    /**
+     * 返回配置项个数
+     */
+    public int configInfoCount(String tenant) {
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        Long result = configInfoRepository.count(qConfigInfo.tenantId.like(tenant));
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoCount error");
+        }
+        return result.intValue();
+    }
+
+    /**
+     * 返回beta配置项个数
+     */
+    public int configInfoBetaCount() {
+        Long result = configInfoBetaRepository.count();
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoBetaCount error");
+        }
+        return result.intValue();
+    }
+
+    /**
+     * 返回beta配置项个数
+     */
+    public int configInfoTagCount() {
+        Long result = configInfoTagRepository.count();
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoBetaCount error");
+        }
+        return result.intValue();
+    }
+
+    private String generateLikeArgument(String s) {
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+
+    public ConfigInfo queryConfigInfo(final String dataId, final String group, final String tenant) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        return configInfoRepository.findOne(qConfigInfo.dataId.eq(dataId)
+            .and(qConfigInfo.groupId.eq(group))
+            .and(qConfigInfo.tenantId.eq(tenantTmp)))
+            .orElse(null);
+    }
+
+    public int aggrConfigInfoCount(String dataId, String group, String tenant) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        Long result = configInfoRepository.count(qConfigInfo.dataId.eq(dataId)
+            .and(qConfigInfo.groupId.eq(group))
+            .and(qConfigInfo.tenantId.eq(tenantTmp)));
+        if (result == null) {
+            throw new IllegalArgumentException("aggrConfigInfoCount error");
+        }
+        return result.intValue();
+    }
+
+    /**
+     * 删除startTime前的数据
+     */
+    public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
+        QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
+        Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.gmtModified.lt(startTime),
+            PageRequest.of(0, limitSize));
+        hisConfigInfoRepository.deleteAll(iterable);
+    }
+
+    /**
+     * 获取指定时间前配置条数
+     */
+    public int findConfigHistoryCountByTime(final Timestamp startTime) {
+        QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
+        Long result = hisConfigInfoRepository.count(qHisConfigInfo.gmtModified.lt(startTime));
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoBetaCount error");
+        }
+        return result.intValue();
+    }
+
+    /**
+     * 获取最大maxId
+     */
+    public long findConfigMaxId() {
+
+        try {
+            //TODO 关系型特性查询
+            return configInfoRepository.findConfigMaxId();
+        } catch (NullPointerException e) {
+            return 0;
+        }
+    }
+
+    public Page<ConfigInfo> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        return configInfoRepository.findAll(qConfigInfo.id.gt(lastMaxId),
+            PageRequest.of(0, pageSize, Sort.by(Sort.Order.asc("id"))));
+    }
+
+    public Page<ConfigInfoBeta> findAllConfigInfoBetaForDumpAll(
+        final int pageNo, final int pageSize) {
+        return configInfoBetaRepository.findAll(null, PageRequest.of(pageNo, pageSize));
+    }
+
+    public Page<ConfigInfoTag> findAllConfigInfoTagForDumpAll(
+        final int pageNo, final int pageSize) {
+        return configInfoTagRepository.findAll(null, PageRequest.of(pageNo, pageSize));
+    }
+
+    /**
+     * 找到所有聚合数据组。
+     */
+    public List<ConfigInfoAggr> findAllAggrGroup() {
+        //TODO 关系型特性查询
+        return configInfoAggrRepository.findAllAggrGroup();
+    }
+
+
+    public List<ConfigInfo> findChangeConfig(final Timestamp startTime,
+                                             final Timestamp endTime) {
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        Iterable<ConfigInfo> iterable = configInfoRepository.findAll(qConfigInfo.gmtModified.gt(startTime)
+            .and(qConfigInfo.gmtModified.lt(endTime)));
+        return ((List<ConfigInfo>) iterable);
+    }
+
+    public List<HisConfigInfo> findDeletedConfig(final Timestamp startTime,
+                                                 final Timestamp endTime) {
+        QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
+        Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.opType.eq("D")
+            .and(qHisConfigInfo.gmtModified.gt(startTime))
+            .and(qHisConfigInfo.gmtModified.lt(startTime)));
+        return ((List<HisConfigInfo>) iterable);
+    }
+
+
+    public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
+                                                         final int pageSize) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        QConfigInfoAggr qConfigInfoAggr = QConfigInfoAggr.configInfoAggr;
+        return configInfoAggrRepository.findAll(qConfigInfoAggr.dataId.eq(dataId)
+            .and(qConfigInfoAggr.groupId.eq(group))
+            .and(qConfigInfoAggr.tenantId.eq(tenantTmp)), PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.by("datumId"))));
+    }
+
+    public List<String> getTenantIdList(int pageNo, int pageSize) {
+        //TODO JPA特性查询
+        Specification<ConfigInfo> specification = new Specification<ConfigInfo>() {
+            @Override
+            public Predicate toPredicate(Root<ConfigInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+                return query.groupBy(root.get("tenantId")).getRestriction();
+            }
+        };
+        Page<ConfigInfo> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
+        return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
+    }
+
+
+    public List<String> getGroupIdList(int pageNo, int pageSize) {
+        //TODO JPA特性查询
+        Specification<ConfigInfo> specification = new Specification<ConfigInfo>() {
+            @Override
+            public Predicate toPredicate(Root<ConfigInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+                return query.groupBy(root.get("groupId")).getRestriction();
+            }
+        };
+        Page<ConfigInfo> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
+        return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
+    }
+
+    public boolean isConfigInfoBeta() {
+        try {
+            configInfoBetaRepository.count();
+            return true;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    public boolean isConfigInfoTag() {
+        try {
+            configInfoTagRepository.count();
+            return true;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
 
 }

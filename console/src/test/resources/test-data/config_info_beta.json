@@ -1,0 +1,13 @@
+{
+    "dataId": "userService",
+    "groupId": "userGroup",
+    "appName": "userService",
+    "content": "logEnabled=true",
+    "betaIps": "127.0.0.1",
+    "md5": "cdb2a17b65ebf01d79525962ed4b3795",
+    "gmtCreate": 1591202519327,
+    "gmtModified": 1591202519327,
+    "srcUser": "zhangsan",
+    "srcIp": "127.0.0.1",
+    "tenantId": "1"
+}

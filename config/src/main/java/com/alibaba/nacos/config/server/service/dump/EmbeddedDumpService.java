@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -66,8 +67,8 @@ public class EmbeddedDumpService extends DumpService {
 	 * @param memberManager   {@link ServerMemberManager}
 	 * @param protocolManager {@link ProtocolManager}
 	 */
-	public EmbeddedDumpService(PersistService persistService,
-			ServerMemberManager memberManager, ProtocolManager protocolManager) {
+	public EmbeddedDumpService(PersistServiceTmp persistService,
+                               ServerMemberManager memberManager, ProtocolManager protocolManager) {
 		super(persistService, memberManager);
 		this.protocolManager = protocolManager;
 	}

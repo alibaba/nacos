@@ -21,12 +21,11 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -43,6 +42,7 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,7 +71,7 @@ public abstract class DumpService {
 	protected DumpAllBetaProcessor dumpAllBetaProcessor;
 	protected DumpAllTagProcessor dumpAllTagProcessor;
 
-	protected final PersistService persistService;
+    protected final PersistServiceTmp persistService;
 	protected final ServerMemberManager memberManager;
 
 	/**
@@ -81,7 +81,7 @@ public abstract class DumpService {
 	 * @param persistService  {@link PersistService}
 	 * @param memberManager   {@link ServerMemberManager}
 	 */
-	public DumpService(PersistService persistService, ServerMemberManager memberManager) {
+	public DumpService(PersistServiceTmp persistService, ServerMemberManager memberManager) {
 		this.persistService = persistService;
 		this.memberManager = memberManager;
 		this.processor = new DumpProcessor(this);
@@ -96,7 +96,7 @@ public abstract class DumpService {
 		DynamicDataSource.getInstance().getDataSource();
 	}
 
-	public PersistService getPersistService() {
+	public PersistServiceTmp getPersistService() {
 		return persistService;
 	}
 
@@ -157,25 +157,25 @@ public abstract class DumpService {
 				// 更新beta缓存
 				LogUtil.defaultLog.info("start clear all config-info-beta.");
 				DiskUtil.clearAllBeta();
-				if (persistService.isExistTable(BETA_TABLE_NAME)) {
+				if (persistService.isConfigInfoBeta()) {
 					dumpAllBetaProcessor
 							.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
 				}
 				// 更新Tag缓存
 				LogUtil.defaultLog.info("start clear all config-info-tag.");
 				DiskUtil.clearAllTag();
-				if (persistService.isExistTable(TAG_TABLE_NAME)) {
+				if (persistService.isConfigInfoTag()) {
 					dumpAllTagProcessor
 							.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
 				}
 
 				// add to dump aggr
-				List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
+				List<ConfigInfoAggr> configList = persistService.findAllAggrGroup();
 				if (configList != null && !configList.isEmpty()) {
 					total = configList.size();
-					List<List<ConfigInfoChanged>> splitList = splitList(configList,
+					List<List<ConfigInfoAggr>> splitList = splitList(configList,
 							INIT_THREAD_COUNT);
-					for (List<ConfigInfoChanged> list : splitList) {
+					for (List<ConfigInfoAggr> list : splitList) {
 						MergeAllDataWorker work = new MergeAllDataWorker(list);
 						work.start();
 					}
@@ -261,10 +261,10 @@ public abstract class DumpService {
 						String dataId = dg[0];
 						String group = dg[1];
 						String tenant = dg[2];
-						ConfigInfoWrapper configInfo = persistService
+						ConfigInfo configInfo = persistService
 								.queryConfigInfo(dataId, group, tenant);
 						ConfigCacheService.dumpChange(dataId, group, tenant,
-								configInfo.getContent(), configInfo.getLastModified());
+								configInfo.getContent(), configInfo.getGmtModified().getTime());
 					}
 					LogUtil.defaultLog.error("end checkMd5Task");
 				};
@@ -365,15 +365,15 @@ public abstract class DumpService {
 		dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 	}
 
-	static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list,
+	static List<List<ConfigInfoAggr>> splitList(List<ConfigInfoAggr> list,
 			int count) {
-		List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(
+		List<List<ConfigInfoAggr>> result = new ArrayList<List<ConfigInfoAggr>>(
 				count);
 		for (int i = 0; i < count; i++) {
-			result.add(new ArrayList<ConfigInfoChanged>());
+			result.add(new ArrayList<ConfigInfoAggr>());
 		}
 		for (int i = 0; i < list.size(); i++) {
-			ConfigInfoChanged config = list.get(i);
+            ConfigInfoAggr config = list.get(i);
 			result.get(i % count).add(config);
 		}
 		return result;
@@ -382,9 +382,9 @@ public abstract class DumpService {
 	class MergeAllDataWorker extends Thread {
 		static final int PAGE_SIZE = 10000;
 
-		private List<ConfigInfoChanged> configInfoList;
+		private List<ConfigInfoAggr> configInfoList;
 
-		public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
+		public MergeAllDataWorker(List<ConfigInfoAggr> configInfoList) {
 			super("MergeAllDataWorker");
 			this.configInfoList = configInfoList;
 		}
@@ -394,10 +394,10 @@ public abstract class DumpService {
 			if (!canExecute()) {
 				return;
 			}
-			for (ConfigInfoChanged configInfo : configInfoList) {
+			for (ConfigInfoAggr configInfo : configInfoList) {
 				String dataId = configInfo.getDataId();
-				String group = configInfo.getGroup();
-				String tenant = configInfo.getTenant();
+				String group = configInfo.getGroupId();
+				String tenant = configInfo.getTenantId();
 				try {
 					List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
 					int rowCount = persistService
@@ -408,7 +408,7 @@ public abstract class DumpService {
 								.findConfigInfoAggrByPage(dataId, group, tenant, pageNo,
 										PAGE_SIZE);
 						if (page != null) {
-							datumList.addAll(page.getPageItems());
+							datumList.addAll(page.getContent());
 							log.info("[merge-query] {}, {}, size/total={}/{}", dataId,
 									group, datumList.size(), rowCount);
 						}
@@ -484,8 +484,6 @@ public abstract class DumpService {
 	static final int INIT_THREAD_COUNT = 10;
 	int total = 0;
 	private final static String TRUE_STR = "true";
-	private final static String BETA_TABLE_NAME = "config_info_beta";
-	private final static String TAG_TABLE_NAME = "config_info_tag";
 
 	Boolean isQuickStart = false;
 

@@ -18,11 +18,10 @@ package com.alibaba.nacos.config.server.service.merge;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -31,6 +30,7 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ import java.util.List;
 public class MergeTaskProcessor implements TaskProcessor {
     final int PAGE_SIZE = 10000;
 
-    MergeTaskProcessor(PersistService persistService, MergeDatumService mergeService) {
+    MergeTaskProcessor(PersistServiceTmp persistService, MergeDatumService mergeService) {
         this.persistService = persistService;
         this.mergeService = mergeService;
     }
@@ -65,7 +65,7 @@ public class MergeTaskProcessor implements TaskProcessor {
                 Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo,
                     PAGE_SIZE);
                 if (page != null) {
-                    datumList.addAll(page.getPageItems());
+                    datumList.addAll(page.getContent());
                     log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(), rowCount);
                 }
             }
@@ -127,6 +127,6 @@ public class MergeTaskProcessor implements TaskProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(MergeTaskProcessor.class);
 
-    private PersistService persistService;
+    private PersistServiceTmp persistService;
     private MergeDatumService mergeService;
 }

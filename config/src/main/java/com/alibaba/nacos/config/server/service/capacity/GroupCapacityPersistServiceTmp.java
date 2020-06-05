@@ -171,27 +171,4 @@ public class GroupCapacityPersistServiceTmp {
         return page.getContent();
     }
 
-//    public boolean updateMaxSize(String group, Integer maxSize) {
-//        return updateGroupCapacity(group, null, maxSize, null, null);
-//    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public boolean deleteGroupCapacity(final String group) {
-
-        return true;
-    }
-
 }

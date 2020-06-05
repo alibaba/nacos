@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.context.annotation.Conditional;
@@ -38,8 +39,8 @@ public class ExternalDumpService extends DumpService {
 	 * @param persistService  {@link PersistService}
 	 * @param memberManager   {@link ServerMemberManager}
 	 */
-	public ExternalDumpService(PersistService persistService,
-			ServerMemberManager memberManager) {
+	public ExternalDumpService(PersistServiceTmp persistService,
+                               ServerMemberManager memberManager) {
 		super(persistService, memberManager);
 	}
 

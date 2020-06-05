@@ -29,13 +29,10 @@ public class CapacityServiceTmp {
     private TenantCapacityPersistServiceTmp tenantCapacityPersistService;
 
     @Autowired
-    private GroupCapacityPersistServiceTmp groupCapacityPersistService;
-
-    @Autowired
     private PersistServiceTmp persistServiceTmp;
 
     @Autowired
-    private PersistService persistService;
+    private GroupCapacityPersistServiceTmp groupCapacityPersistServiceTmp;
 
 
     public void correctUsage() {
@@ -44,7 +41,7 @@ public class CapacityServiceTmp {
     }
 
     public void correctGroupUsage(String group) {
-        groupCapacityPersistService.correctUsage(group, TimeUtils.getCurrentTime());
+        groupCapacityPersistServiceTmp.correctUsage(group, TimeUtils.getCurrentTime());
     }
 
     public void correctTenantUsage(String tenant) {
@@ -58,13 +55,13 @@ public class CapacityServiceTmp {
     }
 
     private void initAllCapacity(boolean isTenant) {
-        int page = 1;
+        int page = 0;
         while (true) {
             List<String> list;
             if (isTenant) {
                 list = persistServiceTmp.getTenantIdList(page, INIT_PAGE_SIZE);
             } else {
-                list = persistService.getGroupIdList(page, INIT_PAGE_SIZE);
+                list = persistServiceTmp.getGroupIdList(page, INIT_PAGE_SIZE);
             }
             for (String targetId : list) {
                 if (isTenant) {
@@ -94,7 +91,7 @@ public class CapacityServiceTmp {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<GroupCapacity> groupCapacityList = groupCapacityPersistService.getCapacityList4CorrectUsage(lastId,
+            List<GroupCapacity> groupCapacityList = groupCapacityPersistServiceTmp.getCapacityList4CorrectUsage(lastId,
                 pageSize);
             if (groupCapacityList.isEmpty()) {
                 break;
@@ -102,7 +99,7 @@ public class CapacityServiceTmp {
             lastId = groupCapacityList.get(groupCapacityList.size() - 1).getId();
             for (GroupCapacity groupCapacity : groupCapacityList) {
                 String group = groupCapacity.getGroupId();
-                groupCapacityPersistService.correctUsage(group, TimeUtils.getCurrentTime());
+                groupCapacityPersistServiceTmp.correctUsage(group, TimeUtils.getCurrentTime());
             }
             try {
                 Thread.sleep(100);
@@ -147,7 +144,7 @@ public class CapacityServiceTmp {
      * @return 是否操作成功
      */
     public boolean insertAndUpdateClusterUsage(CounterMode counterMode, boolean ignoreQuotaLimit) {
-        Capacity capacity = groupCapacityPersistService.getClusterCapacity();
+        Capacity capacity = groupCapacityPersistServiceTmp.getClusterCapacity();
         if (capacity == null) {
             insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
         }
@@ -179,7 +176,7 @@ public class CapacityServiceTmp {
 
 
     public GroupCapacity getGroupCapacity(String group) {
-        return groupCapacityPersistService.getGroupCapacity(group);
+        return groupCapacityPersistServiceTmp.getGroupCapacity(group);
     }
 
 
@@ -221,7 +218,7 @@ public class CapacityServiceTmp {
                 log.warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant,
                     usage, defaultQuota, finalQuota);
             } else {
-                groupCapacityPersistService.updateQuota(group, finalQuota);
+                groupCapacityPersistServiceTmp.updateQuota(group, finalQuota);
                 log.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group,
                     usage, defaultQuota, finalQuota);
             }
@@ -309,7 +306,7 @@ public class CapacityServiceTmp {
         groupCapacity.setMaxAggrSize(maxAggrSize == null ? ZERO : maxAggrSize);
         groupCapacity.setGmtCreate(now);
         groupCapacity.setGmtModified(now);
-        return groupCapacityPersistService.insertGroupCapacity(groupCapacity);
+        return groupCapacityPersistServiceTmp.insertGroupCapacity(groupCapacity);
     }
 
 
@@ -330,13 +327,13 @@ public class CapacityServiceTmp {
         groupCapacity.setGmtModified(now);
         if (CounterMode.INCREMENT == counterMode) {
             if (ignoreQuotaLimit) {
-                return groupCapacityPersistService.incrementUsage(groupCapacity);
+                return groupCapacityPersistServiceTmp.incrementUsage(groupCapacity);
             }
             // 先按默认值限额更新，大部分情况下都是默认值，默认值表里面的quota字段为0
-            return groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(groupCapacity)
-                || groupCapacityPersistService.incrementUsageWithQuotaLimit(groupCapacity);
+            return groupCapacityPersistServiceTmp.incrementUsageWithDefaultQuotaLimit(groupCapacity)
+                || groupCapacityPersistServiceTmp.incrementUsageWithQuotaLimit(groupCapacity);
         }
-        return groupCapacityPersistService.decrementUsage(groupCapacity);
+        return groupCapacityPersistServiceTmp.decrementUsage(groupCapacity);
     }
 
 
@@ -457,11 +454,11 @@ public class CapacityServiceTmp {
             return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount,
                 maxAggrSize);
         }
-        Capacity capacity = groupCapacityPersistService.getGroupCapacity(group);
+        Capacity capacity = groupCapacityPersistServiceTmp.getGroupCapacity(group);
         if (capacity == null) {
             return initGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
         }
-        return groupCapacityPersistService.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
+        return groupCapacityPersistServiceTmp.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
     }
 
 

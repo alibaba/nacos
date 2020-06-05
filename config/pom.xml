@@ -242,7 +242,6 @@
                         <configuration>
                             <outputDirectory>target/generated-sources/java</outputDirectory>
                             <processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
-<!--                            <processor>org.springframework.data.mongodb.repository.support.MongoAnnotationProcessor</processor>-->
                         </configuration>
                     </execution>
                 </executions>

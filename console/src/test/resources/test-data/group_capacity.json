@@ -1,0 +1,11 @@
+{
+    "quota": 10,
+    "usage": 10,
+    "maxSize": 100,
+    "maxAggrCount": 10,
+    "maxAggrSize": 10,
+    "maxHistoryCount": 10,
+    "gmtCreate": 1591202921448,
+    "gmtModified": 1591202921448,
+    "groupId": "1"
+}

@@ -38,8 +38,9 @@ public class EmbeddedDataSourceConfiguration {
         hikariConfig.setJdbcUrl("jdbc:derby:" + nacosHome + File.separator + DERBY_BASE_DIR + ";create=true");
         hikariConfig.setUsername(USER_NAME);
         hikariConfig.setPassword(PASSWORD);
-        hikariConfig.setMaximumPoolSize(30);
-        hikariConfig.setIdleTimeout(10000L);
+        hikariConfig.setMaximumPoolSize(80);
+        hikariConfig.setIdleTimeout(30_000L);
+        hikariConfig.setConnectionTimeout(10000L);
 
         return new EmbeddedDataSource(new HikariDataSource(hikariConfig));
 

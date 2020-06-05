@@ -1,12 +1,13 @@
-package com.alibaba.nacos.config.server.repository;
+package com.alibaba.nacos.console.repository;
 
-import java.util.List;
-
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
 import com.alibaba.nacos.config.server.modules.entity.QConfigInfo;
 import com.alibaba.nacos.config.server.modules.repository.ConfigInfoRepository;
+import com.alibaba.nacos.console.BaseTest;
 import com.querydsl.core.BooleanBuilder;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,19 +15,29 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ConfigInfoRepositoryTest {
+public class ConfigInfoRepositoryTest extends BaseTest {
 
     @Autowired
     private ConfigInfoRepository configInfoRepository;
 
+    private ConfigInfo configInfo;
+
+    @Before
+    public void before() {
+        String data = readClassPath("test-data/config_info.json");
+        configInfo = JacksonUtils.toObj(data, ConfigInfo.class);
+    }
+
     @Test
     public void findByDataIdAndGroupIdAndTenantIdTest() {
-        List<ConfigInfo> list = configInfoRepository.findByDataIdAndGroupIdAndTenantId("userService", "DEFAULT_GROUP", "zhangsan");
+        List<ConfigInfo> list = configInfoRepository.findByDataIdAndGroupIdAndTenantId(configInfo.getDataId(),
+            configInfo.getGroupId(), configInfo.getTenantId());
         Assert.assertTrue(list.size() > 0);
     }
 
@@ -34,10 +45,10 @@ public class ConfigInfoRepositoryTest {
     public void findAllTest() {
         BooleanBuilder builder = new BooleanBuilder();
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        builder.and(qConfigInfo.dataId.eq("userService"));
-        builder.and(qConfigInfo.appName.eq("userService"));
+        builder.and(qConfigInfo.dataId.eq(configInfo.getDataId()));
+        builder.and(qConfigInfo.appName.eq(configInfo.getAppName()));
         Page<ConfigInfo> page = configInfoRepository.findAll(builder, PageRequest.of(0, 10, Sort.by(Sort.Order.desc("gmtCreate"))));
-        Assert.assertEquals(page.get().count(), 1);
+        Assert.assertEquals(page.get().count(), 2);
     }
 
 
@@ -49,12 +60,7 @@ public class ConfigInfoRepositoryTest {
 
     @Test
     public void saveTest() {
-        configInfoRepository.save(buildConfigInfo());
-    }
-
-    private ConfigInfo buildConfigInfo() {
-        ConfigInfo configInfo = new ConfigInfo();
-        return configInfo;
+        configInfoRepository.save(configInfo);
     }
 
 

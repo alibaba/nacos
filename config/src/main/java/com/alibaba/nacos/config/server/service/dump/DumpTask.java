@@ -19,19 +19,16 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTag;
+import com.alibaba.nacos.config.server.modules.entity.HisConfigInfo;
 import com.alibaba.nacos.config.server.service.*;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -133,7 +130,7 @@ class DumpProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        final PersistService persistService = dumpService.getPersistService();
+        final PersistServiceTmp persistService = dumpService.getPersistService();
         DumpTask dumpTask = (DumpTask)task;
         String[] pair = GroupKey2.parseKey(dumpTask.groupKey);
         String dataId = pair[0];
@@ -155,7 +152,7 @@ class DumpProcessor implements TaskProcessor {
 
         if (isBeta) {
             // beta发布，则dump数据，更新beta缓存
-            ConfigInfo4Beta cf = persistService.findConfigInfo4Beta(dataId, group, tenant);
+            ConfigInfoBeta cf = persistService.findConfigInfo4Beta(dataId, group, tenant);
 
             build.remove(Objects.isNull(cf));
             build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
@@ -173,7 +170,7 @@ class DumpProcessor implements TaskProcessor {
                 return DumpConfigHandler.configDump(build.build());
             } else {
 
-                ConfigInfo4Tag cf = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                ConfigInfoTag cf = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
 
                 build.remove(Objects.isNull(cf));
                 build.content(Objects.isNull(cf) ? null : cf.getContent());
@@ -198,10 +195,10 @@ class DumpAllProcessor implements TaskProcessor {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
-            Page<ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
+            Page<ConfigInfo> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
-            if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
-                for (ConfigInfoWrapper cf : page.getPageItems()) {
+            if (page != null && page.getContent() != null && !page.getContent().isEmpty()) {
+                for (ConfigInfo cf : page.getContent()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
@@ -217,13 +214,13 @@ class DumpAllProcessor implements TaskProcessor {
                     }
 
                     boolean result = ConfigCacheService
-                            .dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                        cf.getLastModified(), cf.getType());
+                            .dump(cf.getDataId(), cf.getGroupId(), cf.getTenantId(), cf.getContent(),
+                        cf.getGmtModified().getTime(), cf.getType());
 
                     final String content = cf.getContent();
                     final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
                     LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
-                        GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(), md5);
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroupId()), cf.getGmtModified(), content.length(), md5);
                 }
                 defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
             } else {
@@ -236,7 +233,7 @@ class DumpAllProcessor implements TaskProcessor {
     static final int PAGE_SIZE = 1000;
 
     final DumpService dumpService;
-    final PersistService persistService;
+    final PersistServiceTmp persistService;
 }
 
 class DumpAllBetaProcessor implements TaskProcessor {
@@ -253,18 +250,18 @@ class DumpAllBetaProcessor implements TaskProcessor {
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoBeta> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
-                for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
+                for (ConfigInfoBeta cf : page.getContent()) {
                     boolean result = ConfigCacheService
-                            .dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
-                        cf.getContent(), cf.getLastModified(), cf.getBetaIps());
+                            .dumpBeta(cf.getDataId(), cf.getGroupId(), cf.getTenantId(),
+                        cf.getContent(), cf.getGmtModified().getTime(), cf.getBetaIps());
                     LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
-                        GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroupId()), cf.getGmtModified(), cf.getContent()
                             .length(), cf.getMd5());
                 }
 
-                actualRowCount += page.getPageItems().size();
+                actualRowCount += page.getContent().size();
                 defaultLog.info("[all-dump-beta] {} / {}", actualRowCount, rowCount);
             }
         }
@@ -274,7 +271,7 @@ class DumpAllBetaProcessor implements TaskProcessor {
     static final int PAGE_SIZE = 1000;
 
     final DumpService dumpService;
-    final PersistService persistService;
+    final PersistServiceTmp persistService;
 }
 
 class DumpAllTagProcessor implements TaskProcessor {
@@ -291,18 +288,18 @@ class DumpAllTagProcessor implements TaskProcessor {
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoTag> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
-                for (ConfigInfoTagWrapper cf : page.getPageItems()) {
+                for (ConfigInfoTag cf : page.getContent()) {
                     boolean result = ConfigCacheService
-                            .dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
-                        cf.getContent(), cf.getLastModified());
+                            .dumpTag(cf.getDataId(), cf.getGroupId(), cf.getTenantId(), cf.getTagId(),
+                        cf.getContent(), cf.getGmtModified().getTime());
                     LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
-                        GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroupId()), cf.getGmtModified(), cf.getContent()
                             .length(), cf.getMd5());
                 }
 
-                actualRowCount += page.getPageItems().size();
+                actualRowCount += page.getContent().size();
                 defaultLog.info("[all-dump-tag] {} / {}", actualRowCount, rowCount);
             }
         }
@@ -312,7 +309,7 @@ class DumpAllTagProcessor implements TaskProcessor {
     static final int PAGE_SIZE = 1000;
 
     final DumpService dumpService;
-    final PersistService persistService;
+    final PersistServiceTmp persistService;
 }
 
 class DumpChangeProcessor implements TaskProcessor {
@@ -331,14 +328,14 @@ class DumpChangeProcessor implements TaskProcessor {
             startTime, endTime);
         LogUtil.defaultLog.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();
-        List<ConfigInfoWrapper> updateMd5List = persistService
+        List<ConfigInfo> updateMd5List = persistService
             .listAllGroupKeyMd5();
         LogUtil.defaultLog.warn("updateMd5 count:{}", updateMd5List.size());
-        for (ConfigInfoWrapper config : updateMd5List) {
+        for (ConfigInfo config : updateMd5List) {
             final String groupKey = GroupKey2.getKey(config.getDataId(),
-                config.getGroup());
+                config.getGroupId());
             ConfigCacheService.updateMd5(groupKey, config.getMd5(),
-                config.getLastModified());
+                config.getGmtModified().getTime());
         }
         long endUpdateMd5 = System.currentTimeMillis();
         LogUtil.defaultLog.warn("updateMd5 done,cost:{}", endUpdateMd5
@@ -346,14 +343,14 @@ class DumpChangeProcessor implements TaskProcessor {
 
         LogUtil.defaultLog.warn("deletedConfig start");
         long startDeletedConfigTime = System.currentTimeMillis();
-        List<ConfigInfo> configDeleted = persistService.findDeletedConfig(
+        List<HisConfigInfo> configDeleted = persistService.findDeletedConfig(
             startTime, endTime);
         LogUtil.defaultLog.warn("deletedConfig count:{}", configDeleted.size());
-        for (ConfigInfo configInfo : configDeleted) {
-            if (persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant()) == null) {
+        for (HisConfigInfo configInfo : configDeleted) {
+            if (persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroupId(),
+                configInfo.getTenantId()) == null) {
                 ConfigCacheService
-                        .remove(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                        .remove(configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId());
             }
         }
         long endDeletedConfigTime = System.currentTimeMillis();
@@ -362,20 +359,20 @@ class DumpChangeProcessor implements TaskProcessor {
 
         LogUtil.defaultLog.warn("changeConfig start");
         long startChangeConfigTime = System.currentTimeMillis();
-        List<ConfigInfoWrapper> changeConfigs = persistService
+        List<ConfigInfo> changeConfigs = persistService
             .findChangeConfig(startTime, endTime);
         LogUtil.defaultLog.warn("changeConfig count:{}", changeConfigs.size());
-        for (ConfigInfoWrapper cf : changeConfigs) {
+        for (ConfigInfo cf : changeConfigs) {
             boolean result = ConfigCacheService
-                    .dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(),
-                cf.getContent(), cf.getLastModified());
+                    .dumpChange(cf.getDataId(), cf.getGroupId(), cf.getTenantId(),
+                cf.getContent(), cf.getGmtModified().getTime());
             final String content = cf.getContent();
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             LogUtil.defaultLog.info(
                 "[dump-change-ok] {}, {}, length={}, md5={}",
                 new Object[] {
-                    GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
-                    cf.getLastModified(), content.length(), md5});
+                    GroupKey2.getKey(cf.getDataId(), cf.getGroupId()),
+                    cf.getGmtModified(), content.length(), md5});
         }
         ConfigCacheService.reloadConfig();
         long endChangeConfigTime = System.currentTimeMillis();
@@ -387,7 +384,7 @@ class DumpChangeProcessor implements TaskProcessor {
     // =====================
 
     final DumpService dumpService;
-    final PersistService persistService;
+    final PersistServiceTmp persistService;
     final Timestamp startTime;
     final Timestamp endTime;
 }

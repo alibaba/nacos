@@ -17,11 +17,10 @@ package com.alibaba.nacos.config.server.service.merge;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -31,6 +30,7 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class MergeDatumService {
 
-    private PersistService persistService;
+    private PersistServiceTmp persistService;
     static final int INIT_THREAD_COUNT = 40;
     static final AtomicInteger FINISHED = new AtomicInteger();
     static int total = 0;
@@ -56,7 +56,7 @@ public class MergeDatumService {
     private CPProtocol protocol;
 
     @Autowired
-    public MergeDatumService(PersistService persistService) {
+    public MergeDatumService(PersistServiceTmp persistService) {
         this.persistService = persistService;
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
         mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
@@ -100,8 +100,8 @@ public class MergeDatumService {
         if (!canExecute()) {
             return;
         }
-        for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
+        for (ConfigInfoAggr item : persistService.findAllAggrGroup()) {
+            addMergeTask(item.getDataId(), item.getGroupId(), item.getTenantId(), InetUtils.getSelfIp());
         }
     }
 
@@ -143,7 +143,7 @@ public class MergeDatumService {
                         Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant,
                             pageNo, PAGE_SIZE);
                         if (page != null) {
-                            datumList.addAll(page.getPageItems());
+                            datumList.addAll(page.getContent());
                             log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
                                 rowCount);
                         }
