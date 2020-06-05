@@ -8,7 +8,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @author paderlol
  * @date: 2020/1/18 15:49
  */
-public interface TenantCapacityRepository extends PagingAndSortingRepository<TenantCapacity, Integer>,
+public interface TenantCapacityRepository extends PagingAndSortingRepository<TenantCapacity, Long>,
     QuerydslPredicateExecutor<TenantCapacity> {
 
 }

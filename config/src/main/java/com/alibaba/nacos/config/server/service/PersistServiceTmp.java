@@ -364,13 +364,13 @@ public class PersistServiceTmp {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
         if (StringUtils.isNotBlank(dataId)) {
-            qConfigInfoBeta.dataId.eq(dataId);
+            booleanBuilder.and(qConfigInfoBeta.dataId.eq(dataId));
         }
         if (StringUtils.isNotBlank(group)) {
-            qConfigInfoBeta.groupId.eq(group);
+            booleanBuilder.and(qConfigInfoBeta.groupId.eq(group));
         }
         if (StringUtils.isNotBlank(tenant)) {
-            qConfigInfoBeta.tenantId.eq(tenant);
+            booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenant));
         }
         return configInfoBetaRepository.findOne(booleanBuilder)
             .orElseThrow(() -> new RuntimeException("find configInfoBeta data null"));

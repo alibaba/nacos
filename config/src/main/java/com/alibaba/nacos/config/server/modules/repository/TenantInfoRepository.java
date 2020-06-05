@@ -10,7 +10,7 @@ import java.util.List;
  * @author paderlol
  * @date: 2020/1/18 15:49
  */
-public interface TenantInfoRepository extends PagingAndSortingRepository<TenantInfo, Integer>,
+public interface TenantInfoRepository extends PagingAndSortingRepository<TenantInfo, Long>,
     QuerydslPredicateExecutor<TenantInfo> {
 
     List<TenantInfo> findByKp(String kp);

@@ -8,7 +8,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @author paderlol
  * @date: 2020/1/18 15:49
  */
-public interface ConfigInfoTagRepository extends PagingAndSortingRepository<ConfigInfoTag, Integer>,
+public interface ConfigInfoTagRepository extends PagingAndSortingRepository<ConfigInfoTag, Long>,
     QuerydslPredicateExecutor<ConfigInfoTag> {
 
 }
