@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.api.common.Constants;
@@ -32,6 +31,10 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,11 +51,12 @@ import java.util.*;
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     /**
@@ -90,7 +94,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         super(name);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public PushService getPushService() {
         return ApplicationUtils.getBean(PushService.class);
     }
@@ -322,10 +326,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public String toJSON() {
-        return JSON.toJSONString(this);
+        return JacksonUtils.toJson(this);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getServiceString() {
         Map<Object, Object> serviceObject = new HashMap<Object, Object>(10);
         Service service = this;
@@ -369,7 +373,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         serviceObject.put("clusters", clustersList);
 
-        return JSON.toJSONString(serviceObject);
+        try {
+            return JacksonUtils.toJson(serviceObject);
+        } catch (Exception e) {
+            throw new RuntimeException("Service toJson failed", e);
+        }
     }
 
     public String getToken() {

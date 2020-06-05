@@ -25,19 +25,25 @@ public class MemberMetaDataConstants {
 	/**
 	 * Raft port，This parameter is dropped when GRPC is used as a whole
 	 */
-	public static final String RAFT_PORT = "raft_port";
+	public static final String RAFT_PORT = "raftPort";
 
 	public static final String SITE_KEY = "site";
 
-	public static final String AD_WEIGHT = "adweight";
+	public static final String AD_WEIGHT = "adWeight";
 
 	public static final String WEIGHT = "weight";
+
+	public static final String LAST_REFRESH_TIME = "lastRefreshTime";
+
+	public static final String VERSION = "version";
 
 	public static final String[] META_KEY_LIST = new String[]{
 			RAFT_PORT,
 			SITE_KEY,
 			AD_WEIGHT,
 			WEIGHT,
+			LAST_REFRESH_TIME,
+			VERSION,
 	};
 
 }

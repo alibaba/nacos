@@ -47,7 +47,7 @@ public class NotifyCenter_ITCase {
 	}
 
 	static {
-		System.setProperty("com.alibaba.nacos.core.notify.shareBufferSize", "8");
+		System.setProperty("nacos.core.notify.share-buffer-size", "8");
 	}
 
 	@Test
@@ -215,19 +215,20 @@ public class NotifyCenter_ITCase {
 		}
 	}
 
-	@Test(timeout = 10_000L)
+	@Test
 	public void test_k_two_slowEvent() throws Exception {
 		NotifyCenter.registerToSharePublisher(SlowE1.class);
 		NotifyCenter.registerToSharePublisher(SlowE2.class);
 
-		CountDownLatch latch1 = new CountDownLatch(30);
-		CountDownLatch latch2 = new CountDownLatch(30);
+		CountDownLatch latch1 = new CountDownLatch(15);
+		CountDownLatch latch2 = new CountDownLatch(15);
 
 		String[] values = new String[] {null, null};
 
 		NotifyCenter.registerSubscribe(new Subscribe<SlowE1>() {
 			@Override
 			public void onEvent(SlowE1 event) {
+				ThreadUtils.sleep(1000L);
 				System.out.println(event);
 				values[0] = event.info;
 				latch1.countDown();

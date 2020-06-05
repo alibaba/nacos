@@ -41,18 +41,23 @@ public class ExceptionUtil {
         return strBuilder.toString();
     }
 
+    public static Throwable getCause(final Throwable t) {
+        final Throwable cause = t.getCause();
+        if (Objects.isNull(cause)) {
+            return t;
+        }
+        return cause;
+    }
+
     public static String getStackTrace(final Throwable t) {
         if (t == null) {
             return "";
         }
 
-        try (final ByteArrayOutputStream out = new ByteArrayOutputStream(); final PrintStream ps = new PrintStream(out)) {
-            t.printStackTrace(ps);
-            ps.flush();
-            return new String(out.toByteArray());
-        } catch (final IOException ignored) {
-            // ignored
-        }
-        return "";
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final PrintStream ps = new PrintStream(out);
+        t.printStackTrace(ps);
+        ps.flush();
+        return new String(out.toByteArray());
     }
 }

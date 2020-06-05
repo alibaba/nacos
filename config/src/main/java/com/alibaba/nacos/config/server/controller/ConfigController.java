@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -32,7 +33,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
-import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -133,32 +134,20 @@ public class ConfigController {
 			@RequestParam(value = "type", required = false) String type,
 			@RequestParam(value = "schema", required = false) String schema)
 			throws NacosException {
+
 		final String srcIp = RequestUtil.getRemoteIp(request);
 		String requestIpApp = RequestUtil.getAppName(request);
         // check tenant
         ParamUtils.checkTenant(tenant);
 		ParamUtils.checkParam(dataId, group, "datumId", content);
 		ParamUtils.checkParam(tag);
-
 		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-		if (configTags != null) {
-			configAdvanceInfo.put("config_tags", configTags);
-		}
-		if (desc != null) {
-			configAdvanceInfo.put("desc", desc);
-		}
-		if (use != null) {
-			configAdvanceInfo.put("use", use);
-		}
-		if (effect != null) {
-			configAdvanceInfo.put("effect", effect);
-		}
-		if (type != null) {
-			configAdvanceInfo.put("type", type);
-		}
-		if (schema != null) {
-			configAdvanceInfo.put("schema", schema);
-		}
+		MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
+		MapUtils.putIfValNoNull(configAdvanceInfo, "desc", desc);
+		MapUtils.putIfValNoNull(configAdvanceInfo, "use", use);
+		MapUtils.putIfValNoNull(configAdvanceInfo, "effect", effect);
+		MapUtils.putIfValNoNull(configAdvanceInfo, "type", type);
+		MapUtils.putIfValNoNull(configAdvanceInfo, "schema", schema);
 		ParamUtils.checkParam(configAdvanceInfo);
 
 		if (AggrWhitelist.isAggrDataId(dataId)) {
@@ -171,33 +160,24 @@ public class ConfigController {
 		final Timestamp time = TimeUtils.getCurrentTime();
 		String betaIps = request.getHeader("betaIps");
 		ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+		configInfo.setType(type);
 		if (StringUtils.isBlank(betaIps)) {
 			if (StringUtils.isBlank(tag)) {
 				persistService.insertOrUpdate(srcIp, srcUser, configInfo, time,
-						configAdvanceInfo, false);
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, dataId, group, tenant,
-								time.getTime()));
+						configAdvanceInfo, true);
 			}
 			else {
 				persistService
-						.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-								time.getTime()));
+						.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
 			}
 		}
-		else { // beta publish
+		else {
+			// beta publish
 			persistService
-					.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
-			EventDispatcher.fireEvent(
-					new ConfigDataChangeEvent(true, dataId, group, tenant,
-							time.getTime()));
+					.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
 		}
-		ConfigTraceService
-				.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-						InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
-
+		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
+				InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 		return true;
 	}
 
@@ -275,9 +255,6 @@ public class ConfigController {
 		ConfigTraceService
 				.logPersistenceEvent(dataId, group, tenant, null, time.getTime(),
 						clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-						time.getTime()));
 		return true;
 	}
 
@@ -303,10 +280,6 @@ public class ConfigController {
 						configInfo.getGroup(), configInfo.getTenant(), null,
 						time.getTime(), clientIp,
 						ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(),
-								time.getTime()));
 			}
 		}
 		return ResultBuilder.buildSuccessResult(true);
@@ -453,8 +426,6 @@ public class ConfigController {
 			rr.setMessage("remove beta data error");
 			return rr;
 		}
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant,
-				System.currentTimeMillis()));
 		rr.setCode(200);
 		rr.setData(true);
 		rr.setMessage("stop beta ok");

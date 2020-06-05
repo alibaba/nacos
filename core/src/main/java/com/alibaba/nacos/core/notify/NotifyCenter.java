@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,60 +50,9 @@ public class NotifyCenter {
 
 	private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
 
-	private final EventPublisher sharePublisher = new EventPublisher() {
-
-		private EventPublisher target;
-
-		@Override
-		public void init(Class<? extends Event> type, int bufferSize) {
-			target = BUILD_FACTORY.apply(type, bufferSize);
-		}
-
-		@Override
-		public long currentEventSize() {
-			return target.currentEventSize();
-		}
-
-		@Override
-		public void addSubscribe(Subscribe subscribe) {
-			target.addSubscribe(subscribe);
-		}
-
-		@Override
-		public void unSubscribe(Subscribe subscribe) {
-			target.unSubscribe(subscribe);
-		}
-
-		@Override
-		public boolean publish(Event event) {
-			return target.publish(event);
-		}
-
-		@Override
-		public void notifySubscriber(Subscribe subscribe, Event event) {
-			// Is to handle a SlowEvent, because the event shares an event
-			// queue and requires additional filtering logic
-			if (filter(subscribe, event)) {
-				return;
-			}
-			target.notifySubscriber(subscribe, event);
-		}
-
-		@Override
-		public void shutdown() {
-			target.shutdown();
-		}
-
-		private boolean filter(final Subscribe subscribe, final Event event) {
-			final String sourceName = event.getClass().getName();
-			final String targetName = subscribe.subscribeType().getName();
-			LoggerUtils.printIfDebugEnabled(LOGGER, "source event name : {}, target event name : {}", sourceName, targetName);
-			return !Objects.equals(sourceName, targetName);
-		}
-
-	};
-
 	private static final NotifyCenter INSTANCE = new NotifyCenter();
+
+	private EventPublisher sharePublisher;
 
 	/**
 	 * Publisher management container
@@ -120,11 +67,11 @@ public class NotifyCenter {
 	static {
 		// Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
 		// this value needs to be increased appropriately. default value is 16384
-		String ringBufferSizeProperty = "com.alibaba.nacos.core.notify.ringBufferSize";
+		String ringBufferSizeProperty = "nacos.core.notify.ring-buffer-size";
 		RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
 
 		// The size of the public publisher's message staging queue buffer
-		String shareBufferSizeProperty = "com.alibaba.nacos.core.notify.shareBufferSize";
+		String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
 		SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
 
 		ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
@@ -145,7 +92,7 @@ public class NotifyCenter {
 			};
 		}
 
-		INSTANCE.sharePublisher.init(SlowEvent.class, SHATE_BUFFER_SIZE);
+		INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
 		ShutdownUtils.addShutdownHook(new Thread(() -> {
 			shutdown();
 		}));
@@ -259,7 +206,12 @@ public class NotifyCenter {
 	 * @param event
 	 */
 	public static boolean publishEvent(final Event event) {
-		return publishEvent(event.getClass(), event);
+		try {
+			return publishEvent(event.getClass(), event);
+		} catch (Throwable ex) {
+			LOGGER.error("There was an exception to the message publishing : {}", ex);
+			return false;
+		}
 	}
 
 	/**
