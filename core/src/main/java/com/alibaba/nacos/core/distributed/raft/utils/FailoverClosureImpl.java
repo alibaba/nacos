@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
@@ -28,18 +29,18 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class FailoverClosureImpl<T> implements FailoverClosure<T> {
+public class FailoverClosureImpl implements FailoverClosure {
 
-    private final CompletableFuture<T> future;
-    private volatile T data;
+    private final CompletableFuture<Response> future;
+    private volatile Response data;
     private volatile Throwable throwable;
 
-    public FailoverClosureImpl(final CompletableFuture<T> future) {
+    public FailoverClosureImpl(final CompletableFuture<Response> future) {
         this.future = future;
     }
 
     @Override
-    public void setData(T data) {
+    public void setData(Response data) {
         this.data = data;
     }
 

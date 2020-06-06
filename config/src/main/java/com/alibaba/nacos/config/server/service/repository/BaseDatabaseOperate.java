@@ -18,11 +18,15 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.config.server.utils.DerbyUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -174,9 +178,9 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
     }
 
     default Boolean dataImport(JdbcTemplate template, List<ModifyRequest> requests) {
-        List<String> sqls = requests.stream().map(ModifyRequest::getSql).collect(
-                Collectors.toList());
-        template.batchUpdate(sqls.toArray(new String[0]));
-        return true;
+        final String[] sql = requests.stream().map(ModifyRequest::getSql)
+                .map(DerbyUtils::insertStatementCorrection).toArray(String[]::new);
+        int[] affect = template.batchUpdate(sql);
+        return IntStream.of(affect).count() == requests.size();
     }
 }

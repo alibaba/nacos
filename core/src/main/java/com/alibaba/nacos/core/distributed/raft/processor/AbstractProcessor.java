@@ -71,13 +71,13 @@ public abstract class AbstractProcessor {
 	}
 
 	protected void execute(JRaftServer server, final RpcContext asyncCtx, final Message log, final JRaftServer.RaftGroupTuple tuple) {
-		FailoverClosure<Object> closure = new FailoverClosure<Object>() {
+		FailoverClosure closure = new FailoverClosure() {
 
-			Object data;
+			Response data;
 			Throwable ex;
 
 			@Override
-			public void setData(Object data) {
+			public void setData(Response data) {
 				this.data = data;
 			}
 
@@ -93,14 +93,7 @@ public abstract class AbstractProcessor {
 					asyncCtx.sendResponse(Response.newBuilder().setErrMsg(ex.toString())
 							.setSuccess(false).build());
 				} else {
-					ByteString bytes = Objects.nonNull(data) ? ByteString.copyFrom(serializer.serialize(data)) : ByteString.EMPTY;
-
-					Response response = Response.newBuilder()
-							.setSuccess(true)
-							.setData(bytes)
-							.build();
-
-					asyncCtx.sendResponse(response);
+					asyncCtx.sendResponse(data);
 				}
 			}
 		};

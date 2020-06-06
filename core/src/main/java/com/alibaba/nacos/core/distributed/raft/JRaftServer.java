@@ -455,7 +455,7 @@ public class JRaftServer {
 								closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
 								return;
 							}
-							closure.setData(o);
+							closure.setData((Response) o);
 							closure.run(Status.OK());
 						}
 

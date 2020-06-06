@@ -36,6 +36,10 @@ public class ModifyRequest implements Serializable {
 	public ModifyRequest() {
 	}
 
+	public ModifyRequest(String sql) {
+		this.sql = sql;
+	}
+
 	public int getExecuteNo() {
 		return executeNo;
 	}

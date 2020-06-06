@@ -246,7 +246,7 @@ class NacosStateMachine extends StateMachineAdapter {
 				RouteTable.getInstance().getConfiguration(node.getGroupId()).getPeers());
 	}
 
-	private void postProcessor(Object data, NacosClosure closure) {
+	private void postProcessor(Response data, NacosClosure closure) {
 		if (Objects.nonNull(closure)) {
 			closure.setObject(data);
 		}

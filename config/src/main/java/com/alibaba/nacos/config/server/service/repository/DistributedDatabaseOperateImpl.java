@@ -56,11 +56,13 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -80,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -401,35 +404,41 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
-	public CompletableFuture<RestResult<String>> dataImport(MultipartFile file) {
+	public CompletableFuture<RestResult<String>> dataImport(File file) {
 		return CompletableFuture.supplyAsync(() -> {
-			try {
-				final File tmpFile = File.createTempFile(file.getName(), ".tmp");
-				LineIterator iterator = FileUtils.lineIterator(tmpFile);
+			try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(file)) {
 				int batchSize = 1000;
 				List<String> batchUpdate = new ArrayList<>(batchSize);
 				List<CompletableFuture<Response>> futures = new ArrayList<>();
+				List<Boolean> results = new CopyOnWriteArrayList<>();
 				while (iterator.hasNext()) {
 					String sql = iterator.next();
-					batchUpdate.add(sql);
-					if (batchUpdate.size() == batchSize ||!iterator.hasNext()) {
+					if (StringUtils.isNotBlank(sql)) {
+						batchUpdate.add(sql);
+					}
+					boolean submit = batchUpdate.size() == batchSize || !iterator.hasNext();
+					if (submit) {
 						List<ModifyRequest> requests = batchUpdate.stream()
-								.map(s -> {
-									ModifyRequest request = new ModifyRequest();
-									request.setSql(s);
-									return request;
-								}).collect(Collectors.toList());
-						futures.add(protocol.submitAsync(Log.newBuilder()
+								.map(ModifyRequest::new).collect(Collectors.toList());
+						CompletableFuture<Response> future = protocol.submitAsync(Log.newBuilder()
 								.setGroup(group())
 								.setData(ByteString.copyFrom(serializer.serialize(requests)))
 								.putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString())
-								.build()));
+								.build());
+						futures.add(future);
 						batchUpdate.clear();
 					}
 				}
 				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+				for (CompletableFuture<Response> future : futures) {
+					Response response = future.get();
+					if (!response.getSuccess()) {
+						return RestResultUtils.failed(response.getErrMsg());
+					}
+				}
 				return RestResultUtils.success();
 			} catch (Throwable ex) {
+				LogUtil.defaultLog.error("data import has error : {}", ex);
 				return RestResultUtils.failed(ex.getMessage());
 			}
 		});

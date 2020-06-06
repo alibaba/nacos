@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
 import com.google.protobuf.Message;
@@ -28,7 +29,7 @@ public class NacosClosure implements Closure {
     private final Message log;
     private final Closure closure;
     private Throwable throwable;
-    private Object object;
+    private Response object;
 
     public NacosClosure(Message log, Closure closure) {
         this.log = log;
@@ -44,11 +45,11 @@ public class NacosClosure implements Closure {
         }
     }
 
-    public Object getObject() {
+    public Response getObject() {
         return object;
     }
 
-    public void setObject(Object object) {
+    public void setObject(Response object) {
         this.object = object;
     }
 
@@ -71,7 +72,7 @@ public class NacosClosure implements Closure {
 
         private Status status;
 
-        private Object result;
+        private Response result;
 
         private Throwable throwable;
 
@@ -89,11 +90,11 @@ public class NacosClosure implements Closure {
             this.status = status;
         }
 
-        public Object getResult() {
+        public Response getResult() {
             return result;
         }
 
-        public void setResult(Object result) {
+        public void setResult(Response result) {
             this.result = result;
         }
 

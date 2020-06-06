@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -111,10 +112,10 @@ public interface DatabaseOperate {
     /**
      * data importing
      *
-     * @param file {@link MultipartFile}
+     * @param file {@link File}
      * @return {@link CompletableFuture}
      */
-    CompletableFuture<RestResult<String>> dataImport(MultipartFile file);
+    CompletableFuture<RestResult<String>> dataImport(File file);
 
     /**
      * data modify transaction
