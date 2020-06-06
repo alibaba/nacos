@@ -23,6 +23,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RunWith(SpringRunner.class)
@@ -332,7 +333,7 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void updateTenantNameAtomicTest() {
         persistService.updateTenantNameAtomic(tenantInfo.getKp(), tenantInfo.getTenantId(),
-            tenantInfo.getTenantName(), tenantInfo.getTenantDesc());
+            tenantInfo.getTenantName() + LocalDateTime.now().toString(), tenantInfo.getTenantDesc() + LocalDateTime.now().toString());
     }
 
     @Test
@@ -379,27 +380,40 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void configInfoCount1Test() {
-        persistService.configInfoCount();
+        int result = persistService.configInfoCount();
+        Assert.assertTrue(result > 0);
     }
 
     @Test
     public void configInfoCount2Test() {
-        persistService.configInfoCount(configInfo.getTenantId());
+        int result = persistService.configInfoCount(configInfo.getTenantId());
+        Assert.assertTrue(result > 0);
     }
 
     @Test
     public void configInfoBetaCountTest() {
-        persistService.configInfoBetaCount();
+        int result = persistService.configInfoBetaCount();
+        Assert.assertTrue(result > 0);
     }
 
     @Test
     public void configInfoTagCountTest() {
-        persistService.configInfoTagCount();
+        int result = persistService.configInfoTagCount();
+        Assert.assertTrue(result > 0);
     }
 
     @Test
     public void getGroupIdListTest() {
-        persistService.getGroupIdList(0, 10);
+        List<String> list = persistService.getGroupIdList(0, 10);
+        Assert.assertNotNull(list);
+        Assert.assertTrue(list.size() > 0);
+    }
+
+    @Test
+    public void getTenantIdListTest() {
+        List<String> list = persistService.getTenantIdList(0, 10);
+        Assert.assertNotNull(list);
+        Assert.assertTrue(list.size() > 0);
     }
 
     @Test
@@ -427,7 +441,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findAllConfigInfoFragmentTest() {
-        Page<ConfigInfo> page = persistService.findAllConfigInfoFragment(100, 100);
+        Page<ConfigInfo> page = persistService.findAllConfigInfoFragment(0, 100);
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
@@ -452,18 +466,17 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findChangeConfigTest() {
-        List<ConfigInfo> list = persistService.findChangeConfig(Timestamp.from(Instant.now()), Timestamp.from(Instant.now()));
+        List<ConfigInfo> list = persistService.findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(7)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
 
     @Test
     public void findDeletedConfigTest() {
-        List<HisConfigInfo> list = persistService.findDeletedConfig(Timestamp.from(Instant.now()), Timestamp.from(Instant.now()));
+        List<HisConfigInfo> list = persistService.findDeletedConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(7)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
-
 
 
 }

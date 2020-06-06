@@ -23,7 +23,7 @@ public class RolePersistServiceTmp {
     }
 
     public void addRole(String role, String userName) {
-        rolesRepository.save(new Roles(role, userName));
+        rolesRepository.save(new Roles(userName, role));
     }
 
 

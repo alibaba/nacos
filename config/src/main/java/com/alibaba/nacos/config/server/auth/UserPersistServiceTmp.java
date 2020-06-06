@@ -26,7 +26,7 @@ public class UserPersistServiceTmp {
     }
 
     public void updateUserPassword(String username, String password) {
-        usersRepository.findOne(QUsers.users.password.eq(username))
+        usersRepository.findOne(QUsers.users.username.eq(username))
             .ifPresent(u -> {
                 u.setPassword(password);
                 usersRepository.save(u);
@@ -34,7 +34,7 @@ public class UserPersistServiceTmp {
     }
 
     public Users findUserByUsername(String username) {
-        return usersRepository.findOne(QUsers.users.password.eq(username))
+        return usersRepository.findOne(QUsers.users.username.eq(username))
             .orElseThrow(() -> new RuntimeException(username + " not exist"));
     }
 

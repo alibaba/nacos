@@ -1238,8 +1238,8 @@ public class PersistServiceTmp {
     public List<ConfigInfo> findChangeConfig(final Timestamp startTime,
                                              final Timestamp endTime) {
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        Iterable<ConfigInfo> iterable = configInfoRepository.findAll(qConfigInfo.gmtModified.gt(startTime)
-            .and(qConfigInfo.gmtModified.lt(endTime)));
+        Iterable<ConfigInfo> iterable = configInfoRepository.findAll(qConfigInfo.gmtModified.goe(startTime)
+            .and(qConfigInfo.gmtModified.loe(endTime)));
         return ((List<ConfigInfo>) iterable);
     }
 
@@ -1247,8 +1247,8 @@ public class PersistServiceTmp {
                                                  final Timestamp endTime) {
         QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
         Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.opType.eq("D")
-            .and(qHisConfigInfo.gmtModified.gt(startTime))
-            .and(qHisConfigInfo.gmtModified.lt(startTime)));
+            .and(qHisConfigInfo.gmtModified.goe(startTime))
+            .and(qHisConfigInfo.gmtModified.loe(startTime)));
         return ((List<HisConfigInfo>) iterable);
     }
 

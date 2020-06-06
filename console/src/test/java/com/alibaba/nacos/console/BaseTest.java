@@ -1,7 +1,3 @@
-/*
- * frxs Inc.  湖南兴盛优选电子商务有限公司.
- * Copyright (c) 2017-2019. All Rights Reserved.
- */
 package com.alibaba.nacos.console;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
