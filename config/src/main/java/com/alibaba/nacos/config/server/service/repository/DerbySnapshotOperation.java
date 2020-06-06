@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;

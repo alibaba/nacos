@@ -38,12 +38,14 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.config.server.model.event.DataImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -120,6 +122,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			IdGeneratorManager idGeneratorManager) {
 		this.databaseOperate = databaseOperate;
 		this.idGeneratorManager = idGeneratorManager;
+
+		NotifyCenter.registerToSharePublisher(DataImportEvent.class);
 	}
 
 	@PostConstruct

@@ -17,21 +17,40 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.event.DataImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.config.server.service.repository.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import java.io.File;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
@@ -46,14 +65,15 @@ public class ConfigOpsController {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigOpsController.class);
 
-    protected final PersistService persistService;
-
+    private final PersistService persistService;
     private final DumpService dumpService;
+    private final DatabaseOperate databaseOperate;
 
     @Autowired
-    public ConfigOpsController(PersistService persistService, DumpService dumpService) {
+    public ConfigOpsController(PersistService persistService, DumpService dumpService, DatabaseOperate databaseOperate) {
         this.persistService = persistService;
         this.dumpService = dumpService;
+        this.databaseOperate = databaseOperate;
     }
 
     /**
@@ -75,10 +95,12 @@ public class ConfigOpsController {
 
     // The interface to the Derby operations query can only run select statements
     // and is a direct query to the native Derby database without any additional logic
+    // Important !!!  This interface allows only administrators to operate
 
     // TODO In a future release, the front page should appear operable
 
     @GetMapping(value = "/derby")
+	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
         String selectSign = "select";
         String limitSign = "ROWS FETCH NEXT";
@@ -100,6 +122,61 @@ public class ConfigOpsController {
             return RestResultUtils.failed("The current storage mode is not Derby");
         } catch (Exception e) {
             return RestResultUtils.failed(e.getMessage());
+        }
+    }
+
+    // TODO External Database Data import interface, When data is imported, it is impossible to provide external services
+
+    @PostMapping(value = "/importDerby")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
+    public DeferredResult<RestResult<String>> importDerby(MultipartFile file) {
+        DeferredResult<RestResult<String>> response = new DeferredResult<>();
+        if (!PropertyUtil.isEmbeddedStorage()) {
+            response.setResult(RestResultUtils.failed());
+            return response;
+        }
+        NotifyCenter.publishEvent(new DataImportEvent(false));
+        databaseOperate.dataImport(file).whenComplete((result, ex) -> {
+            NotifyCenter.publishEvent(new DataImportEvent(true));
+            if (Objects.nonNull(ex)) {
+                response.setResult(RestResultUtils.failed(ex.getMessage()));
+                return;
+            }
+            response.setResult(result);
+        });
+        return response;
+    }
+
+    @GetMapping(value = "/exportDerby")
+    @Secured(action = ActionTypes.READ, resource = "nacos/admin")
+    public ResponseEntity<Object> exportDerby(@RequestParam(value = "tableName") String tableName) {
+        if (!PropertyUtil.isEmbeddedStorage()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (!ApplicationUtils.getStandaloneMode()) {
+            CPProtocol protocol = ApplicationUtils.getBean(ProtocolManager.class).getCpProtocol();
+            if (!protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Data export operation is required on the Leader node");
+            }
+        }
+
+        try {
+            final File tmpFile = File.createTempFile(tableName, ".csv");
+            final String exportSql = "CALL SYSCS_UTIL.SYSCS_EXPORT_QUERY('SELECT * FROM ?','?',null,null,null);";
+            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
+                    .getInstance().getDataSource();
+            final DataSource dataSource = dataSourceService.getDatasource();
+            try (Connection connection = dataSource.getConnection()) {
+                CallableStatement statement = connection.prepareCall(exportSql);
+                statement.setString(1, tableName);
+                statement.setString(2, tmpFile.getPath());
+                statement.execute();
+            }
+            FileSystemResource resource = new FileSystemResource(tmpFile);
+            return ResponseEntity.ok(resource);
+        } catch (Throwable ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
         }
     }
 

@@ -23,9 +23,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -103,6 +107,14 @@ public interface DatabaseOperate {
      * @return is success
      */
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
+
+    /**
+     * data importing
+     *
+     * @param file {@link MultipartFile}
+     * @return {@link CompletableFuture}
+     */
+    CompletableFuture<RestResult<String>> dataImport(MultipartFile file);
 
     /**
      * data modify transaction

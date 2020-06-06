@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -37,7 +39,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
-public interface BaseDatabaseOperate {
+public interface BaseDatabaseOperate extends DatabaseOperate {
 
     default  <R> R queryOne(JdbcTemplate jdbcTemplate, String sql, Class<R> cls) {
         try {
@@ -169,5 +171,12 @@ public interface BaseDatabaseOperate {
                 throw e;
             }
         });
+    }
+
+    default Boolean dataImport(JdbcTemplate template, List<ModifyRequest> requests) {
+        List<String> sqls = requests.stream().map(ModifyRequest::getSql).collect(
+                Collectors.toList());
+        template.batchUpdate(sqls.toArray(new String[0]));
+        return true;
     }
 }

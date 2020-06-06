@@ -27,41 +27,42 @@ import java.util.Arrays;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class ModifyRequest implements Serializable {
 
-    private static final long serialVersionUID = 4548851816596520564L;
+	private static final long serialVersionUID = 4548851816596520564L;
 
-    private int executeNo;
-    private String sql;
-    private Object[] args;
+	private int executeNo;
+	private String sql;
+	private Object[] args;
 
-    public ModifyRequest() {
-    }
+	public ModifyRequest() {
+	}
 
-    public int getExecuteNo() {
-        return executeNo;
-    }
+	public int getExecuteNo() {
+		return executeNo;
+	}
 
-    public void setExecuteNo(int executeNo) {
-        this.executeNo = executeNo;
-    }
+	public void setExecuteNo(int executeNo) {
+		this.executeNo = executeNo;
+	}
 
-    public String getSql() {
-        return sql;
-    }
+	public String getSql() {
+		return sql;
+	}
 
-    public void setSql(String sql) {
-        this.sql = sql;
-    }
+	public void setSql(String sql) {
+		this.sql = sql;
+	}
 
-    public Object[] getArgs() {
-        return args;
-    }
+	public Object[] getArgs() {
+		return args;
+	}
 
-    public void setArgs(Object[] args) {
-        this.args = args;
-    }
+	public void setArgs(Object[] args) {
+		this.args = args;
+	}
 
-    @Override public String toString() {
-        return "SQL{" + "executeNo=" + executeNo + ", sql='" + sql + '\'' + ", args="
-                + Arrays.toString(args) + '}';
-    }
+	@Override
+	public String toString() {
+		return "SQL{" + "executeNo=" + executeNo + ", sql='" + sql + '\'' + ", args="
+				+ Arrays.toString(args) + '}';
+	}
 }

@@ -147,7 +147,6 @@ public final class ProtocolMetaData {
         private transient final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
         private transient final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
         private volatile Object data;
-        private transient BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
 
         public ValueItem(String path) {
             this.path = path;
@@ -166,15 +165,10 @@ public final class ProtocolMetaData {
             writeLock.lock();
             try {
                 this.data = data;
-                deferObject.offer(data);
                 setChanged();
 
                 EXECUTOR.execute(() -> {
-                    try {
-                        notifyObservers(deferObject.take());
-                    } catch (InterruptedException ignore) {
-                        Thread.interrupted();
-                    }
+                    notifyObservers(data);
                 });
             } finally {
                 writeLock.unlock();
