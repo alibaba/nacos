@@ -49,7 +49,7 @@
             <artifactId>nacos-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.alibaba.nacos</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>nacos-client</artifactId>
         </dependency>
         <!-- log -->
