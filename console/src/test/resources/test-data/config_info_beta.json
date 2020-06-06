@@ -1,6 +1,6 @@
 {
     "dataId": "userService",
-    "groupId": "userGroup",
+    "groupId": "DEFAULT_GROUP",
     "appName": "userService",
     "content": "logEnabled=true",
     "betaIps": "127.0.0.1",
