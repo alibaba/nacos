@@ -73,15 +73,21 @@ public class CapacityServiceTest extends BaseTest {
     }
 
     @Test
+    public void initTenantCapacity1Test() {
+        capacityServiceTmp.initTenantCapacity("testTenant", null, 10, 10, 10);
+    }
+
+
+    @Test
     public void getCapacityWithDefaultTest() {
-        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", "test");
+        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", "testTenant2");
         Assert.assertNotNull(capacity);
     }
 
 
     @Test
     public void initCapacityTest() {
-        capacityServiceTmp.initCapacity("test2", "");
+        capacityServiceTmp.initCapacity("testGroup1", "");
     }
 
 
@@ -103,13 +109,9 @@ public class CapacityServiceTest extends BaseTest {
 
     @Test
     public void initTenantCapacityTest() {
-        capacityServiceTmp.initTenantCapacity("");
+        capacityServiceTmp.initTenantCapacity("testTenant1");
     }
 
-    @Test
-    public void initTenantCapacity1Test() {
-        capacityServiceTmp.initTenantCapacity("testTenant", 10, 10, 10, 10);
-    }
 
     @Test
     public void getTenantCapacityTest() {
@@ -120,6 +122,12 @@ public class CapacityServiceTest extends BaseTest {
     @Test
     public void insertOrUpdateCapacityTest() {
         boolean result = capacityServiceTmp.insertOrUpdateCapacity("", "", 10, 10, 10, 10);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void initGroupCapacityTest() {
+        boolean result = capacityServiceTmp.initGroupCapacity("testGroup");
         Assert.assertTrue(result);
     }
 
