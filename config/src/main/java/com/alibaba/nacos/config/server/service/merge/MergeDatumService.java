@@ -109,15 +109,11 @@ public class MergeDatumService {
         if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
         }
-        try {
-            ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-            return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
-        } catch (NoSuchRaftGroupException e) {
+        if (ApplicationUtils.getStandaloneMode()) {
             return true;
-        } catch (Exception e) {
-            // It's impossible to get to this point
-            throw new RuntimeException(e);
         }
+        ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
+        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
 
     class MergeAllDataWorker extends Thread {
