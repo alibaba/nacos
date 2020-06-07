@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.naming.push;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -553,7 +553,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             client.getSocketAddr().getPort(),
             lastRefTime);
 
-        String dataStr = JSON.toJSONString(data);
+        String dataStr = JacksonUtils.toJson(data);
 
         try {
             byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
@@ -646,7 +646,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     udpSocket.receive(packet);
 
                     String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
-                    AckPacket ackPacket = JSON.parseObject(json, AckPacket.class);
+                    AckPacket ackPacket = JacksonUtils.toObj(json, AckPacket.class);
 
                     InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
                     String ip = socketAddress.getAddress().getHostAddress();

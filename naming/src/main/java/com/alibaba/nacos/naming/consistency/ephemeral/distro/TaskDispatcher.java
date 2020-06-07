@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.naming.misc.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -125,7 +125,7 @@ public class TaskDispatcher {
                             syncTask.setTargetServer(member.getAddress());
 
                             if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                                Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));
+                                Loggers.DISTRO.debug("add sync task: {}", JacksonUtils.toJson(syncTask));
                             }
 
                             dataSyncer.submit(syncTask, 0);

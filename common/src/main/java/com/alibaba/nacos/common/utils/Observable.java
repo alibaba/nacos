@@ -24,7 +24,9 @@ import java.util.Set;
 public class Observable {
 
 	private transient boolean changed = false;
-	private transient Set<Observer> obs = new ConcurrentHashSet<>();
+	private transient Set<Observer> obs = new ConcurrentHashSet<Observer>();
+	private volatile int observerCnt = 0;
+	private boolean alreadyAddObserver = false;
 
 	/**
 	 * Adds an observer to the set of observers for this object, provided
@@ -35,11 +37,14 @@ public class Observable {
 	 * @param   o   an observer to be added.
 	 * @throws NullPointerException   if the parameter o is null.
 	 */
-	public void addObserver(Observer o) {
-		if (o == null) {
-			throw new NullPointerException();
-		}
+	public synchronized void addObserver(Observer o) {
+		Objects.requireNonNull(o, "Observer");
 		obs.add(o);
+		observerCnt ++;
+		if (!alreadyAddObserver) {
+			notifyAll();
+		}
+		alreadyAddObserver = true;
 	}
 
 	/**
@@ -47,8 +52,9 @@ public class Observable {
 	 * Passing {@code null} to this method will have no effect.
 	 * @param   o   the observer to be deleted.
 	 */
-	public void deleteObserver(Observer o) {
+	public synchronized void deleteObserver(Observer o) {
 		obs.remove(o);
+		observerCnt --;
 	}
 
 	/**
@@ -96,6 +102,9 @@ public class Observable {
 				return;
 			}
 			clearChanged();
+			if (!alreadyAddObserver) {
+				ThreadUtils.objectWait(this);
+			}
 		}
 
 		for (Observer observer : obs) {
@@ -150,7 +159,7 @@ public class Observable {
 	 * @return  the number of observers of this object.
 	 */
 	public int countObservers() {
-		return obs.size();
+		return observerCnt;
 	}
 
 

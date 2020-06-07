@@ -15,21 +15,24 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.api.Constants;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.common.api.Constants.NUMBER_PATTERN;
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
 
 /**
  * Instance
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class Instance {
 
     /**
@@ -173,7 +176,18 @@ public class Instance {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "Instance{" +
+            "instanceId='" + instanceId + '\'' +
+            ", ip='" + ip + '\'' +
+            ", port=" + port +
+            ", weight=" + weight +
+            ", healthy=" + healthy +
+            ", enabled=" + enabled +
+            ", ephemeral=" + ephemeral +
+            ", clusterName='" + clusterName + '\'' +
+            ", serviceName='" + serviceName + '\'' +
+            ", metadata=" + metadata +
+            '}';
     }
 
     public String toInetAddr() {

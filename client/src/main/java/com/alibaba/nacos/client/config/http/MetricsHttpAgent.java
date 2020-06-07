@@ -43,7 +43,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
@@ -59,7 +59,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
@@ -75,7 +75,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {

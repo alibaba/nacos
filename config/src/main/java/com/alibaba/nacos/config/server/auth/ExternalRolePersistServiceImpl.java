@@ -34,7 +34,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.ROLE_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

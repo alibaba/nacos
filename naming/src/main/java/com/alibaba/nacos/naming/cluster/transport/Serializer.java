@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.cluster.transport;
 
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.pojo.Record;
 
@@ -47,16 +46,6 @@ public interface Serializer {
      * @return deserialized data map
      */
     <T> T deserialize(byte[] data, Class<T> clazz);
-
-    /**
-     * Deserialize byte array data to target generic type
-     *
-     * @param data  data to deserialize
-     * @param clazz target type
-     * @param <T>   target type
-     * @return deserialized data
-     */
-    <T> T deserialize(byte[] data, TypeReference<T> clazz);
 
     /**
      * Deserialize byte array data to target type

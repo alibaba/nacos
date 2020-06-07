@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.consistency;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,8 +27,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
 
-    private transient volatile boolean stopDefer = false;
+    private static final Executor EXECUTOR = ExecutorFactory.newFixExecutorService(ProtocolMetaData.class.getCanonicalName(), 4, new NameThreadFactory("nacos.consistency.protocol.metadata"));
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 
@@ -90,16 +91,8 @@ public final class ProtocolMetaData {
                 .unSubscribe(key, observer);
     }
 
-    public void stopDeferPublish() {
-        stopDefer = true;
-    }
-
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public final class MetaData {
-
-        // Each biz does not affect each other
-
-        private transient final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         private final Map<String, ValueItem> itemMap = new ConcurrentHashMap<>(8);
 
@@ -115,7 +108,7 @@ public final class ProtocolMetaData {
 
         void put(String key, Object value) {
             itemMap.computeIfAbsent(key, s -> {
-                ValueItem item = new ValueItem(this, group + "/" + key);
+                ValueItem item = new ValueItem(group + "/" + key);
                 return item;
             });
             ValueItem item = itemMap.get(key);
@@ -130,7 +123,7 @@ public final class ProtocolMetaData {
 
         void subscribe(final String key, final Observer observer) {
             itemMap.computeIfAbsent(key, s -> {
-                ValueItem item = new ValueItem(this, group + "/" + key);
+                ValueItem item = new ValueItem(group + "/" + key);
                 return item;
             });
             final ValueItem item = itemMap.get(key);
@@ -149,7 +142,6 @@ public final class ProtocolMetaData {
 
     public final class ValueItem extends Observable {
 
-        private transient final MetaData holder;
         private transient final String path;
         private transient final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private transient final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
@@ -157,8 +149,7 @@ public final class ProtocolMetaData {
         private volatile Object data;
         private transient BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
 
-        public ValueItem(MetaData holder, String path) {
-            this.holder = holder;
+        public ValueItem(String path) {
             this.path = path;
         }
 
@@ -178,28 +169,16 @@ public final class ProtocolMetaData {
                 deferObject.offer(data);
                 setChanged();
 
-                Runnable runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (countObservers() == 0 && !stopDefer) {
-                            holder.executor.submit(this);
-                            return;
-                        }
-                        try {
-                            notifyObservers(deferObject.take());
-                        } catch (InterruptedException ignore) {
-                            Thread.interrupted();
-                        }
+                EXECUTOR.execute(() -> {
+                    try {
+                        notifyObservers(deferObject.take());
+                    } catch (InterruptedException ignore) {
+                        Thread.interrupted();
                     }
-                };
-                notifySubscriber(runnable);
+                });
             } finally {
                 writeLock.unlock();
             }
-        }
-
-        private void notifySubscriber(Runnable runnable) {
-            holder.executor.submit(runnable);
         }
     }
 }

@@ -16,20 +16,20 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.PERMISSION_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key
@@ -73,14 +73,14 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
 
 	public void addPermission(String role, String resource, String action) {
 		String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
-		SqlContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.smartUpdate();
+		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+		databaseOperate.blockUpdate();
 	}
 
 	public void deletePermission(String role, String resource, String action) {
 		String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
-		SqlContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.smartUpdate();
+		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+		databaseOperate.blockUpdate();
 	}
 
 }

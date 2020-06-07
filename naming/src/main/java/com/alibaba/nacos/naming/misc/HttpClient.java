@@ -110,6 +110,7 @@ public class HttpClient {
             setHeaders(conn, headers, encoding);
 
             if (StringUtils.isNotBlank(body)) {
+                conn.setDoOutput(true);
                 byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);

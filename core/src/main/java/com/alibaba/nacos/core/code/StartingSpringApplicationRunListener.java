@@ -18,8 +18,9 @@ package com.alibaba.nacos.core.code;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
-import com.alibaba.nacos.common.file.WatchFileCenter;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.file.WatchFileCenter;
+import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -111,7 +112,6 @@ public class StartingSpringApplicationRunListener
 	@Override
 	public void started(ConfigurableApplicationContext context) {
 		starting = false;
-
 		ConfigurableEnvironment env = context.getEnvironment();
 
 		closeExecutor();
@@ -152,14 +152,17 @@ public class StartingSpringApplicationRunListener
 
 		LOGGER.error("Startup errors : {}", exception);
 
-		LOGGER.error("Nacos failed to start, please see {} for more details.",
-				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
-
+		HttpClientManager.shutdown();
 		ThreadPoolManager.shutdown();
 		WatchFileCenter.shutdown();
 		NotifyCenter.shutdown();
 
 		closeExecutor();
+
+		context.close();
+
+		LOGGER.error("Nacos failed to start, please see {} for more details.",
+				Paths.get(ApplicationUtils.getNacosHome(), "logs/nacos.log"));
 	}
 
 	/**

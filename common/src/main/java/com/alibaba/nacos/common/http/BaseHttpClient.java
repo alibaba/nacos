@@ -65,6 +65,7 @@ public abstract class BaseHttpClient {
 				try {
 					final String body = EntityUtils.toString(response.getEntity());
 					RestResult<T> data = ResponseHandler.convert(body, type);
+					data.setCode(response.getStatusLine().getStatusCode());
 					callback.onReceive(data);
 				}
 				catch (Throwable e) {

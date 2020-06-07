@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.healthcheck.extend;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

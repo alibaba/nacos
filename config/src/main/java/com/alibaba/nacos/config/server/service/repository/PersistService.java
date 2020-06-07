@@ -93,7 +93,8 @@ public interface PersistService {
 	/**
 	 * 更新配置信息
 	 */
-	void updateConfigInfo4Beta(ConfigInfo configInfo, String srcIp, String srcUser, Timestamp time,
+	void updateConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
 			boolean notify);
 
 	/**

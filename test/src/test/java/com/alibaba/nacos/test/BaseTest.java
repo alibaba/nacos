@@ -16,19 +16,23 @@
 
 package com.alibaba.nacos.test;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author yangyi
+ *
+ * @deprecated It seems no necessary for super test class, will be removed.
  */
+@Deprecated
 public class BaseTest {
 
 	@Test
 	public void test_rs_json() {
 		String json = "{\"cluster\":\"DEFAULT\",\"ip\":\"127.0.0.1\",\"metadata\":{},\"port\":60000,\"scheduled\":true,\"serviceName\":\"DEFAULT_GROUP@@jinhan9J7ye.Vj6hx.net\",\"weight\":1.0}";
-		RsInfo client = JSON.parseObject(json, RsInfo.class);
+		RsInfo client = JacksonUtils.toObj(json, RsInfo.class);
 		System.out.println(client);
 	}
 

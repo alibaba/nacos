@@ -84,17 +84,17 @@ public class RaftOptionsBuilder {
 		raftOptions.setApplyBatch(
 				ConvertUtils.toInt(config.getVal(APPLY_BATCH), DEFAULT_APPLY_BATCH));
 
-		raftOptions.setSync(ConvertUtils.toBoolean(config.getVal(SYNC), DEFAULT_SYNC));
+		raftOptions.setSync(ConvertUtils.toBool(config.getVal(SYNC), DEFAULT_SYNC));
 
 		raftOptions.setSyncMeta(
-				ConvertUtils.toBoolean(config.getVal(SYNC_META), DEFAULT_SYNC_META));
+				ConvertUtils.toBool(config.getVal(SYNC_META), DEFAULT_SYNC_META));
 
 		raftOptions.setDisruptorBufferSize(ConvertUtils
 				.toInt(config.getVal(DISRUPTOR_BUFFER_SIZE),
 						DEFAULT_DISRUPTOR_BUFFER_SIZE));
 
 		raftOptions.setReplicatorPipeline(ConvertUtils
-				.toBoolean(config.getVal(REPLICATOR_PIPELINE),
+				.toBool(config.getVal(REPLICATOR_PIPELINE),
 						DEFAULT_REPLICATOR_PIPELINE));
 
 		raftOptions.setMaxReplicatorInflightMsgs(ConvertUtils
@@ -102,7 +102,7 @@ public class RaftOptionsBuilder {
 						DEFAULT_MAX_REPLICATOR_INFLIGHT_MSGS));
 
 		raftOptions.setEnableLogEntryChecksum(ConvertUtils
-				.toBoolean(config.getVal(ENABLE_LOG_ENTRY_CHECKSUM),
+				.toBool(config.getVal(ENABLE_LOG_ENTRY_CHECKSUM),
 						DEFAULT_ENABLE_LOG_ENTRY_CHECKSUM));
 
 		return raftOptions;

@@ -15,24 +15,22 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.common.api.Constants;
-import com.alibaba.nacos.common.exception.api.NacosException;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.common.utils.BooleanUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -77,14 +75,7 @@ public class ClusterController {
         cluster.setDefCkport(NumberUtils.toInt(checkPort));
         cluster.setUseIPPort4Check(BooleanUtils.toBoolean(useInstancePort4Check));
 
-        JSONObject healthCheckObj = JSON.parseObject(healthChecker);
-        AbstractHealthChecker abstractHealthChecker;
-        String type = healthCheckObj.getString("type");
-        Class<AbstractHealthChecker> healthCheckClass = HealthCheckType.ofHealthCheckerClass(type);
-        if(healthCheckClass == null){
-            throw new NacosException(NacosException.INVALID_PARAM, "unknown health check type:" + healthChecker);
-        }
-        abstractHealthChecker = JSON.parseObject(healthChecker, healthCheckClass);
+        AbstractHealthChecker abstractHealthChecker = HealthCheckerFactory.deserialize(healthChecker);
 
         cluster.setHealthChecker(abstractHealthChecker);
         cluster.setMetadata(UtilsAndCommons.parseMetadata(metadata));

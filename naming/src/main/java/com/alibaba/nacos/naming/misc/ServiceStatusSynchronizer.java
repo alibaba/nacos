@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -50,7 +50,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         }
 
         try {
-            HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(params), new AsyncCompletionHandler() {
+            HttpClient.asyncHttpPostLarge(url, null, JacksonUtils.toJson(params), new AsyncCompletionHandler() {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
@@ -73,7 +73,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             return null;
         }
 
-        Map<String,String> params = new HashMap<>(10);
+        Map<String,String> params = new HashMap<>(1);
 
         params.put("key", key);
 

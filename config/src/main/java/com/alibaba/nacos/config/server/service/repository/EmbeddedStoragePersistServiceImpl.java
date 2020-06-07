@@ -38,13 +38,11 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.DataSourceService;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.sql.SqlContextUtils;
+import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -69,21 +67,21 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO4TAG_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_BASE_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_CHANGED_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_INFO_WRAPPER_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.CONFIG_KEY_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.RowMapperManager.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4TAG_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BASE_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_CHANGED_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_KEY_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
@@ -96,26 +94,26 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 @Component
 public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
-	private final String configInfoId = "config-info-id";
-	private final String configHistoryId = "config-history-id";
-	private final String configTagRelationId = "config-tag-relation-id";
-	private final String appConfigDataRelationSubs = "app-configdata-relation-subs";
-	private final String configBetaId = "config-beta-id";
-	private final String namespaceId = "namespace-id";
-	private final String userId = "user-id";
-	private final String roleId = "role-id";
-	private final String permissionsId = "permissions_id";
+	private static final String RESOURCE_CONFIG_INFO_ID = "config-info-id";
+	private static final String RESOURCE_CONFIG_HISTORY_ID = "config-history-id";
+	private static final String RESOURCE_CONFIG_TAG_RELATION_ID = "config-tag-relation-id";
+	private static final String RESOURCE_APP_CONFIGDATA_RELATION_SUBS = "app-configdata-relation-subs";
+	private static final String RESOURCE_CONFIG_BETA_ID = "config-beta-id";
+	private static final String RESOURCE_NAMESPACE_ID = "namespace-id";
+	private static final String RESOURCE_USER_ID = "user-id";
+	private static final String RESOURCE_ROLE_ID = "role-id";
+	private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
 
-    private DataSourceService dataSourceService;
+	private DataSourceService dataSourceService;
 
-    private final DatabaseOperate databaseOperate;
+	private final DatabaseOperate databaseOperate;
 
 	private final IdGeneratorManager idGeneratorManager;
 
 	/**
 	 * The constructor sets the dependency injection order
 	 *
-	 * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+	 * @param databaseOperate    {@link EmbeddedStoragePersistServiceImpl}
 	 * @param idGeneratorManager {@link IdGeneratorManager}
 	 */
 	public EmbeddedStoragePersistServiceImpl(DatabaseOperate databaseOperate,
@@ -127,8 +125,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	@PostConstruct
 	public void init() {
 		dataSourceService = DynamicDataSource.getInstance().getDataSource();
-		idGeneratorManager.register(configInfoId, configHistoryId, configTagRelationId, appConfigDataRelationSubs,
-				configBetaId, namespaceId, userId, roleId, permissionsId);
+		idGeneratorManager.register(RESOURCE_CONFIG_INFO_ID, RESOURCE_CONFIG_HISTORY_ID,
+				RESOURCE_CONFIG_TAG_RELATION_ID, RESOURCE_APP_CONFIGDATA_RELATION_SUBS,
+				RESOURCE_CONFIG_BETA_ID, RESOURCE_NAMESPACE_ID, RESOURCE_USER_ID,
+				RESOURCE_ROLE_ID, RESOURCE_PERMISSIONS_ID);
 	}
 
 	public boolean checkMasterWritable() {
@@ -169,13 +169,18 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		return new EmbeddedPaginationHelperImpl<E>(databaseOperate);
 	}
 
-	public void addConfigInfo(final String srcIp, final String srcUser,
-			final ConfigInfo configInfo, final Timestamp time,
+	public void addConfigInfo(final String srcIp,
+			final String srcUser, final ConfigInfo configInfo, final Timestamp time,
 			final Map<String, Object> configAdvanceInfo, final boolean notify) {
 
 		try {
-			long configId = idGeneratorManager.nextId(configInfoId);
-			long hisId = idGeneratorManager.nextId(configHistoryId);
+			final String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
+					StringUtils.EMPTY :
+					configInfo.getTenant();
+			configInfo.setTenant(tenantTmp);
+
+			long configId = idGeneratorManager.nextId(RESOURCE_CONFIG_INFO_ID);
+			long hisId = idGeneratorManager.nextId(RESOURCE_CONFIG_HISTORY_ID);
 
 			addConfigInfoAtomic(configId, srcIp, srcUser, configInfo, time,
 					configAdvanceInfo);
@@ -185,34 +190,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 			addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 					configInfo.getGroup(), configInfo.getTenant());
-			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time,
-					"I");
-
-			boolean result = databaseOperate.smartUpdate();
-			if (!result) {
-				throw new NacosConfigException("Config add failed");
-			}
-
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(),
-								time.getTime()));
-			}
+			insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
+			EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
-	public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public void addConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
+			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
 				StringUtils.EMPTY :
 				configInfo.getTenant();
+
+		configInfo.setTenant(tenantTmp);
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
@@ -223,25 +220,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
 					md5, betaIps, srcIp, srcUser, time, time };
 
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils
+					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			boolean result = databaseOperate.smartUpdate();
-			if (!result) {
-				throw new NacosConfigException("[Beta] Config add failed");
-			}
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(true, configInfo.getDataId(),
-								configInfo.getGroup(), tenantTmp, time.getTime()));
-			}
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
-	public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public void addConfigInfo4Tag(ConfigInfo configInfo, String tag,
+			String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -249,6 +240,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				StringUtils.EMPTY :
 				configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+
+		configInfo.setTenant(tenantTmp);
+
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
@@ -259,30 +253,30 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp,
 					configInfo.getContent(), md5, srcIp, srcUser, time, time };
 
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils
+					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			boolean result = databaseOperate.smartUpdate();
-			if (!result) {
-				throw new NacosConfigException("[Tag] Config add failed");
-			}
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), tenantTmp, tagTmp,
-								time.getTime()));
-			}
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
-	public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp,
-			final String srcUser, final Timestamp time,
+	public void updateConfigInfo(final ConfigInfo configInfo,
+			final String srcIp, final String srcUser, final Timestamp time,
 			final Map<String, Object> configAdvanceInfo, final boolean notify) {
 		try {
 			ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(),
 					configInfo.getGroup(), configInfo.getTenant());
+
+			final String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
+					StringUtils.EMPTY :
+					configInfo.getTenant();
+
+			oldConfigInfo.setTenant(tenantTmp);
+
 			String appNameTmp = oldConfigInfo.getAppName();
 			// If the appName passed by the user is not empty, the appName of the user is persisted;
 			// otherwise, the appName of db is used. Empty string is required to clear appName
@@ -306,32 +300,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
 					srcUser, time, "U");
 
-			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
-			if (!result) {
-				throw new NacosConfigException("config modification failed");
-			}
-
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(),
-								time.getTime()));
-			}
+			EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
-	public void updateConfigInfo4Beta(ConfigInfo configInfo, String srcIp, String srcUser,
-			Timestamp time, boolean notify) {
+	@Override
+	public void updateConfigInfo4Beta(ConfigInfo configInfo,
+			String betaIps, String srcIp, String srcUser, Timestamp time,
+			boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
 		String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ?
 				StringUtils.EMPTY :
 				configInfo.getTenant();
+
+		configInfo.setTenant(tenantTmp);
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
@@ -342,26 +330,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp };
 
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils
+					.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
-			if (!result) {
-				throw new NacosConfigException("[Beta] config modification failed");
-			}
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(true, configInfo.getDataId(),
-								configInfo.getGroup(), tenantTmp, time.getTime()));
-			}
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
-	public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp,
-			String srcUser, Timestamp time, boolean notify) {
+	public void updateConfigInfo4Tag(ConfigInfo configInfo,
+			String tag, String srcIp, String srcUser, Timestamp time, boolean notify) {
 		String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ?
 				StringUtils.EMPTY :
 				configInfo.getAppName();
@@ -369,6 +350,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				StringUtils.EMPTY :
 				configInfo.getTenant();
 		String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
+
+		configInfo.setTenant(tenantTmp);
+
 		try {
 			String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
 
@@ -379,23 +363,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 					srcUser, time, appNameTmp, configInfo.getDataId(),
 					configInfo.getGroup(), tenantTmp, tagTmp };
 
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils
+					.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
-			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
-			if (!result) {
-				throw new NacosConfigException("[Tag] config modification failed");
-			}
-
-			if (notify) {
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(true, configInfo.getDataId(),
-								configInfo.getGroup(), tenantTmp, tagTmp,
-								time.getTime()));
-			}
+			databaseOperate.blockUpdate();
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -407,7 +382,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		}
 		else {
-			updateConfigInfo4Beta(configInfo, srcIp, null, time, notify);
+			updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		}
 	}
 
@@ -432,16 +407,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final Object[] args = new Object[] { md5, dataId, group, tenantTmp,
 					lastTime };
 
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException("Failed to config the MD5 modification");
 			}
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -465,7 +440,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		if (isAlreadyExist(subInfo)) {
 			updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(),
 					subInfo.getAppName(), subInfo.getDate());
-		} else {
+		}
+		else {
 			addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(),
 					subInfo.getAppName(), subInfo.getDate());
 		}
@@ -473,9 +449,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 	private boolean isAlreadyExist(SubInfo subInfo) {
 		final String sql = "SELECT * from app_configdata_relation_subs WHERE dara_id=? and group_id=? and app_name=?";
-		Map obj = databaseOperate.queryOne(sql, new Object[] {
-				subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName()
-		}, Map.class);
+		Map obj = databaseOperate.queryOne(sql,
+				new Object[] { subInfo.getDataId(), subInfo.getGroup(),
+						subInfo.getAppName() }, Map.class);
 		return obj != null;
 	}
 
@@ -485,19 +461,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		ConfigInfo configInfo = findConfigInfo(dataId, group, tenant);
 		if (Objects.nonNull(configInfo)) {
 			try {
-				removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
+				String tenantTmp = StringUtils.isBlank(tenant) ?
+						StringUtils.EMPTY :
+						tenant;
+
+				removeConfigInfoAtomic(dataId, group, tenantTmp, srcIp, srcUser);
 				removeTagByIdAtomic(configInfo.getId());
 				insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser,
 						time, "D");
 
+				EmbeddedStorageContextUtils
+						.onDeleteConfigInfo(tenantTmp, group, dataId, srcIp, time);
+
 				boolean result = databaseOperate
-						.update(SqlContextUtils.getCurrentSqlContext());
+						.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 				if (!result) {
 					throw new NacosConfigException("config deletion failed");
 				}
 			}
 			finally {
-				SqlContextUtils.cleanCurrentSqlContext();
+				EmbeddedStorageContextUtils.cleanAllContext();
 			}
 		}
 	}
@@ -521,8 +504,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				}
 			}
 
+			EmbeddedStorageContextUtils.onBatchDeleteConfigInfo(configInfoList);
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException("Failed to config batch deletion");
 			}
@@ -530,7 +514,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			return configInfoList;
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -542,16 +526,20 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			try {
 				final String sql = "DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?";
 				final Object[] args = new Object[] { dataId, group, tenantTmp };
-				SqlContextUtils.addSqlContext(sql, args);
+
+				EmbeddedStorageContextUtils
+						.onDeleteConfigBetaInfo(tenantTmp, group, dataId,
+								System.currentTimeMillis());
+				EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 				boolean result = databaseOperate
-						.update(SqlContextUtils.getCurrentSqlContext());
+						.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 				if (!result) {
 					throw new NacosConfigException("[Tag] Configuration deletion failed");
 				}
 			}
 			finally {
-				SqlContextUtils.cleanCurrentSqlContext();
+				EmbeddedStorageContextUtils.cleanAllContext();
 			}
 
 		}
@@ -581,24 +569,24 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		if (Objects.isNull(dbContent)) {
 			final Object[] args = new Object[] { dataId, group, tenantTmp, datumId,
 					appNameTmp, contentTmp, now };
-			SqlContextUtils.addSqlContext(insert, args);
+			EmbeddedStorageContextUtils.addSqlContext(insert, args);
 		}
 		else if (!dbContent.equals(content)) {
 			final Object[] args = new Object[] { contentTmp, now, dataId, group,
 					tenantTmp, datumId };
-			SqlContextUtils.addSqlContext(update, args);
+			EmbeddedStorageContextUtils.addSqlContext(update, args);
 		}
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException("[Merge] Configuration release failed");
 			}
 			return true;
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -608,18 +596,18 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 		final String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?";
 		final Object[] args = new Object[] { dataId, group, tenantTmp, datumId };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException(
 						"[aggregation with single] Configuration deletion failed");
 			}
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -629,18 +617,18 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 		final String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?";
 		final Object[] args = new Object[] { dataId, group, tenantTmp };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException(
 						"[aggregation with all] Configuration deletion failed");
 			}
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -656,11 +644,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				"delete from config_info_aggr where data_id=? and group_id=? and tenant_id=? and datum_id in ("
 						+ datumString.toString() + ")";
 		final Object[] args = new Object[] { dataId, group, tenantTmp };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException(
 						"[aggregation] Failed to configure batch deletion");
@@ -668,7 +656,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			return true;
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -703,7 +691,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 						entry.getValue());
 			}
 
-			isPublishOk = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			isPublishOk = databaseOperate
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 
 			if (isPublishOk == null) {
 				return false;
@@ -711,7 +700,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			return isPublishOk;
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -731,10 +720,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final Object[] args = new Object[] { dataId, group, tenantTmp,
 					datumEntry.getKey(), appNameTmp, datumEntry.getValue(),
 					new Timestamp(System.currentTimeMillis()) };
-			SqlContextUtils.addSqlContext(sql, args);
+			EmbeddedStorageContextUtils.addSqlContext(sql, args);
 		}
 		try {
-			isReplaceOk = databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			isReplaceOk = databaseOperate
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 
 			if (isReplaceOk == null) {
 				return false;
@@ -742,7 +732,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			return isReplaceOk;
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 
 	}
@@ -1369,7 +1359,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final int pageSize) {
 		String sqlCountRows = "select count(*) from config_info";
 		String sqlFetchRows =
-				" SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
+				" SELECT t.id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
 						+ " FROM (                               "
 						+ "   SELECT id FROM config_info         "
 						+ "   ORDER BY id LIMIT ?,?             "
@@ -1906,7 +1896,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final int pageSize, final long lastMaxId) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		String sqlCountRows = "select count(*) from config_info where ";
-		String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified from config_info where ";
+		String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
 		String where = " 1=1 ";
 		List<Object> params = new ArrayList<Object>();
 
@@ -1981,7 +1971,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final Object[] args = new Object[] { id, configInfo.getDataId(),
 				configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
 				md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema, };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 		return id;
 	}
 
@@ -1992,7 +1982,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 						+ "VALUES(?,?,?,?,?,?)";
 		final Object[] args = new Object[] { configId, tagName, null, dataId, group,
 				tenant };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 	}
 
 	public void addConfigTagsRelation(long configId, String configTags, String dataId,
@@ -2008,7 +1998,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	public void removeTagByIdAtomic(long id) {
 		final String sql = "DELETE FROM config_tags_relation WHERE id=?";
 		final Object[] args = new Object[] { id };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 	}
 
 	public List<String> getConfigTagsByTenant(String tenant) {
@@ -2029,7 +2019,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final String sql = "DELETE FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
 		final Object[] args = new Object[] { dataId, group, tenantTmp };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 	}
 
 	public void removeConfigInfoByIdsAtomic(final String ids) {
@@ -2048,7 +2038,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			paramList.add(Long.parseLong(tagArr[i]));
 		}
 		sql.append(") ");
-		SqlContextUtils.addSqlContext(sql.toString(), paramList.toArray());
+		EmbeddedStorageContextUtils.addSqlContext(sql.toString(), paramList.toArray());
 	}
 
 	public void removeConfigInfoTag(final String dataId, final String group,
@@ -2060,12 +2050,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final String sql = "DELETE FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?";
 		final Object[] args = new Object[] { dataId, group, tenantTmp, tagTmp };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils
+				.onDeleteConfigTagInfo(tenantTmp, group, dataId, tagTmp, srcIp);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 		try {
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2100,7 +2092,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				srcUser, time, appNameTmp, desc, use, effect, type, schema,
 				configInfo.getDataId(), configInfo.getGroup(), tenantTmp };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 	}
 
 	public ConfigInfo findConfigInfo(final String dataId, final String group,
@@ -2206,7 +2198,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 				configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
 				md5Tmp, srcIp, srcUser, time, ops };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 	}
 
 	public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group,
@@ -2224,17 +2216,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	public void addConfigSubAtomic(final String dataId, final String group,
 			final String appName, final Timestamp date) {
 		final String appNameTmp = appName == null ? "" : appName;
-		final long id = idGeneratorManager.nextId(appConfigDataRelationSubs);
+		final long id = idGeneratorManager.nextId(RESOURCE_APP_CONFIGDATA_RELATION_SUBS);
 
 		final String sql = "INSERT INTO app_configdata_relation_subs(id, data_id,group_id,app_name,gmt_modified) VALUES(?,?,?,?,?)";
 		final Object[] args = new Object[] { id, dataId, group, appNameTmp, date };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2244,13 +2236,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 		final String sql = "UPDATE app_configdata_relation_subs SET gmt_modified=? WHERE data_id=? AND group_id=? AND app_name=?";
 		final Object[] args = new Object[] { time, dataId, group, appNameTmp };
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2269,17 +2261,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final Object[] args = new Object[] { kp, tenantId, tenantName, tenantDesc,
 				createResoure, time, time };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException("Namespace creation failed");
 			}
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2290,17 +2282,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		final Object[] args = new Object[] { tenantName, tenantDesc,
 				System.currentTimeMillis(), kp, tenantId };
 
-		SqlContextUtils.addSqlContext(sql, args);
+		EmbeddedStorageContextUtils.addSqlContext(sql, args);
 
 		try {
 			boolean result = databaseOperate
-					.update(SqlContextUtils.getCurrentSqlContext());
+					.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 			if (!result) {
 				throw new NacosConfigException("Namespace update failed");
 			}
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2319,14 +2311,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	}
 
 	public void removeTenantInfoAtomic(final String kp, final String tenantId) {
-		SqlContextUtils
+		EmbeddedStorageContextUtils
 				.addSqlContext("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp,
 						tenantId);
 		try {
-			databaseOperate.update(SqlContextUtils.getCurrentSqlContext());
+			databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
 		}
 		finally {
-			SqlContextUtils.cleanCurrentSqlContext();
+			EmbeddedStorageContextUtils.cleanAllContext();
 		}
 	}
 
@@ -2379,7 +2371,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 	public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
 		String sqlCountRows = " SELECT COUNT(*) FROM config_info ";
-		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+		String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
 		PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
 		Page<ConfigInfoWrapper> page = helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
 				new Object[] { (pageNo - 1) * pageSize, pageSize }, pageNo, pageSize,
@@ -2403,7 +2395,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final String tenant) {
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
 		final String sql =
-				"SELECT ID,data_id,group_id,tenant_id,app_name,content,gmt_modified,md5 FROM "
+				"SELECT ID,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5 FROM "
 						+ "config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
 
 		return databaseOperate.queryOne(sql, new Object[] { dataId, group, tenantTmp },
@@ -2556,7 +2548,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 						notify);
 				succCount++;
 			}
-			catch (DataIntegrityViolationException ive) {
+			catch (Throwable e) {
+				if (!StringUtils.contains("DuplicateKeyException", e.toString())) {
+					throw e;
+				}
 				// uniqueness constraint conflict
 				if (SameConfigPolicy.ABORT.equals(policy)) {
 					failData = new ArrayList<>();

@@ -17,6 +17,8 @@ package com.alibaba.nacos.config.server.model;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -32,6 +34,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     /**
      * 不能增加字段
      */
+    @JsonSerialize(using = ToStringSerializer.class)
     private long id;
     private String dataId;
     private String group;

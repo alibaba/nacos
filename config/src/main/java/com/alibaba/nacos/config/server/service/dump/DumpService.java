@@ -15,7 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.common.utils.*;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -23,30 +26,24 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
+import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -55,9 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -68,26 +63,37 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@Service
-public class DumpService {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class DumpService {
 
-	private final PersistService persistService;
-	private final ServerMemberManager memberManager;
-	private final ProtocolManager protocolManager;
+	protected DumpProcessor processor;
+	protected DumpAllProcessor dumpAllProcessor;
+	protected DumpAllBetaProcessor dumpAllBetaProcessor;
+	protected DumpAllTagProcessor dumpAllTagProcessor;
+
+	protected final PersistService persistService;
+	protected final ServerMemberManager memberManager;
 
 	/**
 	 * Here you inject the dependent objects constructively, ensuring that some
 	 * of the dependent functionality is initialized ahead of time
 	 *
-	 * @param persistService {@link PersistService}
-	 * @param memberManager {@link ServerMemberManager}
-	 * @param protocolManager {@link ProtocolManager}
+	 * @param persistService  {@link PersistService}
+	 * @param memberManager   {@link ServerMemberManager}
 	 */
-	public DumpService(PersistService persistService, ServerMemberManager memberManager,
-			ProtocolManager protocolManager) {
+	public DumpService(PersistService persistService, ServerMemberManager memberManager) {
 		this.persistService = persistService;
 		this.memberManager = memberManager;
-		this.protocolManager = protocolManager;
+		this.processor = new DumpProcessor(this);
+		this.dumpAllProcessor = new DumpAllProcessor(this);
+		this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
+		this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+		this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
+		this.dumpTaskMgr.setDefaultTaskProcessor(processor);
+
+		this.dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
+		this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
+		DynamicDataSource.getInstance().getDataSource();
 	}
 
 	public PersistService getPersistService() {
@@ -98,175 +104,129 @@ public class DumpService {
 		return memberManager;
 	}
 
-	public ProtocolManager getProtocolManager() {
-		return protocolManager;
-	}
+	/**
+	 * initialize
+	 *
+	 * @throws Throwable
+	 */
+	protected abstract void init() throws Throwable;
 
-	@PostConstruct
-	protected void init() throws Exception {
-		DynamicDataSource.getInstance().getDataSource();
-
-		DumpProcessor processor = new DumpProcessor(this);
-		DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
-		DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-		DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-
-		dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
-		dumpTaskMgr.setDefaultTaskProcessor(processor);
-
-		dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
-		dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
-
-		// If using embedded distributed storage, you need to wait for the
-		// underlying master to complete the selection
-		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
-
-			CPProtocol protocol = protocolManager.getCpProtocol();
-
-			LogUtil.dumpLog
-					.info("With embedded distributed storage, you need to wait for "
-							+ "the underlying master to complete before you can perform the dump operation.");
-
-			// watch path => /nacos_config/leader/ has value ?
-			Observer observer = new Observer() {
-
-				@Override
-				public void update(Observable o, Object arg) {
-					GlobalExecutor.executeByCommon(() -> {
-						// must make sure that there is a value here to perform the correct operation that follows
-						if (Objects.isNull(arg)) {
-							return;
-						}
-						dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-								dumpAllTagProcessor);
-						protocol.protocolMetaData()
-								.unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-										com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-										this);
-					});
-				}
-			};
-
-			protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-					com.alibaba.nacos.consistency.cp.Constants.LEADER_META_DATA,
-					observer);
-
-			// When all dump is complete, allow the following flow
-		}
-		else {
-            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
-		}
-	}
-
-	private void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
+	protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
 			DumpAllBetaProcessor dumpAllBetaProcessor,
-			DumpAllTagProcessor dumpAllTagProcessor) {
-		LogUtil.defaultLog.warn("DumpService start");
+			DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
+		TimerContext.start("CONFIG_DUMP_TO_FILE");
+		try {
+			LogUtil.defaultLog.warn("DumpService start");
 
-		Runnable dumpAll = () -> dumpAllTaskMgr
-				.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
+			Runnable dumpAll = () -> dumpAllTaskMgr
+					.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 
-		Runnable dumpAllBeta = () -> dumpAllTaskMgr
-				.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+			Runnable dumpAllBeta = () -> dumpAllTaskMgr
+					.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
 
-		Runnable clearConfigHistory = () -> {
-			log.warn("clearConfigHistory start");
-			if (canExecute()) {
-				try {
-					Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(),
-							24 * getRetentionDays());
-					int totalCount = persistService
-							.findConfigHistoryCountByTime(startTime);
-					if (totalCount > 0) {
-						int pageSize = 1000;
-						int removeTime = (totalCount + pageSize - 1) / pageSize;
-						log.warn(
-								"clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-								new Object[] { startTime, totalCount, pageSize,
-										removeTime });
-						while (removeTime > 0) {
-							// 分页删除，以免批量太大报错
-							persistService.removeConfigHistory(startTime, pageSize);
-							removeTime--;
+			Runnable clearConfigHistory = () -> {
+				log.warn("clearConfigHistory start");
+				if (canExecute()) {
+					try {
+						Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(),
+								24 * getRetentionDays());
+						int totalCount = persistService
+								.findConfigHistoryCountByTime(startTime);
+						if (totalCount > 0) {
+							int pageSize = 1000;
+							int removeTime = (totalCount + pageSize - 1) / pageSize;
+							log.warn(
+									"clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
+									startTime, totalCount, pageSize, removeTime);
+							while (removeTime > 0) {
+								// 分页删除，以免批量太大报错
+								persistService.removeConfigHistory(startTime, pageSize);
+								removeTime--;
+							}
 						}
 					}
-				}
-				catch (Throwable e) {
-					log.error("clearConfigHistory error", e);
-				}
-			}
-		};
-
-		try {
-			dumpConfigInfo(dumpAllProcessor);
-
-			// 更新beta缓存
-			LogUtil.defaultLog.info("start clear all config-info-beta.");
-			DiskUtil.clearAllBeta();
-			if (persistService.isExistTable(BETA_TABLE_NAME)) {
-				dumpAllBetaProcessor
-						.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-			}
-			// 更新Tag缓存
-			LogUtil.defaultLog.info("start clear all config-info-tag.");
-			DiskUtil.clearAllTag();
-			if (persistService.isExistTable(TAG_TABLE_NAME)) {
-				dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
-			}
-
-			// add to dump aggr
-			List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
-			if (configList != null && !configList.isEmpty()) {
-				total = configList.size();
-				List<List<ConfigInfoChanged>> splitList = splitList(configList,
-						INIT_THREAD_COUNT);
-				for (List<ConfigInfoChanged> list : splitList) {
-					MergeAllDataWorker work = new MergeAllDataWorker(list);
-					work.start();
-				}
-				log.info("server start, schedule merge end.");
-			}
-		}
-		catch (Exception e) {
-			LogUtil.fatalLog
-					.error("Nacos Server did not start because dumpservice bean construction failure :\n"
-							+ e.getMessage(), e.getCause());
-			throw new RuntimeException(
-					"Nacos Server did not start because dumpservice bean construction failure :\n"
-							+ e.getMessage());
-		}
-		if (!ApplicationUtils.getStandaloneMode()) {
-			Runnable heartbeat = () -> {
-				String heartBeatTime = TimeUtils.getCurrentTime().toString();
-				// write disk
-				try {
-					DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-				}
-				catch (IOException e) {
-					LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
+					catch (Throwable e) {
+						log.error("clearConfigHistory error : {}", e.toString());
+					}
 				}
 			};
 
-			TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
+			try {
+				dumpConfigInfo(dumpAllProcessor);
 
-			long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
-			LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
+				// 更新beta缓存
+				LogUtil.defaultLog.info("start clear all config-info-beta.");
+				DiskUtil.clearAllBeta();
+				if (persistService.isExistTable(BETA_TABLE_NAME)) {
+					dumpAllBetaProcessor
+							.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+				}
+				// 更新Tag缓存
+				LogUtil.defaultLog.info("start clear all config-info-tag.");
+				DiskUtil.clearAllTag();
+				if (persistService.isExistTable(TAG_TABLE_NAME)) {
+					dumpAllTagProcessor
+							.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+				}
 
-			TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay,
-					DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+				// add to dump aggr
+				List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
+				if (configList != null && !configList.isEmpty()) {
+					total = configList.size();
+					List<List<ConfigInfoChanged>> splitList = splitList(configList,
+							INIT_THREAD_COUNT);
+					for (List<ConfigInfoChanged> list : splitList) {
+						MergeAllDataWorker work = new MergeAllDataWorker(list);
+						work.start();
+					}
+					log.info("server start, schedule merge end.");
+				}
+			}
+			catch (Exception e) {
+				LogUtil.fatalLog
+						.error("Nacos Server did not start because dumpservice bean construction failure :\n"
+								+ e.toString());
+				throw new NacosException(NacosException.SERVER_ERROR,
+						"Nacos Server did not start because dumpservice bean construction failure :\n"
+								+ e.getMessage(), e);
+			}
+			if (!ApplicationUtils.getStandaloneMode()) {
+				Runnable heartbeat = () -> {
+					String heartBeatTime = TimeUtils.getCurrentTime().toString();
+					// write disk
+					try {
+						DiskUtil.saveHeartBeatToDisk(heartBeatTime);
+					}
+					catch (IOException e) {
+						LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
+					}
+				};
 
-			TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
-					DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+				ConfigExecutor
+						.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
+
+				long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
+				LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
+
+				ConfigExecutor.scheduleWithFixedDelay(dumpAll, initialDelay,
+						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+
+				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
+						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+			}
+
+			ConfigExecutor
+					.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 		}
-
-		TimerTaskService
-				.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+		finally {
+			TimerContext.end(LogUtil.dumpLog);
+		}
 
 	}
 
 	private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
 		int timeStep = 6;
-		boolean isAllDump = true;
+		Boolean isAllDump = true;
 		// initial dump all
 		FileInputStream fis = null;
 		Timestamp heartheatLastStamp = null;
@@ -295,7 +255,7 @@ public class DumpService {
 				dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
 				Runnable checkMd5Task = () -> {
 					LogUtil.defaultLog.error("start checkMd5Task");
-					List<String> diffList = ConfigService.checkMd5();
+					List<String> diffList = ConfigCacheService.checkMd5();
 					for (String groupKey : diffList) {
 						String[] dg = GroupKey.parseKey(groupKey);
 						String dataId = dg[0];
@@ -303,12 +263,12 @@ public class DumpService {
 						String tenant = dg[2];
 						ConfigInfoWrapper configInfo = persistService
 								.queryConfigInfo(dataId, group, tenant);
-						ConfigService.dumpChange(dataId, group, tenant,
+						ConfigCacheService.dumpChange(dataId, group, tenant,
 								configInfo.getContent(), configInfo.getLastModified());
 					}
 					LogUtil.defaultLog.error("end checkMd5Task");
 				};
-				TimerTaskService
+				ConfigExecutor
 						.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
 			}
 		}
@@ -346,7 +306,7 @@ public class DumpService {
 		try {
 			String val = null;
 			val = ApplicationUtils.getProperty("isQuickStart");
-			if (TRUE_STR.equals(val)) {
+			if (val != null && TRUE_STR.equals(val)) {
 				isQuickStart = true;
 			}
 			fatalLog.warn("isQuickStart:{}", isQuickStart);
@@ -460,7 +420,7 @@ public class DumpService {
 						ConfigInfo cf = MergeTaskProcessor
 								.merge(dataId, group, tenant, datumList);
 						String aggrContent = cf.getContent();
-						String localContentMD5 = ConfigService
+						String localContentMD5 = ConfigCacheService
 								.getContentMd5(GroupKey.getKey(dataId, group));
 						String aggrConetentMD5 = MD5Utils
 								.md5Hex(aggrContent, Constants.ENCODE);
@@ -498,25 +458,12 @@ public class DumpService {
 		}
 	}
 
-	private boolean canExecute() {
-		try {
-			CPProtocol protocol = protocolManager.getCpProtocol();
-			// if is derby + raft mode, only leader can execute
-			if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils
-					.getStandaloneMode()) {
-				return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
-			}
-			// If it is external storage, it determines whether it is the first node of the cluster
-			return memberManager.isFirstIp();
-		}
-		catch (NoSuchRaftGroupException e) {
-			return true;
-		}
-		catch (Throwable e) {
-			// It's impossible to get to this point
-			throw new RuntimeException(e);
-		}
-	}
+	/**
+	 * Used to determine whether the aggregation task, configuration history cleanup task can be performed
+	 *
+	 * @return {@link Boolean}
+	 */
+	protected abstract boolean canExecute();
 
 	/**
 	 * 全量dump间隔

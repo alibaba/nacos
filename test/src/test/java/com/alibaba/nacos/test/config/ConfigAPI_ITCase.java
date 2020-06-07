@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -28,6 +27,7 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -84,7 +84,7 @@ public class ConfigAPI_ITCase {
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
@@ -660,7 +660,7 @@ public class ConfigAPI_ITCase {
             result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
-            Assert.assertEquals(content, JSON.parseObject(result.content).getString("content"));
+            Assert.assertEquals(content, JacksonUtils.toObj(result.content).get("content").textValue());
         } catch (Exception e) {
             Assert.fail();
         }
@@ -688,7 +688,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
             System.out.println(result.content);
-            Assert.assertNotNull(JSON.parseObject(result.content).getString("data"));
+            Assert.assertFalse(JacksonUtils.toObj(result.content).get("data").isNull());
 
         } catch (Exception e) {
             Assert.fail();
@@ -717,7 +717,7 @@ public class ConfigAPI_ITCase {
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONObject("data").getString("content"));
+            Assert.assertEquals(content, JacksonUtils.toObj(result.content).get("data").get("content").textValue());
             // delete data
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
@@ -751,7 +751,7 @@ public class ConfigAPI_ITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
 
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
@@ -780,8 +780,8 @@ public class ConfigAPI_ITCase {
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
-            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
-            Assert.assertTrue(JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content").startsWith(content));
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("totalCount").intValue() >= 1);
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("pageItems").get(0).get("content").textValue().startsWith(content));
         } catch (Exception e) {
             Assert.fail();
         }
@@ -809,8 +809,8 @@ public class ConfigAPI_ITCase {
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
 
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
-            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("totalCount").intValue() >= 1);
+            Assert.assertEquals(content, JacksonUtils.toObj(result.content).get("pageItems").get(0).get("content").textValue());
 
         } catch (Exception e) {
             Assert.fail();
@@ -839,8 +839,8 @@ public class ConfigAPI_ITCase {
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
 
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertEquals(1, JSON.parseObject(result.content).getIntValue("totalCount"));
-            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            Assert.assertEquals(1, JacksonUtils.toObj(result.content).get("totalCount").intValue());
+            Assert.assertEquals(content, JacksonUtils.toObj(result.content).get("pageItems").get(0).get("content").textValue());
 
         } catch (Exception e) {
             Assert.fail();
@@ -868,8 +868,8 @@ public class ConfigAPI_ITCase {
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, "utf-8", TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertEquals(1, JSON.parseObject(result.content).getIntValue("totalCount"));
-            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            Assert.assertEquals(1, JacksonUtils.toObj(result.content).get("totalCount").intValue());
+            Assert.assertEquals(content, JacksonUtils.toObj(result.content).get("pageItems").get(0).get("content").textValue());
         } catch (Exception e) {
             Assert.fail();
         }

@@ -17,13 +17,17 @@ package com.alibaba.nacos.naming.selector;
 
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
-import com.alibaba.nacos.common.exception.api.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Instance;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,6 +59,7 @@ import java.util.Set;
  * @see CmdbReader
  * @since 0.7.0
  */
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class LabelSelector extends ExpressionSelector implements Selector {
 
     /**
@@ -79,6 +84,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
     static {
         SUPPORTED_INNER_CONNCETORS.add(String.valueOf(CEQUAL));
         SUPPORTED_OUTER_CONNCETORS.add(String.valueOf(CAND));
+        JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
     }
 
     public Set<String> getLabels() {
@@ -90,7 +96,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
     }
 
     public LabelSelector() {
-        setType(SelectorType.label.name());
+        super();
     }
 
     private CmdbReader getCmdbReader() {
