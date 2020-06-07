@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -140,7 +141,7 @@ public class JRaftServer {
 				String.valueOf(256 * 1024 * 1024));
 	}
 
-	public JRaftServer() throws Exception {
+	public JRaftServer() {
 		this.conf = new Configuration();
 	}
 
@@ -555,12 +556,16 @@ public class JRaftServer {
 		return cliService;
 	}
 
-	public class RaftGroupTuple {
+	public static class RaftGroupTuple {
 
-		private final LogProcessor processor;
-		private final Node node;
-		private final RaftGroupService raftGroupService;
-		private final NacosStateMachine machine;
+		private LogProcessor processor;
+		private Node node;
+		private RaftGroupService raftGroupService;
+		private NacosStateMachine machine;
+
+		@JustForTest
+		public RaftGroupTuple() {
+		}
 
 		public RaftGroupTuple(Node node, LogProcessor processor,
 				RaftGroupService raftGroupService, NacosStateMachine machine) {
