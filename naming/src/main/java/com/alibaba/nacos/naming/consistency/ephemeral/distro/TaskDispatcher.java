@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,16 +116,16 @@ public class TaskDispatcher {
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
-                        for (Server member : dataSyncer.getServers()) {
-                            if (NetUtils.localServer().equals(member.getKey())) {
+                        for (Member member : dataSyncer.getServers()) {
+                            if (NetUtils.localServer().equals(member.getAddress())) {
                                 continue;
                             }
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
-                            syncTask.setTargetServer(member.getKey());
+                            syncTask.setTargetServer(member.getAddress());
 
                             if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                                Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));
+                                Loggers.DISTRO.debug("add sync task: {}", JacksonUtils.toJson(syncTask));
                             }
 
                             dataSyncer.submit(syncTask, 0);

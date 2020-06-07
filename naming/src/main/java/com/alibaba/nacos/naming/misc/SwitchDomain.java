@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +42,8 @@ public class SwitchDomain implements Record, Cloneable {
 
     private boolean healthCheckEnabled = true;
 
+    private boolean autoChangeHealthCheckEnabled = true;
+
     private boolean distroEnabled = true;
 
     private boolean enableStandalone = true;
@@ -65,6 +67,8 @@ public class SwitchDomain implements Record, Cloneable {
     private boolean disableAddIP = false;
 
     private boolean sendBeatOnly = false;
+
+    private boolean lightBeatEnabled = true;
 
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
@@ -210,6 +214,14 @@ public class SwitchDomain implements Record, Cloneable {
         return healthCheckEnabled || getHealthCheckWhiteList().contains(serviceName);
     }
 
+    public boolean isAutoChangeHealthCheckEnabled() {
+        return autoChangeHealthCheckEnabled;
+    }
+
+    public void setAutoChangeHealthCheckEnabled(boolean autoChangeHealthCheckEnabled) {
+        this.autoChangeHealthCheckEnabled = autoChangeHealthCheckEnabled;
+    }
+
     public boolean isDistroEnabled() {
         return distroEnabled;
     }
@@ -346,9 +358,17 @@ public class SwitchDomain implements Record, Cloneable {
         this.defaultInstanceEphemeral = defaultInstanceEphemeral;
     }
 
+    public boolean isLightBeatEnabled() {
+        return lightBeatEnabled;
+    }
+
+    public void setLightBeatEnabled(boolean lightBeatEnabled) {
+        this.lightBeatEnabled = lightBeatEnabled;
+    }
+
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return JacksonUtils.toJson(this);
     }
 
     @Override

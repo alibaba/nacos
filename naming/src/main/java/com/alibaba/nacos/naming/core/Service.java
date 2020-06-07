@@ -15,9 +15,10 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
@@ -30,14 +31,14 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.util.*;
 
 /**
@@ -50,12 +51,18 @@ import java.util.*;
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
+
+    /**
+     * Identify the information used to determine how many isEmpty judgments the service has experienced
+     */
+    private int finalizeCount = 0;
 
     private String token;
     private List<String> owners = new ArrayList<>();
@@ -87,9 +94,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         super(name);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public PushService getPushService() {
-        return SpringContext.getAppContext().getBean(PushService.class);
+        return ApplicationUtils.getBean(PushService.class);
     }
 
     public long getIpDeleteTimeout() {
@@ -268,6 +275,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
     }
 
+    public boolean isEmpty() {
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            final Cluster cluster = entry.getValue();
+            if (!cluster.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Instance> allIPs() {
         List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
@@ -309,10 +326,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public String toJSON() {
-        return JSON.toJSONString(this);
+        return JacksonUtils.toJson(this);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getServiceString() {
         Map<Object, Object> serviceObject = new HashMap<Object, Object>(10);
         Service service = this;
@@ -356,7 +373,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         serviceObject.put("clusters", clustersList);
 
-        return JSON.toJSONString(serviceObject);
+        try {
+            return JacksonUtils.toJson(serviceObject);
+        } catch (Exception e) {
+            throw new RuntimeException("Service toJson failed", e);
+        }
     }
 
     public String getToken() {
@@ -460,21 +481,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipsString.append(",");
         }
 
-        try {
-            String result;
-            try {
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
-                result = new BigInteger(1, md5.digest((ipsString.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-            } catch (Exception e) {
-                Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-                result = RandomStringUtils.randomAscii(32);
-            }
-
-            checksum = result;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
-            checksum = RandomStringUtils.randomAscii(32);
-        }
+        checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);
     }
 
     private void updateOrAddCluster(Collection<Cluster> clusters) {
@@ -500,6 +507,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
             cluster.destroy();
         }
+    }
+
+    public int getFinalizeCount() {
+        return finalizeCount;
+    }
+
+    public void setFinalizeCount(int finalizeCount) {
+        this.finalizeCount = finalizeCount;
     }
 
     public void addCluster(Cluster cluster) {

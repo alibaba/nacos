@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.io.File;
 
 /**

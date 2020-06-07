@@ -23,3 +23,15 @@ export const GET_STATE = 'GET_STATE';
 
 export const GET_SUBSCRIBERS = 'GET_SUBSCRIBERS';
 export const REMOVE_SUBSCRIBERS = 'REMOVE_SUBSCRIBERS';
+
+export const UPDATE_USER = 'UPDATE_USER';
+export const SIGN_IN = 'SIGN_IN';
+export const USER_LIST = 'USER_LIST';
+
+export const ROLE_LIST = 'ROLE_LIST';
+
+export const PERMISSIONS_LIST = 'PERMISSIONS_LIST';
+
+export const GET_NAMESPACES = 'GET_NAMESPACES';
+
+export const GET_CONFIGURATION = 'GET_CONFIGURATION';

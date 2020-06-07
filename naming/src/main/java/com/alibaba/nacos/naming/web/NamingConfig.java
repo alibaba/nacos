@@ -32,7 +32,6 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
-
         return registration;
     }
 
@@ -43,19 +42,6 @@ public class NamingConfig {
         registration.addUrlPatterns("/v1/ns/*");
         registration.setName("trafficReviseFilter");
         registration.setOrder(1);
-
-        return registration;
-    }
-
-    @Bean
-    public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
-
-        registration.setFilter(authFilter());
-        registration.addUrlPatterns("/v1/ns/*");
-        registration.setName("authFilter");
-        registration.setOrder(5);
-
         return registration;
     }
 
@@ -67,11 +53,6 @@ public class NamingConfig {
     @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
-    }
-
-    @Bean
-    public AuthFilter authFilter() {
-        return new AuthFilter();
     }
 
 }

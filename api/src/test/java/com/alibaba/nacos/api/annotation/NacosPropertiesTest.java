@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.api.annotation;
 
-import com.alibaba.fastjson.JSON;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;

@@ -16,7 +16,7 @@ public class DumpServiceTest {
     DumpService service;
 
     @Test
-    public void init() {
+    public void init() throws Throwable {
         service.init();
     }
 }

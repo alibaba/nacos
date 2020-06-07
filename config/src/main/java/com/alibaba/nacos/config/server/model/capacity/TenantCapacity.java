@@ -22,6 +22,8 @@ package com.alibaba.nacos.config.server.model.capacity;
  * @date 2018/3/13
  */
 public class TenantCapacity extends Capacity {
+
+    private static final long serialVersionUID = -1238179608935781384L;
     private String tenant;
 
     public String getTenant() {

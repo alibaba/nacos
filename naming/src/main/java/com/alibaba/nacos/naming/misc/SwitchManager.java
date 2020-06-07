@@ -15,13 +15,14 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -77,7 +78,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
             if (SwitchEntry.BATCH.equals(entry)) {
                 //batch update
-                SwitchDomain dom = JSON.parseObject(value, SwitchDomain.class);
+                SwitchDomain dom = JacksonUtils.toObj(value, SwitchDomain.class);
                 dom.setEnableStandalone(switchDomain.isEnableStandalone());
                 if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
                     || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
@@ -272,6 +273,16 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 switchDomain.setDistroServerExpiredMillis(Long.parseLong(distroServerExpiredMillis));
             }
 
+            if (entry.equals(SwitchEntry.LIGHT_BEAT_ENABLED)) {
+                String lightBeatEnabled = value;
+                switchDomain.setLightBeatEnabled(BooleanUtils.toBoolean(lightBeatEnabled));
+            }
+
+            if (entry.equals(SwitchEntry.AUTO_CHANGE_HEALTH_CHECK_ENABLED)) {
+                String autoChangeHealthCheckEnabled = value;
+                switchDomain.setAutoChangeHealthCheckEnabled(BooleanUtils.toBoolean(autoChangeHealthCheckEnabled));
+            }
+
             if (debug) {
                 update(switchDomain);
             } else {
@@ -292,6 +303,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setDefaultCacheMillis(newSwitchDomain.getDefaultCacheMillis());
         switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
         switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
+        switchDomain.setAutoChangeHealthCheckEnabled(newSwitchDomain.isAutoChangeHealthCheckEnabled());
         switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
         switchDomain.setPushEnabled(newSwitchDomain.isPushEnabled());
         switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
@@ -313,6 +325,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
+        switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
     }
 
     public SwitchDomain getSwitchDomain() {
