@@ -21,19 +21,17 @@ import static com.alibaba.nacos.config.server.service.capacity.GroupCapacityPers
 @Service
 public class GroupCapacityPersistServiceTmp {
 
-    @Autowired
-    private GroupCapacityRepository groupCapacityRepository;
+    static final String CLUSTER = "";
 
     @Autowired
-    private TenantCapacityRepository tenantCapacityRepository;
+    private GroupCapacityRepository groupCapacityRepository;
 
     @Autowired
     private ConfigInfoRepository configInfoRepository;
 
     public GroupCapacity getGroupCapacity(String groupId) {
-        return groupCapacityRepository.findAll(QGroupCapacity.groupCapacity.groupId.eq(groupId))
-            .iterator()
-            .next();
+        return groupCapacityRepository.findOne(QGroupCapacity.groupCapacity.groupId.eq(groupId))
+            .orElse(null);
     }
 
 
@@ -59,24 +57,22 @@ public class GroupCapacityPersistServiceTmp {
 
     public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        Iterable<GroupCapacity> iterable = groupCapacityRepository.findAll(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
-            .and(qGroupCapacity.usage.lt(groupCapacity.getUsage()))
-            .and(qGroupCapacity.quota.eq(0)));
-        iterable.forEach(s -> {
-            s.setGmtModified(groupCapacity.getGmtModified());
-            s.setUsage(groupCapacity.getUsage() + 1);
-        });
-        groupCapacityRepository.saveAll(iterable);
+        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+            .and(qGroupCapacity.usage.lt(groupCapacity.getQuota()))
+            .and(qGroupCapacity.quota.eq(0)))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        result.setGmtModified(groupCapacity.getGmtModified());
+        if (result.getUsage() == null) {
+            result.setUsage(1);
+        } else {
+            result.setUsage(result.getUsage() + 1);
+        }
+        groupCapacityRepository.save(result);
         return true;
     }
-
-//    public TenantCapacity getTenantCapacity(String tenantId) {
-//        return tenantCapacityRepository.findAll(QTenantCapacity.tenantCapacity.tenantId.eq(tenantId))
-//            .iterator()
-//            .next();
-//    }
-
-
 
     private boolean insertGroupCapacity(final Long configInfoSize, final GroupCapacity capacity) {
         capacity.setUsage(configInfoSize.intValue());
@@ -86,45 +82,52 @@ public class GroupCapacityPersistServiceTmp {
 
     public boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        Iterable<GroupCapacity> iterable = groupCapacityRepository.findAll(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
-            .and(qGroupCapacity.usage.lt(groupCapacity.getUsage()))
-            .and(qGroupCapacity.quota.ne(0)));
-        List<GroupCapacity> list = (List<GroupCapacity>) iterable;
-        if (list.size() > 1) {
+        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+            .and(qGroupCapacity.quota.ne(0)))
+            .orElse(null);
+        if (result == null) {
             return false;
         }
-        iterable.forEach(s -> {
-            s.setGmtModified(groupCapacity.getGmtModified());
-            s.setUsage(groupCapacity.getUsage() + 1);
-        });
-        groupCapacityRepository.saveAll(iterable);
+        //usage 需要小于quota
+        if (result.getUsage() >= result.getQuota()) {
+            return false;
+        }
+        result.setUsage(result.getUsage() + 1);
+        result.setGmtModified(groupCapacity.getGmtModified());
+        groupCapacityRepository.save(result);
         return true;
     }
 
     public boolean incrementUsage(GroupCapacity groupCapacity) {
-        Iterable<GroupCapacity> iterable = groupCapacityRepository
-            .findAll(QGroupCapacity.groupCapacity.groupId.eq(groupCapacity.getGroupId()));
-        iterable.forEach(s -> {
-            s.setUsage(s.getUsage() + 1);
-            s.setGmtModified(groupCapacity.getGmtModified());
-        });
-        groupCapacityRepository.saveAll(iterable);
+        GroupCapacity result = groupCapacityRepository
+            .findOne(QGroupCapacity.groupCapacity.groupId.eq(groupCapacity.getGroupId()))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        if (result.getUsage() == null) {
+            result.setUsage(1);
+        } else {
+            result.setUsage(result.getUsage() + 1);
+        }
+        result.setGmtModified(groupCapacity.getGmtModified());
+        groupCapacityRepository.save(result);
         return true;
     }
 
     public boolean decrementUsage(GroupCapacity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        Iterable<GroupCapacity> iterable = groupCapacityRepository.findAll(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
-            .and(qGroupCapacity.usage.gt(0)));
-        List<GroupCapacity> list = (List<GroupCapacity>) iterable;
-        if (list.size() > 1) {
+        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+            .and(qGroupCapacity.usage.gt(0)))
+            .orElse(null);
+        if (result == null) {
             return false;
         }
-        list.forEach(s -> {
-            s.setGmtModified(groupCapacity.getGmtModified());
-            s.setUsage(s.getUsage() - 1);
-        });
-        groupCapacityRepository.saveAll(list);
+        if (result.getUsage() != null && result.getUsage() > 0) {
+            result.setUsage(result.getUsage() - 1);
+        }
+        result.setGmtModified(groupCapacity.getGmtModified());
+        groupCapacityRepository.save(result);
         return true;
     }
 
@@ -148,12 +151,23 @@ public class GroupCapacityPersistServiceTmp {
     }
 
 
-    public boolean correctUsage(String tenant, Timestamp gmtModified) {
-        Long size = configInfoRepository.count(QConfigInfo.configInfo.tenantId.eq(tenant));
-        Iterable<GroupCapacity> iterable = groupCapacityRepository.findAll(QTenantCapacity.tenantCapacity.tenantId.eq(tenant)
-            .and(QTenantCapacity.tenantCapacity.gmtModified.eq(gmtModified)));
-        iterable.forEach(tenantCapacity -> tenantCapacity.setUsage(size.intValue()));
-        groupCapacityRepository.saveAll(iterable);
+    public boolean correctUsage(String group, Timestamp gmtModified) {
+        Long size;
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        if (CLUSTER.equals(group)) {
+            size = configInfoRepository.count(qConfigInfo.groupId.eq(group));
+        } else {
+            size = configInfoRepository.count(qConfigInfo.groupId.eq(group)
+                .and(qConfigInfo.tenantId.eq("")));
+        }
+        GroupCapacity groupCapacity = groupCapacityRepository.findOne(QGroupCapacity.groupCapacity.groupId.eq(group))
+            .orElse(null);
+        if (groupCapacity == null) {
+            return false;
+        }
+        groupCapacity.setUsage(size.intValue());
+        groupCapacity.setGmtModified(gmtModified);
+        groupCapacityRepository.save(groupCapacity);
         return true;
     }
 

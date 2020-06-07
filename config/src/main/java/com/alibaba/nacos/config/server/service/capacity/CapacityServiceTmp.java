@@ -304,6 +304,7 @@ public class CapacityServiceTmp {
         groupCapacity.setMaxSize(maxSize == null ? ZERO : maxSize);
         groupCapacity.setMaxAggrCount(maxAggrCount == null ? ZERO : maxAggrCount);
         groupCapacity.setMaxAggrSize(maxAggrSize == null ? ZERO : maxAggrSize);
+        groupCapacity.setMaxHistoryCount(0);
         groupCapacity.setGmtCreate(now);
         groupCapacity.setGmtModified(now);
         return groupCapacityPersistServiceTmp.insertGroupCapacity(groupCapacity);
@@ -415,6 +416,8 @@ public class CapacityServiceTmp {
             tenantCapacity.setMaxSize(maxSize == null ? ZERO : maxSize);
             tenantCapacity.setMaxAggrCount(maxAggrCount == null ? ZERO : maxAggrCount);
             tenantCapacity.setMaxAggrSize(maxAggrSize == null ? ZERO : maxAggrSize);
+            tenantCapacity.setMaxHistoryCount(ZERO);
+            tenantCapacity.setUsage(ZERO);
             tenantCapacity.setGmtCreate(now);
             tenantCapacity.setGmtModified(now);
 //            return true;

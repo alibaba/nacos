@@ -1,7 +1,14 @@
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
+import com.alibaba.nacos.config.server.modules.entity.Capacity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.capacity.CapacityServiceTmp;
+import com.alibaba.nacos.console.BaseTest;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,25 +22,33 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class CapacityServiceTest {
+public class CapacityServiceTest extends BaseTest {
 
     @Autowired
     private CapacityServiceTmp capacityServiceTmp;
 
+    private ConfigInfo configInfo;
+
+    @Before
+    public void before() {
+        String data = readClassPath("test-data/config_info.json");
+        configInfo = JacksonUtils.toObj(data, ConfigInfo.class);
+    }
 
     @Test
     public void correctGroupUsageTest() {
-        capacityServiceTmp.correctGroupUsage("");
+        capacityServiceTmp.correctGroupUsage(configInfo.getGroupId());
     }
 
     @Test
     public void correctTenantUsageTest() {
-        capacityServiceTmp.correctTenantUsage("");
+        capacityServiceTmp.correctTenantUsage(configInfo.getTenantId());
     }
 
     @Test
     public void insertAndUpdateClusterUsageTest() {
-        capacityServiceTmp.insertAndUpdateClusterUsage(CounterMode.INCREMENT, true);
+        boolean result = capacityServiceTmp.insertAndUpdateClusterUsage(CounterMode.INCREMENT, true);
+        Assert.assertTrue(result);
     }
 
     @Test
@@ -43,13 +58,14 @@ public class CapacityServiceTest {
 
     @Test
     public void insertAndUpdateGroupUsageTest() {
-        capacityServiceTmp.insertAndUpdateGroupUsage(CounterMode.INCREMENT, "", true);
+        capacityServiceTmp.insertAndUpdateGroupUsage(CounterMode.DECREMENT, "", false);
     }
 
     @Test
     public void getGroupCapacityTest() {
         capacityServiceTmp.getGroupCapacity("");
     }
+    //
 
     @Test
     public void updateGroupUsageTest() {
@@ -58,32 +74,31 @@ public class CapacityServiceTest {
 
     @Test
     public void getCapacityWithDefaultTest() {
-        capacityServiceTmp.getCapacityWithDefault("", "");
+        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", "test");
+        Assert.assertNotNull(capacity);
     }
+
 
     @Test
     public void initCapacityTest() {
-        capacityServiceTmp.initCapacity("","");
+        capacityServiceTmp.initCapacity("test2", "");
     }
 
-    @Test
-    public void initGroupCapacity() {
-        capacityServiceTmp.initGroupCapacity("");
-    }
 
+    //
     @Test
     public void getCapacityTest() {
-        capacityServiceTmp.getCapacity("","");
+        capacityServiceTmp.getCapacity("", "");
     }
 
     @Test
     public void insertAndUpdateTenantUsageTest() {
-        capacityServiceTmp.insertAndUpdateTenantUsage(CounterMode.INCREMENT,"",true);
+        capacityServiceTmp.insertAndUpdateTenantUsage(CounterMode.INCREMENT, "", true);
     }
 
     @Test
     public void updateTenantUsageTest() {
-        capacityServiceTmp.updateTenantUsage(CounterMode.INCREMENT,"");
+        capacityServiceTmp.updateTenantUsage(CounterMode.INCREMENT, "");
     }
 
     @Test
@@ -93,17 +108,19 @@ public class CapacityServiceTest {
 
     @Test
     public void initTenantCapacity1Test() {
-        capacityServiceTmp.initTenantCapacity("",10,10,10,10);
+        capacityServiceTmp.initTenantCapacity("testTenant", 10, 10, 10, 10);
     }
 
     @Test
     public void getTenantCapacityTest() {
-        capacityServiceTmp.getTenantCapacity("");
+        TenantCapacity tenantCapacity = capacityServiceTmp.getTenantCapacity("");
+        Assert.assertNotNull(tenantCapacity);
     }
 
     @Test
     public void insertOrUpdateCapacityTest() {
-        capacityServiceTmp.insertOrUpdateCapacity("","",10,10,10,10);
+        boolean result = capacityServiceTmp.insertOrUpdateCapacity("", "", 10, 10, 10, 10);
+        Assert.assertTrue(result);
     }
 
 }

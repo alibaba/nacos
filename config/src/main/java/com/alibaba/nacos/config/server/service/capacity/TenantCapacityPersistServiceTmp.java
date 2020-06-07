@@ -24,9 +24,8 @@ public class TenantCapacityPersistServiceTmp {
     private ConfigInfoRepository configInfoRepository;
 
     public TenantCapacity getTenantCapacity(String tenantId) {
-        Iterable<TenantCapacity> tenantCapacities = tenantCapacityRepository.findAll(QTenantCapacity
-            .tenantCapacity.tenantId.eq(tenantId));
-        return tenantCapacities.iterator().next();
+        return tenantCapacityRepository.findOne(QTenantCapacity
+            .tenantCapacity.tenantId.eq(tenantId)).orElse(null);
     }
 
     public boolean insertTenantCapacity(final TenantCapacity tenantCapacity) {
@@ -38,51 +37,60 @@ public class TenantCapacityPersistServiceTmp {
 
     public boolean incrementUsageWithDefaultQuotaLimit(TenantCapacity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        Iterable<TenantCapacity> iterable = tenantCapacityRepository.findAll(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
-            .and(qTenantCapacity.usage.lt(tenantCapacity.getUsage()))
-            .and(qTenantCapacity.quota.eq(0)));
-        iterable.forEach(s -> {
-            s.setGmtModified(tenantCapacity.getGmtModified());
-            s.setUsage(tenantCapacity.getUsage() + 1);
-        });
-        tenantCapacityRepository.saveAll(iterable);
-        return ((List) iterable).size() == 1;
+        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+            .and(qTenantCapacity.usage.lt(tenantCapacity.getQuota()))
+            .and(qTenantCapacity.quota.eq(0)))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        result.setUsage(result.getUsage() + 1);
+        tenantCapacityRepository.save(result);
+        return true;
     }
 
     public boolean incrementUsageWithQuotaLimit(TenantCapacity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        Iterable<TenantCapacity> iterable = tenantCapacityRepository.findAll(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
             .and(qTenantCapacity.usage.lt(tenantCapacity.getUsage()))
-            .and(qTenantCapacity.quota.ne(0)));
-        iterable.forEach(s -> {
-            s.setGmtModified(tenantCapacity.getGmtModified());
-            s.setUsage(tenantCapacity.getUsage() + 1);
-        });
-        tenantCapacityRepository.saveAll(iterable);
-        return ((List) iterable).size() == 1;
+            .and(qTenantCapacity.quota.ne(0)))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        result.setGmtModified(tenantCapacity.getGmtModified());
+        result.setUsage(result.getUsage() + 1);
+        tenantCapacityRepository.save(result);
+        return true;
     }
 
     public boolean incrementUsage(TenantCapacity tenantCapacity) {
-        Iterable<TenantCapacity> iterable = tenantCapacityRepository
-            .findAll(QTenantCapacity.tenantCapacity.tenantId.eq(tenantCapacity.getTenantId()));
-        iterable.forEach(s -> {
-            s.setUsage(s.getUsage() + 1);
-            s.setGmtModified(tenantCapacity.getGmtModified());
-        });
-        tenantCapacityRepository.saveAll(iterable);
-        return ((List) iterable).size() == 1;
+        TenantCapacity result = tenantCapacityRepository
+            .findOne(QTenantCapacity.tenantCapacity.tenantId.eq(tenantCapacity.getTenantId()))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        result.setUsage(result.getUsage() + 1);
+        result.setGmtModified(tenantCapacity.getGmtModified());
+        tenantCapacityRepository.save(result);
+        return true;
     }
 
     public boolean decrementUsage(TenantCapacity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        Iterable<TenantCapacity> iterable = tenantCapacityRepository.findAll(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
-            .and(qTenantCapacity.usage.gt(0)));
-        iterable.forEach(s -> {
-            s.setGmtModified(tenantCapacity.getGmtModified());
-            s.setUsage(s.getUsage() - 1);
-        });
-        tenantCapacityRepository.saveAll(iterable);
-        return ((List) iterable).size() == 1;
+        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+            .and(qTenantCapacity.usage.gt(0)))
+            .orElse(null);
+        if (result == null) {
+            return false;
+        }
+        result.setGmtModified(tenantCapacity.getGmtModified());
+        if (result.getUsage() != null && result.getUsage() > 0) {
+            result.setUsage(result.getUsage() - 1);
+        }
+        tenantCapacityRepository.save(result);
+        return true;
     }
 
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
@@ -104,10 +112,14 @@ public class TenantCapacityPersistServiceTmp {
 
     public boolean correctUsage(String tenant, Timestamp gmtModified) {
         Long size = configInfoRepository.count(QConfigInfo.configInfo.tenantId.eq(tenant));
-        Iterable<TenantCapacity> iterable = tenantCapacityRepository.findAll(QTenantCapacity.tenantCapacity.tenantId.eq(tenant)
-            .and(QTenantCapacity.tenantCapacity.gmtModified.eq(gmtModified)));
-        iterable.forEach(tenantCapacity -> tenantCapacity.setUsage(size.intValue()));
-        tenantCapacityRepository.saveAll(iterable);
+        TenantCapacity tenantCapacity = tenantCapacityRepository.findOne(QTenantCapacity.tenantCapacity.tenantId.eq(tenant))
+            .orElse(null);
+        if (tenantCapacity == null) {
+            return false;
+        }
+        tenantCapacity.setUsage(size.intValue());
+        tenantCapacity.setGmtModified(gmtModified);
+        tenantCapacityRepository.save(tenantCapacity);
         return true;
     }
 
