@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
-import java.util.Objects;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -28,39 +28,36 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class FailoverClosureImpl<T> implements FailoverClosure<T> {
+public class FailoverClosureImpl implements FailoverClosure {
 
-    private final CompletableFuture<T> future;
-    private volatile T data;
-    private volatile Throwable throwable;
+	private final CompletableFuture<Response> future;
+	private volatile Response data;
+	private volatile Throwable throwable;
 
-    public FailoverClosureImpl(final CompletableFuture<T> future) {
-        this.future = future;
-    }
+	public FailoverClosureImpl(final CompletableFuture<Response> future) {
+		this.future = future;
+	}
 
-    @Override
-    public void setData(T data) {
-        this.data = data;
-    }
+	@Override
+	public void setResponse(Response data) {
+		this.data = data;
+	}
 
-    @Override
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
-    }
+	@Override
+	public void setThrowable(Throwable throwable) {
+		this.throwable = throwable;
+	}
 
-    @Override
-    public void run(Status status) {
-        if (status.isOk()) {
-            boolean success = future.complete(data);
-            LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "future.complete execute {}", success);
-            return;
-        }
-        final Throwable throwable = this.throwable;
-        if (Objects.nonNull(throwable)) {
-            future.completeExceptionally(new ConsistencyException(throwable.toString()));
-        } else {
-            future.completeExceptionally(new ConsistencyException("operation failure"));
-        }
-    }
+	@Override
+	public void run(Status status) {
+		if (status.isOk()) {
+			future.complete(data);
+			return;
+		}
+		final Throwable throwable = this.throwable;
+		future.completeExceptionally(Objects.nonNull(throwable) ?
+				new ConsistencyException(throwable.toString()) :
+				new ConsistencyException("operation failure"));
+	}
 
 }
