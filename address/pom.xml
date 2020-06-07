@@ -48,7 +48,7 @@
             <artifactId>nacos-naming</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>com.alibaba.nacos</groupId>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>nacos-cmdb</artifactId>
                 </exclusion>
             </exclusions>
