@@ -15,23 +15,24 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -55,11 +56,11 @@ public class ApiController extends InstanceController {
     private ServiceManager serviceManager;
 
     @RequestMapping("/allDomNames")
-    public JSONObject allDomNames(HttpServletRequest request) throws Exception {
+    public ObjectNode allDomNames(HttpServletRequest request) throws Exception {
 
         boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
         Map<String, Set<String>> domMap = serviceManager.getAllServiceNames();
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
         // For old DNS-F client:
         String dnsfVersion = "1.0.1";
         String agent = WebUtils.getUserAgent(request);
@@ -75,7 +76,7 @@ public class ApiController extends InstanceController {
             }
 
             if (CollectionUtils.isEmpty(domSet)) {
-                result.put("doms", new HashSet<>());
+                result.put("doms", JacksonUtils.transferToJsonNode(new HashSet<>()));
                 result.put("count", 0);
                 return result;
             }
@@ -86,7 +87,7 @@ public class ApiController extends InstanceController {
                 }
             }
 
-            result.put("doms", doms);
+            result.put("doms", JacksonUtils.transferToJsonNode(doms));
             result.put("count", doms.size());
             return result;
         }
@@ -103,7 +104,7 @@ public class ApiController extends InstanceController {
             count += doms.get(namespaceId).size();
         }
 
-        result.put("doms", doms);
+        result.put("doms", JacksonUtils.transferToJsonNode(doms));
         result.put("count", count);
 
         return result;
@@ -117,7 +118,7 @@ public class ApiController extends InstanceController {
 
     @RequestMapping("/srvIPXT")
     @ResponseBody
-    public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
+    public ObjectNode srvIPXT(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -142,7 +143,7 @@ public class ApiController extends InstanceController {
 
     @CanDistro
     @RequestMapping("/clientBeat")
-    public JSONObject clientBeat(HttpServletRequest request) throws Exception {
+    public ObjectNode clientBeat(HttpServletRequest request) throws Exception {
         OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
         requestWrapper.addParameter(CommonParams.SERVICE_NAME,
             Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));

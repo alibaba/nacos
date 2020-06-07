@@ -15,17 +15,14 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.RandomStringUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,17 +36,6 @@ import java.util.Map;
  */
 public class Instances implements Record {
 
-    private static MessageDigest MESSAGE_DIGEST;
-
-    static {
-        try {
-            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            MESSAGE_DIGEST = null;
-        }
-    }
-
     private List<Instance> instanceList = new ArrayList<>();
 
     public List<Instance> getInstanceList() {
@@ -62,18 +48,21 @@ public class Instances implements Record {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        try {
+            return JacksonUtils.toJson(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Instances toJSON failed", e);
+        }
     }
 
     @Override
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getChecksum() {
 
         return recalculateChecksum();
     }
 
     private String recalculateChecksum() {
-        String checksum;
         StringBuilder sb = new StringBuilder();
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
@@ -83,13 +72,7 @@ public class Instances implements Record {
             sb.append(",");
         }
 
-        if (MESSAGE_DIGEST != null) {
-            checksum =
-                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-        } else {
-            checksum = RandomStringUtils.randomAscii(32);
-        }
-        return checksum;
+        return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
     }
 
     public String convertMap2String(Map<String, String> map) {

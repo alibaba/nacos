@@ -16,12 +16,17 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +52,8 @@ public class MD5Util {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
             String ip = RequestUtil.getRemoteIp(request);
-            boolean isUptodate = ConfigService.isUptodate(groupKey, clientMd5, ip, tag);
+            boolean isUptodate = ConfigCacheService
+					.isUptodate(groupKey, clientMd5, ip, tag);
             if (!isUptodate) {
                 changedGroupKeys.add(groupKey);
             }
@@ -68,7 +74,8 @@ public class MD5Util {
         return sb.toString();
     }
 
-    static public String compareMd5ResultString(List<String> changedGroupKeys) throws IOException {
+    static public String compareMd5ResultString(List<String> changedGroupKeys) throws
+            IOException {
         if (null == changedGroupKeys) {
             return "";
         }

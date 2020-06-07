@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
@@ -37,15 +38,12 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int READ_TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     private static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
-
-    private static final String POST = "POST";
-    private static final String PUT = "PUT";
 
     static {
         // limit max redirection
@@ -62,10 +60,10 @@ public class HttpClient {
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
-        return request(url, headers, paramValues, encoding, "GET");
+        return request(url, headers, paramValues, StringUtils.EMPTY, encoding, HttpMethod.GET);
     }
 
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String encoding, String method) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -75,19 +73,20 @@ public class HttpClient {
 
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
+            conn.setReadTimeout(READ_TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
-            if (POST.equals(method) || PUT.equals(method)) {
-                // fix: apache http nio framework must set some content to request body
-                byte[] b = encodedContent.getBytes();
+            if (StringUtils.isNotBlank(body)) {
+                byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);
                 conn.getOutputStream().flush();
                 conn.getOutputStream().close();
             }
             conn.connect();
-            NAMING_LOGGER.debug("Request from server: " + url);
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("Request from server: " + url);
+            }
             return getResult(conn);
         } catch (Exception e) {
             try {
@@ -130,8 +129,14 @@ public class HttpClient {
         if (encodingGzip.equals(respHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             inputStream = new GZIPInputStream(inputStream);
         }
-
-        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        
+        //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
+        //so needs to close it manually 
+        if (inputStream instanceof GZIPInputStream) {
+            inputStream.close();
+        }
+        return httpResult;
     }
 
     private static String getCharset(HttpURLConnection conn) {
@@ -207,6 +212,12 @@ public class HttpClient {
 
         public String getHeader(String name) {
             return respHeaders.get(name);
+        }
+
+        @Override
+        public String toString() {
+            return "HttpResult{" + "code=" + code + ", content='" + content + '\''
+                    + ", respHeaders=" + respHeaders + '}';
         }
     }
 }

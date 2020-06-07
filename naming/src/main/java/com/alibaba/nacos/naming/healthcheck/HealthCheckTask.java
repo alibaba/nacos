@@ -15,12 +15,13 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.lang3.RandomUtils;
 
 /**
@@ -41,20 +42,20 @@ public class HealthCheckTask implements Runnable {
 
     private volatile boolean cancelled = false;
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private DistroMapper distroMapper;
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private SwitchDomain switchDomain;
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private HealthCheckProcessor healthCheckProcessor;
 
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
-        distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
-        switchDomain = SpringContext.getAppContext().getBean(SwitchDomain.class);
-        healthCheckProcessor = SpringContext.getAppContext().getBean(HealthCheckProcessorDelegate.class);
+        distroMapper = ApplicationUtils.getBean(DistroMapper.class);
+        switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
+        healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorDelegate.class);
         initCheckRT();
     }
 

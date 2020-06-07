@@ -15,16 +15,16 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,18 +135,18 @@ public class InstanceControllerTest extends BaseTest {
 
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-        JSONObject result = JSON.parseObject(actualValue);
+        JsonNode result = JacksonUtils.toObj(actualValue);
 
-        Assert.assertEquals(TEST_SERVICE_NAME, result.getString("name"));
-        JSONArray hosts = result.getJSONArray("hosts");
+        Assert.assertEquals(TEST_SERVICE_NAME, result.get("name").asText());
+        JsonNode hosts = result.get("hosts");
         Assert.assertNotNull(hosts);
         Assert.assertEquals(hosts.size(), 1);
 
-        JSONObject host = hosts.getJSONObject(0);
+        JsonNode host = hosts.get(0);
         Assert.assertNotNull(host);
-        Assert.assertEquals("10.10.10.10", host.getString("ip"));
-        Assert.assertEquals(8888, host.getIntValue("port"));
-        Assert.assertEquals(2.0, host.getDoubleValue("weight"), 0.001);
+        Assert.assertEquals("10.10.10.10", host.get("ip").asText());
+        Assert.assertEquals(8888, host.get("port").asInt());
+        Assert.assertEquals(2.0, host.get("weight").asDouble(), 0.001);
     }
 
     @Test
@@ -159,9 +159,9 @@ public class InstanceControllerTest extends BaseTest {
 
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
-        JSONObject result = JSON.parseObject(actualValue);
+        JsonNode result = JacksonUtils.toObj(actualValue);
 
-        JSONArray hosts = result.getJSONArray("hosts");
+        JsonNode hosts = result.get("hosts");
         Assert.assertEquals(hosts.size(), 0);
     }
 }

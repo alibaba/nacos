@@ -12,9 +12,16 @@
  */
 
 import projectConfig from './config';
-import moment from 'moment';
 import $ from 'jquery';
-import i18DocObj from './i18ndoc';
+import { Message } from '@alifd/next';
+
+function goLogin() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  console.log('base_url', base_url);
+  window.location = `${base_url}#/login`;
+}
 
 const global = window;
 
@@ -203,120 +210,6 @@ const nacosUtils = (function(_global) {
       return url;
     },
   };
-})(global);
-
-const aliwareIntl = (function(_global) {
-  /**
-   * 国际化构造方法
-   * @param {Object} options 配置信息
-   */
-  function AliwareI18n(options) {
-    // let currentLocal = options.currentLocal || navigator.language || navigator.userLanguage;
-
-    const nowData = options.locals;
-    this.nowData = nowData;
-    this.setMomentLocale(this.currentLanguageCode);
-  }
-
-  let aliwareLocal = aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
-  let aliwareLocalSite = aliwareGetCookieByKeyName('aliyun_country') || 'cn';
-  aliwareLocal = aliwareLocal.toLowerCase();
-  aliwareLocalSite = aliwareLocalSite.toLowerCase();
-  // 当前语言
-  AliwareI18n.prototype.currentLocal = aliwareLocal;
-  // 当前地区
-  AliwareI18n.prototype.currentSite = aliwareLocalSite;
-  // 当前语言-地区
-  AliwareI18n.prototype.currentLanguageCode =
-    aliwareGetCookieByKeyName('docsite_language') || `${aliwareLocal}-${aliwareLocalSite}`;
-  /**
-   * 通过key获取对应国际化文案
-   * @param {String} key 国际化key
-   */
-  AliwareI18n.prototype.get = function(key) {
-    return this.nowData[key];
-  };
-  /**
-   * 修改国际化文案数据
-   * @param {String} local 语言信息
-   */
-  AliwareI18n.prototype.changeLanguage = function(local) {
-    this.nowData = i18DocObj[local] || {};
-  };
-  /**
-   * 数字国际化
-   * @param {Number} num 数字
-   */
-  AliwareI18n.prototype.intlNumberFormat = function(num) {
-    if (typeof Intl !== 'object' || typeof Intl.NumberFormat !== 'function') {
-      return num;
-    }
-    try {
-      return new Intl.NumberFormat(this.currentLanguageCode).format(num || 0);
-    } catch (error) {
-      return num;
-    }
-  };
-  /**
-   * 时间戳格式化
-   * @param {Number} num 时间戳
-   * @param {Object} initOption 配置信息
-   */
-  AliwareI18n.prototype.intlTimeFormat = function(num = Date.now(), initOption = {}) {
-    try {
-      const date = Object.prototype.toString.call(num) === '[object Date]' ? num : new Date(num);
-      const options = Object.assign(
-        {},
-        {
-          // weekday: "short",
-          hour12: false,
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric',
-        },
-        initOption
-      );
-      return date.toLocaleDateString(this.currentLanguageCode, options);
-    } catch (error) {
-      return typeof moment === 'function' ? moment(num).format() : '--';
-    }
-  };
-  /**
-   * 获取当前时间格式
-   * @param {String} language 语言信息: zh/en
-   */
-  AliwareI18n.prototype.getIntlTimeFormat = function(_language) {
-    const language = _language || aliwareLocal;
-    const langObj = {
-      zh: 'YYYY年M月D日 HH:mm:ss',
-      en: 'MMM D, YYYY, h:mm:ss A',
-      default: 'YYYY-MM-DD HH:mm:ss',
-    };
-    return langObj[language] ? langObj[language] : langObj.default;
-  };
-  /**
-   * 设置moment的locale
-   * @param {String} languageCode 语言信息: zh-ch/en-us
-   */
-  AliwareI18n.prototype.setMomentLocale = function(languageCode) {
-    if (Object.prototype.toString.call(moment) === '[object Function]') {
-      moment.locale(languageCode || this.currentLanguageCode);
-      return true;
-    }
-    return false;
-  };
-
-  return new AliwareI18n({
-    currentLocal: `${aliwareLocal}`,
-    locals:
-      i18DocObj[AliwareI18n.prototype.currentLanguageCode] ||
-      i18DocObj['en-us'] ||
-      i18DocObj['zh-cn'] ||
-      {},
-  });
 })(global);
 
 /**
@@ -561,7 +454,7 @@ const request = (function(_global) {
         } catch (e) {}
         // 设置自动loading效果
         if (serviceObj.autoLoading) {
-          nacosUtils.openLoading();
+          // nacosUtils.openLoading();
           const prevComplete = config.complete;
           config.complete = function() {
             nacosUtils.closeLoading();
@@ -597,11 +490,22 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token);
+    } catch (e) {
+      console.log('Token Erro', localStorage.token, e);
+      goLogin();
+    }
+    const { accessToken = '' } = token;
+    const [url, paramsStr = ''] = config.url.split('?');
+    const params = paramsStr.split('&');
+    params.push(`accessToken=${accessToken}`);
 
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
-        url: config.url,
+        url: [url, params.join('&')].join('?'),
         data: config.data || '',
         dataType: config.dataType || 'json',
         beforeSend(xhr) {
@@ -615,17 +519,17 @@ const request = (function(_global) {
       success => {},
       error => {
         // 处理403 forbidden
-        if (error && (error.status === 403 || error.status === 401)) {
-          // 跳转至login页
-          // TODO: 用 react-router 重写，改造成本比较高，这里先hack
-          const url = window.location.href;
-          // TODO: 后端返回细致的错误码，如果原始密码不对 不应该直接跳到登陆页
-          if (url.includes('password')) {
-            return;
-          }
-          const base_url = url.split('#')[0];
-          window.location = `${base_url}#/login`;
+        const { status, responseJSON = {} } = error || {};
+        if (responseJSON.message) {
+          Message.error(responseJSON.message);
         }
+        if (
+          [401, 403].includes(status) &&
+          ['unknown user!', 'token invalid', 'token expired!'].includes(responseJSON.message)
+        ) {
+          goLogin();
+        }
+        return error;
       }
     );
   }
@@ -645,10 +549,9 @@ export {
   nacosEvent,
   nacosUtils,
   aliwareGetCookieByKeyName,
-  aliwareIntl,
+  removeParams,
   getParams,
   setParam,
   setParams,
-  removeParams,
   request,
 };

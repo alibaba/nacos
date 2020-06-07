@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.config.server.Config;
-import com.alibaba.nacos.test.naming.Params;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,15 +41,14 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @date 2019-07-03
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigBeta_ITCase {
 
     @LocalServerPort
     private int port;
 
     private String url;
-
-    private ConfigService configService;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -149,7 +147,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals(null, JSONObject.parseObject(response1.getBody()).getString("data"));
+        Assert.assertTrue(JacksonUtils.toObj(response1.getBody()).get("data").isNull());
     }
 
     /**
@@ -162,10 +160,14 @@ public class ConfigBeta_ITCase {
 
         HttpHeaders headers = new HttpHeaders(); //不存在betaIps
 
+        final String dataId = "publishBetaConfig_noBetaIps";
+        final String groupId = "publishBetaConfig_noBetaIps";
+        final String content = "publishBetaConfig_noBetaIps";
+
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
             Params.newParams()
                 .appendParam("dataId", dataId)
-                .appendParam("group", group)
+                .appendParam("group", groupId)
                 .appendParam("tenant", tenant)
                 .appendParam("content", content)
                 .appendParam("config_tags", "")
@@ -174,19 +176,18 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.POST);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        System.out.println(response.getBody());
         Assert.assertEquals("true", response.getBody());
 
         ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
             Params.newParams()
                 .appendParam("dataId", dataId)
-                .appendParam("group", group)
+                .appendParam("group", groupId)
                 .appendParam("tenant", tenant)
                 .done(),
             String.class,
             HttpMethod.GET);
+        System.out.println(response1);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        System.out.println(response1.getBody());
         Assert.assertEquals(content, response1.getBody());
     }
 
@@ -223,7 +224,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JSONObject.parseObject(response1.getBody()).getJSONObject("data").getString("dataId"));
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
     }
 
     /**
@@ -260,7 +261,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JSONObject.parseObject(response1.getBody()).getJSONObject("data").getString("dataId"));
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
 
         ResponseEntity<String> response2 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
@@ -271,7 +272,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.DELETE);
         Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("true", JSONObject.parseObject(response2.getBody()).getString("data"));
+        Assert.assertEquals("true", JacksonUtils.toObj(response2.getBody()).get("data").asText());
 
         ResponseEntity<String> response3 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
             Params.newParams()
@@ -282,7 +283,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response3.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals(null, JSONObject.parseObject(response3.getBody()).getString("data"));
+        Assert.assertTrue(JacksonUtils.toObj(response3.getBody()).get("data").isNull());
     }
 
 
@@ -320,7 +321,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JSONObject.parseObject(response1.getBody()).getJSONObject("data").getString("dataId"));
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response1.getBody()).get("data").get("dataId").asText());
 
         ResponseEntity<String> response2 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
             Params.newParams()
@@ -342,7 +343,7 @@ public class ConfigBeta_ITCase {
             String.class,
             HttpMethod.GET);
         Assert.assertTrue(response3.getStatusCode().is2xxSuccessful());
-        Assert.assertEquals("com.dungu.test", JSONObject.parseObject(response3.getBody()).getJSONObject("data").getString("dataId"));
+        Assert.assertEquals("com.dungu.test", JacksonUtils.toObj(response3.getBody()).get("data").get("dataId").asText());
     }
 
     <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {

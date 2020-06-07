@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.springframework.util.StringUtils;
@@ -27,6 +27,7 @@ import java.util.Map;
 /**
  * Report local server status to other server
  *
+ * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  * @author nacos
  */
 public class ServerStatusSynchronizer implements Synchronizer {
@@ -40,11 +41,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
 
         params.put("serverStatus", msg.getData());
 
-        String url = "http://" + serverIP + ":" + RunningConfig.getServerPort()
-            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
+        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort()
+            + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
 
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-            url = "http://" + serverIP + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+            url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                 + "/operator/server/status";
         }
 
@@ -55,7 +56,6 @@ public class ServerStatusSynchronizer implements Synchronizer {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
                             serverIP);
-
                         return 1;
                     }
                     return 0;
