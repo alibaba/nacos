@@ -173,7 +173,7 @@
             <id>springboot</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>nacos-core</artifactId>
                 </dependency>
             </dependencies>
