@@ -39,6 +39,8 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
 import java.util.zip.CheckedInputStream;
@@ -161,6 +163,20 @@ public final class DiskUtils {
 		return FileUtils.deleteQuietly(file);
 	}
 
+	public static boolean deleteQuietly(Path file) {
+		if (Objects.nonNull(file)) {
+			try {
+				Files.deleteIfExists(file);
+				return true;
+			}
+			catch (IOException e) {
+				logger.error("file delete has error : {}", e);
+				return false;
+			}
+		}
+		return false;
+	}
+
 	public static void deleteDirectory(String path) throws IOException {
 		FileUtils.deleteDirectory(new File(path));
 	}
@@ -226,6 +242,18 @@ public final class DiskUtils {
 
 	// copy from sofa-jraft
 
+	/**
+	 * if you want compress /Volumes/resources/logs to /Volumes/resources/logs.zip
+	 * <code>
+	 *     compress(/Volumes/resources, logs, /Volumes/resources/logs.zip)
+	 * </code>
+	 *
+	 * @param rootDir The root directory
+	 * @param sourceDir Directories under rootDir that need to be compressed
+	 * @param outputFile Expect the full path of the compressed destination file
+	 * @param checksum Check code
+	 * @throws IOException
+	 */
 	public static void compress(final String rootDir, final String sourceDir,
 			final String outputFile, final Checksum checksum) throws IOException {
 		try (final FileOutputStream fos = new FileOutputStream(outputFile);

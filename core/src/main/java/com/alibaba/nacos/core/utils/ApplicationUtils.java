@@ -419,6 +419,20 @@ public class ApplicationUtils
 		NACOS_HOME_PATH = nacosHomePath;
 	}
 
+	private static String NACOS_TMP_DIR = null;
+
+	public static String getNacosTmpDir() {
+		if (StringUtils.isBlank(NACOS_TMP_DIR)) {
+			NACOS_TMP_DIR = Paths.get(getNacosHome(), "tmp").toString();
+		}
+		return NACOS_TMP_DIR;
+	}
+
+	@JustForTest
+	public static void setNacosTmpDir(String nacosTmpDir) {
+		NACOS_TMP_DIR = nacosTmpDir;
+	}
+
 	private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
 			.getOperatingSystemMXBean();
 

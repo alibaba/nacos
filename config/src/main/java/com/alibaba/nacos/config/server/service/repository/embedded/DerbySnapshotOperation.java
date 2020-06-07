@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;

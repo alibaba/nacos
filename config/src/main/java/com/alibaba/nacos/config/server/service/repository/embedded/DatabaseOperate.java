@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -110,12 +111,20 @@ public interface DatabaseOperate {
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
 
     /**
-     * data importing
+     * data importing, This method is suitable for importing data from external data sources into embedded data sources
      *
      * @param file {@link File}
      * @return {@link CompletableFuture}
      */
     CompletableFuture<RestResult<String>> dataImport(File file);
+
+    /**
+     * derby backup, Only local Derby is operated upon and does not involve interacting with other nodes to Restore Derby data
+     *
+     * @return {@link File}
+     * @throws IOException File export exception
+     */
+    File backup() throws IOException;
 
     /**
      * data modify transaction

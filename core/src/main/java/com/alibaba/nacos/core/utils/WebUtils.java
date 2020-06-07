@@ -17,16 +17,22 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -85,6 +91,27 @@ public class WebUtils {
             userAgent = StringUtils.defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER), StringUtils.EMPTY);
         }
         return userAgent;
+    }
+
+    public static void onFileUpload(MultipartFile multipartFile, Consumer<Path> consumer,
+            DeferredResult<RestResult<String>> response) {
+
+        if (com.alibaba.nacos.common.utils.Objects.isNull(multipartFile)) {
+            response.setResult(RestResultUtils.failed("File is empty"));
+            return;
+        }
+        Path tmpFile = null;
+        try {
+            tmpFile = Files.createTempFile(multipartFile.getName(), ".tmp");
+            multipartFile.transferTo(tmpFile);
+            consumer.accept(tmpFile);
+        }
+        catch (Throwable ex) {
+            response.setResult(RestResultUtils.failed(ex.getMessage()));
+        }
+        finally {
+            DiskUtils.deleteQuietly(tmpFile);
+        }
     }
 
     public static void response(HttpServletResponse response, String body, int code) throws

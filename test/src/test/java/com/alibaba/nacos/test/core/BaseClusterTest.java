@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
-import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
+import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.notify.Event;

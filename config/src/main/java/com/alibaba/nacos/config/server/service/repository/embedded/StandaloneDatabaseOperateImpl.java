@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -24,30 +24,22 @@ import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -117,7 +109,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
 					batchUpdate.add(sql);
 					if (batchUpdate.size() == batchSize ||!iterator.hasNext()) {
 						futures.add(CompletableFuture.runAsync(
-								() -> results.add(dataImport(jdbcTemplate, batchUpdate.stream()
+								() -> results.add(doDataImport(jdbcTemplate, batchUpdate.stream()
 										.map(s -> {
 											ModifyRequest request = new ModifyRequest();
 											request.setSql(s);
@@ -135,6 +127,11 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
 				return RestResultUtils.failed(ex.getMessage());
 			}
 		});
+	}
+
+	@Override
+	public File backup() throws IOException {
+		return doBackup(jdbcTemplate);
 	}
 
 	@Override

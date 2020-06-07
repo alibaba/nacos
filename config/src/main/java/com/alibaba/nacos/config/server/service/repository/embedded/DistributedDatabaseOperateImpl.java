@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -35,6 +35,7 @@ import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
+import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
@@ -60,9 +61,6 @@ import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -71,10 +69,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -84,7 +81,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
@@ -445,6 +441,11 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
+	public File backup() throws IOException {
+		return doBackup(jdbcTemplate);
+	}
+
+	@Override
 	public Boolean update(List<ModifyRequest> sqlContext,
 			BiConsumer<Boolean, Throwable> consumer) {
 		try {
@@ -581,7 +582,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		try {
 			boolean isOk = false;
 			if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
-				isOk = dataImport(jdbcTemplate, sqlContext);
+				isOk = doDataImport(jdbcTemplate, sqlContext);
 			} else {
 				sqlContext.sort(Comparator.comparingInt(ModifyRequest::getExecuteNo));
 				isOk = update(transactionTemplate, jdbcTemplate, sqlContext);
