@@ -32,7 +32,6 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Node;
@@ -94,7 +93,7 @@ class NacosStateMachine extends StateMachineAdapter {
 				try {
 					if (iter.done() != null) {
 						closure = (NacosClosure) iter.done();
-						message = closure.getLog();
+						message = closure.getMessage();
 					}
 					else {
 						final ByteBuffer data = iter.getData();
@@ -246,9 +245,9 @@ class NacosStateMachine extends StateMachineAdapter {
 				RouteTable.getInstance().getConfiguration(node.getGroupId()).getPeers());
 	}
 
-	private void postProcessor(Object data, NacosClosure closure) {
+	private void postProcessor(Response data, NacosClosure closure) {
 		if (Objects.nonNull(closure)) {
-			closure.setObject(data);
+			closure.setResponse(data);
 		}
 	}
 

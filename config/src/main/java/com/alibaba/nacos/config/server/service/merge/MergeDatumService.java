@@ -26,7 +26,9 @@ import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +54,6 @@ public class MergeDatumService {
     static final int INIT_THREAD_COUNT = 40;
     static final AtomicInteger FINISHED = new AtomicInteger();
     static int total = 0;
-
-    private CPProtocol protocol;
 
     @Autowired
     public MergeDatumService(PersistService persistService) {
@@ -110,7 +110,8 @@ public class MergeDatumService {
             return true;
         }
         try {
-            return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+            ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
+            return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
         } catch (NoSuchRaftGroupException e) {
             return true;
         } catch (Exception e) {

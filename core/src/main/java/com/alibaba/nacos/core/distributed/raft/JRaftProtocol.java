@@ -209,7 +209,7 @@ public class JRaftProtocol
 	}
 
 	@Override
-	public boolean isLeader(String group) throws Exception {
+	public boolean isLeader(String group) {
 		Node node = raftServer.findNodeByGroup(group);
 		if (node == null) {
 			throw new NoSuchRaftGroupException(group);
