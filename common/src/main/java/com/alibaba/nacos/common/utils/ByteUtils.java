@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.nio.charset.Charset;
+import com.alibaba.nacos.common.api.Constants;
 
-import com.alibaba.nacos.api.common.Constants;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.exception.api.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;

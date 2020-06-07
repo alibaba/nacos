@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
@@ -46,8 +46,7 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +69,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -495,8 +496,8 @@ public class ConfigController {
 		}
 
 		HttpHeaders headers = new HttpHeaders();
-		String fileName = EXPORT_CONFIG_FILE_NAME + DateFormatUtils
-				.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
+		String fileName = EXPORT_CONFIG_FILE_NAME +
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now())
 				+ EXPORT_CONFIG_FILE_NAME_EXT;
 		headers.add("Content-Disposition", "attachment;filename=" + fileName);
 		return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers,

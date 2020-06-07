@@ -15,14 +15,13 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.utils.RandomUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import org.apache.commons.lang3.RandomUtils;
 
 /**
  * @author nacos

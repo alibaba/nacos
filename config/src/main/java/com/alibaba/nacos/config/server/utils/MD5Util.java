@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 
 import javax.servlet.http.HttpServletRequest;

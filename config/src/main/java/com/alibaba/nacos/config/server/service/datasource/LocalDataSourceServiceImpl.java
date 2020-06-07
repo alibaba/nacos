@@ -17,8 +17,8 @@
  */
 package com.alibaba.nacos.config.server.service.datasource;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.exception.api.NacosException;
+import com.alibaba.nacos.common.exception.api.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;

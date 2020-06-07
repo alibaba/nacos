@@ -138,11 +138,11 @@ import java.util.concurrent.Executor;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 
 /**
  * Config service example
- * 
+ *
  * @author Nacos
  *
  */
@@ -168,10 +168,10 @@ public class ConfigExample {
 				return null;
 			}
 		});
-		
+
 		boolean isPublishOk = configService.publishConfig(dataId, group, "content");
 		System.out.println(isPublishOk);
-		
+
 		Thread.sleep(3000);
 		content = configService.getConfig(dataId, group, 5000);
 		System.out.println(content);

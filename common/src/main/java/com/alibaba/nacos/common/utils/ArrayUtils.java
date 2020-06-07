@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.common.utils;
 
+import java.util.List;
+
 import static jdk.nashorn.internal.objects.NativeString.indexOf;
 
 /**
@@ -69,5 +71,45 @@ public class ArrayUtils {
      */
     public static boolean contains(final long[] array, final long valueToFind) {
         return indexOf(array, valueToFind) != INDEX_NOT_FOUND;
+    }
+
+    // Basic methods handling multi-dimensional arrays
+    //-----------------------------------------------------------------------
+    /**
+     * <p>Outputs an array as a String, treating {@code null} as an empty array.</p>
+     *
+     * <p>Multi-dimensional arrays are handled correctly, including
+     * multi-dimensional primitive arrays.</p>
+     *
+     * <p>The format is that of Java source code, for example <code>{a,b}</code>.</p>
+     *
+     * @param array  the array to get a toString for, may be {@code null}
+     * @return a String representation of the array, '{}' if null array input
+     */
+    public static String toString(final List<String> array) {
+        if (array == null) {
+            return "{}";
+        }
+        String arrayString = array.toString();
+        return "{" + arrayString.substring(1, arrayString.length() -1) + "}";
+    }
+
+    /**
+     * <p>Outputs an array as a String handling {@code null}s.</p>
+     *
+     * <p>Multi-dimensional arrays are handled correctly, including
+     * multi-dimensional primitive arrays.</p>
+     *
+     * <p>The format is that of Java source code, for example <code>{a,b}</code>.</p>
+     *
+     * @param array  the array to get a toString for, may be {@code null}
+     * @param stringIfNull  the String to return if the array is {@code null}
+     * @return a String representation of the array
+     */
+    public static String toString(final Object array, final String stringIfNull) {
+        if (array == null) {
+            return stringIfNull;
+        }
+        return null;
     }
 }

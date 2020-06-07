@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.common.api.Constants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
