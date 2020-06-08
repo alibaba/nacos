@@ -38,13 +38,10 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -184,12 +181,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 						configInfo.getGroup(), configInfo.getTenant());
 				insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
-				if (notify) {
-					EventDispatcher.fireEvent(
-							new ConfigDataChangeEvent(false, configInfo.getDataId(),
-									configInfo.getGroup(), configInfo.getTenant(),
-									time.getTime()));
-				}
 			}
 			catch (CannotGetJdbcConnectionException e) {
 				LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
@@ -349,10 +340,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time,
 					notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(true, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(),
-						time.getTime()));
 	}
 
 	public void insertOrUpdateTag(final ConfigInfo configInfo,
@@ -364,10 +351,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
 			updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(), tag,
-						time.getTime()));
 	}
 
 	/**
@@ -406,10 +389,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo,
 					notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(),
-						time.getTime()));
 	}
 
 	/**
@@ -452,9 +431,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				return Boolean.TRUE;
 			}
 		});
-
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant,
-				System.currentTimeMillis()));
 	}
 
 	/**
@@ -496,20 +472,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 						}
 					}
 				});
-
-		if (!CollectionUtils.isEmpty(result)) {
-			long currentTime = System.currentTimeMillis();
-			for (ConfigInfo configInfo : result) {
-				ConfigTraceService.logPersistenceEvent(configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(), null, currentTime,
-						srcIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(),
-								currentTime));
-			}
-		}
-
 		return result;
 	}
 
@@ -519,27 +481,21 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	public void removeConfigInfo4Beta(final String dataId, final String group,
 			final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-		tjt.execute(new TransactionCallback<Boolean>() {
-			@Override
-			public Boolean doInTransaction(TransactionStatus status) {
-				try {
-					ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
-					if (configInfo != null) {
-						jt.update(
-								"DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?",
-								dataId, group, tenantTmp);
-					}
+		tjt.execute(status -> {
+			try {
+				ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+				if (configInfo != null) {
+					jt.update(
+							"DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?",
+							dataId, group, tenantTmp);
 				}
-				catch (CannotGetJdbcConnectionException e) {
-					LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-					throw e;
-				}
-				return Boolean.TRUE;
 			}
+			catch (CannotGetJdbcConnectionException e) {
+				LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+				throw e;
+			}
+			return Boolean.TRUE;
 		});
-
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant,
-				System.currentTimeMillis()));
 	}
 
 	// ----------------------- config_aggr_info 表 insert update delete
@@ -2688,9 +2644,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-						System.currentTimeMillis()));
 	}
 
 	/**
