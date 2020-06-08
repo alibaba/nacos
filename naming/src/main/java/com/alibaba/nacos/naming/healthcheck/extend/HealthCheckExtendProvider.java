@@ -60,10 +60,8 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
         for(HealthCheckType type : HealthCheckType.values()){
             origin.add(type.name());
         }
-        Set<String> processorType = new HashSet<>();
-        Set<String> healthCheckerType = new HashSet<>();
-        processorType.addAll(origin);
-        healthCheckerType.addAll(origin);
+        Set<String> processorType = new HashSet<>(origin);
+        Set<String> healthCheckerType = new HashSet<>(origin);
 
         while(processorIt.hasNext()){
             HealthCheckProcessor processor = processorIt.next();
