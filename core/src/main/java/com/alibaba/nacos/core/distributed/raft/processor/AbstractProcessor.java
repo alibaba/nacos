@@ -25,9 +25,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.rpc.RpcContext;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
-import org.slf4j.Logger;
 
 import java.util.Objects;
 
@@ -77,7 +75,7 @@ public abstract class AbstractProcessor {
 			Throwable ex;
 
 			@Override
-			public void setData(Response data) {
+			public void setResponse(Response data) {
 				this.data = data;
 			}
 

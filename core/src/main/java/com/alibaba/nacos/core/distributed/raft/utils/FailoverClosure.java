@@ -29,9 +29,9 @@ public interface FailoverClosure extends Closure {
     /**
      * Set the return interface if needed
      *
-     * @param data data
+     * @param response {@link Response} data
      */
-    void setData(Response data);
+    void setResponse(Response response);
 
     /**
      * Catch exception
