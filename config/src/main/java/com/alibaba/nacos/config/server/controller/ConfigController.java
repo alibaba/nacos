@@ -183,20 +183,21 @@ public class ConfigController {
         return true;
     }
 
-    /**
-     * 取数据
-     *
-     * @throws ServletException
-     * @throws IOException
-     * @throws NacosException
-     */
-    @GetMapping
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public void getConfig(HttpServletRequest request, HttpServletResponse response,
-                          @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-                          @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-                          @RequestParam(value = "tag", required = false) String tag)
-        throws IOException, ServletException, NacosException {
+
+	/**
+	 * 取数据
+	 *
+	 * @throws ServletException
+	 * @throws IOException
+	 * @throws NacosException
+	 */
+	@GetMapping
+	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+	public void getConfig(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+			@RequestParam(value = "tag", required = false) String tag)
+			throws IOException, ServletException, NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
         tenant = processTenant(tenant);
