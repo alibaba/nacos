@@ -65,7 +65,7 @@ public class LifeCycleManagerTest {
         Assert.assertEquals(1, temp.getCounter());
         temp.destroy();
         Assert.assertEquals(0, temp.getCounter());
-        Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
+        Assert.assertEquals(1, ResourceLifeCycleManager.getRegisterResourceNum());
     }
 
     class Resource implements LifeCycle {
