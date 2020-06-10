@@ -85,7 +85,7 @@ public class ClientTrackService {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
             long lastPollingTs = record.groupKey2pollingTsMap.get(groupKey);
-            boolean isUpdate = ConfigService.isUptodate(groupKey, clientMd5);
+            boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
 
             status.put(groupKey, new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
         }
@@ -104,7 +104,7 @@ public class ClientTrackService {
             Long lastPollingTs = clientRec.groupKey2pollingTsMap.get(groupKey);
 
             if (null != clientMd5 && lastPollingTs != null) {
-                Boolean isUpdate = ConfigService.isUptodate(groupKey, clientMd5);
+                Boolean isUpdate = ConfigCacheService.isUptodate(groupKey, clientMd5);
                 subs.put(clientRec.ip, new SubscriberStatus(groupKey, isUpdate, clientMd5, lastPollingTs));
             }
 
@@ -120,7 +120,7 @@ public class ClientTrackService {
         for (Map.Entry<String, String> entry : getClientRecord(ip).groupKey2md5Map.entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
-            Boolean isuptodate = ConfigService.isUptodate(groupKey, clientMd5);
+            Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
             result.put(groupKey, isuptodate);
         }
         return result;
@@ -135,7 +135,7 @@ public class ClientTrackService {
         for (ClientRecord clientRec : clientRecords.values()) {
             String clientMd5 = clientRec.groupKey2md5Map.get(groupKey);
             if (null != clientMd5) {
-                Boolean isuptodate = ConfigService.isUptodate(groupKey, clientMd5);
+                Boolean isuptodate = ConfigCacheService.isUptodate(groupKey, clientMd5);
                 subs.put(clientRec.ip, isuptodate);
             }
         }

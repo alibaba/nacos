@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -88,10 +88,10 @@ public class HealthCheckCommon {
                         continue;
                     }
                     Map<String, String> params = new HashMap<>(10);
-                    params.put("result", JSON.toJSONString(list));
+                    params.put("result", JacksonUtils.toJson(list));
                     if (Loggers.SRV_LOG.isDebugEnabled()) {
                         Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
-                            server, JSON.toJSONString(list));
+                            server, JacksonUtils.toJson(list));
                     }
 
                     HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.getAddress()
@@ -100,7 +100,7 @@ public class HealthCheckCommon {
 
                     if (httpResult.code != HttpURLConnection.HTTP_OK) {
                         Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}",
-                            server, JSON.toJSONString(list));
+                            server, JacksonUtils.toJson(list));
                     }
 
                 }

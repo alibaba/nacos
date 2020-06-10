@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.client.security;
 
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -122,14 +122,14 @@ public class SecurityProxy {
                 params, body, Charsets.UTF_8.name(), HttpMethod.POST);
 
             if (result.code != HttpURLConnection.HTTP_OK) {
-                SECURITY_LOGGER.error("login failed: {}", JSON.toJSONString(result));
+                SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(result));
                 return false;
             }
 
-            JSONObject obj = JSON.parseObject(result.content);
-            if (obj.containsKey(Constants.ACCESS_TOKEN)) {
-                accessToken = obj.getString(Constants.ACCESS_TOKEN);
-                tokenTtl = obj.getIntValue(Constants.TOKEN_TTL);
+            JsonNode obj = JacksonUtils.toObj(result.content);
+            if (obj.has(Constants.ACCESS_TOKEN)) {
+                accessToken = obj.get(Constants.ACCESS_TOKEN).asText();
+                tokenTtl = obj.get(Constants.TOKEN_TTL).asInt();
                 tokenRefreshWindow = tokenTtl / 10;
             }
         }

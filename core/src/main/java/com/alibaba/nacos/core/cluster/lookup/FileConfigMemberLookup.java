@@ -17,9 +17,9 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.file.FileChangeEvent;
-import com.alibaba.nacos.common.file.FileWatcher;
-import com.alibaba.nacos.common.file.WatchFileCenter;
+import com.alibaba.nacos.core.file.FileChangeEvent;
+import com.alibaba.nacos.core.file.FileWatcher;
+import com.alibaba.nacos.core.file.WatchFileCenter;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtils;

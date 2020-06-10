@@ -30,8 +30,6 @@ public class GlobalExecutor {
 
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
 
-    private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
-
     private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
@@ -150,8 +148,8 @@ public class GlobalExecutor {
         executorService.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
-    public static void registerServerListUpdater(Runnable runnable) {
-        executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
+    public static void registerServerInfoUpdater(Runnable runnable) {
+        executorService.scheduleAtFixedRate(runnable, 0, 2, TimeUnit.SECONDS);
     }
 
     public static void registerServerStatusReporter(Runnable runnable, long delay) {

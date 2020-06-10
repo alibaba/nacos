@@ -15,14 +15,12 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -39,6 +37,9 @@ import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -84,7 +85,7 @@ public class InstanceController {
 		@Override
 		public String getData(PushService.PushClient client) {
 
-			JSONObject result = new JSONObject();
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
 			try {
 				result = doSrvIPXT(client.getNamespaceId(), client.getServiceName(),
 						client.getAgent(), client.getClusters(),
@@ -100,7 +101,7 @@ public class InstanceController {
 			result.put("cacheMillis",
 					switchDomain.getPushCacheMillis(client.getServiceName()));
 
-			return result.toJSONString();
+			return result.toString();
 		}
 	};
 
@@ -214,7 +215,7 @@ public class InstanceController {
 
 	@GetMapping("/list")
 	@Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-	public JSONObject list(HttpServletRequest request) throws Exception {
+	public ObjectNode list(HttpServletRequest request) throws Exception {
 
 		String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
 				Constants.DEFAULT_NAMESPACE_ID);
@@ -241,7 +242,7 @@ public class InstanceController {
 
 	@GetMapping
 	@Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-	public JSONObject detail(HttpServletRequest request) throws Exception {
+	public ObjectNode detail(HttpServletRequest request) throws Exception {
 
 		String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
 				Constants.DEFAULT_NAMESPACE_ID);
@@ -268,14 +269,14 @@ public class InstanceController {
 
 		for (Instance instance : ips) {
 			if (instance.getIp().equals(ip) && instance.getPort() == port) {
-				JSONObject result = new JSONObject();
+			    ObjectNode result = JacksonUtils.createEmptyJsonNode();
 				result.put("service", serviceName);
 				result.put("ip", ip);
 				result.put("port", port);
 				result.put("clusterName", cluster);
 				result.put("weight", instance.getWeight());
 				result.put("healthy", instance.isHealthy());
-				result.put("metadata", instance.getMetadata());
+				result.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
 				result.put("instanceId", instance.getInstanceId());
 				return result;
 			}
@@ -287,9 +288,9 @@ public class InstanceController {
 	@CanDistro
 	@PutMapping("/beat")
 	@Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
-	public JSONObject beat(HttpServletRequest request) throws Exception {
+	public ObjectNode beat(HttpServletRequest request) throws Exception {
 
-		JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
 		result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 		String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -303,7 +304,7 @@ public class InstanceController {
 
 		RsInfo clientBeat = null;
 		if (StringUtils.isNotBlank(beat)) {
-			clientBeat = JSON.parseObject(beat, RsInfo.class);
+			clientBeat = JacksonUtils.toObj(beat, RsInfo.class);
 		}
 
 		if (clientBeat != null) {
@@ -368,7 +369,7 @@ public class InstanceController {
 	}
 
 	@RequestMapping("/statuses")
-	public JSONObject listWithHealthStatus(@RequestParam String key)
+	public ObjectNode listWithHealthStatus(@RequestParam String key)
 			throws NacosException {
 
 		String serviceName;
@@ -392,14 +393,14 @@ public class InstanceController {
 
 		List<Instance> ips = service.allIPs();
 
-		JSONObject result = new JSONObject();
-		JSONArray ipArray = new JSONArray();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+		ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
 
 		for (Instance ip : ips) {
 			ipArray.add(ip.toIPAddr() + "_" + ip.isHealthy());
 		}
 
-		result.put("ips", ipArray);
+		result.replace("ips", ipArray);
 		return result;
 	}
 
@@ -470,12 +471,12 @@ public class InstanceController {
 		}
 	}
 
-	public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent,
+	public ObjectNode doSrvIPXT(String namespaceId, String serviceName, String agent,
 			String clusters, String clientIP, int udpPort, String env, boolean isCheck,
 			String app, String tid, boolean healthyOnly) throws Exception {
 
 		ClientInfo clientInfo = new ClientInfo(agent);
-		JSONObject result = new JSONObject();
+		ObjectNode result = JacksonUtils.createEmptyJsonNode();
 		Service service = serviceManager.getService(namespaceId, serviceName);
 
 		if (service == null) {
@@ -485,7 +486,7 @@ public class InstanceController {
 			}
 			result.put("name", serviceName);
 			result.put("clusters", clusters);
-			result.put("hosts", new JSONArray());
+			result.replace("hosts", JacksonUtils.createEmptyArrayNode());
 			return result;
 		}
 
@@ -534,7 +535,7 @@ public class InstanceController {
 				result.put("dom", NamingUtils.getServiceName(serviceName));
 			}
 
-			result.put("hosts", new JSONArray());
+			result.put("hosts", JacksonUtils.createEmptyArrayNode());
 			result.put("name", serviceName);
 			result.put("cacheMillis", cacheMillis);
 			result.put("lastRefTime", System.currentTimeMillis());
@@ -542,7 +543,7 @@ public class InstanceController {
 			result.put("useSpecifiedURL", false);
 			result.put("clusters", clusters);
 			result.put("env", env);
-			result.put("metadata", service.getMetadata());
+			result.put("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
 			return result;
 		}
 
@@ -576,10 +577,10 @@ public class InstanceController {
 			result.put("protectThreshold", service.getProtectThreshold());
 			result.put("reachLocalSiteCallThreshold", false);
 
-			return new JSONObject();
+			return JacksonUtils.createEmptyJsonNode();
 		}
 
-		JSONArray hosts = new JSONArray();
+        ArrayNode hosts = JacksonUtils.createEmptyArrayNode();
 
 		for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
 			List<Instance> ips = entry.getValue();
@@ -595,7 +596,7 @@ public class InstanceController {
 					continue;
 				}
 
-				JSONObject ipObj = new JSONObject();
+				ObjectNode ipObj = JacksonUtils.createEmptyJsonNode();
 
 				ipObj.put("ip", instance.getIp());
 				ipObj.put("port", instance.getPort());
@@ -604,7 +605,7 @@ public class InstanceController {
 				ipObj.put("healthy", entry.getKey());
 				ipObj.put("marked", instance.isMarked());
 				ipObj.put("instanceId", instance.getInstanceId());
-				ipObj.put("metadata", instance.getMetadata());
+				ipObj.put("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
 				ipObj.put("enabled", instance.isEnabled());
 				ipObj.put("weight", instance.getWeight());
 				ipObj.put("clusterName", instance.getClusterName());
@@ -624,7 +625,7 @@ public class InstanceController {
 			}
 		}
 
-		result.put("hosts", hosts);
+		result.replace("hosts", hosts);
 		if (clientInfo.type == ClientInfo.ClientType.JAVA
 				&& clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
 			result.put("dom", serviceName);
@@ -639,7 +640,7 @@ public class InstanceController {
 		result.put("useSpecifiedURL", false);
 		result.put("clusters", clusters);
 		result.put("env", env);
-		result.put("metadata", service.getMetadata());
+		result.replace("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
 		return result;
 	}
 }

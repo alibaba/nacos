@@ -6,11 +6,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,6 +25,7 @@ public class ProtocolMetaDataTest {
 
         metaData.load(map);
 
+        String json = JacksonUtils.toJson(metaData);
         AtomicInteger count = new AtomicInteger(0);
 
         CountDownLatch latch = new CountDownLatch(2);
@@ -38,7 +36,6 @@ public class ProtocolMetaDataTest {
             latch.countDown();
         });
 
-        String json = JacksonUtils.toJson(metaData);
         System.out.println(json);
 
         map = new HashMap<>();
