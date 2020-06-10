@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class EmbeddedStorageContextUtils_ITCase {
+public class EmbeddedStorageContextUtils_CITCase {
 
 	@Test
 	public void test_multi_thread_sql_contexts() throws Exception {

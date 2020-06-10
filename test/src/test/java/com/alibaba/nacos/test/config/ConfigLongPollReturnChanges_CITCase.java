@@ -37,9 +37,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ConfigLongPollReturnChanges_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7005"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigLongPollReturnChanges_CITCase {
 
     @LocalServerPort
     private int port;

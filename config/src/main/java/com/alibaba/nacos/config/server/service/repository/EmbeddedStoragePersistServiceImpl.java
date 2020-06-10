@@ -38,15 +38,12 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -386,12 +383,6 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		else {
 			updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
 		}
-		if (ApplicationUtils.getStandaloneMode()) {
-			EventDispatcher.fireEvent(
-					new ConfigDataChangeEvent(true, configInfo.getDataId(),
-							configInfo.getGroup(), configInfo.getTenant(),
-							time.getTime()));
-		}
 	}
 
 	public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag,
@@ -403,12 +394,6 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 		else {
 			updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
-		}
-		if (ApplicationUtils.getStandaloneMode()) {
-			EventDispatcher.fireEvent(
-					new ConfigDataChangeEvent(false, configInfo.getDataId(),
-							configInfo.getGroup(), configInfo.getTenant(), tag,
-							time.getTime()));
 		}
 	}
 
@@ -447,12 +432,6 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 		else {
 			updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
-		}
-		if (ApplicationUtils.getStandaloneMode()) {
-			EventDispatcher.fireEvent(
-					new ConfigDataChangeEvent(false, configInfo.getDataId(),
-							configInfo.getGroup(), configInfo.getTenant(),
-							time.getTime()));
 		}
 	}
 

@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.filter;
+package com.alibaba.nacos.config.server.service;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ToLeader {
+public class ConfigChangePublisher {
+
+	public static void notifyConfigChange(ConfigDataChangeEvent event) {
+		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
+			return;
+		}
+		EventDispatcher.fireEvent(event);
+	}
+
 }
