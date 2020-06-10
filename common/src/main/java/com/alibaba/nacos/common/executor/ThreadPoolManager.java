@@ -56,9 +56,7 @@ public final class ThreadPoolManager {
 		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-				LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
                 shutdown();
-				LOGGER.warn("[ThreadPoolManager] Destruction of the end");
             }
         }));
     }
@@ -190,10 +188,12 @@ public final class ThreadPoolManager {
 		if (!CLOSED.compareAndSet(false, true)) {
 			return;
 		}
+		LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
 	    Set<String> namespaces = INSTANCE.resourcesManager.keySet();
 	    for (String namespace : namespaces) {
 	        INSTANCE.destroy(namespace);
         }
-    }
+		LOGGER.warn("[ThreadPoolManager] Destruction of the end");
+	}
 
 }

@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.notify.NotifyCenter;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -61,12 +62,10 @@ public class ConfigOpsController {
 	private static final Logger log = LoggerFactory.getLogger(ConfigOpsController.class);
 
 	private final DumpService dumpService;
-	private final DatabaseOperate databaseOperate;
 
 	@Autowired
-	public ConfigOpsController(DumpService dumpService, DatabaseOperate databaseOperate) {
+	public ConfigOpsController(DumpService dumpService) {
 		this.dumpService = dumpService;
-		this.databaseOperate = databaseOperate;
 	}
 
 	/**
@@ -139,6 +138,7 @@ public class ConfigOpsController {
 					RestResultUtils.failed("Limited to embedded storage mode"));
 			return response;
 		}
+		DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
 		WebUtils.onFileUpload(multipartFile, path -> {
 			NotifyCenter.publishEvent(new DataImportEvent(false));
 			databaseOperate.dataImport(path.toFile()).whenComplete((result, ex) -> {
