@@ -222,33 +222,4 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
 	String TMP_DIR = Paths
 			.get(ApplicationUtils.getNacosTmpDir(), "derby", "backup").toString();
 
-	// /{nacos.home}
-	//	-- /tmp
-	//		--/derby
-	//			--/backup
-	//				--/xxxx.del
-	//				--/xxxx.del
-	//			--/backup.zip
-
-	default File doBackup(JdbcTemplate template) throws IOException {
-		DiskUtils.deleteDirThenMkdir(TMP_DIR);
-
-		for (String tableName : TABLE_NAMES) {
-			final Path file = Paths.get(TMP_DIR, tableName + ".del");
-			template.execute(
-					String.format(EXPORT_SQL_TEMPLATE, tableName, file.toString()));
-		}
-
-		final Path zipFile = Paths
-				.get(ApplicationUtils.getNacosTmpDir(), "derby", "backup.zip");
-
-		DiskUtils.compress(
-				Paths.get(ApplicationUtils.getNacosTmpDir(), "derby").toString(),
-				"backup", zipFile.toString(), new CRC64());
-		return zipFile.toFile();
-	}
-
-	default void doRestore(JdbcTemplate template) throws IOException {
-
-	}
 }

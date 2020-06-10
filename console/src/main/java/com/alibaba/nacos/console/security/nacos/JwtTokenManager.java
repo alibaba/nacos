@@ -57,7 +57,7 @@ public class JwtTokenManager {
 
     public String createToken(String userName) {
 
-        long now = (new Date()).getTime();
+        long now = System.currentTimeMillis();
 
         Date validity;
         validity = new Date(now + authConfigs.getTokenValidityInSeconds() * 1000L);

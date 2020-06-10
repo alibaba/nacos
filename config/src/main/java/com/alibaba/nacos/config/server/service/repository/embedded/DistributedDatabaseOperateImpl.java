@@ -441,11 +441,6 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
-	public File backup() throws IOException {
-		return doBackup(jdbcTemplate);
-	}
-
-	@Override
 	public Boolean update(List<ModifyRequest> sqlContext,
 			BiConsumer<Boolean, Throwable> consumer) {
 		try {

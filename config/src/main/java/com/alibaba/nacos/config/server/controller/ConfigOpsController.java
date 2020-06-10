@@ -35,12 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,9 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -159,35 +151,6 @@ public class ConfigOpsController {
 			});
 		}, response);
 		return response;
-	}
-
-	@GetMapping(value = "/derby/backup")
-	@Secured(action = ActionTypes.READ, resource = "nacos/admin")
-	public ResponseEntity<Resource> backup(HttpServletRequest request) {
-
-		// Try to determine file's content type
-		String contentType = null;
-		Resource resource = null;
-
-		try {
-			resource = new UrlResource(databaseOperate.backup().toURI());
-			contentType = request.getServletContext()
-					.getMimeType(resource.getFile().getAbsolutePath());
-		}
-		catch (IOException ex) {
-			LogUtil.defaultLog.error("An exception occurred in the file export. {}", ex);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
-
-		// Fallback to the default content type if type could not be determined
-		if (contentType == null) {
-			contentType = "application/octet-stream";
-		}
-
-		return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment; filename=\"" + resource.getFilename() + "\"")
-				.body(resource);
 	}
 
 }

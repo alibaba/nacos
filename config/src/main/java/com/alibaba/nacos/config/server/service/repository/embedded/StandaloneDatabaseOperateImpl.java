@@ -130,11 +130,6 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
 	}
 
 	@Override
-	public File backup() throws IOException {
-		return doBackup(jdbcTemplate);
-	}
-
-	@Override
 	public Boolean update(List<ModifyRequest> modifyRequests,
 			BiConsumer<Boolean, Throwable> consumer) {
 		return update(modifyRequests);

@@ -119,14 +119,6 @@ public interface DatabaseOperate {
     CompletableFuture<RestResult<String>> dataImport(File file);
 
     /**
-     * derby backup, Only local Derby is operated upon and does not involve interacting with other nodes to Restore Derby data
-     *
-     * @return {@link File}
-     * @throws IOException File export exception
-     */
-    File backup() throws IOException;
-
-    /**
      * data modify transaction
      *
      * @param modifyRequests {@link List<  ModifyRequest  >}
