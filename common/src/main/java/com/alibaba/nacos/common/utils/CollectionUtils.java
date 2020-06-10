@@ -179,6 +179,13 @@ public final class CollectionUtils {
 		}
 	}
 
+	public static <T> boolean contains(Collection<T> coll, T target) {
+		if (isEmpty(coll)) {
+			return false;
+		}
+		return coll.contains(target);
+	}
+
 	/**
 	 * Null-safe check if the specified collection is empty.
 	 * <p>
