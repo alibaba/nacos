@@ -55,7 +55,7 @@ import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
  *
  * @author Nacos
  */
-public class ClientWorker {
+public class ClientWorker implements Closeable {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
@@ -116,7 +116,7 @@ public class ClientWorker {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
+        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
@@ -160,7 +160,7 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
 
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
@@ -191,7 +191,7 @@ public class ClientWorker {
                 }
             }
 
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
             copy.put(key, cache);
             cacheMap.set(copy);
         }
@@ -277,7 +277,6 @@ public class ClientWorker {
         final String tenant = cacheData.tenant;
         File path = LocalConfigInfoProcessor.getFailoverFile(agent.getName(), dataId, group, tenant);
 
-        // 没有 -> 有
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
             String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
@@ -290,7 +289,7 @@ public class ClientWorker {
             return;
         }
 
-        // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
+        // If use local config info, then it doesn't notify business listener and notify after getting from server.
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
             LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
@@ -298,7 +297,7 @@ public class ClientWorker {
             return;
         }
 
-        // 有变更
+        // When it changed.
         if (cacheData.isUseLocalConfigInfo() && path.exists()
             && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
@@ -316,13 +315,13 @@ public class ClientWorker {
     }
 
     public void checkConfigInfo() {
-        // 分任务
+        // Dispatch taskes.
         int listenerSize = cacheMap.get().size();
-        // 向上取整为批数
+        // Round up the longingTaskCount.
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
+                // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
@@ -330,7 +329,13 @@ public class ClientWorker {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * Fetch the dataId list from server.
+     *
+     * @param cacheDatas CacheDatas for config infomations.
+     * @param inInitializingCacheList initial cache lists.
+     * @return String include dataId and group (ps: it maybe null).
+     *
+     * @throws IOException Exception.
      */
     List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -345,7 +350,7 @@ public class ClientWorker {
                     sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
                 }
                 if (cacheData.isInitializing()) {
-                    // cacheData 首次出现在cacheMap中&首次check更新
+                    // It updates when cacheData occours in cacheMap by first time.
                     inInitializingCacheList
                         .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
@@ -356,7 +361,13 @@ public class ClientWorker {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * Fetch the updated dataId list from server.
+     *
+     *
+     * @param probeUpdateString updated attribute string value.
+     * @param isInitializingCacheList initial cache lists.
+     * @return The updated dataId list(ps: it maybe null).
+     * @throws IOException Exception.
      */
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
@@ -403,7 +414,10 @@ public class ClientWorker {
     }
 
     /**
-     * 从HTTP响应拿到变化的groupKey。保证不返回NULL。
+     * Get the groupKey list from the http response.
+     *
+     * @param response Http response.
+     * @return GroupKey List, (ps: it maybe null).
      */
     private List<String> parseUpdateDataIdResponse(String response) {
         if (StringUtils.isBlank(response)) {
@@ -448,7 +462,7 @@ public class ClientWorker {
 
         init(properties);
 
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -458,7 +472,7 @@ public class ClientWorker {
             }
         });
 
-        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        this.executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -468,7 +482,7 @@ public class ClientWorker {
             }
         });
 
-        executor.scheduleWithFixedDelay(new Runnable() {
+        this.executor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -487,7 +501,16 @@ public class ClientWorker {
 
         taskPenaltyTime = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
-        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        this.enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+    }
+
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, LOGGER);
+        ThreadUtils.shutdownThreadPool(executor, LOGGER);
+        LOGGER.info("{} do shutdown stop", className);
     }
 
     class LongPollingRunnable implements Runnable {

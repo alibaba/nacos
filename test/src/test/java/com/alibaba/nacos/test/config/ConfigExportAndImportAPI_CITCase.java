@@ -90,7 +90,7 @@ public class ConfigExportAndImportAPI_CITCase {
     }
 
     @After
-    public void cleanup(){
+    public void cleanup() throws Exception{
         HttpSimpleClient.HttpResult result;
         try {
             List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
@@ -119,6 +119,7 @@ public class ConfigExportAndImportAPI_CITCase {
         } catch (Exception e) {
             Assert.fail();
         }
+        agent.shutdown();
     }
 
     @Test()
