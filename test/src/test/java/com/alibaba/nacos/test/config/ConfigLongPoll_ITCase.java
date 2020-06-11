@@ -22,10 +22,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,7 +62,6 @@ public class ConfigLongPoll_ITCase {
     public void destroy(){
         try {
             configService.shutDown();
-            Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
         }catch (NacosException ex) {
         }
     }

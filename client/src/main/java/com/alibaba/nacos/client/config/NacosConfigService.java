@@ -34,8 +34,6 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import com.alibaba.nacos.common.lifecycle.LifeCycle;
-import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -52,7 +50,7 @@ import java.util.Properties;
  * @author Nacos
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosConfigService implements ConfigService, LifeCycle {
+public class NacosConfigService implements ConfigService {
 
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
@@ -81,9 +79,8 @@ public class NacosConfigService implements ConfigService, LifeCycle {
         initNamespace(properties);
 
         this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        this.agent.fetchServerIpList();
+        this.agent.start();
         this.worker = new ClientWorker(this.agent, this.configFilterChainManager, properties);
-        ResourceLifeCycleManager.register(this);
     }
 
     private void initNamespace(Properties properties) {
@@ -287,12 +284,6 @@ public class NacosConfigService implements ConfigService, LifeCycle {
 
     @Override
     public void shutDown() throws NacosException{
-        destroy();
-        ResourceLifeCycleManager.deregister(this);
-    }
-
-    @Override
-    public void destroy() throws NacosException{
         agent.shutdown();
         worker.shutdown();
     }

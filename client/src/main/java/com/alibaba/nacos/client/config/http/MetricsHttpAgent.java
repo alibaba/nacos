@@ -42,8 +42,8 @@ public class MetricsHttpAgent implements HttpAgent {
     }
 
     @Override
-    public void fetchServerIpList() throws NacosException {
-        httpAgent.fetchServerIpList();
+    public void start() throws NacosException {
+        httpAgent.start();
     }
 
     @Override

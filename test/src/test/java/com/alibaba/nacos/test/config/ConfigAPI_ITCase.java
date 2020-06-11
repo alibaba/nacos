@@ -28,7 +28,6 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -74,7 +73,7 @@ public class ConfigAPI_ITCase {
         properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.fetchServerIpList();
+        agent.start();
     }
 
     @After
@@ -87,8 +86,6 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
             iconfig.shutDown();
             agent.shutdown();
-            // Judge whether the register life cycle resource number equals to zero or not.
-            Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
         } catch (Exception e) {
             e.printStackTrace();
