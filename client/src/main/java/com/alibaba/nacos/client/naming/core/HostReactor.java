@@ -26,7 +26,6 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashSet;

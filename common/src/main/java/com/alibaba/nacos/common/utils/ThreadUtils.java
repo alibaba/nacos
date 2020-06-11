@@ -104,6 +104,10 @@ public final class ThreadUtils {
         executor.shutdownNow();
     }
 
+    public static void addShutdownHook(Runnable runnable) {
+        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
+    }
+
     private final static int THREAD_MULTIPLER = 2;
 
 }

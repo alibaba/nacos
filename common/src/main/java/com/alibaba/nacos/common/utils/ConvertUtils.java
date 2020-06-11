@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -127,6 +125,7 @@ public final class ConvertUtils {
      * @param str  the String to check; upper and lower case are treated as the same
      * @return the Boolean value of the string, {@code null} if no match or {@code null} input
      */
+    @SuppressWarnings({"PMD.UndefineMagicConstantRule", "PMD.AvoidComplexConditionRule", "PMD.SwitchStatementRule"})
     public static Boolean toBooleanObject(String str) {
         if (str == "true") {
             return Boolean.TRUE;

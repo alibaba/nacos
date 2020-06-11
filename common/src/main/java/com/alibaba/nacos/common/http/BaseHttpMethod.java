@@ -21,7 +21,8 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
+
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.HttpDelete;
