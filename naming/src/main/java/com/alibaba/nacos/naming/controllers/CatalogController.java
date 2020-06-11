@@ -15,13 +15,12 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -35,6 +34,9 @@ import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +60,7 @@ public class CatalogController {
 
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @GetMapping("/service")
-    public JSONObject serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public ObjectNode serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                     String serviceName) throws NacosException {
 
         Service detailedService = serviceManager.getService(namespaceId, serviceName);
@@ -67,16 +69,16 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
-        JSONObject detailView = new JSONObject();
+        ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
 
-        JSONObject serviceObject = new JSONObject();
+        ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
         serviceObject.put("name", NamingUtils.getServiceName(serviceName));
         serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
         serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
-        serviceObject.put("selector", detailedService.getSelector());
-        serviceObject.put("metadata", detailedService.getMetadata());
+        serviceObject.replace("selector", JacksonUtils.transferToJsonNode(detailedService.getSelector()));
+        serviceObject.replace("metadata", JacksonUtils.transferToJsonNode(detailedService.getMetadata()));
 
-        detailView.put("service", serviceObject);
+        detailView.replace("service", serviceObject);
 
         List<Cluster> clusters = new ArrayList<>();
 
@@ -92,14 +94,14 @@ public class CatalogController {
             clusters.add(clusterView);
         }
 
-        detailView.put("clusters", clusters);
+        detailView.replace("clusters", JacksonUtils.transferToJsonNode(clusters));
 
         return detailView;
     }
 
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
-    public JSONObject instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                                    @RequestParam String serviceName,
                                    @RequestParam String clusterName,
                                    @RequestParam(name = "pageNo") int page,
@@ -132,8 +134,8 @@ public class CatalogController {
             end = instances.size();
         }
 
-        JSONObject result = new JSONObject();
-        result.put("list", instances.subList(start, end));
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.replace("list", JacksonUtils.transferToJsonNode(instances.subList(start, end)));
         result.put("count", instances.size());
 
         return result;
@@ -175,19 +177,19 @@ public class CatalogController {
             return serviceDetailInfoList;
         }
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
         List<Service> services = new ArrayList<>();
 
         int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
 
         if (CollectionUtils.isEmpty(services)) {
-            result.put("serviceList", Collections.emptyList());
+            result.replace("serviceList", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);
             return result;
         }
 
-        JSONArray serviceJsonArray = new JSONArray();
+        List<ServiceView> serviceViews = new LinkedList<>();
         for (Service service : services) {
             ServiceView serviceView = new ServiceView();
             serviceView.setName(NamingUtils.getServiceName(service.getName()));
@@ -196,17 +198,17 @@ public class CatalogController {
             serviceView.setIpCount(service.allIPs().size());
             serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
             serviceView.setTriggerFlag(service.triggerFlag() ? "true" : "false");
-            serviceJsonArray.add(serviceView);
+            serviceViews.add(serviceView);
         }
 
-        result.put("serviceList", serviceJsonArray);
+        result.replace("serviceList", JacksonUtils.transferToJsonNode(serviceViews));
         result.put("count", total);
 
         return result;
     }
 
     @RequestMapping("/rt/service")
-    public JSONObject rt4Service(HttpServletRequest request) {
+    public ObjectNode rt4Service(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -218,11 +220,11 @@ public class CatalogController {
             throw new IllegalArgumentException("request service doesn't exist");
         }
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
-        JSONArray clusters = new JSONArray();
+        ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
         for (Map.Entry<String, com.alibaba.nacos.naming.core.Cluster> entry : service.getClusterMap().entrySet()) {
-            JSONObject packet = new JSONObject();
+            ObjectNode packet = JacksonUtils.createEmptyJsonNode();
             HealthCheckTask task = entry.getValue().getHealthCheckTask();
 
             packet.put("name", entry.getKey());
@@ -232,8 +234,7 @@ public class CatalogController {
 
             clusters.add(packet);
         }
-        result.put("clusters", clusters);
-
+        result.replace("clusters", clusters);
         return result;
     }
 

@@ -15,14 +15,21 @@
  */
 package com.alibaba.nacos.config.server.service.merge;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.consistency.cp.CPProtocol;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +39,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * 数据聚合服务。
@@ -55,7 +60,6 @@ public class MergeDatumService {
         this.persistService = persistService;
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
         mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
-
     }
 
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
@@ -74,6 +78,9 @@ public class MergeDatumService {
      * 数据变更后调用，添加聚合任务
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String tag, String clientIp) {
+        if (!canExecute()) {
+            return;
+        }
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, tag, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
@@ -82,14 +89,31 @@ public class MergeDatumService {
      * 数据变更后调用，添加聚合任务
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String clientIp) {
+        if (!canExecute()) {
+            return;
+        }
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, clientIp);
         mergeTasks.addTask(task.getId(), task);
     }
 
     public void mergeAll() {
-        for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), LOCAL_IP);
+        if (!canExecute()) {
+            return;
         }
+        for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
+            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIp());
+        }
+    }
+
+    private boolean canExecute() {
+        if (!PropertyUtil.isEmbeddedStorage()) {
+            return true;
+        }
+        if (ApplicationUtils.getStandaloneMode()) {
+            return true;
+        }
+        ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
+        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
     }
 
     class MergeAllDataWorker extends Thread {
@@ -133,7 +157,7 @@ public class MergeDatumService {
                     }
                     // 删除
                     else {
-                        persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
+                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
                         log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                             + group);
                     }

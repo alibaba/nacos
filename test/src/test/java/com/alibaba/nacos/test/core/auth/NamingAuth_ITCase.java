@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Assert;
@@ -41,8 +42,8 @@ import static org.junit.Assert.fail;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NamingAuth_ITCase extends AuthBase {
 
     @LocalServerPort
@@ -80,11 +81,11 @@ public class NamingAuth_ITCase extends AuthBase {
         } catch (NacosException ne) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
         }
+        namingService.shutDown();
     }
 
     @Test
     public void readWithReadPermission() throws Exception {
-
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         NamingService namingService1 = NacosFactory.createNamingService(properties);
@@ -97,6 +98,8 @@ public class NamingAuth_ITCase extends AuthBase {
 
         List<Instance> list = namingService.getAllInstances("test.1");
         Assert.assertEquals(1, list.size());
+        namingService1.shutDown();
+        namingService.shutDown();
     }
 
     @Test
@@ -111,6 +114,7 @@ public class NamingAuth_ITCase extends AuthBase {
         TimeUnit.SECONDS.sleep(5L);
 
         namingService.deregisterInstance("test.1", "1.2.3.4", 80);
+        namingService.shutDown();
     }
 
     @Test
@@ -126,7 +130,7 @@ public class NamingAuth_ITCase extends AuthBase {
         List<Instance> list = namingService.getAllInstances("test.1");
 
         Assert.assertEquals(0, list.size());
-
+        namingService.shutDown();
     }
 
     @Test
@@ -142,6 +146,7 @@ public class NamingAuth_ITCase extends AuthBase {
         List<Instance> list = namingService.getAllInstances("test.1");
 
         Assert.assertEquals(1, list.size());
+        namingService.shutDown();
     }
 
 }

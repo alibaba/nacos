@@ -177,7 +177,7 @@ public class NamingBase extends HttpClient4Test {
         headers.add("Nacos-Server");
         HttpClient.HttpResult result =
             HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
+        System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
 
 
@@ -187,7 +187,7 @@ public class NamingBase extends HttpClient4Test {
         headers.add("Nacos-Server");
         result =
             HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
+        System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
     }
 
@@ -198,7 +198,7 @@ public class NamingBase extends HttpClient4Test {
         headers.add("Nacos-Server");
         HttpClient.HttpResult result =
             HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
+        System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
     }
 }

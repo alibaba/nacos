@@ -16,13 +16,14 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -105,8 +106,8 @@ public class NotifySingleService {
     }
 
     @Autowired
-    public NotifySingleService(ServerListService serverListService) {
-        this.serverListService = serverListService;
+    public NotifySingleService(ServerMemberManager memberManager) {
+        this.memberManager = memberManager;
         setupNotifyExecutors();
     }
 
@@ -114,15 +115,18 @@ public class NotifySingleService {
      * 系统启动时 or 集群扩容、下线时：单线程setupNotifyExecutors executors使用ConcurrentHashMap目的在于保证可见性
      */
     private void setupNotifyExecutors() {
-        List<String> clusterIps = serverListService.getServerList();
+        Collection<Member> clusterIps = memberManager.allMembers();
 
-        for (String ip : clusterIps) {
+        for (Member member : clusterIps) {
+
+            final String address = member.getAddress();
+
             // 固定线程数，无界队列（基于假设: 线程池的吞吐量不错，不会出现持续任务堆积，存在偶尔的瞬间压力）
             @SuppressWarnings("PMD.ThreadPoolCreationRule")
-            Executor executor = Executors.newScheduledThreadPool(1, new NotifyThreadFactory(ip));
+            Executor executor = Executors.newScheduledThreadPool(1, new NotifyThreadFactory(address));
 
-            if (null == executors.putIfAbsent(ip, executor)) {
-                logger.warn("[notify-thread-pool] setup thread target ip {} ok.", ip);
+            if (null == executors.putIfAbsent(address, executor)) {
+                logger.warn("[notify-thread-pool] setup thread target ip {} ok.", address);
             }
         }
 
@@ -143,7 +147,7 @@ public class NotifySingleService {
 
     private final static Logger logger = LogUtil.fatalLog;
 
-    private ServerListService serverListService;
+    private ServerMemberManager memberManager;
 
     private ConcurrentHashMap<String, Executor> executors = new ConcurrentHashMap<String, Executor>();
 

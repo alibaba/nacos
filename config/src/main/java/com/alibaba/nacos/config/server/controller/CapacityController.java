@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import org.apache.commons.lang3.StringUtils;

@@ -22,6 +22,8 @@ package com.alibaba.nacos.config.server.model.capacity;
  * @date 2018/3/13
  */
 public class GroupCapacity extends Capacity {
+
+    private static final long serialVersionUID = 5888791286289014878L;
     private String group;
 
     public String getGroup() {

@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.client.naming.beat;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
@@ -26,6 +24,10 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -35,7 +37,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author harold
  */
-public class BeatReactor {
+public class BeatReactor implements Closeable {
 
     private ScheduledExecutorService executorService;
 
@@ -43,7 +45,7 @@ public class BeatReactor {
 
     private boolean lightBeatEnabled = false;
 
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<>();
 
     public BeatReactor(NamingProxy serverProxy) {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
@@ -51,7 +53,7 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
-        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
+        this.executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -90,6 +92,14 @@ public class BeatReactor {
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
+    @Override
+    public void shutdown() throws NacosException{
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+
     class BeatTask implements Runnable {
 
         BeatInfo beatInfo;
@@ -105,19 +115,19 @@ public class BeatReactor {
             }
             long nextTime = beatInfo.getPeriod();
             try {
-                JSONObject result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
-                long interval = result.getIntValue("clientBeatInterval");
+                JsonNode result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
+                long interval = result.get("clientBeatInterval").asInt();
                 boolean lightBeatEnabled = false;
-                if (result.containsKey(CommonParams.LIGHT_BEAT_ENABLED)) {
-                    lightBeatEnabled = result.getBooleanValue(CommonParams.LIGHT_BEAT_ENABLED);
+                if (result.has(CommonParams.LIGHT_BEAT_ENABLED)) {
+                    lightBeatEnabled = result.get(CommonParams.LIGHT_BEAT_ENABLED).asBoolean();
                 }
                 BeatReactor.this.lightBeatEnabled = lightBeatEnabled;
                 if (interval > 0) {
                     nextTime = interval;
                 }
                 int code = NamingResponseCode.OK;
-                if (result.containsKey(CommonParams.CODE)) {
-                    code = result.getIntValue(CommonParams.CODE);
+                if (result.has(CommonParams.CODE)) {
+                    code = result.get(CommonParams.CODE).asInt();
                 }
                 if (code == NamingResponseCode.RESOURCE_NOT_FOUND) {
                     Instance instance = new Instance();
@@ -137,7 +147,7 @@ public class BeatReactor {
                 }
             } catch (NacosException ne) {
                 NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, code: {}, msg: {}",
-                    JSON.toJSONString(beatInfo), ne.getErrCode(), ne.getErrMsg());
+                    JacksonUtils.toJson(beatInfo), ne.getErrCode(), ne.getErrMsg());
 
             }
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
