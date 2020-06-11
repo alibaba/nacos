@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.config.server.model.capacity;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -27,6 +30,8 @@ import java.sql.Timestamp;
 public class Capacity implements Serializable {
 
     private static final long serialVersionUID = 77343194329627468L;
+
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     private Integer quota;
     private Integer usage;

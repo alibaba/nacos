@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.test.core;
 
-import com.alibaba.nacos.core.distributed.id.SnakeFlowerIdGenerator;
+import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,14 +25,14 @@ import org.springframework.core.env.StandardEnvironment;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class SnakeFlowerIdGenerator_ITCase {
+public class SnowFlowerIdGenerator_ITCase {
 
 	@Test
 	public void test_idGenerator() {
 		ApplicationUtils.injectEnvironment(new StandardEnvironment());
-		SnakeFlowerIdGenerator generator1 = new SnakeFlowerIdGenerator();
-		SnakeFlowerIdGenerator generator2 = new SnakeFlowerIdGenerator();
-		SnakeFlowerIdGenerator generator3 = new SnakeFlowerIdGenerator();
+		SnowFlowerIdGenerator generator1 = new SnowFlowerIdGenerator();
+		SnowFlowerIdGenerator generator2 = new SnowFlowerIdGenerator();
+		SnowFlowerIdGenerator generator3 = new SnowFlowerIdGenerator();
 
 		generator1.initialize(1);
 		generator2.initialize(2);

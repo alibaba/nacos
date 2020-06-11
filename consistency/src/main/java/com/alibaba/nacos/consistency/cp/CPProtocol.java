@@ -30,8 +30,7 @@ public interface CPProtocol<C extends Config, P extends LogProcessor4CP> extends
 	 *
 	 * @param group business module info
 	 * @return is leader
-	 * @throws Exception
 	 */
-	boolean isLeader(String group) throws Exception;
+	boolean isLeader(String group);
 
 }

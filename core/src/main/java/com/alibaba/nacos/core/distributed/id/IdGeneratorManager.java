@@ -45,7 +45,7 @@ public class IdGeneratorManager {
             if (iterator.hasNext()) {
                 generator = iterator.next();
             } else {
-                generator = new SnakeFlowerIdGenerator();
+                generator = new SnowFlowerIdGenerator();
             }
             generator.init();
             return generator;

@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -39,11 +39,8 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
@@ -64,8 +61,8 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.alipay.sofa.jraft.util.Endpoint;
-import com.google.protobuf.Message;
 import com.google.common.base.Joiner;
+import com.google.protobuf.Message;
 import org.springframework.util.CollectionUtils;
 
 import java.nio.ByteBuffer;
@@ -138,11 +135,13 @@ public class JRaftServer {
 		// System.getProperties().setProperty("bolt.channel_write_buf_low_water_mark", String.valueOf(64 * 1024 * 1024));
 		// System.getProperties().setProperty("bolt.channel_write_buf_high_water_mark", String.valueOf(256 * 1024 * 1024));
 
-		System.getProperties().setProperty("bolt.netty.buffer.low.watermark", String.valueOf(128 * 1024 * 1024));
-		System.getProperties().setProperty("bolt.netty.buffer.high.watermark", String.valueOf(256 * 1024 * 1024));
+		System.getProperties().setProperty("bolt.netty.buffer.low.watermark",
+				String.valueOf(128 * 1024 * 1024));
+		System.getProperties().setProperty("bolt.netty.buffer.high.watermark",
+				String.valueOf(256 * 1024 * 1024));
 	}
 
-	public JRaftServer() throws Exception {
+	public JRaftServer() {
 		this.conf = new Configuration();
 	}
 
@@ -272,7 +271,8 @@ public class JRaftServer {
 			machine.setNode(node);
 			RouteTable.getInstance().updateConfiguration(groupName, configuration);
 
-			RaftExecutor.executeByCommon(() -> registerSelfToCluster(groupName, localPeerId, configuration));
+			RaftExecutor.executeByCommon(
+					() -> registerSelfToCluster(groupName, localPeerId, configuration));
 
 			// Turn on the leader auto refresh for this group
 			Random random = new Random();
@@ -305,21 +305,25 @@ public class JRaftServer {
 						}
 						catch (Throwable t) {
 							MetricsMonitor.raftReadIndexFailed();
-							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", t));
+							future.completeExceptionally(new ConsistencyException(
+									"The conformance protocol is temporarily unavailable for reading",
+									t));
 						}
 						return;
 					}
 					MetricsMonitor.raftReadIndexFailed();
 					Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
-					future.completeExceptionally(
-							new ConsistencyException("The conformance protocol is temporarily unavailable for reading, " + status.getErrorMsg()));
+					future.completeExceptionally(new ConsistencyException(
+							"The conformance protocol is temporarily unavailable for reading, "
+									+ status.getErrorMsg()));
 				}
 			});
 			return future;
 		}
 		catch (Throwable e) {
 			MetricsMonitor.raftReadFromLeader();
-			Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}", e.toString());
+			Loggers.RAFT.warn("Raft linear read failed, go to Leader read logic : {}",
+					e.toString());
 			// run raft read
 			readFromLeader(request, future);
 			return future;
@@ -333,20 +337,25 @@ public class JRaftServer {
 					@Override
 					public void accept(Response response, Throwable throwable) {
 						if (Objects.nonNull(throwable)) {
-							future.completeExceptionally(new ConsistencyException("The conformance protocol is temporarily unavailable for reading", throwable));
+							future.completeExceptionally(new ConsistencyException(
+									"The conformance protocol is temporarily unavailable for reading",
+									throwable));
 							return;
 						}
 						if (response.getSuccess()) {
 							future.complete(response);
-						} else {
-							future.completeExceptionally(
-									new ConsistencyException("The conformance protocol is temporarily unavailable for reading, " + response.getErrMsg()));
+						}
+						else {
+							future.completeExceptionally(new ConsistencyException(
+									"The conformance protocol is temporarily unavailable for reading, "
+											+ response.getErrMsg()));
 						}
 					}
 				});
 	}
 
-	public CompletableFuture<Response> commit(final String group, final Message data, final CompletableFuture<Response> future) {
+	public CompletableFuture<Response> commit(final String group, final Message data,
+			final CompletableFuture<Response> future) {
 		LoggerUtils
 				.printIfDebugEnabled(Loggers.RAFT, "data requested this time : {}", data);
 		final RaftGroupTuple tuple = findTupleByGroup(group);
@@ -374,12 +383,12 @@ public class JRaftServer {
 	 * Add yourself to the Raft cluster
 	 *
 	 * @param groupId raft group
-	 * @param selfIp local raft node address
-	 * @param conf {@link Configuration} without self info
+	 * @param selfIp  local raft node address
+	 * @param conf    {@link Configuration} without self info
 	 * @return join success
 	 */
 	void registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
-		for ( ; ; ) {
+		for (; ; ) {
 			List<PeerId> peerIds = cliService.getPeers(groupId, conf);
 			if (peerIds.contains(selfIp)) {
 				return;
@@ -428,14 +437,10 @@ public class JRaftServer {
 	public void applyOperation(Node node, Message data, FailoverClosure closure) {
 		final Task task = new Task();
 		task.setDone(new NacosClosure(data, status -> {
-			NacosClosure.NStatus nStatus = (NacosClosure.NStatus) status;
-			if (Objects.nonNull(nStatus.getThrowable())) {
-				closure.setThrowable(nStatus.getThrowable());
-			}
-			else {
-				closure.setData(nStatus.getResult());
-			}
-			closure.run(nStatus);
+			NacosClosure.NacosStatus nacosStatus = (NacosClosure.NacosStatus) status;
+			closure.setThrowable(nacosStatus.getThrowable());
+			closure.setResponse(nacosStatus.getResponse());
+			closure.run(nacosStatus);
 		}));
 		task.setData(ByteBuffer.wrap(data.toByteArray()));
 		node.apply(task);
@@ -452,10 +457,11 @@ public class JRaftServer {
 						public void complete(Object o, Throwable ex) {
 							if (Objects.nonNull(ex)) {
 								closure.setThrowable(ex);
-								closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
+								closure.run(
+										new Status(RaftError.UNKNOWN, ex.getMessage()));
 								return;
 							}
-							closure.setData(o);
+							closure.setResponse((Response) o);
 							closure.run(Status.OK());
 						}
 
@@ -491,7 +497,8 @@ public class JRaftServer {
 				RestResult<String> result = maintainService.execute(params);
 				if (result.ok()) {
 					successCnt.incrementAndGet();
-				} else {
+				}
+				else {
 					Loggers.RAFT.error("Node removal failed : {}", result);
 				}
 			}
@@ -513,7 +520,8 @@ public class JRaftServer {
 			Configuration oldConf = instance.getConfiguration(groupName);
 			String oldLeader = Optional.ofNullable(instance.selectLeader(groupName))
 					.orElse(PeerId.emptyPeer()).getEndpoint().toString();
-			status = instance.refreshConfiguration(this.cliClientService, groupName, rpcRequestTimeoutMs);
+			status = instance.refreshConfiguration(this.cliClientService, groupName,
+					rpcRequestTimeoutMs);
 			if (!status.isOk()) {
 				Loggers.RAFT
 						.error("Fail to refresh route configuration for group : {}, status is : {}",
@@ -548,12 +556,16 @@ public class JRaftServer {
 		return cliService;
 	}
 
-	public class RaftGroupTuple {
+	public static class RaftGroupTuple {
 
-		private final LogProcessor processor;
-		private final Node node;
-		private final RaftGroupService raftGroupService;
-		private final NacosStateMachine machine;
+		private LogProcessor processor;
+		private Node node;
+		private RaftGroupService raftGroupService;
+		private NacosStateMachine machine;
+
+		@JustForTest
+		public RaftGroupTuple() {
+		}
 
 		public RaftGroupTuple(Node node, LogProcessor processor,
 				RaftGroupService raftGroupService, NacosStateMachine machine) {

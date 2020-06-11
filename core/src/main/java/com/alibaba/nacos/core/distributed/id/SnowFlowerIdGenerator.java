@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,10 +42,10 @@ import java.util.Map;
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class SnakeFlowerIdGenerator implements IdGenerator {
+public class SnowFlowerIdGenerator implements IdGenerator {
 
 	private static final Logger logger = LoggerFactory
-			.getLogger(SnakeFlowerIdGenerator.class);
+			.getLogger(SnowFlowerIdGenerator.class);
 
 	/**
 	 * Start time intercept (2018-08-05 08:34)

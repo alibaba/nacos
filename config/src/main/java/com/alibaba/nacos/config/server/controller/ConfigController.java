@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
-import com.alibaba.nacos.config.server.filter.ToLeader;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -34,20 +33,18 @@ import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.InetUtils;
-import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -64,7 +61,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
@@ -80,7 +76,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -117,17 +112,16 @@ public class ConfigController {
 	}
 
 	/**
-	 * 增加或更新非聚合数据。
+	 * Adds or updates non-aggregated data.
 	 *
 	 * @throws NacosException
 	 */
 	@PostMapping
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+			@RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam("content") String content,
+			@RequestParam(value = "content") String content,
 			@RequestParam(value = "tag", required = false) String tag,
 			@RequestParam(value = "appName", required = false) String appName,
 			@RequestParam(value = "src_user", required = false) String srcUser,
@@ -169,22 +163,27 @@ public class ConfigController {
 			if (StringUtils.isBlank(tag)) {
 				persistService.insertOrUpdate(srcIp, srcUser, configInfo, time,
 						configAdvanceInfo, true);
+				ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
 			}
 			else {
 				persistService
 						.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, true);
+				ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
 			}
 		}
 		else {
 			// beta publish
 			persistService
 					.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, true);
+			ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
 		}
+		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
+				InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 		return true;
 	}
 
 	/**
-	 * 取数据
+	 * get configure board infomation fail
 	 *
 	 * @throws ServletException
 	 * @throws IOException
@@ -209,7 +208,7 @@ public class ConfigController {
 	}
 
 	/**
-	 * 取数据
+	 * Get the specific configuration information that the console USES
 	 *
 	 * @throws NacosException
 	 */
@@ -228,12 +227,11 @@ public class ConfigController {
 	}
 
 	/**
-	 * 同步删除某个dataId下面所有的聚合前数据
+	 * Synchronously delete all pre-aggregation data under a dataId
 	 *
 	 * @throws NacosException
 	 */
 	@DeleteMapping
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, //
@@ -257,6 +255,7 @@ public class ConfigController {
 		ConfigTraceService
 				.logPersistenceEvent(dataId, group, tenant, null, time.getTime(),
 						clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+		ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
 		return true;
 	}
 
@@ -268,7 +267,6 @@ public class ConfigController {
 	 * @Param [request, response, dataId, group, tenant, tag]
 	 */
 	@DeleteMapping(params = "delType=ids")
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public RestResult<Boolean> deleteConfigs(HttpServletRequest request,
 			HttpServletResponse response, @RequestParam(value = "ids") List<Long> ids) {
@@ -278,6 +276,8 @@ public class ConfigController {
 				.removeConfigInfoByIds(ids, clientIp, null);
 		if (!CollectionUtils.isEmpty(configInfoList)) {
 			for (ConfigInfo configInfo : configInfoList) {
+				ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, configInfo.getDataId(),
+						configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
 				ConfigTraceService.logPersistenceEvent(configInfo.getDataId(),
 						configInfo.getGroup(), configInfo.getTenant(), null,
 						time.getTime(), clientIp,
@@ -301,7 +301,7 @@ public class ConfigController {
 	}
 
 	/**
-	 * 比较MD5
+	 * The client listens for configuration changes
 	 */
 	@PostMapping("/listener")
 	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -328,7 +328,7 @@ public class ConfigController {
 	}
 
 	/**
-	 * 订阅改配置的客户端信息
+	 * Subscribe to configured client information
 	 */
 	@GetMapping("/listener")
 	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -350,7 +350,7 @@ public class ConfigController {
 	}
 
 	/**
-	 * 查询配置信息，返回JSON格式。
+	 * Query the configuration information and return it in JSON format.
 	 */
 	@GetMapping(params = "search=accurate")
 	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -381,7 +381,8 @@ public class ConfigController {
 	}
 
 	/**
-	 * 模糊查询配置信息。不允许只根据内容模糊查询，即dataId和group都为NULL，但content不是NULL。这种情况下，返回所有配置。
+	 * Fuzzy query configuration information. Fuzzy queries based only on content are not allowed, that is,
+	 * both dataId and group are NULL, but content is not NULL. In this case, all configurations are returned.
 	 */
 	@GetMapping(params = "search=blur")
 	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -412,7 +413,6 @@ public class ConfigController {
 	}
 
 	@DeleteMapping(params = "beta=true")
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
 			@RequestParam(value = "group") String group,
@@ -428,6 +428,7 @@ public class ConfigController {
 			rr.setMessage("remove beta data error");
 			return rr;
 		}
+		ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
 		rr.setCode(200);
 		rr.setData(true);
 		rr.setMessage("stop beta ok");
@@ -506,7 +507,6 @@ public class ConfigController {
 	}
 
 	@PostMapping(params = "import=true")
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public RestResult<Map<String, Object>> importAndPublishConfig(
 			HttpServletRequest request,
@@ -595,7 +595,7 @@ public class ConfigController {
 				.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false,
 						policy);
 		for (ConfigInfo configInfo : configInfoList) {
-			EventDispatcher.fireEvent(
+			ConfigChangePublisher.notifyConfigChange(
 					new ConfigDataChangeEvent(false, configInfo.getDataId(),
 							configInfo.getGroup(), configInfo.getTenant(),
 							time.getTime()));
@@ -609,7 +609,6 @@ public class ConfigController {
 	}
 
 	@PostMapping(params = "clone=true")
-	@ToLeader
 	@Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
 	public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
 			@RequestParam(value = "src_user", required = false) String srcUser,
@@ -683,7 +682,7 @@ public class ConfigController {
 				.batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp, null, time,
 						false, policy);
 		for (ConfigInfo configInfo : configInfoList4Clone) {
-			EventDispatcher.fireEvent(
+			ConfigChangePublisher.notifyConfigChange(
 					new ConfigDataChangeEvent(false, configInfo.getDataId(),
 							configInfo.getGroup(), configInfo.getTenant(),
 							time.getTime()));
@@ -693,7 +692,7 @@ public class ConfigController {
 							InetUtils.getSelfIp(), ConfigTraceService.PERSISTENCE_EVENT_PUB,
 							configInfo.getContent());
 		}
-		return ResultBuilder.buildSuccessResult("克隆成功", saveResult);
+		return ResultBuilder.buildSuccessResult("Clone Completed Successfully", saveResult);
 	}
 
 	private String processTenant(String tenant) {
