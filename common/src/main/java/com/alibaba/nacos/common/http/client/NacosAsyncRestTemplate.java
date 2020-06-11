@@ -48,7 +48,6 @@ public class NacosAsyncRestTemplate {
         this.clientRequest = clientRequest;
     }
 
-
     /**
      * async http get
      * URL request params are expanded using the given query {@link Query}.
@@ -64,7 +63,6 @@ public class NacosAsyncRestTemplate {
      * @throws Exception ex
      */
     public <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType, callback);
     }
 
@@ -84,7 +82,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void get(String url, Header header, Map<String, String> paramValues,
                         Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.GET, new RequestHttpEntity(header,
             Query.newInstance().initParams(paramValues)), responseType, callback);
     }
@@ -107,7 +104,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void getLarge(String url, Header header, Query query, Object body,
                              Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.GET_LARGE,
             new RequestHttpEntity(header, query, body), responseType, callback);
     }
@@ -128,7 +124,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void delete(String url, Header header, Query query,
                            Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.DELETE,
             new RequestHttpEntity(header, query), responseType, callback);
     }
@@ -151,7 +146,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void put(String url, Header header, Query query, Object body,
                         Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.PUT,
             new RequestHttpEntity(header, query, body), responseType, callback);
     }
@@ -175,12 +169,10 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putJson(String url, Header header, Map<String, String> paramValues,
                             String body, Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_JSON),
                 Query.newInstance().initParams(paramValues), body),
             responseType, callback);
-
     }
 
     /**
@@ -202,7 +194,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putFrom(String url, Header header, Query query, Map<String, String> bodyValues,
                             Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             query, bodyValues), responseType, callback);
@@ -227,7 +218,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putFrom(String url, Header header, Map<String, String> paramValues,
                             Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.PUT, new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
@@ -251,7 +241,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void post(String url, Header header, Query query, Object body,
                          Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.POST, new RequestHttpEntity(
             header, query, body), responseType, callback);
     }
@@ -275,7 +264,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postJson(String url, Header header, Map<String, String> paramValues,
                              String body, Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.POST, new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_JSON),
             Query.newInstance().initParams(paramValues), body),
@@ -301,7 +289,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postFrom(String url, Header header, Query query, Map<String, String> bodyValues,
                              Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.POST, new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
             responseType, callback);
@@ -326,7 +313,6 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postFrom(String url, Header header, Map<String, String> paramValues,
                              Map<String, String> bodyValues, Type responseType, Callback<T> callback) throws Exception {
-
         execute(url, HttpMethod.POST, new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
@@ -336,7 +322,6 @@ public class NacosAsyncRestTemplate {
 
     private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity,
                              Type responseType, Callback<T> callback) throws Exception {
-
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (logger.isDebugEnabled()) {
             logger.debug("HTTP " + httpMethod + " " + url);

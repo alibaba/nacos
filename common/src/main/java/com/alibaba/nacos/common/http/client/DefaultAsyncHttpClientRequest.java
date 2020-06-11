@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.http.client;
 
-
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
@@ -75,7 +74,6 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
         });
 
     }
-
 
     @Override
     public void close() throws IOException {

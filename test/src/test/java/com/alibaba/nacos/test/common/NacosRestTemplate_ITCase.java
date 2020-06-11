@@ -53,11 +53,9 @@ public class NacosRestTemplate_ITCase {
 
     private NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
 
-
     private final String INSTANCE_PATH = "/nacos/v1/ns";
     private final String CONFIG_PATH = "/nacos/v1/cs";
     private String IP = null;
-
 
     @Before
     public void init() throws NacosException {
@@ -131,12 +129,5 @@ public class NacosRestTemplate_ITCase {
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult);
     }
-
-
-
-
-
-
-
 
 }

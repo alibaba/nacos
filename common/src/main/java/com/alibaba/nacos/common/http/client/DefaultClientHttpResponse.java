@@ -20,10 +20,8 @@ import com.alibaba.nacos.common.http.param.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.utils.HttpClientUtils;
 
-
 import java.io.IOException;
 import java.io.InputStream;
-
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}

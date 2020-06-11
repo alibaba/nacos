@@ -122,13 +122,9 @@ public class Header {
         return charset;
     }
 
-
-
-
     public void clear() {
         header.clear();
     }
-
 
     @Override
     public String toString() {
