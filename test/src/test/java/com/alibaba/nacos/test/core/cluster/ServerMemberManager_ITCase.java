@@ -48,13 +48,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ServerMemberManager_ITCase {
 
-	private ServerMemberManager memberManager = new ServerMemberManager(new MockServletContext());
+	private ServerMemberManager memberManager;
+
+	{
+		try {
+			memberManager = new ServerMemberManager(new MockServletContext());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Before
 	public void init() throws Exception {
 		ApplicationUtils.setIsStandalone(true);
 		ApplicationUtils.injectEnvironment(new StandardEnvironment());
-		memberManager.init();
 	}
 
 	@After

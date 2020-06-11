@@ -81,6 +81,7 @@ public class NamingAuth_ITCase extends AuthBase {
         } catch (NacosException ne) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
         }
+        namingService.shutDown();
     }
 
     @Test
@@ -97,6 +98,8 @@ public class NamingAuth_ITCase extends AuthBase {
 
         List<Instance> list = namingService.getAllInstances("test.1");
         Assert.assertEquals(1, list.size());
+        namingService1.shutDown();
+        namingService.shutDown();
     }
 
     @Test
@@ -111,6 +114,7 @@ public class NamingAuth_ITCase extends AuthBase {
         TimeUnit.SECONDS.sleep(5L);
 
         namingService.deregisterInstance("test.1", "1.2.3.4", 80);
+        namingService.shutDown();
     }
 
     @Test
@@ -126,7 +130,7 @@ public class NamingAuth_ITCase extends AuthBase {
         List<Instance> list = namingService.getAllInstances("test.1");
 
         Assert.assertEquals(0, list.size());
-
+        namingService.shutDown();
     }
 
     @Test
@@ -142,6 +146,7 @@ public class NamingAuth_ITCase extends AuthBase {
         List<Instance> list = namingService.getAllInstances("test.1");
 
         Assert.assertEquals(1, list.size());
+        namingService.shutDown();
     }
 
 }

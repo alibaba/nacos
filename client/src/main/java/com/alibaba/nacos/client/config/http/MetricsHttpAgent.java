@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * MetricsHttpAgent
+ *
+ * @author Nacos
+ */
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,6 +34,7 @@ import java.util.List;
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
+
     private HttpAgent httpAgent;
 
     public MetricsHttpAgent(HttpAgent httpAgent) {
@@ -43,7 +49,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
@@ -59,7 +65,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
@@ -75,7 +81,7 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
-        HttpResult result = null;
+        HttpResult result;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
@@ -107,6 +113,11 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public String getEncode() {
         return httpAgent.getEncode();
+    }
+
+    @Override
+    public void shutdown() throws NacosException{
+        httpAgent.shutdown();
     }
 }
 

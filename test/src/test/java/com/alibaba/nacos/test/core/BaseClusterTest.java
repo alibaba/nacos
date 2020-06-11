@@ -22,11 +22,11 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.Constants;
+import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -157,7 +157,14 @@ public class BaseClusterTest extends HttpClient4Test {
 				try {
 					System.out.println("start close : " + context);
 					context.close();
-				} catch (Exception ignore) {
+                    iconfig7.shutDown();
+                    iconfig8.shutDown();
+                    iconfig9.shutDown();
+
+                    inaming7.shutDown();
+                    inaming8.shutDown();
+                    inaming9.shutDown();
+                } catch (Exception ignore) {
 				} finally {
 					System.out.println("finished close : " + context);
 					latch.countDown();
@@ -201,7 +208,7 @@ public class BaseClusterTest extends HttpClient4Test {
 				CPProtocol protocol = context.getBean(CPProtocol.class);
 
 				protocol.protocolMetaData()
-						.subscribe(operate.group(), Constants.LEADER_META_DATA,
+						.subscribe(operate.group(), MetadataKey.LEADER_META_DATA,
 								(o, arg) -> {
 									System.out.println("node : 884" + (7 + index) + "-> select leader is : " + arg);
 									if (finished[index].compareAndSet(false, true)) {
