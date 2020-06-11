@@ -340,7 +340,6 @@ public class ServerHttpAgent implements HttpAgent {
 
     @Override
     public void start() throws NacosException {
-        // fetch server address urls list
         serverListMgr.start();
     }
 
