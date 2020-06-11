@@ -189,7 +189,7 @@ public class WatchFileCenter {
 					if (callBackExecutor.isShutdown()) {
 						return;
 					}
-                    if(events.size() == 0) {
+                    if(events.isEmpty()) {
                         continue;
                     }
 					callBackExecutor.execute(new Runnable() {
