@@ -15,13 +15,16 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Set;
@@ -34,6 +37,7 @@ import java.util.regex.Pattern;
  *
  * @author nkorange
  */
+@JsonInclude(Include.NON_NULL)
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
 
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
@@ -42,7 +46,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     private volatile long lastBeat = System.currentTimeMillis();
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     private volatile boolean mockValid = false;
 
     private volatile boolean marked = false;
@@ -173,7 +177,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     public String toJSON() {
-        return JSON.toJSONString(this);
+        return JacksonUtils.toJson(this);
     }
 
 
@@ -181,7 +185,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         Instance ip;
 
         try {
-            ip = JSON.parseObject(json, Instance.class);
+            ip = JacksonUtils.toObj(json, Instance.class);
         } catch (Exception e) {
             ip = fromString(json);
         }
@@ -224,7 +228,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             && this.isEphemeral() == other.isEphemeral();
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getDatumKey() {
         if (getPort() > 0) {
             return getIp() + ":" + getPort() + ":" + UtilsAndCommons.LOCALHOST_SITE + ":" + getClusterName();
@@ -233,7 +237,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public String getDefaultKey() {
         if (getPort() > 0) {
             return getIp() + ":" + getPort() + ":" + UtilsAndCommons.UNKNOWN_SITE;
@@ -255,22 +259,22 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return HealthCheckStatus.get(this).isBeingChecked.compareAndSet(false, true);
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public long getCheckRT() {
         return HealthCheckStatus.get(this).checkRT;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public AtomicInteger getOKCount() {
         return HealthCheckStatus.get(this).checkOKCount;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public AtomicInteger getFailCount() {
         return HealthCheckStatus.get(this).checkFailCount;
     }
 
-    @JSONField(serialize = false)
+    @JsonIgnore
     public void setCheckRT(long checkRT) {
         HealthCheckStatus.get(this).checkRT = checkRT;
     }

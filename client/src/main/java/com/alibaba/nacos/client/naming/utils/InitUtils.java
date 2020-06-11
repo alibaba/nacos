@@ -19,7 +19,11 @@ package com.alibaba.nacos.client.naming.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
@@ -151,4 +155,21 @@ public class InitUtils {
         return endpointUrl + ":" + endpointPort;
     }
 
+    /**
+     * Register subType for serialization
+     *
+     * Now these subType implementation class has registered in static code.
+     * But there are some problem for classloader. The implementation class
+     * will be loaded when they are used, which will make deserialize
+     * before register.
+     *
+     * 子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当
+     * 该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致
+     * 反序列化失败。
+     */
+    public static void initSerialization() {
+        // TODO register in implementation class or remove subType
+        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
+        JacksonUtils.registerSubtype(ExpressionSelector.class, SelectorType.label.name());
+    }
 }

@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.naming.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -31,11 +30,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xuanyin
  */
 public class Balancer {
-
-    /**
-     * report status to server
-     */
-    public final static List<String> UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER = new CopyOnWriteArrayList<String>();
 
     public static class RandomByWeight {
 

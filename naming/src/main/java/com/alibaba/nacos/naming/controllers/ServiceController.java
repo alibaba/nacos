@@ -15,15 +15,13 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -36,6 +34,10 @@ import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,7 +115,7 @@ public class ServiceController {
 
     @GetMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public JSONObject detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                              @RequestParam String serviceName) throws NacosException {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -121,31 +123,31 @@ public class ServiceController {
             throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
-        JSONObject res = new JSONObject();
+        ObjectNode res = JacksonUtils.createEmptyJsonNode();
         res.put("name", NamingUtils.getServiceName(serviceName));
         res.put("namespaceId", service.getNamespaceId());
         res.put("protectThreshold", service.getProtectThreshold());
-        res.put("metadata", service.getMetadata());
-        res.put("selector", service.getSelector());
+        res.replace("metadata", JacksonUtils.transferToJsonNode(service.getMetadata()));
+        res.replace("selector", JacksonUtils.transferToJsonNode(service.getSelector()));
         res.put("groupName", NamingUtils.getGroupName(serviceName));
 
-        JSONArray clusters = new JSONArray();
+        ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
         for (Cluster cluster : service.getClusterMap().values()) {
-            JSONObject clusterJson = new JSONObject();
+            ObjectNode clusterJson = JacksonUtils.createEmptyJsonNode();
             clusterJson.put("name", cluster.getName());
-            clusterJson.put("healthChecker", cluster.getHealthChecker());
-            clusterJson.put("metadata", cluster.getMetadata());
+            clusterJson.replace("healthChecker", JacksonUtils.transferToJsonNode(cluster.getHealthChecker()));
+            clusterJson.replace("metadata", JacksonUtils.transferToJsonNode(cluster.getMetadata()));
             clusters.add(clusterJson);
         }
 
-        res.put("clusters", clusters);
+        res.replace("clusters", clusters);
 
         return res;
     }
 
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public JSONObject list(HttpServletRequest request) throws Exception {
+    public ObjectNode list(HttpServletRequest request) throws Exception {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -156,10 +158,10 @@ public class ServiceController {
 
         List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
         if (serviceNameList == null || serviceNameList.isEmpty()) {
-            result.put("doms", Collections.emptyList());
+            result.replace("doms", JacksonUtils.transferToJsonNode(Collections.emptyList()));
             result.put("count", 0);
             return result;
         }
@@ -168,10 +170,10 @@ public class ServiceController {
 
         if (StringUtils.isNotBlank(selectorString)) {
 
-            JSONObject selectorJson = JSON.parseObject(selectorString);
+            JsonNode selectorJson = JacksonUtils.toObj(selectorString);
 
-            SelectorType selectorType = SelectorType.valueOf(selectorJson.getString("type"));
-            String expression = selectorJson.getString("expression");
+            SelectorType selectorType = SelectorType.valueOf(selectorJson.get("type").asText());
+            String expression = selectorJson.get("expression").asText();
 
             if (SelectorType.label.equals(selectorType) && StringUtils.isNotBlank(expression)) {
                 expression = StringUtils.deleteWhitespace(expression);
@@ -208,7 +210,7 @@ public class ServiceController {
             serviceNameList.set(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
         }
 
-        result.put("doms", serviceNameList.subList(start, end));
+        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList.subList(start, end)));
         result.put("count", serviceNameList.size());
 
         return result;
@@ -247,7 +249,7 @@ public class ServiceController {
 
     @RequestMapping("/names")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public JSONObject searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
+    public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
                                     @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
                                     @RequestParam(required = false) boolean responsibleOnly) {
 
@@ -270,9 +272,9 @@ public class ServiceController {
             }
         }
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
-        result.put("services", serviceNameMap);
+        result.replace("services", JacksonUtils.transferToJsonNode(serviceNameMap));
         result.put("count", services.size());
 
         return result;
@@ -283,11 +285,11 @@ public class ServiceController {
 
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
-        JSONObject json = JSON.parseObject(value);
+        JsonNode json = JacksonUtils.toObj(value);
 
         //format: service1@@checksum@@@service2@@checksum
-        String statuses = json.getString("statuses");
-        String serverIp = json.getString("clientIP");
+        String statuses = json.get("statuses").asText();
+        String serverIp = json.get("clientIP").asText();
 
         if (!memberManager.hasMember(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
@@ -295,7 +297,7 @@ public class ServiceController {
         }
 
         try {
-            ServiceManager.ServiceChecksum checksums = JSON.parseObject(statuses, ServiceManager.ServiceChecksum.class);
+            ServiceManager.ServiceChecksum checksums = JacksonUtils.toObj(statuses, ServiceManager.ServiceChecksum.class);
             if (checksums == null) {
                 Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
@@ -331,7 +333,7 @@ public class ServiceController {
     }
 
     @PutMapping("/checksum")
-    public JSONObject checksum(HttpServletRequest request) throws Exception {
+    public ObjectNode checksum(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -345,7 +347,7 @@ public class ServiceController {
 
         service.recalculateChecksum();
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
         result.put("checksum", service.getChecksum());
 
@@ -360,7 +362,7 @@ public class ServiceController {
      */
     @GetMapping("/subscribers")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public JSONObject subscribers(HttpServletRequest request) {
+    public ObjectNode subscribers(HttpServletRequest request) {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -370,7 +372,7 @@ public class ServiceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         boolean aggregation = Boolean.parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
 
         try {
             List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
@@ -388,13 +390,13 @@ public class ServiceController {
                 end = count;
             }
 
-            result.put("subscribers", subscribers.subList(start, end));
+            result.replace("subscribers", JacksonUtils.transferToJsonNode(subscribers.subList(start, end)));
             result.put("count", count);
 
             return result;
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("query subscribers failed!", e);
-            result.put("subscribers", new JSONArray());
+            result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
             result.put("count", 0);
             return result;
         }
@@ -440,12 +442,12 @@ public class ServiceController {
             return new NoneSelector();
         }
 
-        JSONObject selectorJson = JSON.parseObject(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        switch (SelectorType.valueOf(selectorJson.getString("type"))) {
+        JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
+        switch (SelectorType.valueOf(selectorJson.get("type").asText())) {
             case none:
                 return new NoneSelector();
             case label:
-                String expression = selectorJson.getString("expression");
+                String expression = selectorJson.get("expression").asText();
                 Set<String> labels = LabelSelector.parseExpression(expression);
                 LabelSelector labelSelector = new LabelSelector();
                 labelSelector.setExpression(expression);

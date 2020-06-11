@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -34,12 +35,10 @@ import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 
 import javax.annotation.PostConstruct;
@@ -49,7 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -69,26 +68,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
 
-	@Autowired
-	private DistroMapper distroMapper;
+	private final DistroMapper distroMapper;
 
-	@Autowired
-	private DataStore dataStore;
+	private final DataStore dataStore;
 
-	@Autowired
-	private TaskDispatcher taskDispatcher;
+	private final TaskDispatcher taskDispatcher;
 
-	@Autowired
-	private Serializer serializer;
+	private final Serializer serializer;
 
-	@Autowired
-	private ServerMemberManager memberManager;
+	private final ServerMemberManager memberManager;
 
-	@Autowired
-	private SwitchDomain switchDomain;
+	private final SwitchDomain switchDomain;
 
-	@Autowired
-	private GlobalConfig globalConfig;
+	private final GlobalConfig globalConfig;
 
 	private boolean initialized = false;
 
@@ -96,9 +88,22 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
 	private LoadDataTask loadDataTask = new LoadDataTask();
 
-	private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
+	private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners = new ConcurrentHashMap<>();
 
 	private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
+
+	public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore,
+			TaskDispatcher taskDispatcher, Serializer serializer,
+			ServerMemberManager memberManager, SwitchDomain switchDomain,
+			GlobalConfig globalConfig) {
+		this.distroMapper = distroMapper;
+		this.dataStore = dataStore;
+		this.taskDispatcher = taskDispatcher;
+		this.serializer = serializer;
+		this.memberManager = memberManager;
+		this.switchDomain = switchDomain;
+		this.globalConfig = globalConfig;
+	}
 
 	@PostConstruct
 	public void init() {
@@ -115,6 +120,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 				if (!initialized) {
 					GlobalExecutor
 							.submit(this, globalConfig.getLoadDataRetryDelayMillis());
+				} else {
+					Loggers.DISTRO.info("load data success");
 				}
 			}
 			catch (Exception e) {
@@ -136,7 +143,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
 		for (Map.Entry<String, Member> entry : memberManager.getServerList().entrySet()) {
 			final String address = entry.getValue().getAddress();
-			if (NetUtils.localServer().equals(address)) {
+			if (ApplicationUtils.getLocalAddress().equals(address)) {
 				continue;
 			}
 			if (Loggers.DISTRO.isDebugEnabled()) {
@@ -237,10 +244,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 				}
 			}
 
-			if (Loggers.DISTRO.isDebugEnabled()) {
-				Loggers.DISTRO.info("to remove keys: {}, to update keys: {}, source: {}",
+			Loggers.DISTRO.info("to remove keys: {}, to update keys: {}, source: {}",
 						toRemoveKeys, toUpdateKeys, server);
-			}
 
 			for (String key : toRemoveKeys) {
 				onRemove(key);
@@ -269,8 +274,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
 		try {
 			byte[] data = NamingProxy.getAllData(server);
-			processData(data);
-			return true;
+			return processData(data);
 		}
 		catch (Exception e) {
 			Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
@@ -278,7 +282,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 		}
 	}
 
-	public void processData(byte[] data) throws Exception {
+	public boolean processData(byte[] data) throws Exception {
 		if (data.length > 0) {
 			Map<String, Datum<Instances>> datumMap = serializer
 					.deserializeMap(data, Instances.class);
@@ -300,7 +304,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 						// now validate the service. if failed, exception will be thrown
 						service.setLastModifiedMillis(System.currentTimeMillis());
 						service.recalculateChecksum();
-						listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0).onChange(
+
+						// The Listener corresponding to the key value must not be empty
+						RecordListener listener = listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).peek();
+						if (Objects.isNull(listener)) {
+							return false;
+						}
+						listener.onChange(
 								KeyBuilder.buildServiceMetaKey(namespaceId, serviceName),
 								service);
 					}
@@ -331,12 +341,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 				dataStore.put(entry.getKey(), entry.getValue());
 			}
 		}
+		return true;
 	}
 
 	@Override
 	public void listen(String key, RecordListener listener) throws NacosException {
 		if (!listeners.containsKey(key)) {
-			listeners.put(key, new CopyOnWriteArrayList<>());
+			listeners.put(key, new ConcurrentLinkedQueue<>());
 		}
 
 		if (listeners.get(key).contains(listener)) {

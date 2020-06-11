@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.slf4j.Logger;
+
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,12 +27,25 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadUtils {
 
+    public static void objectWait(Object object) {
+        try {
+            object.wait();
+        } catch (InterruptedException ignore) {
+            Thread.interrupted();
+        }
+    }
+
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    public static void countDown(CountDownLatch latch) {
+        Objects.requireNonNull(latch, "latch");
+        latch.countDown();
     }
 
     public static void latchAwait(CountDownLatch latch) {
@@ -49,7 +65,8 @@ public final class ThreadUtils {
     }
 
     /**
-     * 通过内核数，算出合适的线程数；1.5-2倍cpu内核数
+     * Through the number of cores, calculate the appropriate number of threads;
+     * 1.5-2 times the number of CPU cores
      *
      * @return thread count
      */
@@ -60,6 +77,31 @@ public final class ThreadUtils {
             workerCount <<= 1;
         }
         return workerCount;
+    }
+
+    public static void shutdownThreadPool(ExecutorService executor) {
+        shutdownThreadPool(executor, null);
+    }
+
+    public static void shutdownThreadPool(ExecutorService executor, Logger logger) {
+        executor.shutdown();
+        int retry = 3;
+        while (retry > 0) {
+            retry --;
+            try {
+                if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.interrupted();
+            } catch (Throwable ex) {
+                if (logger != null) {
+                    logger.error("ThreadPoolManager shutdown executor has error : {}", ex);
+                }
+            }
+        }
+        executor.shutdownNow();
     }
 
     private final static int THREAD_MULTIPLER = 2;

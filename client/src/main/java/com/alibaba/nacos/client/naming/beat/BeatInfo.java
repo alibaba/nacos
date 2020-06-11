@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.client.naming.beat;
 
-import com.alibaba.fastjson.JSON;
-
 import java.util.Map;
 
 /**
@@ -36,7 +34,17 @@ public class BeatInfo {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "BeatInfo{" +
+            "port=" + port +
+            ", ip='" + ip + '\'' +
+            ", weight=" + weight +
+            ", serviceName='" + serviceName + '\'' +
+            ", cluster='" + cluster + '\'' +
+            ", metadata=" + metadata +
+            ", scheduled=" + scheduled +
+            ", period=" + period +
+            ", stopped=" + stopped +
+            '}';
     }
 
     public String getServiceName() {

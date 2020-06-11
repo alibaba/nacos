@@ -15,41 +15,31 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.doReturn;
-
 /**
  * @author nkorange
  */
-public class DomainTest {
+public class DomainTest extends BaseTest {
 
     private Service service;
-    @Spy
-    protected ApplicationContext context;
-    @Mock
-    protected PushService pushService;
 
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        super.before();
         service = new Service();
         service.setName("nacos.service.1");
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
-        doReturn(pushService).when(context).getBean(PushService.class);
+        mockInjectPushServer();
     }
 
     @Test

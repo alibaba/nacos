@@ -104,7 +104,7 @@ public class JwtTokenUtils {
         /**
          * Current time
          */
-        long now = (new Date()).getTime();
+        long now = System.currentTimeMillis();
         /**
          * Validity date
          */
