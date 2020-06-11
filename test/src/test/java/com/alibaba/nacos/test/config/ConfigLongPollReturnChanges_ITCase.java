@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
-import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -62,7 +61,6 @@ public class ConfigLongPollReturnChanges_ITCase {
     public void destroy(){
         try {
             configService.shutDown();
-            Assert.assertEquals(0, ResourceLifeCycleManager.getRegisterResourceNum());
         }catch (NacosException ex) {
         }
     }

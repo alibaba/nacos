@@ -35,7 +35,7 @@ public interface HttpAgent extends Closeable {
      * @return Nothing.
      * @throws NacosException on get ip list error.
      */
-    void fetchServerIpList() throws NacosException;
+    void start() throws NacosException;
 
     /**
      * invoke http get method

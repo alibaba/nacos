@@ -145,10 +145,4 @@ public class NacosException extends Exception {
 	public static final int OVER_THRESHOLD = 503;
 
 	public static final int RESOURCE_NOT_FOUND = -404;
-
-    /**
-     * resource instance destroy failed.
-     */
-	public static final int RESOURCE_DESTROY_FAILED = 410;
-
 }

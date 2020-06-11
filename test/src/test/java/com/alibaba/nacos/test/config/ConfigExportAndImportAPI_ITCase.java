@@ -65,7 +65,7 @@ public class ConfigExportAndImportAPI_ITCase {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.fetchServerIpList();
+        agent.start();
 
         Map<String, String> prarm = new HashMap<>(7);
         prarm.put("dataId", "testNoAppname1.yml");

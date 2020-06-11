@@ -35,8 +35,6 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import com.alibaba.nacos.common.lifecycle.LifeCycle;
-import com.alibaba.nacos.common.lifecycle.ResourceLifeCycleManager;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -52,7 +50,7 @@ import java.util.Properties;
  * @author nkorange
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosNamingService implements NamingService, LifeCycle {
+public class NacosNamingService implements NamingService {
 
     /**
      * Each Naming service should have different namespace.
@@ -99,7 +97,6 @@ public class NacosNamingService implements NamingService, LifeCycle {
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
         this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, this.cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
-        ResourceLifeCycleManager.register(this);
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -493,12 +490,6 @@ public class NacosNamingService implements NamingService, LifeCycle {
 
     @Override
     public void shutDown() throws NacosException{
-        destroy();
-        ResourceLifeCycleManager.deregister(this);
-    }
-
-    @Override
-    public void destroy() throws NacosException{
         beatReactor.shutdown();
         eventDispatcher.shutdown();
         hostReactor.shutdown();
