@@ -320,7 +320,7 @@ public class ServiceController {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
                             serviceName, serverIp, checksum, service.getChecksum());
                     }
-                    serviceManager.addUpdatedServiceQueue(checksums.namespaceId, serviceName, serverIp, checksum);
+                    serviceManager.addUpdatedServiceToQueue(checksums.namespaceId, serviceName, serverIp, checksum);
                 }
             }
         } catch (Exception e) {

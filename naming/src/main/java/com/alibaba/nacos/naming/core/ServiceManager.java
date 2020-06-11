@@ -148,7 +148,7 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public void addUpdatedServiceQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
+    public void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
         lock.lock();
         try {
             toBeUpdatedServicesQueue.offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
