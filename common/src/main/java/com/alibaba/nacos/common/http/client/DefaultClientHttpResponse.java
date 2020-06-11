@@ -72,8 +72,7 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
             if (this.response != null) {
                 HttpClientUtils.closeQuietly(response);
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             // ignore
         }
     }
