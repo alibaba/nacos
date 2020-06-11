@@ -104,5 +104,4 @@ public class HttpClientManager {
 		logger.warn("[HttpClientManager] Destruction of the end");
 	}
 
-
 }

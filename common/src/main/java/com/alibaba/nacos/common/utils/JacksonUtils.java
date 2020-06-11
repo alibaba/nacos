@@ -77,13 +77,11 @@ public final class JacksonUtils {
         } catch (Exception e) {
             throw new NacosDeserializationException(e);
         }
-  }
-
+    }
 
 	public static <T> T toObj(InputStream inputStream, Class<T> tClass) throws Exception {
 	    return mapper.readValue(inputStream, tClass);
     }
-
 
     public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
         try {

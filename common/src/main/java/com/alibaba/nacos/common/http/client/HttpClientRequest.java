@@ -30,7 +30,6 @@ import java.net.URI;
  */
 public interface HttpClientRequest extends Closeable {
 
-
     /**
      * execute http request
      * @param uri http url

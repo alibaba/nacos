@@ -132,7 +132,6 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
-
     }
 
     @Test
@@ -148,7 +147,6 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
         Assert.assertEquals(restResult.getData().get("dom"), "app-test");
-
     }
 
     @Test
@@ -165,10 +163,6 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
-
     }
-
-
-
 
 }

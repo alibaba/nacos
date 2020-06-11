@@ -85,5 +85,4 @@ public final class ResponseHandler {
         return httpRestResult;
     }
 
-
 }

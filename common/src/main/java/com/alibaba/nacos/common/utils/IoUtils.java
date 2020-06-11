@@ -168,7 +168,6 @@ public class IoUtils {
     }
 
     public static void copy(byte[] in, OutputStream out) throws IOException {
-
         try {
             out.write(in);
         } finally {
@@ -176,9 +175,7 @@ public class IoUtils {
                 out.close();
             } catch (IOException io) {
             }
-
         }
-
     }
 
     static public long copy(InputStream input, OutputStream output) throws IOException {

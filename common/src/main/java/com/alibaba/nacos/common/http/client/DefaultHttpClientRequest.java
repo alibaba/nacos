@@ -59,7 +59,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         return new DefaultClientHttpResponse(response);
     }
 
-
     static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
         Header headers = requestHttpEntity.getHeaders();
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);

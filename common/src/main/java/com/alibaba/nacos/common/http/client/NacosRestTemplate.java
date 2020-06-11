@@ -80,7 +80,6 @@ public class NacosRestTemplate {
      */
     public <T> HttpRestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, Query.newInstance().initParams(paramValues));
-
         return execute(url, HttpMethod.GET, requestHttpEntity, responseType);
     }
 
@@ -156,7 +155,6 @@ public class NacosRestTemplate {
             header.setContentType(MediaType.APPLICATION_JSON),
             Query.newInstance().initParams(paramValues),
             body);
-
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
@@ -201,7 +199,6 @@ public class NacosRestTemplate {
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
             bodyValues);
-
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
@@ -244,7 +241,6 @@ public class NacosRestTemplate {
             header.setContentType(MediaType.APPLICATION_JSON),
             Query.newInstance().initParams(paramValues),
             body);
-
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
@@ -266,7 +262,6 @@ public class NacosRestTemplate {
     public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
-
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
@@ -290,10 +285,8 @@ public class NacosRestTemplate {
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
             Query.newInstance().initParams(paramValues),
             bodyValues);
-
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
-
 
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
                           Type responseType) throws Exception {
@@ -318,7 +311,5 @@ public class NacosRestTemplate {
     public void close() throws Exception{
         requestClient.close();
     }
-
-
 
 }
