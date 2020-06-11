@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.cluster;
 /**
  * The life cycle state of a node plays an important role
  *
- * <p>1.3.0-BETA The unified sinking operation should be done first, and the node state
+ * <p>1.3.0 The unified sinking operation should be done first, and the node state
  * should be radiated out later, mainly for whether the request can be processed and so on</p>
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>

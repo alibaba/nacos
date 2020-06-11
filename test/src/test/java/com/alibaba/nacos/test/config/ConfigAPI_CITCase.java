@@ -50,9 +50,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiaochun.xxc
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ConfigAPI_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigAPI_CITCase {
 
     public static final long TIME_OUT = 5000;
     static ConfigService iconfig = null;
@@ -380,7 +380,7 @@ public class ConfigAPI_ITCase {
      * @author xiaochun.xxc
      * @since 3.6.8
      */
-    @Test(timeout = 5 * TIME_OUT)
+    @Test(timeout = Constants.CONFIG_LONG_POLL_TIMEOUT << 2)
     public void nacos_addListener_3() throws InterruptedException, NacosException {
         final AtomicInteger count = new AtomicInteger(0);
         final String dataId = "nacos_addListener_3";
@@ -388,7 +388,6 @@ public class ConfigAPI_ITCase {
         final String content = "test-abc";
         final String newContent = "nacos_addListener_3";
         boolean result = iconfig.publishConfig(dataId, group, content);
-        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
 
         Listener ml = new AbstractListener() {
@@ -401,9 +400,6 @@ public class ConfigAPI_ITCase {
         iconfig.addListener(dataId, group, ml);
         result = iconfig.publishConfig(dataId, group, newContent);
         Assert.assertTrue(result);
-        while (count.get() == 0) {
-            Thread.sleep(2000);
-        }
         // Get enough sleep to ensure that the monitor is triggered only once
         // during the two long training sessions
         ThreadUtils.sleep(Constants.CONFIG_LONG_POLL_TIMEOUT << 1);

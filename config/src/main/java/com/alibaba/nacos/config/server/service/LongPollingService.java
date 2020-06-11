@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -308,7 +310,7 @@ public class LongPollingService extends AbstractEventListener {
                     ClientLongPolling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
                         // 如果beta发布且不在beta列表直接跳过
-                        if (isBeta && !betaIps.contains(clientSub.ip)) {
+                        if (isBeta && !CollectionUtils.contains(betaIps, clientSub.ip)) {
                             continue;
                         }
 
@@ -329,12 +331,8 @@ public class LongPollingService extends AbstractEventListener {
                     }
                 }
             } catch (Throwable t) {
-                LogUtil.defaultLog.error("data change error:" + t.getMessage(), t.getCause());
+                LogUtil.defaultLog.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
-        }
-
-        DataChangeTask(String groupKey) {
-            this(groupKey, false, null);
         }
 
         DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
@@ -475,6 +473,14 @@ public class LongPollingService extends AbstractEventListener {
         final long timeoutTime;
 
         Future<?> asyncTimeoutFuture;
+
+        @Override
+        public String toString() {
+            return "ClientLongPolling{" + "clientMd5Map=" + clientMd5Map + ", createTime="
+                    + createTime + ", ip='" + ip + '\'' + ", appName='" + appName + '\''
+                    + ", tag='" + tag + '\'' + ", probeRequestSize=" + probeRequestSize
+                    + ", timeoutTime=" + timeoutTime + '}';
+        }
     }
 
     void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {

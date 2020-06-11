@@ -210,7 +210,8 @@ public class ServerListManager implements MemberChangeListener {
 
 						// This metadata information exists from 1.3.0 onwards "version"
 						if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-							return;
+						    Loggers.SRV_LOG.debug("[SERVER-STATUS] target {} has extend val {} = {}, use new api report status", server.getAddress(), MemberMetaDataConstants.VERSION, server.getExtendVal(MemberMetaDataConstants.VERSION));
+							continue;
 						}
 
 						Message msg = new Message();
