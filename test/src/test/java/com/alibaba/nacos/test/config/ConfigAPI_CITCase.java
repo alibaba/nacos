@@ -84,8 +84,6 @@ public class ConfigAPI_CITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
-            iconfig.shutDown();
-            agent.shutdown();
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
         } catch (Exception e) {
             e.printStackTrace();
