@@ -23,6 +23,13 @@ public final class ConvertUtils {
 
     private static final String NULL_STR = "null";
 
+    /**
+     * Convert String value to int value if parameter value is legal.
+     * And it automatically defaults to 0 if parameter value is null or blank str.
+     *
+     * @param val String value which need to be converted to int value.
+     * @return Converted int value and its default value is 0.
+     */
     public static int toInt(String val) {
         return toInt(val, 0);
     }
@@ -125,7 +132,7 @@ public final class ConvertUtils {
      * @param str  the String to check; upper and lower case are treated as the same
      * @return the Boolean value of the string, {@code null} if no match or {@code null} input
      */
-    @SuppressWarnings({"PMD.UndefineMagicConstantRule", "PMD.AvoidComplexConditionRule", "PMD.SwitchStatementRule"})
+    @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
         if (str == "true") {
             return Boolean.TRUE;
