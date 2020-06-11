@@ -17,7 +17,7 @@ package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.utils.IPUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
 
