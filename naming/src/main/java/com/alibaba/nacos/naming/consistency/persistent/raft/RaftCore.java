@@ -15,10 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -29,6 +26,10 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
@@ -155,15 +156,15 @@ public class RaftCore {
     public void signalPublish(String key, Record value) throws Exception {
 
         if (!isLeader()) {
-            JSONObject params = new JSONObject();
+            ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
-            params.put("value", value);
+            params.replace("value", JacksonUtils.transferToJsonNode(value));
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
             final RaftPeer leader = getLeader();
 
-            raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toJSONString(), parameters);
+            raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toString(), parameters);
             return;
         }
 
@@ -179,13 +180,13 @@ public class RaftCore {
                 datum.timestamp.set(getDatum(key).timestamp.incrementAndGet());
             }
 
-            JSONObject json = new JSONObject();
-            json.put("datum", datum);
-            json.put("source", peers.local());
+            ObjectNode json = JacksonUtils.createEmptyJsonNode();
+            json.replace("datum", JacksonUtils.transferToJsonNode(datum));
+            json.replace("source", JacksonUtils.transferToJsonNode(peers.local()));
 
             onPublish(datum, peers.local());
 
-            final String content = JSON.toJSONString(json);
+            final String content = json.toString();
 
             final CountDownLatch latch = new CountDownLatch(peers.majorityCount());
             for (final String server : peers.allServersIncludeMyself()) {
@@ -239,18 +240,18 @@ public class RaftCore {
                 return;
             }
 
-            JSONObject json = new JSONObject();
             // construct datum:
             Datum datum = new Datum();
             datum.key = key;
-            json.put("datum", datum);
-            json.put("source", peers.local());
+            ObjectNode json = JacksonUtils.createEmptyJsonNode();
+            json.replace("datum", JacksonUtils.transferToJsonNode(datum));
+            json.replace("source", JacksonUtils.transferToJsonNode(peers.local()));
 
             onDelete(datum.key, peers.local());
 
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildURL(server, API_ON_DEL);
-                HttpClient.asyncHttpDeleteLarge(url, null, JSON.toJSONString(json)
+                HttpClient.asyncHttpDeleteLarge(url, null, json.toString()
                     , new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
@@ -281,14 +282,14 @@ public class RaftCore {
 
         if (!peers.isLeader(source.ip)) {
             Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
-                JSON.toJSONString(source), JSON.toJSONString(getLeader()));
+                JacksonUtils.toJson(source), JacksonUtils.toJson(getLeader()));
             throw new IllegalStateException("peer(" + source.ip + ") tried to publish " +
                 "data but wasn't leader");
         }
 
         if (source.term.get() < local.term.get()) {
             Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
-                JSON.toJSONString(source), JSON.toJSONString(local));
+                JacksonUtils.toJson(source), JacksonUtils.toJson(local));
             throw new IllegalStateException("out of date publish, pub-term:"
                 + source.term.get() + ", cur-term: " + local.term.get());
         }
@@ -326,13 +327,13 @@ public class RaftCore {
 
         if (!peers.isLeader(source.ip)) {
             Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
-                JSON.toJSONString(source), JSON.toJSONString(getLeader()));
+                JacksonUtils.toJson(source), JacksonUtils.toJson(getLeader()));
             throw new IllegalStateException("peer(" + source.ip + ") tried to publish data but wasn't leader");
         }
 
         if (source.term.get() < local.term.get()) {
             Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
-                JSON.toJSONString(source), JSON.toJSONString(local));
+                JacksonUtils.toJson(source), JacksonUtils.toJson(local));
             throw new IllegalStateException("out of date publish, pub-term:"
                 + source.term + ", cur-term: " + local.term);
         }
@@ -391,7 +392,7 @@ public class RaftCore {
 
             RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}",
-                JSON.toJSONString(getLeader()), local.term);
+                JacksonUtils.toJson(getLeader()), local.term);
 
             peers.reset();
 
@@ -400,7 +401,7 @@ public class RaftCore {
             local.state = RaftPeer.State.CANDIDATE;
 
             Map<String, String> params = new HashMap<>(1);
-            params.put("vote", JSON.toJSONString(local));
+            params.put("vote", JacksonUtils.toJson(local));
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildURL(server, API_VOTE);
                 try {
@@ -412,9 +413,9 @@ public class RaftCore {
                                 return 1;
                             }
 
-                            RaftPeer peer = JSON.parseObject(response.getResponseBody(), RaftPeer.class);
+                            RaftPeer peer = JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class);
 
-                            Loggers.RAFT.info("received approve from peer: {}", JSON.toJSONString(peer));
+                            Loggers.RAFT.info("received approve from peer: {}", JacksonUtils.toJson(peer));
 
                             peers.decideLeader(peer);
 
@@ -494,10 +495,10 @@ public class RaftCore {
             local.resetLeaderDue();
 
             // build data
-            JSONObject packet = new JSONObject();
-            packet.put("peer", local);
+            ObjectNode packet = JacksonUtils.createEmptyJsonNode();
+            packet.replace("peer", JacksonUtils.transferToJsonNode(local));
 
-            JSONArray array = new JSONArray();
+            ArrayNode array = JacksonUtils.createEmptyArrayNode();
 
             if (switchDomain.isSendBeatOnly()) {
                 Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
@@ -506,25 +507,25 @@ public class RaftCore {
             if (!switchDomain.isSendBeatOnly()) {
                 for (Datum datum : datums.values()) {
 
-                    JSONObject element = new JSONObject();
+                    ObjectNode element = JacksonUtils.createEmptyJsonNode();
 
                     if (KeyBuilder.matchServiceMetaKey(datum.key)) {
                         element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
                     } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
                         element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
                     }
-                    element.put("timestamp", datum.timestamp);
+                    element.put("timestamp", datum.timestamp.get());
 
                     array.add(element);
                 }
             }
 
-            packet.put("datums", array);
+            packet.replace("datums", array);
             // broadcast
             Map<String, String> params = new HashMap<String, String>(1);
-            params.put("beat", JSON.toJSONString(packet));
+            params.put("beat", JacksonUtils.toJson(packet));
 
-            String content = JSON.toJSONString(params);
+            String content = JacksonUtils.toJson(params);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GZIPOutputStream gzip = new GZIPOutputStream(out);
@@ -555,7 +556,7 @@ public class RaftCore {
                                 return 1;
                             }
 
-                            peers.update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
+                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
                             if (Loggers.RAFT.isDebugEnabled()) {
                                 Loggers.RAFT.debug("receive beat response from: {}", url);
                             }
@@ -577,38 +578,39 @@ public class RaftCore {
         }
     }
 
-    public RaftPeer receivedBeat(JSONObject beat) throws Exception {
+    public RaftPeer receivedBeat(JsonNode beat) throws Exception {
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();
-        remote.ip = beat.getJSONObject("peer").getString("ip");
-        remote.state = RaftPeer.State.valueOf(beat.getJSONObject("peer").getString("state"));
-        remote.term.set(beat.getJSONObject("peer").getLongValue("term"));
-        remote.heartbeatDueMs = beat.getJSONObject("peer").getLongValue("heartbeatDueMs");
-        remote.leaderDueMs = beat.getJSONObject("peer").getLongValue("leaderDueMs");
-        remote.voteFor = beat.getJSONObject("peer").getString("voteFor");
+        JsonNode peer = beat.get("peer");
+        remote.ip = peer.get("ip").asText();
+        remote.state = RaftPeer.State.valueOf(peer.get("state").asText());
+        remote.term.set(peer.get("term").asLong());
+        remote.heartbeatDueMs = peer.get("heartbeatDueMs").asLong();
+        remote.leaderDueMs = peer.get("leaderDueMs").asLong();
+        remote.voteFor = peer.get("voteFor").asText();
 
         if (remote.state != RaftPeer.State.LEADER) {
             Loggers.RAFT.info("[RAFT] invalid state from master, state: {}, remote peer: {}",
-                remote.state, JSON.toJSONString(remote));
+                remote.state, JacksonUtils.toJson(remote));
             throw new IllegalArgumentException("invalid state from master, state: " + remote.state);
         }
 
         if (local.term.get() > remote.term.get()) {
             Loggers.RAFT.info("[RAFT] out of date beat, beat-from-term: {}, beat-to-term: {}, remote peer: {}, and leaderDueMs: {}"
-                , remote.term.get(), local.term.get(), JSON.toJSONString(remote), local.leaderDueMs);
+                , remote.term.get(), local.term.get(), JacksonUtils.toJson(remote), local.leaderDueMs);
             throw new IllegalArgumentException("out of date beat, beat-from-term: " + remote.term.get()
                 + ", beat-to-term: " + local.term.get());
         }
 
         if (local.state != RaftPeer.State.FOLLOWER) {
 
-            Loggers.RAFT.info("[RAFT] make remote as leader, remote peer: {}", JSON.toJSONString(remote));
+            Loggers.RAFT.info("[RAFT] make remote as leader, remote peer: {}", JacksonUtils.toJson(remote));
             // mk follower
             local.state = RaftPeer.State.FOLLOWER;
             local.voteFor = remote.ip;
         }
 
-        final JSONArray beatDatums = beat.getJSONArray("datums");
+        final JsonNode beatDatums = beat.get("datums");
         local.resetLeaderDue();
         local.resetHeartbeatDue();
 
@@ -633,8 +635,8 @@ public class RaftCore {
             for (Object object : beatDatums) {
                 processedCount = processedCount + 1;
 
-                JSONObject entry = (JSONObject) object;
-                String key = entry.getString("key");
+                JsonNode entry = (JsonNode) object;
+                String key = entry.get("key").asText();
                 final String datumKey;
 
                 if (KeyBuilder.matchServiceMetaKey(key)) {
@@ -646,7 +648,7 @@ public class RaftCore {
                     continue;
                 }
 
-                long timestamp = entry.getLong("timestamp");
+                long timestamp = entry.get("timestamp").asLong();
 
                 receivedKeysMap.put(datumKey, 1);
 
@@ -681,37 +683,34 @@ public class RaftCore {
                                 return 1;
                             }
 
-                            List<JSONObject> datumList = JSON.parseObject(response.getResponseBody(), new TypeReference<List<JSONObject>>() {
-                            });
+                            List<JsonNode> datumList = JacksonUtils.toObj(response.getResponseBody(), new TypeReference<List<JsonNode>>() {});
 
-                            for (JSONObject datumJson : datumList) {
+                            for (JsonNode datumJson : datumList) {
                                 OPERATE_LOCK.lock();
                                 Datum newDatum = null;
                                 try {
 
-                                    Datum oldDatum = getDatum(datumJson.getString("key"));
+                                    Datum oldDatum = getDatum(datumJson.get("key").asText());
 
-                                    if (oldDatum != null && datumJson.getLongValue("timestamp") <= oldDatum.timestamp.get()) {
+                                    if (oldDatum != null && datumJson.get("timestamp").asLong() <= oldDatum.timestamp.get()) {
                                         Loggers.RAFT.info("[NACOS-RAFT] timestamp is smaller than that of mine, key: {}, remote: {}, local: {}",
-                                            datumJson.getString("key"), datumJson.getLongValue("timestamp"), oldDatum.timestamp);
+                                            datumJson.get("key").asText(), datumJson.get("timestamp").asLong(), oldDatum.timestamp);
                                         continue;
                                     }
 
-                                    if (KeyBuilder.matchServiceMetaKey(datumJson.getString("key"))) {
+                                    if (KeyBuilder.matchServiceMetaKey(datumJson.get("key").asText())) {
                                         Datum<Service> serviceDatum = new Datum<>();
-                                        serviceDatum.key = datumJson.getString("key");
-                                        serviceDatum.timestamp.set(datumJson.getLongValue("timestamp"));
-                                        serviceDatum.value =
-                                            JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Service.class);
+                                        serviceDatum.key = datumJson.get("key").asText();
+                                        serviceDatum.timestamp.set(datumJson.get("timestamp").asLong());
+                                        serviceDatum.value = JacksonUtils.toObj(datumJson.get("value").toString(), Service.class);
                                         newDatum = serviceDatum;
                                     }
 
-                                    if (KeyBuilder.matchInstanceListKey(datumJson.getString("key"))) {
+                                    if (KeyBuilder.matchInstanceListKey(datumJson.get("key").asText())) {
                                         Datum<Instances> instancesDatum = new Datum<>();
-                                        instancesDatum.key = datumJson.getString("key");
-                                        instancesDatum.timestamp.set(datumJson.getLongValue("timestamp"));
-                                        instancesDatum.value =
-                                            JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Instances.class);
+                                        instancesDatum.key = datumJson.get("key").asText();
+                                        instancesDatum.timestamp.set(datumJson.get("timestamp").asLong());
+                                        instancesDatum.value = JacksonUtils.toObj(datumJson.get("value").toString(), Instances.class);
                                         newDatum = instancesDatum;
                                     }
 
@@ -737,7 +736,7 @@ public class RaftCore {
                                     raftStore.updateTerm(local.term.get());
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
-                                        newDatum.key, newDatum.timestamp, JSON.toJSONString(remote), local.term);
+                                        newDatum.key, newDatum.timestamp, JacksonUtils.toJson(remote), local.term);
 
                                 } catch (Throwable e) {
                                     Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader, datum: {}", newDatum, e);

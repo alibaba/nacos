@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -24,8 +22,10 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -227,9 +227,9 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
             HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject body = JSON.parseObject(response.getBody());
+        JsonNode body = JacksonUtils.toObj(response.getBody());
 
-        Assert.assertEquals(1, body.getJSONArray("subscribers").size());
+        Assert.assertEquals(1, body.get("subscribers").size());
 
         NamingService naming2 = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
 
@@ -254,9 +254,9 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
             HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        body = JSON.parseObject(response.getBody());
+        body = JacksonUtils.toObj(response.getBody());
 
-        Assert.assertEquals(2, body.getJSONArray("subscribers").size());
+        Assert.assertEquals(2, body.get("subscribers").size());
     }
 
 }

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming;
 
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
@@ -27,18 +28,29 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.springframework.context.ApplicationContext;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import static org.mockito.Mockito.doReturn;
 
 /**
  * @author nkorange
  */
+@RunWith(MockitoJUnitRunner.class)
 public class BaseTest {
+
+    protected static final String TEST_CLUSTER_NAME = "test-cluster";
+
+    protected static final String TEST_SERVICE_NAME = "test-service";
+
+    protected static final String TEST_GROUP_NAME = "test-group-name";
+
+    protected static final String TEST_NAMESPACE = "test-namespace";
 
     @Mock
     public ServiceManager serviceManager;
@@ -52,36 +64,52 @@ public class BaseTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Spy
+    protected ConfigurableApplicationContext context;
+
+    @Mock
+    protected DistroMapper distroMapper;
+
+    @Spy
+    protected SwitchDomain switchDomain;
+
+    @Mock
+    protected HealthCheckProcessorDelegate delegate;
+
+    @Mock
+    protected PushService pushService;
+
+    @Spy
+    private MockEnvironment environment;
+
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        ApplicationUtils.injectEnvironment(environment);
+        ApplicationUtils.injectContext(context);
+    }
 
+    protected void mockRaft() {
         RaftPeer peer = new RaftPeer();
         peer.ip = NetUtils.localServer();
         raftCore.setPeerSet(peerSet);
         Mockito.when(peerSet.local()).thenReturn(peer);
         Mockito.when(peerSet.getLeader()).thenReturn(peer);
         Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
+    }
 
-        doReturn(distroMapper).when(context).getBean(DistroMapper.class);
-        doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
-        doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
+    protected void mockInjectPushServer() {
         doReturn(pushService).when(context).getBean(PushService.class);
     }
 
-    protected static final String TEST_CLUSTER_NAME = "test-cluster";
-    protected static final String TEST_SERVICE_NAME = "test-service";
-    protected static final String TEST_GROUP_NAME = "test-group-name";
-    protected static final String TEST_NAMESPACE = "test-namespace";
+    protected void mockInjectHealthCheckProcessor() {
+        doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
+    }
 
-    @Spy
-    protected ApplicationContext context;
-    @Mock
-    protected DistroMapper distroMapper;
-    @Spy
-    protected SwitchDomain switchDomain;
-    @Mock
-    protected HealthCheckProcessorDelegate delegate;
-    @Mock
-    protected PushService pushService;
+    protected void mockInjectSwitchDomain() {
+        doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
+    }
+
+    protected void mockInjectDistroMapper() {
+        doReturn(distroMapper).when(context).getBean(DistroMapper.class);
+    }
 }

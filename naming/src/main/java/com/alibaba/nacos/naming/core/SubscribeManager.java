@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -93,7 +93,7 @@ public class SubscribeManager {
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {
-                    Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
+                    Subscribers subscribers = JacksonUtils.toObj(result.content, Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
             }

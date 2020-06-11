@@ -19,12 +19,10 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
-import java.util.ArrayList;
-import java.util.Collection;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

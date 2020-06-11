@@ -16,13 +16,19 @@
 package com.alibaba.nacos.naming.core;
 
 import org.junit.Test;
-
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author lkxiaolou
@@ -79,6 +85,34 @@ public class InstancesTest {
         countDownLatch.await();
 
         assert catchException.get();
+    }
+
+    @Test
+    public void testToString() {
+        Instances actual = new Instances();
+        Collection<Instance> instancesCase = createInstancesCase();
+        actual.getInstanceList().addAll(instancesCase);
+        String expected = "{\"instanceList\":[" + StringUtils.join(instancesCase.stream().map(Instance::toJSON).collect(Collectors.toList()), ",") + "]}";
+        assertEquals(expected, actual.toString());
+    }
+
+    @Test
+    public void testDeserializeFromJson() throws Exception {
+        Collection<Instance> expected = createInstancesCase();
+        String instancesJson = "{\"instanceList\":[" + StringUtils.join(expected.stream().map(Instance::toJSON).collect(Collectors.toList()), ",") + "]}";
+        Instances actual = JacksonUtils.toObj(instancesJson, Instances.class);
+        assertEquals(expected, actual.getInstanceList());
+    }
+
+    private Collection<Instance> createInstancesCase() {
+        Collection<Instance> result = new ArrayList<>();
+        Instance instanceWithBasicParam = new Instance("1.1.1.1", 1111);
+        Instance instanceWithCluster = new Instance("1.1.1.1", 1112, "TEST");
+        Instance instanceWithAllParam = new Instance("1.1.1.1", 1112, "TEST", "TENANT", "APP");
+        result.add(instanceWithBasicParam);
+        result.add(instanceWithCluster);
+        result.add(instanceWithAllParam);
+        return result;
     }
 
     //@Test

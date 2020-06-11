@@ -15,9 +15,12 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -31,7 +34,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author xuanyin
  */
-public class PushReceiver implements Runnable {
+public class PushReceiver implements Runnable, Closeable {
 
     private ScheduledExecutorService executorService;
 
@@ -44,9 +47,9 @@ public class PushReceiver implements Runnable {
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
-            udpSocket = new DatagramSocket();
+            this.udpSocket = new DatagramSocket();
 
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r);
@@ -56,7 +59,7 @@ public class PushReceiver implements Runnable {
                 }
             });
 
-            executorService.execute(this);
+            this.executorService.execute(this);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
@@ -75,7 +78,7 @@ public class PushReceiver implements Runnable {
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
 
-                PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
+                PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
                     hostReactor.processServiceJSON(pushPacket.data);
@@ -89,7 +92,7 @@ public class PushReceiver implements Runnable {
                     ack = "{\"type\": \"dump-ack\""
                         + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
                         + "\", \"data\":" + "\""
-                        + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
+                        + StringUtils.escapeJavaScript(JacksonUtils.toJson(hostReactor.getServiceInfoMap()))
                         + "\"}";
                 } else {
                     // do nothing send ack only
@@ -106,6 +109,14 @@ public class PushReceiver implements Runnable {
         }
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+
     public static class PushPacket {
         public String type;
         public long lastRefTime;
@@ -113,6 +124,6 @@ public class PushReceiver implements Runnable {
     }
 
     public int getUDPPort() {
-        return udpSocket.getLocalPort();
+        return this.udpSocket.getLocalPort();
     }
 }

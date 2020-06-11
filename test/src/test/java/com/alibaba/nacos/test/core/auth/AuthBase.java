@@ -15,12 +15,13 @@
  */
 package com.alibaba.nacos.test.core.auth;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.Assert;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -66,9 +67,9 @@ public class AuthBase extends HttpClient4Test {
             HttpMethod.POST);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.containsKey("accessToken"));
-        return json.getString("accessToken");
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertTrue(json.has("accessToken"));
+        return json.get("accessToken").textValue();
     }
 
     protected void init(int port) throws Exception {

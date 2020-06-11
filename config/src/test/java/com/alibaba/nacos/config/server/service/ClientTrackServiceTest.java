@@ -40,7 +40,7 @@ public class ClientTrackServiceTest {
         String groupKey = GroupKey2.getKey(dataId, group);
         String md5 = "xxxxxxxxxxxxx";
 
-        ConfigService.updateMd5(groupKey, md5, System.currentTimeMillis());
+        ConfigCacheService.updateMd5(groupKey, md5, System.currentTimeMillis());
 
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
@@ -50,7 +50,7 @@ public class ClientTrackServiceTest {
         Assert.assertEquals(1, ClientTrackService.subscriberCount());
 
         //服务端数据更新
-        ConfigService.updateMd5(groupKey, md5 + "111", System.currentTimeMillis());
+        ConfigCacheService.updateMd5(groupKey, md5 + "111", System.currentTimeMillis());
         Assert.assertEquals(false, ClientTrackService.isClientUptodate(clientIp).get(groupKey));
     }
 

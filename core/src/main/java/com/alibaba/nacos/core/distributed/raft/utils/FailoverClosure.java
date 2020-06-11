@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alipay.sofa.jraft.Closure;
 
 /**
@@ -23,14 +24,14 @@ import com.alipay.sofa.jraft.Closure;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface FailoverClosure<T> extends Closure {
+public interface FailoverClosure extends Closure {
 
     /**
      * Set the return interface if needed
      *
-     * @param data data
+     * @param response {@link Response} data
      */
-    void setData(T data);
+    void setResponse(Response response);
 
     /**
      * Catch exception

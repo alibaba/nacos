@@ -129,8 +129,14 @@ public class HttpClient {
         if (encodingGzip.equals(respHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             inputStream = new GZIPInputStream(inputStream);
         }
-
-        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        
+        //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
+        //so needs to close it manually 
+        if (inputStream instanceof GZIPInputStream) {
+            inputStream.close();
+        }
+        return httpResult;
     }
 
     private static String getCharset(HttpURLConnection conn) {

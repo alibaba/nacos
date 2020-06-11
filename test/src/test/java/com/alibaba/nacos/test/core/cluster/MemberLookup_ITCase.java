@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.cluster.lookup.AddressServerMemberLookup;
@@ -55,19 +55,13 @@ public class MemberLookup_ITCase extends BaseTest {
 
 	static final String name = "cluster.conf";
 
-	static final ServerMemberManager memberManager = new ServerMemberManager(
-			new MockServletContext());
+	ServerMemberManager memberManager;
 
 	@Before
 	public void before() throws Exception {
 		System.setProperty("nacos.home", path);
 		ApplicationUtils.injectEnvironment(new StandardEnvironment());
 		ApplicationUtils.setIsStandalone(false);
-		try {
-			memberManager.init();
-		}
-		catch (Throwable ignore) {
-		}
 		System.out.println(ApplicationUtils.getStandaloneMode());
 
 		System.out.println(Arrays.toString(LookupFactory.LookupType.values()));
@@ -78,6 +72,14 @@ public class MemberLookup_ITCase extends BaseTest {
 		String ip = InetUtils.getSelfIp();
 		DiskUtils.writeFile(file, (ip + ":8848," + ip + ":8847," + ip + ":8849").getBytes(
 				StandardCharsets.UTF_8), false);
+
+		try {
+			memberManager = new ServerMemberManager(
+					new MockServletContext());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@After
