@@ -72,7 +72,6 @@ public class ConfigAPI_CITCase {
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         properties.put(PropertyKeyConst.CONTEXT_PATH, "/nacos");
         iconfig = NacosFactory.createConfigService(properties);
-
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
     }
@@ -84,6 +83,7 @@ public class ConfigAPI_CITCase {
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
             Assert.assertTrue(JacksonUtils.toObj(result.content).get("data").booleanValue());
         } catch (Exception e) {
             e.printStackTrace();

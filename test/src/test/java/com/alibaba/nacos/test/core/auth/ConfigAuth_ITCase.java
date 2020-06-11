@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Assert;
@@ -65,8 +64,12 @@ public class ConfigAuth_ITCase extends AuthBase {
     }
 
     @After
-    public void destroy() {
-        super.destroy();
+    public void destroy(){
+        try {
+            iconfig.shutDown();
+        }catch (NacosException ex) {
+
+        }
     }
 
 
