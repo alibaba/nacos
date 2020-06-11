@@ -101,7 +101,7 @@ public class HostReactor implements Closeable {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-
+        this.beatReactor = beatReactor;
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
