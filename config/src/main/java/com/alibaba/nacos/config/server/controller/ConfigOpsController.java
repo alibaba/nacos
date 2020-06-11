@@ -18,11 +18,11 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.Objects;
-import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.DataImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -61,10 +61,13 @@ public class ConfigOpsController {
 
 	private static final Logger log = LoggerFactory.getLogger(ConfigOpsController.class);
 
+	protected final PersistService persistService;
+
 	private final DumpService dumpService;
 
 	@Autowired
-	public ConfigOpsController(DumpService dumpService) {
+	public ConfigOpsController(PersistService persistService, DumpService dumpService) {
+		this.persistService = persistService;
 		this.dumpService = dumpService;
 	}
 
@@ -72,7 +75,6 @@ public class ConfigOpsController {
 	 * ops call
 	 */
 	@PostMapping(value = "/localCache")
-	@Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
 	public String updateLocalCacheFromStore() {
 		log.info("start to dump all data from store.");
 		dumpService.dumpAll();
@@ -80,45 +82,38 @@ public class ConfigOpsController {
 		return HttpServletResponse.SC_OK + "";
 	}
 
-	// TODO In a future release, the front page should appear operable
-
 	@PutMapping(value = "/log")
-	public String setLogLevel(@RequestParam String logName,
-			@RequestParam String logLevel) {
+	public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
 		LogUtil.setLogLevel(logName, logLevel);
 		return HttpServletResponse.SC_OK + "";
 	}
 
 	// The interface to the Derby operations query can only run select statements
 	// and is a direct query to the native Derby database without any additional logic
-	// Important !!!  This interface allows only administrators to operate
 
 	// TODO In a future release, the front page should appear operable
 
 	@GetMapping(value = "/derby")
-	@Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
 	public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
 		String selectSign = "select";
 		String limitSign = "ROWS FETCH NEXT";
 		String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
 		try {
-			if (!PropertyUtil.isEmbeddedStorage()) {
-				return RestResultUtils.failed("Limited to embedded storage mode");
-			}
-			LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
-					.getInstance().getDataSource();
-			if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
-				if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
-					sql += limit;
+			if (PropertyUtil.isEmbeddedStorage()) {
+				LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
+						.getInstance().getDataSource();
+				if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
+					if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
+						sql += limit;
+					}
+					JdbcTemplate template = dataSourceService.getJdbcTemplate();
+					List<Map<String, Object>> result = template.queryForList(sql);
+					return RestResultUtils.success(result);
 				}
-				JdbcTemplate template = dataSourceService.getJdbcTemplate();
-				List<Map<String, Object>> result = template.queryForList(sql);
-				return RestResultUtils.success(result);
+				return RestResultUtils.failed("Only query statements are allowed to be executed");
 			}
-			return RestResultUtils
-					.failed("Only query statements are allowed to be executed");
-		}
-		catch (Exception e) {
+			return RestResultUtils.failed("The current storage mode is not Derby");
+		} catch (Exception e) {
 			return RestResultUtils.failed(e.getMessage());
 		}
 	}
