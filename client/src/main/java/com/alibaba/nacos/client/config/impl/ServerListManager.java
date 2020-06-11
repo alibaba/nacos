@@ -56,7 +56,15 @@ public class ServerListManager implements Closeable {
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     private static final String HTTPS = "https://";
     private static final String HTTP = "http://";
-    private ScheduledExecutorService executorService;
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.ServerListManager");
+            t.setDaemon(true);
+            return t;
+        }
+    });
 
     public ServerListManager() {
         this.isFixed = false;
@@ -107,7 +115,6 @@ public class ServerListManager implements Closeable {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
-        initExecutor();
 
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -135,7 +142,6 @@ public class ServerListManager implements Closeable {
         this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
-        initExecutor();
 
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             this.isFixed = true;
@@ -223,19 +229,6 @@ public class ServerListManager implements Closeable {
         }
 
         return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
-    }
-
-    private void initExecutor() {
-        // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.ServerListManager");
-                t.setDaemon(true);
-                return t;
-            }
-        });
     }
 
     public synchronized void start() throws NacosException {
