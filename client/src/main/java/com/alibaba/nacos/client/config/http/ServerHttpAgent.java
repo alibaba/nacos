@@ -24,11 +24,12 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +45,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Callable;
 
 /**
  * Server Agent
@@ -60,6 +65,8 @@ public class ServerHttpAgent implements HttpAgent {
     private String namespaceId;
 
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+
+    private ScheduledExecutorService executorService;
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -235,7 +242,7 @@ public class ServerHttpAgent implements HttpAgent {
 
     private String getUrl(String serverAddr, String relativePath) {
         String contextPath = serverListMgr.getContentPath().startsWith("/") ?
-                serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
+            serverListMgr.getContentPath() : "/" + serverListMgr.getContentPath();
         return serverAddr + contextPath + relativePath;
     }
 
@@ -244,22 +251,24 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     public ServerHttpAgent(ServerListManager mgr) {
-        serverListMgr = mgr;
+        this.serverListMgr = mgr;
     }
 
     public ServerHttpAgent(ServerListManager mgr, Properties properties) {
-        serverListMgr = mgr;
+        this.serverListMgr = mgr;
         init(properties);
     }
 
     public ServerHttpAgent(Properties properties) throws NacosException {
-        serverListMgr = new ServerListManager(properties);
-        securityProxy = new SecurityProxy(properties);
-        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        this.serverListMgr = new ServerListManager(properties);
+        this.securityProxy = new SecurityProxy(properties);
+        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
-        securityProxy.login(serverListMgr.getServerUrls());
+        this.securityProxy.login(this.serverListMgr.getServerUrls());
 
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -269,12 +278,13 @@ public class ServerHttpAgent implements HttpAgent {
             }
         });
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
+        this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 securityProxy.login(serverListMgr.getServerUrls());
             }
-        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+        }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+
     }
 
     private void injectSecurityInfo(List<String> params) {
@@ -329,7 +339,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     @Override
-    public synchronized void start() throws NacosException {
+    public void start() throws NacosException {
         serverListMgr.start();
     }
 
@@ -366,8 +376,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = JSONUtils.deserializeObject(stsResponse,
-            new TypeReference<STSCredential>() {
+        STSCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<STSCredential>() {
             });
         sTSCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", sTSCredential.getCode(),
@@ -429,6 +438,14 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public String getEncode() {
         return encode;
+    }
+
+    @Override
+    public void shutdown() throws NacosException{
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, LOGGER);
+        LOGGER.info("{} do shutdown stop", className);
     }
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

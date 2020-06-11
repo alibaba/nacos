@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.test.common;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import org.junit.Assert;
@@ -44,7 +44,7 @@ public class HttpUtils_ITCase {
 
 	@Test
 	public void test_deserialization_type() throws Exception {
-		String json = JSON.toJSONString(list);
+		String json = JacksonUtils.toJson(list);
 		ArrayList<Integer> tmp = ResponseHandler.convert(json, new GenericType<List<Integer>>(){}.getType());
 		Assert.assertEquals(list, tmp);
 	}
@@ -58,7 +58,7 @@ public class HttpUtils_ITCase {
 
 	@Test
 	public void test_deserialization_class() throws Exception {
-		String json = JSON.toJSONString(list);
+		String json = JacksonUtils.toJson(list);
 		ArrayList<Integer> tmp = ResponseHandler.convert(json, ClassUtils.resolveGenericType(new GenericType<List<Integer>>(){}.getClass()));
 		Assert.assertEquals(list, tmp);
 	}

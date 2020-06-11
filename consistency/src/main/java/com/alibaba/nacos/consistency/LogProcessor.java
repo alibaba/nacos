@@ -17,10 +17,8 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.entity.GetRequest;
-import com.alibaba.nacos.consistency.entity.GetResponse;
 import com.alibaba.nacos.consistency.entity.Log;
-
-import java.util.concurrent.CompletableFuture;
+import com.alibaba.nacos.consistency.entity.Response;
 
 /**
  * Can be discovered through SPI or Spring,
@@ -38,7 +36,7 @@ public abstract class LogProcessor {
      * @param request request {@link GetRequest}
      * @return target type data
      */
-    public abstract GetResponse getData(GetRequest request);
+    public abstract Response onRequest(GetRequest request);
 
     /**
      * Process Submitted Log
@@ -46,7 +44,7 @@ public abstract class LogProcessor {
      * @param log {@link Log}
      * @return {@link boolean}
      */
-    public abstract LogFuture onApply(Log log);
+    public abstract Response onApply(Log log);
 
     /**
      * Irremediable errors that need to trigger business price cuts

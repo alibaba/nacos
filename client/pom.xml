@@ -16,7 +16,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.3.0-BETA</version>
+        <version>1.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -26,7 +26,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-client ${project.version}</name>
-    <url>https://github.com/alibaba/nacos</url>
+    <url>http://nacos.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -109,7 +109,6 @@
         <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
-            <version>0.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

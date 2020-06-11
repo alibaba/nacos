@@ -27,12 +27,14 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -40,6 +42,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -123,18 +126,20 @@ public class ServerMemberManager
 	 */
 	private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
 
-	public ServerMemberManager(ServletContext servletContext) {
+	public ServerMemberManager(ServletContext servletContext) throws Exception {
 		this.serverList = new ConcurrentSkipListMap();
 		ApplicationUtils.setContextPath(servletContext.getContextPath());
 		MemberUtils.setManager(this);
+
+		init();
 	}
 
-	@PostConstruct
-	public void init() throws NacosException {
+	protected void init() throws NacosException {
 		Loggers.CORE.info("Nacos-related cluster resource initialization");
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
 		this.self = MemberUtils.singleParse(this.localAddress);
+		this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.VERSION);
 		serverList.put(self.getAddress(), self);
 
 		// register NodeChangeEvent publisher to NotifyManager
@@ -175,6 +180,7 @@ public class ServerMemberManager
 				String oldAddress = event.getOldIp() + ":" + port;
 				String newAddress = event.getNewIp() + ":" + port;
 				ServerMemberManager.this.localAddress = newAddress;
+				ApplicationUtils.setLocalAddress(localAddress);
 
 				Member self = ServerMemberManager.this.self;
 				self.setIp(event.getNewIp());
@@ -197,11 +203,7 @@ public class ServerMemberManager
 		Loggers.CLUSTER.debug("Node information update : {}", newMember);
 
 		String address = newMember.getAddress();
-
-		if (Objects.equals(newMember, self)) {
-			serverList.put(newMember.getAddress(), newMember);
-			return true;
-		}
+		newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
 
 		if (!serverList.containsKey(address)) {
 			return false;
@@ -235,6 +237,10 @@ public class ServerMemberManager
 
 	public Member getSelf() {
 		return this.self;
+	}
+
+	public Member find(String address) {
+		return serverList.get(address);
 	}
 
 	public Collection<Member> allMembers() {
@@ -341,8 +347,6 @@ public class ServerMemberManager
 	@Override
 	public void onApplicationEvent(WebServerInitializedEvent event) {
 		getSelf().setState(NodeState.UP);
-		// For containers that have started, stop all messages from being published late
-		NotifyCenter.stopDeferPublish();
 		if (!ApplicationUtils.getStandaloneMode()) {
 			GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
 		}
@@ -409,10 +413,15 @@ public class ServerMemberManager
 					"/cluster/report");
 
 			try {
-				asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, getSelf(),
+				asyncHttpClient.post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER,
+						VersionUtils.VERSION), Query.EMPTY, getSelf(),
 						reference.getType(), new Callback<String>() {
 							@Override
 							public void onReceive(RestResult<String> result) {
+								if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value() || result.getCode() == HttpStatus.NOT_FOUND.value()) {
+									Loggers.CLUSTER.warn("{} version is too low, it is recommended to upgrade the version : {}", target, VersionUtils.VERSION);
+									return;
+								}
 								if (result.ok()) {
 									MemberUtils.onSuccess(target);
 								}

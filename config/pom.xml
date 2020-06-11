@@ -17,7 +17,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.3.0-BETA</version>
+        <version>1.3.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -26,7 +26,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-config ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>http://nacos.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -54,10 +54,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>taglibs</groupId>-->
-        <!--<artifactId>standard</artifactId>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
@@ -69,15 +65,10 @@
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-dbcp</groupId>
-            <artifactId>commons-dbcp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.derby</groupId>
@@ -129,7 +120,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -177,25 +167,13 @@
                 </configuration>
             </plugin>
         </plugins>
-        <!-- <resources>
-                <resource>
-                    <filtering>true</filtering>
-                    <directory>src/main/resources</directory>
-                    <excludes>
-                        <exclude>application.properties</exclude>
-                        <exclude>banner.txt</exclude>
-                        <exclude>schema.sql</exclude>
-                        <exclude>nacos-db.sql</exclude>
-                    </excludes>
-                </resource>
-            </resources> -->
     </build>
     <profiles>
         <profile>
             <id>springboot</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.alibaba.nacos</groupId>
+                    <groupId>${project.groupId}</groupId>
                     <artifactId>nacos-core</artifactId>
                 </dependency>
             </dependencies>

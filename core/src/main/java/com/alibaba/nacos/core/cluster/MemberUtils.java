@@ -134,9 +134,7 @@ public class MemberUtils {
 
 	@SuppressWarnings("PMD.UndefineMagicConstantRule")
 	public static Collection<Member> kRandom(Collection<Member> members,
-			Predicate<Member> filter) {
-		int k = ApplicationUtils
-				.getProperty("nacos.core.member.report.random-num", Integer.class, 3);
+			Predicate<Member> filter, int k) {
 
         Set<Member> kMembers = new HashSet<>();
 

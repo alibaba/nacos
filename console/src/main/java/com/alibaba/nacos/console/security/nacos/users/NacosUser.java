@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.console.security.nacos.users;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.core.auth.User;
 
 /**
@@ -47,6 +46,9 @@ public class NacosUser extends User {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "NacosUser{" +
+            "token='" + token + '\'' +
+            ", globalAdmin=" + globalAdmin +
+            '}';
     }
 }

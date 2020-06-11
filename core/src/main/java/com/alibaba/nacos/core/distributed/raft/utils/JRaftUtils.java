@@ -16,38 +16,30 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.alibaba.nacos.common.utils.DiskUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
+import com.alibaba.nacos.consistency.SerializeFactory;
+import com.alibaba.nacos.consistency.entity.GetRequest;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.entity.Log;
+import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.raft.JRaftServer;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosGetRequestProcessor;
+import com.alibaba.nacos.core.distributed.raft.processor.NacosLogProcessor;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alipay.remoting.ConnectionEventType;
-import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
-import com.alipay.sofa.jraft.rpc.impl.PingRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.AddLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.AddPeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ChangePeersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.GetLeaderRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.GetPeersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.RemoveLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.RemovePeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ResetLearnersRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.ResetPeerRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.SnapshotRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.cli.TransferLeaderRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.AppendEntriesRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.GetFileRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.InstallSnapshotRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.ReadIndexRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.RequestVoteRequestProcessor;
-import com.alipay.sofa.jraft.rpc.impl.core.TimeoutNowRequestProcessor;
+import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
+import com.alipay.sofa.jraft.rpc.RpcServer;
+import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
+import com.alipay.sofa.jraft.rpc.impl.MarshallerRegistry;
+import com.alipay.sofa.jraft.util.Endpoint;
+import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -56,7 +48,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +55,27 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("all")
 public class JRaftUtils {
+
+    public static RpcServer initRpcServer(JRaftServer server, PeerId peerId) {
+        GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
+        raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(), GetRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(Response.class.getName(), Response.getDefaultInstance());
+
+        MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
+        registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
+
+        final RpcServer rpcServer = raftRpcFactory.createRpcServer(new Endpoint(peerId.getIp(), peerId.getPort()));
+        RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
+                RaftExecutor.getRaftCliServiceExecutor());
+
+
+        rpcServer.registerProcessor(new NacosLogProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(new NacosGetRequestProcessor(server, SerializeFactory.getDefault()));
+
+        return rpcServer;
+    }
 
     public static final void initDirectory(String parentPath, String groupName, NodeOptions copy) {
         final String logUri = Paths.get(parentPath, groupName, "log").toString();
@@ -131,33 +143,6 @@ public class JRaftUtils {
             }
             ThreadUtils.sleep(1000L);
         }
-    }
-
-    public static void addRaftRequestProcessors(final RpcServer rpcServer, final Executor raftExecutor,
-            final Executor cliExecutor) {
-        // raft core processors
-        final AppendEntriesRequestProcessor appendEntriesRequestProcessor = new AppendEntriesRequestProcessor(
-                raftExecutor);
-        rpcServer.addConnectionEventProcessor(ConnectionEventType.CLOSE, appendEntriesRequestProcessor);
-        rpcServer.registerUserProcessor(appendEntriesRequestProcessor);
-        rpcServer.registerUserProcessor(new GetFileRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new InstallSnapshotRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new RequestVoteRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new PingRequestProcessor());
-        rpcServer.registerUserProcessor(new TimeoutNowRequestProcessor(raftExecutor));
-        rpcServer.registerUserProcessor(new ReadIndexRequestProcessor(raftExecutor));
-        // raft cli service
-        rpcServer.registerUserProcessor(new AddPeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new RemovePeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ResetPeerRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ChangePeersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new GetLeaderRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new SnapshotRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new TransferLeaderRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new GetPeersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new AddLearnersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new RemoveLearnersRequestProcessor(cliExecutor));
-        rpcServer.registerUserProcessor(new ResetLearnersRequestProcessor(cliExecutor));
     }
 
 }

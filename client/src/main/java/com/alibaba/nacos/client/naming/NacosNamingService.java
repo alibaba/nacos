@@ -34,7 +34,6 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Nacos Naming Service
@@ -87,7 +85,8 @@ public class NacosNamingService implements NamingService {
 
     private void init(Properties properties) {
         ValidatorUtils.checkInitParam(properties);
-        namespace = InitUtils.initNamespaceForNaming(properties);
+        this.namespace = InitUtils.initNamespaceForNaming(properties);
+        InitUtils.initSerialization();
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();
@@ -96,8 +95,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, beatReactor, cacheDir, isLoadCacheAtStart(properties),
-            initPollingThreadCount(properties));
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, beatReactor, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -196,7 +194,6 @@ public class NacosNamingService implements NamingService {
         }
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
-
 
     @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
@@ -477,5 +474,13 @@ public class NacosNamingService implements NamingService {
 
     public BeatReactor getBeatReactor() {
         return beatReactor;
+    }
+
+    @Override
+    public void shutDown() throws NacosException{
+        beatReactor.shutdown();
+        eventDispatcher.shutdown();
+        hostReactor.shutdown();
+        serverProxy.shutdown();
     }
 }
