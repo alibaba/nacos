@@ -39,9 +39,9 @@ public class Header {
     private Header() {
         header = new LinkedHashMap<String, String>();
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        addParam("Accept-Charset", "UTF-8");
-        addParam("Accept-Encoding", "gzip");
-        addParam("Content-Encoding", "gzip");
+        addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
+        addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
+        addParam(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
     }
 
     public static Header newInstance() {
@@ -104,8 +104,12 @@ public class Header {
     }
 
     public String getCharset() {
-        String value = getValue(HttpHeaderConsts.CONTENT_TYPE);
-        return (StringUtils.isNotBlank(value) ? analysisCharset(value) : Constants.ENCODE);
+        String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
+        if (acceptCharset == null) {
+            String contentType = getValue(HttpHeaderConsts.CONTENT_TYPE);
+            acceptCharset  = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
+        }
+        return acceptCharset;
     }
 
     private String analysisCharset(String contentType) {

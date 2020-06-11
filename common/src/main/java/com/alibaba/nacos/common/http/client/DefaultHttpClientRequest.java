@@ -41,7 +41,7 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "rawtypes", "resource"})
 public class DefaultHttpClientRequest implements HttpClientRequest {
 
-    private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultHttpClientRequest.class);
 
     private final CloseableHttpClient client;
 
