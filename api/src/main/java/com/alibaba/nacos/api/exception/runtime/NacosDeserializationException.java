@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.exception.runtime;
 
+import java.lang.reflect.Type;
+
 /**
  * Nacos deserialization exception.
  *
@@ -42,6 +44,10 @@ public class NacosDeserializationException extends NacosRuntimeException {
         this.targetClass = targetClass;
     }
 
+    public NacosDeserializationException(Type targetType) {
+        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()));
+    }
+
     public NacosDeserializationException(Throwable throwable) {
         super(ERROR_CODE, DEFAULT_MSG, throwable);
     }
@@ -50,6 +56,14 @@ public class NacosDeserializationException extends NacosRuntimeException {
         super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetClass.getName()), throwable);
         this.targetClass = targetClass;
     }
+
+    public NacosDeserializationException(Type targetType, Throwable throwable) {
+        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()), throwable);
+    }
+
+
+
+
 
     public Class<?> getTargetClass() {
         return targetClass;
