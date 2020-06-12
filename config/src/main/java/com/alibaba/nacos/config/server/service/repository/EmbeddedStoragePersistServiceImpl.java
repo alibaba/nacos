@@ -49,7 +49,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -2610,3 +2609,4 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 	}
 
 }
+

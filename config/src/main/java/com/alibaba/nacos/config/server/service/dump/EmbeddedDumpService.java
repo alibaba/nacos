@@ -160,17 +160,11 @@ public class EmbeddedDumpService extends DumpService {
 
 	@Override
 	protected boolean canExecute() {
-		try {
-			// if is derby + raft mode, only leader can execute
-			CPProtocol protocol = protocolManager.getCpProtocol();
-			return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
-		}
-		catch (NoSuchRaftGroupException e) {
+		if (ApplicationUtils.getStandaloneMode()) {
 			return true;
 		}
-		catch (Throwable e) {
-			// It's impossible to get to this point
-			throw new RuntimeException(e);
-		}
+		// if is derby + raft mode, only leader can execute
+		CPProtocol protocol = protocolManager.getCpProtocol();
+		return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
 	}
 }

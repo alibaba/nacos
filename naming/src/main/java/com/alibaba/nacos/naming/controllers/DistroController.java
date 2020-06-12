@@ -106,13 +106,13 @@ public class DistroController {
             datumMap.put(key, datum);
         }
 
-        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
+        byte[] content = serializer.serialize(datumMap);
         return ResponseEntity.ok(content);
     }
 
     @GetMapping("/datums")
     public ResponseEntity getAllDatums() {
-        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
+        byte[] content = serializer.serialize(dataStore.getDataMap());
         return ResponseEntity.ok(content);
     }
 }

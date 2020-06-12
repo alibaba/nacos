@@ -16,19 +16,22 @@
 
 package com.alibaba.nacos.client.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
+import com.alibaba.nacos.client.naming.net.NamingProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.HashMap;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
-
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.client.naming.net.NamingProxy;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HostReactorTest {
@@ -43,15 +46,31 @@ public class HostReactorTest {
 
     private HostReactor hostReactor;
 
+    private BeatReactor beatReactor;
+
     @Before
     public void setUp() throws Exception {
-        hostReactor = new HostReactor(eventDispatcher, namingProxy, CACHE_DIR);
+        beatReactor = new BeatReactor(namingProxy);
+        BeatInfo beatInfo = new BeatInfo();
+        beatInfo.setServiceName("testName");
+        beatInfo.setIp("1.1.1.1");
+        beatInfo.setPort(1234);
+        beatInfo.setCluster("clusterName");
+        beatInfo.setWeight(1);
+        beatInfo.setMetadata(new HashMap<String, String>());
+        beatInfo.setScheduled(false);
+        beatInfo.setPeriod(1000L);
+        beatReactor.addBeatInfo("testName", beatInfo);
+        hostReactor = new HostReactor(eventDispatcher, namingProxy, beatReactor, CACHE_DIR);
     }
 
     @Test
     public void testProcessServiceJSON() {
         ServiceInfo actual = hostReactor.processServiceJSON(EXAMPLE);
         assertServiceInfo(actual);
+        hostReactor.processServiceJSON(CHANGE_DATA_EXAMPLE);
+        BeatInfo actualBeatInfo = beatReactor.dom2Beat.get(beatReactor.buildKey("testName", "1.1.1.1", 1234));
+        assertEquals(2.0, actualBeatInfo.getWeight(), 0.0);
     }
 
     @Test
@@ -89,6 +108,32 @@ public class HostReactorTest {
         + "\t\t\"ip\": \"1.1.1.1\",\n"
         + "\t\t\"port\": 1234,\n"
         + "\t\t\"weight\": 1.0,\n"
+        + "\t\t\"healthy\": true,\n"
+        + "\t\t\"enabled\": true,\n"
+        + "\t\t\"ephemeral\": true,\n"
+        + "\t\t\"clusterName\": \"testClusters\",\n"
+        + "\t\t\"serviceName\": \"testName\",\n"
+        + "\t\t\"metadata\": {},\n"
+        + "\t\t\"instanceHeartBeatInterval\": 5000,\n"
+        + "\t\t\"instanceHeartBeatTimeOut\": 15000,\n"
+        + "\t\t\"ipDeleteTimeout\": 30000,\n"
+        + "\t\t\"instanceIdGenerator\": \"simple\"\n"
+        + "\t}],\n"
+        + "\t\"lastRefTime\": 0,\n"
+        + "\t\"checksum\": \"\",\n"
+        + "\t\"allIPs\": false,\n"
+        + "\t\"valid\": true\n"
+        + "}";
+
+    //the weight changed from 1.0 to 2.0
+    private static final String CHANGE_DATA_EXAMPLE = "{\n"
+        + "\t\"name\": \"testName\",\n"
+        + "\t\"clusters\": \"testClusters\",\n"
+        + "\t\"cacheMillis\": 1000,\n"
+        + "\t\"hosts\": [{\n"
+        + "\t\t\"ip\": \"1.1.1.1\",\n"
+        + "\t\t\"port\": 1234,\n"
+        + "\t\t\"weight\": 2.0,\n"
         + "\t\t\"healthy\": true,\n"
         + "\t\t\"enabled\": true,\n"
         + "\t\t\"ephemeral\": true,\n"
