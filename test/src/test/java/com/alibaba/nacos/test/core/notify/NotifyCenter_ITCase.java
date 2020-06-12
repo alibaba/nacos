@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.AbstractEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
 import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -267,4 +268,60 @@ public class NotifyCenter_ITCase {
 
 	}
 
+
+	static class SmartSlowEvent1 extends SlowEvent{
+
+    }
+
+    static class SmartSlowEvent2 extends SlowEvent{
+
+    }
+
+    @Test
+    public void test_can_notify_smart_slowEvent() throws Exception {
+
+	    AtomicInteger count1 = new AtomicInteger(0);
+	    AtomicInteger count2 = new AtomicInteger(0);
+
+        CountDownLatch latch1 = new CountDownLatch(5);
+
+
+        NotifyCenter.registerToSharePublisher(SmartSlowEvent1.class);
+        NotifyCenter.registerToSharePublisher(SmartSlowEvent2.class);
+
+
+        NotifyCenter.registerSubscriber(new SmartSubscriber() {
+            @Override
+            public boolean canNotify(AbstractEvent event) {
+                if (event instanceof SmartSlowEvent1) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onEvent(AbstractEvent event) {
+                if (event instanceof SmartSlowEvent1) {
+                    count1.incrementAndGet();
+                    latch1.countDown();
+                }
+
+                if (event instanceof SmartSlowEvent2) {
+                    count2.incrementAndGet();
+                }
+            }
+        });
+
+        for (int i = 0; i < 3; i++) {
+            Assert.assertTrue(NotifyCenter.publishEvent(new SmartSlowEvent1()));
+            Assert.assertTrue(NotifyCenter.publishEvent(new SmartSlowEvent2()));
+        }
+
+        latch1.await(3_000L, TimeUnit.MILLISECONDS);
+
+        Assert.assertEquals(3, count1.get());
+        Assert.assertEquals(0, count2.get());
+
+    }
 }

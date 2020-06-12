@@ -2,6 +2,7 @@ package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -29,7 +30,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
 
     private volatile boolean initialized = false;
-    private volatile boolean canOpen = false;
     private volatile boolean shutdown = false;
 
     private Class<? extends AbstractEvent> eventType;
@@ -79,7 +79,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
             for (;;) {
-                if (shutdown || canOpen) {
+                if (shutdown || hasSubscriber()) {
                     break;
                 }
                 ThreadUtils.sleep(1000L);
@@ -99,10 +99,13 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
 
+    private boolean hasSubscriber() {
+        return CollectionUtils.isNotEmpty(subscribers) || CollectionUtils.isNotEmpty(SMART_SUBSCRIBERS);
+    }
+
     @Override
     public void addSubscriber(AbstractSubscriber subscriber) {
         subscribers.add(subscriber);
-        canOpen = true;
     }
 
     @Override
