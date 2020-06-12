@@ -3,7 +3,6 @@ package com.alibaba.nacos.common.notify;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
 import java.util.Set;
@@ -23,7 +22,7 @@ public interface EventPublisher extends Closeable {
     /**
      * Initializes the event publisher
      *
-     * @param type {@link Class<? extends Event>}
+     * @param type {@link Class<? extends AbstractEvent>}
      * @param bufferSize Message staging queue size
      */
     void init(Class<? extends AbstractEvent> type, int bufferSize);

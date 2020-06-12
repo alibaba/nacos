@@ -168,7 +168,7 @@ public class NotifyCenter {
      * @param <T>
      */
     public static <T> void deregisterSubscribe(final AbstractSubscriber consumer) {
-        final Class<? extends Event> cls = consumer.subscriberType();
+        final Class<? extends AbstractEvent> cls = consumer.subscriberType();
         if (consumer instanceof SmartSubscriber) {
             EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
             return;
@@ -261,7 +261,7 @@ public class NotifyCenter {
      * @param eventType
      * @return
      */
-    public static void deregisterPublisher(final Class<? extends Event> eventType) {
+    public static void deregisterPublisher(final Class<? extends AbstractEvent> eventType) {
         final String topic = eventType.getCanonicalName();
         EventPublisher publisher = INSTANCE.publisherMap.remove(topic);
         try {
