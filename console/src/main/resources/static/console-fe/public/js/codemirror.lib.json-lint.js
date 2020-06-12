@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +33,7 @@ case 1: // replace escaped characters with actual character
                      .replace(/\\v/g,'\v')
                      .replace(/\\f/g,'\f')
                      .replace(/\\b/g,'\b');
-        
+
 break;
 case 2:this.$ = Number(yytext);
 break;
@@ -354,7 +357,7 @@ next:function () {
         if (this._input === "") {
             return this.EOF;
         } else {
-            this.parseError('Lexical error on line '+(this.yylineno+1)+'. Unrecognized text.\n'+this.showPosition(), 
+            this.parseError('Lexical error on line '+(this.yylineno+1)+'. Unrecognized text.\n'+this.showPosition(),
                     {text: "", token: null, line: this.yylineno});
         }
     },
