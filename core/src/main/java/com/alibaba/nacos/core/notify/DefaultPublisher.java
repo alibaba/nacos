@@ -19,7 +19,6 @@
 package com.alibaba.nacos.core.notify;
 
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -72,9 +71,10 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
 	@Override
 	public synchronized void start() {
-		super.start();
 		if (!initialized) {
-			if (queueMaxSize == -1) {
+		    // Publisher just start once
+            super.start();
+            if (queueMaxSize == -1) {
 				queueMaxSize = RING_BUFFER_SIZE;
 			}
 			initialized = true;

@@ -1,5 +1,7 @@
 package com.alibaba.nacos.common.notify;
 
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -11,7 +13,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface EventPublisher {
+public interface EventPublisher extends Closeable {
 
     /**
      * Multi-event listener collection list
@@ -24,7 +26,7 @@ public interface EventPublisher {
      * @param type {@link Class<? extends Event>}
      * @param bufferSize Message staging queue size
      */
-    void init(Class<? extends Event> type, int bufferSize);
+    void init(Class<? extends AbstractEvent> type, int bufferSize);
 
     /**
      * The number of currently staged events
@@ -36,35 +38,30 @@ public interface EventPublisher {
     /**
      * Add listener
      *
-     * @param subscribe {@link Subscriber}
+     * @param subscribe {@link AbstractSubscriber}
      */
-    void addSubscribe(Subscriber subscribe);
+    void addSubscriber(AbstractSubscriber subscribe);
 
     /**
      * Remove listener
      *
-     * @param subscriber {@link Subscriber}
+     * @param subscriber {@link AbstractSubscriber}
      */
-    void unSubscribe(Subscriber subscriber);
+    void unSubscriber(AbstractSubscriber subscriber);
 
     /**
      * publish event
      *
-     * @param event {@link Event}
+     * @param event {@link AbstractEvent}
      * @return publish event is success
      */
-    boolean publish(Event event);
+    boolean publish(AbstractEvent event);
 
     /**
      * Notify listener
      *
-     * @param subscriber {@link Subscriber}
-     * @param event {@link Event}
+     * @param subscriber {@link AbstractSubscriber}
+     * @param event {@link AbstractEvent}
      */
-    void notifySubscriber(Subscriber subscriber, Event event);
-
-    /**
-     * shutdown this publisher
-     */
-    void shutdown();
+    void notifySubscriber(AbstractSubscriber subscriber, AbstractEvent event);
 }

@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.test.core.notify;
 
+import com.alibaba.nacos.common.notify.AbstractEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.SlowEvent;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -38,12 +37,10 @@ import java.util.concurrent.atomic.AtomicLong;
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class NotifyCenter_ITCase {
 
-	private static class TestSlowEvent implements SlowEvent {
-
+	private static class TestSlowEvent extends SlowEvent {
 	}
 
-	private static class TestEvent implements Event {
-
+	private static class TestEvent extends AbstractEvent {
 	}
 
 	static {
@@ -59,39 +56,39 @@ public class NotifyCenter_ITCase {
 		final CountDownLatch latch = new CountDownLatch(2);
 		final AtomicInteger count = new AtomicInteger(0);
 
-		NotifyCenter.registerSubscribe(new Subscribe<TestSlowEvent>() {
-			@Override
-			public void onEvent(TestSlowEvent event) {
-				try {
-					System.out.println(event);
-					count.incrementAndGet();
-				} finally {
-					latch.countDown();
-				}
-			}
+        NotifyCenter.registerSubscriber(new AbstractSubscriber<TestSlowEvent>() {
+            @Override
+            public void onEvent(TestSlowEvent event) {
+                try {
+                    System.out.println(event);
+                    count.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            }
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return TestSlowEvent.class;
-			}
-		});
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return TestSlowEvent.class;
+            }
+        });
 
-		NotifyCenter.registerSubscribe(new Subscribe<TestEvent>() {
-			@Override
-			public void onEvent(TestEvent event) {
-				try {
-					System.out.println(event);
-					count.incrementAndGet();
-				} finally {
-					latch.countDown();
-				}
-			}
+        NotifyCenter.registerSubscriber(new AbstractSubscriber<TestEvent>() {
+            @Override
+            public void onEvent(TestEvent event) {
+                try {
+                    System.out.println(event);
+                    count.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            }
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return TestEvent.class;
-			}
-		});
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return TestEvent.class;
+            }
+        });
 
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent()));
 		Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
@@ -108,7 +105,7 @@ public class NotifyCenter_ITCase {
 
 	static CountDownLatch latch = new CountDownLatch(3);
 
-	static class ExpireEvent implements Event {
+	static class ExpireEvent extends AbstractEvent {
 
 		static AtomicLong sequence = new AtomicLong(3);
 
@@ -125,22 +122,24 @@ public class NotifyCenter_ITCase {
 	public void test_b_ignore_expire_event() throws Exception {
 		NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
-		NotifyCenter.registerSubscribe(new Subscribe<ExpireEvent>() {
-			@Override
-			public void onEvent(ExpireEvent event) {
-				count.incrementAndGet();
-			}
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return ExpireEvent.class;
-			}
+		NotifyCenter.registerSubscriber(new AbstractSubscriber<ExpireEvent>() {
+            @Override
+            public void onEvent(ExpireEvent event) {
+                count.incrementAndGet();
+            }
 
-			@Override
-			public boolean ignoreExpireEvent() {
-				return true;
-			}
-		});
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return ExpireEvent.class;
+            }
+
+            public boolean ignoreExpireEvent() {
+                return true;
+            }
+
+        });
+
 
 		for (int i = 0; i < 3; i ++) {
 			Assert.assertTrue(NotifyCenter.publishEvent(new ExpireEvent()));
@@ -152,7 +151,7 @@ public class NotifyCenter_ITCase {
 
 	static CountDownLatch latch2 = new CountDownLatch(3);
 
-	static class NoExpireEvent implements Event {
+	static class NoExpireEvent extends AbstractEvent {
 
 		static AtomicLong sequence = new AtomicLong(3);
 
@@ -168,20 +167,20 @@ public class NotifyCenter_ITCase {
 	public void test_c_no_ignore_expire_event() throws Exception {
 		NotifyCenter.registerToPublisher(NoExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
-		NotifyCenter.registerSubscribe(new Subscribe<NoExpireEvent>() {
-			@Override
-			public void onEvent(NoExpireEvent event) {
-				System.out.println(event);
-				count.incrementAndGet();
-				latch2.countDown();
-			}
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return NoExpireEvent.class;
-			}
+		NotifyCenter.registerSubscriber(new AbstractSubscriber() {
+            @Override
+            public void onEvent(AbstractEvent event) {
+                System.out.println(event);
+                count.incrementAndGet();
+                latch2.countDown();
+            }
 
-		});
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return NoExpireEvent.class;
+            }
+        });
 
 		for (int i = 0; i < 3; i ++) {
 			Assert.assertTrue(NotifyCenter.publishEvent(new NoExpireEvent()));
@@ -191,7 +190,7 @@ public class NotifyCenter_ITCase {
 		Assert.assertEquals(3, count.get());
 	}
 
-	private static class SlowE1 implements SlowEvent {
+	private static class SlowE1 extends SlowEvent {
 		private String info = "SlowE1";
 
 		public String getInfo() {
@@ -203,7 +202,7 @@ public class NotifyCenter_ITCase {
 		}
 	}
 
-	private static class SlowE2 implements SlowEvent {
+	private static class SlowE2 extends SlowEvent {
 		private String info = "SlowE2";
 
 		public String getInfo() {
@@ -225,34 +224,35 @@ public class NotifyCenter_ITCase {
 
 		String[] values = new String[] {null, null};
 
-		NotifyCenter.registerSubscribe(new Subscribe<SlowE1>() {
-			@Override
-			public void onEvent(SlowE1 event) {
-				ThreadUtils.sleep(1000L);
-				System.out.println(event);
-				values[0] = event.info;
-				latch1.countDown();
-			}
+        NotifyCenter.registerSubscriber(new AbstractSubscriber<SlowE1>() {
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return SlowE1.class;
-			}
-		});
+            @Override
+            public void onEvent(SlowE1 event) {
+                ThreadUtils.sleep(1000L);
+                System.out.println(event);
+                values[0] = event.info;
+                latch1.countDown();
+            }
 
-		NotifyCenter.registerSubscribe(new Subscribe<SlowE2>() {
-			@Override
-			public void onEvent(SlowE2 event) {
-				System.out.println(event);
-				values[1] = event.info;
-				latch2.countDown();
-			}
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return SlowE1.class;
+            }
+        });
 
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return SlowE2.class;
-			}
-		});
+		NotifyCenter.registerSubscriber(new AbstractSubscriber<SlowE2>() {
+            @Override
+            public void onEvent(SlowE2 event) {
+                System.out.println(event);
+                values[1] = event.info;
+                latch2.countDown();
+            }
+
+            @Override
+            public Class<? extends AbstractEvent> subscriberType() {
+                return SlowE2.class;
+            }
+        });
 
 		for (int i = 0; i < 30; i ++) {
 			NotifyCenter.publishEvent(new SlowE1());

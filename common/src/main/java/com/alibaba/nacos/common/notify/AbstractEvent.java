@@ -3,17 +3,18 @@ package com.alibaba.nacos.common.notify;
 import java.io.Serializable;
 
 /**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- * @author zongtanghu
+ * An abstract class for event.
  *
+ * @author zongtanghu
  */
-public interface Event extends Serializable {
+public abstract class AbstractEvent implements Serializable {
 
     /**
      * Event sequence number, which can be used to handle the sequence of events
      *
      * @return sequence num, It's best to make sure it's monotone
      */
-     long sequence();
-
+    public long sequence() {
+        return System.currentTimeMillis();
+    }
 }

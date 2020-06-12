@@ -1,8 +1,9 @@
 package com.alibaba.nacos.common.notify;
 
+import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,24 +32,24 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     private volatile boolean canOpen = false;
     private volatile boolean shutdown = false;
 
-    private Class<? extends Event> eventType;
-    private final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
+    private Class<? extends AbstractEvent> eventType;
+    private final ConcurrentHashSet<AbstractSubscriber> subscribers = new ConcurrentHashSet<AbstractSubscriber>();
     private int queueMaxSize = -1;
-    private BlockingQueue<Event> queue;
+    private BlockingQueue<AbstractEvent> queue;
     private volatile Long lastEventSequence = -1L;
     private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater.newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
 
     @Override
-    public void init(Class<? extends Event> type, int bufferSize) {
+    public void init(Class<? extends AbstractEvent> type, int bufferSize) {
         setDaemon(true);
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<Event>(bufferSize);
+        this.queue = new ArrayBlockingQueue<AbstractEvent>(bufferSize);
         start();
     }
 
-    public ConcurrentHashSet<Subscriber> getSubscribers() {
+    public ConcurrentHashSet<AbstractSubscriber> getSubscribers() {
         return subscribers;
     }
 
@@ -88,7 +89,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 if (shutdown) {
                     break;
                 }
-                final Event event = queue.take();
+                final AbstractEvent event = queue.take();
                 receiveEvent(event);
                 updater.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
@@ -99,18 +100,18 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     @Override
-    public void addSubscribe(Subscriber subscribe) {
-        subscribers.add(subscribe);
+    public void addSubscriber(AbstractSubscriber subscriber) {
+        subscribers.add(subscriber);
         canOpen = true;
     }
 
     @Override
-    public void unSubscribe(Subscriber subscribe) {
-        subscribers.remove(subscribe);
+    public void unSubscriber(AbstractSubscriber subscriber) {
+        subscribers.remove(subscriber);
     }
 
     @Override
-    public boolean publish(Event event) {
+    public boolean publish(AbstractEvent event) {
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
@@ -130,7 +131,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     @Override
-    public void shutdown() {
+    public void shutdown(){
         this.shutdown = true;
         this.queue.clear();
     }
@@ -139,12 +140,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         return initialized;
     }
 
-    void receiveEvent(Event event) {
+    void receiveEvent(AbstractEvent event) {
         final long currentEventSequence = event.sequence();
         final String sourceName = event.getClass().getName();
 
         // Notification single event listener
-        for (Subscriber subscriber : subscribers) {
+        for (AbstractSubscriber subscriber : subscribers) {
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent()
                 && lastEventSequence > currentEventSequence) {
@@ -154,9 +155,9 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 continue;
             }
 
-            final String targetName = subscriber.subscribeType().getName();
+            final String targetName = subscriber.subscriberType().getName();
 
-            if (sourceName.equals(targetName)) {
+            if (!Objects.equals(sourceName, targetName)) {
                 continue;
             }
 
@@ -177,7 +178,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     @Override
-    public void notifySubscriber(final Subscriber subscriber, final Event event) {
+    public void notifySubscriber(final AbstractSubscriber subscriber, final AbstractEvent event) {
 
         LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
             subscriber);
