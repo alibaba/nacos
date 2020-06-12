@@ -52,10 +52,11 @@ public class Query {
         return params.get(key);
     }
 
-    public void initParams(Map<String, String> params) {
+    public Query initParams(Map<String, String> params) {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             addParam(entry.getKey(), entry.getValue());
         }
+        return this;
     }
 
     public void initParams(List<String> list) {
