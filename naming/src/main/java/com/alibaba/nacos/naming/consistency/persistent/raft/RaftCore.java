@@ -484,10 +484,9 @@ public class RaftCore {
 
         public void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !ApplicationUtils.getStandaloneMode()) {
+            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER){
                 return;
             }
-
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
             }
