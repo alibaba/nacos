@@ -307,8 +307,6 @@
                         <exclude>REPORTING-BUGS.md</exclude>
                         <exclude>README.md</exclude>
                         <exclude>.github/**/*</exclude>
-                        <exclude>src/main/resources/**</exclude>
-                        <exclude>src/test/**</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>doc/*</exclude>
