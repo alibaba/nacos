@@ -16,6 +16,7 @@ exemptLabels:
     - kind/user experience
     - Soc2019
     - SoC2020
+    - kind/notice
 # Label to use when marking an issue as stale
 staleLabel: expired
 # Comment to post when marking an issue as stale. Set to `false` to disable
