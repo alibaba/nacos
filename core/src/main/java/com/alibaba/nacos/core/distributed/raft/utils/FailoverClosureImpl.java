@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alipay.sofa.jraft.Status;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**

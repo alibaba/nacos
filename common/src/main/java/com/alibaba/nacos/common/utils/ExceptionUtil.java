@@ -18,8 +18,8 @@ package com.alibaba.nacos.common.utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Objects;
 
 /**
  * Common methods for exception
