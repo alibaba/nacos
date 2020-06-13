@@ -1,6 +1,6 @@
 package com.alibaba.nacos.common.notify.listener;
 
-import com.alibaba.nacos.common.notify.AbstractEvent;
+import com.alibaba.nacos.common.notify.Event;
 
 import java.util.concurrent.Executor;
 
@@ -9,21 +9,22 @@ import java.util.concurrent.Executor;
  *
  * @author zongtanghu
  */
-public abstract class AbstractSubscriber<T extends AbstractEvent>{
+@SuppressWarnings("all")
+public abstract class Subscriber<T extends Event>{
 
     /**
      * Event callback
      *
-     * @param event {@link AbstractEvent}
+     * @param event {@link Event}
      */
     public abstract void onEvent(T event);
 
     /**
      * Type of this subscriber's subscription
      *
-     * @return Class which extends {@link AbstractEvent}
+     * @return Class which extends {@link Event}
      */
-    public abstract Class<? extends AbstractEvent> subscriberType();
+    public abstract Class<? extends Event> subscriberType();
 
     /**
      * It is up to the listener to determine whether the callback is asynchronous or synchronous

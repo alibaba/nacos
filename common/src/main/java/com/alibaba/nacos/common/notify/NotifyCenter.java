@@ -1,7 +1,7 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ShutdownUtils;
@@ -30,7 +30,7 @@ public class NotifyCenter {
 
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
-    private static BiFunction<Class<? extends AbstractEvent>, Integer, EventPublisher> BUILD_FACTORY = null;
+    private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
 
     private static final NotifyCenter INSTANCE = new NotifyCenter();
 
@@ -55,9 +55,9 @@ public class NotifyCenter {
         Iterator<EventPublisher> iterator = loader.iterator();
 
         if (iterator.hasNext()) {
-            BUILD_FACTORY = new BiFunction<Class<? extends AbstractEvent>, Integer, EventPublisher>() {
+            BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
                 @Override
-                public EventPublisher apply(Class<? extends AbstractEvent> cls, Integer buffer) {
+                public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
                     loader.reload();
                     EventPublisher publisher = ServiceLoader.load(EventPublisher.class).iterator().next();
                     publisher.init(cls, buffer);
@@ -65,9 +65,9 @@ public class NotifyCenter {
                 }
             };
         } else {
-            BUILD_FACTORY = new BiFunction<Class<? extends AbstractEvent>, Integer, EventPublisher>() {
+            BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
                 @Override
-                public EventPublisher apply(Class<? extends AbstractEvent> cls, Integer buffer) {
+                public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
                     EventPublisher publisher = new DefaultPublisher();
                     publisher.init(cls, buffer);
                     return publisher;
@@ -93,7 +93,7 @@ public class NotifyCenter {
     }
 
     @JustForTest
-    public static EventPublisher getPublisher(Class<? extends AbstractEvent> topic) {
+    public static EventPublisher getPublisher(Class<? extends Event> topic) {
         if (SlowEvent.class.isAssignableFrom(topic)) {
             return INSTANCE.sharePublisher;
         }
@@ -141,8 +141,8 @@ public class NotifyCenter {
      * @param consumer  subscriber
      * @param <T>       event type
      */
-    public static <T> void registerSubscriber(final AbstractSubscriber consumer) {
-        final Class<? extends AbstractEvent> cls = consumer.subscriberType();
+    public static <T> void registerSubscriber(final Subscriber consumer) {
+        final Class<? extends Event> cls = consumer.subscriberType();
         // If you want to listen to multiple events, you do it separately,
         // without automatically registering the appropriate publisher
         if (consumer instanceof SmartSubscriber) {
@@ -167,8 +167,8 @@ public class NotifyCenter {
      * @param consumer subscriber
      * @param <T>
      */
-    public static <T> void deregisterSubscribe(final AbstractSubscriber consumer) {
-        final Class<? extends AbstractEvent> cls = consumer.subscriberType();
+    public static <T> void deregisterSubscribe(final Subscriber consumer) {
+        final Class<? extends Event> cls = consumer.subscriberType();
         if (consumer instanceof SmartSubscriber) {
             EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
             return;
@@ -192,7 +192,7 @@ public class NotifyCenter {
      *
      * @param event
      */
-    public static boolean publishEvent(final AbstractEvent event) {
+    public static boolean publishEvent(final Event event) {
         try {
             return publishEvent(event.getClass(), event);
         } catch (Throwable ex) {
@@ -208,8 +208,8 @@ public class NotifyCenter {
      * @param eventType
      * @param event
      */
-    private static boolean publishEvent(final Class<? extends AbstractEvent> eventType,
-                                        final AbstractEvent event) {
+    private static boolean publishEvent(final Class<? extends Event> eventType,
+                                        final Event event) {
         final String topic = eventType.getCanonicalName();
         if (SlowEvent.class.isAssignableFrom(eventType)) {
             return INSTANCE.sharePublisher.publish(event);
@@ -243,7 +243,7 @@ public class NotifyCenter {
      * @param queueMaxSize
      * @return
      */
-    public static EventPublisher registerToPublisher(final Class<? extends AbstractEvent> eventType,
+    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType,
                                                      final int queueMaxSize) {
         if (SlowEvent.class.isAssignableFrom(eventType)) {
             return INSTANCE.sharePublisher;
@@ -261,7 +261,7 @@ public class NotifyCenter {
      * @param eventType
      * @return
      */
-    public static void deregisterPublisher(final Class<? extends AbstractEvent> eventType) {
+    public static void deregisterPublisher(final Class<? extends Event> eventType) {
         final String topic = eventType.getCanonicalName();
         EventPublisher publisher = INSTANCE.publisherMap.remove(topic);
         try {

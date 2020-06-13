@@ -1,7 +1,7 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.lifecycle.Closeable;
-import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
@@ -22,10 +22,10 @@ public interface EventPublisher extends Closeable {
     /**
      * Initializes the event publisher
      *
-     * @param type {@link Class<? extends AbstractEvent>}
+     * @param type {@link Class<? extends  Event >}
      * @param bufferSize Message staging queue size
      */
-    void init(Class<? extends AbstractEvent> type, int bufferSize);
+    void init(Class<? extends Event> type, int bufferSize);
 
     /**
      * The number of currently staged events
@@ -37,30 +37,30 @@ public interface EventPublisher extends Closeable {
     /**
      * Add listener
      *
-     * @param subscribe {@link AbstractSubscriber}
+     * @param subscribe {@link Subscriber}
      */
-    void addSubscriber(AbstractSubscriber subscribe);
+    void addSubscriber(Subscriber subscribe);
 
     /**
      * Remove listener
      *
-     * @param subscriber {@link AbstractSubscriber}
+     * @param subscriber {@link Subscriber}
      */
-    void unSubscriber(AbstractSubscriber subscriber);
+    void unSubscriber(Subscriber subscriber);
 
     /**
      * publish event
      *
-     * @param event {@link AbstractEvent}
+     * @param event {@link Event}
      * @return publish event is success
      */
-    boolean publish(AbstractEvent event);
+    boolean publish(Event event);
 
     /**
      * Notify listener
      *
-     * @param subscriber {@link AbstractSubscriber}
-     * @param event {@link AbstractEvent}
+     * @param subscriber {@link Subscriber}
+     * @param event {@link Event}
      */
-    void notifySubscriber(AbstractSubscriber subscriber, AbstractEvent event);
+    void notifySubscriber(Subscriber subscriber, Event event);
 }

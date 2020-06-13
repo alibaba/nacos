@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.test.core.notify;
 
-import com.alibaba.nacos.common.notify.AbstractEvent;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
-import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.Assert;
@@ -39,9 +39,17 @@ import java.util.concurrent.atomic.AtomicLong;
 public class NotifyCenter_ITCase {
 
 	private static class TestSlowEvent extends SlowEvent {
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
 	}
 
-	private static class TestEvent extends AbstractEvent {
+	private static class TestEvent extends Event {
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
 	}
 
 	static {
@@ -57,7 +65,7 @@ public class NotifyCenter_ITCase {
 		final CountDownLatch latch = new CountDownLatch(2);
 		final AtomicInteger count = new AtomicInteger(0);
 
-        NotifyCenter.registerSubscriber(new AbstractSubscriber<TestSlowEvent>() {
+        NotifyCenter.registerSubscriber(new Subscriber<TestSlowEvent>() {
             @Override
             public void onEvent(TestSlowEvent event) {
                 try {
@@ -69,12 +77,12 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return TestSlowEvent.class;
             }
         });
 
-        NotifyCenter.registerSubscriber(new AbstractSubscriber<TestEvent>() {
+        NotifyCenter.registerSubscriber(new Subscriber<TestEvent>() {
             @Override
             public void onEvent(TestEvent event) {
                 try {
@@ -86,7 +94,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return TestEvent.class;
             }
         });
@@ -106,7 +114,7 @@ public class NotifyCenter_ITCase {
 
 	static CountDownLatch latch = new CountDownLatch(3);
 
-	static class ExpireEvent extends AbstractEvent {
+	static class ExpireEvent extends Event {
 
 		static AtomicLong sequence = new AtomicLong(3);
 
@@ -124,14 +132,14 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 
-		NotifyCenter.registerSubscriber(new AbstractSubscriber<ExpireEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<ExpireEvent>() {
             @Override
             public void onEvent(ExpireEvent event) {
                 count.incrementAndGet();
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return ExpireEvent.class;
             }
 
@@ -152,7 +160,7 @@ public class NotifyCenter_ITCase {
 
 	static CountDownLatch latch2 = new CountDownLatch(3);
 
-	static class NoExpireEvent extends AbstractEvent {
+	static class NoExpireEvent extends Event {
 
 		static AtomicLong sequence = new AtomicLong(3);
 
@@ -169,16 +177,16 @@ public class NotifyCenter_ITCase {
 		NotifyCenter.registerToPublisher(NoExpireEvent.class, 16);
 		AtomicInteger count = new AtomicInteger(0);
 
-		NotifyCenter.registerSubscriber(new AbstractSubscriber() {
+		NotifyCenter.registerSubscriber(new Subscriber() {
             @Override
-            public void onEvent(AbstractEvent event) {
+            public void onEvent(Event event) {
                 System.out.println(event);
                 count.incrementAndGet();
                 latch2.countDown();
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return NoExpireEvent.class;
             }
         });
@@ -201,9 +209,15 @@ public class NotifyCenter_ITCase {
 		public void setInfo(String info) {
 			this.info = info;
 		}
+
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
 	}
 
 	private static class SlowE2 extends SlowEvent {
+
 		private String info = "SlowE2";
 
 		public String getInfo() {
@@ -213,6 +227,11 @@ public class NotifyCenter_ITCase {
 		public void setInfo(String info) {
 			this.info = info;
 		}
+
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
 	}
 
 	@Test
@@ -225,7 +244,7 @@ public class NotifyCenter_ITCase {
 
 		String[] values = new String[] {null, null};
 
-        NotifyCenter.registerSubscriber(new AbstractSubscriber<SlowE1>() {
+        NotifyCenter.registerSubscriber(new Subscriber<SlowE1>() {
 
             @Override
             public void onEvent(SlowE1 event) {
@@ -236,12 +255,12 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return SlowE1.class;
             }
         });
 
-		NotifyCenter.registerSubscriber(new AbstractSubscriber<SlowE2>() {
+		NotifyCenter.registerSubscriber(new Subscriber<SlowE2>() {
             @Override
             public void onEvent(SlowE2 event) {
                 System.out.println(event);
@@ -250,7 +269,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends AbstractEvent> subscriberType() {
+            public Class<? extends Event> subscriberType() {
                 return SlowE2.class;
             }
         });
@@ -271,10 +290,17 @@ public class NotifyCenter_ITCase {
 
 	static class SmartSlowEvent1 extends SlowEvent{
 
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
     }
 
     static class SmartSlowEvent2 extends SlowEvent{
-
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
+        }
     }
 
     @Test
@@ -292,7 +318,7 @@ public class NotifyCenter_ITCase {
 
         NotifyCenter.registerSubscriber(new SmartSubscriber() {
             @Override
-            public boolean canNotify(AbstractEvent event) {
+            public boolean canNotify(Event event) {
                 if (event instanceof SmartSlowEvent1) {
                     return true;
                 }
@@ -301,7 +327,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public void onEvent(AbstractEvent event) {
+            public void onEvent(Event event) {
                 if (event instanceof SmartSlowEvent1) {
                     count1.incrementAndGet();
                     latch1.countDown();

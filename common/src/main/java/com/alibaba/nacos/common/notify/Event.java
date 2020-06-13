@@ -7,14 +7,13 @@ import java.io.Serializable;
  *
  * @author zongtanghu
  */
-public abstract class AbstractEvent implements Serializable {
+@SuppressWarnings("all")
+public abstract class Event implements Serializable {
 
     /**
      * Event sequence number, which can be used to handle the sequence of events
      *
      * @return sequence num, It's best to make sure it's monotone
      */
-    public long sequence() {
-        return System.currentTimeMillis();
-    }
+    public abstract long sequence();
 }

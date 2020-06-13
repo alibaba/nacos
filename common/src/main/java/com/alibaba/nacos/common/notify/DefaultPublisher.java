@@ -1,11 +1,8 @@
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.common.notify.listener.AbstractSubscriber;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.Objects;
-import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,24 +29,24 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     private volatile boolean initialized = false;
     private volatile boolean shutdown = false;
 
-    private Class<? extends AbstractEvent> eventType;
-    private final ConcurrentHashSet<AbstractSubscriber> subscribers = new ConcurrentHashSet<AbstractSubscriber>();
+    private Class<? extends Event> eventType;
+    private final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
     private int queueMaxSize = -1;
-    private BlockingQueue<AbstractEvent> queue;
+    private BlockingQueue<Event> queue;
     private volatile Long lastEventSequence = -1L;
     private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater.newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
 
     @Override
-    public void init(Class<? extends AbstractEvent> type, int bufferSize) {
+    public void init(Class<? extends Event> type, int bufferSize) {
         setDaemon(true);
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<AbstractEvent>(bufferSize);
+        this.queue = new ArrayBlockingQueue<Event>(bufferSize);
         start();
     }
 
-    public ConcurrentHashSet<AbstractSubscriber> getSubscribers() {
+    public ConcurrentHashSet<Subscriber> getSubscribers() {
         return subscribers;
     }
 
@@ -89,7 +86,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 if (shutdown) {
                     break;
                 }
-                final AbstractEvent event = queue.take();
+                final Event event = queue.take();
                 receiveEvent(event);
                 updater.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
             }
@@ -104,17 +101,17 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     @Override
-    public void addSubscriber(AbstractSubscriber subscriber) {
+    public void addSubscriber(Subscriber subscriber) {
         subscribers.add(subscriber);
     }
 
     @Override
-    public void unSubscriber(AbstractSubscriber subscriber) {
+    public void unSubscriber(Subscriber subscriber) {
         subscribers.remove(subscriber);
     }
 
     @Override
-    public boolean publish(AbstractEvent event) {
+    public boolean publish(Event event) {
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
@@ -143,12 +140,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         return initialized;
     }
 
-    void receiveEvent(AbstractEvent event) {
+    void receiveEvent(Event event) {
         final long currentEventSequence = event.sequence();
-        final String sourceName = event.getClass().getName();
+        final String sourceName = ClassUtils.getName(event);
 
         // Notification single event listener
-        for (AbstractSubscriber subscriber : subscribers) {
+        for (Subscriber subscriber : subscribers) {
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent()
                 && lastEventSequence > currentEventSequence) {
@@ -181,7 +178,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
 
     @Override
-    public void notifySubscriber(final AbstractSubscriber subscriber, final AbstractEvent event) {
+    public void notifySubscriber(final Subscriber subscriber, final Event event) {
 
         LOGGER.debug("[NotifyCenter] the {} will received by {}", event,
             subscriber);

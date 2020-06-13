@@ -1,7 +1,7 @@
 package com.alibaba.nacos.common.notify.listener;
 
 
-import com.alibaba.nacos.common.notify.AbstractEvent;
+import com.alibaba.nacos.common.notify.Event;
 
 /**
  * Subscribers to multiple events can be listened to
@@ -11,18 +11,18 @@ import com.alibaba.nacos.common.notify.AbstractEvent;
  *
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class SmartSubscriber extends AbstractSubscriber {
+public abstract class SmartSubscriber extends Subscriber {
 
     /**
      * Determines if the processing message is acceptable
      *
-     * @param event {@link AbstractEvent}
+     * @param event {@link Event}
      * @return Determines if the processing message is acceptable
      */
-    public abstract boolean canNotify(AbstractEvent event);
+    public abstract boolean canNotify(Event event);
 
     @Override
-    public final Class<? extends AbstractEvent> subscriberType() {
+    public final Class<? extends Event> subscriberType() {
         return null;
     }
 
