@@ -12,6 +12,8 @@
  */
 package com.alibaba.nacos.config.server.service.datasource;
 
+import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -90,11 +92,11 @@ public class ExternalDataSourceProperties {
             HikariDataSource ds = new HikariDataSource();
             ds.setDriverClassName(JDBC_DRIVER_NAME);
             ds.setJdbcUrl(url.get(index).trim());
-            ds.setUsername(defaultIfNull(user, index, user.get(0)).trim());
-            ds.setPassword(defaultIfNull(password, index, password.get(0)).trim());
+            ds.setUsername(getOrDefault(user, index, user.get(0)).trim());
+            ds.setPassword(getOrDefault(password, index, password.get(0)).trim());
             ds.setConnectionTimeout(CONNECTION_TIMEOUT_MS);
-            ds.setMaximumPoolSize(defaultIfNull(maxPoolSize, index, DEFAULT_MAX_POOL_SIZE));
-            ds.setMinimumIdle(defaultIfNull(minIdle, index, DEFAULT_MINIMUM_IDLE));
+            ds.setMaximumPoolSize(getOrDefault(maxPoolSize, index, DEFAULT_MAX_POOL_SIZE));
+            ds.setMinimumIdle(getOrDefault(minIdle, index, DEFAULT_MINIMUM_IDLE));
             // Check the connection pool every 10 minutes
             ds.setValidationTimeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT));
             ds.setConnectionTestQuery(TEST_QUERY);
@@ -105,21 +107,14 @@ public class ExternalDataSourceProperties {
         return dataSources;
     }
 
-    static <T> T defaultIfNull(List<T> collection, int index, T defaultValue) {
-        try {
-            return collection.get(index);
-        } catch (IndexOutOfBoundsException e) {
-            return defaultValue;
-        }
-    }
 
-    interface Callback<T> {
+    interface Callback<DataSource> {
 
         /**
          *  Perform custom logic
-         * @param t
+         * @param dataSource
          */
-        void accept(T t);
+        void accept(DataSource dataSource);
     }
 
 }
