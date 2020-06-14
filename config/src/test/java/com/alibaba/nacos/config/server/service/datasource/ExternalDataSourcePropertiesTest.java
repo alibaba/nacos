@@ -31,7 +31,7 @@ public class ExternalDataSourcePropertiesTest {
     public static final String USERNAME = "nacos_devtest";
 
     @Test
-    public void external_datasource_normaly() {
+    public void external_datasource_normally() {
         HikariDataSource expectedDataSource = new HikariDataSource();
         expectedDataSource.setJdbcUrl(JDBC_URL);
         expectedDataSource.setUsername(USERNAME);
