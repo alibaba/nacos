@@ -209,17 +209,17 @@ public class StartingSpringApplicationRunListener
 	}
 
 	private void logStarting() {
-//		if (!ApplicationUtils.getStandaloneMode()) {
-//
-//			scheduledExecutorService = ExecutorFactory
-//					.newSingleScheduledExecutorService(getClass().getCanonicalName(),
-//							new NameThreadFactory("nacos-starting"));
-//
-//			scheduledExecutorService.scheduleWithFixedDelay(() -> {
-//				if (starting) {
-//					LOGGER.info("Nacos is starting...");
-//				}
-//			}, 1, 1, TimeUnit.SECONDS);
-//		}
+		if (!ApplicationUtils.getStandaloneMode()) {
+
+			scheduledExecutorService = ExecutorFactory
+					.newSingleScheduledExecutorService(getClass().getCanonicalName(),
+							new NameThreadFactory("nacos-starting"));
+
+			scheduledExecutorService.scheduleWithFixedDelay(() -> {
+				if (starting) {
+					LOGGER.info("Nacos is starting...");
+				}
+			}, 1, 1, TimeUnit.SECONDS);
+		}
 	}
 }

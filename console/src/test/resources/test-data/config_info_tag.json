@@ -1,6 +1,6 @@
 {
     "dataId": "userService",
-    "groupId": "userGroup",
+    "groupId": "DEFAULT_GROUP",
     "tenantId": "1",
     "tagId": "1",
     "appName": "userService",

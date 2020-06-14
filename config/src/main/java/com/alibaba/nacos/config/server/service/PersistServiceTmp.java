@@ -108,6 +108,7 @@ public class PersistServiceTmp {
             .map(s -> {
                 ConfigInfoBase configInfoBase = new ConfigInfoBase();
                 BeanUtils.copyProperties(s, configInfoBase);
+                configInfoBase.setGroup(s.getGroupId());
                 return configInfoBase;
             }).orElse(null);
     }
@@ -402,16 +403,16 @@ public class PersistServiceTmp {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
         if (StringUtils.isNotBlank(dataId)) {
-            qConfigInfoTag.dataId.eq(dataId);
+            booleanBuilder.and(qConfigInfoTag.dataId.eq(dataId));
         }
         if (StringUtils.isNotBlank(group)) {
-            qConfigInfoTag.groupId.eq(group);
+            booleanBuilder.and(qConfigInfoTag.groupId.eq(group));
         }
         if (StringUtils.isNotBlank(tenant)) {
-            qConfigInfoTag.tenantId.eq(tenant);
+            booleanBuilder.and(qConfigInfoTag.tenantId.eq(tenant));
         }
         if (StringUtils.isNotBlank(tag)) {
-            qConfigInfoTag.tagId.eq(tag);
+            booleanBuilder.and(qConfigInfoTag.tagId.eq(tag));
         }
         return configInfoTagRepository.findOne(booleanBuilder)
             .orElseThrow(() -> new RuntimeException("find configInfoTag data null"));
@@ -439,7 +440,7 @@ public class PersistServiceTmp {
             booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
         }
         return configInfoRepository.findOne(booleanBuilder)
-            .orElseThrow(() -> new RuntimeException("find configInfo data null"));
+            .orElse(null);
     }
 
     /**
@@ -1110,8 +1111,10 @@ public class PersistServiceTmp {
         int pageCount = (int) Math.ceil(totalCount * 1.0 / pageSize);
         List<ConfigInfo> allConfigInfo = new ArrayList<ConfigInfo>();
         for (int pageNo = 0; pageNo <= pageCount; pageNo++) {
-            Iterable<ConfigInfo> iterable = configInfoRepository.findAll(new BooleanBuilder(), PageRequest.of(pageNo, pageSize));
-            allConfigInfo.addAll(((List<ConfigInfo>) iterable));
+            Page<ConfigInfo> page = configInfoRepository.findAll(new BooleanBuilder(), PageRequest.of(pageNo, pageSize));
+            if (!page.getContent().isEmpty()) {
+                allConfigInfo.addAll(page.getContent());
+            }
         }
         return allConfigInfo;
     }
@@ -1265,7 +1268,7 @@ public class PersistServiceTmp {
         QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
         Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.opType.eq("D")
             .and(qHisConfigInfo.gmtModified.goe(startTime))
-            .and(qHisConfigInfo.gmtModified.loe(startTime)));
+            .and(qHisConfigInfo.gmtModified.loe(endTime)));
         return ((List<HisConfigInfo>) iterable);
     }
 
