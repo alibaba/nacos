@@ -42,6 +42,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -107,7 +108,12 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public boolean publishConfig(String dataId, String group, String content) throws NacosException {
-        return publishConfigInner(namespace, dataId, group, null, null, null, content);
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, null);
+    }
+
+    @Override
+    public boolean publishConfig(String dataId, String group, String content, Map<String, Object> extendFields) throws NacosException {
+        return publishConfigInner(namespace, dataId, group, null, null, null, content, extendFields);
     }
 
     @Override
@@ -209,7 +215,7 @@ public class NacosConfigService implements ConfigService {
     }
 
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
-                                       String betaIps, String content) throws NacosException {
+                                       String betaIps, String content, Map<String, Object> extendFields) throws NacosException {
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
 
@@ -240,6 +246,13 @@ public class NacosConfigService implements ConfigService {
         if (StringUtils.isNotEmpty(tag)) {
             params.add("tag");
             params.add(tag);
+        }
+        if (extendFields != null) {
+            Object type = extendFields.get("type");
+            if (type != null && StringUtils.isNotEmpty(String.valueOf(type))) {
+                params.add("type");
+                params.add(String.valueOf(type));
+            }
         }
 
         List<String> headers = new ArrayList<String>();

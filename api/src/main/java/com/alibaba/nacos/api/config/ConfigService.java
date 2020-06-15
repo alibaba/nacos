@@ -17,6 +17,7 @@ package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import java.util.Map;
 
 /**
  * Config Service Interface
@@ -78,6 +79,19 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
+
+    /**
+     * Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param extendFields Non-required extended fields
+     * @return Whether publish
+     * @throws NacosException NacosException
+     * @see #publishConfig(String, String, String)
+     */
+    boolean publishConfig(String dataId, String group, String content, Map<String, Object> extendFields) throws NacosException;
 
     /**
      * Remove config
