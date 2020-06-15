@@ -84,7 +84,7 @@ class ConfigurationManagement extends React.Component {
       value: '',
       visible: false,
       total: 0,
-      pageSize: 10,
+      pageSize: getParams('pageSize') ? getParams('pageSize') : 10,
       currentPage: 1,
       dataSource: [],
       fieldValue: [],
@@ -252,15 +252,21 @@ class ConfigurationManagement extends React.Component {
     }
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
+    const prePageNo = getParams('pageNo');
+    const prePageSize = getParams('pageSize');
+    this.pageNo = prePageNo ? prePageNo : pageNo;
+    this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
     const params = {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
       config_tags: this.state.config_tags.join(','),
-      pageNo,
-      pageSize: this.state.pageSize,
+      pageNo: prePageNo ? prePageNo : pageNo,
+      pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
     };
+    setParams('pageSize', null);
+    setParams('pageNo', null);
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
       params.search = 'blur';
     } else {
@@ -514,7 +520,7 @@ class ConfigurationManagement extends React.Component {
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&searchDataId=${
         this.dataId
-      }&searchGroup=${this.group}`
+      }&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${this.pageNo}`
     );
   }
 
@@ -526,7 +532,9 @@ class ConfigurationManagement extends React.Component {
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&edasAppId=${
         this.edasAppId
-      }&searchDataId=${this.dataId}&searchGroup=${this.group}`
+      }&searchDataId=${this.dataId}&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${
+        this.pageNo
+      }`
     );
   }
 
