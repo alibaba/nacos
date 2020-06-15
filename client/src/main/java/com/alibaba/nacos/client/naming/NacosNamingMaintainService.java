@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
 import java.util.Properties;
