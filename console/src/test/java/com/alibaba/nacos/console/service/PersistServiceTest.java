@@ -604,7 +604,24 @@ public class PersistServiceTest extends BaseTest {
     //
     @Test
     public void findChangeConfigTest() {
-        List<ConfigInfo> list = persistService.findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(7)), Timestamp.from(Instant.now()));
+
+        Timestamp startTime;
+        Timestamp endTime;
+        List<ConfigInfo> result = (List<ConfigInfo>) configInfoRepository.findAll();
+        if (CollectionUtils.isEmpty(result)) {
+            configInfoRepository.save(configInfo);
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+            }
+            startTime = new Timestamp(configInfo.getGmtModified().getTime());
+            endTime = new Timestamp(configInfo.getGmtModified().getTime());
+        } else {
+            startTime = new Timestamp(result.get(0).getGmtModified().getTime());
+            endTime = new Timestamp(result.get(0).getGmtModified().getTime());
+        }
+
+        List<ConfigInfo> list = persistService.findChangeConfig(startTime, endTime);
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }

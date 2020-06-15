@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.PermissionPersistServiceTmp;
 import com.alibaba.nacos.config.server.modules.entity.Permissions;
+import com.alibaba.nacos.config.server.modules.entity.QPermissions;
+import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,9 +49,18 @@ public class PermissionPersistServiceTest extends BaseTest {
     @Autowired
     private PermissionPersistServiceTmp permissionPersistServiceTmp;
 
+    @Autowired
+    private PermissionsRepository permissionsRepository;
 
     @Test
     public void getPermissionsTest() {
+        QPermissions qPermissions = QPermissions.permissions;
+        Permissions result = permissionsRepository.findOne(qPermissions.role.eq(permissions.getRole()))
+            .orElse(null);
+        if (result == null){
+            addPermissionTest();
+        }
+
         Page<Permissions> page = permissionPersistServiceTmp.getPermissions(permissions.getRole(), 0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);

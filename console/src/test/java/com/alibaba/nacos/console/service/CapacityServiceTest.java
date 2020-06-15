@@ -17,9 +17,9 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
-import com.alibaba.nacos.config.server.modules.entity.Capacity;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
-import com.alibaba.nacos.config.server.modules.entity.TenantCapacity;
+import com.alibaba.nacos.config.server.modules.entity.*;
+import com.alibaba.nacos.config.server.modules.repository.GroupCapacityRepository;
+import com.alibaba.nacos.config.server.modules.repository.TenantCapacityRepository;
 import com.alibaba.nacos.config.server.service.capacity.CapacityServiceTmp;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
@@ -42,12 +42,33 @@ public class CapacityServiceTest extends BaseTest {
     @Autowired
     private CapacityServiceTmp capacityServiceTmp;
 
+    @Autowired
+    private TenantCapacityRepository tenantCapacityRepository;
+
+    @Autowired
+    private GroupCapacityRepository groupCapacityRepository;
+
     private ConfigInfo configInfo;
+
+    private TenantCapacity tenantCapacity;
+
+    private GroupCapacity groupCapacity;
 
     @Before
     public void before() {
         String data = readClassPath("test-data/config_info.json");
         configInfo = JacksonUtils.toObj(data, ConfigInfo.class);
+        String tenantCapacityStr = readClassPath("test-data/tenant_capacity.json");
+        tenantCapacity = JacksonUtils.toObj(tenantCapacityStr, TenantCapacity.class);
+        String groupCapacityStr = readClassPath("test-data/group_capacity.json");
+        groupCapacity = JacksonUtils.toObj(groupCapacityStr, GroupCapacity.class);
+
+        TenantCapacity result = tenantCapacityRepository.findOne(QTenantCapacity
+            .tenantCapacity.tenantId.eq(tenantCapacity.getTenantId())).orElse(null);
+        if (result == null) {
+            tenantCapacityRepository.save(tenantCapacity);
+        }
+
     }
 
     @Test
@@ -88,21 +109,20 @@ public class CapacityServiceTest extends BaseTest {
     }
 
     @Test
-    public void initTenantCapacity1Test() {
-        capacityServiceTmp.initTenantCapacity("testTenant", null, 10, 10, 10);
-    }
-
-
-    @Test
     public void getCapacityWithDefaultTest() {
-        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", "testTenant2");
+        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", tenantCapacity.getTenantId());
         Assert.assertNotNull(capacity);
     }
 
 
     @Test
     public void initCapacityTest() {
-        capacityServiceTmp.initCapacity("testGroup1", "");
+        GroupCapacity result = groupCapacityRepository.findOne(QGroupCapacity
+            .groupCapacity.groupId.eq(groupCapacity.getGroupId())).orElse(null);
+        if (result != null) {
+            groupCapacityRepository.delete(result);
+        }
+        capacityServiceTmp.initCapacity(groupCapacity.getGroupId(), "");
     }
 
 
@@ -124,7 +144,12 @@ public class CapacityServiceTest extends BaseTest {
 
     @Test
     public void initTenantCapacityTest() {
-        capacityServiceTmp.initTenantCapacity("testTenant1");
+        TenantCapacity result = tenantCapacityRepository.findOne(QTenantCapacity
+            .tenantCapacity.tenantId.eq(tenantCapacity.getTenantId())).orElse(null);
+        if (result != null) {
+            tenantCapacityRepository.delete(result);
+        }
+        capacityServiceTmp.initTenantCapacity(tenantCapacity.getTenantId());
     }
 
 
@@ -137,12 +162,6 @@ public class CapacityServiceTest extends BaseTest {
     @Test
     public void insertOrUpdateCapacityTest() {
         boolean result = capacityServiceTmp.insertOrUpdateCapacity("", "", 10, 10, 10, 10);
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void initGroupCapacityTest() {
-        boolean result = capacityServiceTmp.initGroupCapacity("testGroup");
         Assert.assertTrue(result);
     }
 
