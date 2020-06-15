@@ -28,30 +28,39 @@ import java.util.regex.Pattern;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public final class ValidatorUtils {
 
 	private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
 	private static final Pattern IP_MATCH = Pattern.compile("([^\\/:]+)(:\\d+)");
 
 	public static void checkInitParam(Properties properties) {
+		final String severAddrs = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+		final String endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT);
+
+		if (StringUtils.isAllBlank(severAddrs, endpoint)) {
+			throw new IllegalArgumentException("serverAddr or endpoint need to setting one");
+		}
+
 		checkServerAddr(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
 		checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
 	}
 
 	public static void checkServerAddr(String serverAddr) {
-		if (StringUtils.isEmpty(serverAddr)) {
-			throw new IllegalArgumentException("Please set the serverAddr");
-		}
-		String[] addrs;
-		if (serverAddr.contains(StringUtils.COMMA)) {
-			addrs = serverAddr.split(StringUtils.COMMA);
-		} else {
-			addrs = new String[]{serverAddr};
-		}
-		for (String addr : addrs) {
-			Matcher matcher = IP_MATCH.matcher(addr.trim());
-			if (!matcher.find()) {
-				throw new IllegalArgumentException("Incorrect serverAddr address : " + addr + ", example should like ip:port or domain:port");
+		if (StringUtils.isNotBlank(serverAddr)) {
+			String[] addrs;
+			if (serverAddr.contains(StringUtils.COMMA)) {
+				addrs = serverAddr.split(StringUtils.COMMA);
+			}
+			else {
+				addrs = new String[] { serverAddr };
+			}
+			for (String addr : addrs) {
+				Matcher matcher = IP_MATCH.matcher(addr.trim().replace("http://", "").replace("https://", ""));
+				if (!matcher.find()) {
+					throw new IllegalArgumentException(
+							"Incorrect serverAddr address : " + addr + ", example should like ip:port or domain:port");
+				}
 			}
 		}
 	}
