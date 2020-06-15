@@ -56,6 +56,15 @@ public class StringUtils {
         return true;
     }
 
+    public static boolean isAllBlank(String... strs) {
+        for (String str : strs) {
+            if (isNotBlank(str)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
     }
