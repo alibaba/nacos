@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @DependsOn("ProtocolManager")
-public class RaftPeerSet implements MemberChangeListener {
+public class RaftPeerSet extends MemberChangeListener {
 
     private final ServerMemberManager memberManager;
 
@@ -70,7 +70,7 @@ public class RaftPeerSet implements MemberChangeListener {
 
     @PostConstruct
     public void init() {
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
         changePeers(memberManager.allMembers());
     }
 

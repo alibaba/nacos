@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  *
@@ -25,6 +25,10 @@ import com.alibaba.nacos.core.notify.Event;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 @JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
+public class RaftDBErrorRecoverEvent extends SlowEvent {
 
+    @Override
+    public long sequence() {
+        return System.currentTimeMillis();
+    }
 }

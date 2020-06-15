@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class DerbyLoadEvent implements SlowEvent {
+public class DerbyLoadEvent extends SlowEvent {
 
 	public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
 
 	private static final long serialVersionUID = 875401667921565121L;
 
+    @Override
+    public long sequence() {
+        return System.currentTimeMillis();
+    }
 }

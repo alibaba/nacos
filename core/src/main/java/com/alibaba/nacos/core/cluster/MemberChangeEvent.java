@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.Event;
+
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberChangeEvent implements Event {
+public class MemberChangeEvent extends Event {
 
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
 

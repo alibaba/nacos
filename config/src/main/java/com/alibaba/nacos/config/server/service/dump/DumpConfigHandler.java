@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
@@ -25,13 +27,11 @@ import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class DumpConfigHandler implements Subscribe<ConfigDumpEvent> {
+public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
 
 	public static boolean configDump(ConfigDumpEvent event) {
 		final String dataId = event.getDataId();
@@ -144,7 +144,7 @@ public class DumpConfigHandler implements Subscribe<ConfigDumpEvent> {
 	}
 
 	@Override
-	public Class<? extends Event> subscribeType() {
+	public Class<? extends Event> subscriberType() {
 		return ConfigDumpEvent.class;
 	}
 }

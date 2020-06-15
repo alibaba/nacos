@@ -18,12 +18,12 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.Event;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ConfigDumpEvent implements Event {
+public class ConfigDumpEvent extends Event {
 
 	private static final long serialVersionUID = -8776888606458370294L;
 
@@ -131,7 +131,12 @@ public class ConfigDumpEvent implements Event {
 		return new ConfigDumpEventBuilder();
 	}
 
-	public static final class ConfigDumpEventBuilder {
+    @Override
+    public long sequence() {
+        return System.currentTimeMillis();
+    }
+
+    public static final class ConfigDumpEventBuilder {
 		private boolean remove;
 		private String namespaceId;
 		private String dataId;

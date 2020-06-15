@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.test.core.cluster;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -102,7 +102,7 @@ public class ServerMemberManager_ITCase {
 		AtomicInteger integer = new AtomicInteger(0);
 		CountDownLatch latch = new CountDownLatch(1);
 
-		NotifyCenter.registerSubscribe(new Subscribe<MemberChangeEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<MemberChangeEvent>() {
 			@Override
 			public void onEvent(MemberChangeEvent event) {
 				integer.incrementAndGet();
@@ -110,7 +110,7 @@ public class ServerMemberManager_ITCase {
 			}
 
 			@Override
-			public Class<? extends Event> subscribeType() {
+			public Class<? extends Event> subscriberType() {
 				return MemberChangeEvent.class;
 			}
 		});

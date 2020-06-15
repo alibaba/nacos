@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class MemberChangeListener extends Subscriber<MemberChangeEvent> {
 
     /**
      * return NodeChangeEvent.class info
@@ -30,7 +31,7 @@ public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
      * @return {@link MemberChangeEvent#getClass()}
      */
     @Override
-    default Class<? extends Event> subscribeType() {
+    public Class<? extends Event> subscriberType() {
         return MemberChangeEvent.class;
     }
 
@@ -40,7 +41,7 @@ public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
      * @return default value is {@link Boolean#TRUE}
      */
     @Override
-    default boolean ignoreExpireEvent() {
+    public boolean ignoreExpireEvent() {
         return true;
     }
 }

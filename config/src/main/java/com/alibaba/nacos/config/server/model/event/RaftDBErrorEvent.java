@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class RaftDBErrorEvent implements SlowEvent {
+public class RaftDBErrorEvent extends SlowEvent {
 
 	private static final long serialVersionUID = 101591819161802336L;
 
@@ -37,4 +37,9 @@ public class RaftDBErrorEvent implements SlowEvent {
 	public Throwable getEx() {
 		return ex;
 	}
+
+    @Override
+    public long sequence() {
+        return System.currentTimeMillis();
+    }
 }

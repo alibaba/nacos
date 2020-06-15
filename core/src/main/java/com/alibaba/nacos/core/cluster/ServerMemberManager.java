@@ -25,13 +25,13 @@ import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Constants;
@@ -45,7 +45,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
@@ -174,7 +173,7 @@ public class ServerMemberManager
 
 		// The address information of this node needs to be dynamically modified
 		// when registering the IP change of this node
-		NotifyCenter.registerSubscribe(new Subscribe<InetUtils.IPChangeEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<InetUtils.IPChangeEvent>() {
 			@Override
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				String oldAddress = event.getOldIp() + ":" + port;
@@ -193,7 +192,7 @@ public class ServerMemberManager
 			}
 
 			@Override
-			public Class<? extends Event> subscribeType() {
+			public Class<? extends Event> subscriberType() {
 				return InetUtils.IPChangeEvent.class;
 			}
 		});

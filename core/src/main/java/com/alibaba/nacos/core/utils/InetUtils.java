@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.SlowEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class InetUtils {
      * {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener
      */
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-    public static class IPChangeEvent implements SlowEvent {
+    public static class IPChangeEvent extends SlowEvent {
 
         private String oldIp;
         private String newIp;
@@ -70,6 +71,11 @@ public class InetUtils {
         public String toString() {
             return "IPChangeEvent{" + "oldIp='" + oldIp + '\'' + ", newIp='"
                     + newIp + '\'' + '}';
+        }
+
+        @Override
+        public long sequence() {
+            return System.currentTimeMillis();
         }
     }
 

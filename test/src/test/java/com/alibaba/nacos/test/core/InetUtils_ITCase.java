@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.test.core;
 
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class InetUtils_ITCase {
 
 		AtomicReference<String> reference = new AtomicReference<>(null);
 
-		Subscribe<InetUtils.IPChangeEvent> subscribe = new Subscribe<InetUtils.IPChangeEvent>() {
+		Subscriber<InetUtils.IPChangeEvent> subscribe = new Subscriber<InetUtils.IPChangeEvent>() {
 			@Override
 			public void onEvent(InetUtils.IPChangeEvent event) {
 				if (Objects.nonNull(event.getOldIp())) {
@@ -64,12 +64,12 @@ public class InetUtils_ITCase {
 			}
 
 			@Override
-			public Class<? extends Event> subscribeType() {
+			public Class<? extends Event> subscriberType() {
 				return InetUtils.IPChangeEvent.class;
 			}
 		};
 
-		NotifyCenter.registerSubscribe(subscribe);
+		NotifyCenter.registerSubscriber(subscribe);
 		latch.await(10_000L, TimeUnit.MILLISECONDS);
 
 		Assert.assertEquals(testIp, reference.get());
