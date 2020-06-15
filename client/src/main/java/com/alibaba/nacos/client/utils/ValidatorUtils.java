@@ -33,16 +33,8 @@ import java.util.regex.Pattern;
 public final class ValidatorUtils {
 
 	private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
-	private static final Pattern IP_MATCH = Pattern.compile("([^\\/:]+)(:\\d+)");
 
 	public static void checkInitParam(Properties properties) throws NacosException {
-		final String severAddrs = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-		final String endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT);
-
-		if (StringUtils.isAllBlank(severAddrs, endpoint)) {
-			throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "serverAddr or endpoint need to setting one");
-		}
-
 		checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
 	}
 
