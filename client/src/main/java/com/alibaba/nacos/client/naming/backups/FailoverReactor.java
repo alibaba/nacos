@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
-
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
