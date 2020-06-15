@@ -189,6 +189,9 @@ public class WatchFileCenter {
 					if (callBackExecutor.isShutdown()) {
 						return;
 					}
+                    if(events.isEmpty()) {
+                        continue;
+                    }
 					callBackExecutor.execute(new Runnable() {
 						@Override
 						public void run() {
