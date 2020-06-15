@@ -34,11 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Data replicator
  *
  * @author nkorange
+ * @author pengzhengfa
  * @since 1.0.0
  */
 @Component
@@ -50,12 +52,14 @@ public class DataSyncer {
     private final Serializer serializer;
     private final DistroMapper distroMapper;
     private final ServerMemberManager memberManager;
-
+    private final int firstRetryCount = 1;
+    private final int maxRetryCount = 10;
+    private AtomicInteger requestCount = new AtomicInteger(0);
     private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
 
     public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig,
-            Serializer serializer, DistroMapper distroMapper,
-            ServerMemberManager memberManager) {
+                      Serializer serializer, DistroMapper distroMapper,
+                      ServerMemberManager memberManager) {
         this.dataStore = dataStore;
         this.partitionConfig = partitionConfig;
         this.serializer = serializer;
@@ -133,22 +137,35 @@ public class DataSyncer {
     }
 
     public void retrySync(SyncTask syncTask) {
-        Member member = new Member();
-        member.setIp(syncTask.getTargetServer().split(":")[0]);
-        member.setPort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
-        if (!getServers().contains(member)) {
-            // if server is no longer in healthy server list, ignore this task:
-            //fix #1665 remove existing tasks
-            if (syncTask.getKeys() != null) {
-                for (String key : syncTask.getKeys()) {
-                    taskMap.remove(buildKey(key, syncTask.getTargetServer()));
+        try {
+            Member member = new Member();
+            long syncRetryDelay;
+            for (int retryCount = 0; retryCount < Integer.MAX_VALUE; retryCount++) {
+                syncRetryDelay = partitionConfig.getSyncRetryDelay();
+                requestCount.incrementAndGet();
+                member.setIp(syncTask.getTargetServer().split(":")[0]);
+                member.setPort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
+                if (!getServers().contains(member)) {
+                    // if server is no longer in healthy server list, ignore this task:
+                    //fix #1665 remove existing tasks
+                    if (syncTask.getKeys() != null) {
+                        for (String key : syncTask.getKeys()) {
+                            taskMap.remove(buildKey(key, syncTask.getTargetServer()));
+                        }
+                    }
+                    return;
                 }
+                if (requestCount.get() != firstRetryCount) {
+                    syncRetryDelay = partitionConfig.getSyncRetryDelay() * retryCount;
+                }
+                if (requestCount.get() == maxRetryCount) {
+                    throw new RuntimeException("You have retried too many times, please contact the system operation and maintenance personnel.");
+                }
+                submit(syncTask, syncRetryDelay);
             }
-            return;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // TODO may choose other retry policy.
-        submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 
     public void startTimedSync() {
