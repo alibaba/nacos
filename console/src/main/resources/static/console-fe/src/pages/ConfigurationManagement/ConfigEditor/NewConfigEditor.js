@@ -318,8 +318,17 @@ class ConfigEditor extends React.Component {
     const namespace = getParams('namespace');
     const group = getParams('searchGroup') || '';
     const dataId = getParams('searchDataId') || '';
+    const pageSize = getParams('pageSize');
+    const pageNo = getParams('pageNo');
     this.props.history.push(
-      generateUrl('/configurationManagement', { serverId, group, dataId, namespace })
+      generateUrl('/configurationManagement', {
+        serverId,
+        group,
+        dataId,
+        namespace,
+        pageSize,
+        pageNo,
+      })
     );
   }
 
