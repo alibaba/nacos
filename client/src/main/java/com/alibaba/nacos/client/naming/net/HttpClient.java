@@ -18,8 +18,8 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.net.HttpHeaders;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -130,9 +130,9 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
         HttpResult httpResult = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
-        
+
         //InputStream from HttpURLConnection can be closed automatically,but new GZIPInputStream can't be closed automatically
-        //so needs to close it manually 
+        //so needs to close it manually
         if (inputStream instanceof GZIPInputStream) {
             inputStream.close();
         }

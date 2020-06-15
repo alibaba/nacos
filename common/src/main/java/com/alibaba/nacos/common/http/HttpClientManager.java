@@ -20,8 +20,8 @@ import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
 import com.alibaba.nacos.common.http.client.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -61,7 +61,7 @@ public class HttpClientManager {
 
 
 	static {
-		ShutdownUtils.addShutdownHook(new Runnable() {
+        ThreadUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
 				shutdown();
