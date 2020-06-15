@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Properties;
@@ -25,22 +27,36 @@ public class ValidatorUtilsTest {
 
 	@Test
 	public void test_init_properties_only_serverAddr() {
-		Properties properties = new Properties();
-		properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-		ValidatorUtils.checkInitParam(properties);
+		try {
+			Properties properties = new Properties();
+			properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+			ValidatorUtils.checkInitParam(properties);
+		} catch (NacosException ex) {
+			Assert.fail();
+		}
 	}
 
 	@Test
 	public void test_init_properties_only_endpoint() {
-		Properties properties = new Properties();
-		properties.setProperty(PropertyKeyConst.ENDPOINT, "http://127.0.0.1:8848");
-		ValidatorUtils.checkInitParam(properties);
+		try {
+			Properties properties = new Properties();
+			properties.setProperty(PropertyKeyConst.ENDPOINT, "http://127.0.0.1:8848");
+			ValidatorUtils.checkInitParam(properties);
+		} catch (NacosException ex) {
+			Assert.fail();
+		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void test_init_properties_illegal() {
-		Properties properties = new Properties();
-		ValidatorUtils.checkInitParam(properties);
+		try {
+			Properties properties = new Properties();
+			ValidatorUtils.checkInitParam(properties);
+		} catch (NacosException ex) {
+			Assert.assertEquals(NacosException.CLIENT_INVALID_PARAM, ex.getErrCode());
+		} catch (Throwable ex) {
+			Assert.fail();
+		}
 	}
 
 	@Test
@@ -77,52 +93,6 @@ public class ValidatorUtilsTest {
 	public void test_context_path_illegal_4() {
 		String contextPath4 = "//";
 		ValidatorUtils.checkContextPath(contextPath4);
-	}
-
-	@Test
-	public void test_server_addr() {
-		String serverAddr = "http://127.0.0.1:8848";
-		ValidatorUtils.checkServerAddr(serverAddr);
-		String serverAddrs = "https://127.0.0.1:8848,https://127.0.0.1:80,https://127.0.0.1:8809";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test
-	public void test_server_addr_k8s() {
-		String serverAddr = "https://busybox-1.busybox-subdomain.default.svc.cluster.local:80";
-		ValidatorUtils.checkServerAddr(serverAddr);
-		String serverAddrs = "busybox-1.busybox-subdomain.default.svc.cluster.local:80,busybox-1.busybox-subdomain.default.svc.cluster.local:8111, busybox-1.busybox-subdomain.default.svc.cluster.local:8098";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_err() {
-		String serverAddr = "127.0.0.1";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_illegal_err() {
-		String serverAddr = "127.0.0.1:";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addrs_err() {
-		String serverAddrs = "127.0.0.1:8848,127.0.0.1,127.0.0.1:8809";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_k8s_err() {
-		String serverAddr = "busybox-1.busybox-subdomain.default.svc.cluster.local";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addrs_k8s_err() {
-		String serverAddrs = "busybox-1.busybox-subdomain.default.svc.cluster.local,busybox-1.busybox-subdomain.default.svc.cluster.local:8111, busybox-1.busybox-subdomain.default.svc.cluster.local:8098";
-		ValidatorUtils.checkServerAddr(serverAddrs);
 	}
 
 }
