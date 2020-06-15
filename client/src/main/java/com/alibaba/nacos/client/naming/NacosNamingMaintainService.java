@@ -48,17 +48,17 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private NamingProxy serverProxy;
 
-    public NacosNamingMaintainService(String serverList) {
+    public NacosNamingMaintainService(String serverList) throws NacosException  {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
         init(properties);
     }
 
-    public NacosNamingMaintainService(Properties properties) {
+    public NacosNamingMaintainService(Properties properties) throws NacosException  {
         init(properties);
     }
 
-    private void init(Properties properties) {
+    private void init(Properties properties) throws NacosException  {
         ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();

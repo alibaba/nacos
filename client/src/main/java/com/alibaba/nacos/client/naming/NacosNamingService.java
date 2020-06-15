@@ -73,17 +73,17 @@ public class NacosNamingService implements NamingService {
 
     private NamingProxy serverProxy;
 
-    public NacosNamingService(String serverList) {
+    public NacosNamingService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
         init(properties);
     }
 
-    public NacosNamingService(Properties properties) {
+    public NacosNamingService(Properties properties) throws NacosException  {
         init(properties);
     }
 
-    private void init(Properties properties) {
+    private void init(Properties properties) throws NacosException  {
         ValidatorUtils.checkInitParam(properties);
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
