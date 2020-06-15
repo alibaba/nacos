@@ -94,8 +94,8 @@ public class NacosNamingService implements NamingService {
         this.eventDispatcher = new EventDispatcher();
         this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
-        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, this.cacheDir, isLoadCacheAtStart(properties),
-            initPollingThreadCount(properties));
+        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
+            isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -188,21 +188,10 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-
         if (instance.isEphemeral()) {
-            BeatInfo beatInfo = new BeatInfo();
-            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
-            beatInfo.setIp(instance.getIp());
-            beatInfo.setPort(instance.getPort());
-            beatInfo.setCluster(instance.getClusterName());
-            beatInfo.setWeight(instance.getWeight());
-            beatInfo.setMetadata(instance.getMetadata());
-            beatInfo.setScheduled(false);
-            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
-
+            BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
-
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
@@ -488,7 +477,7 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public void shutDown() throws NacosException{
+    public void shutDown() throws NacosException {
         beatReactor.shutdown();
         eventDispatcher.shutdown();
         hostReactor.shutdown();
