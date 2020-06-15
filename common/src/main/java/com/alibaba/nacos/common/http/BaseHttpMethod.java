@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.http.handler.RequestHandler;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.HttpMethod;
 
 import java.util.ArrayList;
@@ -28,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.NameValuePair;

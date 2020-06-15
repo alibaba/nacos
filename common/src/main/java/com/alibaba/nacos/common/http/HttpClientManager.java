@@ -20,8 +20,6 @@ import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
 import com.alibaba.nacos.common.http.client.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.utils.ShutdownUtils;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.http.client.config.RequestConfig;
