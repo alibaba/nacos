@@ -20,14 +20,15 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class HostReactor implements Closeable {
 
     private EventDispatcher eventDispatcher;
 
+    private BeatReactor beatReactor;
+
     private NamingProxy serverProxy;
 
     private FailoverReactor failoverReactor;
@@ -72,11 +75,11 @@ public class HostReactor implements Closeable {
 
     private ScheduledExecutorService executor;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
         // init executorService
         this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
@@ -88,8 +91,8 @@ public class HostReactor implements Closeable {
                 return thread;
             }
         });
-
         this.eventDispatcher = eventDispatcher;
+        this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         if (loadCacheAtStart) {
@@ -187,6 +190,7 @@ public class HostReactor implements Closeable {
 
             if (modHosts.size() > 0) {
                 changed = true;
+                updateBeatInfo(modHosts);
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(modHosts));
             }
@@ -216,6 +220,16 @@ public class HostReactor implements Closeable {
         }
 
         return serviceInfo;
+    }
+
+    private void updateBeatInfo(Set<Instance> modHosts) {
+        for (Instance instance : modHosts) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
     }
 
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
@@ -272,7 +286,6 @@ public class HostReactor implements Closeable {
     }
 
 
-
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -317,7 +330,7 @@ public class HostReactor implements Closeable {
     }
 
     @Override
-    public void shutdown() throws NacosException{
+    public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);

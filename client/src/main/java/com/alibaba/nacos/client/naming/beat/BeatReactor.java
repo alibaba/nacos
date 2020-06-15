@@ -87,7 +87,20 @@ public class BeatReactor implements Closeable {
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    private String buildKey(String serviceName, String ip, int port) {
+    public BeatInfo buildBeatInfo(Instance instance) {
+        BeatInfo beatInfo = new BeatInfo();
+        beatInfo.setServiceName(instance.getServiceName());
+        beatInfo.setIp(instance.getIp());
+        beatInfo.setPort(instance.getPort());
+        beatInfo.setCluster(instance.getClusterName());
+        beatInfo.setWeight(instance.getWeight());
+        beatInfo.setMetadata(instance.getMetadata());
+        beatInfo.setScheduled(false);
+        beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
+        return beatInfo;
+    }
+
+    public String buildKey(String serviceName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
