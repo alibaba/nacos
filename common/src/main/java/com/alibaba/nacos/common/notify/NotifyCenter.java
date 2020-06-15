@@ -19,7 +19,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.BiFunction;
-import com.alibaba.nacos.common.utils.ShutdownUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +93,7 @@ public class NotifyCenter {
 
         INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
 
-        ShutdownUtils.addShutdownHook(new Runnable() {
+        ThreadUtils.addShutdownHook(new Runnable() {
             @Override
             public void run() {
                 shutdown();
