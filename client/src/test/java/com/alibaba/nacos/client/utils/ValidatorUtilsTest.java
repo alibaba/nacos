@@ -16,48 +16,9 @@
 
 package com.alibaba.nacos.client.utils;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Properties;
-
 public class ValidatorUtilsTest {
-
-	@Test
-	public void test_init_properties_only_serverAddr() {
-		try {
-			Properties properties = new Properties();
-			properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-			ValidatorUtils.checkInitParam(properties);
-		} catch (NacosException ex) {
-			Assert.fail();
-		}
-	}
-
-	@Test
-	public void test_init_properties_only_endpoint() {
-		try {
-			Properties properties = new Properties();
-			properties.setProperty(PropertyKeyConst.ENDPOINT, "http://127.0.0.1:8848");
-			ValidatorUtils.checkInitParam(properties);
-		} catch (NacosException ex) {
-			Assert.fail();
-		}
-	}
-
-	@Test
-	public void test_init_properties_illegal() {
-		try {
-			Properties properties = new Properties();
-			ValidatorUtils.checkInitParam(properties);
-		} catch (NacosException ex) {
-			Assert.assertEquals(NacosException.CLIENT_INVALID_PARAM, ex.getErrCode());
-		} catch (Throwable ex) {
-			Assert.fail();
-		}
-	}
 
 	@Test
 	public void test_context_path_legal() {
