@@ -15,13 +15,19 @@
  */
 package com.alibaba.nacos.config.server.service.datasource;
 
-import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.zaxxer.hikari.HikariDataSource;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -30,18 +36,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Base data source
@@ -52,9 +53,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
 
     private static final Logger log = LoggerFactory.getLogger(
             ExternalDataSourceServiceImpl.class);
-    private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
-    private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static String JDBC_DRIVER_NAME;
+   private final static String JDBC_DRIVER_NAME="com.mysql.cj.jdbc.Driver";
 
     /**
      * JDBC执行超时时间, 单位秒
@@ -78,24 +77,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private volatile int masterIndex;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
-    static {
-        try {
-            Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
-            JDBC_DRIVER_NAME = MYSQL_HIGH_LEVEL_DRIVER;
-            log.info("Use Mysql 8 as the driver");
-        } catch (ClassNotFoundException e) {
-            log.info("Use Mysql as the driver");
-            JDBC_DRIVER_NAME = DEFAULT_MYSQL_DRIVER;
-        }
-    }
 
-    @PostConstruct
+
+    @Override
     public void init() {
         queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
         jt = new JdbcTemplate();
-        /**
-         *  设置最大记录数，防止内存膨胀
-         */
+        // Set the maximum number of records to prevent memory expansion
         jt.setMaxRows(50000);
         jt.setQueryTimeout(queryTimeout);
 
@@ -103,20 +91,18 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         testMasterJT.setQueryTimeout(queryTimeout);
 
         testMasterWritableJT = new JdbcTemplate();
-        /**
-         * 防止login接口因为主库不可用而rt太长
-         */
+        // Prevent the login interface from being too long because the main library is not available
         testMasterWritableJT.setQueryTimeout(1);
-        /**
-         * 数据库健康检测
-         */
+
+        //  Database health check
+
         testJTList = new ArrayList<JdbcTemplate>();
         isHealthList = new ArrayList<Boolean>();
 
         tm = new DataSourceTransactionManager();
         tjt = new TransactionTemplate(tm);
         /**
-         *  事务的超时时间需要与普通操作区分开
+         *  Transaction timeout needs to be distinguished from ordinary operations
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
         if (PropertyUtil.isUseExternalDB()) {
@@ -136,73 +122,20 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
 
     @Override
     public synchronized void reload() throws IOException {
-        List<HikariDataSource> dblist = new ArrayList<>();
         try {
-            String val = null;
-            val = ApplicationUtils.getProperty("db.num");
-            if (null == val) {
-                throw new IllegalArgumentException("db.num is null");
-            }
-            int dbNum = Integer.parseInt(val.trim());
-
-            for (int i = 0; i < dbNum; i++) {
-                HikariDataSource ds = new HikariDataSource();
-                ds.setDriverClassName(JDBC_DRIVER_NAME);
-
-                val = ApplicationUtils.getProperty("db.url." + i);
-                if (null == val) {
-                    fatalLog.error("db.url." + i + " is null");
-                    throw new IllegalArgumentException("db.url." + i + " is null");
-                }
-                ds.setJdbcUrl(val.trim());
-
-                val = ApplicationUtils.getProperty("db.user." + i, ApplicationUtils.getProperty("db.user"));
-                if (null == val) {
-                    fatalLog.error("db.user." + i + " is null");
-                    throw new IllegalArgumentException("db.user." + i + " is null");
-                }
-                ds.setUsername(val.trim());
-
-                val = ApplicationUtils.getProperty("db.password." + i, ApplicationUtils.getProperty("db.password"));
-                if (null == val) {
-                    fatalLog.error("db.password." + i + " is null");
-                    throw new IllegalArgumentException("db.password." + i + " is null");
-                }
-                ds.setPassword(val.trim());
-
-                val = ApplicationUtils.getProperty("db.maxPoolSize." + i, ApplicationUtils.getProperty("db.maxPoolSize"));
-                ds.setMaximumPoolSize(Integer.parseInt(defaultIfNull(val, "20")));
-
-                val = ApplicationUtils.getProperty("db.minIdle." + i, ApplicationUtils.getProperty("db.minIdle"));
-                ds.setMinimumIdle(Integer.parseInt(defaultIfNull(val, "50")));
-
-                ds.setConnectionTimeout(3000L);
-
-                // 每10分钟检查一遍连接池
-                ds.setValidationTimeout(TimeUnit.MINUTES.toMillis(10L));
-                ds.setConnectionTestQuery("SELECT 1 FROM dual");
-
-                dblist.add(ds);
-
-                JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                jdbcTemplate.setQueryTimeout(queryTimeout);
-                jdbcTemplate.setDataSource(ds);
-
-                testJTList.add(jdbcTemplate);
-                isHealthList.add(Boolean.TRUE);
-            }
-
-            if (dblist == null || dblist.size() == 0) {
-                throw new RuntimeException("no datasource available");
-            }
-
-            dataSourceList = dblist;
+            dataSourceList = new ExternalDataSourceProperties()
+                .build(ApplicationUtils.getEnvironment(), (dataSource) -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setQueryTimeout(queryTimeout);
+                    jdbcTemplate.setDataSource(dataSource);
+                    testJTList.add(jdbcTemplate);
+                    isHealthList.add(Boolean.TRUE);
+                });
             new SelectMasterTask().run();
             new CheckDBHealthTask().run();
         } catch (RuntimeException e) {
             fatalLog.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
-        } finally {
         }
     }
 
@@ -210,9 +143,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     public boolean checkMasterWritable() {
 
         testMasterWritableJT.setDataSource(jt.getDataSource());
-        /**
-         *  防止login接口因为主库不可用而rt太长
-         */
+        // Prevent the login interface from being too long because the main library is not available
         testMasterWritableJT.setQueryTimeout(1);
         String sql = " SELECT @@read_only ";
 
@@ -255,13 +186,11 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         for (int i = 0; i < isHealthList.size(); i++) {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
-                    /**
-                     * 主库不健康
-                     */
+                    // The master is unhealthy
                     return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 } else {
                     /**
-                     * 从库不健康
+                     * The slave  is unhealthy
                      */
                     return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 }

@@ -212,4 +212,25 @@ public final class CollectionUtils {
 		return !CollectionUtils.isEmpty(coll);
 	}
 
+    /**
+     * Returns the value to which the specified index , or {@code defaultValue} if this collection contains no value for
+     * the index.
+     *
+     * @param coll
+     *            the collection to get a value from
+     * @param index
+     *            the index to get
+     * @param defaultValue
+     * @param <T>
+     * @return the value to which the specified index , or {@code defaultValue} if this collection contains no value for
+     *         the index.
+     */
+    public static <T> T getOrDefault(Collection<T> coll, int index, T defaultValue) {
+        try {
+
+            return (T)get(coll, index);
+        } catch (IndexOutOfBoundsException e) {
+            return defaultValue;
+        }
+    }
 }
