@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * MetricsHttpAgent
+ *
+ * @author Nacos
+ */
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,6 +34,7 @@ import java.util.List;
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
+
     private HttpAgent httpAgent;
 
     public MetricsHttpAgent(HttpAgent httpAgent) {
@@ -107,6 +113,11 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public String getEncode() {
         return httpAgent.getEncode();
+    }
+
+    @Override
+    public void shutdown() throws NacosException{
+        httpAgent.shutdown();
     }
 }
 

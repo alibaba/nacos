@@ -34,7 +34,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -72,14 +72,15 @@ public class NacosConfigService implements ConfigService {
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
-            encode = Constants.ENCODE;
+            this.encode = Constants.ENCODE;
         } else {
-            encode = encodeTmp.trim();
+            this.encode = encodeTmp.trim();
         }
         initNamespace(properties);
-        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.start();
-        worker = new ClientWorker(agent, configFilterChainManager, properties);
+
+        this.agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+        this.agent.start();
+        this.worker = new ClientWorker(this.agent, this.configFilterChainManager, properties);
     }
 
     private void initNamespace(Properties properties) {
@@ -281,4 +282,9 @@ public class NacosConfigService implements ConfigService {
         }
     }
 
+    @Override
+    public void shutDown() throws NacosException{
+        agent.shutdown();
+        worker.shutdown();
+    }
 }

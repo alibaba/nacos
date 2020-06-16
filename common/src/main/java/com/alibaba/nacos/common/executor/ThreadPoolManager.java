@@ -16,7 +16,6 @@
 package com.alibaba.nacos.common.executor;
 
 
-import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -53,7 +51,7 @@ public final class ThreadPoolManager {
 
     static {
         INSTANCE.init();
-		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
+		ThreadUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
 				LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");

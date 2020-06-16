@@ -41,9 +41,9 @@ import java.util.*;
  * @date 2019/5/23 15:26
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ConfigExportAndImportAPI_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7003"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigExportAndImportAPI_CITCase {
 
     private static final long TIME_OUT = 2000;
     private static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
@@ -90,7 +90,7 @@ public class ConfigExportAndImportAPI_ITCase {
     }
 
     @After
-    public void cleanup(){
+    public void cleanup() throws Exception{
         HttpSimpleClient.HttpResult result;
         try {
             List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
@@ -119,9 +119,10 @@ public class ConfigExportAndImportAPI_ITCase {
         } catch (Exception e) {
             Assert.fail();
         }
+        agent.shutdown();
     }
 
-    @Test(timeout = 3*TIME_OUT)
+    @Test()
     public void testExportByIds(){
         String getDataUrl = "?search=accurate&dataId=&group=&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
@@ -129,8 +130,9 @@ public class ConfigExportAndImportAPI_ITCase {
         JsonNode resultConfigs = resultObj.get("pageItems");
         JsonNode config1 = resultConfigs.get(0);
         JsonNode config2 = resultConfigs.get(1);
-        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + config1.get("id").longValue()
-            + "," + config2.get("id").longValue();
+        String id1 = config1.get("id").asText();
+        String id2 = config2.get("id").asText();
+        String exportByIdsUrl = "?export=true&tenant=&group=&appName=&ids=" + id1 + "," + id2;
         System.out.println(exportByIdsUrl);
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);

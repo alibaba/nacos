@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.client.utils;
 
 import org.junit.Test;
@@ -38,52 +54,6 @@ public class ValidatorUtilsTest {
 	public void test_context_path_illegal_4() {
 		String contextPath4 = "//";
 		ValidatorUtils.checkContextPath(contextPath4);
-	}
-
-	@Test
-	public void test_server_addr() {
-		String serverAddr = "127.0.0.1:8848";
-		ValidatorUtils.checkServerAddr(serverAddr);
-		String serverAddrs = "127.0.0.1:8848,127.0.0.1:80,127.0.0.1:8809";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test
-	public void test_server_addr_k8s() {
-		String serverAddr = "busybox-1.busybox-subdomain.default.svc.cluster.local:80";
-		ValidatorUtils.checkServerAddr(serverAddr);
-		String serverAddrs = "busybox-1.busybox-subdomain.default.svc.cluster.local:80,busybox-1.busybox-subdomain.default.svc.cluster.local:8111, busybox-1.busybox-subdomain.default.svc.cluster.local:8098";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_err() {
-		String serverAddr = "127.0.0.1";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_illegal_err() {
-		String serverAddr = "127.0.0.1:";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addrs_err() {
-		String serverAddrs = "127.0.0.1:8848,127.0.0.1,127.0.0.1:8809";
-		ValidatorUtils.checkServerAddr(serverAddrs);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addr_k8s_err() {
-		String serverAddr = "busybox-1.busybox-subdomain.default.svc.cluster.local";
-		ValidatorUtils.checkServerAddr(serverAddr);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_server_addrs_k8s_err() {
-		String serverAddrs = "busybox-1.busybox-subdomain.default.svc.cluster.local,busybox-1.busybox-subdomain.default.svc.cluster.local:8111, busybox-1.busybox-subdomain.default.svc.cluster.local:8098";
-		ValidatorUtils.checkServerAddr(serverAddrs);
 	}
 
 }

@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.alibaba.nacos.client;
@@ -23,15 +21,11 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -52,6 +46,12 @@ public class ConfigTest {
 		configService = NacosFactory.createConfigService(properties);
 	}
 
+    @After
+    public void cleanup() throws Exception {
+	    configService.shutDown();
+    }
+
+	@Test
 	public static void test() throws Exception {
 		final String dataId = "lessspring";
 		final String group = "lessspring";

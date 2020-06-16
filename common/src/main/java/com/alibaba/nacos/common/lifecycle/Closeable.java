@@ -13,15 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.alibaba.nacos.common.lifecycle;
 
-package com.alibaba.nacos.config.server.filter;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * An interface is used to define the resource's close and shutdown,
+ * such as IO Connection and ThreadPool.
+ *
+ * @author zongtanghu
+ *
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ToLeader {
+public interface Closeable {
+
+    /**
+     * Shutdown the Resources, such as Thread Pool.
+     *
+     * @throws NacosException exception.
+     */
+    public void shutdown() throws NacosException;
+
 }

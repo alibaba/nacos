@@ -93,6 +93,12 @@ public abstract class DumpService {
 
 		this.dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
 		this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
+
+        this.dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllBetaTask.TASK_ID, dumpAllBetaProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
+
+
 		DynamicDataSource.getInstance().getDataSource();
 	}
 
@@ -123,6 +129,9 @@ public abstract class DumpService {
 
 			Runnable dumpAllBeta = () -> dumpAllTaskMgr
 					.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+
+            Runnable dumpAllTag = () -> dumpAllTaskMgr
+                    .addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
 
 			Runnable clearConfigHistory = () -> {
 				log.warn("clearConfigHistory start");
@@ -212,7 +221,10 @@ public abstract class DumpService {
 						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
 				ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay,
-						DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+
+                ConfigExecutor.scheduleWithFixedDelay(dumpAllTag, initialDelay,
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 			}
 
 			ConfigExecutor
