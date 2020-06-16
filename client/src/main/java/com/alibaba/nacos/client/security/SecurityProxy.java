@@ -22,12 +22,12 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -119,7 +119,7 @@ public class SecurityProxy {
             }
 
             HttpClient.HttpResult result = HttpClient.request(url, new ArrayList<String>(2),
-                params, body, Charsets.UTF_8.name(), HttpMethod.POST);
+                params, body, StandardCharsets.UTF_8.name(), HttpMethod.POST);
 
             if (result.code != HttpURLConnection.HTTP_OK) {
                 SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(result));
