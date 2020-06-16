@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;

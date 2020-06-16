@@ -16,7 +16,7 @@
 package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.HttpRestResult;

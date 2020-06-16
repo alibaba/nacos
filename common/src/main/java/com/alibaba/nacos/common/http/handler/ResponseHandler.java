@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.exception.api.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
@@ -52,7 +52,7 @@ public final class ResponseHandler {
         return JacksonUtils.toObj(inputStream, type);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes", "resource"})
+    @SuppressWarnings({"unchecked", "resource"})
     public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception {
         Header headers = response.getHeaders();
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);

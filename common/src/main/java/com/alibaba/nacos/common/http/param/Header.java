@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.common.http.param;
 
-
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.StringUtils;
 

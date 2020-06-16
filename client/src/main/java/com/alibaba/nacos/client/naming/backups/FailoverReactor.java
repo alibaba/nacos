@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.backups;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
