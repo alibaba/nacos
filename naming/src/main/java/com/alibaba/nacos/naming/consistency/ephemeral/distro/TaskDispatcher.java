@@ -28,13 +28,11 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Data sync task dispatcher
  *
  * @author nkorange
- * @author pengzhengfa
  * @since 1.0.0
  */
 @Component
@@ -67,7 +65,7 @@ public class TaskDispatcher {
 
         private int index;
 
-        private AtomicInteger dataSize = new AtomicInteger(0);
+        private int dataSize = 0;
 
         private long lastDispatchTime = 0L;
 
@@ -108,15 +106,14 @@ public class TaskDispatcher {
                         continue;
                     }
 
-                    if (dataSize.get() == 0) {
+                    if (dataSize == 0) {
                         keys = new ArrayList<>();
                     }
 
                     keys.add(key);
+                    dataSize++;
 
-                    dataSize.incrementAndGet();
-
-                    if (dataSize.get() == partitionConfig.getBatchSyncKeyCount() ||
+                    if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
                         for (Member member : dataSyncer.getServers()) {
@@ -134,7 +131,7 @@ public class TaskDispatcher {
                             dataSyncer.submit(syncTask, 0);
                         }
                         lastDispatchTime = System.currentTimeMillis();
-                        dataSize.set(0);
+                        dataSize = 0;
                     }
 
                 } catch (Exception e) {
