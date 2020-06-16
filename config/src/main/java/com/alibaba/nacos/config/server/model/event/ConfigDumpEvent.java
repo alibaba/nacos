@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -25,7 +27,11 @@ public class ConfigDumpEvent extends Event {
 
 	private static final long serialVersionUID = -8776888606458370294L;
 
-	private boolean remove;
+    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+
+    private long no = SEQUENCE.getAndIncrement();
+
+    private boolean remove;
 	private String namespaceId;
 	private String dataId;
 	private String group;
@@ -131,7 +137,7 @@ public class ConfigDumpEvent extends Event {
 
     @Override
     public long sequence() {
-        return System.currentTimeMillis();
+        return no;
     }
 
     public static final class ConfigDumpEventBuilder {

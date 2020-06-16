@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +47,9 @@ public class InetUtils {
      */
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class IPChangeEvent extends SlowEvent {
+
+        private static final AtomicLong SEQUENCE = new AtomicLong(0);
+        private long no = SEQUENCE.getAndIncrement();
 
         private String oldIp;
         private String newIp;
@@ -75,7 +78,7 @@ public class InetUtils {
 
         @Override
         public long sequence() {
-            return System.currentTimeMillis();
+            return no;
         }
     }
 
