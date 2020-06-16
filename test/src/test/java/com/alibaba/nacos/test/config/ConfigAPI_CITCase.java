@@ -396,6 +396,8 @@ public class ConfigAPI_CITCase {
             }
         };
         iconfig.addListener(dataId, group, ml);
+        ThreadUtils.sleep(3000);
+
         result = iconfig.publishConfig(dataId, group, newContent);
         Assert.assertTrue(result);
         // Get enough sleep to ensure that the monitor is triggered only once

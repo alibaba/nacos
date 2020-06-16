@@ -66,30 +66,42 @@ public class NotifyCenter {
         String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
         SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
 
-        final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
-        Iterator<EventPublisher> iterator = loader.iterator();
+        BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
 
-        if (iterator.hasNext()) {
-            BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
-                @Override
-                public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
-                    loader.reload();
-                    EventPublisher publisher = ServiceLoader.load(EventPublisher.class).iterator().next();
+            Class<? extends EventPublisher> clazz;
+
+            @Override
+            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
+                try {
+                    if (clazz == null) {
+                        synchronized(this) {
+                            if (clazz == null) {
+                                // Load Class by serviceLoader.
+                                clazz = loadClass();
+                            }
+                        }
+                    }
+                    EventPublisher publisher = clazz.newInstance();
                     publisher.init(cls, buffer);
                     return publisher;
-                }
-            };
-        } else {
-            BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
-                @Override
-                public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
-                    EventPublisher publisher = new DefaultPublisher();
-                    publisher.init(cls, buffer);
-                    return publisher;
-                }
-            };
-        }
 
+                }catch (Exception ex) {
+                    LOGGER.error("Service class newInstance has error : {}", ex);
+                }
+
+                return null;
+            }
+
+            private Class<? extends EventPublisher> loadClass() {
+                final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
+                Iterator<EventPublisher> iterator = loader.iterator();
+                if(iterator.hasNext()){
+                    return iterator.next().getClass();
+                }else{
+                    return DefaultPublisher.class;
+                }
+            }
+        };
 
         INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
 
