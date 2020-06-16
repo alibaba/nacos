@@ -40,6 +40,11 @@ public final class ClassUtils {
 		return obj.getClass().getCanonicalName();
 	}
 
+	public static boolean isAssignableFrom(Class clazz, Class cls) {
+        Objects.requireNonNull(cls, "cls");
+        return clazz.isAssignableFrom(cls);
+    }
+
 	public static String getSimplaName(Object obj) {
 		Objects.requireNonNull(obj, "obj");
 		return obj.getClass().getSimpleName();

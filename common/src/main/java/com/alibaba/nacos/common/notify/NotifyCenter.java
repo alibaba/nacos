@@ -19,6 +19,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.BiFunction;
+import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ public class NotifyCenter {
 
     @JustForTest
     public static EventPublisher getPublisher(Class<? extends Event> topic) {
-        if (SlowEvent.class.isAssignableFrom(topic)) {
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, topic)) {
             return INSTANCE.sharePublisher;
         }
         return INSTANCE.publisherMap.get(topic.getCanonicalName());
@@ -176,13 +177,12 @@ public class NotifyCenter {
             EventPublisher.SMART_SUBSCRIBERS.add((SmartSubscriber) consumer);
             return;
         }
-        // If the event does not require additional queue resources,
-        // go to share-publisher to reduce resource waste
-        if (SlowEvent.class.isAssignableFrom(cls)) {
+
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
             INSTANCE.sharePublisher.addSubscriber(consumer);
             return;
         }
-        final String topic = consumer.subscriberType().getCanonicalName();
+        final String topic = ClassUtils.getCanonicalName(consumer.subscriberType());
         INSTANCE.publisherMap.putIfAbsent(topic, BUILD_FACTORY.apply(cls, RING_BUFFER_SIZE));
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
@@ -200,11 +200,11 @@ public class NotifyCenter {
             EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
             return;
         }
-        if (SlowEvent.class.isAssignableFrom(cls)) {
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
             INSTANCE.sharePublisher.unSubscriber(consumer);
             return;
         }
-        final String topic = consumer.subscriberType().getCanonicalName();
+        final String topic = ClassUtils.getCanonicalName(consumer.subscriberType());
         if (INSTANCE.publisherMap.containsKey(topic)) {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
             publisher.unSubscriber(consumer);
@@ -237,8 +237,8 @@ public class NotifyCenter {
      */
     private static boolean publishEvent(final Class<? extends Event> eventType,
                                         final Event event) {
-        final String topic = eventType.getCanonicalName();
-        if (SlowEvent.class.isAssignableFrom(eventType)) {
+        final String topic = ClassUtils.getCanonicalName(eventType);
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher.publish(event);
         }
 
@@ -272,11 +272,11 @@ public class NotifyCenter {
      */
     public static EventPublisher registerToPublisher(final Class<? extends Event> eventType,
                                                      final int queueMaxSize) {
-        if (SlowEvent.class.isAssignableFrom(eventType)) {
+        if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher;
         }
 
-        final String topic = eventType.getCanonicalName();
+        final String topic = ClassUtils.getCanonicalName(eventType);
         INSTANCE.publisherMap.putIfAbsent(topic, BUILD_FACTORY.apply(eventType, queueMaxSize));
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;
@@ -289,7 +289,7 @@ public class NotifyCenter {
      * @return
      */
     public static void deregisterPublisher(final Class<? extends Event> eventType) {
-        final String topic = eventType.getCanonicalName();
+        final String topic = ClassUtils.getCanonicalName(eventType);
         EventPublisher publisher = INSTANCE.publisherMap.remove(topic);
         try {
             publisher.shutdown();

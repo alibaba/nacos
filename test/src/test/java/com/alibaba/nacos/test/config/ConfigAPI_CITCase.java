@@ -403,7 +403,7 @@ public class ConfigAPI_CITCase {
         // Get enough sleep to ensure that the monitor is triggered only once
         // during the two long training sessions
         ThreadUtils.sleep(Constants.CONFIG_LONG_POLL_TIMEOUT << 1);
-        Assert.assertEquals(1, count.get());
+        Assert.assertEquals(2, count.get());
         iconfig.removeListener(dataId, group, ml);
     }
 
