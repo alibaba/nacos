@@ -32,6 +32,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -318,18 +319,16 @@ public class HttpClient {
 
     public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
         try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
-
+            HttpClientBuilder builder = HttpClients.custom()
+                .setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
             CloseableHttpClient httpClient = builder.build();
-            HttpPut httpPut = new HttpPut(url);
 
+            HttpPut httpPut = new HttpPut(url);
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 httpPut.setHeader(entry.getKey(), entry.getValue());
             }
-
-            httpPut.setEntity(new StringEntity(new String(content, StandardCharsets.UTF_8), ContentType.create("application/json", StandardCharsets.UTF_8)));
+            httpPut.setEntity(new ByteArrayEntity(content, ContentType.APPLICATION_JSON));
 
             HttpResponse response = httpClient.execute(httpPut);
             HttpEntity entity = response.getEntity();

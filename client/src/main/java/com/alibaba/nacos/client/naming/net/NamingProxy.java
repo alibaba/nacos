@@ -17,8 +17,8 @@ package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.common.api.Constants;
-import com.alibaba.nacos.common.exception.api.NacosException;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -37,30 +37,35 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author nkorange
  */
-public class NamingProxy {
+public class NamingProxy implements Closeable {
 
     private static final int DEFAULT_SERVER_PORT = 8848;
 
@@ -86,9 +91,11 @@ public class NamingProxy {
 
     private Properties properties;
 
+    private ScheduledExecutorService executorService;
+
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
 
-        securityProxy = new SecurityProxy(properties);
+        this.securityProxy = new SecurityProxy(properties);
         this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
@@ -99,13 +106,12 @@ public class NamingProxy {
                 this.nacosDomain = serverList;
             }
         }
-
-        initRefreshTask();
+        this.initRefreshTask();
     }
 
     private void initRefreshTask() {
 
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
+        this.executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -115,7 +121,7 @@ public class NamingProxy {
             }
         });
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
+        this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 refreshSrvIfNeed();
@@ -123,7 +129,7 @@ public class NamingProxy {
         }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
+        this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 securityProxy.login(getServerList());
@@ -131,7 +137,7 @@ public class NamingProxy {
         }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
 
         refreshSrvIfNeed();
-        securityProxy.login(getServerList());
+        this.securityProxy.login(getServerList());
     }
 
     public List<String> getServerListFromEndpoint() {
@@ -197,7 +203,7 @@ public class NamingProxy {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
             namespaceId, serviceName, instance);
 
-        final Map<String, String> params = new HashMap<String, String>(9);
+        final Map<String, String> params = new HashMap<String, String>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
@@ -583,5 +589,12 @@ public class NamingProxy {
         }
     }
 
+    @Override
+    public void shutdown() throws NacosException{
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
 }
 

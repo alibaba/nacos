@@ -67,6 +67,15 @@ public class StringUtils {
         return true;
     }
 
+    public static boolean isAllBlank(String... strs) {
+        for (String str : strs) {
+            if (isNotBlank(str)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
     }
@@ -227,149 +236,8 @@ public class StringUtils {
         }
     }
 
-    public static boolean equalsIgnoreCase(String str1, String str2) {
-        if (str1 == null || str2 == null) {
-            return str1 == str2;
-        } else if (str1 == str2) {
-            return true;
-        } else if (str1.length() != str2.length()) {
-            return false;
-        } else {
-            return CharSequenceUtils.regionMatches(str1, true, 0, str2, 0, str1.length());
-        }
-    }
-
-    /**
-     * <p>Checks if none of the CharSequences are blank ("") or null and whitespace only..</p>
-     *
-     * <pre>
-     * StringUtils.isNoneBlank(null)             = false
-     * StringUtils.isNoneBlank(null, "foo")      = false
-     * StringUtils.isNoneBlank(null, null)       = false
-     * StringUtils.isNoneBlank("", "bar")        = false
-     * StringUtils.isNoneBlank("bob", "")        = false
-     * StringUtils.isNoneBlank("  bob  ", null)  = false
-     * StringUtils.isNoneBlank(" ", "bar")       = false
-     * StringUtils.isNoneBlank("foo", "bar")     = true
-     * </pre>
-     *
-     * @param css  the CharSequences to check, may be null or empty
-     * @return {@code true} if none of the CharSequences are blank or null or whitespace only
-     * @since 3.2
-     */
-    public static boolean isNoneBlank(final CharSequence... css) {
-        return !isAnyBlank(css);
-    }
-
-    /**
-     * <p>Checks if any one of the CharSequences are blank ("") or null and not whitespace only..</p>
-     *
-     * <pre>
-     * StringUtils.isAnyBlank(null)             = true
-     * StringUtils.isAnyBlank(null, "foo")      = true
-     * StringUtils.isAnyBlank(null, null)       = true
-     * StringUtils.isAnyBlank("", "bar")        = true
-     * StringUtils.isAnyBlank("bob", "")        = true
-     * StringUtils.isAnyBlank("  bob  ", null)  = true
-     * StringUtils.isAnyBlank(" ", "bar")       = true
-     * StringUtils.isAnyBlank("foo", "bar")     = false
-     * </pre>
-     *
-     * @param css  the CharSequences to check, may be null or empty
-     * @return {@code true} if any of the CharSequences are blank or null or whitespace only
-     * @since 3.2
-     */
-    public static boolean isAnyBlank(final CharSequence... css) {
-        if (ArrayUtils.isEmpty(css)) {
-            return true;
-        }
-        for (final CharSequence cs : css){
-            if (isBlank(cs)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * <p>Checks if a CharSequence is whitespace, empty ("") or null.</p>
-     *
-     * <pre>
-     * StringUtils.isBlank(null)      = true
-     * StringUtils.isBlank("")        = true
-     * StringUtils.isBlank(" ")       = true
-     * StringUtils.isBlank("bob")     = false
-     * StringUtils.isBlank("  bob  ") = false
-     * </pre>
-     *
-     * @param cs  the CharSequence to check, may be null
-     * @return {@code true} if the CharSequence is null, empty or whitespace
-     * @since 2.0
-     * @since 3.0 Changed signature from isBlank(String) to isBlank(CharSequence)
-     */
-    public static boolean isBlank(final CharSequence cs) {
-        int strLen;
-        if (cs == null || (strLen = cs.length()) == 0) {
-            return true;
-        }
-        for (int i = 0; i < strLen; i++) {
-            if (!Character.isWhitespace(cs.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * <p>Check if a CharSequence starts with a specified prefix.</p>
-     *
-     * <p>{@code null}s are handled without exceptions. Two {@code null}
-     * references are considered to be equal. The comparison is case sensitive.</p>
-     *
-     * <pre>
-     * StringUtils.startsWith(null, null)      = true
-     * StringUtils.startsWith(null, "abc")     = false
-     * StringUtils.startsWith("abcdef", null)  = false
-     * StringUtils.startsWith("abcdef", "abc") = true
-     * StringUtils.startsWith("ABCDEF", "abc") = false
-     * </pre>
-     *
-     * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
-     * @param prefix the prefix to find, may be null
-     * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or
-     *  both {@code null}
-     * @since 2.4
-     * @since 3.0 Changed signature from startsWith(String, String) to startsWith(CharSequence, CharSequence)
-     */
-    public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
-        return startsWith(str, prefix, false);
-    }
-
-    /**
-     * <p>Check if a CharSequence starts with a specified prefix (optionally case insensitive).</p>
-     *
-     * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
-     * @param prefix the prefix to find, may be null
-     * @param ignoreCase indicates whether the compare should ignore case
-     *  (case insensitive) or not.
-     * @return {@code true} if the CharSequence starts with the prefix or
-     *  both {@code null}
-     */
-    private static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
-        if (str == null || prefix == null) {
-            return str == null && prefix == null;
-        }
-        if (prefix.length() > str.length()) {
-            return false;
-        }
-        return CharSequenceUtils.regionMatches(str, ignoreCase, 0, prefix, 0, prefix.length());
-    }
-
-
-    //    The following utility functions are extracted from <link>org.apache.commons.lang3</link>
-    //    start
+    //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
+    //   start
 
     /**
      * <p>Checks if CharSequence contains a search CharSequence irrespective of case,
@@ -421,7 +289,7 @@ public class StringUtils {
      * @return whether the region matched
      */
     static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-                                 final CharSequence substring, final int start, final int length)    {
+            final CharSequence substring, final int start, final int length)    {
         if (cs instanceof String && substring instanceof String) {
             return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
         }
@@ -443,7 +311,7 @@ public class StringUtils {
 
             // The same check as in String.regionMatches():
             if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
-                && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
                 return false;
             }
         }
@@ -451,371 +319,84 @@ public class StringUtils {
         return true;
     }
 
-    //    end
-
     /**
-     * <p>Case insensitive check if a CharSequence starts with a specified prefix.</p>
+     * <p>Compares two CharSequences, returning {@code true} if they represent
+     * equal sequences of characters, ignoring case.</p>
      *
      * <p>{@code null}s are handled without exceptions. Two {@code null}
-     * references are considered to be equal. The comparison is case insensitive.</p>
+     * references are considered equal. Comparison is case insensitive.</p>
      *
      * <pre>
-     * StringUtils.startsWithIgnoreCase(null, null)      = true
-     * StringUtils.startsWithIgnoreCase(null, "abc")     = false
-     * StringUtils.startsWithIgnoreCase("abcdef", null)  = false
-     * StringUtils.startsWithIgnoreCase("abcdef", "abc") = true
-     * StringUtils.startsWithIgnoreCase("ABCDEF", "abc") = true
+     * StringUtils.equalsIgnoreCase(null, null)   = true
+     * StringUtils.equalsIgnoreCase(null, "abc")  = false
+     * StringUtils.equalsIgnoreCase("abc", null)  = false
+     * StringUtils.equalsIgnoreCase("abc", "abc") = true
+     * StringUtils.equalsIgnoreCase("abc", "ABC") = true
      * </pre>
      *
-     * @see java.lang.String#startsWith(String)
-     * @param str  the CharSequence to check, may be null
-     * @param prefix the prefix to find, may be null
-     * @return {@code true} if the CharSequence starts with the prefix, case insensitive, or
+     * @param str1  the first CharSequence, may be null
+     * @param str2  the second CharSequence, may be null
+     * @return {@code true} if the CharSequence are equal, case insensitive, or
      *  both {@code null}
-     * @since 2.4
-     * @since 3.0 Changed signature from startsWithIgnoreCase(String, String) to startsWithIgnoreCase(CharSequence, CharSequence)
+     * @since 3.0 Changed signature from equalsIgnoreCase(String, String) to equalsIgnoreCase(CharSequence, CharSequence)
      */
-    public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
-        return startsWith(str, prefix, true);
-    }
-
-    /**
-     * <p>Splits the provided text into an array, separators specified.
-     * This is an alternative to using StringTokenizer.</p>
-     *
-     * <p>The separator is not included in the returned String array.
-     * Adjacent separators are treated as one separator.
-     * For more control over the split use the StrTokenizer class.</p>
-     *
-     * <p>A {@code null} input String returns {@code null}.
-     * A {@code null} separatorChars splits on whitespace.</p>
-     *
-     * <pre>
-     * StringUtils.split(null, *)         = null
-     * StringUtils.split("", *)           = []
-     * StringUtils.split("abc def", null) = ["abc", "def"]
-     * StringUtils.split("abc def", " ")  = ["abc", "def"]
-     * StringUtils.split("abc  def", " ") = ["abc", "def"]
-     * StringUtils.split("ab:cd:ef", ":") = ["ab", "cd", "ef"]
-     * </pre>
-     *
-     * @param str  the String to parse, may be null
-     * @param separatorChars  the characters used as the delimiters,
-     *  {@code null} splits on whitespace
-     * @return an array of parsed Strings, {@code null} if null String input
-     */
-    public static String[] split(final String str, final String separatorChars) {
-        return splitWorker(str, separatorChars, -1, false);
-    }
-
-    /**
-     * Performs the logic for the {@code split} and
-     * {@code splitPreserveAllTokens} methods that return a maximum array
-     * length.
-     *
-     * @param str  the String to parse, may be {@code null}
-     * @param separatorChars the separate character
-     * @param max  the maximum number of elements to include in the
-     *  array. A zero or negative value implies no limit.
-     * @param preserveAllTokens if {@code true}, adjacent separators are
-     * treated as empty token separators; if {@code false}, adjacent
-     * separators are treated as one separator.
-     * @return an array of parsed Strings, {@code null} if null String input
-     */
-    private static String[] splitWorker(final String str, final String separatorChars, final int max, final boolean preserveAllTokens) {
-        // Performance tuned for 2.0 (JDK1.4)
-        // Direct code is quicker than StringTokenizer.
-        // Also, StringTokenizer uses isSpace() not isWhitespace()
-
-        if (str == null) {
-            return null;
-        }
-        final int len = str.length();
-        if (len == 0) {
-            return ArrayUtils.EMPTY_STRING_ARRAY;
-        }
-        final List<String> list = new ArrayList<String>();
-        int sizePlus1 = 1;
-        int i = 0, start = 0;
-        boolean match = false;
-        boolean lastMatch = false;
-        if (separatorChars == null) {
-            // Null separator means use whitespace
-            while (i < len) {
-                if (Character.isWhitespace(str.charAt(i))) {
-                    if (match || preserveAllTokens) {
-                        lastMatch = true;
-                        if (sizePlus1++ == max) {
-                            i = len;
-                            lastMatch = false;
-                        }
-                        list.add(str.substring(start, i));
-                        match = false;
-                    }
-                    start = ++i;
-                    continue;
-                }
-                lastMatch = false;
-                match = true;
-                i++;
-            }
-        } else if (separatorChars.length() == 1) {
-            // Optimise 1 character case
-            final char sep = separatorChars.charAt(0);
-            while (i < len) {
-                if (str.charAt(i) == sep) {
-                    if (match || preserveAllTokens) {
-                        lastMatch = true;
-                        if (sizePlus1++ == max) {
-                            i = len;
-                            lastMatch = false;
-                        }
-                        list.add(str.substring(start, i));
-                        match = false;
-                    }
-                    start = ++i;
-                    continue;
-                }
-                lastMatch = false;
-                match = true;
-                i++;
-            }
-        } else {
-            // standard case
-            while (i < len) {
-                if (separatorChars.indexOf(str.charAt(i)) >= 0) {
-                    if (match || preserveAllTokens) {
-                        lastMatch = true;
-                        if (sizePlus1++ == max) {
-                            i = len;
-                            lastMatch = false;
-                        }
-                        list.add(str.substring(start, i));
-                        match = false;
-                    }
-                    start = ++i;
-                    continue;
-                }
-                lastMatch = false;
-                match = true;
-                i++;
-            }
-        }
-        final boolean isMatch = match || preserveAllTokens && lastMatch;
-        if (isMatch) {
-            list.add(str.substring(start, i));
-        }
-        return list.toArray(new String[0]);
-    }
-
-    /**
-     * <p>Deletes all whitespaces from a String as defined by
-     * {@link Character#isWhitespace(char)}.</p>
-     *
-     * <pre>
-     * StringUtils.deleteWhitespace(null)         = null
-     * StringUtils.deleteWhitespace("")           = ""
-     * StringUtils.deleteWhitespace("abc")        = "abc"
-     * StringUtils.deleteWhitespace("   ab  c  ") = "abc"
-     * </pre>
-     *
-     * @param str  the String to delete whitespace from, may be null
-     * @return the String without whitespaces, <code>null</code> if null String input
-     */
-    public static String deleteWhitespace(String str) {
-        if (isEmpty(str)) {
-            return str;
-        }
-        int sz = str.length();
-        char[] chs = new char[sz];
-        int count = 0;
-        for (int i = 0; i < sz; i++) {
-            if (!Character.isWhitespace(str.charAt(i))) {
-                chs[count++] = str.charAt(i);
-            }
-        }
-        if (count == sz) {
-            return str;
-        }
-        return new String(chs, 0, count);
-    }
-
-    /**
-     * <p>Checks if String contains a search String, handling <code>null</code>.
-     * This method uses {@link String#indexOf(String)}.</p>
-     *
-     * <p>A <code>null</code> String will return <code>false</code>.</p>
-     *
-     * <pre>
-     * StringUtils.contains(null, *)     = false
-     * StringUtils.contains(*, null)     = false
-     * StringUtils.contains("", "")      = true
-     * StringUtils.contains("abc", "")   = true
-     * StringUtils.contains("abc", "a")  = true
-     * StringUtils.contains("abc", "z")  = false
-     * </pre>
-     *
-     * @param str  the String to check, may be null
-     * @param searchStr  the String to find, may be null
-     * @return true if the String contains the search String,
-     *  false if not or <code>null</code> string input
-     * @since 2.0
-     */
-    public static boolean contains(String str, String searchStr) {
-        if (str == null || searchStr == null) {
+    public static boolean equalsIgnoreCase(final CharSequence str1, final CharSequence str2) {
+        if (str1 == null || str2 == null) {
+            return str1 == str2;
+        } else if (str1 == str2) {
+            return true;
+        } else if (str1.length() != str2.length()) {
             return false;
-        }
-        return str.contains(searchStr);
-    }
-
-    // Stripping
-    //-----------------------------------------------------------------------
-    /**
-     * <p>Strips whitespace from the start and end of a String.</p>
-     *
-     * <p>This is similar to {@link #trim(String)} but removes whitespace.
-     * Whitespace is defined by {@link Character#isWhitespace(char)}.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.</p>
-     *
-     * <pre>
-     * StringUtils.strip(null)     = null
-     * StringUtils.strip("")       = ""
-     * StringUtils.strip("   ")    = ""
-     * StringUtils.strip("abc")    = "abc"
-     * StringUtils.strip("  abc")  = "abc"
-     * StringUtils.strip("abc  ")  = "abc"
-     * StringUtils.strip(" abc ")  = "abc"
-     * StringUtils.strip(" ab c ") = "ab c"
-     * </pre>
-     *
-     * @param str  the String to remove whitespace from, may be null
-     * @return the stripped String, <code>null</code> if null String input
-     */
-    public static String strip(String str) {
-        return strip(str, null);
-    }
-
-    /**
-     * <p>Strips any of a set of characters from the start and end of a String.
-     * This is similar to {@link String#trim()} but allows the characters
-     * to be stripped to be controlled.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.
-     * An empty string ("") input returns the empty string.</p>
-     *
-     * <p>If the stripChars String is <code>null</code>, whitespace is
-     * stripped as defined by {@link Character#isWhitespace(char)}.
-     * Alternatively use {@link #strip(String)}.</p>
-     *
-     * <pre>
-     * StringUtils.strip(null, *)          = null
-     * StringUtils.strip("", *)            = ""
-     * StringUtils.strip("abc", null)      = "abc"
-     * StringUtils.strip("  abc", null)    = "abc"
-     * StringUtils.strip("abc  ", null)    = "abc"
-     * StringUtils.strip(" abc ", null)    = "abc"
-     * StringUtils.strip("  abcyx", "xyz") = "  abc"
-     * </pre>
-     *
-     * @param str  the String to remove characters from, may be null
-     * @param stripChars  the characters to remove, null treated as whitespace
-     * @return the stripped String, <code>null</code> if null String input
-     */
-    public static String strip(String str, String stripChars) {
-        if (isEmpty(str)) {
-            return str;
-        }
-        str = stripStart(str, stripChars);
-        return stripEnd(str, stripChars);
-    }
-
-    /**
-     * <p>Strips any of a set of characters from the start of a String.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.
-     * An empty string ("") input returns the empty string.</p>
-     *
-     * <p>If the stripChars String is <code>null</code>, whitespace is
-     * stripped as defined by {@link Character#isWhitespace(char)}.</p>
-     *
-     * <pre>
-     * StringUtils.stripStart(null, *)          = null
-     * StringUtils.stripStart("", *)            = ""
-     * StringUtils.stripStart("abc", "")        = "abc"
-     * StringUtils.stripStart("abc", null)      = "abc"
-     * StringUtils.stripStart("  abc", null)    = "abc"
-     * StringUtils.stripStart("abc  ", null)    = "abc  "
-     * StringUtils.stripStart(" abc ", null)    = "abc "
-     * StringUtils.stripStart("yxabc  ", "xyz") = "abc  "
-     * </pre>
-     *
-     * @param str  the String to remove characters from, may be null
-     * @param stripChars  the characters to remove, null treated as whitespace
-     * @return the stripped String, <code>null</code> if null String input
-     */
-    public static String stripStart(String str, String stripChars) {
-        int strLen;
-        if (str == null || (strLen = str.length()) == 0) {
-            return str;
-        }
-        int start = 0;
-        if (stripChars == null) {
-            while ((start != strLen) && Character.isWhitespace(str.charAt(start))) {
-                start++;
-            }
-        } else if (stripChars.length() == 0) {
-            return str;
         } else {
-            while ((start != strLen) && (stripChars.indexOf(str.charAt(start)) != INDEX_NOT_FOUND)) {
-                start++;
-            }
+            return CharSequenceUtils.regionMatches(str1, true, 0, str2, 0, str1.length());
         }
-        return str.substring(start);
     }
 
-    /**
-     * <p>Strips any of a set of characters from the end of a String.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.
-     * An empty string ("") input returns the empty string.</p>
-     *
-     * <p>If the stripChars String is <code>null</code>, whitespace is
-     * stripped as defined by {@link Character#isWhitespace(char)}.</p>
-     *
-     * <pre>
-     * StringUtils.stripEnd(null, *)          = null
-     * StringUtils.stripEnd("", *)            = ""
-     * StringUtils.stripEnd("abc", "")        = "abc"
-     * StringUtils.stripEnd("abc", null)      = "abc"
-     * StringUtils.stripEnd("  abc", null)    = "  abc"
-     * StringUtils.stripEnd("abc  ", null)    = "abc"
-     * StringUtils.stripEnd(" abc ", null)    = " abc"
-     * StringUtils.stripEnd("  abcyx", "xyz") = "  abc"
-     * StringUtils.stripEnd("120.00", ".0")   = "12"
-     * </pre>
-     *
-     * @param str  the String to remove characters from, may be null
-     * @param stripChars  the set of characters to remove, null treated as whitespace
-     * @return the stripped String, <code>null</code> if null String input
-     */
-    public static String stripEnd(String str, String stripChars) {
-        int end;
-        if (str == null || (end = str.length()) == 0) {
-            return str;
+    static class CharSequenceUtils {
+
+        /**
+         * Green implementation of regionMatches.
+         *
+         * @param cs the {@code CharSequence} to be processed
+         * @param ignoreCase whether or not to be case insensitive
+         * @param thisStart the index to start on the {@code cs} CharSequence
+         * @param substring the {@code CharSequence} to be looked for
+         * @param start the index to start on the {@code substring} CharSequence
+         * @param length character length of the region
+         * @return whether the region matched
+         */
+        static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
+                                     final CharSequence substring, final int start, final int length)    {
+            if (cs instanceof String && substring instanceof String) {
+                return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
+            }
+            int index1 = thisStart;
+            int index2 = start;
+            int tmpLen = length;
+
+            while (tmpLen-- > 0) {
+                final char c1 = cs.charAt(index1++);
+                final char c2 = substring.charAt(index2++);
+
+                if (c1 == c2) {
+                    continue;
+                }
+
+                if (!ignoreCase) {
+                    return false;
+                }
+
+                // The same check as in String.regionMatches():
+                if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
+                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
-        if (stripChars == null) {
-            while ((end != 0) && Character.isWhitespace(str.charAt(end - 1))) {
-                end--;
-            }
-        } else if (stripChars.length() == 0) {
-            return str;
-        } else {
-            while ((end != 0) && (stripChars.indexOf(str.charAt(end - 1)) != INDEX_NOT_FOUND)) {
-                end--;
-            }
-        }
-        return str.substring(0, end);
     }
+
+    //   end
 }

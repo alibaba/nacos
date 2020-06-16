@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.logging;
 
-import com.alibaba.nacos.common.utils.BooleanUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -52,7 +52,7 @@ public abstract class AbstractNacosLogging {
     private boolean isDefaultConfigEnabled() {
         String property = System.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
         // The default value is true.
-        return property == null || BooleanUtils.toBoolean(property);
+        return property == null || ConvertUtils.toBoolean(property);
     }
 
     /**

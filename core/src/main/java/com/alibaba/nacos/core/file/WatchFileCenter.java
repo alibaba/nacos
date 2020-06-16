@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.ShutdownUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class WatchFileCenter {
 	private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
 	static {
-		ShutdownUtils.addShutdownHook(new Runnable() {
+        ThreadUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
 				shutdown();
@@ -189,6 +189,9 @@ public class WatchFileCenter {
 					if (callBackExecutor.isShutdown()) {
 						return;
 					}
+                    if(events.isEmpty()) {
+                        continue;
+                    }
 					callBackExecutor.execute(new Runnable() {
 						@Override
 						public void run() {

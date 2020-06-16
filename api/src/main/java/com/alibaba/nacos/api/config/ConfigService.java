@@ -105,4 +105,10 @@ public interface ConfigService {
      */
     String getServerStatus();
 
+    /**
+     * Shutdown the resource service
+     *
+     * @throws NacosException exception.
+     */
+    void shutDown() throws NacosException;
 }

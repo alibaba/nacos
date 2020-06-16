@@ -97,5 +97,4 @@ public class NacosFactory {
     public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
         return NamingMaintainFactory.createMaintainService(properties);
     }
-
 }

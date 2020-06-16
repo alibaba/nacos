@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -118,6 +121,19 @@ public final class HttpUtils {
 
     public static String decode(String str, String encode) throws UnsupportedEncodingException {
         return innerDecode(null, str, encode);
+    }
+
+    /**
+     * build URI By url and query
+     * @param url url
+     * @param query query param {@link Query}
+     * @return
+     */
+    public static URI buildUri(String url, Query query) throws URISyntaxException {
+        if (!query.isEmpty()) {
+            url = url + "?" + query.toQueryUrl();
+        }
+        return new URI(url);
     }
 
     private static String innerDecode(String pre, String now, String encode) throws UnsupportedEncodingException {

@@ -16,7 +16,6 @@
 package com.alibaba.nacos.common.utils;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 
 /**

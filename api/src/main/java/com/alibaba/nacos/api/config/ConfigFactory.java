@@ -58,5 +58,4 @@ public class ConfigFactory {
         properties.put(PropertyKeyConst.SERVER_ADDR, serverAddr);
         return createConfigService(properties);
     }
-
 }

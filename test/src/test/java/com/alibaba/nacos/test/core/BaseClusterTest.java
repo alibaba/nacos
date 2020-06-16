@@ -157,7 +157,14 @@ public class BaseClusterTest extends HttpClient4Test {
 				try {
 					System.out.println("start close : " + context);
 					context.close();
-				} catch (Exception ignore) {
+                    iconfig7.shutDown();
+                    iconfig8.shutDown();
+                    iconfig9.shutDown();
+
+                    inaming7.shutDown();
+                    inaming8.shutDown();
+                    inaming9.shutDown();
+                } catch (Exception ignore) {
 				} finally {
 					System.out.println("finished close : " + context);
 					latch.countDown();

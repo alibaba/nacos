@@ -19,8 +19,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.common.api.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
-import org.slf4j.Logger;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;

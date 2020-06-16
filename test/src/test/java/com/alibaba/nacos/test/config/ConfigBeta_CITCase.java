@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.exception.api.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,9 +42,9 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @date 2019-07-03
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ConfigBeta_ITCase {
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7002"},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigBeta_CITCase {
 
     @LocalServerPort
     private int port;
@@ -177,6 +178,8 @@ public class ConfigBeta_ITCase {
             HttpMethod.POST);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("true", response.getBody());
+
+        ThreadUtils.sleep(10_000L);
 
         ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
             Params.newParams()

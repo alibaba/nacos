@@ -38,13 +38,10 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -184,12 +181,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				addConfigTagsRelation(configId, configTags, configInfo.getDataId(),
 						configInfo.getGroup(), configInfo.getTenant());
 				insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
-				if (notify) {
-					EventDispatcher.fireEvent(
-							new ConfigDataChangeEvent(false, configInfo.getDataId(),
-									configInfo.getGroup(), configInfo.getTenant(),
-									time.getTime()));
-				}
 			}
 			catch (CannotGetJdbcConnectionException e) {
 				LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
@@ -349,10 +340,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time,
 					notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(true, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(),
-						time.getTime()));
 	}
 
 	public void insertOrUpdateTag(final ConfigInfo configInfo,
@@ -364,10 +351,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 		catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
 			updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(), tag,
-						time.getTime()));
 	}
 
 	/**
@@ -406,10 +389,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo,
 					notify);
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(),
-						time.getTime()));
 	}
 
 	/**
@@ -452,9 +431,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 				return Boolean.TRUE;
 			}
 		});
-
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant,
-				System.currentTimeMillis()));
 	}
 
 	/**
@@ -496,20 +472,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 						}
 					}
 				});
-
-		if (!CollectionUtils.isEmpty(result)) {
-			long currentTime = System.currentTimeMillis();
-			for (ConfigInfo configInfo : result) {
-				ConfigTraceService.logPersistenceEvent(configInfo.getDataId(),
-						configInfo.getGroup(), configInfo.getTenant(), null, currentTime,
-						srcIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-				EventDispatcher.fireEvent(
-						new ConfigDataChangeEvent(false, configInfo.getDataId(),
-								configInfo.getGroup(), configInfo.getTenant(),
-								currentTime));
-			}
-		}
-
 		return result;
 	}
 
@@ -519,27 +481,21 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	public void removeConfigInfo4Beta(final String dataId, final String group,
 			final String tenant) {
 		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-		tjt.execute(new TransactionCallback<Boolean>() {
-			@Override
-			public Boolean doInTransaction(TransactionStatus status) {
-				try {
-					ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
-					if (configInfo != null) {
-						jt.update(
-								"DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?",
-								dataId, group, tenantTmp);
-					}
+		tjt.execute(status -> {
+			try {
+				ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+				if (configInfo != null) {
+					jt.update(
+							"DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?",
+							dataId, group, tenantTmp);
 				}
-				catch (CannotGetJdbcConnectionException e) {
-					LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-					throw e;
-				}
-				return Boolean.TRUE;
 			}
+			catch (CannotGetJdbcConnectionException e) {
+				LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+				throw e;
+			}
+			return Boolean.TRUE;
 		});
-
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant,
-				System.currentTimeMillis()));
 	}
 
 	// ----------------------- config_aggr_info 表 insert update delete
@@ -1970,7 +1926,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			final ConfigKey[] configKeys, final boolean blacklist) {
 		String sqlCountRows = "select count(*) from config_info where ";
 		String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
-		String where = " 1=1 ";
+		StringBuilder where = new StringBuilder(" 1=1 ");
 		// 白名单，请同步条件为空，则没有符合条件的配置
 		if (configKeys.length == 0 && blacklist == false) {
 			Page<ConfigInfo> page = new Page<ConfigInfo>();
@@ -1993,74 +1949,74 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			if (blacklist) {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " and ";
+					where.append(" and ");
 				}
 
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id not like ? ";
+					where.append(" data_id not like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " group_id not like ? ";
+					where.append(" group_id not like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " app_name != ? ";
+					where.append(" app_name != ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 			else {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " or ";
+					where.append(" or ");
 				}
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id like ? ";
+					where.append(" data_id like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " group_id like ? ";
+					where.append(" group_id like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " app_name = ? ";
+					where.append(" app_name = ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 		}
 
 		try {
-			return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+			return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(),
 					params.toArray(), pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
 		}
 		catch (CannotGetJdbcConnectionException e) {
@@ -2212,7 +2168,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 
 		String sqlCountRows = "select count(*) from config_info_aggr where ";
 		String sqlFetchRows = "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where ";
-		String where = " 1=1 ";
+		StringBuilder where = new StringBuilder(" 1=1 ");
 		// 白名单，请同步条件为空，则没有符合条件的配置
 		if (configKeys.length == 0 && blacklist == false) {
 			Page<ConfigInfoAggr> page = new Page<ConfigInfoAggr>();
@@ -2234,75 +2190,75 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			if (blacklist) {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " and ";
+					where.append(" and ");
 				}
 
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id not like ? ";
+					where.append(" data_id not like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " group_id not like ? ";
+					where.append(" group_id not like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " app_name != ? ";
+					where.append(" app_name != ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 			else {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " or ";
+					where.append(" or ");
 				}
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id like ? ";
+					where.append(" data_id like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " group_id like ? ";
+					where.append(" group_id like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " app_name = ? ";
+					where.append(" app_name = ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 		}
 
 		try {
 			Page<ConfigInfoAggr> result = helper
-					.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+					.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(),
 							params.toArray(), pageNo, pageSize,
 							CONFIG_INFO_AGGR_ROW_MAPPER);
 			return result;
@@ -2688,9 +2644,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
 		}
-		EventDispatcher.fireEvent(
-				new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-						System.currentTimeMillis()));
 	}
 
 	/**

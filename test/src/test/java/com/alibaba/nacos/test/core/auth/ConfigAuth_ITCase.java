@@ -64,8 +64,12 @@ public class ConfigAuth_ITCase extends AuthBase {
     }
 
     @After
-    public void destroy() {
-        super.destroy();
+    public void destroy(){
+        try {
+            iconfig.shutDown();
+        }catch (NacosException ex) {
+
+        }
     }
 
 

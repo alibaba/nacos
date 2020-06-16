@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.config.server.service;
+
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ShutdownUtils {
+public class ConfigChangePublisher {
 
-    public static void addShutdownHook(Runnable runnable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
-    }
+	public static void notifyConfigChange(ConfigDataChangeEvent event) {
+		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
+			return;
+		}
+		EventDispatcher.fireEvent(event);
+	}
 
 }

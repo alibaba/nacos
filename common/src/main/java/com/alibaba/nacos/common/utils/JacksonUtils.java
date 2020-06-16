@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -46,8 +47,7 @@ public final class JacksonUtils {
 	public static String toJson(Object obj) {
 		try {
 			return mapper.writeValueAsString(obj);
-		}
-		catch (JsonProcessingException e) {
+		} catch (JsonProcessingException e) {
 			throw new NacosSerializationException(obj.getClass(), e);
 		}
 	}
@@ -55,8 +55,7 @@ public final class JacksonUtils {
 	public static byte[] toJsonBytes(Object obj) {
 		try {
 			return ByteUtils.toBytes(mapper.writeValueAsString(obj));
-		}
-		catch (JsonProcessingException e) {
+		} catch (JsonProcessingException e) {
 			throw new NacosSerializationException(obj.getClass(), e);
 		}
 	}
@@ -64,35 +63,39 @@ public final class JacksonUtils {
 	public static <T> T toObj(byte[] json, Class<T> cls) {
 		try {
 			return toObj(StringUtils.newString4UTF8(json), cls);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new NacosDeserializationException(cls, e);
 		}
 	}
 
 	public static <T> T toObj(byte[] json, Type cls) {
-		try {
-			return toObj(StringUtils.newString4UTF8(json), cls);
-		}
-		catch (Exception e) {
-			throw new NacosDeserializationException(e);
-		}
-	}
+        try {
+            return toObj(StringUtils.newString4UTF8(json), cls);
+        } catch (Exception e) {
+            throw new NacosDeserializationException(e);
+        }
+    }
 
-	public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
-		try {
-			return toObj(StringUtils.newString4UTF8(json), typeReference);
-		}
-		catch (Exception e) {
-			throw new NacosDeserializationException(e);
-		}
-	}
+	public static <T> T toObj(InputStream inputStream, Class<T> tClass) {
+        try {
+            return mapper.readValue(inputStream, tClass);
+        } catch (IOException e) {
+            throw new NacosDeserializationException(e);
+        }
+    }
+
+    public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
+        try {
+            return toObj(StringUtils.newString4UTF8(json), typeReference);
+        } catch (Exception e) {
+            throw new NacosDeserializationException(e);
+        }
+    }
 
 	public static <T> T toObj(String json, Class<T> cls) {
 		try {
 			return mapper.readValue(json, cls);
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			throw new NacosDeserializationException(cls, e);
 		}
 	}
@@ -100,8 +103,7 @@ public final class JacksonUtils {
 	public static <T> T toObj(String json, Type type) {
 		try {
 			return mapper.readValue(json, mapper.constructType(type));
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			throw new NacosDeserializationException(e);
 		}
 	}
@@ -109,17 +111,23 @@ public final class JacksonUtils {
 	public static <T> T toObj(String json, TypeReference<T> typeReference) {
 		try {
 			return mapper.readValue(json, typeReference);
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			throw new NacosDeserializationException(typeReference.getClass(), e);
 		}
 	}
 
+	public static <T> T toObj(InputStream inputStream, Type type) {
+        try {
+            return mapper.readValue(inputStream, mapper.constructType(type));
+        } catch (IOException e) {
+            throw new NacosDeserializationException(type, e);
+        }
+    }
+
 	public static JsonNode toObj(String json) {
 		try {
 			return mapper.readTree(json);
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			throw new NacosDeserializationException(e);
 		}
 	}

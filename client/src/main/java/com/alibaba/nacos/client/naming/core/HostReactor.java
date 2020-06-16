@@ -15,27 +15,41 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.common.exception.api.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class HostReactor {
+public class HostReactor implements Closeable {
 
     private static final long DEFAULT_DELAY = 1000L;
 
@@ -51,6 +65,8 @@ public class HostReactor {
 
     private EventDispatcher eventDispatcher;
 
+    private BeatReactor beatReactor;
+
     private NamingProxy serverProxy;
 
     private FailoverReactor failoverReactor;
@@ -59,14 +75,14 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
-
-        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
+        // init executorService
+        this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -75,8 +91,8 @@ public class HostReactor {
                 return thread;
             }
         });
-
         this.eventDispatcher = eventDispatcher;
+        this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         if (loadCacheAtStart) {
@@ -174,6 +190,7 @@ public class HostReactor {
 
             if (modHosts.size() > 0) {
                 changed = true;
+                updateBeatInfo(modHosts);
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
                     + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(modHosts));
             }
@@ -203,6 +220,16 @@ public class HostReactor {
         }
 
         return serviceInfo;
+    }
+
+    private void updateBeatInfo(Set<Instance> modHosts) {
+        for (Instance instance : modHosts) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
     }
 
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
@@ -259,7 +286,6 @@ public class HostReactor {
     }
 
 
-
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -301,6 +327,14 @@ public class HostReactor {
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }
+    }
+
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
     public class UpdateTask implements Runnable {
