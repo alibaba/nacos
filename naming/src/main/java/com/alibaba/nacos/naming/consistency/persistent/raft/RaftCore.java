@@ -484,10 +484,9 @@ public class RaftCore {
 
         public void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !ApplicationUtils.getStandaloneMode()) {
+            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
-
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
             }
@@ -683,7 +682,8 @@ public class RaftCore {
                                 return 1;
                             }
 
-                            List<JsonNode> datumList = JacksonUtils.toObj(response.getResponseBody(), new TypeReference<List<JsonNode>>() {});
+                            List<JsonNode> datumList = JacksonUtils.toObj(response.getResponseBody(), new TypeReference<List<JsonNode>>() {
+                            });
 
                             for (JsonNode datumJson : datumList) {
                                 OPERATE_LOCK.lock();
