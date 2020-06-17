@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
@@ -35,21 +36,18 @@ import java.util.Collections;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-/**
- * @author jifengnan 2019-04-29
- */
 @RunWith(MockitoJUnitRunner.class)
 public class CatalogControllerTest {
-
+    
     @Mock
     private ServiceManager serviceManager;
-
+    
     private CatalogController catalogController;
-
+    
     private Service service;
-
+    
     private Cluster cluster;
-
+    
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         catalogController = new CatalogController();
@@ -63,12 +61,14 @@ public class CatalogControllerTest {
         cluster = new Cluster(TEST_CLUSTER_NAME, service);
         cluster.setDefaultPort(1);
         service.addCluster(cluster);
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME)).thenReturn(service);
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID,
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME)).thenReturn(service);
     }
-
+    
     @Test
     public void testServiceDetail() throws Exception {
-        ObjectNode result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
+        ObjectNode result = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
         String actual = result.toString();
         assertTrue(actual.contains("\"service\":{"));
         assertTrue(actual.contains("\"groupName\":\"test-group-name\""));
@@ -85,22 +85,24 @@ public class CatalogControllerTest {
         assertTrue(actual.contains("\"serviceName\":\"test-service\""));
         assertTrue(actual.contains("\"useIPPort4Check\":true"));
     }
-
+    
     @Test(expected = NacosException.class)
     public void testServiceDetailNotFound() throws Exception {
         catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME);
     }
-
+    
     private static final String TEST_CLUSTER_NAME = "test-cluster";
+    
     private static final String TEST_SERVICE_NAME = "test-service";
+    
     private static final String TEST_GROUP_NAME = "test-group-name";
-
+    
     @Test
     public void testInstanceList() throws NacosException {
         Instance instance = new Instance("1.1.1.1", 1234, TEST_CLUSTER_NAME);
-        cluster.updateIPs(Collections.singletonList(instance), false);
-        ObjectNode result = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME,
-            TEST_CLUSTER_NAME, 1, 10);
+        cluster.updateIps(Collections.singletonList(instance), false);
+        ObjectNode result = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID,
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME, 1, 10);
         String actual = result.toString();
         assertTrue(actual.contains("\"count\":1"));
         assertTrue(actual.contains("\"list\":["));
@@ -108,12 +110,12 @@ public class CatalogControllerTest {
         assertTrue(actual.contains("\"ip\":\"1.1.1.1\""));
         assertTrue(actual.contains("\"port\":1234"));
     }
-
+    
     @Test
     public void testListDetail() {
         // TODO
     }
-
+    
     @Test
     public void testRt4Service() {
         // TODO

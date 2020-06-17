@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.pojo;
 
 import java.io.Serializable;
 import java.util.List;
 
 /**
+ * Subscribers.
+ *
  * @author nicholas
  * @version $Id: Subscribers.java, v 0.1 2019-05-28 下午10:47 nicholas Exp $$
  */
 public class Subscribers implements Serializable {
-
+    
     private List<Subscriber> subscribers;
-
+    
     public List<Subscriber> getSubscribers() {
         return subscribers;
     }
-
+    
     public void setSubscribers(List<Subscriber> subscribers) {
         this.subscribers = subscribers;
     }

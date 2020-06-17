@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -25,30 +26,56 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 /**
+ * Response exception handler.
+ *
  * @author nkorange
  */
 @ControllerAdvice
 public class ResponseExceptionHandler {
-
+    
+    /**
+     * Handle {@link NacosException}.
+     *
+     * @param e NacosException
+     * @return ResponseEntity
+     */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException e) {
         Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
-
+    
+    /**
+     * Handle {@link IllegalArgumentException}.
+     *
+     * @param ex IllegalArgumentException
+     * @return ResponseEntity
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
         Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ExceptionUtil.getAllExceptionMsg(ex));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
-
+    
+    /**
+     * Handle missing request parameter exception.
+     *
+     * @param ex {@link MissingServletRequestParameterException}
+     * @return ResponseEntity
+     */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
         Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(ex));
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
     }
-
+    
+    /**
+     * Handle other exception.
+     *
+     * @param e other exception
+     * @return ResponseEntity
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
         Loggers.SRV_LOG.error("got exception.", ExceptionUtil.getAllExceptionMsg(e));
