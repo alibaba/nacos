@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.push;
 
+package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.BaseTest;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
 
-/**
- * @author nkorange
- */
-public class PushClientTest extends BaseTest  {
-
+public class PushClientTest extends BaseTest {
+    
     @Test
     public void testAddClient() {
-
+        
         String namespaceId = "public";
         String serviceName = "test.1";
         String clusters = "DEFAULT";
@@ -36,15 +33,8 @@ public class PushClientTest extends BaseTest  {
         String clientIp = "xxxxx";
         String app = "nacos";
         int udpPort = 10000;
-
-
-        pushService.addClient(namespaceId
-            , serviceName
-            , clusters
-            , agent
-            , new InetSocketAddress(clientIp, udpPort)
-            , null
-            , namespaceId
-            , app);
+        
+        pushService.addClient(namespaceId, serviceName, clusters, agent, new InetSocketAddress(clientIp, udpPort), null,
+                namespaceId, app);
     }
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.selector.SelectorType;
@@ -31,11 +32,11 @@ import java.util.List;
  */
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
-
+    
     static {
         JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
     }
-
+    
     @Override
     public List<Instance> select(String consumer, List<Instance> providers) {
         return providers;
