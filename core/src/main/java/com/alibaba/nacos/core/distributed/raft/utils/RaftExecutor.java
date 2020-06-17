@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.raft.JRaftServer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 
+import com.alibaba.nacos.core.utils.ClassUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,7 @@ public final class RaftExecutor {
 	private static ScheduledExecutorService raftCommonExecutor;
 	private static ExecutorService raftSnapshotExecutor;
 
-	private static final String OWNER = JRaftServer.class.getName();
+	private static final String OWNER = ClassUtils.getCanonicalName(JRaftServer.class);
 
 	private RaftExecutor() {
 	}
@@ -49,22 +50,24 @@ public final class RaftExecutor {
 				config.getValOfDefault(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM,
 						"4"));
 
-		raftCoreExecutor = ExecutorFactory.newFixExecutorService(OWNER, raftCoreThreadNum,
-				new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
+		raftCoreExecutor = ExecutorFactory.Managed
+                .newFixExecutorService(OWNER, raftCoreThreadNum,
+				        new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
 
-		raftCliServiceExecutor = ExecutorFactory
+		raftCliServiceExecutor = ExecutorFactory.Managed
 				.newFixExecutorService(OWNER, raftCliServiceThreadNum,
 						new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
 
-		raftCommonExecutor = ExecutorFactory.newScheduledExecutorService(OWNER, 8,
-				new NameThreadFactory(
-						"com.alibaba.nacos.core.protocol.raft-common"));
+		raftCommonExecutor = ExecutorFactory.Managed
+                .newScheduledExecutorService(OWNER, 8,
+				        new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-common"));
 
 		int snapshotNum = raftCoreThreadNum / 2;
 		snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
 
-		raftSnapshotExecutor = ExecutorFactory.newFixExecutorService(OWNER, snapshotNum,
-				new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
+		raftSnapshotExecutor = ExecutorFactory.Managed.
+                newFixExecutorService(OWNER, snapshotNum,
+				        new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
 
 	}
 

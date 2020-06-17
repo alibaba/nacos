@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.push;
+package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.naming.core.Service;
-import org.springframework.context.ApplicationEvent;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 /**
- * Service change event.
+ * http Client Factory
  *
- * @author pbting
- * @date 2019-07-10 5:41 PM
+ * @author mai.jh
+ * @date 2020/6/15
  */
-public class ServiceChangeEvent extends ApplicationEvent {
-    
-    private Service service;
-    
-    public ServiceChangeEvent(Object source, Service service) {
-        super(source);
-        this.service = service;
-    }
-    
-    public Service getService() {
-        return service;
-    }
+public interface HttpClientFactory {
+
+    /**
+     * create new nacost rest
+     * @return NacosRestTemplate
+     */
+    NacosRestTemplate createNacosRestTemplate();
+
+    /**
+     * create new nacos async rest
+     * @return NacosAsyncRestTemplate
+     */
+    NacosAsyncRestTemplate createNacosAsyncRestTemplate();
+
 }

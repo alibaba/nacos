@@ -16,12 +16,12 @@
   -->
 
 <included>
-
+    
     <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
     <property name="LOG_HOME" value="${logPath}"/>
-
+    
     <appender name="naming-server"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-server.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -37,7 +37,7 @@
         </encoder>
     </appender>
     <appender name="naming-raft"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-raft.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -53,7 +53,7 @@
         </encoder>
     </appender>
     <appender name="naming-event"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-event.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -69,7 +69,7 @@
         </encoder>
     </appender>
     <appender name="naming-push"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-push.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -85,7 +85,7 @@
         </encoder>
     </appender>
     <appender name="naming-rt"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-rt.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -100,9 +100,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-performance"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-performance.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -117,9 +117,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-router"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-router.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -134,9 +134,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-cache"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-cache.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -151,9 +151,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-device"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-device.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -168,9 +168,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-tag"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-tag.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -185,9 +185,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-debug"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-debug.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -202,9 +202,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <appender name="naming-distro"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/naming-distro.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -219,7 +219,7 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="naming-server"/>

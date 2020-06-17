@@ -211,9 +211,9 @@ public class StartingSpringApplicationRunListener
 	private void logStarting() {
 		if (!ApplicationUtils.getStandaloneMode()) {
 
-			scheduledExecutorService = ExecutorFactory
-					.newSingleScheduledExecutorService(getClass().getCanonicalName(),
-							new NameThreadFactory("nacos-starting"));
+            scheduledExecutorService = ExecutorFactory
+                .newSingleScheduledExecutorService(
+                    new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
 
 			scheduledExecutorService.scheduleWithFixedDelay(() -> {
 				if (starting) {

@@ -14,33 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.persistent.raft;
-
-import org.springframework.context.ApplicationEvent;
+package com.alibaba.nacos.common.http;
 
 /**
- * Base raft event.
+ * default http client factory
  *
- * @author pbting
- * @date 2019-07-01 8:46 PM
+ * @author mai.jh
+ * @date 2020/6/15
  */
-public abstract class BaseRaftEvent extends ApplicationEvent {
-    
-    private final RaftPeer raftPeer;
-    
-    private final RaftPeer local;
-    
-    public BaseRaftEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
-        super(source);
-        this.raftPeer = raftPeer;
-        this.local = local;
-    }
-    
-    public RaftPeer getRaftPeer() {
-        return raftPeer;
-    }
-    
-    public RaftPeer getLocal() {
-        return local;
+public class DefaultHttpClientFactory extends AbstractHttpClientFactory {
+
+    private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
+
+    @Override
+    protected HttpClientConfig buildHttpClientConfig() {
+        return HttpClientConfig.builder()
+            .setConTimeOutMillis(TIMEOUT)
+            .setReadTimeOutMillis(TIMEOUT >> 1)
+            .build();
     }
 }

@@ -58,7 +58,7 @@ public final class ResponseHandler {
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         InputStream body = response.getBody();
         T extractBody = null;
-        if (MediaType.APPLICATION_JSON.equals(contentType) && HttpStatus.SC_OK == response.getStatusCode()) {
+        if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response.getStatusCode()) {
             extractBody = convert(body, type);
         }
         if (extractBody == null) {

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -29,23 +30,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Package of instance list
+ * Package of instance list.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public class Instances implements Record {
-
+    
     private List<Instance> instanceList = new ArrayList<>();
-
+    
     public List<Instance> getInstanceList() {
         return instanceList;
     }
-
+    
     public void setInstanceList(List<Instance> instanceList) {
         this.instanceList = instanceList;
     }
-
+    
     @Override
     public String toString() {
         try {
@@ -54,33 +55,40 @@ public class Instances implements Record {
             throw new RuntimeException("Instances toJSON failed", e);
         }
     }
-
+    
     @Override
     @JsonIgnore
     public String getChecksum() {
-
+        
         return recalculateChecksum();
     }
-
+    
     private String recalculateChecksum() {
         StringBuilder sb = new StringBuilder();
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
-            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isHealthy() + "_" + ip.isEnabled() + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
+            String string =
+                    ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip.isEnabled()
+                            + "_" + ip.getClusterName() + "_" + convertMap2String(ip.getMetadata());
             sb.append(string);
             sb.append(",");
         }
-
+        
         return MD5Utils.md5Hex(sb.toString(), Constants.ENCODE);
     }
-
+    
+    /**
+     * Convert Map to KV string with ':'.
+     *
+     * @param map map need to be converted
+     * @return KV string with ':'
+     */
     public String convertMap2String(Map<String, String> map) {
-
+        
         if (map == null || map.isEmpty()) {
             return StringUtils.EMPTY;
         }
-
+        
         StringBuilder sb = new StringBuilder();
         List<String> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys);
