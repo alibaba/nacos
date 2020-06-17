@@ -95,7 +95,7 @@
             <property name="allowedAnnotations"
                 value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters"/>
             <property name="ignoreMethodNamesRegex" value="^set[A-Z].*|^get[A-Z].*"/>
-            <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
+            <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="SingleLineJavadoc">
             <property name="ignoreInlineTags" value="false"/>
