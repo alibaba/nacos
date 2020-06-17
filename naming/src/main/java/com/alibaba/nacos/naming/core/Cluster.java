@@ -301,15 +301,15 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     public List<Instance> subtract(Collection<Instance> oldIp, Collection<Instance> ips) {
-        Map<String, Instance> IpsMap = new HashMap<>(ips.size());
+        Map<String, Instance> ipsMap = new HashMap<>(ips.size());
         for (Instance instance : ips) {
-            IpsMap.put(instance.getIp() + ":" + instance.getPort(), instance);
+            ipsMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
 
         List<Instance> instanceResult = new ArrayList<>();
 
         for (Instance instance : oldIp) {
-            if (!IpsMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+            if (!ipsMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
                 instanceResult.add(instance);
             }
         }
