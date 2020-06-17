@@ -347,22 +347,21 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         
         return new ArrayList<>(instanceMap.values());
     }
-    
-    private List<Instance> subtract(Collection<Instance> a, Collection<Instance> b) {
-        Map<String, Instance> mapa = new HashMap<>(b.size());
-        for (Instance o : b) {
-            mapa.put(o.getIp() + ":" + o.getPort(), o);
+  
+    private List<Instance> subtract(Collection<Instance> oldIp, Collection<Instance> ips) {
+        Map<String, Instance> ipsMap = new HashMap<>(ips.size());
+        for (Instance instance : ips) {
+            ipsMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
-        
-        List<Instance> result = new ArrayList<>();
-        
-        for (Instance o : a) {
-            if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
-                result.add(o);
+
+        List<Instance> instanceResult = new ArrayList<>();
+
+        for (Instance instance : oldIp) {
+            if (!ipsMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                instanceResult.add(instance);
             }
         }
-        
-        return result;
+        return instanceResult;
     }
     
     @Override
