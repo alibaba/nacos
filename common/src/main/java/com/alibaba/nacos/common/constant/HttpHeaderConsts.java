@@ -30,5 +30,8 @@ public interface HttpHeaderConsts {
     String ACCEPT_CHARSET = "Accept-Charset";
     String ACCEPT_ENCODING = "Accept-Encoding";
     String CONTENT_ENCODING = "Content-Encoding";
+    String CONNECTION = "Connection";
+    String REQUEST_ID = "RequestId";
+    String REQUEST_MODULE = "REQUEST_MODULE";
 
 }

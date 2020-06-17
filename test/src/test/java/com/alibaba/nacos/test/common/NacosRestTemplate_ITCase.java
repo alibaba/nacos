@@ -17,7 +17,7 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpClientManager;
+import com.alibaba.nacos.common.http.HttpClientBeanFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -51,7 +51,7 @@ public class NacosRestTemplate_ITCase {
     @LocalServerPort
     private int port;
 
-    private NacosRestTemplate nacosRestTemplate = HttpClientManager.getNacosRestTemplate();
+    private NacosRestTemplate nacosRestTemplate = HttpClientBeanFactory.getNacosRestTemplate();
 
     private final String INSTANCE_PATH = "/nacos/v1/ns";
     private final String CONFIG_PATH = "/nacos/v1/cs";
@@ -60,6 +60,19 @@ public class NacosRestTemplate_ITCase {
     @Before
     public void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
+    }
+
+    @Test
+    public void test_url_post_config() throws  Exception {
+        String url = IP + CONFIG_PATH + "/configs";
+        Map<String, String> param = new HashMap<>();
+        param.put("dataId", "test-1");
+        param.put("group", "DEFAULT_GROUP");
+        param.put("content", "aaa=b");
+        HttpRestResult<String> restResult = nacosRestTemplate.postFrom(url, Header.newInstance(), Query.EMPTY, param, String.class);
+        Assert.assertTrue(restResult.ok());
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
     }
 
     @Test
