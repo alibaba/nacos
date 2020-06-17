@@ -77,7 +77,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return TestSlowEvent.class;
             }
         });
@@ -94,7 +94,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return TestEvent.class;
             }
         });
@@ -139,7 +139,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return ExpireEvent.class;
             }
 
@@ -186,7 +186,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return NoExpireEvent.class;
             }
         });
@@ -255,7 +255,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return SlowE1.class;
             }
         });
@@ -269,7 +269,7 @@ public class NotifyCenter_ITCase {
             }
 
             @Override
-            public Class<? extends Event> subscriberType() {
+            public Class<? extends Event> subscribeType() {
                 return SlowE2.class;
             }
         });

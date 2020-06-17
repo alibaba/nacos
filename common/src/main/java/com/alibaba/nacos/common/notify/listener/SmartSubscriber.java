@@ -36,7 +36,7 @@ public abstract class SmartSubscriber extends Subscriber {
     public abstract boolean canNotify(Event event);
 
     @Override
-    public final Class<? extends Event> subscriberType() {
+    public final Class<? extends Event> subscribeType() {
         return null;
     }
 

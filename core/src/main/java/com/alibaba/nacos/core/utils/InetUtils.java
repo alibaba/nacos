@@ -48,9 +48,6 @@ public class InetUtils {
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class IPChangeEvent extends SlowEvent {
 
-        private static final AtomicLong SEQUENCE = new AtomicLong(0);
-        private long no = SEQUENCE.getAndIncrement();
-
         private String oldIp;
         private String newIp;
 
@@ -78,7 +75,7 @@ public class InetUtils {
 
         @Override
         public long sequence() {
-            return no;
+            return 0;
         }
     }
 

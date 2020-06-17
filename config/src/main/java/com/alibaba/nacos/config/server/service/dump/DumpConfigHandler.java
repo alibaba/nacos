@@ -142,7 +142,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
 	}
 
 	@Override
-	public Class<? extends Event> subscriberType() {
+	public Class<? extends Event> subscribeType() {
 		return ConfigDumpEvent.class;
 	}
 }

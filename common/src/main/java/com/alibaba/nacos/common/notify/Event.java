@@ -16,6 +16,7 @@
 package com.alibaba.nacos.common.notify;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An abstract class for event.
@@ -25,10 +26,16 @@ import java.io.Serializable;
 @SuppressWarnings("all")
 public abstract class Event implements Serializable {
 
+    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+
+    private long no = SEQUENCE.getAndIncrement();
+
     /**
      * Event sequence number, which can be used to handle the sequence of events
      *
      * @return sequence num, It's best to make sure it's monotone
      */
-    public abstract long sequence();
+    public long sequence() {
+        return no;
+    }
 }

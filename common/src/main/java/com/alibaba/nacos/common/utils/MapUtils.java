@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.util.Collection;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -108,5 +109,23 @@ public class MapUtils {
 			return;
 		}
 	}
+
+	public static Object computeIfAbsent(Map target, Object key,
+                                         BiFunction mappingFunction, Object param1, Object param2) {
+
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(key, "mappingFunction");
+        Objects.requireNonNull(key, "param1");
+        Objects.requireNonNull(key, "param2");
+
+        HashMap<String, String> map = new HashMap<String, String>();
+        Object val = target.get(key);
+        if (val == null) {
+            Object ret = mappingFunction.apply(param1, param2);
+            target.put(key, ret);
+            return ret;
+        }
+        return val;
+    }
 
 }

@@ -27,10 +27,6 @@ public class ConfigDumpEvent extends Event {
 
 	private static final long serialVersionUID = -8776888606458370294L;
 
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
-    private long no = SEQUENCE.getAndIncrement();
-
     private boolean remove;
 	private String namespaceId;
 	private String dataId;
@@ -134,11 +130,6 @@ public class ConfigDumpEvent extends Event {
 	public static ConfigDumpEventBuilder builder() {
 		return new ConfigDumpEventBuilder();
 	}
-
-    @Override
-    public long sequence() {
-        return no;
-    }
 
     public static final class ConfigDumpEventBuilder {
 		private boolean remove;

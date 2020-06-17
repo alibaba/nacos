@@ -174,7 +174,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 continue;
             }
 
-            final String targetName = ClassUtils.getName(subscriber.subscriberType());
+            final String targetName = ClassUtils.getName(subscriber.subscribeType());
 
             if (!Objects.equals(sourceName, targetName)) {
                 continue;

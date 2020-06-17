@@ -91,7 +91,7 @@ public class BaseClusterTest extends HttpClient4Test {
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return RaftDBErrorEvent.class;
 			}
 		});

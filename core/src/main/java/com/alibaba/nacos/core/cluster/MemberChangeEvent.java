@@ -35,13 +35,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MemberChangeEvent extends Event {
 
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
     private static final long serialVersionUID = 7308126651076668976L;
 
     private Collection<Member> members;
-
-    private long no = SEQUENCE.getAndIncrement();
 
     public static MemberChangeEventBuilder builder() {
         return new MemberChangeEventBuilder();
@@ -53,11 +49,6 @@ public class MemberChangeEvent extends Event {
 
     public void setMembers(Collection<Member> members) {
         this.members = members;
-    }
-
-    @Override
-    public long sequence() {
-        return no;
     }
 
     public static final class MemberChangeEventBuilder {

@@ -39,7 +39,7 @@ public abstract class Subscriber<T extends Event>{
      *
      * @return Class which extends {@link Event}
      */
-    public abstract Class<? extends Event> subscriberType();
+    public abstract Class<? extends Event> subscribeType();
 
     /**
      * It is up to the listener to determine whether the callback is asynchronous or synchronous

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.notify.SlowEvent;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -28,10 +27,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RaftEvent extends SlowEvent {
 
     private static final long serialVersionUID = -4304258594602886451L;
-
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
-    private long no = SEQUENCE.getAndIncrement();
 
     private String groupId;
 
@@ -79,7 +74,7 @@ public class RaftEvent extends SlowEvent {
 
     @Override
     public long sequence() {
-        return no;
+        return 0;
     }
 
     public static final class RaftEventBuilder {

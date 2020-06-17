@@ -192,7 +192,7 @@ public class ServerMemberManager
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return InetUtils.IPChangeEvent.class;
 			}
 		});

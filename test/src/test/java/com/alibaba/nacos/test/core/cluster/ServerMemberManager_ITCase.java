@@ -110,7 +110,7 @@ public class ServerMemberManager_ITCase {
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return MemberChangeEvent.class;
 			}
 		});

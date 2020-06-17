@@ -17,21 +17,11 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.notify.Event;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RaftErrorEvent extends Event {
-
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
-    private long no = SEQUENCE.getAndIncrement();
-
-    @Override
-    public long sequence() {
-        return no;
-    }
 
     private static final long serialVersionUID = 3016514657754158167L;
 

@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ public class NotifyCenter {
 
     public static int RING_BUFFER_SIZE = 16384;
 
-    public static int SHATE_BUFFER_SIZE = 1024;
+    public static int SHARE_BUFFER_SIZE = 1024;
 
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
 
@@ -51,6 +52,8 @@ public class NotifyCenter {
     private static final NotifyCenter INSTANCE = new NotifyCenter();
 
     private EventPublisher sharePublisher;
+
+    private static Class<? extends EventPublisher> clazz = null;
 
     /**
      * Publisher management container
@@ -65,46 +68,33 @@ public class NotifyCenter {
 
         // The size of the public publisher's message staging queue buffer
         String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
-        SHATE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
+        SHARE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
+
+        final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
+        Iterator<EventPublisher> iterator = loader.iterator();
+
+        if(iterator.hasNext()){
+            clazz = iterator.next().getClass();
+        }else{
+            clazz = DefaultPublisher.class;
+        }
 
         BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
-
-            Class<? extends EventPublisher> clazz;
 
             @Override
             public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
                 try {
-                    if (clazz == null) {
-                        synchronized(this) {
-                            if (clazz == null) {
-                                // Load Class by serviceLoader.
-                                clazz = loadClass();
-                            }
-                        }
-                    }
                     EventPublisher publisher = clazz.newInstance();
                     publisher.init(cls, buffer);
                     return publisher;
-
                 }catch (Exception ex) {
                     LOGGER.error("Service class newInstance has error : {}", ex);
                 }
-
                 return null;
-            }
-
-            private Class<? extends EventPublisher> loadClass() {
-                final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
-                Iterator<EventPublisher> iterator = loader.iterator();
-                if(iterator.hasNext()){
-                    return iterator.next().getClass();
-                }else{
-                    return DefaultPublisher.class;
-                }
             }
         };
 
-        INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHATE_BUFFER_SIZE);
+        INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHARE_BUFFER_SIZE);
 
         ThreadUtils.addShutdownHook(new Runnable() {
             @Override
@@ -112,7 +102,6 @@ public class NotifyCenter {
                 shutdown();
             }
         });
-
     }
 
     @JustForTest
@@ -145,18 +134,22 @@ public class NotifyCenter {
             return;
         }
         LOGGER.warn("[NotifyCenter] Start destroying Publisher");
-        try {
 
-            for (Map.Entry<String, EventPublisher> entry : INSTANCE.publisherMap.entrySet()) {
+        for (Map.Entry<String, EventPublisher> entry : INSTANCE.publisherMap.entrySet()) {
+            try {
                 EventPublisher eventPublisher = entry.getValue();
                 eventPublisher.shutdown();
+            } catch (Throwable e) {
+                LOGGER.error("[EventPublisher] shutdown has error : {}", e);
             }
+        }
 
+        try {
             INSTANCE.sharePublisher.shutdown();
+        } catch (Throwable e) {
+            LOGGER.error("[SharePublisher] shutdown has error : {}", e);
         }
-        catch (Throwable e) {
-            LOGGER.error("NotifyCenter shutdown has error : {}", e);
-        }
+
         LOGGER.warn("[NotifyCenter] Destruction of the end");
     }
 
@@ -170,7 +163,7 @@ public class NotifyCenter {
      * @param <T>       event type
      */
     public static <T> void registerSubscriber(final Subscriber consumer) {
-        final Class<? extends Event> cls = consumer.subscriberType();
+        final Class<? extends Event> cls = consumer.subscribeType();
         // If you want to listen to multiple events, you do it separately,
         // without automatically registering the appropriate publisher
         if (consumer instanceof SmartSubscriber) {
@@ -182,8 +175,8 @@ public class NotifyCenter {
             INSTANCE.sharePublisher.addSubscriber(consumer);
             return;
         }
-        final String topic = ClassUtils.getCanonicalName(consumer.subscriberType());
-        INSTANCE.publisherMap.putIfAbsent(topic, BUILD_FACTORY.apply(cls, RING_BUFFER_SIZE));
+        final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
+        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, BUILD_FACTORY, cls, RING_BUFFER_SIZE);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
     }
@@ -195,7 +188,7 @@ public class NotifyCenter {
      * @param <T>
      */
     public static <T> void deregisterSubscribe(final Subscriber consumer) {
-        final Class<? extends Event> cls = consumer.subscriberType();
+        final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
             EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
             return;
@@ -204,7 +197,7 @@ public class NotifyCenter {
             INSTANCE.sharePublisher.unSubscriber(consumer);
             return;
         }
-        final String topic = ClassUtils.getCanonicalName(consumer.subscriberType());
+        final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
         if (INSTANCE.publisherMap.containsKey(topic)) {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
             publisher.unSubscriber(consumer);
@@ -277,7 +270,7 @@ public class NotifyCenter {
         }
 
         final String topic = ClassUtils.getCanonicalName(eventType);
-        INSTANCE.publisherMap.putIfAbsent(topic, BUILD_FACTORY.apply(eventType, queueMaxSize));
+        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, BUILD_FACTORY, eventType, queueMaxSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;
     }

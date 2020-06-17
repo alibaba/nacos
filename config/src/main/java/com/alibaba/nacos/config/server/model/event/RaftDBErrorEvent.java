@@ -17,8 +17,6 @@ package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.SlowEvent;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
@@ -26,10 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RaftDBErrorEvent extends SlowEvent {
 
 	private static final long serialVersionUID = 101591819161802336L;
-
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
-    private long no = SEQUENCE.getAndIncrement();
 
 	private Throwable ex;
 
@@ -46,6 +40,6 @@ public class RaftDBErrorEvent extends SlowEvent {
 
     @Override
     public long sequence() {
-        return no;
+        return 0;
     }
 }

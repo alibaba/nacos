@@ -143,7 +143,7 @@ public class JRaftProtocol
 				}
 
 				@Override
-				public Class<? extends Event> subscriberType() {
+				public Class<? extends Event> subscribeType() {
 					return RaftEvent.class;
 				}
 

@@ -31,7 +31,7 @@ public abstract class MemberChangeListener extends Subscriber<MemberChangeEvent>
      * @return {@link MemberChangeEvent#getClass()}
      */
     @Override
-    public Class<? extends Event> subscriberType() {
+    public Class<? extends Event> subscribeType() {
         return MemberChangeEvent.class;
     }
 

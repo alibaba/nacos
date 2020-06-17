@@ -176,7 +176,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return RaftDBErrorEvent.class;
 			}
 		});

@@ -306,7 +306,7 @@ public class ConfigDerbyRaft_DITCase
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return RaftDBErrorEvent.class;
 			}
 		});
@@ -326,7 +326,7 @@ public class ConfigDerbyRaft_DITCase
 			}
 
 			@Override
-			public Class<? extends Event> subscriberType() {
+			public Class<? extends Event> subscribeType() {
 				return RaftDBErrorRecoverEvent.class;
 			}
 		});
