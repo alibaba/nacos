@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.constant;
+
+package com.alibaba.nacos.common.http;
 
 /**
- * Nacos header constants
+ * default http client factory
  *
- * @author ly
+ * @author mai.jh
+ * @date 2020/6/15
  */
-public interface HttpHeaderConsts {
+public class DefaultHttpClientFactory extends AbstractHttpClientFactory {
 
-    String CLIENT_VERSION_HEADER = "Client-Version";
-    String USER_AGENT_HEADER = "User-Agent";
-    String REQUEST_SOURCE_HEADER = "Request-Source";
-    String CONTENT_TYPE = "Content-Type";
-    String CONTENT_LENGTH = "Content-Length";
-    String ACCEPT_CHARSET = "Accept-Charset";
-    String ACCEPT_ENCODING = "Accept-Encoding";
-    String CONTENT_ENCODING = "Content-Encoding";
-    String CONNECTION = "Connection";
-    String REQUEST_ID = "RequestId";
-    String REQUEST_MODULE = "REQUEST_MODULE";
+    private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
 
+    @Override
+    protected HttpClientConfig buildHttpClientConfig() {
+        return HttpClientConfig.builder()
+            .setConTimeOutMillis(TIMEOUT)
+            .setReadTimeOutMillis(TIMEOUT >> 1)
+            .build();
+    }
 }
