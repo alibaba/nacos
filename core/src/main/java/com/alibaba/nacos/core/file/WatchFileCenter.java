@@ -154,9 +154,8 @@ public class WatchFileCenter {
 			}
 
 			this.callBackExecutor = ExecutorFactory
-					.newFixExecutorService(WatchFileCenter.class.getCanonicalName(),
-							1,
-							new NameThreadFactory("com.alibaba.nacos.file.watch-" + paths));
+                    .newSingleExecutorService(
+                        new NameThreadFactory("com.alibaba.nacos.core.file.watch-" + paths));
 
 			try {
 				WatchService service = FILE_SYSTEM.newWatchService();
@@ -176,7 +175,8 @@ public class WatchFileCenter {
 		}
 
 		void shutdown() {
-			watch = false;
+		    watch = false;
+            ThreadUtils.shutdownThreadPool(this.callBackExecutor);
 		}
 
 		@Override
