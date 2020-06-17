@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.utils;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

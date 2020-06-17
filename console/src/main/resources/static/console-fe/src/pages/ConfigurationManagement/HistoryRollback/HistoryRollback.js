@@ -302,7 +302,7 @@ class HistoryRollback extends React.Component {
                   }
                   try {
                     const date = new Date(val);
-                    return date.toLocaleString();
+                    return date.toLocaleString(locale.momentLocale);
                   } catch (e) {
                     return '';
                   }

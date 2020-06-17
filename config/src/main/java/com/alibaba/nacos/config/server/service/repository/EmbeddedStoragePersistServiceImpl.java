@@ -991,7 +991,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		}
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		return helper
-				.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo,
+				.fetchPage(sqlCount + where.toString(), sql + where.toString(), paramList.toArray(), pageNo,
 						pageSize, CONFIG_INFO_ROW_MAPPER);
 	}
 
@@ -1597,7 +1597,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			final ConfigKey[] configKeys, final boolean blacklist) {
 		String sqlCountRows = "select count(*) from config_info where ";
 		String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
-		String where = " 1=1 ";
+		StringBuilder where = new StringBuilder(" 1=1 ");
 		// White list, please synchronize the condition is empty, there is no qualified configuration
 		if (configKeys.length == 0 && !blacklist) {
 			Page<ConfigInfo> page = new Page<ConfigInfo>();
@@ -1619,74 +1619,74 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			if (blacklist) {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " and ";
+					where.append(" and ");
 				}
 
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id not like ? ";
+					where.append(" data_id not like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " group_id not like ? ";
+					where.append(" group_id not like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " app_name != ? ";
+					where.append(" app_name != ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 			else {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " or ";
+					where.append(" or ");
 				}
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id like ? ";
+					where.append(" data_id like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " group_id like ? ";
+					where.append(" group_id like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " app_name = ? ";
+					where.append(" app_name = ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 		}
 		PaginationHelper<ConfigInfo> helper = createPaginationHelper();
 		return helper
-				.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+				.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
 						pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
 
 	}
@@ -1769,7 +1769,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 
 		String sqlCountRows = "select count(*) from config_info_aggr where ";
 		String sqlFetchRows = "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where ";
-		String where = " 1=1 ";
+		StringBuilder where = new StringBuilder(" 1=1 ");
 		// White list, please synchronize the condition is empty, there is no qualified configuration
 		if (configKeys.length == 0 && blacklist == false) {
 			Page<ConfigInfoAggr> page = new Page<ConfigInfoAggr>();
@@ -1790,74 +1790,74 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 			if (blacklist) {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " and ";
+					where.append(" and ");
 				}
 
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id not like ? ";
+					where.append(" data_id not like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " group_id not like ? ";
+					where.append(" group_id not like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " or ";
+						where.append(" or ");
 					}
-					where += " app_name != ? ";
+					where.append(" app_name != ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 			else {
 				if (isFirst) {
 					isFirst = false;
-					where += " and ";
+					where.append(" and ");
 				}
 				else {
-					where += " or ";
+					where.append(" or ");
 				}
-				where += "(";
+				where.append("(");
 				boolean isFirstSub = true;
 				if (!StringUtils.isBlank(dataId)) {
-					where += " data_id like ? ";
+					where.append(" data_id like ? ");
 					params.add(generateLikeArgument(dataId));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(group)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " group_id like ? ";
+					where.append(" group_id like ? ");
 					params.add(generateLikeArgument(group));
 					isFirstSub = false;
 				}
 				if (!StringUtils.isBlank(appName)) {
 					if (!isFirstSub) {
-						where += " and ";
+						where.append(" and ");
 					}
-					where += " app_name = ? ";
+					where.append(" app_name = ? ");
 					params.add(appName);
 					isFirstSub = false;
 				}
-				where += ") ";
+				where.append(") ");
 			}
 		}
 		PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
 		return helper
-				.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+				.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
 						pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
 
 	}

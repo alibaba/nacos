@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.identify.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;

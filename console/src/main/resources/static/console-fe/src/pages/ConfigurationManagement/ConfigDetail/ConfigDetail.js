@@ -54,6 +54,8 @@ class ConfigDetail extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.searchDataId = getParams('searchDataId') || '';
     this.searchGroup = getParams('searchGroup') || '';
+    this.pageSize = getParams('pageSize');
+    this.pageNo = getParams('pageNo');
     // this.params = window.location.hash.split('?')[1]||'';
   }
 
@@ -149,6 +151,8 @@ class ConfigDetail extends React.Component {
         group: this.searchGroup,
         dataId: this.searchDataId,
         namespace: this.tenant,
+        pageNo: this.pageNo,
+        pageSize: this.pageSize,
       })
     );
   }

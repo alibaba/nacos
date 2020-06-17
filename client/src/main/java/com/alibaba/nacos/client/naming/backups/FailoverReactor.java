@@ -25,14 +25,20 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Map;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.TimerTask;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -52,7 +58,7 @@ public class FailoverReactor implements Closeable {
         this.hostReactor = hostReactor;
         this.failoverDir = cacheDir + "/failover";
         // init executorService
-        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);

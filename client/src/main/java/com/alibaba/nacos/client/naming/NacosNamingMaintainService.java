@@ -28,7 +28,7 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
 import java.util.Properties;
@@ -48,17 +48,17 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private NamingProxy serverProxy;
 
-    public NacosNamingMaintainService(String serverList) {
+    public NacosNamingMaintainService(String serverList) throws NacosException  {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
         init(properties);
     }
 
-    public NacosNamingMaintainService(Properties properties) {
+    public NacosNamingMaintainService(Properties properties) throws NacosException  {
         init(properties);
     }
 
-    private void init(Properties properties) {
+    private void init(Properties properties) throws NacosException  {
         ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();

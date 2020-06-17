@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -50,7 +51,7 @@ public class HttpClientManager {
 	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
 
 	static {
-		ShutdownUtils.addShutdownHook(new Runnable() {
+        ThreadUtils.addShutdownHook(new Runnable() {
 			@Override
 			public void run() {
 				shutdown();
