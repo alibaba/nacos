@@ -13,25 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.constant;
+
+package com.alibaba.nacos.common.http;
+
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 /**
- * Nacos header constants
+ * http Client Factory
  *
- * @author ly
+ * @author mai.jh
+ * @date 2020/6/15
  */
-public interface HttpHeaderConsts {
+public interface HttpClientFactory {
 
-    String CLIENT_VERSION_HEADER = "Client-Version";
-    String USER_AGENT_HEADER = "User-Agent";
-    String REQUEST_SOURCE_HEADER = "Request-Source";
-    String CONTENT_TYPE = "Content-Type";
-    String CONTENT_LENGTH = "Content-Length";
-    String ACCEPT_CHARSET = "Accept-Charset";
-    String ACCEPT_ENCODING = "Accept-Encoding";
-    String CONTENT_ENCODING = "Content-Encoding";
-    String CONNECTION = "Connection";
-    String REQUEST_ID = "RequestId";
-    String REQUEST_MODULE = "REQUEST_MODULE";
+    /**
+     * create new nacost rest
+     * @return NacosRestTemplate
+     */
+    NacosRestTemplate createNacosRestTemplate();
+
+    /**
+     * create new nacos async rest
+     * @return NacosAsyncRestTemplate
+     */
+    NacosAsyncRestTemplate createNacosAsyncRestTemplate();
 
 }
