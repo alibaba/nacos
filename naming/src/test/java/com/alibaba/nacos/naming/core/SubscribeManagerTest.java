@@ -37,29 +37,26 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Nicholas
- */
 @SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 public class SubscribeManagerTest extends BaseTest {
-
+    
     @Mock
     private SubscribeManager subscribeManager;
-
+    
     @Mock
     private PushService pushService;
-
+    
     @Mock
     private ServerMemberManager memberManager;
-
+    
     @Before
     public void before() {
         super.before();
         subscribeManager = new SubscribeManager();
     }
-
+    
     @Test
     public void getSubscribersWithFalse() {
         String serviceName = "test";
@@ -67,18 +64,19 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.FALSE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
+                    serviceName);
             clients.add(subscriber);
             Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
-        } catch (Exception e) {
-
+        } catch (Exception ignored) {
+        
         }
     }
-
+    
     @Test
     public void testGetSubscribersFuzzy() {
         String serviceName = "test";
@@ -86,18 +84,19 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, "testGroupName@@test_subscriber");
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
+                    "testGroupName@@test_subscriber");
             clients.add(subscriber);
             Mockito.when(pushService.getClientsFuzzy(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
             Assert.assertEquals(1, list.size());
             Assert.assertEquals("testGroupName@@test_subscriber", list.get(0).getServiceName());
-        } catch (Exception e) {
-
+        } catch (Exception ignored) {
+        
         }
     }
-
+    
     @Test
     public void getSubscribersWithTrue() {
         String serviceName = "test";
@@ -105,11 +104,12 @@ public class SubscribeManagerTest extends BaseTest {
         boolean aggregation = Boolean.TRUE;
         try {
             List<Subscriber> clients = new ArrayList<Subscriber>();
-            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
+            Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId,
+                    serviceName);
             clients.add(subscriber);
-
+            
             List<Member> healthyServers = new ArrayList<>();
-
+            
             for (int i = 0; i <= 2; i++) {
                 Member server = new Member();
                 server.setIp("127.0.0.1");
@@ -121,15 +121,15 @@ public class SubscribeManagerTest extends BaseTest {
                 server.setExtendVal(MemberMetaDataConstants.RAFT_PORT, 8000 + i);
                 healthyServers.add(server);
             }
-
+            
             Mockito.when(memberManager.allMembers()).thenReturn(healthyServers);
             //Mockito.doReturn(3).when(serverListManager.getHealthyServers().size());
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
             Assert.assertEquals(2, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
-        } catch (Exception e) {
-
+        } catch (Exception ignored) {
+        
         }
     }
 }

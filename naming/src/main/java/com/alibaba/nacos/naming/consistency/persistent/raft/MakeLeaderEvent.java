@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 /**
+ * Make leader event.
+ *
  * @author pbting
  * @date 2019-07-01 8:45 PM
  */
 public class MakeLeaderEvent extends BaseRaftEvent {
-
+    
     public MakeLeaderEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
         super(source, raftPeer, local);
     }
