@@ -22,7 +22,7 @@ package com.alibaba.nacos.common.http;
  * @author mai.jh
  * @date 2020/6/15
  */
-public class DefaultHttpClientFactory extends AbstractHttpClientFactoryWrapper {
+public class DefaultHttpClientConfig extends AbstractHttpClientFactoryWrapper {
 
     private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
 

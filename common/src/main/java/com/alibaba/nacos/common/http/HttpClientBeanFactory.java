@@ -24,8 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -45,8 +45,8 @@ public final class HttpClientBeanFactory {
     private static HttpClientConfig HTTP_CLIENT_CONFIG = HttpClientConfig.builder()
         .setConTimeOutMillis(TIMEOUT).setReadTimeOutMillis(TIMEOUT >> 1).build();
 
-    private static final Map<String, NacosRestTemplate> singletonRest = new ConcurrentHashMap<String, NacosRestTemplate>(10);
-    private static final Map<String, NacosAsyncRestTemplate> singletonAsyncRest = new ConcurrentHashMap<String, NacosAsyncRestTemplate>(10);
+    private static final Map<String, NacosRestTemplate> singletonRest = new HashMap<String, NacosRestTemplate>(10);
+    private static final Map<String, NacosAsyncRestTemplate> singletonAsyncRest = new HashMap<String, NacosAsyncRestTemplate>(10);
 
     private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
 
@@ -60,7 +60,7 @@ public final class HttpClientBeanFactory {
     }
 
     public static NacosRestTemplate getNacosRestTemplate() {
-        HttpClientFactory httpClientFactory = new DefaultHttpClientFactory();
+        HttpClientFactory httpClientFactory = new DefaultHttpClientConfig();
         return getNacosRestTemplate(httpClientFactory);
     }
 
@@ -71,14 +71,20 @@ public final class HttpClientBeanFactory {
         String factoryName = httpClientFactory.getClass().getName();
         NacosRestTemplate nacosRestTemplate = singletonRest.get(factoryName);
         if (nacosRestTemplate == null) {
-            nacosRestTemplate = httpClientFactory.createNacosRestTemplate();
-            singletonRest.put(factoryName, nacosRestTemplate);
+            synchronized (singletonRest) {
+                nacosRestTemplate = singletonRest.get(factoryName);
+                if (nacosRestTemplate != null) {
+                    return nacosRestTemplate;
+                }
+                nacosRestTemplate = httpClientFactory.createNacosRestTemplate();
+                singletonRest.put(factoryName, nacosRestTemplate);
+            }
         }
         return nacosRestTemplate;
     }
 
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-        HttpClientFactory httpClientFactory = new DefaultHttpClientFactory();
+        HttpClientFactory httpClientFactory = new DefaultHttpClientConfig();
         return getNacosAsyncRestTemplate(httpClientFactory);
     }
 
@@ -89,8 +95,14 @@ public final class HttpClientBeanFactory {
         String factoryName = httpClientFactory.getClass().getName();
         NacosAsyncRestTemplate nacosAsyncRestTemplate = singletonAsyncRest.get(factoryName);
         if (nacosAsyncRestTemplate == null) {
-            nacosAsyncRestTemplate = httpClientFactory.createNacosAsyncRestTemplate();
-            singletonAsyncRest.put(factoryName, nacosAsyncRestTemplate);
+            synchronized (singletonAsyncRest) {
+                nacosAsyncRestTemplate = singletonAsyncRest.get(factoryName);
+                if (nacosAsyncRestTemplate != null) {
+                    return nacosAsyncRestTemplate;
+                }
+                nacosAsyncRestTemplate = httpClientFactory.createNacosAsyncRestTemplate();
+                singletonAsyncRest.put(factoryName, nacosAsyncRestTemplate);
+            }
         }
         return nacosAsyncRestTemplate;
     }
