@@ -35,7 +35,7 @@ public class NamingHttpClientManager {
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
     private static final int MAX_REDIRECTS = 5;
 
-    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new NamingHttpClientConfig();
+    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new NamingHttpClientFactory();
 
     public static String getPrefix() {
         if (ENABLE_HTTPS) {
@@ -45,10 +45,10 @@ public class NamingHttpClientManager {
     }
 
     public static NacosRestTemplate getNacosRestTemplate() {
-        return HttpClientBeanFactory.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
+        return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
     }
 
-    private static class NamingHttpClientConfig extends AbstractHttpClientFactoryWrapper {
+    private static class NamingHttpClientFactory extends AbstractHttpClientFactory {
 
         @Override
         protected HttpClientConfig buildHttpClientConfig() {

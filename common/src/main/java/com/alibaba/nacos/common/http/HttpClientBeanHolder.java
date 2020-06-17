@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2020/6/16
  */
 @SuppressWarnings("all")
-public final class HttpClientBeanFactory {
+public final class HttpClientBeanHolder {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpClientManager.class);
 
@@ -60,8 +60,7 @@ public final class HttpClientBeanFactory {
     }
 
     public static NacosRestTemplate getNacosRestTemplate() {
-        HttpClientFactory httpClientFactory = new DefaultHttpClientConfig();
-        return getNacosRestTemplate(httpClientFactory);
+        return getNacosRestTemplate(new DefaultHttpClientFactory());
     }
 
     public static NacosRestTemplate getNacosRestTemplate(HttpClientFactory httpClientFactory) {
@@ -84,8 +83,7 @@ public final class HttpClientBeanFactory {
     }
 
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-        HttpClientFactory httpClientFactory = new DefaultHttpClientConfig();
-        return getNacosAsyncRestTemplate(httpClientFactory);
+        return getNacosAsyncRestTemplate(new DefaultHttpClientFactory());
     }
 
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(HttpClientFactory httpClientFactory) {

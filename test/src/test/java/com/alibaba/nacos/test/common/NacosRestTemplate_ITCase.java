@@ -17,7 +17,7 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpClientBeanFactory;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -51,7 +51,7 @@ public class NacosRestTemplate_ITCase {
     @LocalServerPort
     private int port;
 
-    private NacosRestTemplate nacosRestTemplate = HttpClientBeanFactory.getNacosRestTemplate();
+    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate();
 
     private final String INSTANCE_PATH = "/nacos/v1/ns";
     private final String CONFIG_PATH = "/nacos/v1/cs";

@@ -31,7 +31,7 @@ import org.apache.http.impl.nio.client.HttpAsyncClients;
  * @author mai.jh
  * @date 2020/6/15
  */
-public abstract class AbstractHttpClientFactoryWrapper implements HttpClientFactory {
+public abstract class AbstractHttpClientFactory implements HttpClientFactory {
 
     @Override
     public final NacosRestTemplate createNacosRestTemplate() {
