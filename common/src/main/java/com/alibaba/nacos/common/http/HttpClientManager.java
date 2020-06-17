@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.http.client.config.RequestConfig;
