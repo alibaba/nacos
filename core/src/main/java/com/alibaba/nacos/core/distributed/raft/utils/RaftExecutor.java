@@ -51,11 +51,11 @@ public final class RaftExecutor {
 						"4"));
 
 		raftCoreExecutor = ExecutorFactory.Managed
-                .newFixExecutorService(OWNER, raftCoreThreadNum,
+                .newFixedExecutorService(OWNER, raftCoreThreadNum,
 				        new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
 
 		raftCliServiceExecutor = ExecutorFactory.Managed
-				.newFixExecutorService(OWNER, raftCliServiceThreadNum,
+				.newFixedExecutorService(OWNER, raftCliServiceThreadNum,
 						new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
 
 		raftCommonExecutor = ExecutorFactory.Managed
@@ -66,7 +66,7 @@ public final class RaftExecutor {
 		snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
 
 		raftSnapshotExecutor = ExecutorFactory.Managed.
-                newFixExecutorService(OWNER, snapshotNum,
+                newFixedExecutorService(OWNER, snapshotNum,
 				        new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
 
 	}

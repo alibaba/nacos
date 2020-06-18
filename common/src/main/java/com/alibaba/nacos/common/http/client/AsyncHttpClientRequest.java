@@ -24,17 +24,15 @@ import java.lang.reflect.Type;
 import java.net.URI;
 
 /**
- * Represents a client-side Async HTTP request.
- * Created via an implementation execute.
+ * Represents a client-side Async HTTP request. Created via an implementation execute.
  *
  * @author mai.jh
- * @date 2020/5/29
  */
 public interface AsyncHttpClientRequest extends Closeable {
-
-
+    
+    
     /**
-     * execute async http request
+     * execute async http request.
      *
      * @param uri               http url
      * @param httpMethod        http request method
@@ -43,6 +41,6 @@ public interface AsyncHttpClientRequest extends Closeable {
      * @param callback          http response callback
      * @throws Exception ex
      */
-    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
-                     final Type responseType, final Callback<T> callback) throws Exception;
+    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType,
+            final Callback<T> callback) throws Exception;
 }

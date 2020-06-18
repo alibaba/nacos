@@ -193,7 +193,7 @@ public class HttpSimpleClient {
                 conn.addRequestProperty(iter.next(), iter.next());
             }
         }
-        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
 
         String ts = String.valueOf(System.currentTimeMillis());
