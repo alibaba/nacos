@@ -32,7 +32,7 @@ import com.alibaba.nacos.naming.pojo.Record;
  * @since 1.0.0
  */
 public interface ConsistencyService {
-    
+
     /**
      * Put a data related to a key to Nacos cluster.
      *
@@ -41,7 +41,7 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     void put(String key, Record value) throws NacosException;
-    
+
     /**
      * Remove a data from Nacos cluster.
      *
@@ -49,7 +49,7 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     void remove(String key) throws NacosException;
-    
+
     /**
      * Get a data from Nacos cluster.
      *
@@ -58,7 +58,7 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     Datum get(String key) throws NacosException;
-    
+
     /**
      * Listen for changes of a data.
      *
@@ -67,7 +67,7 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     void listen(String key, RecordListener listener) throws NacosException;
-    
+
     /**
      * Cancel listening of a data.
      *
@@ -75,8 +75,8 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException nacos exception
      */
-    void unlisten(String key, RecordListener listener) throws NacosException;
-    
+    void unListen(String key, RecordListener listener) throws NacosException;
+
     /**
      * Tell the status of this consistency service.
      *
