@@ -38,16 +38,16 @@ import org.springframework.stereotype.Service;
 @DependsOn("ProtocolManager")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
-
+    
     @Autowired
     private RaftCore raftCore;
-
+    
     @Autowired
     private RaftPeerSet peers;
-
+    
     @Autowired
     private SwitchDomain switchDomain;
-
+    
     @Override
     public void put(String key, Record value) throws NacosException {
         try {
@@ -58,7 +58,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                     e);
         }
     }
-
+    
     @Override
     public void remove(String key) throws NacosException {
         try {
@@ -76,27 +76,27 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key, e);
         }
     }
-
+    
     @Override
     public Datum get(String key) throws NacosException {
         return raftCore.getDatum(key);
     }
-
+    
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         raftCore.listen(key, listener);
     }
-
+    
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
-        raftCore.unListen(key, listener);
+        raftCore.unlisten(key, listener);
     }
-
+    
     @Override
     public boolean isAvailable() {
         return raftCore.isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
-
+    
     /**
      * Put a new datum from other server.
      *
@@ -113,7 +113,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                     "Raft onPut failed, datum:" + datum + ", source: " + source, e);
         }
     }
-
+    
     /**
      * Remove a new datum from other server.
      *
