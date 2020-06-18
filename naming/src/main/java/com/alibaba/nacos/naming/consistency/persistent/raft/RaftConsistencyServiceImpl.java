@@ -88,8 +88,8 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
     
     @Override
-    public void unlisten(String key, RecordListener listener) throws NacosException {
-        raftCore.unlisten(key, listener);
+    public void unListen(String key, RecordListener listener) throws NacosException {
+        raftCore.unListen(key, listener);
     }
     
     @Override

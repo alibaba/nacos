@@ -359,7 +359,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     @Override
-    public void unlisten(String key, RecordListener listener) throws NacosException {
+    public void unListen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
             return;
         }

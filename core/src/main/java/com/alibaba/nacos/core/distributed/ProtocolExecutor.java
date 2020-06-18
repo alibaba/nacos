@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.utils.ClassUtils;
 import java.util.concurrent.ExecutorService;
 
 /**
- * The thread pool for the conformance protocol.
+ * ProtocolExecutor.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

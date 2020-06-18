@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Consistent protocol metadata information, <Key, <Key, Value >> structure Listeners that can register to listen to
- * changes in value
+ * changes in value.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -56,11 +56,6 @@ public final class ProtocolMetaData {
     // Does not guarantee thread safety, there may be two updates of
     // time-1 and time-2 (time-1 <time-2), but time-1 data overwrites time-2
     
-    /**
-     * Update protocol metadata information data for a group.
-     *
-     * @param mapMap {@link Map}
-     */
     public void load(final Map<String, Map<String, Object>> mapMap) {
         mapMap.forEach((s, map) -> {
             metaDataMap.computeIfAbsent(s, MetaData::new);
@@ -69,13 +64,6 @@ public final class ProtocolMetaData {
         });
     }
     
-    /**
-     * Get protocol metadata information according to group and key.
-     *
-     * @param group  group
-     * @param subKey key
-     * @return {@link Object}
-     */
     public Object get(String group, String subKey) {
         if (StringUtils.isBlank(subKey)) {
             return metaDataMap.get(group);

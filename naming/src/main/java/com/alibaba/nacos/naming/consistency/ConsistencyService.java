@@ -75,7 +75,7 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException nacos exception
      */
-    void unlisten(String key, RecordListener listener) throws NacosException;
+    void unListen(String key, RecordListener listener) throws NacosException;
     
     /**
      * Tell the status of this consistency service.

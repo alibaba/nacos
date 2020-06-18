@@ -18,21 +18,22 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * global executor in core module.
+ * core module global executor.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public class GlobalExecutor {
     
-    private static final ScheduledExecutorService COMMON_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(GlobalExecutor.class), 4,
-                    new NameThreadFactory("com.alibaba.nacos.core.common"));
+    private static final ScheduledExecutorService COMMON_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(GlobalExecutor.class),
+            4,
+            new NameThreadFactory("com.alibaba.nacos.core.common")
+    );
     
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();

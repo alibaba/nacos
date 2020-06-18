@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +36,7 @@ import java.nio.file.WatchService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -46,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Unified file change monitoring management center, which uses {@link WatchService} internally. One file directory
  * corresponds to one {@link WatchService}. It can only monitor up to 32 file directories. When a file change occurs, a
- * {@link FileChangeEvent} will be issued.
+ * {@link FileChangeEvent} will be issued
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -65,23 +64,28 @@ public class WatchFileCenter {
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
+    static {
+        ThreadUtils.addShutdownHook(new Runnable() {
+            @Override
+            public void run() {
+                shutdown();
+            }
+        });
+    }
+    
     /**
      * The number of directories that are currently monitored.
      */
     @SuppressWarnings("checkstyle:StaticVariableName")
     private static int NOW_WATCH_JOB_CNT = 0;
     
-    static {
-        ThreadUtils.addShutdownHook(WatchFileCenter::shutdown);
-    }
-    
     /**
-     * Register a file change listener in the directory of paths.
+     * Register {@link FileWatcher} in this directory.
      *
-     * @param paths   directory
+     * @param paths directory
      * @param watcher {@link FileWatcher}
-     * @return register file-watcher is success
-     * @throws NacosException Registration is abnormal
+     * @return register is success
+     * @throws NacosException NacosException
      */
     public static synchronized boolean registerWatcher(final String paths, FileWatcher watcher) throws NacosException {
         checkState();
@@ -100,10 +104,10 @@ public class WatchFileCenter {
     }
     
     /**
-     * Remove all file listeners in this directory.
+     * Deregister all {@link FileWatcher} in this directory.
      *
      * @param path directory
-     * @return deregister all file-watcher which in this directory is success
+     * @return deregister is success
      */
     public static synchronized boolean deregisterAllWatcher(final String path) {
         WatchDirJob job = MANAGER.get(path);
@@ -128,7 +132,7 @@ public class WatchFileCenter {
             try {
                 entry.getValue().shutdown();
             } catch (Throwable e) {
-                LOGGER.error("[WatchFileCenter] shutdown has error : {}", ExceptionUtil.getStackTrace(e));
+                LOGGER.error("[WatchFileCenter] shutdown has error : {}", e);
             }
         }
         MANAGER.clear();
@@ -136,9 +140,9 @@ public class WatchFileCenter {
     }
     
     /**
-     * deregister this {@link FileWatcher} which watch this directory.
+     * Deregister {@link FileWatcher} in this directory.
      *
-     * @param path    directory
+     * @param path directory
      * @param watcher {@link FileWatcher}
      * @return deregister is success
      */
@@ -151,17 +155,11 @@ public class WatchFileCenter {
         return false;
     }
     
-    private static void checkState() {
-        if (CLOSED.get()) {
-            throw new IllegalStateException("WatchFileCenter already shutdown");
-        }
-    }
-    
     private static class WatchDirJob extends Thread {
         
-        private final String paths;
-        
         private ExecutorService callBackExecutor;
+        
+        private final String paths;
         
         private WatchService watchService;
         
@@ -230,7 +228,7 @@ public class WatchFileCenter {
                 } catch (InterruptedException ignore) {
                     Thread.interrupted();
                 } catch (Throwable ex) {
-                    LOGGER.error("An exception occurred during file listening : {}", ExceptionUtil.getStackTrace(ex));
+                    LOGGER.error("An exception occurred during file listening : {}", ex);
                 }
             }
         }
@@ -251,7 +249,7 @@ public class WatchFileCenter {
                         try {
                             job.run();
                         } catch (Throwable ex) {
-                            LOGGER.error("File change event callback error : {}", ExceptionUtil.getStackTrace(ex));
+                            LOGGER.error("File change event callback error : {}", ex);
                         }
                     } else {
                         executor.execute(job);
@@ -271,5 +269,11 @@ public class WatchFileCenter {
             }
         }
         
+    }
+    
+    private static void checkState() {
+        if (CLOSED.get()) {
+            throw new IllegalStateException("WatchFileCenter already shutdown");
+        }
     }
 }
