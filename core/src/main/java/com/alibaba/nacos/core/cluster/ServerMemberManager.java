@@ -83,11 +83,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
     
     /**
-     * Broadcast this node element information task
-     */
-    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
-    
-    /**
      * Cluster node list
      */
     private volatile ConcurrentSkipListMap<String, Member> serverList;
@@ -122,6 +117,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
     
+    /**
+     * Broadcast this node element information task
+     */
+    private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
+    
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap();
         ApplicationUtils.setContextPath(servletContext.getContextPath());
@@ -135,7 +135,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
         this.localAddress = InetUtils.getSelfIp() + ":" + port;
         this.self = MemberUtils.singleParse(this.localAddress);
-        this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.VERSION);
+        this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager
@@ -360,13 +360,13 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
     
     @JustForTest
-    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
-        this.memberAddressInfos = memberAddressInfos;
+    public void updateMember(Member member) {
+        serverList.put(member.getAddress(), member);
     }
     
     @JustForTest
-    public void updateMember(Member member) {
-        serverList.put(member.getAddress(), member);
+    public void setMemberAddressInfos(Set<String> memberAddressInfos) {
+        this.memberAddressInfos = memberAddressInfos;
     }
     
     public Map<String, Member> getServerList() {
@@ -406,7 +406,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             
             try {
                 asyncHttpClient
-                        .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.VERSION),
+                        .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
                                 Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
                                     @Override
                                     public void onReceive(RestResult<String> result) {
@@ -414,7 +414,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                 || result.getCode() == HttpStatus.NOT_FOUND.value()) {
                                             Loggers.CLUSTER
                                                     .warn("{} version is too low, it is recommended to upgrade the version : {}",
-                                                            target, VersionUtils.VERSION);
+                                                            target, VersionUtils.version);
                                             return;
                                         }
                                         if (result.ok()) {

@@ -22,73 +22,72 @@ import com.alibaba.nacos.common.http.param.Query;
 import java.lang.reflect.Type;
 
 /**
+ * Nacos async http client interface.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public interface NAsyncHttpClient extends NHttpClient {
-
+    
     /**
      * http get
      *
-     * @param url url
-     * @param header http header param
-     * @param query http query param
-     * @param token return type
+     * @param url      url
+     * @param header   http header param
+     * @param query    http query param
+     * @param token    return type
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    <T> void get(String url, Header header, Query query,
-                 Type token, Callback<T> callback) throws Exception;
-
+    <T> void get(String url, Header header, Query query, Type token, Callback<T> callback) throws Exception;
+    
     /**
      * get request, may be pulling a lot of data
      *
-     * @param url url
-     * @param header http header param
-     * @param query http query param
-     * @param body get with body
-     * @param token return type
+     * @param url      url
+     * @param header   http header param
+     * @param query    http query param
+     * @param body     get with body
+     * @param token    return type
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    <T> void getLarge(String url, Header header, Query query, Object body,
-                              Type token,
-                              Callback<T> callback) throws Exception;
-
+    <T> void getLarge(String url, Header header, Query query, Object body, Type token, Callback<T> callback)
+            throws Exception;
+    
     /**
      * http delete
      *
-     * @param url url
-     * @param header http header param
-     * @param query http query param
-     * @param token return type
+     * @param url      url
+     * @param header   http header param
+     * @param query    http query param
+     * @param token    return type
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    <T> void delete(String url, Header header, Query query,
-                    Type token, Callback<T> callback) throws Exception;
-
+    <T> void delete(String url, Header header, Query query, Type token, Callback<T> callback) throws Exception;
+    
     /**
      * http put
      *
-     * @param url url
-     * @param header http header param
-     * @param query http query param
-     * @param body http body param
-     * @param token return type
+     * @param url      url
+     * @param header   http header param
+     * @param query    http query param
+     * @param body     http body param
+     * @param token    return type
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    <T> void put(String url, Header header, Query query, Object body,
-                 Type token, Callback<T> callback) throws Exception;
-
+    <T> void put(String url, Header header, Query query, Object body, Type token, Callback<T> callback)
+            throws Exception;
+    
     /**
      * http post
      *
-     * @param url url
-     * @param header http header param
-     * @param query http query param
-     * @param body http body param
-     * @param token return type
+     * @param url      url
+     * @param header   http header param
+     * @param query    http query param
+     * @param body     http body param
+     * @param token    return type
      * @param callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
-    <T> void post(String url, Header header, Query query, Object body,
-                  Type token, Callback<T> callback) throws Exception;
-
+    <T> void post(String url, Header header, Query query, Object body, Type token, Callback<T> callback)
+            throws Exception;
+    
 }

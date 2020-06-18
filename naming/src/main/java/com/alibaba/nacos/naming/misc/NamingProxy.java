@@ -58,7 +58,7 @@ public class NamingProxy {
         try {
             Map<String, String> headers = new HashMap<>(128);
             
-            headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+            headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
             headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
             headers.put("Connection", "Keep-Alive");
             
@@ -147,7 +147,7 @@ public class NamingProxy {
     public static boolean syncData(byte[] data, String curServer) {
         Map<String, String> headers = new HashMap<>(128);
         
-        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         headers.put("Accept-Encoding", "gzip,deflate,sdch");
         headers.put("Connection", "Keep-Alive");
@@ -183,7 +183,7 @@ public class NamingProxy {
      */
     public static String reqApi(String api, Map<String, String> params, String curServer) throws Exception {
         try {
-            List<String> headers = Arrays.asList(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            List<String> headers = Arrays.asList(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version,
                     HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION, "Accept-Encoding",
                     "gzip,deflate,sdch", "Connection", "Keep-Alive", "Content-Encoding", "gzip");
             
@@ -225,7 +225,7 @@ public class NamingProxy {
     public static String reqApi(String api, Map<String, String> params, String curServer, boolean isPost)
             throws Exception {
         try {
-            List<String> headers = Arrays.asList(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            List<String> headers = Arrays.asList(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version,
                     HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION, "Accept-Encoding",
                     "gzip,deflate,sdch", "Connection", "Keep-Alive", "Content-Encoding", "gzip");
             

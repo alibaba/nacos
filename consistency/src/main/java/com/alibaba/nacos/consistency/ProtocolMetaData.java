@@ -41,7 +41,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public final class ProtocolMetaData {
     
     private static final Executor EXECUTOR = ExecutorFactory.Managed
-            .newFixExecutorService(ProtocolMetaData.class.getCanonicalName(), 4,
+            .newFixedExecutorService(ProtocolMetaData.class.getCanonicalName(), 4,
                     new NameThreadFactory("com.alibaba.nacos.consistency.protocol.metadata"));
     
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
