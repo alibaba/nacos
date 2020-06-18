@@ -34,40 +34,52 @@ import java.lang.reflect.Type;
 import org.slf4j.Logger;
 
 /**
+ * Response handler.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ResponseHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ResponseHandler.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHandler.class);
+    
     public static <T> T convert(String s, Class<T> cls) throws Exception {
         return JacksonUtils.toObj(s, cls);
     }
-
+    
     public static <T> T convert(String s, Type type) throws Exception {
         return JacksonUtils.toObj(s, type);
     }
-
+    
     public static <T> T convert(InputStream inputStream, Type type) throws Exception {
         return JacksonUtils.toObj(inputStream, type);
     }
-
+    
+    private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
+        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
+        httpRestResult.setCode(restResult.getCode());
+        httpRestResult.setData(restResult.getData());
+        httpRestResult.setMessage(restResult.getMessage());
+        return httpRestResult;
+    }
+    
     @SuppressWarnings({"unchecked", "rawtypes", "resource"})
-    public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type) throws Exception {
+    public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type)
+            throws Exception {
         Header headers = response.getHeaders();
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         InputStream body = response.getBody();
         T extractBody = null;
-        if (MediaType.APPLICATION_JSON.equals(contentType) && HttpStatus.SC_OK == response.getStatusCode()) {
+        if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response
+                .getStatusCode()) {
             extractBody = convert(body, type);
         }
         if (extractBody == null) {
             if (!String.class.toString().equals(type.toString())) {
-                logger.error("if the response contentType is not [application/json]," +
-                    " only support to java.lang.String");
+                LOGGER.error(
+                        "if the response contentType is not [application/json]," + " only support to java.lang.String");
                 throw new NacosDeserializationException(type);
             }
-            extractBody = (T)IoUtils.toString(body, headers.getCharset());
+            extractBody = (T) IoUtils.toString(body, headers.getCharset());
         }
         if (extractBody instanceof RestResult) {
             HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
@@ -76,13 +88,4 @@ public final class ResponseHandler {
         }
         return new HttpRestResult<T>(response.getHeaders(), response.getStatusCode(), extractBody);
     }
-
-    private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
-        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
-        httpRestResult.setCode(restResult.getCode());
-        httpRestResult.setData(restResult.getData());
-        httpRestResult.setMessage(restResult.getMessage());
-        return httpRestResult;
-    }
-
 }

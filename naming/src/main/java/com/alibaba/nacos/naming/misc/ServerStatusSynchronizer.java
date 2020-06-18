@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -25,37 +26,38 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Report local server status to other server
+ * Report local server status to other server.
  *
- * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  * @author nacos
+ * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 public class ServerStatusSynchronizer implements Synchronizer {
+    
     @Override
     public void send(final String serverIP, Message msg) {
         if (StringUtils.isEmpty(serverIP)) {
             return;
         }
-
+        
         final Map<String, String> params = new HashMap<String, String>(2);
-
+        
         params.put("serverStatus", msg.getData());
-
-        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort()
-            + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
-
+        
+        String url = "http://" + serverIP + ":" + ApplicationUtils.getPort() + ApplicationUtils.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
+        
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                + "/operator/server/status";
+                    + "/operator/server/status";
         }
-
+        
         try {
             HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler() {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
-                            serverIP);
+                                serverIP);
                         return 1;
                     }
                     return 0;
@@ -65,7 +67,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
         }
     }
-
+    
     @Override
     public Message get(String server, String key) {
         return null;

@@ -17,29 +17,31 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 /**
+ * constant.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftConstants {
-
-	public static final String JRAFT_EXTEND_INFO_KEY = JRaftLogOperation.class.getCanonicalName();
-
-	public static final String GROUP_ID = "groupId";
-
-	public static final String COMMAND_NAME = "command";
-
-	public static final String COMMAND_VALUE = "value";
-
-	public static final String TRANSFER_LEADER = "transferLeader";
-
-	public static final String RESET_RAFT_CLUSTER = "restRaftCluster";
-
-	public static final String DO_SNAPSHOT = "doSnapshot";
-
-	public static final String REMOVE_PEER = "removePeer";
-
-	public static final String REMOVE_PEERS = "removePeers";
-
-	public static final String CHANGE_PEERS = "changePeers";
-
+    
+    public static final String JRAFT_EXTEND_INFO_KEY = JRaftLogOperation.class.getCanonicalName();
+    
+    public static final String GROUP_ID = "groupId";
+    
+    public static final String COMMAND_NAME = "command";
+    
+    public static final String COMMAND_VALUE = "value";
+    
+    public static final String TRANSFER_LEADER = "transferLeader";
+    
+    public static final String RESET_RAFT_CLUSTER = "restRaftCluster";
+    
+    public static final String DO_SNAPSHOT = "doSnapshot";
+    
+    public static final String REMOVE_PEER = "removePeer";
+    
+    public static final String REMOVE_PEERS = "removePeers";
+    
+    public static final String CHANGE_PEERS = "changePeers";
+    
 }

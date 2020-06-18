@@ -19,28 +19,28 @@ package com.alibaba.nacos.core.notify.listener;
 import com.alibaba.nacos.core.notify.Event;
 
 /**
- * Subscribers to multiple events can be listened to
+ * Subscribers to multiple events can be listened to.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SmartSubscribe implements Subscribe<Event> {
-
-	/**
-	 * Determines if the processing message is acceptable
-	 *
-	 * @param event {@link Event}
-	 * @return Determines if the processing message is acceptable
-	 */
-	public abstract boolean canNotify(Event event);
-
-	@Override
-	public final Class<? extends Event> subscribeType() {
-		return null;
-	}
-
-	@Override
-	public final boolean ignoreExpireEvent() {
-		return false;
-	}
+    
+    /**
+     * Determines if the processing message is acceptable.
+     *
+     * @param event {@link Event}
+     * @return Determines if the processing message is acceptable
+     */
+    public abstract boolean canNotify(Event event);
+    
+    @Override
+    public final Class<? extends Event> subscribeType() {
+        return null;
+    }
+    
+    @Override
+    public final boolean ignoreExpireEvent() {
+        return false;
+    }
 }

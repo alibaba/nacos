@@ -20,6 +20,8 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
 
 /**
+ * ap protocol.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")

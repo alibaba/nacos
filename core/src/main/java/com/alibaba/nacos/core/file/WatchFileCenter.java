@@ -43,7 +43,7 @@ public class WatchFileCenter {
     private static final Logger LOGGER = LoggerFactory.getLogger(WatchFileCenter.class);
     
     /**
-     * Maximum number of monitored file directories
+     * Maximum number of monitored file directories.
      */
     private static final int MAX_WATCH_FILE_JOB = Integer.getInteger("nacos.watch-file.max-dirs", 16);
     
@@ -63,11 +63,20 @@ public class WatchFileCenter {
     }
     
     /**
-     * The number of directories that are currently monitored
+     * The number of directories that are currently monitored.
      */
+    @SuppressWarnings("checkstyle:StaticVariableName")
     private static int NOW_WATCH_JOB_CNT = 0;
     
-    public synchronized static boolean registerWatcher(final String paths, FileWatcher watcher) throws NacosException {
+    /**
+     * Register {@link FileWatcher} in this directory.
+     *
+     * @param paths directory
+     * @param watcher {@link FileWatcher}
+     * @return register is success
+     * @throws NacosException NacosException
+     */
+    public static synchronized boolean registerWatcher(final String paths, FileWatcher watcher) throws NacosException {
         checkState();
         NOW_WATCH_JOB_CNT++;
         if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
@@ -83,7 +92,13 @@ public class WatchFileCenter {
         return true;
     }
     
-    public synchronized static boolean deregisterAllWatcher(final String path) {
+    /**
+     * Deregister all {@link FileWatcher} in this directory.
+     *
+     * @param path directory
+     * @return deregister is success
+     */
+    public static synchronized boolean deregisterAllWatcher(final String path) {
         WatchDirJob job = MANAGER.get(path);
         if (job != null) {
             job.shutdown();
@@ -93,6 +108,9 @@ public class WatchFileCenter {
         return false;
     }
     
+    /**
+     * close {@link WatchFileCenter}.
+     */
     public static void shutdown() {
         if (!CLOSED.compareAndSet(false, true)) {
             return;
@@ -110,7 +128,14 @@ public class WatchFileCenter {
         LOGGER.warn("[WatchFileCenter] already closed");
     }
     
-    public synchronized static boolean deregisterWatcher(final String path, final FileWatcher watcher) {
+    /**
+     * Deregister {@link FileWatcher} in this directory.
+     *
+     * @param path directory
+     * @param watcher {@link FileWatcher}
+     * @return deregister is success
+     */
+    public static synchronized boolean deregisterWatcher(final String path, final FileWatcher watcher) {
         WatchDirJob job = MANAGER.get(path);
         if (job != null) {
             job.watchers.remove(watcher);
@@ -139,8 +164,8 @@ public class WatchFileCenter {
                 throw new IllegalArgumentException("Must be a file directory : " + paths);
             }
             
-            this.callBackExecutor = ExecutorFactory.newFixExecutorService(WatchFileCenter.class.getCanonicalName(), 1,
-                    new NameThreadFactory("com.alibaba.nacos.file.watch-" + paths));
+            this.callBackExecutor = ExecutorFactory
+                    .newSingleExecutorService(new NameThreadFactory("com.alibaba.nacos.core.file.watch-" + paths));
             
             try {
                 WatchService service = FILE_SYSTEM.newWatchService();
@@ -158,6 +183,7 @@ public class WatchFileCenter {
         
         void shutdown() {
             watch = false;
+            ThreadUtils.shutdownThreadPool(this.callBackExecutor);
         }
         
         @Override

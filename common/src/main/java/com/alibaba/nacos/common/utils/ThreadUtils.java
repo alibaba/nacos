@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
-
+    
     public static void objectWait(Object object) {
         try {
             object.wait();
@@ -34,7 +34,7 @@ public final class ThreadUtils {
             Thread.interrupted();
         }
     }
-
+    
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
@@ -42,12 +42,12 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-
+    
     public static void countDown(CountDownLatch latch) {
         Objects.requireNonNull(latch, "latch");
         latch.countDown();
     }
-
+    
     public static void latchAwait(CountDownLatch latch) {
         try {
             latch.await();
@@ -55,7 +55,7 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-
+    
     public static void latchAwait(CountDownLatch latch, long time, TimeUnit unit) {
         try {
             latch.await(time, unit);
@@ -63,10 +63,9 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-
+    
     /**
-     * Through the number of cores, calculate the appropriate number of threads;
-     * 1.5-2 times the number of CPU cores
+     * Through the number of cores, calculate the appropriate number of threads; 1.5-2 times the number of CPU cores
      *
      * @return thread count
      */
@@ -78,16 +77,16 @@ public final class ThreadUtils {
         }
         return workerCount;
     }
-
+    
     public static void shutdownThreadPool(ExecutorService executor) {
         shutdownThreadPool(executor, null);
     }
-
+    
     public static void shutdownThreadPool(ExecutorService executor, Logger logger) {
         executor.shutdown();
         int retry = 3;
         while (retry > 0) {
-            retry --;
+            retry--;
             try {
                 if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
                     return;
@@ -103,11 +102,11 @@ public final class ThreadUtils {
         }
         executor.shutdownNow();
     }
-
+    
     public static void addShutdownHook(Runnable runnable) {
         Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
-
-    private final static int THREAD_MULTIPLER = 2;
-
+    
+    private static final int THREAD_MULTIPLER = 2;
+    
 }

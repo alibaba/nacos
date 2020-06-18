@@ -32,47 +32,46 @@ import java.net.URI;
 import java.util.Map;
 
 /**
- * {@link HttpClientRequest} implementation that uses apache http client to
- * execute streaming requests
+ * {@link HttpClientRequest} implementation that uses apache http client to execute streaming requests.
  *
  * @author mai.jh
- * @date 2020/5/24
  */
-@SuppressWarnings({"unchecked", "rawtypes", "resource"})
+@SuppressWarnings({"unchecked", "resource"})
 public class DefaultHttpClientRequest implements HttpClientRequest {
-
-    private static final Logger logger = LoggerFactory.getLogger(DefaultHttpClientRequest.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultHttpClientRequest.class);
+    
     private final CloseableHttpClient client;
-
+    
     public DefaultHttpClientRequest(CloseableHttpClient client) {
         this.client = client;
     }
-
+    
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception {
+    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
+            throws Exception {
         HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
         CloseableHttpResponse response = client.execute(request);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Request from server: " + request.getURI().toString());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Request from server: " + request.getURI().toString());
         }
         return new DefaultClientHttpResponse(response);
     }
-
+    
     static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
         Header headers = requestHttpEntity.getHeaders();
         BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         httpMethod.init(uri.toString());
         httpMethod.initHeader(headers);
         if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
-            && requestHttpEntity.getBody() instanceof Map) {
+                && requestHttpEntity.getBody() instanceof Map) {
             httpMethod.initFromEntity((Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
         } else {
             httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
         return httpMethod.getRequestBase();
     }
-
+    
     @Override
     public void close() throws IOException {
         client.close();

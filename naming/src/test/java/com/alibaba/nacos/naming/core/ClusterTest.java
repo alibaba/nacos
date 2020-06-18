@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
@@ -38,20 +39,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-/**
- * @author nkorange
- */
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterTest {
-
+    
     private Cluster cluster;
-
+    
     @Mock
     private ConfigurableApplicationContext context;
-
+    
     @Mock
     private SwitchDomain switchDomain;
-
+    
     @Before
     public void before() {
         ApplicationUtils.injectContext(context);
@@ -59,19 +57,18 @@ public class ClusterTest {
         when(switchDomain.getTcpHealthParams()).thenReturn(new TcpHealthParams());
         Service service = new Service();
         service.setName("nacos.service.1");
-
+        
         cluster = new Cluster("nacos-cluster-1", service);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
         cluster.init();
     }
-
-
+    
     @Test
     public void updateCluster() {
         Service service = new Service();
         service.setName("nacos.service.2");
-
+        
         Cluster newCluster = new Cluster("nacos-cluster-1", service);
         newCluster.setDefCkport(8888);
         newCluster.setDefIPPort(9999);
@@ -80,9 +77,9 @@ public class ClusterTest {
         healthCheckConfig.setExpectedResponseCode(500);
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
         newCluster.setHealthChecker(healthCheckConfig);
-
+        
         cluster.update(newCluster);
-
+        
         assertEquals(8888, cluster.getDefCkport());
         assertEquals(9999, cluster.getDefIPPort());
         assertTrue(cluster.getHealthChecker() instanceof Http);
@@ -91,24 +88,24 @@ public class ClusterTest {
         assertEquals(500, httpHealthCheck.getExpectedResponseCode());
         assertEquals("Client-Version:nacos-test-1", httpHealthCheck.getHeaders());
     }
-
+    
     @Test
     public void updateIps() {
-
+        
         Instance instance1 = new Instance();
         instance1.setIp("1.1.1.1");
         instance1.setPort(1234);
-
+        
         Instance instance2 = new Instance();
         instance2.setIp("1.1.1.1");
         instance2.setPort(2345);
-
+        
         List<Instance> list = new ArrayList<>();
         list.add(instance1);
         list.add(instance2);
-
-        cluster.updateIPs(list, false);
-
+        
+        cluster.updateIps(list, false);
+        
         List<Instance> ips = cluster.allIPs();
         assertNotNull(ips);
         assertEquals(2, ips.size());
@@ -117,27 +114,27 @@ public class ClusterTest {
         assertEquals("1.1.1.1", ips.get(1).getIp());
         assertEquals(2345, ips.get(1).getPort());
     }
-
+    
     @Test
     public void testValidate() {
         Service service = new Service("nacos.service.2");
         cluster = new Cluster("nacos-cluster-1", service);
         cluster.validate();
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void testValidateClusterNameNull() {
         Service service = new Service("nacos.service.2");
         cluster = new Cluster(null, service);
         cluster.validate();
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void testValidateServiceNull() {
         cluster = new Cluster("nacos-cluster-1", null);
         cluster.validate();
     }
-
+    
     @Test
     public void testSerialize() throws Exception {
         String actual = JacksonUtils.toJson(cluster);
@@ -154,10 +151,11 @@ public class ClusterTest {
         assertTrue(actual.contains("\"sitegroup\":\"\""));
         assertTrue(actual.contains("\"empty\":true"));
         assertFalse(actual.contains("\"service\""));
-
+        
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() throws Exception {
         String example = "{\"defCkport\":80,\"defIPPort\":8080,\"defaultCheckPort\":80,\"defaultPort\":80,\"empty\":true,\"healthChecker\":{\"type\":\"TCP\"},\"metadata\":{},\"name\":\"nacos-cluster-1\",\"serviceName\":\"nacos.service.1\",\"sitegroup\":\"\",\"useIPPort4Check\":true}";
         Cluster actual = JacksonUtils.toObj(example, Cluster.class);

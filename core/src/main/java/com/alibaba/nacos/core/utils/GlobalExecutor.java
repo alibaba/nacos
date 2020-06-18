@@ -16,39 +16,41 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * core module global executor.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class GlobalExecutor {
-
-    private static final ScheduledExecutorService COMMON_EXECUTOR = ExecutorFactory.newScheduledExecutorService(
-            GlobalExecutor.class.getCanonicalName(),
+    
+    private static final ScheduledExecutorService COMMON_EXECUTOR = ExecutorFactory.Managed.newScheduledExecutorService(
+            ClassUtils.getCanonicalName(GlobalExecutor.class),
             4,
             new NameThreadFactory("com.alibaba.nacos.core.common")
     );
-
+    
     public static void runWithoutThread(Runnable runnable) {
         runnable.run();
     }
-
+    
     public static void executeByCommon(Runnable runnable) {
         if (COMMON_EXECUTOR.isShutdown()) {
             return;
         }
         COMMON_EXECUTOR.execute(runnable);
     }
-
+    
     public static void scheduleByCommon(Runnable runnable, long delayMs) {
         if (COMMON_EXECUTOR.isShutdown()) {
             return;
         }
         COMMON_EXECUTOR.schedule(runnable, delayMs, TimeUnit.MILLISECONDS);
     }
-
+    
 }
