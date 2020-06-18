@@ -20,7 +20,7 @@
 package com.alibaba.nacos.consistency.entity;
 
 /**
- * Protobuf type {@code GetRequest}
+ * Protobuf type {@code GetRequest}.
  */
 @SuppressWarnings("all")
 public final class GetRequest extends com.google.protobuf.GeneratedMessageV3 implements

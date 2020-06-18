@@ -29,10 +29,11 @@ import java.util.ServiceLoader;
  */
 public class SerializeFactory {
     
-    public static final String HESSIAN_INDEX = "Kryo".toLowerCase();
+    public static final String HESSIAN_INDEX = "Hessian".toLowerCase();
     
     private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
     
+    @SuppressWarnings("checkstyle:StaticVariableName")
     public static String DEFAULT_SERIALIZER = HESSIAN_INDEX;
     
     static {

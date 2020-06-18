@@ -19,7 +19,7 @@ package com.alibaba.nacos.consistency.ap;
 import com.alibaba.nacos.consistency.LogProcessor;
 
 /**
- *
+ * log processor for ap.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

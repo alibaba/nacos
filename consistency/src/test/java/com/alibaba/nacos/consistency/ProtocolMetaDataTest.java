@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProtocolMetaDataTest {
     
     @Test
-    public void test_protocol_meta_data() throws Exception {
+    public void testProtocolMetaData() throws Exception {
         Map<String, Map<String, Object>> map = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
         data.put("test-1", LocalDateTime.now());

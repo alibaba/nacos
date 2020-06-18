@@ -20,7 +20,7 @@
 package com.alibaba.nacos.consistency.entity;
 
 /**
- * Protobuf type {@code Log}
+ * Protobuf type {@code Log}.
  */
 @SuppressWarnings("all")
 public final class Log extends com.google.protobuf.GeneratedMessageV3 implements

@@ -19,14 +19,18 @@ package com.alibaba.nacos.consistency;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SerializeFactoryTest {
     
-    
     @Test
-    public void test_list_serialize() throws Exception {
+    public void testListSerialize() throws Exception {
         byte[] data = new byte[0];
         Serializer serializer = SerializeFactory.getDefault();
         
@@ -43,7 +47,7 @@ public class SerializeFactoryTest {
     }
     
     @Test
-    public void test_map_serialize() {
+    public void testMapSerialize() {
         byte[] data = new byte[0];
         Serializer serializer = SerializeFactory.getDefault();
         Map<Integer, Integer> logsMap = new HashMap<>();
@@ -57,7 +61,7 @@ public class SerializeFactoryTest {
     }
     
     @Test
-    public void test_set_serialize() {
+    public void testSetSerialize() {
         byte[] data = new byte[0];
         Serializer serializer = SerializeFactory.getDefault();
         Set<Integer> logsMap = new CopyOnWriteArraySet<>();
