@@ -347,7 +347,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         return new ArrayList<>(instanceMap.values());
     }
-
     private List<Instance> subtract(Collection<Instance> oldIp, Collection<Instance> ips) {
         Map<String, Instance> ipsMap = new HashMap<>(ips.size());
         for (Instance instance : ips) {
