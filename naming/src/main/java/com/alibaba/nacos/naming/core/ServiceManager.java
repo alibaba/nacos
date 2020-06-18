@@ -234,7 +234,7 @@ public class ServiceManager implements RecordListener<Service> {
             
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
             
-            consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
+            consistencyService.unListen(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
         }
         

@@ -904,7 +904,7 @@ public class RaftCore {
      * @param key      key
      * @param listener listener
      */
-    public void unlisten(String key, RecordListener listener) {
+    public void unListen(String key, RecordListener listener) {
         
         if (!listeners.containsKey(key)) {
             return;
