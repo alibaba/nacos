@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -29,70 +30,70 @@ import static org.springframework.boot.context.logging.LoggingApplicationListene
 import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
 /**
- * Logging {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution
+ * Logging {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
 public class LoggingSpringApplicationRunListener implements SpringApplicationRunListener, Ordered {
-
+    
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
-
-    private static final Logger logger = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
+    
     private final SpringApplication application;
-
+    
     private final String[] args;
-
+    
     public LoggingSpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
     }
-
+    
     @Override
     public void starting() {
     }
-
+    
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         ApplicationUtils.injectEnvironment(environment);
         if (!environment.containsProperty(CONFIG_PROPERTY)) {
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
-            if (logger.isInfoEnabled()) {
-                logger.info("There is no property named \"{}\" in Spring Boot Environment, " +
-                                "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("There is no property named \"{}\" in Spring Boot Environment, "
+                                + "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
                         DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
     }
-
+    
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-
+    
     }
-
+    
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-
+    
     }
-
+    
     @Override
     public void started(ConfigurableApplicationContext context) {
-
+    
     }
-
+    
     @Override
     public void running(ConfigurableApplicationContext context) {
-
+    
     }
-
+    
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
-
+    
     }
-
+    
     /**
-     * Before {@link EventPublishingRunListener}
+     * Before {@link EventPublishingRunListener}.
      *
      * @return HIGHEST_PRECEDENCE
      */

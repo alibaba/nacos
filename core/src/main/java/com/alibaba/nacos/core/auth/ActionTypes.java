@@ -13,30 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
 /**
- * Resource action type definitions
+ * Resource action type definitions.
  *
  * @author nkorange
  * @since 1.2.0
  */
 public enum ActionTypes {
     /**
-     * Read
+     * Read.
      */
     READ("r"),
     /**
-     * Write
+     * Write.
      */
     WRITE("w");
-
+    
     private String action;
-
+    
     ActionTypes(String action) {
         this.action = action;
     }
-
+    
     @Override
     public String toString() {
         return action;

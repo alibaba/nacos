@@ -20,27 +20,29 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
+ * Read the snapshot file interface.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Reader {
-
+    
     private final String path;
-
+    
     private final Map<String, LocalFileMeta> allFiles;
-
+    
     public Reader(String path, Map<String, LocalFileMeta> allFiles) {
         this.path = path;
         this.allFiles = Collections.unmodifiableMap(allFiles);
     }
-
+    
     public String getPath() {
         return path;
     }
-
+    
     public Map<String, LocalFileMeta> listFiles() {
         return allFiles;
     }
-
+    
     public LocalFileMeta getFileMeta(String fileName) {
         return allFiles.get(fileName);
     }

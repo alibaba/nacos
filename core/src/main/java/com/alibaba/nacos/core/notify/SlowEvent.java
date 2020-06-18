@@ -17,9 +17,10 @@
 package com.alibaba.nacos.core.notify;
 
 /**
- * this event share one event-queue
+ * this event share one event-queue.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface SlowEvent extends Event {
+
 }

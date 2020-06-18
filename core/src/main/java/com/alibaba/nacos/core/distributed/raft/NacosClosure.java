@@ -23,97 +23,96 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.google.protobuf.Message;
 
 /**
+ * implement jraft closure.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosClosure implements Closure {
-
+    
     private final Message message;
+    
     private final Closure closure;
+    
     private final NacosStatus nacosStatus = new NacosStatus();
-
+    
     public NacosClosure(Message message, Closure closure) {
         this.message = message;
         this.closure = closure;
     }
-
+    
     @Override
     public void run(Status status) {
         nacosStatus.setStatus(status);
         closure.run(nacosStatus);
     }
-
+    
     public void setResponse(Response response) {
         this.nacosStatus.setResponse(response);
     }
-
+    
     public void setThrowable(Throwable throwable) {
         this.nacosStatus.setThrowable(throwable);
     }
-
+    
     public Message getMessage() {
         return message;
     }
-
+    
     // Pass the Throwable inside the state machine to the outer layer
-
+    
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     public static class NacosStatus extends Status {
-
+        
         private Status status;
-
+        
         private Response response = null;
-
+        
         private Throwable throwable = null;
-
+        
         public void setStatus(Status status) {
             this.status = status;
         }
-
+        
         @Override
         public void reset() {
             status.reset();
         }
-
+        
         @Override
         public boolean isOk() {
             return status.isOk();
         }
-
-        @Override
-        public void setCode(int code) {
-            status.setCode(code);
-        }
-
+        
         @Override
         public int getCode() {
             return status.getCode();
         }
-
+        
+        @Override
+        public void setCode(int code) {
+            status.setCode(code);
+        }
+        
         @Override
         public RaftError getRaftError() {
             return status.getRaftError();
         }
-
-        @Override
-        public void setErrorMsg(String errMsg) {
-            status.setErrorMsg(errMsg);
-        }
-
+        
         @Override
         public void setError(int code, String fmt, Object... args) {
             status.setError(code, fmt, args);
         }
-
+        
         @Override
         public void setError(RaftError error, String fmt, Object... args) {
             status.setError(error, fmt, args);
         }
-
+        
         @Override
         public String toString() {
             return status.toString();
         }
-
+        
         @Override
         public Status copy() {
             NacosStatus copy = new NacosStatus();
@@ -122,28 +121,32 @@ public class NacosClosure implements Closure {
             copy.throwable = this.throwable;
             return copy;
         }
-
+        
         @Override
         public String getErrorMsg() {
             return status.getErrorMsg();
         }
-
+        
+        @Override
+        public void setErrorMsg(String errMsg) {
+            status.setErrorMsg(errMsg);
+        }
+        
         public Response getResponse() {
             return response;
         }
-
+        
         public void setResponse(Response response) {
             this.response = response;
         }
-
+        
         public Throwable getThrowable() {
             return throwable;
         }
-
+        
         public void setThrowable(Throwable throwable) {
             this.throwable = throwable;
         }
-
-
+        
     }
 }
