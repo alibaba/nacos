@@ -17,29 +17,33 @@
 package com.alibaba.nacos.consistency.exception;
 
 /**
+ * Conformance protocol internal exceptions.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConsistencyException extends RuntimeException {
+    
     private static final long serialVersionUID = 1935132712388069418L;
-
+    
     public ConsistencyException() {
         super();
     }
-
+    
     public ConsistencyException(String message) {
         super(message);
     }
-
+    
     public ConsistencyException(String message, Throwable cause) {
         super(message, cause);
     }
-
+    
     public ConsistencyException(Throwable cause) {
         super(cause);
     }
-
-    protected ConsistencyException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    
+    protected ConsistencyException(String message, Throwable cause, boolean enableSuppression,
+            boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
-
+    
 }

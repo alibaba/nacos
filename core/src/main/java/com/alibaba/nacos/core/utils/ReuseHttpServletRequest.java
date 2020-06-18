@@ -35,100 +35,104 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
+ * httprequest wrapper.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ReuseHttpServletRequest extends HttpServletRequestWrapper implements ReuseHttpRequest {
-
-	private byte[] body;
-	private Map<String, String[]> stringMap;
-	private final HttpServletRequest target;
-
-	/**
-	 * Constructs a request object wrapping the given request.
-	 *
-	 * @param request The request to wrap
-	 * @throws IllegalArgumentException if the request is null
-	 */
-	public ReuseHttpServletRequest(HttpServletRequest request) throws IOException {
-		super(request);
-		this.target = request;
-		this.body = toBytes(request.getInputStream());
-		this.stringMap = toDuplication(request);
-	}
-
-	@Override
-	public Object getBody() throws Exception {
-		if (StringUtils.containsIgnoreCase(target.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
-			return target.getParts();
-		} else {
-			String s = ByteUtils.toString(body);
-			if (StringUtils.isBlank(s)) {
-				return HttpUtils.encodingParams(HttpUtils.translateParameterMap(stringMap),
-								StandardCharsets.UTF_8.name());
-			}
-			return s;
-		}
-	}
-
-	private byte[] toBytes(InputStream inputStream) throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		byte[] buffer = new byte[1024];
-		int n = 0;
-		while ((n = inputStream.read(buffer)) != -1) {
-			bos.write(buffer, 0, n);
-		}
-		return bos.toByteArray();
-	}
-
-	@Override
-	public BufferedReader getReader() throws IOException {
-		return new BufferedReader(new InputStreamReader(getInputStream()));
-	}
-
-	@Override
-	public Map<String, String[]> getParameterMap() {
-		return stringMap;
-	}
-
-	@Override
-	public String getParameter(String name) {
-		String[] values = stringMap.get(name);
-		if (values == null || values.length == 0) {
-			return null;
-		}
-		return values[0];
-	}
-
-	@Override
-	public String[] getParameterValues(String name) {
-		return stringMap.get(name);
-	}
-
-	@Override
-	public ServletInputStream getInputStream() throws IOException {
-
-		final ByteArrayInputStream inputStream = new ByteArrayInputStream(body);
-
-		return new ServletInputStream() {
-			@Override
-			public int read() throws IOException {
-				return inputStream.read();
-			}
-
-			@Override
-			public boolean isFinished() {
-				return false;
-			}
-
-			@Override
-			public boolean isReady() {
-				return false;
-			}
-
-			@Override
-			public void setReadListener(ReadListener readListener) {
-			}
-		};
-	}
-
+    
+    private final HttpServletRequest target;
+    
+    private byte[] body;
+    
+    private Map<String, String[]> stringMap;
+    
+    /**
+     * Constructs a request object wrapping the given request.
+     *
+     * @param request The request to wrap
+     * @throws IllegalArgumentException if the request is null
+     */
+    public ReuseHttpServletRequest(HttpServletRequest request) throws IOException {
+        super(request);
+        this.target = request;
+        this.body = toBytes(request.getInputStream());
+        this.stringMap = toDuplication(request);
+    }
+    
+    @Override
+    public Object getBody() throws Exception {
+        if (StringUtils.containsIgnoreCase(target.getContentType(), MediaType.MULTIPART_FORM_DATA)) {
+            return target.getParts();
+        } else {
+            String s = ByteUtils.toString(body);
+            if (StringUtils.isBlank(s)) {
+                return HttpUtils
+                        .encodingParams(HttpUtils.translateParameterMap(stringMap), StandardCharsets.UTF_8.name());
+            }
+            return s;
+        }
+    }
+    
+    private byte[] toBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int n = 0;
+        while ((n = inputStream.read(buffer)) != -1) {
+            bos.write(buffer, 0, n);
+        }
+        return bos.toByteArray();
+    }
+    
+    @Override
+    public BufferedReader getReader() throws IOException {
+        return new BufferedReader(new InputStreamReader(getInputStream()));
+    }
+    
+    @Override
+    public Map<String, String[]> getParameterMap() {
+        return stringMap;
+    }
+    
+    @Override
+    public String getParameter(String name) {
+        String[] values = stringMap.get(name);
+        if (values == null || values.length == 0) {
+            return null;
+        }
+        return values[0];
+    }
+    
+    @Override
+    public String[] getParameterValues(String name) {
+        return stringMap.get(name);
+    }
+    
+    @Override
+    public ServletInputStream getInputStream() throws IOException {
+        
+        final ByteArrayInputStream inputStream = new ByteArrayInputStream(body);
+        
+        return new ServletInputStream() {
+            @Override
+            public int read() throws IOException {
+                return inputStream.read();
+            }
+            
+            @Override
+            public boolean isFinished() {
+                return false;
+            }
+            
+            @Override
+            public boolean isReady() {
+                return false;
+            }
+            
+            @Override
+            public void setReadListener(ReadListener readListener) {
+            }
+        };
+    }
+    
 }

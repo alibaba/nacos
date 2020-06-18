@@ -22,18 +22,20 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import java.util.Map;
 
 /**
+ * Operation and maintenance command interface.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface CommandOperations {
-
-	/**
-	 * Operation and maintenance interface operation entry
-	 *
-	 * @param commands commands
-	 * @return execute success
-	 */
-	default RestResult<String> execute(Map<String, String> commands) {
-		return RestResultUtils.success();
-	}
-
+    
+    /**
+     * Operation and maintenance interface operation entry.
+     *
+     * @param commands commands
+     * @return execute success
+     */
+    default RestResult<String> execute(Map<String, String> commands) {
+        return RestResultUtils.success();
+    }
+    
 }

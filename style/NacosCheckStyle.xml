@@ -86,14 +86,14 @@
             <property name="allowMissingParamTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="allowedAnnotations"
-                value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters"/>
+                value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters, Bean"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="MissingJavadocMethod">
             <property name="scope" value="public"/>
             <property name="minLineCount" value="2"/>
             <property name="allowedAnnotations"
-                value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters"/>
+                value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters, Bean"/>
             <property name="ignoreMethodNamesRegex" value="^set[A-Z].*|^get[A-Z].*"/>
             <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>

@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
+package com.alibaba.nacos.common.http;
+
 /**
+ * default http client factory
  *
+ * @author mai.jh
+ * @date 2020/6/15
  */
-package com.alibaba.nacos.core;
+public class DefaultHttpClientFactory extends AbstractHttpClientFactory {
+
+    private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
+
+    @Override
+    protected HttpClientConfig buildHttpClientConfig() {
+        return HttpClientConfig.builder()
+            .setConTimeOutMillis(TIMEOUT)
+            .setReadTimeOutMillis(TIMEOUT >> 1)
+            .build();
+    }
+}

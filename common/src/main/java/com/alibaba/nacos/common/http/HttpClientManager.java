@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
-import com.alibaba.nacos.common.http.client.DefaultHttpClientRequest;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -51,14 +47,7 @@ public class HttpClientManager {
 	private static final NAsyncHttpClient ASYNC_HTTP_CLIENT = new NacosAsyncHttpClient(
 			HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build());
 
-    private static final NacosRestTemplate NACOS_REST_TEMPLATE = new NacosRestTemplate(
-	    new DefaultHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
-
-    private static final NacosAsyncRestTemplate NACOS_ASYNC_REST_TEMPLATE = new NacosAsyncRestTemplate(
-        new DefaultAsyncHttpClientRequest(HttpAsyncClients.custom().setDefaultRequestConfig(DEFAULT_CONFIG).build()));
-
 	private static final AtomicBoolean alreadyShutdown = new AtomicBoolean(false);
-
 
 	static {
         ThreadUtils.addShutdownHook(new Runnable() {
@@ -78,14 +67,6 @@ public class HttpClientManager {
 		return ASYNC_HTTP_CLIENT;
 	}
 
-	public static NacosRestTemplate getNacosRestTemplate() {
-	    return NACOS_REST_TEMPLATE;
-    }
-
-    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-	    return NACOS_ASYNC_REST_TEMPLATE;
-    }
-
 	public static void shutdown() {
 		if (!alreadyShutdown.compareAndSet(false, true)) {
 			return;
@@ -94,8 +75,6 @@ public class HttpClientManager {
 		try {
 			SYNC_HTTP_CLIENT.close();
 			ASYNC_HTTP_CLIENT.close();
-            NACOS_REST_TEMPLATE.close();
-            NACOS_ASYNC_REST_TEMPLATE.close();
 		}
 		catch (Exception ex) {
 			logger.error("An exception occurred when the HTTP client was closed : {}",

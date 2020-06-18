@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -20,13 +21,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/**
- * @author jifengnan
- */
 public class TaskDispatcherTest {
-
+    
     private TaskDispatcher taskDispatcher;
-
+    
     @Before
     public void init() {
         taskDispatcher = new TaskDispatcher();
@@ -35,10 +33,10 @@ public class TaskDispatcherTest {
         ReflectionTestUtils.setField(taskDispatcher, "partitionConfig", conf);
         taskDispatcher.init();
     }
-
+    
     @Test
     public void testAddTask() {
-        char[] chars = new char[]{2325, 9, 30, 12, 2};
+        char[] chars = new char[] {2325, 9, 30, 12, 2};
         taskDispatcher.addTask(new String(chars));
     }
 }

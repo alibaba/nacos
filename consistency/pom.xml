@@ -14,84 +14,84 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <parent>
-        <groupId>com.alibaba.nacos</groupId>
-        <artifactId>nacos-all</artifactId>
-        <version>1.3.0</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
-    <modelVersion>4.0.0</modelVersion>
-
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    
     <artifactId>nacos-consistency</artifactId>
-    <packaging>jar</packaging>
-
-    <name>nacos-consistency ${project.version}</name>
-    <url>http://nacos.io</url>
+    
     <build>
         <extensions>
             <extension>
-                <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
+                <groupId>kr.motd.maven</groupId>
                 <version>1.5.0.Final</version>
             </extension>
         </extensions>
         <plugins>
-<!--            Grpc coding plug-in-->
-<!--            <plugin>-->
-<!--                <groupId>org.xolstice.maven.plugins</groupId>-->
-<!--                <artifactId>protobuf-maven-plugin</artifactId>-->
-<!--                <version>0.5.0</version>-->
-<!--                <configuration>-->
-<!--                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>-->
-<!--                    <pluginId>grpc-java</pluginId>-->
-<!--                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <goals>-->
-<!--                            <goal>compile</goal>-->
-<!--                            <goal>compile-custom</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-compiler-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <source>8</source>-->
-<!--                    <target>8</target>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+            <!--            Grpc coding plug-in-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.xolstice.maven.plugins</groupId>-->
+            <!--                <artifactId>protobuf-maven-plugin</artifactId>-->
+            <!--                <version>0.5.0</version>-->
+            <!--                <configuration>-->
+            <!--                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>-->
+            <!--                    <pluginId>grpc-java</pluginId>-->
+            <!--                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <goals>-->
+            <!--                            <goal>compile</goal>-->
+            <!--                            <goal>compile-custom</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-compiler-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <source>8</source>-->
+            <!--                    <target>8</target>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
-
+    
+    <dependencies>
+        <dependency>
+            <artifactId>nacos-common</artifactId>
+            <groupId>${project.groupId}</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>javatuples</artifactId>
+            <groupId>org.javatuples</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>hessian</artifactId>
+            <groupId>com.caucho</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>protobuf-java</artifactId>
+            <groupId>com.google.protobuf</groupId>
+        </dependency>
+    </dependencies>
+    <modelVersion>4.0.0</modelVersion>
+    
+    <name>nacos-consistency ${project.version}</name>
+    <packaging>jar</packaging>
+    <parent>
+        <artifactId>nacos-all</artifactId>
+        <groupId>com.alibaba.nacos</groupId>
+        <relativePath>../pom.xml</relativePath>
+        <version>1.3.0</version>
+    </parent>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.javatuples</groupId>
-            <artifactId>javatuples</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.caucho</groupId>
-            <artifactId>hessian</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-        </dependency>
-    </dependencies>
+    
+    <url>http://nacos.io</url>
 
 </project>
