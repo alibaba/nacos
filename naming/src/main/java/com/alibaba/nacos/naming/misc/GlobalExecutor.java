@@ -43,8 +43,8 @@ public class GlobalExecutor {
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
     
     private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors() * 2, r -> {
-        Thread t = new Thread(r);
+            Runtime.getRuntime().availableProcessors() * 2, registerMaster -> {
+        Thread t = new Thread(registerMaster);
         
         t.setDaemon(true);
         t.setName("com.alibaba.nacos.naming.timer");
@@ -53,8 +53,8 @@ public class GlobalExecutor {
     });
     
     private static ScheduledExecutorService taskDispatchExecutor = new ScheduledThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors(), r -> {
-        Thread t = new Thread(r);
+            Runtime.getRuntime().availableProcessors(), taskDispatch -> {
+        Thread t = new Thread(taskDispatch);
         
         t.setDaemon(true);
         t.setName("com.alibaba.nacos.naming.distro.task.dispatcher");
@@ -63,8 +63,8 @@ public class GlobalExecutor {
     });
     
     private static ScheduledExecutorService dataSyncExecutor = new ScheduledThreadPoolExecutor(
-            Runtime.getRuntime().availableProcessors(), r -> {
-        Thread t = new Thread(r);
+            Runtime.getRuntime().availableProcessors(), dataSync -> {
+        Thread t = new Thread(dataSync);
         
         t.setDaemon(true);
         t.setName("com.alibaba.nacos.naming.distro.data.syncer");
@@ -72,8 +72,8 @@ public class GlobalExecutor {
         return t;
     });
     
-    private static ScheduledExecutorService notifyServerListExecutor = new ScheduledThreadPoolExecutor(1, r -> {
-        Thread t = new Thread(r);
+    private static ScheduledExecutorService notifyServerListExecutor = new ScheduledThreadPoolExecutor(1, notifyServer -> {
+        Thread t = new Thread(notifyServer);
         
         t.setDaemon(true);
         t.setName("com.alibaba.nacos.naming.server.list.notifier");
@@ -81,8 +81,8 @@ public class GlobalExecutor {
         return t;
     });
     
-    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = new ScheduledThreadPoolExecutor(1, r -> {
-        Thread t = new Thread(r);
+    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = new ScheduledThreadPoolExecutor(1, serverStatus -> {
+        Thread t = new Thread(serverStatus);
         t.setName("nacos.naming.status.worker");
         t.setDaemon(true);
         return t;
@@ -91,23 +91,23 @@ public class GlobalExecutor {
     /**
      * thread pool that processes getting service detail from other server asynchronously.
      */
-    private static ExecutorService serviceUpdateExecutor = Executors.newFixedThreadPool(2, r -> {
-        Thread t = new Thread(r);
+    private static ExecutorService serviceUpdateExecutor = Executors.newFixedThreadPool(2, serviceUpdate -> {
+        Thread t = new Thread(serviceUpdate);
         t.setName("com.alibaba.nacos.naming.service.update.http.handler");
         t.setDaemon(true);
         return t;
     });
     
     private static ScheduledExecutorService emptyServiceAutoCleanExecutor = Executors
-            .newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r);
+            .newSingleThreadScheduledExecutor(emptyService -> {
+                Thread t = new Thread(emptyService);
                 t.setName("com.alibaba.nacos.naming.service.empty.auto-clean");
                 t.setDaemon(true);
                 return t;
             });
     
-    private static ScheduledExecutorService distroNotifyExecutor = new ScheduledThreadPoolExecutor(1, r -> {
-        Thread t = new Thread(r);
+    private static ScheduledExecutorService distroNotifyExecutor = new ScheduledThreadPoolExecutor(1, distroNotify -> {
+        Thread t = new Thread(distroNotify);
         
         t.setDaemon(true);
         t.setName("com.alibaba.nacos.naming.distro.notifier");
