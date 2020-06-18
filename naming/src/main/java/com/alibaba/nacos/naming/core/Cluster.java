@@ -311,8 +311,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         }
         
         Map<String, Integer> intersectMap = new ConcurrentHashMap<>(newInstance.size() + oldInstance.size());
-        Map<String, Instance> instanceMap = new ConcurrentHashMap<>(newInstance.size());
-        Map<String, Instance> instanceMap1 = new ConcurrentHashMap<>(newInstance.size());
+        Map<String, Instance> updatedInstancesMap = new ConcurrentHashMap<>(newInstance.size());
+        Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());
         
         for (Instance instance : oldInstance) {
             if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
@@ -330,7 +330,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 }
             }
             
-            instanceMap1.put(instance.toString(), instance);
+            newInstancesMap.put(instance.toString(), instance);
             
         }
         
@@ -339,23 +339,23 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             Integer value = entry.getValue();
             
             if (value == 1) {
-                if (instanceMap1.containsKey(key)) {
-                    instanceMap.put(key, instanceMap1.get(key));
+                if (newInstancesMap.containsKey(key)) {
+                    updatedInstancesMap.put(key, newInstancesMap.get(key));
                 }
             }
         }
         
-        return new ArrayList<>(instanceMap.values());
+        return new ArrayList<>(updatedInstancesMap.values());
     }
-  
+    
     private List<Instance> subtract(Collection<Instance> oldIp, Collection<Instance> ips) {
         Map<String, Instance> ipsMap = new HashMap<>(ips.size());
         for (Instance instance : ips) {
             ipsMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
-
+        
         List<Instance> instanceResult = new ArrayList<>();
-
+        
         for (Instance instance : oldIp) {
             if (!ipsMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
                 instanceResult.add(instance);
