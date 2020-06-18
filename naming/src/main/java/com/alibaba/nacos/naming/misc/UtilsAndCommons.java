@@ -74,7 +74,7 @@ public class UtilsAndCommons {
     
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
     
-    public static final String NACOS_VERSION = VersionUtils.VERSION;
+    public static final String NACOS_VERSION = VersionUtils.version;
     
     public static final String SUPER_TOKEN = "xy";
     

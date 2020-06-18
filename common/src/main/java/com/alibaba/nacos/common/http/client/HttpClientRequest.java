@@ -22,18 +22,17 @@ import java.io.Closeable;
 import java.net.URI;
 
 /**
- * Represents a client-side HTTP request.
- * Created via an implementation execute.
+ * Represents a client-side HTTP request. Created via an implementation execute.
  *
  * @author mai.jh
- * @date 2020/5/23
  */
 public interface HttpClientRequest extends Closeable {
-
+    
     /**
-     * execute http request
-     * @param uri http url
-     * @param httpMethod http request method
+     * execute http request.
+     *
+     * @param uri               http url
+     * @param httpMethod        http request method
      * @param requestHttpEntity http request entity
      * @return HttpClientResponse
      * @throws Exception ex

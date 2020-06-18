@@ -72,7 +72,7 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
     private Configuration loadConfiguration(LoggerContext loggerContext, String location) {
         try {
-            URL url = ResourceUtils.getResourceURL(location);
+            URL url = ResourceUtils.getResourceUrl(location);
             ConfigurationSource source = getConfigurationSource(url);
             // since log4j 2.7 getConfiguration(LoggerContext loggerContext, ConfigurationSource source)
             return ConfigurationFactory.getInstance().getConfiguration(loggerContext, source);

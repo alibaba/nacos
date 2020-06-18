@@ -19,6 +19,8 @@ package com.alibaba.nacos.common.http;
 import java.io.Closeable;
 
 /**
+ * Nacos http client interface.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

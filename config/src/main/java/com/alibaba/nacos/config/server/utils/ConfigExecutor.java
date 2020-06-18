@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ConfigExecutor {
 
-	private static final Executor DUMP_EXECUTOR = ExecutorFactory.newFixExecutorService(
+	private static final Executor DUMP_EXECUTOR = ExecutorFactory.newFixedExecutorService(
 			Config.class.getCanonicalName(),
 			1,
 			new NameThreadFactory("nacos.config.embedded.dump"));
