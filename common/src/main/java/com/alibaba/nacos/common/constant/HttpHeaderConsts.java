@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.constant;
 
 /**
- * Nacos header constants
+ * Nacos header constants.
  *
  * @author ly
  */
 public interface HttpHeaderConsts {
-
+    
     String CLIENT_VERSION_HEADER = "Client-Version";
     String USER_AGENT_HEADER = "User-Agent";
     String REQUEST_SOURCE_HEADER = "Request-Source";
@@ -30,5 +31,8 @@ public interface HttpHeaderConsts {
     String ACCEPT_CHARSET = "Accept-Charset";
     String ACCEPT_ENCODING = "Accept-Encoding";
     String CONTENT_ENCODING = "Content-Encoding";
-
+    String CONNECTION = "Connection";
+    String REQUEST_ID = "RequestId";
+    String REQUEST_MODULE = "REQUEST_MODULE";
+    
 }

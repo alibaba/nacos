@@ -17,29 +17,29 @@
 package com.alibaba.nacos.core.distributed.raft.exception;
 
 /**
- * This exception is thrown if the current Raft Group Cluster does not elect a leader
+ * This exception is thrown if the current Raft Group Cluster does not elect a leader.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NoLeaderException extends Exception {
-
+    
     private static final long serialVersionUID = 1755681688785678765L;
-
+    
     public NoLeaderException() {
     }
-
+    
     public NoLeaderException(String group) {
         super("The Raft Group [" + group + "] did not find the Leader node");
     }
-
+    
     public NoLeaderException(String message, Throwable cause) {
         super(message, cause);
     }
-
+    
     public NoLeaderException(Throwable cause) {
         super(cause);
     }
-
+    
     public NoLeaderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }

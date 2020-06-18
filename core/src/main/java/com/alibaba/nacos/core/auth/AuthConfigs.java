@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.common.JustForTest;
@@ -29,7 +30,7 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 /**
- * Auth related configurations
+ * Auth related configurations.
  *
  * @author nkorange
  * @since 1.2.0
@@ -37,66 +38,76 @@ import java.util.Objects;
 @Component
 @Configuration
 public class AuthConfigs {
-
+    
+    @JustForTest
+    private static Boolean cachingEnabled = null;
+    
     @Autowired
     private ReloadableConfigs reloadableConfigs;
-
+    
     /**
-     * secret key
+     * secret key.
      */
     @Value("${nacos.core.auth.default.token.secret.key:}")
     private String secretKey;
-
+    
     /**
-     * Token validity time(seconds)
+     * Token validity time(seconds).
      */
     @Value("${nacos.core.auth.default.token.expire.seconds:1800}")
     private long tokenValidityInSeconds;
-
+    
     /**
-     * Which auth system is in use
+     * Which auth system is in use.
      */
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
-
-    @JustForTest
-    private static Boolean cachingEnabled = null;
-
+    
     public String getSecretKey() {
         return secretKey;
     }
-
+    
     public long getTokenValidityInSeconds() {
         return tokenValidityInSeconds;
     }
-
+    
     public String getNacosAuthSystemType() {
         return nacosAuthSystemType;
     }
-
+    
+    /**
+     * auth function is open.
+     *
+     * @return auth function is open
+     */
     public boolean isAuthEnabled() {
         // Runtime -D parameter has higher priority:
         String enabled = System.getProperty("nacos.core.auth.enabled");
         if (StringUtils.isNotBlank(enabled)) {
             return BooleanUtils.toBoolean(enabled);
         }
-        return BooleanUtils.toBoolean(reloadableConfigs.getProperties()
-            .getProperty("nacos.core.auth.enabled", "false"));
+        return BooleanUtils
+                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.enabled", "false"));
     }
-
+    
+    /**
+     * Whether permission information can be cached.
+     *
+     * @return bool
+     */
     public boolean isCachingEnabled() {
         if (Objects.nonNull(AuthConfigs.cachingEnabled)) {
             return cachingEnabled;
         }
-        return BooleanUtils.toBoolean(reloadableConfigs.getProperties()
-            .getProperty("nacos.core.auth.caching.enabled", "true"));
+        return BooleanUtils
+                .toBoolean(reloadableConfigs.getProperties().getProperty("nacos.core.auth.caching.enabled", "true"));
     }
-
+    
     @JustForTest
     public static void setCachingEnabled(boolean cachingEnabled) {
         AuthConfigs.cachingEnabled = cachingEnabled;
     }
-
+    
     @Bean
     public FilterRegistrationBean authFilterRegistration() {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
@@ -104,13 +115,13 @@ public class AuthConfigs {
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
-
+        
         return registration;
     }
-
+    
     @Bean
     public AuthFilter authFilter() {
         return new AuthFilter();
     }
-
+    
 }

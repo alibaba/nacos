@@ -17,26 +17,29 @@
 package com.alibaba.nacos.consistency.exception;
 
 /**
+ * There is no log processing group corresponding to the group.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NoSuchLogProcessorException extends RuntimeException {
-
+    
     public NoSuchLogProcessorException() {
     }
-
+    
     public NoSuchLogProcessorException(String message) {
         super(message);
     }
-
+    
     public NoSuchLogProcessorException(String message, Throwable cause) {
         super(message, cause);
     }
-
+    
     public NoSuchLogProcessorException(Throwable cause) {
         super(cause);
     }
-
-    public NoSuchLogProcessorException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    
+    public NoSuchLogProcessorException(String message, Throwable cause, boolean enableSuppression,
+            boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

@@ -17,16 +17,16 @@
 package com.alibaba.nacos.core.distributed.raft.utils;
 
 /**
- * Retry function
+ * Retry function.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @FunctionalInterface
 public interface RetryRunner {
-
+    
     /**
-     * Tasks that require retry
+     * Tasks that require retry.
      */
     void run();
-
+    
 }

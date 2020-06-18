@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -25,24 +26,43 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 
 /**
+ * Raft http proxy.
+ *
  * @author nacos
  */
 @Component
 public class RaftProxy {
-
-    public void proxyGET(String server, String api, Map<String, String> params) throws Exception {
+    
+    /**
+     * Proxy get method.
+     *
+     * @param server target server
+     * @param api    api path
+     * @param params parameters
+     * @throws Exception any exception during request
+     */
+    public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-
-        HttpClient.HttpResult result =  HttpClient.httpGet(url, null, params);
+        
+        HttpClient.HttpResult result = HttpClient.httpGet(url, null, params);
         if (result.code != HttpURLConnection.HTTP_OK) {
             throw new IllegalStateException("leader failed, caused by: " + result.content);
         }
     }
-
+    
+    /**
+     * Proxy specified method.
+     *
+     * @param server target server
+     * @param api    api path
+     * @param params parameters
+     * @param method http method
+     * @throws Exception any exception during request
+     */
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
@@ -52,31 +72,41 @@ public class RaftProxy {
         HttpClient.HttpResult result;
         switch (method) {
             case GET:
-                result =  HttpClient.httpGet(url, null, params);
+                result = HttpClient.httpGet(url, null, params);
                 break;
             case POST:
                 result = HttpClient.httpPost(url, null, params);
                 break;
             case DELETE:
-                result =  HttpClient.httpDelete(url, null, params);
+                result = HttpClient.httpDelete(url, null, params);
                 break;
             default:
                 throw new RuntimeException("unsupported method:" + method);
         }
-
+        
         if (result.code != HttpURLConnection.HTTP_OK) {
             throw new IllegalStateException("leader failed, caused by: " + result.content);
         }
     }
-
-    public void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
+    
+    /**
+     * Proxy post method with large body.
+     *
+     * @param server  target server
+     * @param api     api path
+     * @param content body
+     * @param headers headers
+     * @throws Exception any exception during request
+     */
+    public void proxyPostLarge(String server, String api, String content, Map<String, String> headers)
+            throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-
-        HttpClient.HttpResult result =  HttpClient.httpPostLarge(url, headers, content);
+        
+        HttpClient.HttpResult result = HttpClient.httpPostLarge(url, headers, content);
         if (result.code != HttpURLConnection.HTTP_OK) {
             throw new IllegalStateException("leader failed, caused by: " + result.content);
         }

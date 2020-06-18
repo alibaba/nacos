@@ -28,35 +28,34 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Inject the raft information from the naming module into the outlier information of the node
+ * Inject the raft information from the naming module into the outlier information of the node.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
 public class RaftListener implements SmartApplicationListener {
-
-	private static final String GROUP = "naming";
-
-	@Autowired
-	private ServerMemberManager memberManager;
-
-	@Override
-	public boolean supportsEventType(
-			Class<? extends ApplicationEvent> eventType) {
-		boolean a = BaseRaftEvent.class.isAssignableFrom(eventType);
-		return a;
-	}
-
-	@Override
-	public void onApplicationEvent(ApplicationEvent event) {
-		if (event instanceof BaseRaftEvent) {
-			BaseRaftEvent raftEvent = (BaseRaftEvent) event;
-			RaftPeer local = raftEvent.getLocal();
-			String json = JacksonUtils.toJson(local);
-			Map map = JacksonUtils.toObj(json, HashMap.class);
-			Member self = memberManager.getSelf();
-			self.setExtendVal(GROUP, map);
-			memberManager.update(self);
-		}
-	}
+    
+    private static final String GROUP = "naming";
+    
+    @Autowired
+    private ServerMemberManager memberManager;
+    
+    @Override
+    public boolean supportsEventType(Class<? extends ApplicationEvent> eventType) {
+        boolean a = BaseRaftEvent.class.isAssignableFrom(eventType);
+        return a;
+    }
+    
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof BaseRaftEvent) {
+            BaseRaftEvent raftEvent = (BaseRaftEvent) event;
+            RaftPeer local = raftEvent.getLocal();
+            String json = JacksonUtils.toJson(local);
+            Map map = JacksonUtils.toObj(json, HashMap.class);
+            Member self = memberManager.getSelf();
+            self.setExtendVal(GROUP, map);
+            memberManager.update(self);
+        }
+    }
 }

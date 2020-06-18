@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -26,7 +27,12 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.http.*;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -47,16 +53,24 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 /**
+ * Http Client.
+ *
  * @author nacos
  */
 public class HttpClient {
+
     private static final int TIME_OUT_MILLIS = 10000;
+
     private static final int CON_TIME_OUT_MILLIS = 5000;
 
     private static AsyncHttpClient asyncHttpClient;
@@ -88,16 +102,47 @@ public class HttpClient {
         postClient = builder2.build();
     }
 
+    /**
+     * Request http delete method.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @return {@link HttpResult} as response
+     */
     public static HttpResult httpDelete(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "DELETE");
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8",
+                "DELETE");
     }
 
+    /**
+     * Request http get method.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @return {@link HttpResult} as response
+     */
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8",
+                "GET");
     }
 
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body, int connectTimeout,
-                                     int readTimeout, String encoding, String method) {
+    /**
+     * Do http request.
+     *
+     * @param url            request url
+     * @param headers        request headers
+     * @param paramValues    request params
+     * @param body           request body
+     * @param connectTimeout timeout of connection
+     * @param readTimeout    timeout of request
+     * @param encoding       charset of request
+     * @param method         http method
+     * @return {@link HttpResult} as response
+     */
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body,
+            int connectTimeout, int readTimeout, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -130,19 +175,56 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http get method by async.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @param handler     callback after request execute
+     */
+    public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues,
+            AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.GET);
     }
 
-    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http post method by async.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @param handler     callback after request execute
+     */
+    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues,
+            AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.POST);
     }
 
-    public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http delete method by async.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @param handler     callback after request execute
+     */
+    public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues,
+            AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.DELETE);
     }
 
-    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler, String method) throws Exception {
+    /**
+     * Do http request by async.
+     *
+     * @param url         request url
+     * @param headers     request headers
+     * @param paramValues request params
+     * @param method      http method
+     * @throws Exception exception when request
+     */
+    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues,
+            AsyncCompletionHandler handler, String method) throws Exception {
         if (!MapUtils.isEmpty(paramValues)) {
             String encodedContent = encodingParams(paramValues, "UTF-8");
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
@@ -182,11 +264,29 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpPostLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http post method by async with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @param handler callback after request execute
+     */
+    public static void asyncHttpPostLarge(String url, List<String> headers, String content,
+            AsyncCompletionHandler handler) throws Exception {
         asyncHttpPostLarge(url, headers, content.getBytes(), handler);
     }
 
-    public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http post method by async with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @param handler callback after request execute
+     */
+    public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content,
+            AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
 
         if (!CollectionUtils.isEmpty(headers)) {
@@ -209,7 +309,16 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http delete method by async with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @param handler callback after request execute
+     */
+    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content,
+            AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareDelete(url);
 
         if (!CollectionUtils.isEmpty(headers)) {
@@ -236,12 +345,24 @@ public class HttpClient {
         return httpPost(url, headers, paramValues, "UTF-8");
     }
 
-    public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
+    /**
+     * Request http post method.
+     *
+     * @param url         url
+     * @param headers     headers
+     * @param paramValues params
+     * @param encoding    charset
+     * @return {@link HttpResult} as response
+     */
+    public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues,
+            String encoding) {
         try {
 
             HttpPost httpost = new HttpPost(url);
 
-            RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000).setRedirectsEnabled(true).setMaxRedirects(5).build();
+            RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(5000)
+                    .setConnectTimeout(5000).setSocketTimeout(5000).setRedirectsEnabled(true).setMaxRedirects(5)
+                    .build();
             httpost.setConfig(requestConfig);
 
             List<NameValuePair> nvps = new ArrayList<NameValuePair>();
@@ -259,19 +380,29 @@ public class HttpClient {
 
                 HeaderElement[] headerElements = entity.getContentType().getElements();
 
-                if (headerElements != null && headerElements.length > 0 && headerElements[0] != null &&
-                    headerElements[0].getParameterByName("charset") != null) {
+                if (headerElements != null && headerElements.length > 0 && headerElements[0] != null
+                        && headerElements[0].getParameterByName("charset") != null) {
                     charset = headerElements[0].getParameterByName("charset").getValue();
                 }
             }
 
-            return new HttpResult(response.getStatusLine().getStatusCode(), IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
     }
 
-    public static void asyncHttpPutLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http put method by async with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @param handler callback after request execute
+     */
+    public static void asyncHttpPutLarge(String url, Map<String, String> headers, byte[] content,
+            AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePut(url);
 
         if (!headers.isEmpty()) {
@@ -294,7 +425,16 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpGetLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+    /**
+     * Request http get method by async with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @param handler callback after request execute
+     */
+    public static void asyncHttpGetLarge(String url, Map<String, String> headers, byte[] content,
+            AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareGet(url);
 
         if (!headers.isEmpty()) {
@@ -317,11 +457,18 @@ public class HttpClient {
         }
     }
 
+    /**
+     * Request http put method with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @return {@link HttpResult} as response
+     */
     public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
         try {
-            HttpClientBuilder builder = HttpClients.custom()
-                .setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+            HttpClientBuilder builder = HttpClients.custom().setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
             CloseableHttpClient httpClient = builder.build();
 
             HttpPut httpPut = new HttpPut(url);
@@ -337,12 +484,20 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
     }
 
+    /**
+     * Request http get method with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @return {@link HttpResult} as response
+     */
     public static HttpResult httpGetLarge(String url, Map<String, String> headers, String content) {
 
         try {
@@ -350,7 +505,6 @@ public class HttpClient {
             builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
             builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
 
-            CloseableHttpClient httpClient = builder.build();
             HttpGetWithEntity httpGetWithEntity = new HttpGetWithEntity();
             httpGetWithEntity.setURI(new URI(url));
 
@@ -359,6 +513,7 @@ public class HttpClient {
             }
 
             httpGetWithEntity.setEntity(new StringEntity(content, ContentType.create("application/json", "UTF-8")));
+            CloseableHttpClient httpClient = builder.build();
             HttpResponse response = httpClient.execute(httpGetWithEntity);
             HttpEntity entity = response.getEntity();
 
@@ -366,12 +521,20 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
     }
 
+    /**
+     * Request http post method with large body.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param content full request content
+     * @return {@link HttpResult} as response
+     */
     public static HttpResult httpPostLarge(String url, Map<String, String> headers, String content) {
         try {
             HttpClientBuilder builder = HttpClients.custom();
@@ -393,7 +556,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -453,16 +616,23 @@ public class HttpClient {
             }
         }
 
-        conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-            + encoding);
+        conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
-        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         conn.addRequestProperty(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         conn.addRequestProperty(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
     }
 
+    /**
+     * Encoding parameters.
+     *
+     * @param params   parameters
+     * @param encoding charset
+     * @return parameters string
+     * @throws UnsupportedEncodingException unsupported encodin exception
+     */
     public static String encodingParams(Map<String, String> params, String encoding)
-        throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder();
         if (null == params || params.isEmpty()) {
             return null;
@@ -484,6 +654,12 @@ public class HttpClient {
         return sb.toString();
     }
 
+    /**
+     * Translate parameter map.
+     *
+     * @param parameterMap parameter map
+     * @return new parameter
+     */
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
 
         Map<String, String> map = new HashMap<>(16);
@@ -494,9 +670,12 @@ public class HttpClient {
     }
 
     public static class HttpResult {
-        final public int code;
-        final public String content;
-        final private Map<String, String> respHeaders;
+
+        public final int code;
+
+        public final String content;
+
+        private final Map<String, String> respHeaders;
 
         public HttpResult(int code, String content, Map<String, String> respHeaders) {
             this.code = code;
@@ -511,7 +690,7 @@ public class HttpClient {
 
     public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
 
-        public final static String METHOD_NAME = "GET";
+        public static final String METHOD_NAME = "GET";
 
         @Override
         public String getMethod() {

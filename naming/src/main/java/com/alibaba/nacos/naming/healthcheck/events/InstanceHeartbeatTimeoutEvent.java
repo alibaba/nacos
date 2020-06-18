@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck.events;
 
 import com.alibaba.nacos.naming.core.Instance;
 import org.springframework.context.ApplicationEvent;
 
 /**
+ * Instance heart beat timeout event.
+ *
  * @author pbting
  * @date 2019-05-28 8:29 PM
  */
 public class InstanceHeartbeatTimeoutEvent extends ApplicationEvent {
-
+    
     private Instance instance;
-
+    
     public InstanceHeartbeatTimeoutEvent(Object source, Instance instance) {
         super(source);
         this.instance = instance;
     }
-
+    
     public void setInstance(Instance instance) {
         this.instance = instance;
     }
-
+    
     public Instance getInstance() {
         return instance;
     }

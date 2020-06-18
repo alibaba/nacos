@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
   ~
@@ -14,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<code_scheme name="NacoStyle" version="1">
+<code_scheme name="NacoStyle">
     <option name="OTHER_INDENT_OPTIONS">
         <value>
             <option name="INDENT_SIZE" value="2"/>
@@ -22,6 +23,8 @@
             <option name="TAB_SIZE" value="2"/>
         </value>
     </option>
+    <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
+    <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
     <option name="LINE_SEPARATOR" value="&#xA;"/>
     <AndroidXmlCodeStyleSettings>
         <option name="USE_CUSTOM_SETTINGS" value="true"/>
@@ -34,10 +37,6 @@
     <JSCodeStyleSettings version="0">
         <option name="INDENT_CHAINED_CALLS" value="false"/>
     </JSCodeStyleSettings>
-    <JavaCodeStyleSettings>
-        <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
-        <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
-    </JavaCodeStyleSettings>
     <Objective-C>
         <option name="INDENT_NAMESPACE_MEMBERS" value="0"/>
         <option name="INDENT_C_STRUCT_MEMBERS" value="2"/>

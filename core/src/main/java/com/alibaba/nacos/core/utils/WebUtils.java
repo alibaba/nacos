@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -30,10 +31,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
+ * web utils.
+ *
  * @author nkorange
  */
 public class WebUtils {
-
+    
+    /**
+     * get target value from parameterMap, if not found will throw {@link IllegalArgumentException}.
+     *
+     * @param req {@link HttpServletRequest}
+     * @param key key
+     * @return value
+     */
     public static String required(final HttpServletRequest req, final String key) {
         String value = req.getParameter(key);
         if (StringUtils.isEmpty(value)) {
@@ -42,7 +52,15 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         return resolveValue(value, encoding);
     }
-
+    
+    /**
+     * get target value from parameterMap, if not found will return default value.
+     *
+     * @param req          {@link HttpServletRequest}
+     * @param key          key
+     * @param defaultValue default value
+     * @return value
+     */
     public static String optional(final HttpServletRequest req, final String key, final String defaultValue) {
         if (!req.getParameterMap().containsKey(key) || req.getParameterMap().get(key)[0] == null) {
             return defaultValue;
@@ -54,51 +72,81 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         return resolveValue(value, encoding);
     }
-
+    
+    /**
+     * decode target value.
+     *
+     * @param value    value
+     * @param encoding encode
+     * @return Decoded data
+     */
     private static String resolveValue(String value, String encoding) {
         if (StringUtils.isEmpty(encoding)) {
             encoding = StandardCharsets.UTF_8.name();
         }
         try {
             value = HttpUtils.decode(new String(value.getBytes(StandardCharsets.UTF_8), encoding), encoding);
-        } catch (UnsupportedEncodingException ignore) { }
+        } catch (UnsupportedEncodingException ignore) {
+        }
         return value.trim();
     }
-
+    
+    /**
+     * get accept encode from request.
+     *
+     * @param req {@link HttpServletRequest}
+     * @return accept encode
+     */
     public static String getAcceptEncoding(HttpServletRequest req) {
         String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), StandardCharsets.UTF_8.name());
         encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
         return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
     }
-
+    
     /**
      * Returns the value of the request header "user-agent" as a <code>String</code>.
      *
      * @param request HttpServletRequest
-     * @return the value of the request header "user-agent", or the value of the
-     *         request header "client-version" if the request does not have a
-     *         header of "user-agent"
+     * @return the value of the request header "user-agent", or the value of the request header "client-version" if the
+     *         request does not have a header of "user-agent".
      */
     public static String getUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
         if (StringUtils.isEmpty(userAgent)) {
-            userAgent = StringUtils.defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER), StringUtils.EMPTY);
+            userAgent = StringUtils
+                    .defaultIfEmpty(request.getHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER), StringUtils.EMPTY);
         }
         return userAgent;
     }
-
-    public static void response(HttpServletResponse response, String body, int code) throws
-            IOException {
+    
+    /**
+     * response data to client.
+     *
+     * @param response {@link HttpServletResponse}
+     * @param body     body
+     * @param code     http code
+     * @throws IOException IOException
+     */
+    public static void response(HttpServletResponse response, String body, int code) throws IOException {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(body);
         response.setStatus(code);
     }
-
-    public static  <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Function<Throwable, T> errorHandler) {
-
+    
+    /**
+     * Register DeferredResult in the callback of CompletableFuture.
+     *
+     * @param deferredResult {@link DeferredResult}
+     * @param future         {@link CompletableFuture}
+     * @param errorHandler   {@link Function}
+     * @param <T>            target type
+     */
+    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future,
+            Function<Throwable, T> errorHandler) {
+        
         deferredResult.onTimeout(future::join);
-
+        
         future.whenComplete((t, throwable) -> {
             if (Objects.nonNull(throwable)) {
                 deferredResult.setResult(errorHandler.apply(throwable));
@@ -107,11 +155,21 @@ public class WebUtils {
             deferredResult.setResult(t);
         });
     }
-
-    public static  <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success, Function<Throwable, T> errorHandler) {
-
+    
+    /**
+     * Register DeferredResult in the callback of CompletableFuture.
+     *
+     * @param deferredResult {@link DeferredResult}
+     * @param future         {@link CompletableFuture}
+     * @param success        if future success, callback runnable
+     * @param errorHandler   {@link Function}
+     * @param <T>            target type
+     */
+    public static <T> void process(DeferredResult<T> deferredResult, CompletableFuture<T> future, Runnable success,
+            Function<Throwable, T> errorHandler) {
+        
         deferredResult.onTimeout(future::join);
-
+        
         future.whenComplete((t, throwable) -> {
             if (Objects.nonNull(throwable)) {
                 deferredResult.setResult(errorHandler.apply(throwable));

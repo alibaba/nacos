@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -27,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Method cache
+ * Method cache.
  *
  * @author nkorange
  * @since 1.2.0
@@ -38,8 +45,7 @@ public class ControllerMethodsCache {
     @Value("${server.servlet.contextPath:/nacos}")
     private String contextPath;
 
-    private ConcurrentMap<String, Method> methods = new
-        ConcurrentHashMap<>();
+    private ConcurrentMap<String, Method> methods = new ConcurrentHashMap<>();
 
     public ConcurrentMap<String, Method> getMethods() {
         return methods;
@@ -50,6 +56,11 @@ public class ControllerMethodsCache {
         return methods.get(key);
     }
 
+    /**
+     * find target method from this package.
+     *
+     * @param packageName package name
+     */
     public void initClassMethod(String packageName) {
         Reflections reflections = new Reflections(packageName);
         Set<Class<?>> classesList = reflections.getTypesAnnotatedWith(RequestMapping.class);
@@ -59,12 +70,22 @@ public class ControllerMethodsCache {
         }
     }
 
+    /**
+     * find target method from class list.
+     *
+     * @param classesList class list
+     */
     public void initClassMethod(Set<Class<?>> classesList) {
         for (Class clazz : classesList) {
             initClassMethod(clazz);
         }
     }
 
+    /**
+     * find target method from target class.
+     *
+     * @param clazz {@link Class}
+     */
     public void initClassMethod(Class<?> clazz) {
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
         for (String classPath : requestMapping.value()) {

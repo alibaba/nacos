@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -22,8 +23,13 @@ import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +42,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Data replicator
+ * Data replicator.
  *
  * @author nkorange
  * @since 1.0.0
@@ -46,16 +52,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataSyncer {
 
     private final DataStore dataStore;
+
     private final GlobalConfig partitionConfig;
+
     private final Serializer serializer;
+
     private final DistroMapper distroMapper;
+
     private final ServerMemberManager memberManager;
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
 
-    public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig,
-            Serializer serializer, DistroMapper distroMapper,
-            ServerMemberManager memberManager) {
+    public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig, Serializer serializer,
+            DistroMapper distroMapper, ServerMemberManager memberManager) {
         this.dataStore = dataStore;
         this.partitionConfig = partitionConfig;
         this.serializer = serializer;
@@ -68,6 +77,12 @@ public class DataSyncer {
         startTimedSync();
     }
 
+    /**
+     * Submit a {@link SyncTask} with a delay to execute.
+     *
+     * @param task  synchronize data task
+     * @param delay delay to execute
+     */
     public void submit(SyncTask task, long delay) {
 
         // If it's a new task:
@@ -132,7 +147,7 @@ public class DataSyncer {
         }, delay);
     }
 
-    public void retrySync(SyncTask syncTask) {
+    private void retrySync(SyncTask syncTask) {
         Member member = new Member();
         member.setIp(syncTask.getTargetServer().split(":")[0]);
         member.setPort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));

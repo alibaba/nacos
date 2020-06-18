@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.common.api.Constants;
@@ -20,15 +21,14 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +37,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Old API entry
+ * Old API entry.
  *
  * @author nkorange
  */
@@ -55,6 +60,13 @@ public class ApiController extends InstanceController {
     @Autowired
     private ServiceManager serviceManager;
 
+    /**
+     * Get all dom(service) name.
+     *
+     * @param request http request
+     * @return dom(service) jackson json object
+     * @throws Exception exception
+     */
     @RequestMapping("/allDomNames")
     public ObjectNode allDomNames(HttpServletRequest request) throws Exception {
 
@@ -65,8 +77,8 @@ public class ApiController extends InstanceController {
         String dnsfVersion = "1.0.1";
         String agent = WebUtils.getUserAgent(request);
         ClientInfo clientInfo = new ClientInfo(agent);
-        if (clientInfo.type == ClientInfo.ClientType.DNS &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
+        if (clientInfo.type == ClientInfo.ClientType.DNS
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
 
             List<String> doms = new ArrayList<String>();
             Set<String> domSet = null;
@@ -110,18 +122,18 @@ public class ApiController extends InstanceController {
         return result;
     }
 
-    @RequestMapping("/hello")
-    @ResponseBody
-    public String hello(HttpServletRequest request) throws Exception {
-        return "ok";
-    }
-
+    /**
+     * Get service ips.
+     *
+     * @param request http request
+     * @return service detail infomation
+     * @throws Exception exception
+     */
     @RequestMapping("/srvIPXT")
     @ResponseBody
-    public ObjectNode srvIPXT(HttpServletRequest request) throws Exception {
+    public ObjectNode srvIpxt(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
         String dom = WebUtils.required(request, "dom");
         String agent = WebUtils.getUserAgent(request);
@@ -137,16 +149,23 @@ public class ApiController extends InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
-            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIpxt(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP), agent, clusters,
+                clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
+    /**
+     * Client report beat API.
+     *
+     * @param request http request
+     * @return beat response
+     * @throws Exception exception
+     */
     @CanDistro
     @RequestMapping("/clientBeat")
     public ObjectNode clientBeat(HttpServletRequest request) throws Exception {
         OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
         requestWrapper.addParameter(CommonParams.SERVICE_NAME,
-            Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
+                Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
         return beat(requestWrapper);
     }
 }

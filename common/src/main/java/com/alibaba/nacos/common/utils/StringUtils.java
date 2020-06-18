@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.common.api.Constants;
@@ -27,7 +28,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * string util
+ * string util.
  *
  * @author Nacos
  */
@@ -50,7 +51,7 @@ public class StringUtils {
      */
     public static final String LF = "\n";
 
-    public static String newString4UTF8(byte[] bytes) {
+    public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
 
@@ -133,7 +134,6 @@ public class StringUtils {
         return stringBuilder.toString();
     }
 
-
     public static String escapeJavaScript(String str) {
         return escapeJavaStyleString(str, true, true);
     }
@@ -152,12 +152,8 @@ public class StringUtils {
         }
     }
 
-    private static String hex(char ch) {
-        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
-    }
-
     private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
-                                              boolean escapeForwardSlash) throws IOException {
+            boolean escapeForwardSlash) throws IOException {
         if (out == null) {
             throw new IllegalArgumentException("The Writer must not be null");
         }
@@ -234,6 +230,10 @@ public class StringUtils {
                 }
             }
         }
+    }
+
+    private static String hex(char ch) {
+        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
     }
 
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
@@ -734,9 +734,8 @@ public class StringUtils {
     }
 
     /**
-     * <p>Checks if CharSequence contains a search CharSequence irrespective of case,
-     * handling {@code null}. Case-insensitivity is defined as by
-     * {@link String#equalsIgnoreCase(String)}.
+     * Checks if CharSequence contains a search CharSequence irrespective of case, handling {@code null}.
+     * Case-insensitivity is defined as by {@link String#equalsIgnoreCase(String)}.
      *
      * <p>A {@code null} CharSequence will return {@code false}.</p>
      *
@@ -751,11 +750,12 @@ public class StringUtils {
      * StringUtils.contains("abc", "Z") = false
      * </pre>
      *
-     * @param str  the CharSequence to check, may be null
-     * @param searchStr  the CharSequence to find, may be null
-     * @return true if the CharSequence contains the search CharSequence irrespective of
-     * case or false if not or {@code null} string input
-     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence, CharSequence)
+     * @param str       the CharSequence to check, may be null
+     * @param searchStr the CharSequence to find, may be null
+     * @return true if the CharSequence contains the search CharSequence irrespective of case or false if not or {@code
+     * null} string input
+     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence,
+     * CharSequence)
      */
     public static boolean containsIgnoreCase(final CharSequence str, final CharSequence searchStr) {
         if (str == null || searchStr == null) {
@@ -774,16 +774,16 @@ public class StringUtils {
     /**
      * Green implementation of regionMatches.
      *
-     * @param cs the {@code CharSequence} to be processed
+     * @param cs         the {@code CharSequence} to be processed
      * @param ignoreCase whether or not to be case insensitive
-     * @param thisStart the index to start on the {@code cs} CharSequence
-     * @param substring the {@code CharSequence} to be looked for
-     * @param start the index to start on the {@code substring} CharSequence
-     * @param length character length of the region
+     * @param thisStart  the index to start on the {@code cs} CharSequence
+     * @param substring  the {@code CharSequence} to be looked for
+     * @param start      the index to start on the {@code substring} CharSequence
+     * @param length     character length of the region
      * @return whether the region matched
      */
     static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-            final CharSequence substring, final int start, final int length)    {
+            final CharSequence substring, final int start, final int length) {
         if (cs instanceof String && substring instanceof String) {
             return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
         }
@@ -804,8 +804,8 @@ public class StringUtils {
             }
 
             // The same check as in String.regionMatches():
-            if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
-                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+            if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
+                    .toLowerCase(c2)) {
                 return false;
             }
         }
@@ -828,11 +828,11 @@ public class StringUtils {
      * StringUtils.equalsIgnoreCase("abc", "ABC") = true
      * </pre>
      *
-     * @param str1  the first CharSequence, may be null
-     * @param str2  the second CharSequence, may be null
-     * @return {@code true} if the CharSequence are equal, case insensitive, or
-     *  both {@code null}
-     * @since 3.0 Changed signature from equalsIgnoreCase(String, String) to equalsIgnoreCase(CharSequence, CharSequence)
+     * @param str1 the first CharSequence, may be null
+     * @param str2 the second CharSequence, may be null
+     * @return {@code true} if the CharSequence are equal, case insensitive, or both {@code null}
+     * @since 3.0 Changed signature from equalsIgnoreCase(String, String) to equalsIgnoreCase(CharSequence,
+     * CharSequence)
      */
     public static boolean equalsIgnoreCase(final CharSequence str1, final CharSequence str2) {
         if (str1 == null || str2 == null) {
@@ -851,16 +851,16 @@ public class StringUtils {
         /**
          * Green implementation of regionMatches.
          *
-         * @param cs the {@code CharSequence} to be processed
+         * @param cs         the {@code CharSequence} to be processed
          * @param ignoreCase whether or not to be case insensitive
-         * @param thisStart the index to start on the {@code cs} CharSequence
-         * @param substring the {@code CharSequence} to be looked for
-         * @param start the index to start on the {@code substring} CharSequence
-         * @param length character length of the region
+         * @param thisStart  the index to start on the {@code cs} CharSequence
+         * @param substring  the {@code CharSequence} to be looked for
+         * @param start      the index to start on the {@code substring} CharSequence
+         * @param length     character length of the region
          * @return whether the region matched
          */
         static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-                                     final CharSequence substring, final int start, final int length)    {
+                final CharSequence substring, final int start, final int length) {
             if (cs instanceof String && substring instanceof String) {
                 return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
             }
@@ -881,8 +881,8 @@ public class StringUtils {
                 }
 
                 // The same check as in String.regionMatches():
-                if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
-                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+                if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
+                        .toLowerCase(c2)) {
                     return false;
                 }
             }

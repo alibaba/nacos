@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -26,47 +27,47 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
 /**
- * Detect and control the working status of local server
+ * Detect and control the working status of local server.
  *
  * @author nkorange
  * @since 1.0.0
  */
 @Service
 public class ServerStatusManager {
-
+    
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
-
+    
     @Autowired
     private SwitchDomain switchDomain;
-
+    
     private ServerStatus serverStatus = ServerStatus.STARTING;
-
+    
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerStatusUpdater(new ServerStatusUpdater());
     }
-
+    
     private void refreshServerStatus() {
-
+        
         if (StringUtils.isNotBlank(switchDomain.getOverriddenServerStatus())) {
             serverStatus = ServerStatus.valueOf(switchDomain.getOverriddenServerStatus());
             return;
         }
-
+        
         if (consistencyService.isAvailable()) {
             serverStatus = ServerStatus.UP;
         } else {
             serverStatus = ServerStatus.DOWN;
         }
     }
-
+    
     public ServerStatus getServerStatus() {
         return serverStatus;
     }
-
+    
     public class ServerStatusUpdater implements Runnable {
-
+        
         @Override
         public void run() {
             refreshServerStatus();

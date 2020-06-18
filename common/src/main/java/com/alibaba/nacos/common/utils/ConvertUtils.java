@@ -17,15 +17,17 @@
 package com.alibaba.nacos.common.utils;
 
 /**
+ * Value Convert Utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ConvertUtils {
-
+    
     private static final String NULL_STR = "null";
-
+    
     /**
-     * Convert String value to int value if parameter value is legal.
-     * And it automatically defaults to 0 if parameter value is null or blank str.
+     * Convert String value to int value if parameter value is legal. And it automatically defaults to 0 if parameter
+     * value is null or blank str.
      *
      * @param val String value which need to be converted to int value.
      * @return Converted int value and its default value is 0.
@@ -33,7 +35,15 @@ public final class ConvertUtils {
     public static int toInt(String val) {
         return toInt(val, 0);
     }
-
+    
+    /**
+     * Convert String value to int value if parameter value is legal. And return default value if parameter value is
+     * null or blank str.
+     *
+     * @param val          value
+     * @param defaultValue default value
+     * @return int value if input value is legal, otherwise default value
+     */
     public static int toInt(String val, int defaultValue) {
         if (StringUtils.equalsIgnoreCase(val, NULL_STR)) {
             return defaultValue;
@@ -43,38 +53,59 @@ public final class ConvertUtils {
         }
         return Integer.parseInt(val);
     }
-
+    
+    /**
+     * Convert String value to long value if parameter value is legal. And it automatically defaults to 0 if parameter
+     * value is null or blank str.
+     *
+     * @param val String value which need to be converted to int value.
+     * @return Converted long value and its default value is 0.
+     */
     public static long toLong(String val) {
-        return toLong(val);
+        return toLong(val, 0L);
     }
-
+    
+    /**
+     * Convert String value to long value if parameter value is legal. And return default value if parameter value is
+     * null or blank str.
+     *
+     * @param val          value
+     * @param defaultValue default value
+     * @return long value if input value is legal, otherwise default value
+     */
     public static long toLong(String val, long defaultValue) {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
         return Long.parseLong(val);
     }
-
+    
+    /**
+     * Convert String value to boolean value if parameter value is legal. And return default value if parameter value is
+     * null or blank str.
+     *
+     * @param val          value
+     * @param defaultValue default value
+     * @return boolean value if input value is legal, otherwise default value
+     */
     public static boolean toBoolean(String val, boolean defaultValue) {
         if (StringUtils.isBlank(val)) {
             return defaultValue;
         }
         return Boolean.parseBoolean(val);
     }
-
+    
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
     //   start
-
+    
     /**
      * <p>Converts a String to a boolean (optimised for performance).</p>
      *
      * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'}
-     * (case insensitive) will return {@code true}. Otherwise,
-     * {@code false} is returned.</p>
+     * (case insensitive) will return {@code true}. Otherwise, {@code false} is returned.</p>
      *
      * <p>This method performs 4 times faster (JDK1.4) than
-     * {@code Boolean.valueOf(String)}. However, this method accepts
-     * 'on' and 'yes', 't', 'y' as true values.
+     * {@code Boolean.valueOf(String)}. However, this method accepts 'on' and 'yes', 't', 'y' as true values.
      *
      * <pre>
      *   BooleanUtils.toBoolean(null)    = false
@@ -91,21 +122,19 @@ public final class ConvertUtils {
      *   BooleanUtils.toBooleanObject("f") = false
      * </pre>
      *
-     * @param str  the String to check
+     * @param str the String to check
      * @return the boolean value of the string, {@code false} if no match or the String is null
      */
     public static boolean toBoolean(final String str) {
         return toBooleanObject(str) == Boolean.TRUE;
     }
-
+    
     /**
      * <p>Converts a String to a Boolean.</p>
      *
      * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'}
-     * (case insensitive) will return {@code true}.
-     * {@code 'false'}, {@code 'off'}, {@code 'n'}, {@code 'f'} or {@code 'no'}
-     * (case insensitive) will return {@code false}.
-     * Otherwise, {@code null} is returned.</p>
+     * (case insensitive) will return {@code true}. {@code 'false'}, {@code 'off'}, {@code 'n'}, {@code 'f'} or {@code
+     * 'no'} (case insensitive) will return {@code false}. Otherwise, {@code null} is returned.</p>
      *
      * <p>NOTE: This returns null and will throw a NullPointerException if autoboxed to a boolean. </p>
      *
@@ -129,7 +158,7 @@ public final class ConvertUtils {
      *   BooleanUtils.toBooleanObject("ono")   = null // does not match on or no
      * </pre>
      *
-     * @param str  the String to check; upper and lower case are treated as the same
+     * @param str the String to check; upper and lower case are treated as the same
      * @return the Boolean value of the string, {@code null} if no match or {@code null} input
      */
     @SuppressWarnings("all")
@@ -143,17 +172,17 @@ public final class ConvertUtils {
             char ch1;
             char ch2;
             char ch3;
-            switch(str.length()) {
+            switch (str.length()) {
                 case 1:
                     ch0 = str.charAt(0);
                     if (ch0 == 'y' || ch0 == 'Y' || ch0 == 't' || ch0 == 'T') {
                         return Boolean.TRUE;
                     }
-
+                    
                     if (ch0 != 'n' && ch0 != 'N' && ch0 != 'f' && ch0 != 'F') {
                         break;
                     }
-
+                    
                     return Boolean.FALSE;
                 case 2:
                     ch0 = str.charAt(0);
@@ -161,7 +190,7 @@ public final class ConvertUtils {
                     if ((ch0 == 'o' || ch0 == 'O') && (ch1 == 'n' || ch1 == 'N')) {
                         return Boolean.TRUE;
                     }
-
+                    
                     if ((ch0 == 'n' || ch0 == 'N') && (ch1 == 'o' || ch1 == 'O')) {
                         return Boolean.FALSE;
                     }
@@ -173,7 +202,7 @@ public final class ConvertUtils {
                     if ((ch0 == 'y' || ch0 == 'Y') && (ch1 == 'e' || ch1 == 'E') && (ch2 == 's' || ch2 == 'S')) {
                         return Boolean.TRUE;
                     }
-
+                    
                     if ((ch0 == 'o' || ch0 == 'O') && (ch1 == 'f' || ch1 == 'F') && (ch2 == 'f' || ch2 == 'F')) {
                         return Boolean.FALSE;
                     }
@@ -183,7 +212,8 @@ public final class ConvertUtils {
                     ch1 = str.charAt(1);
                     ch2 = str.charAt(2);
                     ch3 = str.charAt(3);
-                    if ((ch0 == 't' || ch0 == 'T') && (ch1 == 'r' || ch1 == 'R') && (ch2 == 'u' || ch2 == 'U') && (ch3 == 'e' || ch3 == 'E')) {
+                    if ((ch0 == 't' || ch0 == 'T') && (ch1 == 'r' || ch1 == 'R') && (ch2 == 'u' || ch2 == 'U') && (
+                            ch3 == 'e' || ch3 == 'E')) {
                         return Boolean.TRUE;
                     }
                     break;
@@ -193,15 +223,16 @@ public final class ConvertUtils {
                     ch2 = str.charAt(2);
                     ch3 = str.charAt(3);
                     char ch4 = str.charAt(4);
-                    if ((ch0 == 'f' || ch0 == 'F') && (ch1 == 'a' || ch1 == 'A') && (ch2 == 'l' || ch2 == 'L') && (ch3 == 's' || ch3 == 'S') && (ch4 == 'e' || ch4 == 'E')) {
+                    if ((ch0 == 'f' || ch0 == 'F') && (ch1 == 'a' || ch1 == 'A') && (ch2 == 'l' || ch2 == 'L') && (
+                            ch3 == 's' || ch3 == 'S') && (ch4 == 'e' || ch4 == 'E')) {
                         return Boolean.FALSE;
                     }
             }
-
+            
             return null;
         }
     }
-
+    
     //   end
-
+    
 }

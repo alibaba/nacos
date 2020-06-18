@@ -22,11 +22,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Nicholas
- */
 public class SubscriberTest {
-
+    
     @Test
     public void subscriberBeanTest() {
         Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test");
@@ -36,20 +33,20 @@ public class SubscriberTest {
         subscriber.setAgent("agent");
         subscriber.setNamespaceId("public");
         subscriber.setServiceName("test");
-
+        
         subscriber.getAddrStr();
         subscriber.getIp();
         subscriber.getAgent();
         subscriber.getApp();
         subscriber.getNamespaceId();
         subscriber.getServiceName();
-
+        
         Subscribers subscribers = new Subscribers();
         List<Subscriber> subscriberList = new ArrayList<>();
         subscriberList.add(subscriber);
         subscribers.setSubscribers(subscriberList);
         subscribers.getSubscribers();
-
+        
         Assert.assertNotNull(subscriberList);
         Assert.assertEquals(1, subscriberList.size());
         Assert.assertEquals("127.0.0.1:8080", subscriberList.get(0).getAddrStr());

@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Http header.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Header {
@@ -75,6 +77,11 @@ public class Header {
         return header.entrySet().iterator();
     }
 
+    /**
+     * Transfer to KV part list. The odd index is key and the even index is value.
+     *
+     * @return KV string list
+     */
     public List<String> toList() {
         List<String> list = new ArrayList<String>(header.size() * 2);
         Iterator<Map.Entry<String, String>> iterator = iterator();
@@ -86,16 +93,27 @@ public class Header {
         return list;
     }
 
+    /**
+     * Add all KV list to header. The odd index is key and the even index is value.
+     *
+     * @param list KV list
+     * @return header
+     */
     public Header addAll(List<String> list) {
         if ((list.size() & 1) != 0) {
             throw new IllegalArgumentException("list size must be a multiple of 2");
         }
-        for (int i = 0; i < list.size();) {
+        for (int i = 0; i < list.size(); ) {
             header.put(list.get(i++), list.get(i++));
         }
         return this;
     }
 
+    /**
+     * Add all parameters to header.
+     *
+     * @param params parameters
+     */
     public void addAll(Map<String, String> params) {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             addParam(entry.getKey(), entry.getValue());
@@ -106,7 +124,7 @@ public class Header {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
             String contentType = getValue(HttpHeaderConsts.CONTENT_TYPE);
-            acceptCharset  = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
+            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
         }
         return acceptCharset;
     }
@@ -131,9 +149,7 @@ public class Header {
 
     @Override
     public String toString() {
-        return "Header{" +
-            "headerToMap=" + header +
-            '}';
+        return "Header{" + "headerToMap=" + header + '}';
     }
 }
 
