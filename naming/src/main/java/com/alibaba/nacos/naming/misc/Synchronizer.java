@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
 /**
+ * Synchronizer.
+ *
  * @author nacos
  */
 public interface Synchronizer {
+    
     /**
-     * Send message to server
+     * Send message to server.
      *
      * @param serverIP target server address
      * @param msg      message to send
      */
     void send(String serverIP, Message msg);
-
+    
     /**
-     * Get message from server using message key
+     * Get message from server using message key.
      *
      * @param serverIP source server address
      * @param key      message key

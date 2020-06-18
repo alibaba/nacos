@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -46,6 +47,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Sets of raft peers.
+ *
  * @author nacos
  */
 @Component
@@ -89,17 +92,34 @@ public class RaftPeerSet extends MemberChangeListener {
         return ready;
     }
 
+    /**
+     * Remove raft node.
+     *
+     * @param servers node address need to be removed
+     */
     public void remove(List<String> servers) {
         for (String server : servers) {
             peers.remove(server);
         }
     }
 
+    /**
+     * Update raft peer.
+     *
+     * @param peer new peer.
+     * @return new peer
+     */
     public RaftPeer update(RaftPeer peer) {
         peers.put(peer.ip, peer);
         return peer;
     }
 
+    /**
+     * Judge whether input address is leader.
+     *
+     * @param ip peer address
+     * @return true if is leader or stand alone, otherwise false
+     */
     public boolean isLeader(String ip) {
         if (ApplicationUtils.getStandaloneMode()) {
             return true;
@@ -117,6 +137,11 @@ public class RaftPeerSet extends MemberChangeListener {
         return peers.keySet();
     }
 
+    /**
+     * Get all servers excludes current peer.
+     *
+     * @return all servers excludes current peer
+     */
     public Set<String> allServersWithoutMySelf() {
         Set<String> servers = new HashSet<String>(peers.keySet());
 
@@ -134,6 +159,12 @@ public class RaftPeerSet extends MemberChangeListener {
         return peers.size();
     }
 
+    /**
+     * Calculate and decide which peer is leader. If has new peer has more than half vote, change leader to new peer.
+     *
+     * @param candidate new candidate
+     * @return new leader if new candidate has more than half vote, otherwise old leader
+     */
     public RaftPeer decideLeader(RaftPeer candidate) {
         peers.put(candidate.ip, candidate);
 
@@ -166,25 +197,33 @@ public class RaftPeerSet extends MemberChangeListener {
         return leader;
     }
 
+    /**
+     * Set leader as new candidate.
+     *
+     * @param candidate new candidate
+     * @return new leader
+     */
     public RaftPeer makeLeader(RaftPeer candidate) {
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
             ApplicationUtils.publishEvent(new MakeLeaderEvent(this, leader, local()));
-            Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
-                leader.ip, JacksonUtils.toJson(local()), JacksonUtils.toJson(leader));
+            Loggers.RAFT
+                    .info("{} has become the LEADER, local: {}, leader: {}", leader.ip, JacksonUtils.toJson(local()),
+                            JacksonUtils.toJson(leader));
         }
 
         for (final RaftPeer peer : peers.values()) {
             Map<String, String> params = new HashMap<>(1);
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
-                    String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
+                    String url = RaftCore.buildUrl(peer.ip, RaftCore.API_GET_PEER);
                     HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("[NACOS-RAFT] get peer failed: {}, peer: {}",
-                                    response.getResponseBody(), peer.ip);
+                                Loggers.RAFT
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", response.getResponseBody(),
+                                                peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
                                 return 1;
                             }
@@ -204,6 +243,11 @@ public class RaftPeerSet extends MemberChangeListener {
         return update(candidate);
     }
 
+    /**
+     * Get local raft peer.
+     *
+     * @return local raft peer
+     */
     public RaftPeer local() {
         RaftPeer peer = peers.get(ApplicationUtils.getLocalAddress());
         if (peer == null && ApplicationUtils.getStandaloneMode()) {
@@ -214,8 +258,9 @@ public class RaftPeerSet extends MemberChangeListener {
             return localPeer;
         }
         if (peer == null) {
-            throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
-                + Arrays.toString(peers.keySet().toArray()));
+            throw new IllegalStateException(
+                    "unable to find local peer: " + NetUtils.localServer() + ", all peers: " + Arrays
+                            .toString(peers.keySet().toArray()));
         }
 
         return peer;
@@ -229,6 +274,9 @@ public class RaftPeerSet extends MemberChangeListener {
         return peers.size() / 2 + 1;
     }
 
+    /**
+     * Reset set.
+     */
     public void reset() {
 
         leader = null;
@@ -260,7 +308,6 @@ public class RaftPeerSet extends MemberChangeListener {
 
         for (Member member : members) {
 
-
             final String address = member.getAddress();
             if (peers.containsKey(address)) {
                 tmpPeers.put(address, peers.get(address));
@@ -287,7 +334,7 @@ public class RaftPeerSet extends MemberChangeListener {
 
     @Override
     public String toString() {
-        return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader
-                + ", peers=" + peers + ", sites=" + sites + '}';
+        return "RaftPeerSet{" + "localTerm=" + localTerm + ", leader=" + leader + ", peers=" + peers + ", sites="
+                + sites + '}';
     }
 }

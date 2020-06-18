@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -32,13 +33,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author jifengnan  2019-04-28
- */
 public class ServiceTest extends BaseTest {
-
+    
     private Service service;
-
+    
     @Before
     public void before() {
         super.before();
@@ -48,7 +46,7 @@ public class ServiceTest extends BaseTest {
         mockInjectDistroMapper();
         mockInjectSwitchDomain();
     }
-
+    
     @Test
     public void testUpdateIPs() {
         List<Instance> instances = new ArrayList<>();
@@ -56,7 +54,7 @@ public class ServiceTest extends BaseTest {
         instances.add(instance);
         service.updateIPs(instances, true);
         Assert.assertEquals(instances, service.allIPs(true));
-
+        
         instances = new ArrayList<>();
         instance = new Instance();
         instance.setIp("2.2.2.2");
@@ -67,10 +65,10 @@ public class ServiceTest extends BaseTest {
         instances.remove(null);
         Assert.assertEquals(instances, service.allIPs(true));
     }
-
+    
     @Test
     public void testSerialize() throws Exception {
-        String actual = new Service("test-service").toJSON();
+        String actual = new Service("test-service").toJson();
         System.out.println(actual);
         assertTrue(actual.contains("\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\""));
         assertTrue(actual.contains("\"clusterMap\":{}"));
@@ -89,8 +87,9 @@ public class ServiceTest extends BaseTest {
         assertFalse(actual.contains("serviceString"));
         assertFalse(actual.contains("pushService"));
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() throws Exception {
         String example = "{\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
         Service actual = JacksonUtils.toObj(example, Service.class);
@@ -109,7 +108,7 @@ public class ServiceTest extends BaseTest {
         assertFalse(actual.getResetWeight());
         assertThat(actual.getSelector(), instanceOf(NoneSelector.class));
     }
-
+    
     @Test
     public void testGetServiceString() {
         String actual = service.getServiceString();
@@ -119,11 +118,5 @@ public class ServiceTest extends BaseTest {
         assertTrue(actual.contains("\"owners\":[]"));
         assertTrue(actual.contains("\"protectThreshold\":0.0"));
         assertTrue(actual.contains("\"clusters\":[]"));
-    }
-
-    @Test
-    public void test() {
-        String a = "{\"appName\":\"\",\"checksum\":\"d9ce515b2d3f26a06cd7ba43a4cba1a7\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"groupName\":\"\",\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":1590401570517,\"metadata\":{},\"name\":\"DEFAULT_GROUP@@nacos.test\",\"namespaceId\":\"public\",\"owners\":[],\"protectThreshold\":0.5,\"pushService\":{\"failedPushCount\":0,\"totalPush\":0},\"resetWeight\":false,\"selector\":{\"type\":\"none\"},\"serviceString\":\"{\\\"invalidIPCount\\\":0,\\\"name\\\":\\\"DEFAULT_GROUP@@nacos.test\\\",\\\"ipCount\\\":0,\\\"owners\\\":[],\\\"protectThreshold\\\":0.5,\\\"clusters\\\":[],\\\"token\\\":null}\",\"token\":\"\"}";
-//        JacksonUtils.toObj(a, Service.class);
     }
 }

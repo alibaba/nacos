@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import org.springframework.context.ApplicationEvent;
 
 /**
+ * Base raft event.
+ *
  * @author pbting
  * @date 2019-07-01 8:46 PM
  */
 public abstract class BaseRaftEvent extends ApplicationEvent {
-
+    
     private final RaftPeer raftPeer;
+    
     private final RaftPeer local;
-
+    
     public BaseRaftEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
         super(source);
         this.raftPeer = raftPeer;
         this.local = local;
     }
-
+    
     public RaftPeer getRaftPeer() {
         return raftPeer;
     }
-
+    
     public RaftPeer getLocal() {
         return local;
     }

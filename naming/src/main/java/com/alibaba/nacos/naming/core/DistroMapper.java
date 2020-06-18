@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -33,13 +34,15 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Distro mapper, judge which server response input service.
+ *
  * @author nkorange
  */
 @Component("distroMapper")
 public class DistroMapper extends MemberChangeListener {
 
     /**
-     * List of service nodes, you must ensure that the order of healthyList is the same for all nodes
+     * List of service nodes, you must ensure that the order of healthyList is the same for all nodes.
      */
     private volatile List<String> healthyList = new ArrayList<>();
 
@@ -57,7 +60,7 @@ public class DistroMapper extends MemberChangeListener {
     }
 
     /**
-     * init server list
+     * init server list.
      */
     @PostConstruct
     public void init() {
@@ -66,12 +69,16 @@ public class DistroMapper extends MemberChangeListener {
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {
-        return switchDomain.isHealthCheckEnabled(cluster.getServiceName())
-            && !cluster.getHealthCheckTask().isCancelled()
-            && responsible(cluster.getServiceName())
-            && cluster.contains(instance);
+        return switchDomain.isHealthCheckEnabled(cluster.getServiceName()) && !cluster.getHealthCheckTask()
+                .isCancelled() && responsible(cluster.getServiceName()) && cluster.contains(instance);
     }
 
+    /**
+     * Judge whether current server is responsible for input service.
+     *
+     * @param serviceName service name
+     * @return true if input service is response, otherwise false
+     */
     public boolean responsible(String serviceName) {
         final List<String> servers = healthyList;
 
@@ -94,6 +101,12 @@ public class DistroMapper extends MemberChangeListener {
         return target >= index && target <= lastIndex;
     }
 
+    /**
+     * Calculate which other server response input service.
+     *
+     * @param serviceName service name
+     * @return server which response input service
+     */
     public String mapSrv(String serviceName) {
         final List<String> servers = healthyList;
 
@@ -105,12 +118,13 @@ public class DistroMapper extends MemberChangeListener {
             int index = distroHash(serviceName) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils.getLocalAddress(), e);
+            Loggers.SRV_LOG.warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + ApplicationUtils
+                    .getLocalAddress(), e);
             return ApplicationUtils.getLocalAddress();
         }
     }
 
-    public int distroHash(String serviceName) {
+    private int distroHash(String serviceName) {
         return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
 

@@ -40,7 +40,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
 
-    private static final Executor EXECUTOR = ExecutorFactory.newFixExecutorService(ProtocolMetaData.class.getCanonicalName(), 4, new NameThreadFactory("nacos.consistency.protocol.metadata"));
+    private static final Executor EXECUTOR = ExecutorFactory.Managed.newFixExecutorService(
+            ProtocolMetaData.class.getCanonicalName(),
+            4,
+            new NameThreadFactory("com.alibaba.nacos.consistency.protocol.metadata"));
 
     private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
 

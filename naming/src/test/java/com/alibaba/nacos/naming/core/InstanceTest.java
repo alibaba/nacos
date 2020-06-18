@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -28,33 +29,30 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author nkorange
- */
 public class InstanceTest {
-
+    
     private Instance instance;
-
+    
     @Before
     public void before() {
         instance = new Instance();
     }
-
+    
     @Test
     public void updateIp() {
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setWeight(5);
-
+        
         assertEquals("1.1.1.1", instance.getIp());
         assertEquals(1234, instance.getPort());
         assertEquals(5, instance.getWeight(), 0.001);
     }
-
+    
     @Test
     public void testToJsonWithAllParam() {
         instance = new Instance("1.1.1.1", 1234, "TEST", "TENANT", "APP");
-        String actual = instance.toJSON();
+        String actual = instance.toJson();
         assertTrue(actual.contains("\"app\":\"APP\""));
         assertTrue(actual.contains("\"clusterName\":\"TEST\""));
         assertTrue(actual.contains("\"enabled\":true"));
@@ -74,11 +72,11 @@ public class InstanceTest {
         assertFalse(actual.contains("\"mockValid\""));
         assertFalse(actual.contains("\"failCount\""));
     }
-
+    
     @Test
     public void testToJsonWithoutTenantAndApp() {
         instance = new Instance("1.1.1.1", 1234, "TEST");
-        String actual = instance.toJSON();
+        String actual = instance.toJson();
         System.out.println(actual);
         assertTrue(actual.contains("\"clusterName\":\"TEST\""));
         assertTrue(actual.contains("\"enabled\":true"));
@@ -99,35 +97,36 @@ public class InstanceTest {
         assertFalse(actual.contains("\"mockValid\""));
         assertFalse(actual.contains("\"failCount\""));
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testFromJsonByJson() {
-        instance = Instance.fromJSON("{\"clusterName\":\"TEST\",\"enabled\":true,\"ephemeral\":true,\"healthy\":true,\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"instanceIdGenerator\":\"simple\",\"ip\":\"1.1.1.1\",\"ipDeleteTimeout\":30000,\"lastBeat\":1590043805463,\"marked\":false,\"metadata\":{},\"port\":1234,\"weight\":1.0}\n");
+        instance = Instance.fromJson(
+                "{\"clusterName\":\"TEST\",\"enabled\":true,\"ephemeral\":true,\"healthy\":true,\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"instanceIdGenerator\":\"simple\",\"ip\":\"1.1.1.1\",\"ipDeleteTimeout\":30000,\"lastBeat\":1590043805463,\"marked\":false,\"metadata\":{},\"port\":1234,\"weight\":1.0}\n");
         assertEquals("1.1.1.1", instance.getIp());
         assertEquals(1234, instance.getPort());
         assertEquals("TEST", instance.getClusterName());
         assertNull(instance.getApp());
         assertNull(instance.getTenant());
     }
-
+    
     @Test
     public void testFromJsonByNoJson() {
-        instance = Instance.fromJSON("2.2.2.2:8888_2_TEST1");
+        instance = Instance.fromJson("2.2.2.2:8888_2_TEST1");
         assertEquals("2.2.2.2", instance.getIp());
         assertEquals(8888, instance.getPort());
         assertEquals(2, instance.getWeight(), 0.001);
         assertEquals("TEST1", instance.getClusterName());
     }
-
+    
     @Test
     public void rsInfo() throws Exception {
-
         RsInfo info = new RsInfo();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("version", "2222");
         info.setMetadata(metadata);
         System.out.println(JacksonUtils.toJson(info));
-
+        
         String json = JacksonUtils.toJson(info);
         RsInfo info1 = JacksonUtils.toObj(json, RsInfo.class);
         System.out.println(info1);

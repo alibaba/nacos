@@ -54,179 +54,193 @@ import java.util.Optional;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
-public class ServerListManager extends MemberChangeListener {
+public class ServerListManager implements MemberChangeListener {
 
-	private final static String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+    private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
-	private final SwitchDomain switchDomain;
-	private final ServerMemberManager memberManager;
-	private final Synchronizer synchronizer = new ServerStatusSynchronizer();
+    private final SwitchDomain switchDomain;
 
-	private volatile List<Member> servers;
+    private final ServerMemberManager memberManager;
 
-	public ServerListManager(final SwitchDomain switchDomain,
-			final ServerMemberManager memberManager) {
-		this.switchDomain = switchDomain;
-		this.memberManager = memberManager;
-		NotifyCenter.registerSubscriber(this);
-		this.servers = new ArrayList<>(memberManager.allMembers());
-	}
+    private final Synchronizer synchronizer = new ServerStatusSynchronizer();
 
-	@PostConstruct
-	public void init() {
-		GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
-		GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
-	}
+    private volatile List<Member> servers;
 
-	public boolean contains(String s) {
-		for (Member server : getServers()) {
-			if (Objects.equals(s, server.getAddress())) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
+        this.switchDomain = switchDomain;
+        this.memberManager = memberManager;
+        NotifyCenter.registerSubscribe(this);
+        this.servers = new ArrayList<>(memberManager.allMembers());
+    }
 
-	public List<Member> getServers() {
-		return servers;
-	}
+    @PostConstruct
+    public void init() {
+        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
+        GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
+    }
 
-	@Override
-	public void onEvent(MemberChangeEvent event) {
-		this.servers = new ArrayList<>(event.getMembers());
-	}
+    /**
+     * Judge whether contain server in cluster.
+     *
+     * @param serverAddress server address
+     * @return true if contain, otherwise false
+     */
+    public boolean contains(String serverAddress) {
+        for (Member server : getServers()) {
+            if (Objects.equals(server, server.getAddress())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	/**
-	 * Compatible with older version logic, In version 1.2.1 and before
-	 *
-	 * @param configInfo site:ip:lastReportTime:weight
-	 */
-	public synchronized void onReceiveServerStatus(String configInfo) {
+    public List<Member> getServers() {
+        return servers;
+    }
 
-		Loggers.SRV_LOG.info("receive config info: {}", configInfo);
+    @Override
+    public void onEvent(MemberChangeEvent event) {
+        this.servers = new ArrayList<>(event.getMembers());
+    }
 
-		String[] configs = configInfo.split("\r\n");
-		if (configs.length == 0) {
-			return;
-		}
+    /**
+     * Compatible with older version logic, In version 1.2.1 and before
+     *
+     * @param configInfo site:ip:lastReportTime:weight
+     */
+    public synchronized void onReceiveServerStatus(String configInfo) {
 
-		for (String config : configs) {
-			// site:ip:lastReportTime:weight
-			String[] params = config.split("#");
-			if (params.length <= 3) {
-				Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
-				continue;
-			}
+        Loggers.SRV_LOG.info("receive config info: {}", configInfo);
 
-			Member server = Optional.ofNullable(memberManager.find(params[1])).orElse(Member.builder()
-					.ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0])
-					.state(NodeState.UP)
-					.port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1]))
-					.build());
+        String[] configs = configInfo.split("\r\n");
+        if (configs.length == 0) {
+            return;
+        }
 
-			server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
-			server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
-			memberManager.update(server);
+        for (String config : configs) {
+            // site:ip:lastReportTime:weight
+            String[] params = config.split("#");
+            if (params.length <= 3) {
+                Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
+                continue;
+            }
 
-			if (!contains(server.getAddress())) {
-				throw new IllegalArgumentException("server: " + server.getAddress() + " is not in serverlist");
-			}
-		}
-	}
+            Member server = Optional.ofNullable(memberManager.find(params[1]))
+                    .orElse(Member.builder().ip(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[0]).state(NodeState.UP)
+                            .port(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1])).build());
 
-	private class ServerInfoUpdater implements Runnable {
+            server.setExtendVal(MemberMetaDataConstants.SITE_KEY, params[0]);
+            server.setExtendVal(MemberMetaDataConstants.WEIGHT, params.length == 4 ? Integer.parseInt(params[3]) : 1);
+            memberManager.update(server);
 
-		private int cursor = 0;
+            if (!contains(server.getAddress())) {
+                throw new IllegalArgumentException("server: " + server.getAddress() + " is not in serverlist");
+            }
+        }
+    }
 
-		@Override
-		public void run() {
-			List<Member> members = servers;
-			if (members.isEmpty()) {
-				return;
-			}
+    private class ServerInfoUpdater implements Runnable {
 
-			this.cursor = (this.cursor + 1) % members.size();
-			Member target = members.get(cursor);
-			if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
-				return;
-			}
+        private int cursor = 0;
 
-			// This metadata information exists from 1.3.0 onwards "version"
-			if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-				return;
-			}
+        @Override
+        public void run() {
+            List<Member> members = servers;
+            if (members.isEmpty()) {
+                return;
+            }
 
-			final String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
-			final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
-			final String server = target.getAddress();
+            this.cursor = (this.cursor + 1) % members.size();
+            Member target = members.get(cursor);
+            if (Objects.equals(target.getAddress(), ApplicationUtils.getLocalAddress())) {
+                return;
+            }
 
-			try {
-				String content = NamingProxy.reqCommon(path, params, server, false);
-				if (!StringUtils.EMPTY.equals(content)) {
-					RaftPeer raftPeer = JacksonUtils.toObj(content, RaftPeer.class);
-					if (null != raftPeer) {
-						String json = JacksonUtils.toJson(raftPeer);
-						Map map = JacksonUtils.toObj(json, HashMap.class);
-						target.setExtendVal("naming", map);
-						memberManager.update(target);
-					}
-				}
-			} catch (Exception ignore) {
-				//
-			}
-		}
-	}
+            // This metadata information exists from 1.3.0 onwards "version"
+            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                return;
+            }
 
-	private class ServerStatusReporter implements Runnable {
+            final String path =
+                    UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT
+                            + "/state";
+            final Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+            final String server = target.getAddress();
 
-		@Override
-		public void run() {
-			try {
+            try {
+                String content = NamingProxy.reqCommon(path, params, server, false);
+                if (!StringUtils.EMPTY.equals(content)) {
+                    RaftPeer raftPeer = JacksonUtils.toObj(content, RaftPeer.class);
+                    if (null != raftPeer) {
+                        String json = JacksonUtils.toJson(raftPeer);
+                        Map map = JacksonUtils.toObj(json, HashMap.class);
+                        target.setExtendVal("naming", map);
+                        memberManager.update(target);
+                    }
+                }
+            } catch (Exception ignore) {
+                //
+            }
+        }
+    }
 
-				if (ApplicationUtils.getPort() <= 0) {
-					return;
-				}
+    private class ServerStatusReporter implements Runnable {
 
-				int weight = Runtime.getRuntime().availableProcessors() / 2;
-				if (weight <= 0) {
-					weight = 1;
-				}
+        @Override
+        public void run() {
+            try {
 
-				long curTime = System.currentTimeMillis();
-				String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight + "\r\n";
+                if (ApplicationUtils.getPort() <= 0) {
+                    return;
+                }
 
-				List<Member> allServers = getServers();
+                int weight = Runtime.getRuntime().availableProcessors() / 2;
+                if (weight <= 0) {
+                    weight = 1;
+                }
 
-				if (!contains(ApplicationUtils.getLocalAddress())) {
-					Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", ApplicationUtils.getLocalAddress(), allServers);
-					return;
-				}
+                long curTime = System.currentTimeMillis();
+                String status = LOCALHOST_SITE + "#" + ApplicationUtils.getLocalAddress() + "#" + curTime + "#" + weight
+                        + "\r\n";
 
-				if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
-					for (Member server : allServers) {
-						if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
-							continue;
-						}
+                List<Member> allServers = getServers();
 
-						// This metadata information exists from 1.3.0 onwards "version"
-						if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-						    Loggers.SRV_LOG.debug("[SERVER-STATUS] target {} has extend val {} = {}, use new api report status", server.getAddress(), MemberMetaDataConstants.VERSION, server.getExtendVal(MemberMetaDataConstants.VERSION));
-							continue;
-						}
+                if (!contains(ApplicationUtils.getLocalAddress())) {
+                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
+                            ApplicationUtils.getLocalAddress(), allServers);
+                    return;
+                }
 
-						Message msg = new Message();
-						msg.setData(status);
+                if (allServers.size() > 0 && !ApplicationUtils.getLocalAddress()
+                        .contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                    for (Member server : allServers) {
+                        if (Objects.equals(server.getAddress(), ApplicationUtils.getLocalAddress())) {
+                            continue;
+                        }
 
-						synchronizer.send(server.getAddress(), msg);
-					}
-				}
-			} catch (Exception e) {
-				Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
-			} finally {
-				GlobalExecutor.registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
-			}
+                        // This metadata information exists from 1.3.0 onwards "version"
+                        if (server.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                            Loggers.SRV_LOG
+                                    .debug("[SERVER-STATUS] target {} has extend val {} = {}, use new api report status",
+                                            server.getAddress(), MemberMetaDataConstants.VERSION,
+                                            server.getExtendVal(MemberMetaDataConstants.VERSION));
+                            continue;
+                        }
 
-		}
-	}
+                        Message msg = new Message();
+                        msg.setData(status);
+
+                        synchronizer.send(server.getAddress(), msg);
+                    }
+                }
+            } catch (Exception e) {
+                Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
+            } finally {
+                GlobalExecutor
+                        .registerServerStatusReporter(this, switchDomain.getServerStatusSynchronizationPeriodMillis());
+            }
+
+        }
+    }
 
 }
