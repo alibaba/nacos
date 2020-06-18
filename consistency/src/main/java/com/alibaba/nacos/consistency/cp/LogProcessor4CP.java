@@ -18,24 +18,27 @@ package com.alibaba.nacos.consistency.cp;
 
 import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
+
 import java.util.Collections;
 import java.util.List;
 
 /**
+ * log processor for cp.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public abstract class LogProcessor4CP extends LogProcessor {
-
-
+    
+    
     /**
-     * Discovery snapshot handler
-     * It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by itself
+     * Discovery snapshot handler It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by
+     * itself.
      *
      * @return {@link List <SnapshotOperate>}
      */
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.emptyList();
     }
-
+    
 }

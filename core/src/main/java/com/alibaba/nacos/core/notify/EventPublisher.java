@@ -23,64 +23,64 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import java.util.Set;
 
 /**
- * Event publisher
+ * Event publisher.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface EventPublisher {
-
-	/**
-	 * Multi-event listener collection list
-	 */
-	Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
-
-	/**
-	 * Initializes the event publisher
-	 *
-	 * @param type {@link Class<? extends Event>}
-	 * @param bufferSize Message staging queue size
-	 */
-	void init(Class<? extends Event> type, int bufferSize);
-
-	/**
-	 * The number of currently staged events
-	 *
-	 * @return event size
-	 */
-	long currentEventSize();
-
-	/**
-	 * Add listener
-	 *
-	 * @param subscribe {@link Subscribe}
-	 */
-	void addSubscribe(Subscribe subscribe);
-
-	/**
-	 * Remove listener
-	 *
-	 * @param subscribe {@link Subscribe}
-	 */
-	void unSubscribe(Subscribe subscribe);
-
-	/**
-	 * publish event
-	 *
-	 * @param event {@link Event}
-	 * @return publish event is success
-	 */
-	boolean publish(Event event);
-
-	/**
-	 * Notify listener
-	 *
-	 * @param subscribe {@link Subscribe}
-	 * @param event {@link Event}
-	 */
-	void notifySubscriber(Subscribe subscribe, Event event);
-
-	/**
-	 * shutdown this publisher
-	 */
-	void shutdown();
+    
+    /**
+     * Multi-event listener collection list.
+     */
+    Set<SmartSubscribe> SMART_SUBSCRIBES = new ConcurrentHashSet<>();
+    
+    /**
+     * Initializes the event publisher.
+     *
+     * @param type       {@link Class}
+     * @param bufferSize Message staging queue size
+     */
+    void init(Class<? extends Event> type, int bufferSize);
+    
+    /**
+     * The number of currently staged events.
+     *
+     * @return event size
+     */
+    long currentEventSize();
+    
+    /**
+     * Add listener.
+     *
+     * @param subscribe {@link Subscribe}
+     */
+    void addSubscribe(Subscribe subscribe);
+    
+    /**
+     * Remove listener.
+     *
+     * @param subscribe {@link Subscribe}
+     */
+    void unSubscribe(Subscribe subscribe);
+    
+    /**
+     * publish event.
+     *
+     * @param event {@link Event}
+     * @return publish event is success
+     */
+    boolean publish(Event event);
+    
+    /**
+     * Notify listener.
+     *
+     * @param subscribe {@link Subscribe}
+     * @param event     {@link Event}
+     */
+    void notifySubscriber(Subscribe subscribe, Event event);
+    
+    /**
+     * shutdown this publisher.
+     */
+    void shutdown();
 }
