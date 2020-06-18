@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.api.Constants;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -44,7 +44,7 @@ import java.util.zip.GZIPInputStream;
  * @author nacos
  */
 public class IoUtils {
-    
+
     public static byte[] tryDecompress(InputStream raw) throws Exception {
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
@@ -63,17 +63,17 @@ public class IoUtils {
                 gis.close();
             }
         }
-        
+
         return null;
     }
-    
+
     public static byte[] tryDecompress(byte[] raw) throws Exception {
         if (!isGzipStream(raw)) {
             return raw;
         }
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
-        
+
         try {
             gis = new GZIPInputStream(new ByteArrayInputStream(raw));
             out = new ByteArrayOutputStream();
@@ -88,11 +88,11 @@ public class IoUtils {
             }
         }
     }
-    
+
     private static BufferedReader toBufferedReader(Reader reader) {
         return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
     }
-    
+
     public static void writeStringToFile(File file, String data, String encoding) throws IOException {
         OutputStream os = null;
         try {
@@ -105,7 +105,7 @@ public class IoUtils {
             }
         }
     }
-    
+
     public static List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
@@ -122,7 +122,7 @@ public class IoUtils {
         }
         return list;
     }
-    
+
     public static String toString(InputStream input, String encoding) throws IOException {
         if (input == null) {
             return StringUtils.EMPTY;
@@ -130,13 +130,13 @@ public class IoUtils {
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));
     }
-    
+
     public static String toString(Reader reader) throws IOException {
         CharArrayWriter sw = new CharArrayWriter();
         copy(reader, sw);
         return sw.toString();
     }
-    
+
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
@@ -146,25 +146,25 @@ public class IoUtils {
         }
         return count;
     }
-    
+
     public static long copy(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;
         int totalBytes = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
             output.write(buffer, 0, bytesRead);
-            
+
             totalBytes += bytesRead;
         }
-        
+
         return totalBytes;
     }
-    
+
     public static void delete(File fileOrDir) throws IOException {
         if (fileOrDir == null) {
             return;
         }
-        
+
         if (fileOrDir.isDirectory()) {
             cleanDirectory(fileOrDir);
         } else {
@@ -176,7 +176,7 @@ public class IoUtils {
             }
         }
     }
-    
+
     /**
      * 清理目录下的内容.
      */
@@ -185,18 +185,18 @@ public class IoUtils {
             String message = directory + " does not exist";
             throw new IllegalArgumentException(message);
         }
-        
+
         if (!directory.isDirectory()) {
             String message = directory + " is not a directory";
             throw new IllegalArgumentException(message);
         }
-        
+
         File[] files = directory.listFiles();
         // null if security restricted
         if (files == null) {
             throw new IOException("Failed to list contents of " + directory);
         }
-        
+
         IOException exception = null;
         for (File file : files) {
             try {
@@ -205,12 +205,12 @@ public class IoUtils {
                 exception = ioe;
             }
         }
-        
+
         if (null != exception) {
             throw exception;
         }
     }
-    
+
     public static void copyFile(String source, String target) throws IOException {
         File sf = new File(source);
         if (!sf.exists()) {
@@ -223,7 +223,7 @@ public class IoUtils {
         if (!tf.exists() && !tf.createNewFile()) {
             throw new RuntimeException("failed to create target file.");
         }
-        
+
         FileChannel sc = null;
         FileChannel tc = null;
         try {
@@ -239,17 +239,17 @@ public class IoUtils {
             }
         }
     }
-    
+
     public static boolean isGzipStream(byte[] bytes) {
-        
+
         int minByteArraySize = 2;
         if (bytes == null || bytes.length < minByteArraySize) {
             return false;
         }
-        
+
         return GZIPInputStream.GZIP_MAGIC == ((bytes[1] << 8 | bytes[0]) & 0xFFFF);
     }
-    
+
     public static void closeQuietly(HttpURLConnection connection) {
         if (connection != null) {
             try {
@@ -258,15 +258,15 @@ public class IoUtils {
             }
         }
     }
-    
+
     public static void closeQuietly(InputStream input) {
         closeQuietly((Closeable) input);
     }
-    
+
     public static void closeQuietly(OutputStream output) {
         closeQuietly((Closeable) output);
     }
-    
+
     public static void closeQuietly(Closeable closeable) {
         try {
             if (closeable != null) {

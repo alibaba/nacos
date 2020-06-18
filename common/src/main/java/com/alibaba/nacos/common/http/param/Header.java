@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.constant.api.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -32,11 +32,11 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Header {
-    
+
     public static final Header EMPTY = Header.newInstance();
-    
+
     private final Map<String, String> header;
-    
+
     private Header() {
         header = new LinkedHashMap<String, String>();
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
@@ -44,39 +44,39 @@ public class Header {
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
         addParam(HttpHeaderConsts.CONTENT_ENCODING, "gzip");
     }
-    
+
     public static Header newInstance() {
         return new Header();
     }
-    
+
     public Header addParam(String key, String value) {
         header.put(key, value);
         return this;
     }
-    
+
     public Header setContentType(String contentType) {
         if (contentType == null) {
             contentType = MediaType.APPLICATION_JSON;
         }
         return addParam(HttpHeaderConsts.CONTENT_TYPE, contentType);
     }
-    
+
     public Header build() {
         return this;
     }
-    
+
     public String getValue(String key) {
         return header.get(key);
     }
-    
+
     public Map<String, String> getHeader() {
         return header;
     }
-    
+
     public Iterator<Map.Entry<String, String>> iterator() {
         return header.entrySet().iterator();
     }
-    
+
     /**
      * Transfer to KV part list. The odd index is key and the even index is value.
      *
@@ -92,7 +92,7 @@ public class Header {
         }
         return list;
     }
-    
+
     /**
      * Add all KV list to header. The odd index is key and the even index is value.
      *
@@ -108,7 +108,7 @@ public class Header {
         }
         return this;
     }
-    
+
     /**
      * Add all parameters to header.
      *
@@ -119,7 +119,7 @@ public class Header {
             addParam(entry.getKey(), entry.getValue());
         }
     }
-    
+
     public String getCharset() {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
@@ -128,7 +128,7 @@ public class Header {
         }
         return acceptCharset;
     }
-    
+
     private String analysisCharset(String contentType) {
         String[] values = contentType.split(";");
         String charset = Constants.ENCODE;
@@ -142,11 +142,11 @@ public class Header {
         }
         return charset;
     }
-    
+
     public void clear() {
         header.clear();
     }
-    
+
     @Override
     public String toString() {
         return "Header{" + "headerToMap=" + header + '}';

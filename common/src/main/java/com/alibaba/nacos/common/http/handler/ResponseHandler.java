@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.HttpClientResponse;
@@ -39,21 +38,21 @@ import org.slf4j.Logger;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ResponseHandler {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHandler.class);
-    
+
     public static <T> T convert(String s, Class<T> cls) throws Exception {
         return JacksonUtils.toObj(s, cls);
     }
-    
+
     public static <T> T convert(String s, Type type) throws Exception {
         return JacksonUtils.toObj(s, type);
     }
-    
+
     public static <T> T convert(InputStream inputStream, Type type) throws Exception {
         return JacksonUtils.toObj(inputStream, type);
     }
-    
+
     private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
         HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
         httpRestResult.setCode(restResult.getCode());
@@ -61,8 +60,8 @@ public final class ResponseHandler {
         httpRestResult.setMessage(restResult.getMessage());
         return httpRestResult;
     }
-    
-    @SuppressWarnings({"unchecked", "rawtypes", "resource"})
+
+    @SuppressWarnings({"unchecked", "resource"})
     public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type)
             throws Exception {
         Header headers = response.getHeaders();
@@ -77,7 +76,7 @@ public final class ResponseHandler {
             if (!String.class.toString().equals(type.toString())) {
                 LOGGER.error(
                         "if the response contentType is not [application/json]," + " only support to java.lang.String");
-                throw new NacosDeserializationException(type);
+                throw new RuntimeException(type.toString());
             }
             extractBody = (T) IoUtils.toString(body, headers.getCharset());
         }

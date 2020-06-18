@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.lifecycle;
+package com.alibaba.nacos.common.constant.api;
 
 /**
- * An interface is used to define the resource's close and shutdown, such as IO Connection and ThreadPool.
- *
- * @author zongtanghu
+ * @author lin-mt
+ * @since 2020/6/19
  */
-public interface Closeable {
+public interface Constants {
 
-    /**
-     * Shutdown the Resources, such as Thread Pool.
-     *
-     * @throws Exception exception.
-     */
-    public void shutdown() throws Exception;
+    String ENCODE = "UTF-8";
 
 }
