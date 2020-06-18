@@ -45,7 +45,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
@@ -139,7 +138,7 @@ public class ServerMemberManager
 		this.port = ApplicationUtils.getProperty("server.port", Integer.class, 8848);
 		this.localAddress = InetUtils.getSelfIp() + ":" + port;
 		this.self = MemberUtils.singleParse(this.localAddress);
-		this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.VERSION);
+		this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
 		serverList.put(self.getAddress(), self);
 
 		// register NodeChangeEvent publisher to NotifyManager
@@ -414,12 +413,12 @@ public class ServerMemberManager
 
 			try {
 				asyncHttpClient.post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER,
-						VersionUtils.VERSION), Query.EMPTY, getSelf(),
+						VersionUtils.version), Query.EMPTY, getSelf(),
 						reference.getType(), new Callback<String>() {
 							@Override
 							public void onReceive(RestResult<String> result) {
 								if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value() || result.getCode() == HttpStatus.NOT_FOUND.value()) {
-									Loggers.CLUSTER.warn("{} version is too low, it is recommended to upgrade the version : {}", target, VersionUtils.VERSION);
+									Loggers.CLUSTER.warn("{} version is too low, it is recommended to upgrade the version : {}", target, VersionUtils.version);
 									return;
 								}
 								if (result.ok()) {

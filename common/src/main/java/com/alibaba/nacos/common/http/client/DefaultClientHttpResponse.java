@@ -24,31 +24,30 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * ApacheClientHttpResponse implementation {@link HttpClientResponse}
+ * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
  *
  * @author mai.jh
- * @date 2020/5/25
  */
 public class DefaultClientHttpResponse implements HttpClientResponse {
-
+    
     private HttpResponse response;
-
+    
     private Header responseHeader;
-
+    
     public DefaultClientHttpResponse(HttpResponse response) {
         this.response = response;
     }
-
+    
     @Override
     public int getStatusCode() {
         return this.response.getStatusLine().getStatusCode();
     }
-
+    
     @Override
     public String getStatusText() {
         return this.response.getStatusLine().getReasonPhrase();
     }
-
+    
     @Override
     public Header getHeaders() {
         if (this.responseHeader == null) {
@@ -60,12 +59,12 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
         }
         return this.responseHeader;
     }
-
+    
     @Override
-    public InputStream getBody() throws IOException{
+    public InputStream getBody() throws IOException {
         return response.getEntity().getContent();
     }
-
+    
     @Override
     public void close() {
         try {

@@ -617,7 +617,7 @@ public class HttpClient {
         
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
-        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
         conn.addRequestProperty(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         conn.addRequestProperty(HttpHeaderConsts.REQUEST_SOURCE_HEADER, ApplicationUtils.getLocalAddress());
     }

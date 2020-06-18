@@ -17,12 +17,10 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 
 /**
  * Represents a client-side HTTP response.
@@ -31,34 +29,39 @@ import java.net.URI;
  * @date 2020/5/23
  */
 public interface HttpClientResponse extends Closeable {
-
+    
     /**
      * Return the headers of this message.
+     *
      * @return a corresponding HttpHeaders object (never {@code null})
      */
     Header getHeaders();
-
+    
     /**
      * Return the body of the message as an input stream.
+     *
      * @return String response body
      * @throws IOException IOException
      */
     InputStream getBody() throws IOException;
-
+    
     /**
-     * Return the HTTP status code
+     * Return the HTTP status code.
+     *
      * @return the HTTP status as an integer
      */
     int getStatusCode();
-
+    
     /**
      * Return the HTTP status text of the response.
+     *
      * @return the HTTP status text
      */
     String getStatusText();
-
+    
     /**
-     * close response InputStream
+     * close response InputStream.
+     *
      * @throws IOException ex
      */
     @Override
