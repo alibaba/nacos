@@ -41,7 +41,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
 
         try {
             LoggerContext loggerContext = (LoggerContext)StaticLoggerBinder.getSingleton().getLoggerFactory();
-            new ContextInitializer(loggerContext).configureByResource(ResourceUtils.getResourceURL(location));
+            new ContextInitializer(loggerContext).configureByResource(ResourceUtils.getResourceUrl(location));
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
         }

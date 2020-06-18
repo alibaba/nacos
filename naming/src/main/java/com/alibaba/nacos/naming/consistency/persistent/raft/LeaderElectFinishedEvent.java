@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 /**
+ * Leader election finished event.
+ *
  * @author pbting
  * @date 2019-07-01 8:25 PM
  */
 public class LeaderElectFinishedEvent extends BaseRaftEvent {
-
+    
     public LeaderElectFinishedEvent(Object source, RaftPeer raftPeer, RaftPeer local) {
         super(source, raftPeer, local);
     }
-
+    
 }

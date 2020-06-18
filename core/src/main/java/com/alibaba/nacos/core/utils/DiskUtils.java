@@ -16,6 +16,13 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.utils.ByteUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -40,36 +47,53 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.alibaba.nacos.common.utils.ByteUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.NullOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
+ * IO operates on the utility class.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DiskUtils {
-
-    private static final Logger logger = LoggerFactory.getLogger(DiskUtils.class);
-
-    private final static String NO_SPACE_CN = "设备上没有空间";
-    private final static String NO_SPACE_EN = "No space left on device";
-    private final static String DISK_QUATA_CN = "超出磁盘限额";
-    private final static String DISK_QUATA_EN = "Disk quota exceeded";
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(DiskUtils.class);
+    
+    private static final String NO_SPACE_CN = "设备上没有空间";
+    
+    private static final String NO_SPACE_EN = "No space left on device";
+    
+    private static final String DISK_QUATA_CN = "超出磁盘限额";
+    
+    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+    
     private static final Charset CHARSET = StandardCharsets.UTF_8;
+    
     private static final CharsetDecoder DECODER = CHARSET.newDecoder();
-
+    
     public static void touch(String path, String fileName) throws IOException {
         FileUtils.touch(Paths.get(path, fileName).toFile());
     }
-
+    
+    /**
+     * Implements the same behaviour as the "touch" utility on Unix. It creates a new file with size 0 or, if the file
+     * exists already, it is opened and closed without modifying it, but updating the file date and time.
+     *
+     * <p>NOTE: As from v1.3, this method throws an IOException if the last
+     * modified date of the file cannot be set. Also, as from v1.3 this method creates parent directories if they do not
+     * exist.
+     *
+     * @param file the File to touch
+     * @throws IOException If an I/O problem occurs
+     */
     public static void touch(File file) throws IOException {
         FileUtils.touch(file);
     }
-
+    
+    /**
+     * read file which under the path.
+     *
+     * @param path     directory
+     * @param fileName filename
+     * @return content
+     */
     public static String readFile(String path, String fileName) {
         File file = openFile(path, fileName);
         if (file.exists()) {
@@ -77,7 +101,13 @@ public final class DiskUtils {
         }
         return null;
     }
-
+    
+    /**
+     * read file content by {@link InputStream}.
+     *
+     * @param is {@link InputStream}
+     * @return content
+     */
     public static String readFile(InputStream is) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             StringBuilder textBuilder = new StringBuilder();
@@ -90,7 +120,13 @@ public final class DiskUtils {
             return null;
         }
     }
-
+    
+    /**
+     * read this file content.
+     *
+     * @param file {@link File}
+     * @return content
+     */
     public static String readFile(File file) {
         try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {
             StringBuilder text = new StringBuilder();
@@ -111,7 +147,13 @@ public final class DiskUtils {
             return null;
         }
     }
-
+    
+    /**
+     * read this file content then return bytes.
+     *
+     * @param file {@link File}
+     * @return content bytes
+     */
     public static byte[] readFileBytes(File file) {
         if (file.exists()) {
             String result = readFile(file);
@@ -121,12 +163,20 @@ public final class DiskUtils {
         }
         return null;
     }
-
+    
     public static byte[] readFileBytes(String path, String fileName) {
         File file = openFile(path, fileName);
         return readFileBytes(file);
     }
-
+    
+    /**
+     * Writes the contents to the target file.
+     *
+     * @param file    target file
+     * @param content content
+     * @param append  write append mode
+     * @return write success
+     */
     public static boolean writeFile(File file, byte[] content, boolean append) {
         try (FileChannel fileChannel = new FileOutputStream(file, append).getChannel()) {
             ByteBuffer buffer = ByteBuffer.wrap(content);
@@ -135,17 +185,23 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg)
-                        || errMsg.contains(DISK_QUATA_CN)
-                        || errMsg.contains(DISK_QUATA_EN)) {
-                    logger.warn("磁盘满，自杀退出");
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
+                        .contains(DISK_QUATA_EN)) {
+                    LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }
             }
         }
         return false;
     }
-
+    
+    /**
+     * delete target file.
+     *
+     * @param path     directory
+     * @param fileName filename
+     * @return delete success
+     */
     public static boolean deleteFile(String path, String fileName) {
         File file = openFile(path, fileName);
         if (file.exists()) {
@@ -153,36 +209,44 @@ public final class DiskUtils {
         }
         return false;
     }
-
+    
     public static void deleteDirectory(String path) throws IOException {
         FileUtils.deleteDirectory(new File(path));
     }
-
+    
     public static void forceMkdir(String path) throws IOException {
         FileUtils.forceMkdir(new File(path));
     }
-
+    
     public static void forceMkdir(File file) throws IOException {
         FileUtils.forceMkdir(file);
     }
-
+    
     public static void deleteDirThenMkdir(String path) throws IOException {
         deleteDirectory(path);
         forceMkdir(path);
     }
-
+    
     public static void copyDirectory(File srcDir, File destDir) throws IOException {
         FileUtils.copyDirectory(srcDir, destDir);
     }
-
+    
     public static void copyFile(File src, File target) throws IOException {
         FileUtils.copyFile(src, target);
     }
-
+    
     public static File openFile(String path, String fileName) {
         return openFile(path, fileName, false);
     }
-
+    
+    /**
+     * open file.
+     *
+     * @param path     directory
+     * @param fileName filename
+     * @param rewrite  if rewrite is true, will delete old file and create new one
+     * @return {@link File}
+     */
     public static File openFile(String path, String fileName, boolean rewrite) {
         File directory = new File(path);
         boolean mkdirs = true;
@@ -190,7 +254,7 @@ public final class DiskUtils {
             mkdirs = directory.mkdirs();
         }
         if (!mkdirs) {
-            logger.error("[DiskUtils] can't create directory");
+            LOGGER.error("[DiskUtils] can't create directory");
             return null;
         }
         File file = new File(path, fileName);
@@ -214,24 +278,33 @@ public final class DiskUtils {
         }
         return file;
     }
-
+    
     // copy from sofa-jraft
-
+    
+    /**
+     * Compress a folder in a directory.
+     *
+     * @param rootDir    directory
+     * @param sourceDir  folder
+     * @param outputFile output file
+     * @param checksum   checksum
+     * @throws IOException IOException
+     */
     public static void compress(final String rootDir, final String sourceDir, final String outputFile,
-                                final Checksum checksum) throws IOException {
-        try (final FileOutputStream fos = new FileOutputStream(outputFile);
-             final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
-             final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
+            final Checksum checksum) throws IOException {
+        try (final FileOutputStream fos = new FileOutputStream(
+                outputFile); final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
+                final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
             compressDirectoryToZipFile(rootDir, sourceDir, zos);
             zos.flush();
             fos.getFD().sync();
         }
     }
-
+    
     // copy from sofa-jraft
-
+    
     private static void compressDirectoryToZipFile(final String rootDir, final String sourceDir,
-                                                   final ZipOutputStream zos) throws IOException {
+            final ZipOutputStream zos) throws IOException {
         final String dir = Paths.get(rootDir, sourceDir).toString();
         final File[] files = Objects.requireNonNull(new File(dir).listFiles(), "files");
         for (final File file : files) {
@@ -240,28 +313,36 @@ public final class DiskUtils {
                 compressDirectoryToZipFile(rootDir, child, zos);
             } else {
                 zos.putNextEntry(new ZipEntry(child));
-                try (final FileInputStream fis = new FileInputStream(file);
-                     final BufferedInputStream bis = new BufferedInputStream(fis)) {
+                try (final FileInputStream fis = new FileInputStream(
+                        file); final BufferedInputStream bis = new BufferedInputStream(fis)) {
                     IOUtils.copy(bis, zos);
                 }
             }
         }
     }
-
+    
     // copy from sofa-jraft
-
+    
+    /**
+     * Unzip the target file to the specified folder.
+     *
+     * @param sourceFile target file
+     * @param outputDir  specified folder
+     * @param checksum   checksum
+     * @throws IOException IOException
+     */
     public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
             throws IOException {
-        try (final FileInputStream fis = new FileInputStream(sourceFile);
-             final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
-             final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
+        try (final FileInputStream fis = new FileInputStream(
+                sourceFile); final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
+                final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
                 final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
-                try (final FileOutputStream fos = new FileOutputStream(entryFile);
-                     final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                try (final FileOutputStream fos = new FileOutputStream(
+                        entryFile); final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                     IOUtils.copy(zis, bos);
                     bos.flush();
                     fos.getFD().sync();
@@ -274,5 +355,5 @@ public final class DiskUtils {
             IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
         }
     }
-
+    
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
@@ -20,13 +21,15 @@ import com.alibaba.nacos.naming.pojo.Record;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Naming data.
+ *
  * @author nacos
  */
 public class Datum<T extends Record> {
-
+    
     public String key;
-
+    
     public T value;
-
+    
     public AtomicLong timestamp = new AtomicLong(0L);
 }

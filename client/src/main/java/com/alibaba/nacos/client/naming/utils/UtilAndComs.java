@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.VERSION;
+    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
 
     public static String WEB_CONTEXT = "/nacos";
 

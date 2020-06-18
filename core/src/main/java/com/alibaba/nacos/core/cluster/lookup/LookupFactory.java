@@ -28,136 +28,154 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * An addressing pattern factory, responsible for the creation of all addressing patterns.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class LookupFactory {
-
-	static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
-
-	static MemberLookup LOOK_UP = null;
-
-	static LookupType currentLookupType = null;
-
-	public enum LookupType {
-
-		/**
-		 * File addressing mode
-		 */
-		FILE_CONFIG(1, "file"),
-
-		/**
-		 * Address server addressing mode
-		 */
-		ADDRESS_SERVER(2, "address-server"),
-
-		;
-
-		private final int code;
-		private final String name;
-
-		LookupType(int code, String name) {
-			this.code = code;
-			this.name = name;
-		}
-
-		public int getCode() {
-			return code;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		@Override
-		public String toString() {
-			return name;
-		}
-
-		public static LookupType sourceOf(String name) {
-			for (LookupType type : values()) {
-				if (Objects.equals(type.name, name)) {
-					return type;
-				}
-			}
-			return null;
-		}
-	}
-
-	public static MemberLookup createLookUp(ServerMemberManager memberManager)
-			throws NacosException {
-		if (!ApplicationUtils.getStandaloneMode()) {
-			String lookupType = ApplicationUtils.getProperty(LOOKUP_MODE_TYPE);
-			LookupType type = chooseLookup(lookupType);
-			LOOK_UP = find(type);
-			currentLookupType = type;
-		}
-		else {
-			LOOK_UP = new StandaloneMemberLookup();
-		}
-		LOOK_UP.injectMemberManager(memberManager);
-		Loggers.CLUSTER.info("Current addressing mode selection : {}",
-				LOOK_UP.getClass().getSimpleName());
-		return LOOK_UP;
-	}
-
-	public static MemberLookup switchLookup(String name,
-			ServerMemberManager memberManager) throws NacosException {
-		LookupType lookupType = LookupType.sourceOf(name);
-
-		if (Objects.isNull(lookupType)) {
-			throw new IllegalArgumentException(
-					"The addressing mode exists : " + name + ", just support : [" + Arrays
-							.toString(LookupType.values()) + "]");
-		}
-
-		if (Objects.equals(currentLookupType, lookupType)) {
-			return LOOK_UP;
-		}
-		MemberLookup newLookup = find(lookupType);
-		currentLookupType = lookupType;
-		if (Objects.nonNull(LOOK_UP)) {
-			LOOK_UP.destroy();
-		}
-		LOOK_UP = newLookup;
-		LOOK_UP.injectMemberManager(memberManager);
-		Loggers.CLUSTER.info("Current addressing mode selection : {}",
-				LOOK_UP.getClass().getSimpleName());
-		return LOOK_UP;
-	}
-
-	private static MemberLookup find(LookupType type) {
-		if (LookupType.FILE_CONFIG.equals(type)) {
-			LOOK_UP = new FileConfigMemberLookup();
-			return LOOK_UP;
-		}
-		if (LookupType.ADDRESS_SERVER.equals(type)) {
-			LOOK_UP = new AddressServerMemberLookup();
-			return LOOK_UP;
-		}
-		// unpossible to run here
-		throw new IllegalArgumentException();
-	}
-
-	private static LookupType chooseLookup(String lookupType) {
-		if (StringUtils.isNotBlank(lookupType)) {
-			LookupType type = LookupType.sourceOf(lookupType);
-			if (Objects.nonNull(type)) {
-				return type;
-			}
-		}
-		File file = new File(ApplicationUtils.getClusterConfFilePath());
-		if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
-			return LookupType.FILE_CONFIG;
-		}
-		return LookupType.ADDRESS_SERVER;
-	}
-
-	public static MemberLookup getLookUp() {
-		return LOOK_UP;
-	}
-
-	public static void destroy() throws NacosException {
-		Objects.requireNonNull(LOOK_UP).destroy();
-	}
-
+    
+    private static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
+    
+    @SuppressWarnings("checkstyle:StaticVariableName")
+    private static MemberLookup LOOK_UP = null;
+    
+    private static LookupType currentLookupType = null;
+    
+    /**
+     * Create the target addressing pattern.
+     *
+     * @param memberManager {@link ServerMemberManager}
+     * @return {@link MemberLookup}
+     * @throws NacosException NacosException
+     */
+    public static MemberLookup createLookUp(ServerMemberManager memberManager) throws NacosException {
+        if (!ApplicationUtils.getStandaloneMode()) {
+            String lookupType = ApplicationUtils.getProperty(LOOKUP_MODE_TYPE);
+            LookupType type = chooseLookup(lookupType);
+            LOOK_UP = find(type);
+            currentLookupType = type;
+        } else {
+            LOOK_UP = new StandaloneMemberLookup();
+        }
+        LOOK_UP.injectMemberManager(memberManager);
+        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        return LOOK_UP;
+    }
+    
+    /**
+     * Switch to target addressing mode.
+     *
+     * @param name          target member-lookup name
+     * @param memberManager {@link ServerMemberManager}
+     * @return {@link MemberLookup}
+     * @throws NacosException {@link NacosException}
+     */
+    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager) throws NacosException {
+        LookupType lookupType = LookupType.sourceOf(name);
+        
+        if (Objects.isNull(lookupType)) {
+            throw new IllegalArgumentException(
+                    "The addressing mode exists : " + name + ", just support : [" + Arrays.toString(LookupType.values())
+                            + "]");
+        }
+        
+        if (Objects.equals(currentLookupType, lookupType)) {
+            return LOOK_UP;
+        }
+        MemberLookup newLookup = find(lookupType);
+        currentLookupType = lookupType;
+        if (Objects.nonNull(LOOK_UP)) {
+            LOOK_UP.destroy();
+        }
+        LOOK_UP = newLookup;
+        LOOK_UP.injectMemberManager(memberManager);
+        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        return LOOK_UP;
+    }
+    
+    private static MemberLookup find(LookupType type) {
+        if (LookupType.FILE_CONFIG.equals(type)) {
+            LOOK_UP = new FileConfigMemberLookup();
+            return LOOK_UP;
+        }
+        if (LookupType.ADDRESS_SERVER.equals(type)) {
+            LOOK_UP = new AddressServerMemberLookup();
+            return LOOK_UP;
+        }
+        // unpossible to run here
+        throw new IllegalArgumentException();
+    }
+    
+    private static LookupType chooseLookup(String lookupType) {
+        if (StringUtils.isNotBlank(lookupType)) {
+            LookupType type = LookupType.sourceOf(lookupType);
+            if (Objects.nonNull(type)) {
+                return type;
+            }
+        }
+        File file = new File(ApplicationUtils.getClusterConfFilePath());
+        if (file.exists() || StringUtils.isNotBlank(ApplicationUtils.getMemberList())) {
+            return LookupType.FILE_CONFIG;
+        }
+        return LookupType.ADDRESS_SERVER;
+    }
+    
+    public static MemberLookup getLookUp() {
+        return LOOK_UP;
+    }
+    
+    public static void destroy() throws NacosException {
+        Objects.requireNonNull(LOOK_UP).destroy();
+    }
+    
+    public enum LookupType {
+        
+        /**
+         * File addressing mode.
+         */
+        FILE_CONFIG(1, "file"),
+        
+        /**
+         * Address server addressing mode.
+         */
+        ADDRESS_SERVER(2, "address-server");
+        
+        private final int code;
+        
+        private final String name;
+        
+        LookupType(int code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+        
+        /**
+         * find one {@link LookupType} by name, if not found, return null.
+         *
+         * @param name name
+         * @return {@link LookupType}
+         */
+        public static LookupType sourceOf(String name) {
+            for (LookupType type : values()) {
+                if (Objects.equals(type.name, name)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+        
+        public int getCode() {
+            return code;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+    
 }

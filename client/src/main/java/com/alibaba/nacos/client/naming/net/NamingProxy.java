@@ -528,7 +528,7 @@ public class NamingProxy implements Closeable {
 
     public List<String> builderHeaders() {
         List<String> headers = Arrays.asList(
-            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version,
             HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",

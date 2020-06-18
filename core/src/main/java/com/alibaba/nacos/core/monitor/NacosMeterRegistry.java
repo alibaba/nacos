@@ -26,28 +26,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Metrics unified usage center
+ * Metrics unified usage center.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public final class NacosMeterRegistry {
-
-	private static final CompositeMeterRegistry METER_REGISTRY = new CompositeMeterRegistry();
-
-	public static DistributionSummary summary(String module, String name) {
-		ImmutableTag moduleTag = new ImmutableTag("module", module);
-		List<Tag> tags = new ArrayList<>();
-		tags.add(moduleTag);
-		tags.add(new ImmutableTag("name", name));
-		return METER_REGISTRY.summary("nacos_monitor", tags);
-	}
-
-	public static Timer timer(String module, String name) {
-		ImmutableTag moduleTag = new ImmutableTag("module", module);
-		List<Tag> tags = new ArrayList<>();
-		tags.add(moduleTag);
-		tags.add(new ImmutableTag("name", name));
-		return METER_REGISTRY.timer("nacos_monitor", tags);
-	}
-
+    
+    private static final CompositeMeterRegistry METER_REGISTRY = new CompositeMeterRegistry();
+    
+    public static DistributionSummary summary(String module, String name) {
+        ImmutableTag moduleTag = new ImmutableTag("module", module);
+        List<Tag> tags = new ArrayList<>();
+        tags.add(moduleTag);
+        tags.add(new ImmutableTag("name", name));
+        return METER_REGISTRY.summary("nacos_monitor", tags);
+    }
+    
+    public static Timer timer(String module, String name) {
+        ImmutableTag moduleTag = new ImmutableTag("module", module);
+        List<Tag> tags = new ArrayList<>();
+        tags.add(moduleTag);
+        tags.add(new ImmutableTag("name", name));
+        return METER_REGISTRY.timer("nacos_monitor", tags);
+    }
+    
 }

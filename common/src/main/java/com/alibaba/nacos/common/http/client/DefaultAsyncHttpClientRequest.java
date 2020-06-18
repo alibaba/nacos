@@ -30,25 +30,24 @@ import java.lang.reflect.Type;
 import java.net.URI;
 
 /**
- * {@link AsyncHttpClientRequest} implementation that uses apache async http client to
- * execute streaming requests
+ * {@link AsyncHttpClientRequest} implementation that uses apache async http client to execute streaming requests.
  *
  * @author mai.jh
- * @date 2020/5/29
  */
 public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
-
+    
     private final CloseableHttpAsyncClient asyncClient;
-
+    
     public DefaultAsyncHttpClientRequest(CloseableHttpAsyncClient asyncClient) {
         this.asyncClient = asyncClient;
         if (!this.asyncClient.isRunning()) {
             this.asyncClient.start();
         }
     }
-
+    
     @Override
-    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType, final Callback<T> callback) throws Exception {
+    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType,
+            final Callback<T> callback) throws Exception {
         HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
         asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
             @Override
@@ -61,20 +60,20 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
                     callback.onError(e);
                 }
             }
-
+            
             @Override
             public void failed(Exception ex) {
                 callback.onError(ex);
             }
-
+            
             @Override
             public void cancelled() {
-
+            
             }
         });
-
+        
     }
-
+    
     @Override
     public void close() throws IOException {
         this.asyncClient.close();

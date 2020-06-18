@@ -25,46 +25,46 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import com.google.protobuf.ZeroByteStringHelper;
 
 /**
+ * JRaft snapshot operation.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 interface JSnapshotOperation {
-
+    
     /**
-     * do snapshot save operation
+     * do snapshot save operation.
      *
      * @param writer {@link SnapshotWriter}
      * @param done   {@link Closure}
      */
     void onSnapshotSave(SnapshotWriter writer, Closure done);
-
+    
     /**
-     * do snapshot load operation
+     * do snapshot load operation.
      *
      * @param reader {@link SnapshotReader}
      * @return operation label
      */
     boolean onSnapshotLoad(SnapshotReader reader);
-
+    
     /**
-     * return actually snapshot executor
+     * return actually snapshot executor.
      *
      * @return name
      */
     String info();
-
+    
     /**
-     * Metadata information for snapshot files
+     * Metadata information for snapshot files.
      *
      * @param metadata meta data
-     * @param <T>      type
      * @return {@link LocalFileMetaOutter.LocalFileMeta}
+     * @throws Exception Exception
      */
     default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) throws Exception {
-        return metadata == null ? null
-                : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata)))
-                .build();
+        return metadata == null ? null : LocalFileMetaOutter.LocalFileMeta.newBuilder()
+                .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata))).build();
     }
-
+    
 }
