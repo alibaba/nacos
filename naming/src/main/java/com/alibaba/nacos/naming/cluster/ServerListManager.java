@@ -54,7 +54,7 @@ import java.util.Optional;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
-public class ServerListManager implements MemberChangeListener {
+public class ServerListManager extends MemberChangeListener {
 
     private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
@@ -69,7 +69,7 @@ public class ServerListManager implements MemberChangeListener {
     public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
         this.switchDomain = switchDomain;
         this.memberManager = memberManager;
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
         this.servers = new ArrayList<>(memberManager.allMembers());
     }
 
