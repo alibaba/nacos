@@ -131,7 +131,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
     
     @Override
-    public void unSubscriber(Subscriber subscriber) {
+    public void removeSubscriber(Subscriber subscriber) {
         subscribers.remove(subscriber);
     }
     

@@ -25,17 +25,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule", "PMD.ConstantFieldShouldBeUpperCaseRule"})
 public abstract class Event implements Serializable {
     
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+    private static final AtomicLong sequence = new AtomicLong(0);
     
-    private long no = SEQUENCE.getAndIncrement();
+    private final long no = sequence.getAndIncrement();
     
     /**
-     * Event sequence number, which can be used to handle the sequence of events
+     * Event sequence number, which can be used to handle the sequence of events.
      *
-     * @return sequence num, It's best to make sure it's monotone
+     * @return sequence num, It's best to make sure it's monotone.
      */
     public long sequence() {
         return no;

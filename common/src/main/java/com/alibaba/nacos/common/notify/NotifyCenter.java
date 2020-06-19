@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.notify;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -34,13 +35,15 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
+
 /**
  * Unified Event Notify Center.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("all")
+@SuppressWarnings("PMD.ConstantFieldShouldBeUpperCaseRule")
 public class NotifyCenter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
@@ -60,7 +63,7 @@ public class NotifyCenter {
     private static Class<? extends EventPublisher> clazz = null;
     
     /**
-     * Publisher management container
+     * Publisher management container.
      */
     private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<String, EventPublisher>(16);
     
@@ -86,19 +89,23 @@ public class NotifyCenter {
         BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
             
             @Override
-            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
+            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) throws NacosException {
                 try {
                     EventPublisher publisher = clazz.newInstance();
                     publisher.init(cls, buffer);
                     return publisher;
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     LOGGER.error("Service class newInstance has error : {}", ex);
+                    throw new NacosException(SERVER_ERROR, ex);
                 }
-                return null;
             }
         };
         
-        INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHARE_BUFFER_SIZE);
+        try {
+            INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHARE_BUFFER_SIZE);
+        } catch (Throwable ex) {
+            LOGGER.error("Service class newInstance has error : {}", ex);
+        }
         
         ThreadUtils.addShutdownHook(new Runnable() {
             @Override
@@ -133,6 +140,9 @@ public class NotifyCenter {
     
     private static final AtomicBoolean closed = new AtomicBoolean(false);
     
+    /**
+     * Shutdown the serveral publisher instance which notifycenter has.
+     */
     public static void shutdown() {
         if (!closed.compareAndSet(false, true)) {
             return;
@@ -159,13 +169,12 @@ public class NotifyCenter {
     
     /**
      * Register a Subscriber. If the Publisher concerned by the Subscriber does not exist, then PublihserMap will
-     * preempt a placeholder Publisher first. not call {@link Publisher#start()}
+     * preempt a placeholder Publisher first.
      *
-     * @param eventType Types of events that Subscriber cares about
-     * @param consumer  subscriber
-     * @param <T>       event type
+     * @param consumer subscriber
+     * @param <T>      event type
      */
-    public static <T> void registerSubscriber(final Subscriber consumer) {
+    public static <T> void registerSubscriber(final Subscriber consumer) throws NacosException {
         final Class<? extends Event> cls = consumer.subscribeType();
         // If you want to listen to multiple events, you do it separately,
         // without automatically registering the appropriate publisher
@@ -185,10 +194,9 @@ public class NotifyCenter {
     }
     
     /**
-     * deregister subscriber
+     * Deregister subscriber.
      *
-     * @param consumer subscriber
-     * @param <T>
+     * @param consumer subscriber.
      */
     public static <T> void deregisterSubscribe(final Subscriber consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
@@ -197,13 +205,13 @@ public class NotifyCenter {
             return;
         }
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.unSubscriber(consumer);
+            INSTANCE.sharePublisher.removeSubscriber(consumer);
             return;
         }
         final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
         if (INSTANCE.publisherMap.containsKey(topic)) {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-            publisher.unSubscriber(consumer);
+            publisher.removeSubscriber(consumer);
             return;
         }
         throw new NoSuchElementException("The subcriber has no event publisher");
@@ -213,7 +221,7 @@ public class NotifyCenter {
      * request publisher publish event Publishers load lazily, calling publisher. Start () only when the event is
      * actually published
      *
-     * @param event
+     * @param event class Instances of the event.
      */
     public static boolean publishEvent(final Event event) {
         try {
@@ -225,11 +233,10 @@ public class NotifyCenter {
     }
     
     /**
-     * request publisher publish event Publishers load lazily, calling publisher. Start () only when the event is
-     * actually published
+     * Request publisher publish event Publishers load lazily, calling publisher.
      *
-     * @param eventType
-     * @param event
+     * @param eventType class Instances type of the event type.
+     * @param event     event instance.
      */
     private static boolean publishEvent(final Class<? extends Event> eventType, final Event event) {
         final String topic = ClassUtils.getCanonicalName(eventType);
@@ -245,25 +252,23 @@ public class NotifyCenter {
     }
     
     /**
-     * register to share-publisher
+     * Register to share-publisher.
      *
-     * @param supplier
-     * @param eventType
-     * @return
+     * @param eventType class Instances type of the event type.
+     * @return share publisher instance.
      */
     public static EventPublisher registerToSharePublisher(final Class<? extends SlowEvent> eventType) {
         return INSTANCE.sharePublisher;
     }
     
     /**
-     * register publisher
+     * Register publisher.
      *
-     * @param supplier
-     * @param eventType
-     * @param queueMaxSize
-     * @return
+     * @param eventType    class Instances type of the event type.
+     * @param queueMaxSize the publisher's queue max size.
      */
-    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize) {
+    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize)
+            throws NacosException {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher;
         }
@@ -275,10 +280,9 @@ public class NotifyCenter {
     }
     
     /**
-     * deregister publisher
+     * Deregister publisher.
      *
-     * @param eventType
-     * @return
+     * @param eventType class Instances type of the event type.
      */
     public static void deregisterPublisher(final Class<? extends Event> eventType) {
         final String topic = ClassUtils.getCanonicalName(eventType);

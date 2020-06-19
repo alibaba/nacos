@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
+
 /**
  * Represents a function that accepts two arguments and produces a result.
+ * The following utility functions are extracted from org.apache.commons.lang3.
  *
  * <p>This is a <a href="package-summary.html">functional interface</a>
  * whose functional method is {@link #apply(Object, Object)}.
@@ -25,19 +28,15 @@ package com.alibaba.nacos.common.utils;
  * @author zongtanghu
  *
  */
+@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface BiFunction<T, U, R> {
-
-    //    The following utility functions are extracted from <link>org.apache.commons.lang3</link>
-    //    start
-
+    
     /**
-     * Applies this function to the given arguments.
+     * Applies this function to the given arguments. This
      *
      * @param t the first function argument
      * @param u the second function argument
      * @return the function result
      */
-    R apply(T t, U u);
-
-    //    end
+    R apply(T t, U u) throws NacosException;
 }

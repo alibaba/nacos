@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.notify;
+package com.alibaba.nacos.common;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * This event share one event-queue.
+ * Annotation that marks a method as not thread safe.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class SlowEvent extends Event {
+@Documented
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface NotThreadSafe {
     
-    @Override
-    public long sequence() {
-        return 0;
-    }
 }
