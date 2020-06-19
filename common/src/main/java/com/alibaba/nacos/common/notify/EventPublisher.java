@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import java.util.Set;
 
 /**
- * Event publisher
+ * Event publisher.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
@@ -32,41 +32,41 @@ import java.util.Set;
 public interface EventPublisher extends Closeable {
     
     /**
-     * Multi-event listener collection list
+     * Multi-event listener collection list.
      */
     Set<SmartSubscriber> SMART_SUBSCRIBERS = new ConcurrentHashSet<SmartSubscriber>();
     
     /**
-     * Initializes the event publisher
+     * Initializes the event publisher.
      *
-     * @param type       {@link Class<? extends  Event >}
+     * @param type       {@link Event >}
      * @param bufferSize Message staging queue size
      */
     void init(Class<? extends Event> type, int bufferSize);
     
     /**
-     * The number of currently staged events
+     * The number of currently staged events.
      *
      * @return event size
      */
     long currentEventSize();
     
     /**
-     * Add listener
+     * Add listener.
      *
      * @param subscribe {@link Subscriber}
      */
     void addSubscriber(Subscriber subscribe);
     
     /**
-     * Remove listener
+     * Remove listener.
      *
      * @param subscriber {@link Subscriber}
      */
     void unSubscriber(Subscriber subscriber);
     
     /**
-     * publish event
+     * publish event.
      *
      * @param event {@link Event}
      * @return publish event is success
@@ -74,7 +74,7 @@ public interface EventPublisher extends Closeable {
     boolean publish(Event event);
     
     /**
-     * Notify listener
+     * Notify listener.
      *
      * @param subscriber {@link Subscriber}
      * @param event      {@link Event}

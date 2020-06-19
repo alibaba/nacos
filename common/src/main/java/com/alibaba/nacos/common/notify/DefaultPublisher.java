@@ -34,9 +34,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.alibaba.nacos.common.notify.NotifyCenter.RING_BUFFER_SIZE;
 
 /**
- * The default event publisher implementation
- * <p>
- * Internally, use {@link ArrayBlockingQueue <Event>} as a message staging queue
+ * The default event publisher implementation.
+ *
+ * <p>Internally, use {@link ArrayBlockingQueue <Event/>} as a message staging queue.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu

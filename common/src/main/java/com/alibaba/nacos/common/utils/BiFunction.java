@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.utils;
 
+package com.alibaba.nacos.common.utils;
 
 /**
  * Represents a function that accepts two arguments and produces a result.

@@ -19,7 +19,7 @@ package com.alibaba.nacos.common.notify.listener;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
- * Subscribers to multiple events can be listened to
+ * Subscribers to multiple events can be listened to.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.notify.Event;
 public abstract class SmartSubscriber extends Subscriber {
     
     /**
-     * Determines if the processing message is acceptable
+     * Determines if the processing message is acceptable.
      *
      * @param event {@link Event}
      * @return Determines if the processing message is acceptable

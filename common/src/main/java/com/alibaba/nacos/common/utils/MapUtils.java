@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.utils;
 
 import java.util.Collection;
 import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -125,6 +124,16 @@ public class MapUtils {
         }
     }
     
+    /**
+     * ComputeIfAbsent lazy load.
+     *
+     * @param target target Map data.
+     * @param key map key.
+     * @param mappingFunction funtion which is need to be executed.
+     * @param param1 function's parameter value1.
+     * @param param2 function's parameter value1.
+     * @return
+     */
     public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
             Object param2) {
         
