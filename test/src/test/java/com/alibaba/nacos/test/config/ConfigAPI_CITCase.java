@@ -395,6 +395,9 @@ public class ConfigAPI_CITCase {
         final String newContent = "nacos_addListener_3-" + System.currentTimeMillis();
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
+        
+        // Maximum assurance level notification has been performed
+        ThreadUtils.sleep(5000);
 
         Listener ml = new AbstractListener() {
             @Override
