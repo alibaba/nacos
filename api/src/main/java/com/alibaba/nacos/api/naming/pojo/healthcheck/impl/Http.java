@@ -18,9 +18,9 @@ package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,50 +32,51 @@ import java.util.Map;
  * @author yangyi
  */
 public class Http extends AbstractHealthChecker {
+    
     public static final String TYPE = "HTTP";
-
+    
     private String path = "";
-
+    
     private String headers = "";
-
+    
     private int expectedResponseCode = 200;
-
+    
     public Http() {
-        super(TYPE);
+        super(Http.TYPE);
     }
-
+    
     public int getExpectedResponseCode() {
-        return expectedResponseCode;
+        return this.expectedResponseCode;
     }
-
-    public void setExpectedResponseCode(int expectedResponseCode) {
+    
+    public void setExpectedResponseCode(final int expectedResponseCode) {
         this.expectedResponseCode = expectedResponseCode;
     }
-
+    
     public String getPath() {
-        return path;
+        return this.path;
     }
-
-    public void setPath(String path) {
+    
+    public void setPath(final String path) {
         this.path = path;
     }
-
+    
     public String getHeaders() {
-        return headers;
+        return this.headers;
     }
-
-    public void setHeaders(String headers) {
+    
+    public void setHeaders(final String headers) {
         this.headers = headers;
     }
-
+    
     @JsonIgnore
     public Map<String, String> getCustomHeaders() {
-        if (StringUtils.isBlank(headers)) {
+        if (StringUtils.isBlank(this.headers)) {
             return Collections.emptyMap();
         }
-        Map<String, String> headerMap = new HashMap<String, String>(16);
-        for (String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
-            String[] splits = s.split(":");
+        final Map<String, String> headerMap = new HashMap<String, String>(16);
+        for (final String s : this.headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+            final String[] splits = s.split(":");
             if (splits.length != 2) {
                 continue;
             }
@@ -83,36 +84,36 @@ public class Http extends AbstractHealthChecker {
         }
         return headerMap;
     }
-
+    
     @Override
     public int hashCode() {
-        return Objects.hashCode(path, headers, expectedResponseCode);
+        return Objects.hashCode(this.path, this.headers, this.expectedResponseCode);
     }
-
+    
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof Http)) {
             return false;
         }
-
-        Http other = (Http) obj;
-
-        if (!StringUtils.equals(type, other.getType())) {
+        
+        final Http other = (Http) obj;
+        
+        if (!StringUtils.equals(this.type, other.getType())) {
             return false;
         }
-
-        if (!StringUtils.equals(path, other.getPath())) {
+        
+        if (!StringUtils.equals(this.path, other.getPath())) {
             return false;
         }
-        if (!StringUtils.equals(headers, other.getHeaders())) {
+        if (!StringUtils.equals(this.headers, other.getHeaders())) {
             return false;
         }
-        return expectedResponseCode == other.getExpectedResponseCode();
+        return this.expectedResponseCode == other.getExpectedResponseCode();
     }
-
+    
     @Override
     public Http clone() throws CloneNotSupportedException {
-        Http config = new Http();
+        final Http config = new Http();
         config.setPath(this.getPath());
         config.setHeaders(this.getHeaders());
         config.setExpectedResponseCode(this.getExpectedResponseCode());
