@@ -51,7 +51,7 @@ public class JSONUtils {
         return mapper.readValue(s, typeReference);
     }
 
-    public static <T> T deserializeObject(InputStream src, TypeReference<?> typeReference)
+    public static <T> T deserializeObject(InputStream src, TypeReference<T> typeReference)
         throws IOException {
         return mapper.readValue(src, typeReference);
     }
