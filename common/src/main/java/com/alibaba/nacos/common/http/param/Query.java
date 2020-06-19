@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Http Query object.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Query {
@@ -42,6 +44,13 @@ public class Query {
         return new Query();
     }
     
+    /**
+     * Add query parameter.
+     *
+     * @param key   key
+     * @param value value
+     * @return this query
+     */
     public Query addParam(String key, Object value) {
         isEmpty = false;
         params.put(key, value);
@@ -52,6 +61,12 @@ public class Query {
         return params.get(key);
     }
     
+    /**
+     * Add all parameters as query parameter.
+     *
+     * @param params parameters
+     * @return this query
+     */
     public Query initParams(Map<String, String> params) {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             addParam(entry.getKey(), entry.getValue());
@@ -59,6 +74,11 @@ public class Query {
         return this;
     }
     
+    /**
+     * Add query parameters from KV list. KV list: odd index is key, even index is value.
+     *
+     * @param list KV list
+     */
     public void initParams(List<String> list) {
         if ((list.size() & 1) != 0) {
             throw new IllegalArgumentException("list size must be a multiple of 2");
@@ -68,6 +88,11 @@ public class Query {
         }
     }
     
+    /**
+     * Print query as a http url param string. Like K=V&K=V.
+     *
+     * @return http url param string
+     */
     public String toQueryUrl() {
         StringBuilder urlBuilder = new StringBuilder();
         Set<Map.Entry<String, Object>> entrySet = params.entrySet();
