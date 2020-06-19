@@ -45,6 +45,13 @@ import java.util.zip.GZIPInputStream;
  */
 public class IoUtils {
     
+    /**
+     * Try decompress by GZIP from stream.
+     *
+     * @param raw compress stream
+     * @return byte array after decompress
+     * @throws Exception exception
+     */
     public static byte[] tryDecompress(InputStream raw) throws Exception {
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
@@ -67,6 +74,13 @@ public class IoUtils {
         return null;
     }
     
+    /**
+     * Try decompress by GZIP from byte array.
+     *
+     * @param raw compressed byte array
+     * @return byte array after decompress
+     * @throws Exception exception
+     */
     public static byte[] tryDecompress(byte[] raw) throws Exception {
         if (!isGzipStream(raw)) {
             return raw;
@@ -93,6 +107,14 @@ public class IoUtils {
         return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
     }
     
+    /**
+     * Write string to a file.
+     *
+     * @param file     file
+     * @param data     string
+     * @param encoding encoding of string
+     * @throws IOException io exception
+     */
     public static void writeStringToFile(File file, String data, String encoding) throws IOException {
         OutputStream os = null;
         try {
@@ -106,6 +128,13 @@ public class IoUtils {
         }
     }
     
+    /**
+     * Read lines.
+     *
+     * @param input reader
+     * @return list of line
+     * @throws IOException io exception
+     */
     public static List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
@@ -123,6 +152,14 @@ public class IoUtils {
         return list;
     }
     
+    /**
+     * To string from stream.
+     *
+     * @param input    stream
+     * @param encoding charset of stream
+     * @return string
+     * @throws IOException io exception
+     */
     public static String toString(InputStream input, String encoding) throws IOException {
         if (input == null) {
             return StringUtils.EMPTY;
@@ -131,12 +168,27 @@ public class IoUtils {
                 : toString(new InputStreamReader(input, encoding));
     }
     
+    /**
+     * To string from reader.
+     *
+     * @param reader reader
+     * @return string
+     * @throws IOException io exception
+     */
     public static String toString(Reader reader) throws IOException {
         CharArrayWriter sw = new CharArrayWriter();
         copy(reader, sw);
         return sw.toString();
     }
     
+    /**
+     * Copy data.
+     *
+     * @param input  source
+     * @param output target
+     * @return copy size
+     * @throws IOException io exception
+     */
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
@@ -147,6 +199,14 @@ public class IoUtils {
         return count;
     }
     
+    /**
+     * Copy data.
+     *
+     * @param input  source
+     * @param output target
+     * @return copy size
+     * @throws IOException io exception
+     */
     public static long copy(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;
@@ -160,6 +220,16 @@ public class IoUtils {
         return totalBytes;
     }
     
+    /**
+     * Delete file or dir.
+     *
+     * <p>If is dir, clean directory, do not delete dir.
+     *
+     * <p>If is file, delete file.
+     *
+     * @param fileOrDir file or dir
+     * @throws IOException io exception
+     */
     public static void delete(File fileOrDir) throws IOException {
         if (fileOrDir == null) {
             return;
@@ -178,7 +248,10 @@ public class IoUtils {
     }
     
     /**
-     * 清理目录下的内容.
+     * 清理目录下的内容. Clean content under directory.
+     *
+     * @param directory directory
+     * @throws IOException io exception
      */
     public static void cleanDirectory(File directory) throws IOException {
         if (!directory.exists()) {
@@ -211,6 +284,13 @@ public class IoUtils {
         }
     }
     
+    /**
+     * Copy File.
+     *
+     * @param source source file path
+     * @param target target file path
+     * @throws IOException io exception
+     */
     public static void copyFile(String source, String target) throws IOException {
         File sf = new File(source);
         if (!sf.exists()) {
@@ -240,6 +320,12 @@ public class IoUtils {
         }
     }
     
+    /**
+     * Judge whether is Gzip stream.
+     *
+     * @param bytes byte array
+     * @return true if is gzip, otherwise false
+     */
     public static boolean isGzipStream(byte[] bytes) {
         
         int minByteArraySize = 2;
@@ -250,6 +336,11 @@ public class IoUtils {
         return GZIPInputStream.GZIP_MAGIC == ((bytes[1] << 8 | bytes[0]) & 0xFFFF);
     }
     
+    /**
+     * Close http connection quietly.
+     *
+     * @param connection http connection
+     */
     public static void closeQuietly(HttpURLConnection connection) {
         if (connection != null) {
             try {
@@ -267,6 +358,11 @@ public class IoUtils {
         closeQuietly((Closeable) output);
     }
     
+    /**
+     * Close closable object quietly.
+     *
+     * @param closeable http connection
+     */
     public static void closeQuietly(Closeable closeable) {
         try {
             if (closeable != null) {

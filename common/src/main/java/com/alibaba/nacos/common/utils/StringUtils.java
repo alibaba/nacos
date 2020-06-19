@@ -44,6 +44,12 @@ public class StringUtils {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
     
+    /**
+     * Judge whether string is blank.
+     *
+     * @param str string
+     * @return true if str is null, empty string or only blanks, otherwise false
+     */
     public static boolean isBlank(String str) {
         int strLen;
         if (str == null || (strLen = str.length()) == 0) {
@@ -57,6 +63,12 @@ public class StringUtils {
         return true;
     }
     
+    /**
+     * Judge whether all strings are blank.
+     *
+     * @param strs strings
+     * @return true if all strings are blank, otherwise false
+     */
     public static boolean isAllBlank(String... strs) {
         for (String str : strs) {
             if (isNotBlank(str)) {
@@ -90,6 +102,14 @@ public class StringUtils {
         return str == null ? null : str.trim();
     }
     
+    /**
+     * Substring between two index.
+     *
+     * @param str   string
+     * @param open  start index to sub
+     * @param close end index to sub
+     * @return substring
+     */
     public static String substringBetween(String str, String open, String close) {
         if (str == null || open == null || close == null) {
             return null;
@@ -104,6 +124,13 @@ public class StringUtils {
         return null;
     }
     
+    /**
+     * Join object with input separator.
+     *
+     * @param collection collection of objects need to join
+     * @param separator  separator
+     * @return joined string
+     */
     public static String join(Collection collection, String separator) {
         if (collection == null) {
             return null;

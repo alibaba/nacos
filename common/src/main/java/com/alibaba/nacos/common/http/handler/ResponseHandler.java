@@ -62,6 +62,15 @@ public final class ResponseHandler {
         return httpRestResult;
     }
     
+    /**
+     * Extract response entity to {@link HttpRestResult}.
+     *
+     * @param response response
+     * @param type     type
+     * @param <T>      general type
+     * @return {@link HttpRestResult}
+     * @throws Exception exception
+     */
     @SuppressWarnings({"unchecked", "rawtypes", "resource"})
     public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type)
             throws Exception {
