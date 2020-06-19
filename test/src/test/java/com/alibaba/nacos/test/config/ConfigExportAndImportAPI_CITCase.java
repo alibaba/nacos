@@ -56,7 +56,12 @@ public class ConfigExportAndImportAPI_CITCase {
     private String SERVER_ADDR = null;
 
     private HttpAgent agent = null;
-
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+    }
 
     @Before
     public void setUp() throws Exception {
