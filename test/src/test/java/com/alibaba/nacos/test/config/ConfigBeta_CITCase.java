@@ -21,8 +21,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.test.base.Params;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,12 @@ public class ConfigBeta_CITCase {
     String tenant = "dungu";
     String content = "test";
     String appName = "nacos";
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+    }
 
     @Before
     public void init() throws NacosException {
