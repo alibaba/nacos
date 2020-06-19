@@ -23,10 +23,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Thread utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
     
+    /**
+     * Wait.
+     *
+     * @param object load object
+     */
     public static void objectWait(Object object) {
         try {
             object.wait();
@@ -35,6 +42,11 @@ public final class ThreadUtils {
         }
     }
     
+    /**
+     * Sleep.
+     *
+     * @param millis sleep millisecond
+     */
     public static void sleep(long millis) {
         try {
             Thread.sleep(millis);
@@ -48,6 +60,11 @@ public final class ThreadUtils {
         latch.countDown();
     }
     
+    /**
+     * Await count down latch.
+     *
+     * @param latch count down latch
+     */
     public static void latchAwait(CountDownLatch latch) {
         try {
             latch.await();
@@ -56,6 +73,13 @@ public final class ThreadUtils {
         }
     }
     
+    /**
+     * Await count down latch with timeout.
+     *
+     * @param latch count down latch
+     * @param time  timeout time
+     * @param unit  time unit
+     */
     public static void latchAwait(CountDownLatch latch, long time, TimeUnit unit) {
         try {
             latch.await(time, unit);
@@ -65,7 +89,7 @@ public final class ThreadUtils {
     }
     
     /**
-     * Through the number of cores, calculate the appropriate number of threads; 1.5-2 times the number of CPU cores
+     * Through the number of cores, calculate the appropriate number of threads; 1.5-2 times the number of CPU cores.
      *
      * @return thread count
      */
@@ -82,6 +106,12 @@ public final class ThreadUtils {
         shutdownThreadPool(executor, null);
     }
     
+    /**
+     * Shutdown thread pool.
+     *
+     * @param executor thread pool
+     * @param logger   logger
+     */
     public static void shutdownThreadPool(ExecutorService executor, Logger logger) {
         executor.shutdown();
         int retry = 3;

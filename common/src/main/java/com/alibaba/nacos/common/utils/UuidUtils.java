@@ -19,6 +19,8 @@ package com.alibaba.nacos.common.utils;
 import java.util.UUID;
 
 /**
+ * UUID utils.
+ *
  * @author nkorange
  */
 public class UuidUtils {

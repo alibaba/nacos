@@ -185,6 +185,9 @@ public final class ThreadPoolManager {
         }
     }
     
+    /**
+     * Shutdown thread pool manager.
+     */
     public static void shutdown() {
         if (!CLOSED.compareAndSet(false, true)) {
             return;

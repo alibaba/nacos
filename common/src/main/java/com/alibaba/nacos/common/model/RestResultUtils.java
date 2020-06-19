@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common.model;
 
 /**
+ * Rest result utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RestResultUtils {

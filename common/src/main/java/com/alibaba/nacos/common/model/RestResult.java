@@ -19,6 +19,8 @@ package com.alibaba.nacos.common.model;
 import java.io.Serializable;
 
 /**
+ * Rest result.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RestResult<T> implements Serializable {
@@ -112,7 +114,12 @@ public class RestResult<T> implements Serializable {
             this.data = data;
             return this;
         }
-        
+    
+        /**
+         * Build result.
+         *
+         * @return result
+         */
         public RestResult<T> build() {
             RestResult<T> restResult = new RestResult<T>();
             restResult.setCode(code);
