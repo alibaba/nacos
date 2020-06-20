@@ -20,13 +20,11 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
-
 /**
  * Utils for Class.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
 public final class ClassUtils {
     
     /**
@@ -44,49 +42,16 @@ public final class ClassUtils {
     }
     
     /**
-     * Gets and returns className.
-     *
-     * @param obj Object instance.
-     * @return className.
-     */
-    public static String getName(Object obj) {
-        Objects.requireNonNull(obj, "obj");
-        return obj.getClass().getName();
-    }
-    
-    /**
-     * Gets and returns the canonical name of the underlying class.
-     *
-     * @param obj Object instance.
-     * @return The canonical name of the underlying class.
-     */
-    public static String getCanonicalName(Object obj) {
-        Objects.requireNonNull(obj, "obj");
-        return obj.getClass().getCanonicalName();
-    }
-    
-    /**
      * Determines if the class or interface represented by this object is either the same as, or is a superclass or
      * superinterface of, the class or interface represented by the specified parameter.
      *
-     * @param clazz
-     * @param cls
+     * @param clazz Instances of the class represent classes and interfaces.
+     * @param cls   Instances of the class represent classes and interfaces.
      * @return the value indicating whether objects of the type can be assigned to objects of this class.
      */
     public static boolean isAssignableFrom(Class clazz, Class cls) {
         Objects.requireNonNull(cls, "cls");
         return clazz.isAssignableFrom(cls);
-    }
-    
-    /**
-     * Gets and returns the simple name of the underlying class as given in the source code.
-     *
-     * @param obj Object instance.
-     * @return the simple name of the underlying class.
-     */
-    public static String getSimplaName(Object obj) {
-        Objects.requireNonNull(obj, "obj");
-        return obj.getClass().getSimpleName();
     }
     
     /**
@@ -101,6 +66,17 @@ public final class ClassUtils {
     }
     
     /**
+     * Gets and returns className.
+     *
+     * @param obj Object instance.
+     * @return className.
+     */
+    public static String getName(Object obj) {
+        Objects.requireNonNull(obj, "obj");
+        return obj.getClass().getName();
+    }
+    
+    /**
      * Gets and returns the canonical name of the underlying class.
      *
      * @param cls Instances of the class represent classes and interfaces.
@@ -112,6 +88,17 @@ public final class ClassUtils {
     }
     
     /**
+     * Gets and returns the canonical name of the underlying class.
+     *
+     * @param obj Object instance.
+     * @return The canonical name of the underlying class.
+     */
+    public static String getCanonicalName(Object obj) {
+        Objects.requireNonNull(obj, "obj");
+        return obj.getClass().getCanonicalName();
+    }
+    
+    /**
      * Gets and returns the simple name of the underlying class.
      *
      * @param cls Instances of the class represent classes and interfaces.
@@ -120,6 +107,17 @@ public final class ClassUtils {
     public static String getSimplaName(Class cls) {
         Objects.requireNonNull(cls, "cls");
         return cls.getSimpleName();
+    }
+    
+    /**
+     * Gets and returns the simple name of the underlying class as given in the source code.
+     *
+     * @param obj Object instance.
+     * @return the simple name of the underlying class.
+     */
+    public static String getSimplaName(Object obj) {
+        Objects.requireNonNull(obj, "obj");
+        return obj.getClass().getSimpleName();
     }
     
 }

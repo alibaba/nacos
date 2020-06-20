@@ -26,25 +26,25 @@ import java.util.concurrent.Executor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("all")
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Subscriber<T extends Event> {
     
     /**
-     * Event callback
+     * Event callback.
      *
      * @param event {@link Event}
      */
     public abstract void onEvent(T event);
     
     /**
-     * Type of this subscriber's subscription
+     * Type of this subscriber's subscription.
      *
      * @return Class which extends {@link Event}
      */
     public abstract Class<? extends Event> subscribeType();
     
     /**
-     * It is up to the listener to determine whether the callback is asynchronous or synchronous
+     * It is up to the listener to determine whether the callback is asynchronous or synchronous.
      *
      * @return {@link Executor}
      */
@@ -53,7 +53,7 @@ public abstract class Subscriber<T extends Event> {
     }
     
     /**
-     * Whether to ignore expired events
+     * Whether to ignore expired events.
      *
      * @return default value is {@link Boolean#FALSE}
      */

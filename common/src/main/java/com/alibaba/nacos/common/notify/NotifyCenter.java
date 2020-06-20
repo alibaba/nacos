@@ -43,18 +43,17 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */
-@SuppressWarnings("PMD.ConstantFieldShouldBeUpperCaseRule")
 public class NotifyCenter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
     
-    public static int RING_BUFFER_SIZE = 16384;
+    public static int ringBufferSize = 16384;
     
-    public static int SHARE_BUFFER_SIZE = 1024;
+    public static int shareBufferSize = 1024;
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
-    private static BiFunction<Class<? extends Event>, Integer, EventPublisher> BUILD_FACTORY = null;
+    private static BiFunction<Class<? extends Event>, Integer, EventPublisher> publisherFactory = null;
     
     private static final NotifyCenter INSTANCE = new NotifyCenter();
     
@@ -71,11 +70,11 @@ public class NotifyCenter {
         // Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
         // this value needs to be increased appropriately. default value is 16384
         String ringBufferSizeProperty = "nacos.core.notify.ring-buffer-size";
-        RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
+        ringBufferSize = Integer.getInteger(ringBufferSizeProperty, 16384);
         
         // The size of the public publisher's message staging queue buffer
         String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
-        SHARE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
+        shareBufferSize = Integer.getInteger(shareBufferSizeProperty, 1024);
         
         final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
         Iterator<EventPublisher> iterator = loader.iterator();
@@ -86,7 +85,7 @@ public class NotifyCenter {
             clazz = DefaultPublisher.class;
         }
         
-        BUILD_FACTORY = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
+        publisherFactory = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
             
             @Override
             public EventPublisher apply(Class<? extends Event> cls, Integer buffer) throws NacosException {
@@ -102,7 +101,7 @@ public class NotifyCenter {
         };
         
         try {
-            INSTANCE.sharePublisher = BUILD_FACTORY.apply(SlowEvent.class, SHARE_BUFFER_SIZE);
+            INSTANCE.sharePublisher = publisherFactory.apply(SlowEvent.class, shareBufferSize);
         } catch (Throwable ex) {
             LOGGER.error("Service class newInstance has error : {}", ex);
         }
@@ -138,13 +137,11 @@ public class NotifyCenter {
         return INSTANCE.sharePublisher;
     }
     
-    private static final AtomicBoolean closed = new AtomicBoolean(false);
-    
     /**
      * Shutdown the serveral publisher instance which notifycenter has.
      */
     public static void shutdown() {
-        if (!closed.compareAndSet(false, true)) {
+        if (!CLOSED.compareAndSet(false, true)) {
             return;
         }
         LOGGER.warn("[NotifyCenter] Start destroying Publisher");
@@ -188,7 +185,7 @@ public class NotifyCenter {
             return;
         }
         final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, BUILD_FACTORY, cls, RING_BUFFER_SIZE);
+        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, cls, ringBufferSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
     }
@@ -274,7 +271,7 @@ public class NotifyCenter {
         }
         
         final String topic = ClassUtils.getCanonicalName(eventType);
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, BUILD_FACTORY, eventType, queueMaxSize);
+        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;
     }

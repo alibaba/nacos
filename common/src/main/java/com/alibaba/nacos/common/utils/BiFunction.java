@@ -28,15 +28,15 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author zongtanghu
  *
  */
-@SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface BiFunction<T, U, R> {
     
     /**
-     * Applies this function to the given arguments. This
+     * Applies this function to the two given arguments.
      *
      * @param t the first function argument
      * @param u the second function argument
      * @return the function result
+     * @throws NacosException function throws NacosException
      */
     R apply(T t, U u) throws NacosException;
 }
