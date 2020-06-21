@@ -17,12 +17,10 @@
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.Observable;
-import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.event.DataImportEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
-import com.alibaba.nacos.config.server.service.repository.DerbyLoadEvent;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;
@@ -53,8 +51,10 @@ import java.util.List;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("all")
 public class CurcuitFilter implements Filter {
+
+	private volatile boolean isDowngrading = false;
+	private volatile boolean isOpenService = false;
 
 	@Autowired
 	private ServerMemberManager memberManager;
@@ -64,9 +64,6 @@ public class CurcuitFilter implements Filter {
 
 	@Autowired
 	private ControllerMethodsCache controllerMethodsCache;
-
-	private volatile boolean isDowngrading = false;
-	private volatile boolean isOpenService = false;
 
 	@PostConstruct
 	protected void init() {
@@ -101,12 +98,10 @@ public class CurcuitFilter implements Filter {
 		catch (AccessControlException e) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN,
 					"access denied: " + ExceptionUtil.getAllExceptionMsg(e));
-			return;
 		}
 		catch (Throwable e) {
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
 					"Server failed," + e.toString());
-			return;
 		}
 	}
 
@@ -117,18 +112,14 @@ public class CurcuitFilter implements Filter {
 
 	private void listenerSelfInCluster() {
 		protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP,
-				MetadataKey.RAFT_GROUP_MEMBER,
-				new Observer() {
-					@Override
-					public void update(Observable o, Object arg) {
-						final List<String> peers = (List<String>) arg;
-						final Member self = memberManager.getSelf();
-						final String raftAddress = self.getIp() + ":" + self
-								.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
-						// Only when you are in the cluster and the current Leader is
-						// elected can you provide external services
-						isOpenService = peers.contains(raftAddress);
-					}
+				MetadataKey.RAFT_GROUP_MEMBER, (o, arg) -> {
+					final List<String> peers = (List<String>) arg;
+					final Member self = memberManager.getSelf();
+					final String raftAddress = self.getIp() + ":" + self
+							.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
+					// Only when you are in the cluster and the current Leader is
+					// elected can you provide external services
+					isOpenService = peers.contains(raftAddress);
 				});
 	}
 
@@ -146,12 +137,17 @@ public class CurcuitFilter implements Filter {
 				if (event instanceof RaftDBErrorEvent) {
 					isDowngrading = true;
 				}
+				if (event instanceof DataImportEvent) {
+					DataImportEvent e = (DataImportEvent) event;
+					isOpenService = e.isFinished();
+				}
 			}
 
 			@Override
 			public boolean canNotify(Event event) {
 				return (event instanceof RaftDBErrorEvent)
-						|| (event instanceof RaftDBErrorRecoverEvent);
+						|| (event instanceof RaftDBErrorRecoverEvent)
+						|| (event instanceof DataImportEvent);
 			}
 		});
 	}

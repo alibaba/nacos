@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
-import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;

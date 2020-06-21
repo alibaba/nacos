@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,9 +25,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -103,6 +109,14 @@ public interface DatabaseOperate {
      * @return is success
      */
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
+
+    /**
+     * data importing, This method is suitable for importing data from external data sources into embedded data sources
+     *
+     * @param file {@link File}
+     * @return {@link CompletableFuture}
+     */
+    CompletableFuture<RestResult<String>> dataImport(File file);
 
     /**
      * data modify transaction

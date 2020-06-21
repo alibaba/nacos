@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -28,10 +30,12 @@ import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedSt
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
+import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
+import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
@@ -53,6 +57,7 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
@@ -65,15 +70,21 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * <pre>
@@ -132,15 +143,20 @@ import java.util.function.BiConsumer;
 @Conditional(ConditionDistributedEmbedStorage.class)
 @Component
 public class DistributedDatabaseOperateImpl extends LogProcessor4CP
-		implements BaseDatabaseOperate, DatabaseOperate {
+		implements BaseDatabaseOperate {
+
+	/** The data import operation is dedicated key, which ACTS as an identifier */
+	private static final String DATA_IMPORT_KEY = "00--0-data_import-0--00";
 
 	private ServerMemberManager memberManager;
 	private CPProtocol protocol;
-
 	private LocalDataSourceServiceImpl dataSourceService;
+
 	private JdbcTemplate jdbcTemplate;
 	private TransactionTemplate transactionTemplate;
+
 	private Serializer serializer = SerializeFactory.getDefault();
+
 	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 	private ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
 	private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
@@ -384,6 +400,47 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	}
 
 	@Override
+	public CompletableFuture<RestResult<String>> dataImport(File file) {
+		return CompletableFuture.supplyAsync(() -> {
+			try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(file)) {
+				int batchSize = 1000;
+				List<String> batchUpdate = new ArrayList<>(batchSize);
+				List<CompletableFuture<Response>> futures = new ArrayList<>();
+				List<Boolean> results = new CopyOnWriteArrayList<>();
+				while (iterator.hasNext()) {
+					String sql = iterator.next();
+					if (StringUtils.isNotBlank(sql)) {
+						batchUpdate.add(sql);
+					}
+					boolean submit = batchUpdate.size() == batchSize || !iterator.hasNext();
+					if (submit) {
+						List<ModifyRequest> requests = batchUpdate.stream()
+								.map(ModifyRequest::new).collect(Collectors.toList());
+						CompletableFuture<Response> future = protocol.submitAsync(Log.newBuilder()
+								.setGroup(group())
+								.setData(ByteString.copyFrom(serializer.serialize(requests)))
+								.putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString())
+								.build());
+						futures.add(future);
+						batchUpdate.clear();
+					}
+				}
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+				for (CompletableFuture<Response> future : futures) {
+					Response response = future.get();
+					if (!response.getSuccess()) {
+						return RestResultUtils.failed(response.getErrMsg());
+					}
+				}
+				return RestResultUtils.success();
+			} catch (Throwable ex) {
+				LogUtil.defaultLog.error("data import has error : {}", ex);
+				return RestResultUtils.failed(ex.getMessage());
+			}
+		});
+	}
+
+	@Override
 	public Boolean update(List<ModifyRequest> sqlContext,
 			BiConsumer<Boolean, Throwable> consumer) {
 		try {
@@ -464,26 +521,26 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		try {
 			switch (type) {
 			case QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS:
-				data = onQueryOne(selectRequest.getSql(), selectRequest.getArgs(),
+				data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
 						mapper);
 				break;
 			case QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS:
-				data = onQueryOne(selectRequest.getSql(),
+				data = queryOne(jdbcTemplate, selectRequest.getSql(),
 						ClassUtils.findClassByName(selectRequest.getClassName()));
 				break;
 			case QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS:
-				data = onQueryOne(selectRequest.getSql(), selectRequest.getArgs(),
+				data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
 						ClassUtils.findClassByName(selectRequest.getClassName()));
 				break;
 			case QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS:
-				data = onQueryMany(selectRequest.getSql(), selectRequest.getArgs(),
+				data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
 						mapper);
 				break;
 			case QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS:
-				data = onQueryMany(selectRequest.getSql(), selectRequest.getArgs());
+				data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs());
 				break;
 			case QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS:
-				data = onQueryMany(selectRequest.getSql(), selectRequest.getArgs(),
+				data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
 						ClassUtils.findClassByName(selectRequest.getClassName()));
 				break;
 			default:
@@ -518,14 +575,18 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		final Lock lock = readLock;
 		lock.lock();
 		try {
-			sqlContext.sort(Comparator.comparingInt(ModifyRequest::getExecuteNo));
-			boolean isOk = onUpdate(sqlContext);
-
-			// If there is additional information, post processing
-			// Put into the asynchronous thread pool for processing to avoid blocking the
-			// normal execution of the state machine
-			ConfigExecutor
-					.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
+			boolean isOk = false;
+			if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
+				isOk = doDataImport(jdbcTemplate, sqlContext);
+			} else {
+				sqlContext.sort(Comparator.comparingInt(ModifyRequest::getExecuteNo));
+				isOk = update(transactionTemplate, jdbcTemplate, sqlContext);
+				// If there is additional information, post processing
+				// Put into the asynchronous thread pool for processing to avoid blocking the
+				// normal execution of the state machine
+				ConfigExecutor
+						.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
+			}
 
 			return Response.newBuilder().setSuccess(isOk).build();
 
@@ -556,34 +617,6 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 	@Override
 	public String group() {
 		return Constants.CONFIG_MODEL_RAFT_GROUP;
-	}
-
-	public Boolean onUpdate(List<ModifyRequest> sqlContext) {
-		return update(transactionTemplate, jdbcTemplate, sqlContext);
-	}
-
-	public <R> R onQueryOne(String sql, Class<R> rClass) {
-		return queryOne(jdbcTemplate, sql, rClass);
-	}
-
-	public <R> R onQueryOne(String sql, Object[] args, Class<R> rClass) {
-		return queryOne(jdbcTemplate, sql, args, rClass);
-	}
-
-	public <R> R onQueryOne(String sql, Object[] args, RowMapper<R> mapper) {
-		return queryOne(jdbcTemplate, sql, args, mapper);
-	}
-
-	public <R> List<R> onQueryMany(String sql, Object[] args, RowMapper<R> mapper) {
-		return queryMany(jdbcTemplate, sql, args, mapper);
-	}
-
-	public <R> List<R> onQueryMany(String sql, Object[] args, Class<R> rClass) {
-		return queryMany(jdbcTemplate, sql, args, rClass);
-	}
-
-	public List<Map<String, Object>> onQueryMany(String sql, Object[] args) {
-		return queryMany(jdbcTemplate, sql, args);
 	}
 
 	private void handleExtendInfo(Map<String, String> extendInfo) {

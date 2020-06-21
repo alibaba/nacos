@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author nkorange
@@ -61,7 +62,8 @@ public class NamingTest {
 
         System.out.println(list);
 
-        ThreadUtils.sleep(60_000L);
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await();
 //        ExpressionSelector expressionSelector = new ExpressionSelector();
 //        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
 //        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);

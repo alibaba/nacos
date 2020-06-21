@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionStandaloneEmbedStorage;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.utils.DiskUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -28,18 +33,22 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(ConditionStandaloneEmbedStorage.class)
 @Component
-public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate, DatabaseOperate {
+public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
 
 	private DataSourceService dataSourceService;
 
@@ -82,6 +91,42 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate, Datab
 	@Override
 	public List<Map<String, Object>> queryMany(String sql, Object[] args) {
 		return queryMany(jdbcTemplate, sql, args);
+	}
+
+	@Override
+	public CompletableFuture<RestResult<String>> dataImport(File file) {
+		return CompletableFuture.supplyAsync(() -> {
+			try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(file)) {
+				int batchSize = 1000;
+				List<String> batchUpdate = new ArrayList<>(batchSize);
+				List<CompletableFuture<Void>> futures = new ArrayList<>();
+				List<Boolean> results = new CopyOnWriteArrayList<>();
+				while (iterator.hasNext()) {
+					String sql = iterator.next();
+					if (StringUtils.isBlank(sql)) {
+						continue;
+					}
+					batchUpdate.add(sql);
+					if (batchUpdate.size() == batchSize ||!iterator.hasNext()) {
+						futures.add(CompletableFuture.runAsync(
+								() -> results.add(doDataImport(jdbcTemplate, batchUpdate.stream()
+										.map(s -> {
+											ModifyRequest request = new ModifyRequest();
+											request.setSql(s);
+											return request;
+										}).collect(Collectors.toList())))));
+						batchUpdate.clear();
+					}
+				}
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+				return RestResult.<String>builder()
+						.withCode(BooleanUtils.and(results.toArray(new Boolean[0])) ? 200 : 500)
+						.withData("").build();
+			} catch (Throwable ex) {
+				LogUtil.defaultLog.error("data import has error : {}", ex);
+				return RestResultUtils.failed(ex.getMessage());
+			}
+		});
 	}
 
 	@Override
