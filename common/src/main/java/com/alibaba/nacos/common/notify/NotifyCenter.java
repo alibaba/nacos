@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,11 +127,6 @@ public class NotifyCenter {
     }
     
     @JustForTest
-    public static Set<SmartSubscriber> getSmartSubscribers() {
-        return EventPublisher.SMART_SUBSCRIBERS;
-    }
-    
-    @JustForTest
     public static EventPublisher getSharePublisher() {
         return INSTANCE.sharePublisher;
     }
@@ -176,7 +170,6 @@ public class NotifyCenter {
         // If you want to listen to multiple events, you do it separately,
         // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
-            EventPublisher.SMART_SUBSCRIBERS.add((SmartSubscriber) consumer);
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
                 addSubscriber(consumer, subscribeType);
             }
@@ -215,7 +208,6 @@ public class NotifyCenter {
     public static <T> void deregisterSubscriber(final Subscriber consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
-            EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
                 removeSubscriber(consumer, subscribeType);
             }

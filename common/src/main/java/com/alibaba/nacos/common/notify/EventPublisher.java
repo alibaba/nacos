@@ -18,10 +18,6 @@ package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-
-import java.util.Set;
 
 /**
  * Event publisher.
@@ -30,11 +26,6 @@ import java.util.Set;
  * @author zongtanghu
  */
 public interface EventPublisher extends Closeable {
-    
-    /**
-     * Multi-event listener collection list.
-     */
-    Set<SmartSubscriber> SMART_SUBSCRIBERS = new ConcurrentHashSet<SmartSubscriber>();
     
     /**
      * Initializes the event publisher.
