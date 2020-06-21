@@ -18,6 +18,8 @@ package com.alibaba.nacos.common.notify.listener;
 
 import com.alibaba.nacos.common.notify.Event;
 
+import java.util.List;
+
 /**
  * Subscribers to multiple events can be listened to.
  *
@@ -28,12 +30,11 @@ import com.alibaba.nacos.common.notify.Event;
 public abstract class SmartSubscriber extends Subscriber {
     
     /**
-     * Determines if the processing message is acceptable.
+     * Returns which event type are smartsubscriber interested in.
      *
-     * @param event {@link Event}
-     * @return Determines if the processing message is acceptable
+     * @return The interestd event types.
      */
-    public abstract boolean canNotify(Event event);
+    public abstract List<Class<? extends Event>> subscribeTypes();
     
     @Override
     public final Class<? extends Event> subscribeType() {

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -82,7 +81,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             // start just called once
             super.start();
             if (queueMaxSize == -1) {
-                queueMaxSize = ringBufferSize ;
+                queueMaxSize = ringBufferSize;
             }
             initialized = true;
         }
@@ -122,7 +121,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
     
     private boolean hasSubscriber() {
-        return CollectionUtils.isNotEmpty(subscribers) || CollectionUtils.isNotEmpty(SMART_SUBSCRIBERS);
+        return CollectionUtils.isNotEmpty(subscribers);
     }
     
     @Override
@@ -177,19 +176,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             }
             
             final String targetName = ClassUtils.getName(subscriber.subscribeType());
-            
             if (!Objects.equals(sourceName, targetName)) {
-                continue;
-            }
-            
-            notifySubscriber(subscriber, event);
-        }
-        
-        // Notification multi-event event listener
-        for (SmartSubscriber subscriber : SMART_SUBSCRIBERS) {
-            // If you are a multi-event listener, you need to make additional logical judgments
-            if (!subscriber.canNotify(event)) {
-                LOGGER.debug("[NotifyCenter] the {} is unacceptable to this multi-event subscriber", event.getClass());
                 continue;
             }
             notifySubscriber(subscriber, event);

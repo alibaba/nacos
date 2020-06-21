@@ -174,9 +174,12 @@ public class NotifyCenter {
     public static <T> void registerSubscriber(final Subscriber consumer) throws NacosException {
         final Class<? extends Event> cls = consumer.subscribeType();
         // If you want to listen to multiple events, you do it separately,
-        // without automatically registering the appropriate publisher
+        // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
             EventPublisher.SMART_SUBSCRIBERS.add((SmartSubscriber) consumer);
+            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
+                addSubscriber(consumer, subscribeType);
+            }
             return;
         }
         
@@ -184,8 +187,22 @@ public class NotifyCenter {
             INSTANCE.sharePublisher.addSubscriber(consumer);
             return;
         }
-        final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, cls, ringBufferSize);
+        
+        addSubscriber(consumer, consumer.subscribeType());
+    }
+    
+    /**
+     * Add a subscriber to pusblisher.
+     *
+     * @param consumer      subscriber instance.
+     * @param subscribeType subscribeType.
+     * @throws NacosException BiFunction mappingFunction may throw a NacosException.
+     */
+    private static void addSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType)
+            throws NacosException {
+        
+        final String topic = ClassUtils.getCanonicalName(subscribeType);
+        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
     }
@@ -193,30 +210,50 @@ public class NotifyCenter {
     /**
      * Deregister subscriber.
      *
-     * @param consumer subscriber.
+     * @param consumer subscriber instance.
      */
-    public static <T> void deregisterSubscribe(final Subscriber consumer) {
+    public static <T> void deregisterSubscriber(final Subscriber consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
             EventPublisher.SMART_SUBSCRIBERS.remove((SmartSubscriber) consumer);
+            for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
+                removeSubscriber(consumer, subscribeType);
+            }
             return;
         }
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
             INSTANCE.sharePublisher.removeSubscriber(consumer);
             return;
         }
-        final String topic = ClassUtils.getCanonicalName(consumer.subscribeType());
-        if (INSTANCE.publisherMap.containsKey(topic)) {
-            EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-            publisher.removeSubscriber(consumer);
+        
+        if (removeSubscriber(consumer, consumer.subscribeType())) {
             return;
         }
         throw new NoSuchElementException("The subcriber has no event publisher");
     }
     
     /**
-     * request publisher publish event Publishers load lazily, calling publisher. Start () only when the event is
-     * actually published
+     * Remove subscriber.
+     *
+     * @param consumer      subscriber instance.
+     * @param subscribeType subscribeType.
+     * @return whether remove subscriber successfully or not.
+     */
+    private static boolean removeSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType) {
+        
+        final String topic = ClassUtils.getCanonicalName(subscribeType);
+        if (INSTANCE.publisherMap.containsKey(topic)) {
+            EventPublisher publisher = INSTANCE.publisherMap.get(topic);
+            publisher.removeSubscriber(consumer);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Request publisher publish event Publishers load lazily, calling publisher. Start () only when the event is
+     * actually published.
      *
      * @param event class Instances of the event.
      */
