@@ -40,11 +40,6 @@ public final class HttpClientBeanHolder {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpClientManager.class);
 
-    private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
-
-    private static HttpClientConfig HTTP_CLIENT_CONFIG = HttpClientConfig.builder()
-        .setConTimeOutMillis(TIMEOUT).setReadTimeOutMillis(TIMEOUT >> 1).build();
-
     private static final Map<String, NacosRestTemplate> singletonRest = new HashMap<String, NacosRestTemplate>(10);
     private static final Map<String, NacosAsyncRestTemplate> singletonAsyncRest = new HashMap<String, NacosAsyncRestTemplate>(10);
 

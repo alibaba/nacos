@@ -288,6 +288,28 @@ public class NacosRestTemplate {
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
+    /**
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and
+     * returns the response as {@link HttpRestResult}.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param paramValues  http query param
+     * @param bodyValues   http body param
+     * @param httpMethod   http method
+     * @param responseType return type
+     * @return {@link HttpRestResult}
+     * @throws Exception ex
+     */
+    public <T> HttpRestResult<T> exchangeFrom(String url, Header header,
+                                              Map<String, String> paramValues, Map<String, String> bodyValues, String httpMethod, Type responseType) throws Exception{
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+            Query.newInstance().initParams(paramValues),
+            bodyValues);
+        return execute(url, httpMethod, requestHttpEntity, responseType);
+    }
+
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
                           Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());

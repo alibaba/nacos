@@ -174,7 +174,7 @@ public enum BaseHttpMethod {
     }
 
     public void initFromEntity(Map<String, String> body, String charset) throws Exception{
-        if (body.isEmpty()) {
+        if (body == null || body.isEmpty()) {
             return;
         }
         List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());

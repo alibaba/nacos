@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.client.naming.net;
 
-import com.alibaba.nacos.common.http.*;
+import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.HttpClientConfig;
+import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 /**
