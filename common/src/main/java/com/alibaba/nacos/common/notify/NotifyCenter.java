@@ -100,7 +100,11 @@ public class NotifyCenter {
         };
         
         try {
-            INSTANCE.sharePublisher = publisherFactory.apply(SlowEvent.class, shareBufferSize);
+            
+            // Create and init DefaultSharePublisher instance.
+            INSTANCE.sharePublisher = new DefaultSharePublisher();
+            INSTANCE.sharePublisher.init(SlowEvent.class, shareBufferSize);
+            
         } catch (Throwable ex) {
             LOGGER.error("Service class newInstance has error : {}", ex);
         }
