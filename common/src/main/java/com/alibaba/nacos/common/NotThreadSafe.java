@@ -14,7 +14,22 @@
  * limitations under the License.
  */
 
+package com.alibaba.nacos.common;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
+ * Annotation that marks a method as not thread safe.
  *
+ * @author zongtanghu
  */
-package com.alibaba.nacos.core;
+@Documented
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface NotThreadSafe {
+    
+}

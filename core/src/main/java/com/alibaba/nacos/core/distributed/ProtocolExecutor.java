@@ -17,26 +17,29 @@
 package com.alibaba.nacos.core.distributed;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.core.utils.ClassUtils;
 
 import java.util.concurrent.ExecutorService;
 
 /**
+ * ProtocolExecutor.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ProtocolExecutor {
-
-	private static final ExecutorService CP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.newSingleExecutorService(
-			ProtocolManager.class.getName());
-
-	private static final ExecutorService AP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.newSingleExecutorService(
-			ProtocolManager.class.getName());
-
-	public static void cpMemberChange(Runnable runnable) {
-		CP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
-	}
-
-	public static void apMemberChange(Runnable runnable) {
-		AP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
-	}
-
+    
+    private static final ExecutorService CP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService(ClassUtils.getCanonicalName(ProtocolManager.class));
+    
+    private static final ExecutorService AP_MEMBER_CHANGE_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService(ClassUtils.getCanonicalName(ProtocolManager.class));
+    
+    public static void cpMemberChange(Runnable runnable) {
+        CP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
+    }
+    
+    public static void apMemberChange(Runnable runnable) {
+        AP_MEMBER_CHANGE_EXECUTOR.execute(runnable);
+    }
+    
 }

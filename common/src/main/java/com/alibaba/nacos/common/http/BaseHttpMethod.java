@@ -44,12 +44,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 
 /**
+ * Base http method.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public enum BaseHttpMethod {
 
     /**
-     * get request
+     * get request.
      */
     GET(HttpMethod.GET) {
         @Override
@@ -66,7 +68,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * post request
+     * post request.
      */
     POST(HttpMethod.POST) {
         @Override
@@ -76,7 +78,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * put request
+     * put request.
      */
     PUT(HttpMethod.PUT) {
         @Override
@@ -86,7 +88,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * delete request
+     * delete request.
      */
     DELETE(HttpMethod.DELETE) {
         @Override
@@ -96,7 +98,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * head request
+     * head request.
      */
     HEAD(HttpMethod.HEAD) {
         @Override
@@ -106,7 +108,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * trace request
+     * trace request.
      */
     TRACE(HttpMethod.TRACE) {
         @Override
@@ -116,7 +118,7 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * patch request
+     * patch request.
      */
     PATCH(HttpMethod.PATCH) {
         @Override
@@ -126,16 +128,14 @@ public enum BaseHttpMethod {
     },
 
     /**
-     * options request
+     * options request.
      */
     OPTIONS(HttpMethod.OPTIONS) {
         @Override
         protected HttpRequestBase createRequest(String url) {
             return new HttpTrace(url);
         }
-    },
-
-    ;
+    };
 
     private String name;
 
@@ -153,6 +153,11 @@ public enum BaseHttpMethod {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Init http header.
+     *
+     * @param header header
+     */
     public void initHeader(Header header) {
         Iterator<Map.Entry<String, String>> iterator = header.iterator();
         while (iterator.hasNext()) {
@@ -161,6 +166,13 @@ public enum BaseHttpMethod {
         }
     }
 
+    /**
+     * Init http entity.
+     *
+     * @param body      body
+     * @param mediaType mediaType {@link ContentType}
+     * @throws Exception exception
+     */
     public void initEntity(Object body, String mediaType) throws Exception {
         if (body == null) {
             return;
@@ -173,7 +185,14 @@ public enum BaseHttpMethod {
         }
     }
 
-    public void initFromEntity(Map<String, String> body, String charset) throws Exception{
+    /**
+     * Init request from entity map.
+     *
+     * @param body    body map
+     * @param charset charset of entity
+     * @throws Exception exception
+     */
+    public void initFromEntity(Map<String, String> body, String charset) throws Exception {
         if (body == null || body.isEmpty()) {
             return;
         }
@@ -192,6 +211,12 @@ public enum BaseHttpMethod {
         return (HttpRequestBase) requestBase;
     }
 
+    /**
+     * Value of {@link BaseHttpMethod}.
+     *
+     * @param name method name
+     * @return {@link BaseHttpMethod}
+     */
     public static BaseHttpMethod sourceOf(String name) {
         for (BaseHttpMethod method : BaseHttpMethod.values()) {
             if (StringUtils.equalsIgnoreCase(name, method.name)) {

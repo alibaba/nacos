@@ -19,27 +19,26 @@ package com.alibaba.nacos.consistency.snapshot;
 import java.util.function.BiConsumer;
 
 /**
- * Custom snapshot operation interface
- * Discovery via SPI
+ * Custom snapshot operation interface Discovery via SPI.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface SnapshotOperation {
-
+    
     /**
-     * do snapshot save operation
+     * do snapshot save operation.
      *
      * @param writer      {@link Writer}
-     * @param callFinally Callback {@link BiConsumer<Boolean, Throwable>} when the snapshot operation is complete
+     * @param callFinally Callback {@link BiConsumer} when the snapshot operation is complete
      */
     void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally);
-
+    
     /**
-     * do snapshot load operation
+     * do snapshot load operation.
      *
      * @param reader {@link Reader}
      * @return operation label
      */
     boolean onSnapshotLoad(Reader reader);
-
+    
 }

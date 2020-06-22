@@ -19,34 +19,36 @@ package com.alibaba.nacos.consistency;
 import java.util.Map;
 
 /**
+ * Id generator.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface IdGenerator {
-
+    
     /**
-     * Perform the corresponding initialization operation
+     * Perform the corresponding initialization operation.
      */
     void init();
-
+    
     /**
-     * current id info
+     * current id info.
      *
      * @return current id
      */
     long currentId();
-
+    
     /**
-     * Get next id
+     * Get next id.
      *
      * @return next id
      */
     long nextId();
-
+    
     /**
-     * Returns information for the current IDGenerator
+     * Returns information for the current IDGenerator.
      *
-     * @return {@link Map<Object, Object>}
+     * @return {@link Map}
      */
     Map<Object, Object> info();
-
+    
 }

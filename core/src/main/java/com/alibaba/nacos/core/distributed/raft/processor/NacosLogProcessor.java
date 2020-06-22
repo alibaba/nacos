@@ -23,29 +23,29 @@ import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
 /**
+ * deal with {@link Log}.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosLogProcessor extends AbstractProcessor implements RpcProcessor<Log> {
-
+    
     private static final String INTEREST_NAME = Log.class.getName();
-
+    
     private final JRaftServer server;
-
+    
     public NacosLogProcessor(JRaftServer server, Serializer serializer) {
         super(serializer);
         this.server = server;
     }
-
+    
     @Override
     public void handleRequest(final RpcContext rpcCtx, Log log) {
         handleRequest(server, log.getGroup(), rpcCtx, log);
     }
-
+    
     @Override
     public String interest() {
         return INTEREST_NAME;
     }
-
-
-
+    
 }

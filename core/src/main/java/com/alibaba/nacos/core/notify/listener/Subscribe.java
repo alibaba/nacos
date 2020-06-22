@@ -17,43 +17,46 @@
 package com.alibaba.nacos.core.notify.listener;
 
 import com.alibaba.nacos.core.notify.Event;
+
 import java.util.concurrent.Executor;
 
 /**
+ * subscriber.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Subscribe<T extends Event> {
-
+    
     /**
-     * Event callback
+     * Event callback.
      *
      * @param event {@link Event}
      */
     void onEvent(T event);
-
+    
     /**
-     * Type of this subscriber's subscription
+     * Type of this subscriber's subscription.
      *
      * @return Class which extends {@link Event}
      */
     Class<? extends Event> subscribeType();
-
+    
     /**
-     * It is up to the listener to determine whether the callback is asynchronous or synchronous
+     * It is up to the listener to determine whether the callback is asynchronous or synchronous.
      *
      * @return {@link Executor}
      */
     default Executor executor() {
         return null;
     }
-
+    
     /**
-     * Whether to ignore expired events
+     * Whether to ignore expired events.
      *
      * @return default value is {@link Boolean#FALSE}
      */
     default boolean ignoreExpireEvent() {
         return false;
     }
-
+    
 }

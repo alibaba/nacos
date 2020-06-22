@@ -19,12 +19,12 @@ package com.alibaba.nacos.core.utils;
 import com.google.common.reflect.TypeToken;
 
 /**
- * Encapsulates third party tools for generics acquisition
+ * Encapsulates third party tools for generics acquisition.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class GenericType<T> extends TypeToken<T> {
-
-	private static final long serialVersionUID = -2103808581228167629L;
-
+    
+    private static final long serialVersionUID = -2103808581228167629L;
+    
 }

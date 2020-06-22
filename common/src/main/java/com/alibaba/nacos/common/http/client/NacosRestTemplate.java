@@ -32,8 +32,7 @@ import java.net.URI;
 import java.util.Map;
 
 /**
- * NacosRestTemplate
- * Interface specifying a basic set of RESTful operations.
+ * Nacos rest template Interface specifying a basic set of RESTful operations.
  *
  * @author mai.jh
  * @date 2020/5/24
@@ -42,7 +41,7 @@ import java.util.Map;
  */
 public class NacosRestTemplate {
 
-    private static final Logger logger = LoggerFactory.getLogger(NacosRestTemplate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
 
     private HttpClientRequest requestClient;
 
@@ -51,8 +50,8 @@ public class NacosRestTemplate {
     }
 
     /**
-     * http get
-     * URL request params are expanded using the given query {@link Query}.
+     * http get URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -67,8 +66,8 @@ public class NacosRestTemplate {
     }
 
     /**
-     * http get
-     * URL request params are expanded using the given query {@link Query}.
+     * http get URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -78,15 +77,17 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header, Query.newInstance().initParams(paramValues));
+    public <T> HttpRestResult<T> get(String url, Header header, Map<String, String> paramValues, Type responseType)
+            throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header,
+                Query.newInstance().initParams(paramValues));
         return execute(url, HttpMethod.GET, requestHttpEntity, responseType);
     }
 
     /**
-     * get request, may be pulling a lot of data
-     * URL request params are expanded using the given query {@link Query},
+     * get request, may be pulling a lot of data URL request params are expanded using the given query {@link Query},
      * More request parameters can be set via body.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -97,13 +98,14 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType)
+            throws Exception {
         return execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType);
     }
 
     /**
-     * http delete
-     * URL request params are expanded using the given query {@link Query}.
+     * http delete URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -118,9 +120,10 @@ public class NacosRestTemplate {
     }
 
     /**
-     * http put
-     * Create a new resource by PUTting the given body to http request.
+     * http put Create a new resource by PUTting the given body to http request.
+     *
      * <p>URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -131,15 +134,17 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> put(String url, Header header, Query query, Object body, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> put(String url, Header header, Query query, Object body, Type responseType)
+            throws Exception {
         return execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType);
     }
 
     /**
-     * http put json
-     * Create a new resource by PUTting the given body to http request,
-     * http header contentType default 'application/json;charset=UTF-8'.
+     * http put json Create a new resource by PUTting the given body to http request, http header contentType default
+     * 'application/json;charset=UTF-8'.
+     *
      * <p>URL request params are expanded using the given map {@code paramValues}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -150,40 +155,42 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_JSON),
-            Query.newInstance().initParams(paramValues),
-            body);
+    public <T> HttpRestResult<T> putJson(String url, Header header, Map<String, String> paramValues, String body,
+            Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
+                Query.newInstance().initParams(paramValues), body);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
     /**
-     * http put from
-     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
-     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
+     * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     *
      * <p>URL request params are expanded using the given query {@code Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
      * @param header       http header param
-     * @param query  http query param
+     * @param query        http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+            Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
     /**
-     * http put from
-     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
-     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
+     * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     *
      * <p>URL request params are expanded using the given map {@code paramValues}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -194,18 +201,19 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putFrom(String url, Header header, Map<String, String> paramValues,
+            Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-            Query.newInstance().initParams(paramValues),
-            bodyValues);
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
 
     /**
-     * http post
-     * Create a new resource by POSTing the given object to the http request.
+     * http post Create a new resource by POSTing the given object to the http request.
+     *
      * <p>URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -216,16 +224,17 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> post(String url, Header header, Query query, Object body, Type responseType) throws Exception {
-        return execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body),
-            responseType);
+    public <T> HttpRestResult<T> post(String url, Header header, Query query, Object body, Type responseType)
+            throws Exception {
+        return execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType);
     }
 
     /**
-     * http post json
-     * Create a new resource by POSTing the given object to the http request,
-     * http header contentType default 'application/json;charset=UTF-8'.
+     * http post json Create a new resource by POSTing the given object to the http request, http header contentType
+     * default 'application/json;charset=UTF-8'.
+     *
      * <p>URL request params are expanded using the given map {@code paramValues}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -236,40 +245,42 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType) throws Exception {
-        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_JSON),
-            Query.newInstance().initParams(paramValues),
-            body);
+    public <T> HttpRestResult<T> postJson(String url, Header header, Map<String, String> paramValues, String body,
+            Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
+                Query.newInstance().initParams(paramValues), body);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
     /**
-     * http post from
-     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
-     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
+     * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     *
      * <p>URL request params are expanded using the given query {@link Query}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
      * @param header       http header param
-     * @param query  http query param
+     * @param query        http query param
      * @param bodyValues   http body param
      * @param responseType return type
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+            Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
     /**
-     * http post from
-     * Create a new resource by PUTting the given map {@code bodyValues} to http request,
-     * http header contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     * http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
+     * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
+     *
      * <p>URL request params are expanded using the given map {@code paramValues}.
+     *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
      * @param url          url
@@ -280,11 +291,11 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postFrom(String url, Header header, Map<String, String> paramValues,
+            Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-            Query.newInstance().initParams(paramValues),
-            bodyValues);
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
 
@@ -311,10 +322,10 @@ public class NacosRestTemplate {
     }
 
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
-                          Type responseType) throws Exception {
+            Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
-        if (logger.isDebugEnabled()) {
-            logger.debug("HTTP " + httpMethod + " " + url);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("HTTP " + httpMethod + " " + url);
         }
         HttpClientResponse response = null;
         try {
@@ -328,9 +339,9 @@ public class NacosRestTemplate {
     }
 
     /**
-     * close request client
+     * close request client.
      */
-    public void close() throws Exception{
+    public void close() throws Exception {
         requestClient.close();
     }
 
