@@ -177,7 +177,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+    public <T> HttpRestResult<T> putForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
@@ -200,7 +200,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Map<String, String> paramValues,
+    public <T> HttpRestResult<T> putForm(String url, Header header, Map<String, String> paramValues,
             Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
@@ -267,7 +267,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+    public <T> HttpRestResult<T> postForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
@@ -290,7 +290,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Map<String, String> paramValues,
+    public <T> HttpRestResult<T> postForm(String url, Header header, Map<String, String> paramValues,
             Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
@@ -311,7 +311,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> exchangeFrom(String url, Header header,
+    public <T> HttpRestResult<T> exchangeForm(String url, Header header,
                                               Map<String, String> paramValues, Map<String, String> bodyValues, String httpMethod, Type responseType) throws Exception{
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),

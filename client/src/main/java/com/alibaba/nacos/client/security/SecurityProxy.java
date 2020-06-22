@@ -124,7 +124,7 @@ public class SecurityProxy {
                 url = server + contextPath + LOGIN_URL;
             }
             try {
-                HttpRestResult<String> restResult = nacosRestTemplate.postFrom(url, Header.EMPTY, params, bodyMap, String.class);
+                HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY, params, bodyMap, String.class);
                 if (!restResult.ok()) {
                     SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
                     return false;

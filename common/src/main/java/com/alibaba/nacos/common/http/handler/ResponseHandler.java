@@ -78,7 +78,7 @@ public final class ResponseHandler {
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         InputStream body = response.getBody();
         T extractBody = null;
-        boolean typeToStr = String.class.toString().equals(type.toString());
+        final boolean typeToStr = String.class.toString().equals(type.toString());
         if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response
             .getStatusCode()) {
             // When the type is string type and the response contentType is [application/json],

@@ -49,7 +49,7 @@ import org.apache.http.message.BasicNameValuePair;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public enum BaseHttpMethod {
-
+    
     /**
      * get request.
      */
