@@ -39,21 +39,21 @@ import org.slf4j.Logger;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ResponseHandler {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHandler.class);
-
+    
     public static <T> T convert(String s, Class<T> cls) throws Exception {
         return JacksonUtils.toObj(s, cls);
     }
-
+    
     public static <T> T convert(String s, Type type) throws Exception {
         return JacksonUtils.toObj(s, type);
     }
-
+    
     public static <T> T convert(InputStream inputStream, Type type) throws Exception {
         return JacksonUtils.toObj(inputStream, type);
     }
-
+    
     private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
         HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
         httpRestResult.setCode(restResult.getCode());
@@ -61,7 +61,7 @@ public final class ResponseHandler {
         httpRestResult.setMessage(restResult.getMessage());
         return httpRestResult;
     }
-
+    
     /**
      * Extract response entity to {@link HttpRestResult}.
      *
