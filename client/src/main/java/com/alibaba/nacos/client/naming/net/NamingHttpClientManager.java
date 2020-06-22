@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
  * http Manager
  *
  * @author mai.jh
- * @date 2020/6/14
  */
 public class NamingHttpClientManager {
 
