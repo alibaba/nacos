@@ -74,7 +74,7 @@ public class AutoDeregisterInstance_ITCase {
     }
 
     @After
-    public void destroy() {
+    public void destroy() throws Exception{
         NamingBase.destoryServer(port);
     }
 

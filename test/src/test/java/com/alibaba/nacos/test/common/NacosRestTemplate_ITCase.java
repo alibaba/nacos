@@ -69,7 +69,7 @@ public class NacosRestTemplate_ITCase {
         param.put("dataId", "test-1");
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate.postFrom(url, Header.newInstance(), Query.EMPTY, param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), Query.EMPTY, param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
@@ -87,13 +87,13 @@ public class NacosRestTemplate_ITCase {
 
 
     @Test
-    public void test_url_post_from() throws Exception{
+    public void test_url_post_form() throws Exception{
         String url = IP + INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate.postFrom(url, Header.newInstance(), Query.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
@@ -105,7 +105,7 @@ public class NacosRestTemplate_ITCase {
         param.put("serviceName", "app-test-change");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate.putFrom(url, Header.newInstance(), Query.newInstance(), param, String.class);
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url, Header.newInstance(), Query.newInstance(), param, String.class);
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }

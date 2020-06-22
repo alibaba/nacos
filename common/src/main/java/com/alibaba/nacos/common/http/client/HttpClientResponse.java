@@ -26,7 +26,6 @@ import java.io.InputStream;
  * Represents a client-side HTTP response.
  *
  * @author mai.jh
- * @date 2020/5/23
  */
 public interface HttpClientResponse extends Closeable {
     
