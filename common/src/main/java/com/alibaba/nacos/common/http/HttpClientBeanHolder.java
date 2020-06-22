@@ -36,13 +36,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class HttpClientBeanHolder {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
-
+    
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
-
+    
     private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(10);
-
+    
     private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
-
+    
     static {
         ThreadUtils.addShutdownHook(new Runnable() {
             @Override
@@ -51,11 +51,11 @@ public final class HttpClientBeanHolder {
             }
         });
     }
-
+    
     public static NacosRestTemplate getNacosRestTemplate() {
         return getNacosRestTemplate(new DefaultHttpClientFactory());
     }
-
+    
     public static NacosRestTemplate getNacosRestTemplate(HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) {
             throw new NullPointerException("httpClientFactory is null");
@@ -74,11 +74,11 @@ public final class HttpClientBeanHolder {
         }
         return nacosRestTemplate;
     }
-
+    
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
         return getNacosAsyncRestTemplate(new DefaultHttpClientFactory());
     }
-
+    
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) {
             throw new NullPointerException("httpClientFactory is null");
@@ -97,7 +97,7 @@ public final class HttpClientBeanHolder {
         }
         return nacosAsyncRestTemplate;
     }
-
+    
     /**
      * Shutdown http client holder and close all template.
      */
@@ -115,7 +115,7 @@ public final class HttpClientBeanHolder {
         }
         LOGGER.warn("[HttpClientBeanFactory] Destruction of the end");
     }
-
+    
     private static void nacostRestTemplateShutdown() throws Exception {
         if (!SINGLETON_REST.isEmpty()) {
             Collection<NacosRestTemplate> nacosRestTemplates = SINGLETON_REST.values();
@@ -125,7 +125,7 @@ public final class HttpClientBeanHolder {
             SINGLETON_REST.clear();
         }
     }
-
+    
     private static void nacosAsyncRestTemplateShutdown() throws Exception {
         if (!SINGLETON_ASYNC_REST.isEmpty()) {
             Collection<NacosAsyncRestTemplate> nacosAsyncRestTemplates = SINGLETON_ASYNC_REST.values();

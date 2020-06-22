@@ -59,14 +59,14 @@ public enum BaseHttpMethod {
             return new HttpGet(url);
         }
     },
-
+    
     GET_LARGE(HttpMethod.GET_LARGE) {
         @Override
         protected HttpRequestBase createRequest(String url) {
             return new BaseHttpClient.HttpGetWithEntity(url);
         }
     },
-
+    
     /**
      * post request.
      */
@@ -76,7 +76,7 @@ public enum BaseHttpMethod {
             return new HttpPost(url);
         }
     },
-
+    
     /**
      * put request.
      */
@@ -86,7 +86,7 @@ public enum BaseHttpMethod {
             return new HttpPut(url);
         }
     },
-
+    
     /**
      * delete request.
      */
@@ -96,7 +96,7 @@ public enum BaseHttpMethod {
             return new HttpDelete(url);
         }
     },
-
+    
     /**
      * head request.
      */
@@ -106,7 +106,7 @@ public enum BaseHttpMethod {
             return new HttpHead(url);
         }
     },
-
+    
     /**
      * trace request.
      */
@@ -116,7 +116,7 @@ public enum BaseHttpMethod {
             return new HttpTrace(url);
         }
     },
-
+    
     /**
      * patch request.
      */
@@ -126,7 +126,7 @@ public enum BaseHttpMethod {
             return new HttpPatch(url);
         }
     },
-
+    
     /**
      * options request.
      */
@@ -136,23 +136,23 @@ public enum BaseHttpMethod {
             return new HttpTrace(url);
         }
     };
-
+    
     private String name;
-
+    
     private HttpRequest requestBase;
-
+    
     BaseHttpMethod(String name) {
         this.name = name;
     }
-
+    
     public void init(String url) {
         requestBase = createRequest(url);
     }
-
+    
     protected HttpRequestBase createRequest(String url) {
         throw new UnsupportedOperationException();
     }
-
+    
     /**
      * Init http header.
      *
@@ -165,7 +165,7 @@ public enum BaseHttpMethod {
             requestBase.setHeader(entry.getKey(), entry.getValue());
         }
     }
-
+    
     /**
      * Init http entity.
      *
@@ -184,7 +184,7 @@ public enum BaseHttpMethod {
             request.setEntity(entity);
         }
     }
-
+    
     /**
      * Init request from entity map.
      *
@@ -206,11 +206,11 @@ public enum BaseHttpMethod {
             request.setEntity(entity);
         }
     }
-
+    
     public HttpRequestBase getRequestBase() {
         return (HttpRequestBase) requestBase;
     }
-
+    
     /**
      * Value of {@link BaseHttpMethod}.
      *
@@ -225,5 +225,5 @@ public enum BaseHttpMethod {
         }
         throw new IllegalArgumentException("Unsupported http method : " + name);
     }
-
+    
 }

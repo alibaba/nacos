@@ -39,15 +39,15 @@ import java.util.Map;
  * @see HttpClientResponse
  */
 public class NacosRestTemplate {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
-
+    
     private HttpClientRequest requestClient;
-
+    
     public NacosRestTemplate(HttpClientRequest requestClient) {
         this.requestClient = requestClient;
     }
-
+    
     /**
      * http get URL request params are expanded using the given query {@link Query}.
      *
@@ -63,7 +63,7 @@ public class NacosRestTemplate {
     public <T> HttpRestResult<T> get(String url, Header header, Query query, Type responseType) throws Exception {
         return execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType);
     }
-
+    
     /**
      * http get URL request params are expanded using the given query {@link Query}.
      *
@@ -82,7 +82,7 @@ public class NacosRestTemplate {
                 Query.newInstance().initParams(paramValues));
         return execute(url, HttpMethod.GET, requestHttpEntity, responseType);
     }
-
+    
     /**
      * get request, may be pulling a lot of data URL request params are expanded using the given query {@link Query},
      * More request parameters can be set via body.
@@ -101,7 +101,7 @@ public class NacosRestTemplate {
             throws Exception {
         return execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType);
     }
-
+    
     /**
      * http delete URL request params are expanded using the given query {@link Query}.
      *
@@ -117,7 +117,7 @@ public class NacosRestTemplate {
     public <T> HttpRestResult<T> delete(String url, Header header, Query query, Type responseType) throws Exception {
         return execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType);
     }
-
+    
     /**
      * http put Create a new resource by PUTting the given body to http request.
      *
@@ -137,7 +137,7 @@ public class NacosRestTemplate {
             throws Exception {
         return execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType);
     }
-
+    
     /**
      * http put json Create a new resource by PUTting the given body to http request, http header contentType default
      * 'application/json;charset=UTF-8'.
@@ -160,7 +160,7 @@ public class NacosRestTemplate {
                 Query.newInstance().initParams(paramValues), body);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
-
+    
     /**
      * http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
      * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -183,7 +183,7 @@ public class NacosRestTemplate {
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
-
+    
     /**
      * http put from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
      * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -207,7 +207,7 @@ public class NacosRestTemplate {
                 Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, HttpMethod.PUT, requestHttpEntity, responseType);
     }
-
+    
     /**
      * http post Create a new resource by POSTing the given object to the http request.
      *
@@ -227,7 +227,7 @@ public class NacosRestTemplate {
             throws Exception {
         return execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType);
     }
-
+    
     /**
      * http post json Create a new resource by POSTing the given object to the http request, http header contentType
      * default 'application/json;charset=UTF-8'.
@@ -250,7 +250,7 @@ public class NacosRestTemplate {
                 Query.newInstance().initParams(paramValues), body);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
-
+    
     /**
      * http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
      * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -273,7 +273,7 @@ public class NacosRestTemplate {
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
-
+    
     /**
      * http post from Create a new resource by PUTting the given map {@code bodyValues} to http request, http header
      * contentType default 'application/x-www-form-urlencoded;charset=utf-8'.
@@ -297,7 +297,7 @@ public class NacosRestTemplate {
                 Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
     }
-
+    
     /**
      * Execute the HTTP method to the given URI template, writing the given request entity to the request, and
      * returns the response as {@link HttpRestResult}.
@@ -319,7 +319,7 @@ public class NacosRestTemplate {
             bodyValues);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
-
+    
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
@@ -336,12 +336,12 @@ public class NacosRestTemplate {
             }
         }
     }
-
+    
     /**
      * close request client.
      */
     public void close() throws Exception {
         requestClient.close();
     }
-
+    
 }
