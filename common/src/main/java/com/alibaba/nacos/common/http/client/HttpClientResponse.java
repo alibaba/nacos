@@ -26,17 +26,16 @@ import java.io.InputStream;
  * Represents a client-side HTTP response.
  *
  * @author mai.jh
- * @date 2020/5/23
  */
 public interface HttpClientResponse extends Closeable {
-    
+
     /**
      * Return the headers of this message.
      *
      * @return a corresponding HttpHeaders object (never {@code null})
      */
     Header getHeaders();
-    
+
     /**
      * Return the body of the message as an input stream.
      *
@@ -44,21 +43,21 @@ public interface HttpClientResponse extends Closeable {
      * @throws IOException IOException
      */
     InputStream getBody() throws IOException;
-    
+
     /**
      * Return the HTTP status code.
      *
      * @return the HTTP status as an integer
      */
     int getStatusCode();
-    
+
     /**
      * Return the HTTP status text of the response.
      *
      * @return the HTTP status text
      */
     String getStatusText();
-    
+
     /**
      * close response InputStream.
      *

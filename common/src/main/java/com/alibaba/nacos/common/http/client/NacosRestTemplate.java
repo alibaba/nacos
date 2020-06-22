@@ -35,7 +35,6 @@ import java.util.Map;
  * Nacos rest template Interface specifying a basic set of RESTful operations.
  *
  * @author mai.jh
- * @date 2020/5/24
  * @see HttpClientRequest
  * @see HttpClientResponse
  */
