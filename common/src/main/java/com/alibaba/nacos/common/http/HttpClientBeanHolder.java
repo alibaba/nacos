@@ -37,15 +37,9 @@ public final class HttpClientBeanHolder {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
     
-    private static final int TIMEOUT = Integer.getInteger("nacos.http.timeout", 5000);
-    
-    private static final HttpClientConfig HTTP_CLIENT_CONFIG = HttpClientConfig.builder().setConTimeOutMillis(TIMEOUT)
-            .setReadTimeOutMillis(TIMEOUT >> 1).build();
-    
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
     
-    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(
-            10);
+    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(10);
     
     private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
     
