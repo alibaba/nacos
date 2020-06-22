@@ -94,7 +94,7 @@ public class NacosException extends Exception {
     
     @Override
     public String toString() {
-        return "ErrCode:" + this.getErrCode() + ", ErrMsg:" + this.getErrMsg();
+        return "ErrCode:" + getErrCode() + ", ErrMsg:" + getErrMsg();
     }
     
     /*

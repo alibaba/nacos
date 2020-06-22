@@ -71,11 +71,11 @@ public class Http extends AbstractHealthChecker {
     
     @JsonIgnore
     public Map<String, String> getCustomHeaders() {
-        if (StringUtils.isBlank(this.headers)) {
+        if (StringUtils.isBlank(headers)) {
             return Collections.emptyMap();
         }
         final Map<String, String> headerMap = new HashMap<String, String>(16);
-        for (final String s : this.headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+        for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
             final String[] splits = s.split(":");
             if (splits.length != 2) {
                 continue;
@@ -87,7 +87,7 @@ public class Http extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.path, this.headers, this.expectedResponseCode);
+        return Objects.hashCode(path, headers, expectedResponseCode);
     }
     
     @Override
@@ -98,25 +98,25 @@ public class Http extends AbstractHealthChecker {
         
         final Http other = (Http) obj;
         
-        if (!StringUtils.equals(this.type, other.getType())) {
+        if (!StringUtils.equals(type, other.getType())) {
             return false;
         }
         
-        if (!StringUtils.equals(this.path, other.getPath())) {
+        if (!StringUtils.equals(path, other.getPath())) {
             return false;
         }
-        if (!StringUtils.equals(this.headers, other.getHeaders())) {
+        if (!StringUtils.equals(headers, other.getHeaders())) {
             return false;
         }
-        return this.expectedResponseCode == other.getExpectedResponseCode();
+        return expectedResponseCode == other.getExpectedResponseCode();
     }
     
     @Override
     public Http clone() throws CloneNotSupportedException {
         final Http config = new Http();
-        config.setPath(this.getPath());
-        config.setHeaders(this.getHeaders());
-        config.setExpectedResponseCode(this.getExpectedResponseCode());
+        config.setPath(getPath());
+        config.setHeaders(getHeaders());
+        config.setExpectedResponseCode(getExpectedResponseCode());
         return config;
     }
 }

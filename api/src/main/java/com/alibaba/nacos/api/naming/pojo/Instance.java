@@ -41,49 +41,49 @@ public class Instance {
     private String instanceId;
     
     /**
-     * instance ip
+     * instance ip.
      */
     private String ip;
     
     /**
-     * instance port
+     * instance port.
      */
     private int port;
     
     /**
-     * instance weight
+     * instance weight.
      */
     private double weight = 1.0D;
     
     /**
-     * instance health status
+     * instance health status.
      */
     private boolean healthy = true;
     
     /**
-     * If instance is enabled to accept request
+     * If instance is enabled to accept request.
      */
     private boolean enabled = true;
     
     /**
-     * If instance is ephemeral
+     * If instance is ephemeral.
      *
      * @since 1.0.0
      */
     private boolean ephemeral = true;
     
     /**
-     * cluster information of instance
+     * cluster information of instance.
      */
     private String clusterName;
     
     /**
-     * Service information of instance
+     * Service information of instance.
      */
     private String serviceName;
     
     /**
-     * user extended attributes
+     * user extended attributes.
      */
     private Map<String, String> metadata = new HashMap<String, String>();
     
@@ -158,10 +158,10 @@ public class Instance {
      * @param value meta data value
      */
     public void addMetadata(final String key, final String value) {
-        if (this.metadata == null) {
-            this.metadata = new HashMap<String, String>(4);
+        if (metadata == null) {
+            metadata = new HashMap<String, String>(4);
         }
-        this.metadata.put(key, value);
+        metadata.put(key, value);
     }
     
     public boolean isEnabled() {
@@ -182,14 +182,14 @@ public class Instance {
     
     @Override
     public String toString() {
-        return "Instance{" + "instanceId='" + this.instanceId + '\'' + ", ip='" + this.ip + '\'' + ", port=" + this.port
-                + ", weight=" + this.weight + ", healthy=" + this.healthy + ", enabled=" + this.enabled + ", ephemeral="
-                + this.ephemeral + ", clusterName='" + this.clusterName + '\'' + ", serviceName='" + this.serviceName
-                + '\'' + ", metadata=" + this.metadata + '}';
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port
+                + ", weight=" + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral="
+                + ephemeral + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName
+                + '\'' + ", metadata=" + metadata + '}';
     }
     
     public String toInetAddr() {
-        return this.ip + ":" + this.port;
+        return ip + ":" + port;
     }
     
     @Override
@@ -199,12 +199,12 @@ public class Instance {
         }
         
         final Instance host = (Instance) obj;
-        return Instance.strEquals(host.toString(), this.toString());
+        return Instance.strEquals(host.toString(), toString());
     }
     
     @Override
     public int hashCode() {
-        return this.toString().hashCode();
+        return toString().hashCode();
     }
     
     private static boolean strEquals(final String str1, final String str2) {
@@ -212,30 +212,30 @@ public class Instance {
     }
     
     public long getInstanceHeartBeatInterval() {
-        return this.getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
                 Constants.DEFAULT_HEART_BEAT_INTERVAL);
     }
     
     public long getInstanceHeartBeatTimeOut() {
-        return this.getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
                 Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
     
     public long getIpDeleteTimeout() {
-        return this.getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT,
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT,
                 Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
     
     public String getInstanceIdGenerator() {
-        return this.getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.INSTANCE_ID_GENERATOR,
                 Constants.DEFAULT_INSTANCE_ID_GENERATOR);
     }
     
     private long getMetaDataByKeyWithDefault(final String key, final long defaultValue) {
-        if (this.getMetadata() == null || this.getMetadata().isEmpty()) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }
-        final String value = this.getMetadata().get(key);
+        final String value = getMetadata().get(key);
         if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
             return Long.parseLong(value);
         }
@@ -243,10 +243,10 @@ public class Instance {
     }
     
     private String getMetaDataByKeyWithDefault(final String key, final String defaultValue) {
-        if (this.getMetadata() == null || this.getMetadata().isEmpty()) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }
-        return this.getMetadata().get(key);
+        return getMetadata().get(key);
     }
     
 }

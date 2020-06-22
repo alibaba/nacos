@@ -65,7 +65,7 @@ public class Mysql extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.user, this.pwd, this.cmd);
+        return Objects.hashCode(user, pwd, cmd);
     }
     
     @Override
@@ -76,23 +76,23 @@ public class Mysql extends AbstractHealthChecker {
         
         final Mysql other = (Mysql) obj;
         
-        if (!StringUtils.equals(this.user, other.getUser())) {
+        if (!StringUtils.equals(user, other.getUser())) {
             return false;
         }
         
-        if (!StringUtils.equals(this.pwd, other.getPwd())) {
+        if (!StringUtils.equals(pwd, other.getPwd())) {
             return false;
         }
         
-        return StringUtils.equals(this.cmd, other.getCmd());
+        return StringUtils.equals(cmd, other.getCmd());
     }
     
     @Override
     public Mysql clone() throws CloneNotSupportedException {
         final Mysql config = new Mysql();
-        config.setUser(this.getUser());
-        config.setPwd(this.getPwd());
-        config.setCmd(this.getCmd());
+        config.setUser(getUser());
+        config.setPwd(getPwd());
+        config.setCmd(getCmd());
         return config;
     }
 }
