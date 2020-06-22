@@ -178,13 +178,13 @@ public class NamingBase extends HttpClient4Test {
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
-        HttpRestResult<String> result = nacosRestTemplate.putFrom(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
         url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
 
-        result = nacosRestTemplate.putFrom(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
@@ -194,7 +194,7 @@ public class NamingBase extends HttpClient4Test {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
 
-        HttpRestResult<String> result = nacosRestTemplate.putFrom(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
         System.out.println(result);
         Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
