@@ -175,10 +175,16 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 continue;
             }
             
-            final String targetName = ClassUtils.getName(subscriber.subscribeType());
-            if (!Objects.equals(sourceName, targetName)) {
-                continue;
+            // Because unifying smartSubscriber and subscriber, so here need to think of compatibility.
+            // To smartSubscriber, the subscribeType() method returns null by default.
+            if (subscriber.subscribeType() != null) {
+                
+                final String targetName = ClassUtils.getName(subscriber.subscribeType());
+                if (!Objects.equals(sourceName, targetName)) {
+                    continue;
+                }
             }
+            
             notifySubscriber(subscriber, event);
         }
     }
