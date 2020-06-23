@@ -123,6 +123,10 @@ public class UtilsAndCommons {
     public static final String DATA_BASE_DIR =
             ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
     
+    public static final String RAFT_CACHE_FILE_SUFFIX = ".datum";
+    
+    public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos";
+    
     public static final String NUMBER_PATTERN = "^\\d+$";
     
     public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
@@ -179,10 +183,6 @@ public class UtilsAndCommons {
             return t;
         });
         
-    }
-    
-    public static String getSwitchDomainKey() {
-        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
     
     /**

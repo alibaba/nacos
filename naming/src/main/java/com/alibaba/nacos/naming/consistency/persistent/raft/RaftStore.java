@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +44,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DATA_BASE_DIR;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFFIX;
+
 /**
  * Raft store.
  *
@@ -55,11 +58,9 @@ public class RaftStore {
     
     private final Properties meta = new Properties();
     
-    private static final String META_FILE_NAME = UtilsAndCommons.DATA_BASE_DIR + File.separator + "meta.properties";
+    private static final String META_FILE_NAME = DATA_BASE_DIR + File.separator + "meta.properties";
     
-    private static final String CACHE_DIR = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
-    
-    private static final String CACHE_FILE_SUFFIX = ".datum";
+    private static final String CACHE_DIR = DATA_BASE_DIR + File.separator + "data";
     
     /**
      * Load datum from cache file.
@@ -127,7 +128,8 @@ public class RaftStore {
                 Loggers.RAFT.warn("warning: encountered directory in cache dir: {}", cache.getAbsolutePath());
             }
             
-            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key) + CACHE_FILE_SUFFIX)) {
+            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key)) &&
+                    !StringUtils.equals(cache.getName(), encodeDatumKey(key) + RAFT_CACHE_FILE_SUFFIX)) {
                 continue;
             }
             
@@ -139,7 +141,7 @@ public class RaftStore {
     }
     
     private boolean isDatumCacheFile(String fileName) {
-        return fileName.endsWith(CACHE_FILE_SUFFIX);
+        return fileName.endsWith(RAFT_CACHE_FILE_SUFFIX) || fileName.startsWith(RAFT_CACHE_FILE_PREFIX);
     }
     
     private synchronized Datum readDatum(File file, String namespaceId) throws IOException {
@@ -155,13 +157,15 @@ public class RaftStore {
             if (StringUtils.isBlank(json)) {
                 return null;
             }
+            JsonNode jsonNode = JacksonUtils.toObj(json);
+            final String cacheDatumKey = jsonNode.get("key").asText();
             
-            if (KeyBuilder.matchSwitchKey(file.getName())) {
+            if (KeyBuilder.matchSwitchKey(cacheDatumKey)) {
                 return JacksonUtils.toObj(json, new TypeReference<Datum<SwitchDomain>>() {
                 });
             }
             
-            if (KeyBuilder.matchServiceMetaKey(file.getName())) {
+            if (KeyBuilder.matchServiceMetaKey(cacheDatumKey)) {
                 
                 Datum<Service> serviceDatum;
                 
@@ -188,7 +192,7 @@ public class RaftStore {
                 return serviceDatum;
             }
             
-            if (KeyBuilder.matchInstanceListKey(file.getName())) {
+            if (KeyBuilder.matchInstanceListKey(cacheDatumKey)) {
                 
                 Datum<Instances> instancesDatum;
                 
@@ -235,8 +239,15 @@ public class RaftStore {
         } else {
             fileName = CACHE_DIR + File.separator + encodeDatumKey(datum.key);
         }
-        fileName += CACHE_FILE_SUFFIX;
         return fileName;
+    }
+    
+    private File cacheFile(String cacheFileName) {
+        File cacheFile = new File(cacheFileName);
+        if (cacheFile.exists()) {
+            return cacheFile;
+        }
+        return new File(cacheFileName + RAFT_CACHE_FILE_SUFFIX);
     }
     
     /**
@@ -249,7 +260,7 @@ public class RaftStore {
         
         String namespaceId = KeyBuilder.getNamespace(datum.key);
         
-        File cacheFile = new File(cacheFileName(namespaceId, datum));
+        File cacheFile = cacheFile(cacheFileName(namespaceId, datum));
         
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             MetricsMonitor.getDiskException().increment();
@@ -281,7 +292,7 @@ public class RaftStore {
                 String oldFormatKey = datum.key
                         .replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
                 
-                cacheFile = new File(cacheFileName(namespaceId, datum));
+                cacheFile = cacheFile(cacheFileName(namespaceId, datum));
                 if (cacheFile.exists() && !cacheFile.delete()) {
                     Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}", datum.key,
                             datum.value);
