@@ -286,6 +286,12 @@ public class NotifyCenterTest {
         }
     }
     
+    /**
+     * One SmartSubscriber can listen serveral Events.
+     * And then, Notify publish events by Publisher.
+     *
+     * @throws Exception
+     */
     @Test
     public void test_notify_smart_event_singlePublisher() throws Exception {
         
@@ -341,8 +347,14 @@ public class NotifyCenterTest {
     private static class TestSlowEvent2 extends SlowEvent {
     }
     
+    /**
+     * Two general subscriber can listen two kinds of SlowEvents.
+     * And then, Notify publish events by SharePublisher.
+     *
+     * @throws Exception
+     */
     @Test
-    public void test_mutiple_slow_event_can_listen() throws Exception {
+    public void test_mutiple_slow_events_can_listen() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent1.class);
         NotifyCenter.registerToSharePublisher(TestSlowEvent2.class);
@@ -394,5 +406,133 @@ public class NotifyCenterTest {
         Assert.assertEquals(3, count1.get());
         Assert.assertEquals(3, count2.get());
     
+    }
+    
+    private static class TestSlowEvent3 extends SlowEvent {
+    }
+    
+    private static class TestSlowEvent4 extends SlowEvent {
+    }
+    
+    /**
+     * One SmartSubscriber can listen serveral SlowEvents.
+     * And then, Notify publish events by SharePublisher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void test_mutiple_slow_events_can_listen_by_smartsubscriber() throws Exception {
+        
+        NotifyCenter.registerToSharePublisher(TestSlowEvent3.class);
+        NotifyCenter.registerToSharePublisher(TestSlowEvent4.class);
+        
+        
+        final AtomicInteger count1 = new AtomicInteger(0);
+        final AtomicInteger count2 = new AtomicInteger(0);
+        
+        final CountDownLatch latch1 = new CountDownLatch(3);
+        final CountDownLatch latch2 = new CountDownLatch(3);
+        
+        NotifyCenter.registerSubscriber(new SmartSubscriber() {
+    
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof TestSlowEvent3) {
+                    count1.incrementAndGet();
+                    latch1.countDown();
+                }
+                
+                if (event instanceof TestSlowEvent4) {
+                    count2.incrementAndGet();
+                    latch2.countDown();
+                }
+            }
+    
+            @Override
+            public List<Class<? extends Event>> subscribeTypes() {
+                List<Class<? extends Event>> subTypes = new ArrayList<Class<? extends Event>>();
+                subTypes.add(TestSlowEvent3.class);
+                subTypes.add(TestSlowEvent4.class);
+                return subTypes;
+            }
+        });
+        
+        for (int i = 0; i < 3; i++) {
+            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent3()));
+            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent4()));
+        }
+        
+        ThreadUtils.sleep(2000L);
+        
+        latch1.await(3000L, TimeUnit.MILLISECONDS);
+        latch2.await(3000L, TimeUnit.MILLISECONDS);
+        
+        Assert.assertEquals(3, count1.get());
+        Assert.assertEquals(3, count2.get());
+        
+    }
+    
+    private static class TestSlowEvent5 extends SlowEvent {
+    }
+    
+    private static class TestEvent6 extends Event {
+    }
+    
+    /**
+     * One SmartSubscriber can listen mutiple kinds of event: SlowEvent and General Event.
+     * And then, Notify publish events by SharePublisher and default pusbisher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void test_mutiple_kinds_events_can_listen_by_smartsubscriber() throws Exception {
+        
+        NotifyCenter.registerToSharePublisher(TestSlowEvent5.class);
+        NotifyCenter.registerToPublisher(TestEvent6.class, 1024);
+        
+        
+        final AtomicInteger count1 = new AtomicInteger(0);
+        final AtomicInteger count2 = new AtomicInteger(0);
+        
+        final CountDownLatch latch1 = new CountDownLatch(3);
+        final CountDownLatch latch2 = new CountDownLatch(3);
+        
+        NotifyCenter.registerSubscriber(new SmartSubscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                if (event instanceof TestSlowEvent5) {
+                    count1.incrementAndGet();
+                    latch1.countDown();
+                }
+                
+                if (event instanceof TestEvent6) {
+                    count2.incrementAndGet();
+                    latch2.countDown();
+                }
+            }
+            
+            @Override
+            public List<Class<? extends Event>> subscribeTypes() {
+                List<Class<? extends Event>> subTypes = new ArrayList<Class<? extends Event>>();
+                subTypes.add(TestSlowEvent5.class);
+                subTypes.add(TestEvent6.class);
+                return subTypes;
+            }
+        });
+        
+        for (int i = 0; i < 3; i++) {
+            Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent5()));
+            Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent6()));
+        }
+        
+        ThreadUtils.sleep(2000L);
+        
+        latch1.await(3000L, TimeUnit.MILLISECONDS);
+        latch2.await(3000L, TimeUnit.MILLISECONDS);
+        
+        Assert.assertEquals(3, count1.get());
+        Assert.assertEquals(3, count2.get());
+        
     }
 }

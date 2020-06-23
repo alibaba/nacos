@@ -175,7 +175,13 @@ public class NotifyCenter {
         // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
-                addSubscriber(consumer, subscribeType);
+                // For case, producer: defaultSharePublisher -> consumer: smartSubscriber.
+                if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+                    INSTANCE.sharePublisher.addSubscriber(consumer);
+                } else {
+                    // For case, producer: defaultPublisher -> consumer: subscriber.
+                    addSubscriber(consumer, subscribeType);
+                }
             }
             return;
         }
@@ -213,10 +219,15 @@ public class NotifyCenter {
         final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
-                removeSubscriber(consumer, subscribeType);
+                if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+                    INSTANCE.sharePublisher.removeSubscriber(consumer);
+                } else {
+                    removeSubscriber(consumer, subscribeType);
+                }
             }
             return;
         }
+        
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
             INSTANCE.sharePublisher.removeSubscriber(consumer);
             return;

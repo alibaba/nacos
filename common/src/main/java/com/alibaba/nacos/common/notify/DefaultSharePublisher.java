@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.notify;
 
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.Objects;
@@ -41,12 +42,28 @@ public class DefaultSharePublisher extends DefaultPublisher {
                 continue;
             }
             
-            final String targetName = ClassUtils.getName(subscriber.subscribeType());
-            if (!Objects.equals(sourceName, targetName)) {
+            if (subscriber instanceof SmartSubscriber) {
+                // For SmartSubscriber instance.
+                
+                SmartSubscriber smartSubscriber = (SmartSubscriber) subscriber;
+                
+                for (Class<? extends Event> subType : smartSubscriber.subscribeTypes()) {
+                    // Judge whether smartSubscriber has subscribed this type of event.
+                    if (ClassUtils.getName(subType).equals(sourceName)) {
+                        notifySubscriber(subscriber, event);
+                        break;
+                    }
+                }
+            } else {
+                // For subscriber instance.
+                
+                final String targetName = ClassUtils.getName(subscriber.subscribeType());
+                if (!Objects.equals(sourceName, targetName)) {
+                    continue;
+                }
+                notifySubscriber(subscriber, event);
                 continue;
             }
-            
-            notifySubscriber(subscriber, event);
         }
     }
 }

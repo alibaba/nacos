@@ -96,13 +96,16 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     void openEventHandler() {
         try {
+            
+            int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
             for (; ; ) {
-                if (shutdown || hasSubscriber()) {
+                if (shutdown || hasSubscriber() || waitTimes <= 0) {
                     break;
                 }
                 ThreadUtils.sleep(1000L);
+                waitTimes--;
             }
             
             for (; ; ) {
@@ -163,7 +166,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     /**
      * Receive and notifySubscriber to process the event.
      *
-     * @param event  {@link Event}.
+     * @param event {@link Event}.
      */
     public void receiveEvent(Event event) {
         final long currentEventSequence = event.sequence();
