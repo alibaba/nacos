@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.output.NullOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +33,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
@@ -193,6 +197,10 @@ public final class DiskUtils {
             }
         }
         return false;
+    }
+    
+    public static void deleteQuietly(Path path) {
+        FileUtils.deleteQuietly(path.toFile());
     }
     
     /**
@@ -353,6 +361,93 @@ public final class DiskUtils {
             //
             // See https://coderanch.com/t/279175/java/ZipInputStream
             IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
+        }
+    }
+    
+    /**
+     * Returns an Iterator for the lines in a <code>File</code>.
+     * <p>
+     * This method opens an <code>InputStream</code> for the file.
+     * When you have finished with the iterator you should close the stream
+     * to free internal resources. This can be done by calling the
+     * {@link org.apache.commons.io.LineIterator#close()} or
+     * {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)} method.
+     * <p>
+     * The recommended usage pattern is:
+     * <pre>
+     * LineIterator it = FileUtils.lineIterator(file, "UTF-8");
+     * try {
+     *   while (it.hasNext()) {
+     *     String line = it.nextLine();
+     *     /// do something with line
+     *   }
+     * } finally {
+     *   LineIterator.closeQuietly(iterator);
+     * }
+     * </pre>
+     * <p>
+     * If an exception occurs during the creation of the iterator, the
+     * underlying stream is closed.
+     *
+     * @param file  the file to open for input, must not be <code>null</code>
+     * @param encoding  the encoding to use, <code>null</code> means platform default
+     * @return an Iterator of the lines in the file, never <code>null</code>
+     * @throws IOException in case of an I/O error (file closed)
+     * @since 1.2
+     */
+    public static LineIterator lineIterator(File file, String encoding) throws IOException {
+        return new LineIterator(FileUtils.lineIterator(file, encoding));
+    }
+    
+    /**
+     * Returns an Iterator for the lines in a <code>File</code> using the default encoding for the VM.
+     *
+     * @param file  the file to open for input, must not be <code>null</code>
+     * @return an Iterator of the lines in the file, never <code>null</code>
+     * @throws IOException in case of an I/O error (file closed)
+     * @since 1.3
+     * @see #lineIterator(File, String)
+     */
+    public static LineIterator lineIterator(File file) throws IOException {
+        return new LineIterator(FileUtils.lineIterator(file, null));
+    }
+    
+    public static class LineIterator implements AutoCloseable {
+    
+        private final org.apache.commons.io.LineIterator target;
+    
+        /**
+         * Constructs an iterator of the lines for a <code>Reader</code>.
+         *
+         * @param target {@link org.apache.commons.io.LineIterator}
+         */
+        LineIterator(org.apache.commons.io.LineIterator target) {
+            this.target = target;
+        }
+    
+        public boolean hasNext() {
+            return target.hasNext();
+        }
+        
+        public String next() {
+            return target.next();
+        }
+    
+        public String nextLine() {
+            return target.nextLine();
+        }
+    
+        @Override
+        public void close() {
+            target.close();
+        }
+    
+        public void remove() {
+            target.remove();
+        }
+    
+        public void forEachRemaining(Consumer<? super String> action) {
+            target.forEachRemaining(action);
         }
     }
     

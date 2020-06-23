@@ -393,6 +393,15 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
         return functionModeType;
     }
     
+    private static String nacosTmpDir;
+    
+    public static String getNacosTmpDir() {
+        if (StringUtils.isBlank(nacosTmpDir)) {
+            nacosTmpDir = Paths.get(getNacosHome(), "data", "tmp").toString();
+        }
+        return nacosTmpDir;
+    }
+    
     public static String getNacosHome() {
         if (StringUtils.isBlank(NACOS_HOME_PATH)) {
             String nacosHome = System.getProperty(NACOS_HOME_KEY);
