@@ -48,14 +48,14 @@ Volunteer wanted.
 #### checkstyle
 [chechstyle-idea-install](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
 
-1. Preferences/Settings --> Other Settings --> Checkstyle 
+1. `Preferences/Settings --> Other Settings --> Checkstyle` OR `Preferences/Settings --> Tools --> Checkstyle`
 2. Set checkstyle version at least 8.30 and scan scope `All resource(including tests)` in checkstyle plugin.
 3. Import `style/NacosCheckStyle.xml` to checkstyle plugin.
 4. Scan and check your modified code by plugin.
 
 [chechstyle插件idea安装](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
 
-1. Preferences/Settings --> Other Settings --> Checkstyle 
+1. `Preferences/Settings --> Other Settings --> Checkstyle` 或者 `Preferences/Settings --> Tools --> Checkstyle`
 2. 在checkstyle插件中设置checkstyle版本至少为8.30,并将扫描作用域设置为`All resource(including tests)`
 3. 导入源代码下`style/NacosCheckStyle.xml`文件到checkstyle插件。
 4. 用checkstyle插件扫描你修改的代码。
