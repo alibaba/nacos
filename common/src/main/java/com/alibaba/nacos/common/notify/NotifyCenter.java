@@ -220,7 +220,7 @@ public class NotifyCenter {
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
                 if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
-                    INSTANCE.sharePublisher.removeSubscriber(consumer);
+                    INSTANCE.sharePublisher.removeSubscriber(consumer, subscribeType);
                 } else {
                     removeSubscriber(consumer, subscribeType);
                 }
@@ -229,7 +229,7 @@ public class NotifyCenter {
         }
         
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.removeSubscriber(consumer);
+            INSTANCE.sharePublisher.removeSubscriber(consumer, cls);
             return;
         }
         
@@ -251,7 +251,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         if (INSTANCE.publisherMap.containsKey(topic)) {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-            publisher.removeSubscriber(consumer);
+            publisher.removeSubscriber(consumer, subscribeType);
             return true;
         }
         

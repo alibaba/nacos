@@ -51,6 +51,23 @@ public class DefaultSharePublisher extends DefaultPublisher {
     }
     
     @Override
+    public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
+        // Actually, do a classification based on the slowEvent type.
+        Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
+        // For removing to parent class attributes synchronization.
+        subscribers.remove(subscriber);
+    
+        Set<Subscriber> sets = subMappings.get(subSlowEventType);
+    
+        if (sets != null && sets.contains(subscriber)) {
+            sets.remove(subscriber);
+            if (sets.isEmpty()) {
+                subMappings.remove(subSlowEventType);
+            }
+        }
+    }
+    
+    @Override
     public void receiveEvent(Event event) {
         
         final long currentEventSequence = event.sequence();
