@@ -16,10 +16,12 @@
 
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.utils.ClassUtils;
-import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The default share event publisher implementation for slow event.
@@ -28,12 +30,37 @@ import com.alibaba.nacos.common.utils.Objects;
  */
 public class DefaultSharePublisher extends DefaultPublisher {
     
+    private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<Class<? extends SlowEvent>, Set<Subscriber>>();
+    
+    @Override
+    public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
+        // Actually, do a classification based on the slowEvent type.
+        Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
+        // For adding to parent class attributes synchronization.
+        subscribers.add(subscriber);
+        Set<Subscriber> sets = subMappings.get(subSlowEventType);
+        
+        if (sets == null) {
+            Set<Subscriber> newSet = new ConcurrentHashSet<Subscriber>();
+            newSet.add(subscriber);
+            subMappings.put(subSlowEventType, newSet);
+            return;
+        }
+        
+        sets.add(subscriber);
+    }
+    
     @Override
     public void receiveEvent(Event event) {
-        final long currentEventSequence = event.sequence();
-        final String sourceName = ClassUtils.getName(event);
         
-        // Notification single event listener
+        final long currentEventSequence = event.sequence();
+        // get subscriber set based on the slow EventType.
+        final Class<? extends SlowEvent> slowEventType = (Class<? extends SlowEvent>) event.getClass();
+        
+        // Get for Map, the algorithm is O(1).
+        Set<Subscriber> subscribers = subMappings.get(slowEventType);
+        
+        // Notification single event subscriber
         for (Subscriber subscriber : subscribers) {
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
@@ -42,28 +69,8 @@ public class DefaultSharePublisher extends DefaultPublisher {
                 continue;
             }
             
-            if (subscriber instanceof SmartSubscriber) {
-                // For SmartSubscriber instance.
-                
-                SmartSubscriber smartSubscriber = (SmartSubscriber) subscriber;
-                
-                for (Class<? extends Event> subType : smartSubscriber.subscribeTypes()) {
-                    // Judge whether smartSubscriber has subscribed this type of event.
-                    if (ClassUtils.getName(subType).equals(sourceName)) {
-                        notifySubscriber(subscriber, event);
-                        break;
-                    }
-                }
-            } else {
-                // For subscriber instance.
-                
-                final String targetName = ClassUtils.getName(subscriber.subscribeType());
-                if (!Objects.equals(sourceName, targetName)) {
-                    continue;
-                }
-                notifySubscriber(subscriber, event);
-                continue;
-            }
+            // Notify single subscriber for slow event.
+            notifySubscriber(subscriber, event);
         }
     }
 }

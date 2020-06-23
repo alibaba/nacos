@@ -97,6 +97,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     void openEventHandler() {
         try {
             
+            // This variable is defined to resolve the problem which message overstock in the queue.
             int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
@@ -126,7 +127,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
     
     @Override
-    public void addSubscriber(Subscriber subscriber) {
+    public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         subscribers.add(subscriber);
     }
     

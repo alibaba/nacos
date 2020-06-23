@@ -46,8 +46,9 @@ public interface EventPublisher extends Closeable {
      * Add listener.
      *
      * @param subscriber {@link Subscriber}
+     * @param subscribeType type of subscribe.
      */
-    void addSubscriber(Subscriber subscriber);
+    void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType);
     
     /**
      * Remove listener.

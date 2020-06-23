@@ -526,7 +526,7 @@ public class NotifyCenterTest {
             Assert.assertTrue(NotifyCenter.publishEvent(new TestEvent6()));
         }
         
-        ThreadUtils.sleep(2000L);
+        ThreadUtils.sleep(3000L);
         
         latch1.await(3000L, TimeUnit.MILLISECONDS);
         latch2.await(3000L, TimeUnit.MILLISECONDS);

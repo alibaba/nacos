@@ -177,7 +177,7 @@ public class NotifyCenter {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
                 // For case, producer: defaultSharePublisher -> consumer: smartSubscriber.
                 if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
-                    INSTANCE.sharePublisher.addSubscriber(consumer);
+                    INSTANCE.sharePublisher.addSubscriber(consumer, subscribeType);
                 } else {
                     // For case, producer: defaultPublisher -> consumer: subscriber.
                     addSubscriber(consumer, subscribeType);
@@ -187,7 +187,7 @@ public class NotifyCenter {
         }
         
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.addSubscriber(consumer);
+            INSTANCE.sharePublisher.addSubscriber(consumer, cls);
             return;
         }
         
@@ -207,7 +207,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-        publisher.addSubscriber(consumer);
+        publisher.addSubscriber(consumer, subscribeType);
     }
     
     /**
