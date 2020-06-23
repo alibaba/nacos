@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.event.DataImportEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -137,17 +136,12 @@ public class CurcuitFilter implements Filter {
 				if (event instanceof RaftDBErrorEvent) {
 					isDowngrading = true;
 				}
-				if (event instanceof DataImportEvent) {
-					DataImportEvent e = (DataImportEvent) event;
-					isOpenService = e.isFinished();
-				}
 			}
 
 			@Override
 			public boolean canNotify(Event event) {
 				return (event instanceof RaftDBErrorEvent)
-						|| (event instanceof RaftDBErrorRecoverEvent)
-						|| (event instanceof DataImportEvent);
+						|| (event instanceof RaftDBErrorRecoverEvent);
 			}
 		});
 	}

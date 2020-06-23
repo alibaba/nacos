@@ -38,7 +38,7 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.model.event.DataImportEvent;
+import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
@@ -124,7 +124,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
 		this.databaseOperate = databaseOperate;
 		this.idGeneratorManager = idGeneratorManager;
 
-		NotifyCenter.registerToSharePublisher(DataImportEvent.class);
+		NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
 	}
 
 	@PostConstruct

@@ -62,8 +62,7 @@ public class NamingTest {
 
         System.out.println(list);
 
-        CountDownLatch latch = new CountDownLatch(1);
-        latch.await();
+        ThreadUtils.sleep(30_000L);
 //        ExpressionSelector expressionSelector = new ExpressionSelector();
 //        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
 //        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);

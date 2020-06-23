@@ -17,9 +17,9 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.Objects;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.output.NullOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,16 +33,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
@@ -89,6 +88,81 @@ public final class DiskUtils {
      */
     public static void touch(File file) throws IOException {
         FileUtils.touch(file);
+    }
+    
+    /**
+     * Creates a new empty file in the specified directory, using the given
+     * prefix and suffix strings to generate its name. The resulting
+     * {@code Path} is associated with the same {@code FileSystem} as the given
+     * directory.
+     *
+     * <p> The details as to how the name of the file is constructed is
+     * implementation dependent and therefore not specified. Where possible
+     * the {@code prefix} and {@code suffix} are used to construct candidate
+     * names in the same manner as the {@link
+     * java.io.File#createTempFile(String,String,File)} method.
+     *
+     *
+     * @param   dir
+     *          the path to directory in which to create the file
+     * @param   prefix
+     *          the prefix string to be used in generating the file's name;
+     *          may be {@code null}
+     * @param   suffix
+     *          the suffix string to be used in generating the file's name;
+     *          may be {@code null}, in which case "{@code .tmp}" is used
+     *
+     * @return  the path to the newly created file that did not exist before
+     *          this method was invoked
+     *
+     * @throws  IllegalArgumentException
+     *          if the prefix or suffix parameters cannot be used to generate
+     *          a candidate file name
+     * @throws  UnsupportedOperationException
+     *          if the array contains an attribute that cannot be set atomically
+     *          when creating the directory
+     * @throws  IOException
+     *          if an I/O error occurs or {@code dir} does not exist
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file.
+     */
+    public static File createTmpFile(String dir, String prefix, String suffix) throws IOException {
+        return Files.createTempFile(Paths.get(dir), prefix, suffix).toFile();
+    }
+    
+    /**
+     * Creates an empty file in the default temporary-file directory, using
+     * the given prefix and suffix to generate its name. The resulting {@code
+     * Path} is associated with the default {@code FileSystem}.
+     *
+     * @param   prefix
+     *          the prefix string to be used in generating the file's name;
+     *          may be {@code null}
+     * @param   suffix
+     *          the suffix string to be used in generating the file's name;
+     *          may be {@code null}, in which case "{@code .tmp}" is used
+     *
+     * @return  the path to the newly created file that did not exist before
+     *          this method was invoked
+     *
+     * @throws  IllegalArgumentException
+     *          if the prefix or suffix parameters cannot be used to generate
+     *          a candidate file name
+     * @throws  UnsupportedOperationException
+     *          if the array contains an attribute that cannot be set atomically
+     *          when creating the directory
+     * @throws  IOException
+     *          if an I/O error occurs or the temporary-file directory does not
+     *          exist
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file.
+     */
+    public static File createTmpFile(String prefix, String suffix) throws IOException {
+        return Files.createTempFile(prefix, suffix).toFile();
     }
     
     /**
@@ -199,7 +273,13 @@ public final class DiskUtils {
         return false;
     }
     
+    public static void deleteQuietly(File file) {
+        Objects.requireNonNull(file, "file");
+        FileUtils.deleteQuietly(file);
+    }
+    
     public static void deleteQuietly(Path path) {
+        Objects.requireNonNull(path, "path");
         FileUtils.deleteQuietly(path.toFile());
     }
     

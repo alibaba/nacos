@@ -19,7 +19,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.event.DataImportEvent;
+import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -134,10 +134,10 @@ public class ConfigOpsController {
 			return response;
 		}
 		DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
-		WebUtils.onFileUpload(multipartFile, path -> {
-			NotifyCenter.publishEvent(new DataImportEvent(false));
-			databaseOperate.dataImport(path.toFile()).whenComplete((result, ex) -> {
-				NotifyCenter.publishEvent(new DataImportEvent(true));
+		WebUtils.onFileUpload(multipartFile, file -> {
+			NotifyCenter.publishEvent(new DerbyImportEvent(false));
+			databaseOperate.dataImport(file).whenComplete((result, ex) -> {
+				NotifyCenter.publishEvent(new DerbyImportEvent(true));
 				if (Objects.nonNull(ex)) {
 					response.setResult(RestResultUtils.failed(ex.getMessage()));
 					return;

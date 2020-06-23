@@ -425,7 +425,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 						batchUpdate.clear();
 					}
 				}
-				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 				for (CompletableFuture<Response> future : futures) {
 					Response response = future.get();
 					if (!response.getSuccess()) {

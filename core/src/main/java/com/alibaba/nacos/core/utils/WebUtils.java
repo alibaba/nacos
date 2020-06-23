@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -147,23 +148,23 @@ public class WebUtils {
      * @param consumer post processor
      * @param response {@link DeferredResult}
      */
-    public static void onFileUpload(MultipartFile multipartFile, Consumer<Path> consumer,
+    public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
             DeferredResult<RestResult<String>> response) {
         
-        if (com.alibaba.nacos.common.utils.Objects.isNull(multipartFile)) {
+        if (Objects.isNull(multipartFile) || multipartFile.isEmpty()) {
             response.setResult(RestResultUtils.failed("File is empty"));
             return;
         }
-        Path tmpFile = null;
+        File tmpFile = null;
         try {
-            tmpFile = Files.createTempFile(multipartFile.getName(), ".tmp");
+            tmpFile = DiskUtils.createTmpFile(multipartFile.getName(), ".tmp");
             multipartFile.transferTo(tmpFile);
             consumer.accept(tmpFile);
-        }
-        catch (Throwable ex) {
-            response.setResult(RestResultUtils.failed(ex.getMessage()));
-        }
-        finally {
+        } catch (Throwable ex) {
+            if (!response.isSetOrExpired()) {
+                response.setResult(RestResultUtils.failed(ex.getMessage()));
+            }
+        } finally {
             DiskUtils.deleteQuietly(tmpFile);
         }
     }
