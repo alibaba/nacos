@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -66,6 +66,8 @@ public class RaftPeerSet implements MemberChangeListener {
     private Set<String> sites = new HashSet<>();
     
     private volatile boolean ready = false;
+    
+    private Set<Member> oldMembers;
     
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -299,8 +301,20 @@ public class RaftPeerSet implements MemberChangeListener {
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
-        changePeers(event.getMembers());
+    public void onEvent(MembersChangeEvent event) {
+        Collection<Member> members = event.getMembers();
+        if (oldMembers == null) {
+            oldMembers = new HashSet<>(members);
+        } else {
+            oldMembers.removeAll(members);
+        }
+        
+        if (!oldMembers.isEmpty()) {
+            changePeers(members);
+        }
+    
+        oldMembers.clear();
+        oldMembers.addAll(members);
     }
     
     private void changePeers(Collection<Member> members) {

@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Member node tool class.
@@ -206,6 +207,10 @@ public class MemberUtils {
         }
         
         return nodes;
+    }
+    
+    public static Set<Member> selectTargetMembers(Collection<Member> members, Predicate<Member> filter) {
+        return members.stream().filter(filter).collect(Collectors.toSet());
     }
     
     public static List<String> simpleMembers(Collection<Member> members) {
