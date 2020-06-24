@@ -56,7 +56,7 @@ public class NotifyCenter {
     
     private static final NotifyCenter INSTANCE = new NotifyCenter();
     
-    private EventPublisher sharePublisher;
+    private DefaultSharePublisher sharePublisher;
     
     private static Class<? extends EventPublisher> clazz = null;
     
@@ -207,7 +207,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-        publisher.addSubscriber(consumer, subscribeType);
+        publisher.addSubscriber(consumer);
     }
     
     /**
@@ -251,7 +251,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         if (INSTANCE.publisherMap.containsKey(topic)) {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
-            publisher.removeSubscriber(consumer, subscribeType);
+            publisher.removeSubscriber(consumer);
             return true;
         }
         

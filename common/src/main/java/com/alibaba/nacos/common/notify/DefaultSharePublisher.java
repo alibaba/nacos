@@ -32,7 +32,12 @@ public class DefaultSharePublisher extends DefaultPublisher {
     
     private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<Class<? extends SlowEvent>, Set<Subscriber>>();
     
-    @Override
+    /**
+     * Add listener for default share publisher.
+     *
+     * @param subscriber {@link Subscriber}
+     * @param subscribeType subscribe event type, such as slow event or general event.
+     */
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
@@ -50,7 +55,12 @@ public class DefaultSharePublisher extends DefaultPublisher {
         sets.add(subscriber);
     }
     
-    @Override
+    /**
+     * Remove listener for default share publisher.
+     *
+     * @param subscriber {@link Subscriber}
+     * @param subscribeType subscribe event type, such as slow event or general event.
+     */
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
         // Actually, do a classification based on the slowEvent type.
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
@@ -61,9 +71,6 @@ public class DefaultSharePublisher extends DefaultPublisher {
     
         if (sets != null && sets.contains(subscriber)) {
             sets.remove(subscriber);
-            if (sets.isEmpty()) {
-                subMappings.remove(subSlowEventType);
-            }
         }
     }
     

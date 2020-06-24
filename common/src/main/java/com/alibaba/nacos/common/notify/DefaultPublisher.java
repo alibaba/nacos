@@ -127,12 +127,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     }
     
     @Override
-    public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
+    public void addSubscriber(Subscriber subscriber) {
         subscribers.add(subscriber);
     }
     
     @Override
-    public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
+    public void removeSubscriber(Subscriber subscriber) {
         subscribers.remove(subscriber);
     }
     
@@ -169,7 +169,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
      *
      * @param event {@link Event}.
      */
-    public void receiveEvent(Event event) {
+    void receiveEvent(Event event) {
         final long currentEventSequence = event.sequence();
         
         // Notification single event listener
