@@ -125,7 +125,7 @@ public class UtilsAndCommons {
     
     public static final String RAFT_CACHE_FILE_SUFFIX = ".datum";
     
-    public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos";
+    public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
     
     public static final String NUMBER_PATTERN = "^\\d+$";
     

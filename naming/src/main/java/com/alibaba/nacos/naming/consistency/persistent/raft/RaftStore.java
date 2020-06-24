@@ -157,15 +157,15 @@ public class RaftStore {
             if (StringUtils.isBlank(json)) {
                 return null;
             }
-            JsonNode jsonNode = JacksonUtils.toObj(json);
-            final String cacheDatumKey = jsonNode.get("key").asText();
             
-            if (KeyBuilder.matchSwitchKey(cacheDatumKey)) {
+            final String fileName = file.getName();
+            
+            if (KeyBuilder.matchSwitchKey(fileName)) {
                 return JacksonUtils.toObj(json, new TypeReference<Datum<SwitchDomain>>() {
                 });
             }
             
-            if (KeyBuilder.matchServiceMetaKey(cacheDatumKey)) {
+            if (KeyBuilder.matchServiceMetaKey(fileName)) {
                 
                 Datum<Service> serviceDatum;
                 
@@ -192,7 +192,7 @@ public class RaftStore {
                 return serviceDatum;
             }
             
-            if (KeyBuilder.matchInstanceListKey(cacheDatumKey)) {
+            if (KeyBuilder.matchInstanceListKey(fileName)) {
                 
                 Datum<Instances> instancesDatum;
                 
