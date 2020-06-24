@@ -35,7 +35,6 @@ import java.util.Map;
  * Nacos rest template Interface specifying a basic set of RESTful operations.
  *
  * @author mai.jh
- * @date 2020/5/24
  * @see HttpClientRequest
  * @see HttpClientResponse
  */
@@ -178,7 +177,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+    public <T> HttpRestResult<T> putForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
@@ -201,7 +200,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putFrom(String url, Header header, Map<String, String> paramValues,
+    public <T> HttpRestResult<T> putForm(String url, Header header, Map<String, String> paramValues,
             Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
@@ -268,7 +267,7 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Query query, Map<String, String> bodyValues,
+    public <T> HttpRestResult<T> postForm(String url, Header header, Query query, Map<String, String> bodyValues,
             Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
@@ -291,12 +290,34 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postFrom(String url, Header header, Map<String, String> paramValues,
+    public <T> HttpRestResult<T> postForm(String url, Header header, Map<String, String> paramValues,
             Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
                 Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, HttpMethod.POST, requestHttpEntity, responseType);
+    }
+    
+    /**
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and
+     * returns the response as {@link HttpRestResult}.
+     *
+     * @param url          url
+     * @param header       http header param
+     * @param paramValues  http query param
+     * @param bodyValues   http body param
+     * @param httpMethod   http method
+     * @param responseType return type
+     * @return {@link HttpRestResult}
+     * @throws Exception ex
+     */
+    public <T> HttpRestResult<T> exchangeForm(String url, Header header,
+                                              Map<String, String> paramValues, Map<String, String> bodyValues, String httpMethod, Type responseType) throws Exception{
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
+            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+            Query.newInstance().initParams(paramValues),
+            bodyValues);
+        return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,

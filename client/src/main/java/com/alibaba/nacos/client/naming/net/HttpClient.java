@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -35,7 +36,9 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author nkorange
+ * @deprecated Use NacosRestTemplate{@link NacosRestTemplate} unified http client
  */
+@Deprecated
 public class HttpClient {
 
     public static final int READ_TIME_OUT_MILLIS = Integer

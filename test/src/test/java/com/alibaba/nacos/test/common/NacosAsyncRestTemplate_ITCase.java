@@ -88,14 +88,14 @@ public class NacosAsyncRestTemplate_ITCase {
     }
 
     @Test
-    public void test_url_post_from() throws Exception{
+    public void test_url_post_form() throws Exception{
         String url = IP + CONFIG_INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.postFrom(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
@@ -104,14 +104,14 @@ public class NacosAsyncRestTemplate_ITCase {
     }
 
     @Test
-    public void test_url_put_from() throws Exception{
+    public void test_url_put_form() throws Exception{
         String url = IP + CONFIG_INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test-change");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
         CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.putFrom(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
