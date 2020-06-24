@@ -22,6 +22,8 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The default share event publisher implementation for slow event.
@@ -32,10 +34,12 @@ public class DefaultSharePublisher extends DefaultPublisher {
     
     private final Map<Class<? extends SlowEvent>, Set<Subscriber>> subMappings = new ConcurrentHashMap<Class<? extends SlowEvent>, Set<Subscriber>>();
     
+    private final Lock lock = new ReentrantLock();
+    
     /**
      * Add listener for default share publisher.
      *
-     * @param subscriber {@link Subscriber}
+     * @param subscriber    {@link Subscriber}
      * @param subscribeType subscribe event type, such as slow event or general event.
      */
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
@@ -43,22 +47,26 @@ public class DefaultSharePublisher extends DefaultPublisher {
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
         // For adding to parent class attributes synchronization.
         subscribers.add(subscriber);
-        Set<Subscriber> sets = subMappings.get(subSlowEventType);
         
-        if (sets == null) {
-            Set<Subscriber> newSet = new ConcurrentHashSet<Subscriber>();
-            newSet.add(subscriber);
-            subMappings.put(subSlowEventType, newSet);
-            return;
+        lock.lock();
+        try {
+            Set<Subscriber> sets = subMappings.get(subSlowEventType);
+            if (sets == null) {
+                Set<Subscriber> newSet = new ConcurrentHashSet<Subscriber>();
+                newSet.add(subscriber);
+                subMappings.put(subSlowEventType, newSet);
+                return;
+            }
+            sets.add(subscriber);
+        } finally {
+            lock.unlock();
         }
-        
-        sets.add(subscriber);
     }
     
     /**
      * Remove listener for default share publisher.
      *
-     * @param subscriber {@link Subscriber}
+     * @param subscriber    {@link Subscriber}
      * @param subscribeType subscribe event type, such as slow event or general event.
      */
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
@@ -66,11 +74,16 @@ public class DefaultSharePublisher extends DefaultPublisher {
         Class<? extends SlowEvent> subSlowEventType = (Class<? extends SlowEvent>) subscribeType;
         // For removing to parent class attributes synchronization.
         subscribers.remove(subscriber);
-    
-        Set<Subscriber> sets = subMappings.get(subSlowEventType);
-    
-        if (sets != null && sets.contains(subscriber)) {
-            sets.remove(subscriber);
+        
+        lock.lock();
+        try {
+            Set<Subscriber> sets = subMappings.get(subSlowEventType);
+            
+            if (sets != null && sets.contains(subscriber)) {
+                sets.remove(subscriber);
+            }
+        } finally {
+            lock.unlock();
         }
     }
     

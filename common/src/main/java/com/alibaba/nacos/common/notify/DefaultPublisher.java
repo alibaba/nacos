@@ -183,7 +183,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             
             // Because unifying smartSubscriber and subscriber, so here need to think of compatibility.
             // Remove original judge part of codes.
-            
             notifySubscriber(subscriber, event);
         }
     }

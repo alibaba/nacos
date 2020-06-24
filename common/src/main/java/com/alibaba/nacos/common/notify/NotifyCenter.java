@@ -205,7 +205,10 @@ public class NotifyCenter {
             throws NacosException {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
+        synchronized (NotifyCenter.class) {
+            // MapUtils.computeIfAbsent is a unsafe method.
+            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
+        }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
     }
@@ -315,7 +318,10 @@ public class NotifyCenter {
         }
         
         final String topic = ClassUtils.getCanonicalName(eventType);
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
+        synchronized (NotifyCenter.class) {
+            // MapUtils.computeIfAbsent is a unsafe method.
+            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
+        }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;
     }
