@@ -19,21 +19,21 @@ package com.alibaba.nacos.config.server.model.event;
 import com.alibaba.nacos.core.notify.SlowEvent;
 
 /**
- * Data import event
+ * Data import event.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbyImportEvent implements SlowEvent {
-
-	private static final long serialVersionUID = 3299565864352399053L;
-
-	private final boolean finished;
-
-	public DerbyImportEvent(boolean finished) {
-		this.finished = finished;
-	}
-
-	public boolean isFinished() {
-		return finished;
-	}
+    
+    private static final long serialVersionUID = 3299565864352399053L;
+    
+    private final boolean finished;
+    
+    public DerbyImportEvent(boolean finished) {
+        this.finished = finished;
+    }
+    
+    public boolean isFinished() {
+        return finished;
+    }
 }
