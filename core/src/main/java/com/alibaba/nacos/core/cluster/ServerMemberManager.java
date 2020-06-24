@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.BiFunction;
 
 /**
  * Cluster node management in Nacos.
@@ -77,53 +76,52 @@ import java.util.function.BiFunction;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component(value = "serverMemberManager")
-@SuppressWarnings("all")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
     private final NAsyncHttpClient asyncHttpClient = HttpClientManager.getAsyncHttpClient();
     
     /**
-     * Cluster node list
+     * Cluster node list.
      */
     private volatile ConcurrentSkipListMap<String, Member> serverList;
     
     /**
-     * Is this node in the cluster list
+     * Is this node in the cluster list.
      */
     private volatile boolean isInIpList = true;
     
     /**
-     * port
+     * port.
      */
     private int port;
     
     /**
-     * Address information for the local node
+     * Address information for the local node.
      */
     private String localAddress;
     
     /**
-     * Addressing pattern instances
+     * Addressing pattern instances.
      */
     private MemberLookup lookup;
     
     /**
-     * self member obj
+     * self member obj.
      */
     private volatile Member self;
     
     /**
-     * here is always the node information of the "UP" state
+     * here is always the node information of the "UP" state.
      */
     private volatile Set<String> memberAddressInfos = new ConcurrentHashSet<>();
     
     /**
-     * Broadcast this node element information task
+     * Broadcast this node element information task.
      */
     private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
     public ServerMemberManager(ServletContext servletContext) throws Exception {
-        this.serverList = new ConcurrentSkipListMap();
+        this.serverList = new ConcurrentSkipListMap<>();
         ApplicationUtils.setContextPath(servletContext.getContextPath());
         MemberUtils.setManager(this);
         
@@ -156,7 +154,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.lookup.start();
     }
     
-    public void swithLookup(String name) throws NacosException {
+    public void switchLookup(String name) throws NacosException {
         this.lookup = LookupFactory.switchLookup(name, this);
         this.lookup.start();
     }
@@ -193,6 +191,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         });
     }
     
+    /**
+     * member information update.
+     *
+     * @param newMember {@link Member}
+     * @return update is success
+     */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
         
@@ -203,18 +207,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             return false;
         }
         
-        serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
-            @Override
-            public Member apply(String s, Member member) {
-                if (NodeState.DOWN.equals(newMember.getState())) {
-                    memberAddressInfos.remove(newMember.getAddress());
-                }
-                MemberUtils.copy(newMember, member);
-                return member;
+        serverList.computeIfPresent(address, (s, member) -> {
+            if (NodeState.DOWN.equals(newMember.getState())) {
+                memberAddressInfos.remove(newMember.getAddress());
             }
+            MemberUtils.copy(newMember, member);
+            return member;
         });
         
-        // Node data changes and all listeners need to be notified
+        // member data changes and all listeners need to be notified
         NotifyCenter.publishEvent(MembersChangeEvent.builder()
                 .members(allMembers())
                 .build());
@@ -222,6 +223,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return true;
     }
     
+    /**
+     * Whether the node exists within the cluster.
+     *
+     * @param address ip:port
+     * @return is exist
+     */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
         if (!result) {
@@ -244,6 +251,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return serverList.get(address);
     }
     
+    /**
+     * return this cluster all members.
+     *
+     * @return {@link Collection} all member
+     */
     public Collection<Member> allMembers() {
         // We need to do a copy to avoid affecting the real data
         HashSet<Member> set = new HashSet<>(serverList.values());
@@ -251,6 +263,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return set;
     }
     
+    /**
+     * return this cluster all members without self.
+     *
+     * @return {@link Collection} all member without self
+     */
     public List<Member> allMembersWithoutSelf() {
         List<Member> members = new ArrayList<>(serverList.values());
         members.remove(self);
@@ -280,7 +297,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // are involved and all recipients need to be notified of the node change event
         
         boolean hasChange = members.size() != serverList.size();
-        ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap();
+        ConcurrentSkipListMap<String, Member> tmpMap = new ConcurrentSkipListMap<>();
         Set<String> tmpAddressInfo = new ConcurrentHashSet<>();
         for (Member member : members) {
             final String address = member.getAddress();
@@ -294,8 +311,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             tmpAddressInfo.add(address);
         }
         
-        Map oldList = serverList;
-        Set oldSet = memberAddressInfos;
+        Map<String, Member> oldList = serverList;
+        Set<String> oldSet = memberAddressInfos;
         
         serverList = tmpMap;
         memberAddressInfos = tmpAddressInfo;
@@ -322,18 +339,36 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return hasChange;
     }
     
+    /**
+     * members join this cluster.
+     *
+     * @param members {@link Collection} new members
+     * @return is success
+     */
     public synchronized boolean memberJoin(Collection<Member> members) {
         Set<Member> set = new HashSet<>(members);
         set.addAll(allMembers());
         return memberChange(set);
     }
     
+    /**
+     * members leave this cluster.
+     *
+     * @param members {@link Collection} wait leave members
+     * @return is success
+     */
     public synchronized boolean memberLeave(Collection<Member> members) {
         Set<Member> set = new HashSet<>(allMembers());
         set.removeAll(members);
         return memberChange(set);
     }
     
+    /**
+     * this member {@link Member#getState()} is health.
+     *
+     * @param address ip:port
+     * @return is health
+     */
     public boolean isUnHealth(String address) {
         Member member = serverList.get(address);
         if (member == null) {
@@ -357,6 +392,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CLUSTER.info("This node is ready to provide external services");
     }
     
+    /**
+     * ServerMemberManager shutdown.
+     *
+     * @throws NacosException NacosException
+     */
     @PreDestroy
     public void shutdown() throws NacosException {
         serverList.clear();

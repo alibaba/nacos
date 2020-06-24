@@ -67,6 +67,8 @@ public class RaftPeerSet implements MemberChangeListener {
     
     private volatile boolean ready = false;
     
+    private Set<Member> oldMembers;
+    
     public RaftPeerSet(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
@@ -300,7 +302,19 @@ public class RaftPeerSet implements MemberChangeListener {
     
     @Override
     public void onEvent(MembersChangeEvent event) {
-        changePeers(event.getMembers());
+        Collection<Member> members = event.getMembers();
+        if (oldMembers == null) {
+            oldMembers = new HashSet<>(members);
+        } else {
+            oldMembers.removeAll(members);
+        }
+        
+        if (!oldMembers.isEmpty()) {
+            changePeers(members);
+        }
+    
+        oldMembers.clear();
+        oldMembers.addAll(members);
     }
     
     private void changePeers(Collection<Member> members) {

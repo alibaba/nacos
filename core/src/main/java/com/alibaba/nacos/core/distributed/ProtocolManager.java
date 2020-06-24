@@ -62,6 +62,8 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
     
     private boolean cpInit = false;
     
+    private Set<Member> oldMembers;
+    
     private static Set<String> toAPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
         members.forEach(member -> nodes.add(member.getAddress()));
@@ -159,18 +161,29 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
         // node change event A occurs at time T1, and node change event B occurs at
         // time T2 after a period of time.
         // (T1 < T2)
-        
         Set<Member> copy = new HashSet<>(event.getMembers());
+    
+        if (oldMembers == null) {
+            oldMembers = new HashSet<>(copy);
+        } else {
+            oldMembers.removeAll(copy);
+        }
         
-        // Node change events between different protocols should not block each other.
-        // and we use a single thread pool to inform the consistency layer of node changes,
-        // to avoid multiple tasks simultaneously carrying out the consistency layer of
-        // node changes operation
-        if (Objects.nonNull(apProtocol)) {
-            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+        if (!oldMembers.isEmpty()) {
+            // Node change events between different protocols should not block each other.
+            // and we use a single thread pool to inform the consistency layer of node changes,
+            // to avoid multiple tasks simultaneously carrying out the consistency layer of
+            // node changes operation
+            if (Objects.nonNull(apProtocol)) {
+                ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+            }
+            if (Objects.nonNull(cpProtocol)) {
+                ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
+            }
         }
-        if (Objects.nonNull(cpProtocol)) {
-            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
-        }
+    
+        // remove old members info
+        oldMembers.clear();
+        oldMembers.addAll(copy);
     }
 }
