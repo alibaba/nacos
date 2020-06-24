@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberChangeEvent implements Event {
+public class MembersChangeEvent implements Event {
     
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
     
@@ -59,6 +59,11 @@ public class MemberChangeEvent implements Event {
         return no;
     }
     
+    @Override
+    public String toString() {
+        return "MembersChangeEvent{" + "members=" + members + ", no=" + no + '}';
+    }
+    
     public static final class MemberChangeEventBuilder {
         
         private Collection<Member> allMembers;
@@ -74,12 +79,12 @@ public class MemberChangeEvent implements Event {
         /**
          * build MemberChangeEvent.
          *
-         * @return {@link MemberChangeEvent}
+         * @return {@link MembersChangeEvent}
          */
-        public MemberChangeEvent build() {
-            MemberChangeEvent memberChangeEvent = new MemberChangeEvent();
-            memberChangeEvent.setMembers(allMembers);
-            return memberChangeEvent;
+        public MembersChangeEvent build() {
+            MembersChangeEvent membersChangeEvent = new MembersChangeEvent();
+            membersChangeEvent.setMembers(allMembers);
+            return membersChangeEvent;
         }
     }
 }
