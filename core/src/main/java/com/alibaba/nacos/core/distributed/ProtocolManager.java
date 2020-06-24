@@ -20,7 +20,7 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -154,7 +154,7 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
+    public void onEvent(MembersChangeEvent event) {
         // Here, the sequence of node change events is very important. For example,
         // node change event A occurs at time T1, and node change event B occurs at
         // time T2 after a period of time.

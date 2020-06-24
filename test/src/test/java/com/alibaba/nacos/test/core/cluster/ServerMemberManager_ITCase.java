@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.core.cluster;
 
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Constants;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -109,16 +108,16 @@ public class ServerMemberManager_ITCase {
         AtomicInteger integer = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(1);
         
-        NotifyCenter.registerSubscribe(new Subscribe<MemberChangeEvent>() {
+        NotifyCenter.registerSubscribe(new Subscribe<MembersChangeEvent>() {
             @Override
-            public void onEvent(MemberChangeEvent event) {
+            public void onEvent(MembersChangeEvent event) {
                 integer.incrementAndGet();
                 latch.countDown();
             }
             
             @Override
             public Class<? extends Event> subscribeType() {
-                return MemberChangeEvent.class;
+                return MembersChangeEvent.class;
             }
         });
         Collection<Member> members = memberManager.allMembers();
@@ -142,11 +141,11 @@ public class ServerMemberManager_ITCase {
         AtomicReference<Collection<Member>> healthMembers = new AtomicReference<>();
         CountDownLatch first = new CountDownLatch(1);
         CountDownLatch second = new CountDownLatch(1);
-        NotifyCenter.registerSubscribe(new Subscribe<MemberChangeEvent>() {
+        NotifyCenter.registerSubscribe(new Subscribe<MembersChangeEvent>() {
             @Override
-            public void onEvent(MemberChangeEvent event) {
+            public void onEvent(MembersChangeEvent event) {
                 System.out.println(event);
-                healthMembers.set(event.getHealthMembers());
+                healthMembers.set(MemberUtils.selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
                 if (first.getCount() == 1) {
                     first.countDown();
                     return;
@@ -158,7 +157,7 @@ public class ServerMemberManager_ITCase {
             
             @Override
             public Class<? extends Event> subscribeType() {
-                return MemberChangeEvent.class;
+                return MembersChangeEvent.class;
             }
         });
         
@@ -175,7 +174,6 @@ public class ServerMemberManager_ITCase {
         
         memberManager.memberJoin(map.values());
         
-        GlobalExecutor.scheduleByCommon(memberManager.getHealthCheckTask(), 1_000L);
         first.await();
         Set<Member> copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());

@@ -122,11 +122,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
-    /**
-     * Node health timing check task.
-     */
-    private final MemberHealthCheckTask healthCheckTask = new MemberHealthCheckTask();
-    
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap();
         ApplicationUtils.setContextPath(servletContext.getContextPath());
@@ -168,7 +163,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private void registerClusterEvent() {
         // Register node change events
-        NotifyCenter.registerToPublisher(MemberChangeEvent.class,
+        NotifyCenter.registerToPublisher(MembersChangeEvent.class,
                 ApplicationUtils.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
         
         // The address information of this node needs to be dynamically modified
@@ -199,7 +194,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
     
     public boolean update(Member newMember) {
-        Loggers.CLUSTER.debug("Node information update : {}", newMember);
+        Loggers.CLUSTER.debug("member information update : {}", newMember);
         
         String address = newMember.getAddress();
         newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
@@ -207,6 +202,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         if (!serverList.containsKey(address)) {
             return false;
         }
+        
         serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
             @Override
             public Member apply(String s, Member member) {
@@ -217,6 +213,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 return member;
             }
         });
+        
+        // Node data changes and all listeners need to be notified
+        NotifyCenter.publishEvent(MembersChangeEvent.builder()
+                .members(allMembers())
+                .build());
+        
         return true;
     }
     
@@ -313,7 +315,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Set<Member> healthMembers = MemberUtils.selectTargetMembers(members, member -> {
                 return !NodeState.DOWN.equals(member.getState());
             });
-            Event event = MemberChangeEvent.builder().healthMembers(healthMembers).members(finalMembers).build();
+            Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         }
         
@@ -349,7 +351,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         getSelf().setState(NodeState.UP);
         if (!ApplicationUtils.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
-            GlobalExecutor.scheduleByCommon(this.healthCheckTask, 1_000L);
         }
         ApplicationUtils.setPort(event.getWebServer().getPort());
         ApplicationUtils.setLocalAddress(this.localAddress);
@@ -383,51 +384,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return infoReportTask;
     }
     
-    @JustForTest
-    public MemberHealthCheckTask getHealthCheckTask() {
-        return healthCheckTask;
-    }
-    
     public Map<String, Member> getServerList() {
         return Collections.unmodifiableMap(serverList);
     }
     
     public boolean isInIpList() {
         return isInIpList;
-    }
-    
-    class MemberHealthCheckTask extends Task {
-        
-        private Set<Member> oldHealthMembers;
-    
-        @Override
-        protected void executeBody() {
-            Collection<Member> members = allMembers();
-            Set<Member> healthMembers = MemberUtils.selectTargetMembers(members, member -> {
-                return !NodeState.DOWN.equals(member.getState());
-            });
-            
-            boolean needPublish = false;
-            
-            if (oldHealthMembers != null) {
-                oldHealthMembers.removeAll(healthMembers);
-                if (!oldHealthMembers.isEmpty()) {
-                    needPublish = true;
-                }
-                oldHealthMembers.clear();
-            } else {
-                needPublish = true;
-            }
-            oldHealthMembers = healthMembers;
-            if (needPublish) {
-                NotifyCenter.publishEvent(MemberChangeEvent.builder().healthMembers(healthMembers).members(members).build());
-            }
-        }
-    
-        @Override
-        protected void after() {
-            GlobalExecutor.scheduleByCommon(this, 1_000L);
-        }
     }
     
     // Synchronize the metadata information of a node

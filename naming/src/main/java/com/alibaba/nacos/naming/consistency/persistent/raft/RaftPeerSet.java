@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -299,7 +299,7 @@ public class RaftPeerSet implements MemberChangeListener {
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
+    public void onEvent(MembersChangeEvent event) {
         changePeers(event.getMembers());
     }
     

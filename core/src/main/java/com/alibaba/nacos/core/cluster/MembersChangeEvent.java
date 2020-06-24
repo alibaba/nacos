@@ -32,13 +32,11 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberChangeEvent implements Event {
+public class MembersChangeEvent implements Event {
     
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
     
     private static final long serialVersionUID = 7308126651076668976L;
-    
-    private Collection<Member> healthMembers;
     
     private Collection<Member> members;
     
@@ -46,14 +44,6 @@ public class MemberChangeEvent implements Event {
     
     public static MemberChangeEventBuilder builder() {
         return new MemberChangeEventBuilder();
-    }
-    
-    public Collection<Member> getHealthMembers() {
-        return healthMembers;
-    }
-    
-    public void setHealthMembers(Collection<Member> healthMembers) {
-        this.healthMembers = healthMembers;
     }
     
     public Collection<Member> getMembers() {
@@ -71,21 +61,14 @@ public class MemberChangeEvent implements Event {
     
     @Override
     public String toString() {
-        return "MemberChangeEvent{" + "healthMembers=" + healthMembers + ", members=" + members + ", no=" + no + '}';
+        return "MembersChangeEvent{" + "members=" + members + ", no=" + no + '}';
     }
     
     public static final class MemberChangeEventBuilder {
         
-        private Collection<Member> healthMembers;
-        
         private Collection<Member> allMembers;
         
         private MemberChangeEventBuilder() {
-        }
-        
-        public MemberChangeEventBuilder healthMembers(Collection<Member> healthMembers) {
-            this.healthMembers = healthMembers;
-            return this;
         }
         
         public MemberChangeEventBuilder members(Collection<Member> allMembers) {
@@ -96,13 +79,12 @@ public class MemberChangeEvent implements Event {
         /**
          * build MemberChangeEvent.
          *
-         * @return {@link MemberChangeEvent}
+         * @return {@link MembersChangeEvent}
          */
-        public MemberChangeEvent build() {
-            MemberChangeEvent memberChangeEvent = new MemberChangeEvent();
-            memberChangeEvent.setMembers(allMembers);
-            memberChangeEvent.setHealthMembers(healthMembers);
-            return memberChangeEvent;
+        public MembersChangeEvent build() {
+            MembersChangeEvent membersChangeEvent = new MembersChangeEvent();
+            membersChangeEvent.setMembers(allMembers);
+            return membersChangeEvent;
         }
     }
 }

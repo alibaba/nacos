@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
@@ -99,7 +99,7 @@ public class ServerListManager implements MemberChangeListener {
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
+    public void onEvent(MembersChangeEvent event) {
         this.servers = new ArrayList<>(event.getMembers());
     }
     
