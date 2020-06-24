@@ -60,7 +60,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     public void init() {
         
         try {
-            consistencyService.listen(UtilsAndCommons.getSwitchDomainKey(), this);
+            consistencyService.listen(KeyBuilder.getSwitchDomainKey(), this);
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen switch service failed.", e);
         }
@@ -79,7 +79,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         lock.lock();
         try {
             
-            Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
+            Datum datum = consistencyService.get(KeyBuilder.getSwitchDomainKey());
             SwitchDomain switchDomain;
             
             if (datum != null && datum.value != null) {
@@ -291,7 +291,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             if (debug) {
                 update(switchDomain);
             } else {
-                consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+                consistencyService.put(KeyBuilder.getSwitchDomainKey(), switchDomain);
             }
             
         } finally {
