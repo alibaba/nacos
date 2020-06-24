@@ -82,7 +82,7 @@ public class WatchFileCenter {
     /**
      * Register {@link FileWatcher} in this directory.
      *
-     * @param paths directory
+     * @param paths   directory
      * @param watcher {@link FileWatcher}
      * @return register is success
      * @throws NacosException NacosException
@@ -142,7 +142,7 @@ public class WatchFileCenter {
     /**
      * Deregister {@link FileWatcher} in this directory.
      *
-     * @param path directory
+     * @param path    directory
      * @param watcher {@link FileWatcher}
      * @return deregister is success
      */

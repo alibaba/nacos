@@ -20,7 +20,7 @@ import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -61,6 +61,8 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
     private boolean apInit = false;
     
     private boolean cpInit = false;
+    
+    private Set<Member> oldMembers;
     
     private static Set<String> toAPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
@@ -154,23 +156,34 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
+    public void onEvent(MembersChangeEvent event) {
         // Here, the sequence of node change events is very important. For example,
         // node change event A occurs at time T1, and node change event B occurs at
         // time T2 after a period of time.
         // (T1 < T2)
-        
         Set<Member> copy = new HashSet<>(event.getMembers());
+    
+        if (oldMembers == null) {
+            oldMembers = new HashSet<>(copy);
+        } else {
+            oldMembers.removeAll(copy);
+        }
         
-        // Node change events between different protocols should not block each other.
-        // and we use a single thread pool to inform the consistency layer of node changes,
-        // to avoid multiple tasks simultaneously carrying out the consistency layer of
-        // node changes operation
-        if (Objects.nonNull(apProtocol)) {
-            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+        if (!oldMembers.isEmpty()) {
+            // Node change events between different protocols should not block each other.
+            // and we use a single thread pool to inform the consistency layer of node changes,
+            // to avoid multiple tasks simultaneously carrying out the consistency layer of
+            // node changes operation
+            if (Objects.nonNull(apProtocol)) {
+                ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(copy)));
+            }
+            if (Objects.nonNull(cpProtocol)) {
+                ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
+            }
         }
-        if (Objects.nonNull(cpProtocol)) {
-            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(copy)));
-        }
+    
+        // remove old members info
+        oldMembers.clear();
+        oldMembers.addAll(copy);
     }
 }

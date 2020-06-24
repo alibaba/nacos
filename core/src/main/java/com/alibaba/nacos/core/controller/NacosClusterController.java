@@ -134,7 +134,7 @@ public class NacosClusterController {
     @PostMapping(value = "/switch/lookup")
     public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
         try {
-            memberManager.swithLookup(type);
+            memberManager.switchLookup(type);
             return RestResultUtils.success();
         } catch (Throwable ex) {
             return RestResultUtils.failed(ex.getMessage());
