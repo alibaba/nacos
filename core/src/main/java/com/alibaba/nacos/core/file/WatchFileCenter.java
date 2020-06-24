@@ -25,8 +25,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,7 +82,7 @@ public class WatchFileCenter {
     /**
      * Register {@link FileWatcher} in this directory.
      *
-     * @param paths directory
+     * @param paths   directory
      * @param watcher {@link FileWatcher}
      * @return register is success
      * @throws NacosException NacosException
@@ -131,7 +142,7 @@ public class WatchFileCenter {
     /**
      * Deregister {@link FileWatcher} in this directory.
      *
-     * @param path directory
+     * @param path    directory
      * @param watcher {@link FileWatcher}
      * @return deregister is success
      */
