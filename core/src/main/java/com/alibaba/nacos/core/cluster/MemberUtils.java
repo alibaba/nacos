@@ -118,10 +118,12 @@ public class MemberUtils {
      * @param member {@link Member}
      */
     public static void onSuccess(Member member) {
+        Member cloneMember = new Member();
+        copy(member, cloneMember);
         manager.getMemberAddressInfos().add(member.getAddress());
-        member.setState(NodeState.UP);
-        member.setFailAccessCnt(0);
-        manager.update(member);
+        cloneMember.setState(NodeState.UP);
+        cloneMember.setFailAccessCnt(0);
+        manager.update(cloneMember);
     }
     
     public static void onFail(Member member) {
@@ -135,18 +137,20 @@ public class MemberUtils {
      * @param ex     {@link Throwable}
      */
     public static void onFail(Member member, Throwable ex) {
+        Member cloneMember = new Member();
+        copy(member, cloneMember);
         manager.getMemberAddressInfos().remove(member.getAddress());
-        member.setState(NodeState.SUSPICIOUS);
-        member.setFailAccessCnt(member.getFailAccessCnt() + 1);
+        cloneMember.setState(NodeState.SUSPICIOUS);
+        cloneMember.setFailAccessCnt(member.getFailAccessCnt() + 1);
         int maxFailAccessCnt = ApplicationUtils.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
-        if (member.getFailAccessCnt() > maxFailAccessCnt || StringUtils
+        if (cloneMember.getFailAccessCnt() > maxFailAccessCnt || StringUtils
                 .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
-            member.setState(NodeState.DOWN);
+            cloneMember.setState(NodeState.DOWN);
         }
-        manager.update(member);
+        manager.update(cloneMember);
     }
     
     /**
@@ -209,13 +213,63 @@ public class MemberUtils {
         return nodes;
     }
     
+    /**
+     * Select target members with filter.
+     *
+     * @param members original members
+     * @param filter  filter
+     * @return target members
+     */
     public static Set<Member> selectTargetMembers(Collection<Member> members, Predicate<Member> filter) {
         return members.stream().filter(filter).collect(Collectors.toSet());
     }
     
+    /**
+     * Get address list of members.
+     *
+     * @param members members
+     * @return address list
+     */
     public static List<String> simpleMembers(Collection<Member> members) {
         return members.stream().map(Member::getAddress).sorted()
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
     
+    /**
+     * Judge whether two member is full equals.
+     *
+     * @param actual   actual member
+     * @param expected expected member
+     * @return true if all content is same, otherwise false
+     */
+    public static boolean fullEquals(Member actual, Member expected) {
+        if (null == expected) {
+            return null == actual;
+        }
+        if (!expected.getIp().equals(actual.getIp())) {
+            return false;
+        }
+        if (expected.getPort() != actual.getPort()) {
+            return false;
+        }
+        if (!expected.getAddress().equals(actual.getAddress())) {
+            return false;
+        }
+        if (!expected.getState().equals(actual.getState())) {
+            return false;
+        }
+        return equalsExtendInfo(expected, actual);
+    }
+    
+    private static boolean equalsExtendInfo(Member expected, Member actual) {
+        for (String each : MemberMetaDataConstants.META_KEY_LIST_WITHOUT_LAST_REFRESH_TIME) {
+            if (expected.getExtendInfo().containsKey(each) != actual.getExtendInfo().containsKey(each)) {
+                return false;
+            }
+            if (null != expected.getExtendVal(each) && !expected.getExtendVal(each).equals(actual.getExtendVal(each))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
