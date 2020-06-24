@@ -24,16 +24,16 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
+public interface MemberChangeListener extends Subscribe<MembersChangeEvent> {
     
     /**
      * return NodeChangeEvent.class info.
      *
-     * @return {@link MemberChangeEvent#getClass()}
+     * @return {@link MembersChangeEvent#getClass()}
      */
     @Override
     default Class<? extends Event> subscribeType() {
-        return MemberChangeEvent.class;
+        return MembersChangeEvent.class;
     }
     
     /**

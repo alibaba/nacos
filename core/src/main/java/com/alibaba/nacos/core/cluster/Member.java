@@ -137,7 +137,8 @@ public class Member implements Comparable<Member>, Cloneable {
     
     @Override
     public String toString() {
-        return "Member{" + "address='" + getAddress() + '\'' + '}';
+        return "Member{" + "ip='" + ip + '\'' + ", port=" + port + ", state=" + state + ", extendInfo=" + extendInfo
+                + '}';
     }
     
     @Override

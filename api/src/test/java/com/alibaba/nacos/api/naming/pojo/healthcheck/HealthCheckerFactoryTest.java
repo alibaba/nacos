@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HealthCheckerFactoryTest {
 

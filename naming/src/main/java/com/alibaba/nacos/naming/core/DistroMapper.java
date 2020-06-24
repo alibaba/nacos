@@ -17,8 +17,9 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtils;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
+import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -129,14 +130,16 @@ public class DistroMapper implements MemberChangeListener {
     }
     
     @Override
-    public void onEvent(MemberChangeEvent event) {
+    public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtils.simpleMembers(event.getMembers());
+        List<String> list = MemberUtils.simpleMembers(MemberUtils
+                .selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);
         Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
+        old.clear();
     }
     
     @Override

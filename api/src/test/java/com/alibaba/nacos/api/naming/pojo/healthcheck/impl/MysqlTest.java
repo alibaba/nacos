@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 
 import org.junit.Before;
@@ -25,6 +23,9 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MysqlTest {
 
