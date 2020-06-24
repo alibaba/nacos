@@ -54,7 +54,7 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void test_a_event_can_listen() throws Exception {
+    public void testEventsCanBeSubscribed() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent.class);
         NotifyCenter.registerToPublisher(TestEvent.class, 8);
@@ -121,7 +121,7 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void test_b_ignore_expire_event() throws Exception {
+    public void testCanIgnoreExpireEvent() throws Exception {
         NotifyCenter.registerToPublisher(ExpireEvent.class, 16);
         final AtomicInteger count = new AtomicInteger(0);
         
@@ -165,7 +165,7 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void test_c_no_ignore_expire_event() throws Exception {
+    public void testNoIgnoreExpireEvent() throws Exception {
         NotifyCenter.registerToPublisher(NoExpireEvent.class, 16);
         final AtomicInteger count = new AtomicInteger(0);
         
@@ -219,7 +219,7 @@ public class NotifyCenterTest {
     }
     
     @Test
-    public void test_k_two_slowEvent() throws Exception {
+    public void testSharePublishTwoSlowEvents() throws Exception {
         NotifyCenter.registerToSharePublisher(SlowE1.class);
         NotifyCenter.registerToSharePublisher(SlowE2.class);
         
@@ -293,7 +293,7 @@ public class NotifyCenterTest {
      * @throws Exception
      */
     @Test
-    public void test_notify_smart_event_singlePublisher() throws Exception {
+    public void testSeveralEventsPublishedBySinglePublisher() throws Exception {
         
         final AtomicInteger count1 = new AtomicInteger(0);
         final AtomicInteger count2 = new AtomicInteger(0);
@@ -354,7 +354,7 @@ public class NotifyCenterTest {
      * @throws Exception
      */
     @Test
-    public void test_mutiple_slow_events_can_listen() throws Exception {
+    public void testMutipleSlowEventsListenedBySubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent1.class);
         NotifyCenter.registerToSharePublisher(TestSlowEvent2.class);
@@ -421,7 +421,7 @@ public class NotifyCenterTest {
      * @throws Exception
      */
     @Test
-    public void test_mutiple_slow_events_can_listen_by_smartsubscriber() throws Exception {
+    public void testMutipleSlowEventsListenedBySmartsubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent3.class);
         NotifyCenter.registerToSharePublisher(TestSlowEvent4.class);
@@ -485,7 +485,7 @@ public class NotifyCenterTest {
      * @throws Exception
      */
     @Test
-    public void test_mutiple_kinds_events_can_listen_by_smartsubscriber() throws Exception {
+    public void testMutipleKindsEventsCanListenBySmartsubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent5.class);
         NotifyCenter.registerToPublisher(TestEvent6.class, 1024);
