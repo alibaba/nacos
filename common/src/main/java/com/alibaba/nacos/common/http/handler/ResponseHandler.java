@@ -78,14 +78,22 @@ public final class ResponseHandler {
         String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
         InputStream body = response.getBody();
         T extractBody = null;
+        final boolean typeToStr = String.class.toString().equals(type.toString());
         if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response
-                .getStatusCode()) {
-            extractBody = convert(body, type);
+            .getStatusCode()) {
+            // When the type is string type and the response contentType is [application/json],
+            // then it should be serialized as string
+            if (typeToStr) {
+                extractBody = (T) IoUtils.toString(body, headers.getCharset());
+            } else {
+                extractBody = convert(body, type);
+            }
         }
         if (extractBody == null) {
-            if (!String.class.toString().equals(type.toString())) {
+            if (!typeToStr) {
                 LOGGER.error(
-                        "if the response contentType is not [application/json]," + " only support to java.lang.String");
+                    "if the response contentType is not [application/json]," +
+                    " only support to java.lang.String");
                 throw new NacosDeserializationException(type);
             }
             extractBody = (T) IoUtils.toString(body, headers.getCharset());
