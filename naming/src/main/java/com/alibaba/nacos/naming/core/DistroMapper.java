@@ -132,7 +132,7 @@ public class DistroMapper implements MemberChangeListener {
     public void onEvent(MemberChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtils.simpleMembers(event.getMembers());
+        List<String> list = MemberUtils.simpleMembers(event.getHealthMembers());
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);

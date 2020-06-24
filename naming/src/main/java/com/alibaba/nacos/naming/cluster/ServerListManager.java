@@ -87,7 +87,7 @@ public class ServerListManager implements MemberChangeListener {
      */
     public boolean contains(String serverAddress) {
         for (Member server : getServers()) {
-            if (Objects.equals(server, server.getAddress())) {
+            if (Objects.equals(serverAddress, server.getAddress())) {
                 return true;
             }
         }

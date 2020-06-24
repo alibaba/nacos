@@ -122,6 +122,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     private final MemberInfoReportTask infoReportTask = new MemberInfoReportTask();
     
+    /**
+     * Node health timing check task.
+     */
+    private final MemberHealthCheckTask healthCheckTask = new MemberHealthCheckTask();
+    
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap();
         ApplicationUtils.setContextPath(servletContext.getContextPath());
@@ -205,7 +210,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         serverList.computeIfPresent(address, new BiFunction<String, Member, Member>() {
             @Override
             public Member apply(String s, Member member) {
-                if (!NodeState.UP.equals(newMember.getState())) {
+                if (NodeState.DOWN.equals(newMember.getState())) {
                     memberAddressInfos.remove(newMember.getAddress());
                 }
                 MemberUtils.copy(newMember, member);
@@ -305,7 +310,10 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         // that the event publication is sequential
         if (hasChange) {
             MemberUtils.syncToFile(finalMembers);
-            Event event = MemberChangeEvent.builder().members(finalMembers).build();
+            Set<Member> healthMembers = MemberUtils.selectTargetMembers(members, member -> {
+                return !NodeState.DOWN.equals(member.getState());
+            });
+            Event event = MemberChangeEvent.builder().healthMembers(healthMembers).members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         }
         
@@ -341,6 +349,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         getSelf().setState(NodeState.UP);
         if (!ApplicationUtils.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+            GlobalExecutor.scheduleByCommon(this.healthCheckTask, 1_000L);
         }
         ApplicationUtils.setPort(event.getWebServer().getPort());
         ApplicationUtils.setLocalAddress(this.localAddress);
@@ -369,12 +378,56 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.memberAddressInfos = memberAddressInfos;
     }
     
+    @JustForTest
+    public MemberInfoReportTask getInfoReportTask() {
+        return infoReportTask;
+    }
+    
+    @JustForTest
+    public MemberHealthCheckTask getHealthCheckTask() {
+        return healthCheckTask;
+    }
+    
     public Map<String, Member> getServerList() {
         return Collections.unmodifiableMap(serverList);
     }
     
     public boolean isInIpList() {
         return isInIpList;
+    }
+    
+    class MemberHealthCheckTask extends Task {
+        
+        private Set<Member> oldHealthMembers;
+    
+        @Override
+        protected void executeBody() {
+            Collection<Member> members = allMembers();
+            Set<Member> healthMembers = MemberUtils.selectTargetMembers(members, member -> {
+                return !NodeState.DOWN.equals(member.getState());
+            });
+            
+            boolean needPublish = false;
+            
+            if (oldHealthMembers != null) {
+                oldHealthMembers.removeAll(healthMembers);
+                if (!oldHealthMembers.isEmpty()) {
+                    needPublish = true;
+                }
+                oldHealthMembers.clear();
+            } else {
+                needPublish = true;
+            }
+            oldHealthMembers = healthMembers;
+            if (needPublish) {
+                NotifyCenter.publishEvent(MemberChangeEvent.builder().healthMembers(healthMembers).members(members).build());
+            }
+        }
+    
+        @Override
+        protected void after() {
+            GlobalExecutor.scheduleByCommon(this, 1_000L);
+        }
     }
     
     // Synchronize the metadata information of a node
