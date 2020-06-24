@@ -56,7 +56,7 @@ public class NotifyCenter {
     
     private static final NotifyCenter INSTANCE = new NotifyCenter();
     
-    private EventPublisher sharePublisher;
+    private DefaultSharePublisher sharePublisher;
     
     private static Class<? extends EventPublisher> clazz = null;
     
@@ -100,7 +100,11 @@ public class NotifyCenter {
         };
         
         try {
-            INSTANCE.sharePublisher = publisherFactory.apply(SlowEvent.class, shareBufferSize);
+            
+            // Create and init DefaultSharePublisher instance.
+            INSTANCE.sharePublisher = new DefaultSharePublisher();
+            INSTANCE.sharePublisher.init(SlowEvent.class, shareBufferSize);
+            
         } catch (Throwable ex) {
             LOGGER.error("Service class newInstance has error : {}", ex);
         }
@@ -171,13 +175,19 @@ public class NotifyCenter {
         // based on subclass's subscribeTypes method return list, it can register to publisher.
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
-                addSubscriber(consumer, subscribeType);
+                // For case, producer: defaultSharePublisher -> consumer: smartSubscriber.
+                if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+                    INSTANCE.sharePublisher.addSubscriber(consumer, subscribeType);
+                } else {
+                    // For case, producer: defaultPublisher -> consumer: subscriber.
+                    addSubscriber(consumer, subscribeType);
+                }
             }
             return;
         }
         
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.addSubscriber(consumer);
+            INSTANCE.sharePublisher.addSubscriber(consumer, cls);
             return;
         }
         
@@ -195,7 +205,10 @@ public class NotifyCenter {
             throws NacosException {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
+        synchronized (NotifyCenter.class) {
+            // MapUtils.computeIfAbsent is a unsafe method.
+            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
+        }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);
     }
@@ -209,12 +222,17 @@ public class NotifyCenter {
         final Class<? extends Event> cls = consumer.subscribeType();
         if (consumer instanceof SmartSubscriber) {
             for (Class<? extends Event> subscribeType : ((SmartSubscriber) consumer).subscribeTypes()) {
-                removeSubscriber(consumer, subscribeType);
+                if (ClassUtils.isAssignableFrom(SlowEvent.class, subscribeType)) {
+                    INSTANCE.sharePublisher.removeSubscriber(consumer, subscribeType);
+                } else {
+                    removeSubscriber(consumer, subscribeType);
+                }
             }
             return;
         }
+        
         if (ClassUtils.isAssignableFrom(SlowEvent.class, cls)) {
-            INSTANCE.sharePublisher.removeSubscriber(consumer);
+            INSTANCE.sharePublisher.removeSubscriber(consumer, cls);
             return;
         }
         
@@ -300,7 +318,10 @@ public class NotifyCenter {
         }
         
         final String topic = ClassUtils.getCanonicalName(eventType);
-        MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
+        synchronized (NotifyCenter.class) {
+            // MapUtils.computeIfAbsent is a unsafe method.
+            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, eventType, queueMaxSize);
+        }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         return publisher;
     }
