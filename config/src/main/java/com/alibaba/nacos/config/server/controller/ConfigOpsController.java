@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
@@ -22,8 +23,8 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -51,101 +52,104 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 管理控制器。
+ * Manage controllers.
  *
  * @author Nacos
  */
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
 public class ConfigOpsController {
-
-	private static final Logger log = LoggerFactory.getLogger(ConfigOpsController.class);
-
-	protected final PersistService persistService;
-
-	private final DumpService dumpService;
-
-	@Autowired
-	public ConfigOpsController(PersistService persistService, DumpService dumpService) {
-		this.persistService = persistService;
-		this.dumpService = dumpService;
-	}
-
-	/**
-	 * ops call
-	 */
-	@PostMapping(value = "/localCache")
-	public String updateLocalCacheFromStore() {
-		log.info("start to dump all data from store.");
-		dumpService.dumpAll();
-		log.info("finish to dump all data from store.");
-		return HttpServletResponse.SC_OK + "";
-	}
-
-	@PutMapping(value = "/log")
-	public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
-		LogUtil.setLogLevel(logName, logLevel);
-		return HttpServletResponse.SC_OK + "";
-	}
-
-	// The interface to the Derby operations query can only run select statements
-	// and is a direct query to the native Derby database without any additional logic
-
-	// TODO In a future release, the front page should appear operable
-
-	@GetMapping(value = "/derby")
-	public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
-		String selectSign = "select";
-		String limitSign = "ROWS FETCH NEXT";
-		String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
-		try {
-			if (PropertyUtil.isEmbeddedStorage()) {
-				LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
-						.getInstance().getDataSource();
-				if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
-					if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
-						sql += limit;
-					}
-					JdbcTemplate template = dataSourceService.getJdbcTemplate();
-					List<Map<String, Object>> result = template.queryForList(sql);
-					return RestResultUtils.success(result);
-				}
-				return RestResultUtils.failed("Only query statements are allowed to be executed");
-			}
-			return RestResultUtils.failed("The current storage mode is not Derby");
-		} catch (Exception e) {
-			return RestResultUtils.failed(e.getMessage());
-		}
-	}
-
-	// TODO In a future release, the front page should appear operable
-
-	// mysqldump --defaults-file="XXX" --host=0.0.0.0 --protocol=tcp --user=XXX --extended-insert=FALSE --complete-insert=TRUE
-	// --skip-triggers --no-create-info --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
-
-	@PostMapping(value = "/data/removal")
-	@Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
-	public DeferredResult<RestResult<String>> importDerby(
-			@RequestParam(value = "file") MultipartFile multipartFile) {
-		DeferredResult<RestResult<String>> response = new DeferredResult<>();
-		if (!PropertyUtil.isEmbeddedStorage()) {
-			response.setResult(
-					RestResultUtils.failed("Limited to embedded storage mode"));
-			return response;
-		}
-		DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
-		WebUtils.onFileUpload(multipartFile, file -> {
-			NotifyCenter.publishEvent(new DerbyImportEvent(false));
-			databaseOperate.dataImport(file).whenComplete((result, ex) -> {
-				NotifyCenter.publishEvent(new DerbyImportEvent(true));
-				if (Objects.nonNull(ex)) {
-					response.setResult(RestResultUtils.failed(ex.getMessage()));
-					return;
-				}
-				response.setResult(result);
-			});
-		}, response);
-		return response;
-	}
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);
+    
+    protected final PersistService persistService;
+    
+    private final DumpService dumpService;
+    
+    @Autowired
+    public ConfigOpsController(PersistService persistService, DumpService dumpService) {
+        this.persistService = persistService;
+        this.dumpService = dumpService;
+    }
+    
+    /**
+     * Manually trigger dump of a local configuration file.
+     */
+    @PostMapping(value = "/localCache")
+    public String updateLocalCacheFromStore() {
+        LOGGER.info("start to dump all data from store.");
+        dumpService.dumpAll();
+        LOGGER.info("finish to dump all data from store.");
+        return HttpServletResponse.SC_OK + "";
+    }
+    
+    @PutMapping(value = "/log")
+    public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        LogUtil.setLogLevel(logName, logLevel);
+        return HttpServletResponse.SC_OK + "";
+    }
+    
+    /**
+     * // TODO In a future release, the front page should appear operable The interface to the Derby operations query
+     * can only run select statements and is a direct query to the native Derby database without any additional logic.
+     *
+     * @param sql The query
+     * @return {@link RestResult}
+     */
+    @GetMapping(value = "/derby")
+    public RestResult<Object> derbyOps(@RequestParam(value = "sql") String sql) {
+        String selectSign = "select";
+        String limitSign = "ROWS FETCH NEXT";
+        String limit = " OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY";
+        try {
+            if (PropertyUtil.isEmbeddedStorage()) {
+                LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
+                        .getInstance().getDataSource();
+                if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
+                    if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
+                        sql += limit;
+                    }
+                    JdbcTemplate template = dataSourceService.getJdbcTemplate();
+                    List<Map<String, Object>> result = template.queryForList(sql);
+                    return RestResultUtils.success(result);
+                }
+                return RestResultUtils.failed("Only query statements are allowed to be executed");
+            }
+            return RestResultUtils.failed("The current storage mode is not Derby");
+        } catch (Exception e) {
+            return RestResultUtils.failed(e.getMessage());
+        }
+    }
+    
+    /**
+     * // TODO the front page should appear operable The external data source is imported into derby.
+     * <p>mysqldump --defaults-file="XXX" --host=0.0.0.0 --protocol=tcp --user=XXX --extended-insert=FALSE \
+     * --complete-insert=TRUE \ --skip-triggers --no-create-info --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
+     *
+     * @param multipartFile {@link MultipartFile}
+     * @return {@link DeferredResult}
+     */
+    @PostMapping(value = "/data/removal")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
+    public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
+        DeferredResult<RestResult<String>> response = new DeferredResult<>();
+        if (!PropertyUtil.isEmbeddedStorage()) {
+            response.setResult(RestResultUtils.failed("Limited to embedded storage mode"));
+            return response;
+        }
+        DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
+        WebUtils.onFileUpload(multipartFile, file -> {
+            NotifyCenter.publishEvent(new DerbyImportEvent(false));
+            databaseOperate.dataImport(file).whenComplete((result, ex) -> {
+                NotifyCenter.publishEvent(new DerbyImportEvent(true));
+                if (Objects.nonNull(ex)) {
+                    response.setResult(RestResultUtils.failed(ex.getMessage()));
+                    return;
+                }
+                response.setResult(result);
+            });
+        }, response);
+        return response;
+    }
+    
 }
