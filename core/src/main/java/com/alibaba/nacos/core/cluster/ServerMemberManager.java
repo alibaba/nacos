@@ -201,8 +201,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CLUSTER.debug("member information update : {}", newMember);
         
         String address = newMember.getAddress();
-        newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
-        
         if (!serverList.containsKey(address)) {
             return false;
         }
@@ -211,12 +209,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             if (NodeState.DOWN.equals(newMember.getState())) {
                 memberAddressInfos.remove(newMember.getAddress());
             }
-            MemberUtils.copy(newMember, member);
+            if (!MemberUtils.fullEquals(newMember, member)) {
+                newMember.setExtendVal(MemberMetaDataConstants.LAST_REFRESH_TIME, System.currentTimeMillis());
+                MemberUtils.copy(newMember, member);
+                // member data changes and all listeners need to be notified
+                NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
+            }
             return member;
         });
-        
-        // member data changes and all listeners need to be notified
-        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
         
         return true;
     }
@@ -309,18 +309,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             tmpAddressInfo.add(address);
         }
         
-        Map<String, Member> oldList = serverList;
-        Set<String> oldSet = memberAddressInfos;
-        
         serverList = tmpMap;
         memberAddressInfos = tmpAddressInfo;
         
         Collection<Member> finalMembers = allMembers();
         
         Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
-        
-        oldList.clear();
-        oldSet.clear();
         
         // Persist the current cluster node information to cluster.conf
         // <important> need to put the event publication into a synchronized block to ensure
