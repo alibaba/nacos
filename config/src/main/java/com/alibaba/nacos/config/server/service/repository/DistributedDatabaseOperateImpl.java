@@ -19,6 +19,9 @@ package com.alibaba.nacos.config.server.service.repository;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -49,9 +52,6 @@ import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.google.common.base.Preconditions;
@@ -169,7 +169,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		// Register the snapshot load event
 		NotifyCenter.registerToSharePublisher(DerbyLoadEvent.class);
 
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<RaftDBErrorEvent>() {
 			@Override
 			public void onEvent(RaftDBErrorEvent event) {
 				dataSourceService.setHealthStatus("DOWN");
@@ -182,8 +182,8 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP
 		});
 
 		NotifyCenter.registerToPublisher(ConfigDumpEvent.class,
-				NotifyCenter.RING_BUFFER_SIZE);
-		NotifyCenter.registerSubscribe(new DumpConfigHandler());
+				NotifyCenter.ringBufferSize);
+		NotifyCenter.registerSubscriber(new DumpConfigHandler());
 
 		this.protocol.addLogProcessors(Collections.singletonList(this));
 		LogUtil.defaultLog.info("use DistributedTransactionServicesImpl");

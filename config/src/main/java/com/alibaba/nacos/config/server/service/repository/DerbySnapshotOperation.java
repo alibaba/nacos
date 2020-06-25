@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;
@@ -44,6 +44,8 @@ import java.util.zip.Checksum;
 import javax.sql.DataSource;
 
 /**
+ * DerbySnapshotOperation.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbySnapshotOperation implements SnapshotOperation {

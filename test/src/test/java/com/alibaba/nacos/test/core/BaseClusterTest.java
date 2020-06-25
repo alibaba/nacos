@@ -19,17 +19,18 @@ package com.alibaba.nacos.test.core;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
@@ -83,18 +84,22 @@ public class BaseClusterTest extends HttpClient4Test {
 		String ip = InetUtils.getSelfIp();
 		clusterInfo = "nacos.member.list=" + ip + ":8847," + ip
 				+ ":8848," + ip + ":8849";
-
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
-			@Override
-			public void onEvent(RaftDBErrorEvent event) {
-				System.out.print(event.getEx());
-			}
-
-			@Override
-			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorEvent.class;
-			}
-		});
+		
+		try {
+			NotifyCenter.registerSubscriber(new Subscriber<RaftDBErrorEvent>() {
+				@Override
+				public void onEvent(RaftDBErrorEvent event) {
+					System.out.print(event.getEx());
+				}
+	
+				@Override
+				public Class<? extends Event> subscribeType() {
+					return RaftDBErrorEvent.class;
+				}
+			});
+		} catch (NacosException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@BeforeClass

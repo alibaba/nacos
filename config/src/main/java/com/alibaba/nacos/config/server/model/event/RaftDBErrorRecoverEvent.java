@@ -17,14 +17,15 @@
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.Event;
 
 /**
+ * RaftDBErrorRecoverEvent.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 @JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
+public class RaftDBErrorRecoverEvent extends Event {
 
 }

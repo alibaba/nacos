@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -32,9 +33,9 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
 
@@ -123,36 +124,39 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
-            NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
-                @Override
-                public void onEvent(RaftEvent event) {
-                    Loggers.RAFT.info("This Raft event changes : {}", event);
-                    final String groupId = event.getGroupId();
-                    Map<String, Map<String, Object>> value = new HashMap<>();
-                    Map<String, Object> properties = new HashMap<>();
-                    final String leader = event.getLeader();
-                    final Long term = event.getTerm();
-                    final List<String> raftClusterInfo = event.getRaftClusterInfo();
+            try {
+                NotifyCenter.registerSubscriber(new Subscriber<RaftEvent>() {
+                    @Override
+                    public void onEvent(RaftEvent event) {
+                        Loggers.RAFT.info("This Raft event changes : {}", event);
+                        final String groupId = event.getGroupId();
+                        Map<String, Map<String, Object>> value = new HashMap<>();
+                        Map<String, Object> properties = new HashMap<>();
+                        final String leader = event.getLeader();
+                        final Long term = event.getTerm();
+                        final List<String> raftClusterInfo = event.getRaftClusterInfo();
+                        
+                        // Leader information needs to be selectively updated. If it is valid data,
+                        // the information in the protocol metadata is updated.
+                        MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
+                        MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
+                        MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
+                        
+                        value.put(groupId, properties);
+                        metaData.load(value);
+                        
+                        // The metadata information is injected into the metadata information of the node
+                        injectProtocolMetaData(metaData);
+                    }
                     
-                    // Leader information needs to be selectively updated. If it is valid data,
-                    // the information in the protocol metadata is updated.
-                    MapUtils.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
-                    MapUtils.putIfValNoNull(properties, MetadataKey.TERM_META_DATA, term);
-                    MapUtils.putIfValNoEmpty(properties, MetadataKey.RAFT_GROUP_MEMBER, raftClusterInfo);
-                    
-                    value.put(groupId, properties);
-                    metaData.load(value);
-                    
-                    // The metadata information is injected into the metadata information of the node
-                    injectProtocolMetaData(metaData);
-                }
-                
-                @Override
-                public Class<? extends Event> subscribeType() {
-                    return RaftEvent.class;
-                }
-                
-            });
+                    @Override
+                    public Class<? extends Event> subscribeType() {
+                        return RaftEvent.class;
+                    }
+                });
+            } catch (NacosException ex) {
+                ex.printStackTrace();
+            }
         }
     }
     

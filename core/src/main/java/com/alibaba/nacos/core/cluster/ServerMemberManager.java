@@ -25,13 +25,13 @@ import com.alibaba.nacos.common.http.NAsyncHttpClient;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Constants;
@@ -159,14 +159,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.lookup.start();
     }
     
-    private void registerClusterEvent() {
+    private void registerClusterEvent() throws NacosException {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
                 ApplicationUtils.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
-        NotifyCenter.registerSubscribe(new Subscribe<InetUtils.IPChangeEvent>() {
+        NotifyCenter.registerSubscriber(new Subscriber<InetUtils.IPChangeEvent>() {
             @Override
             public void onEvent(InetUtils.IPChangeEvent event) {
                 String oldAddress = event.getOldIp() + ":" + port;
@@ -216,9 +216,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         });
         
         // member data changes and all listeners need to be notified
-        NotifyCenter.publishEvent(MembersChangeEvent.builder()
-                .members(allMembers())
-                .build());
+        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
         
         return true;
     }
