@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 public abstract class MemberChangeListener extends Subscriber<MembersChangeEvent> {
     
     @Override
-    public Class<? extends Event> subscribeType() {
+    public final Class<? extends Event> subscribeType() {
         return MembersChangeEvent.class;
     }
     

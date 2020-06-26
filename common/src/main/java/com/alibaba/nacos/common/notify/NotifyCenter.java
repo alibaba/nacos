@@ -88,7 +88,7 @@ public class NotifyCenter {
         publisherFactory = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
             
             @Override
-            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) throws NacosRuntimeException {
+            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
                 try {
                     EventPublisher publisher = clazz.newInstance();
                     publisher.init(cls, buffer);

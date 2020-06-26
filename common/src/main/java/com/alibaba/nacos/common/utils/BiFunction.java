@@ -37,5 +37,5 @@ public interface BiFunction<T, U, R> {
      * @return the function result
      * @throws NacosRuntimeException function throws NacosRuntimeException
      */
-    R apply(T t, U u) throws NacosRuntimeException;
+    R apply(T t, U u);
 }
