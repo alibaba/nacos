@@ -52,12 +52,6 @@ public class ConfigDerbyImport_CITCase {
     @Autowired
     private ApplicationContext context;
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanResource() throws Throwable {
-        DiskUtils.deleteDirectory(Paths.get(ApplicationUtils.getNacosHome(), "data").toString());
-    }
-    
     @Test()
     public void testDerbyImport() throws Throwable {
         DatabaseOperate operate = context.getBean(DatabaseOperate.class);
