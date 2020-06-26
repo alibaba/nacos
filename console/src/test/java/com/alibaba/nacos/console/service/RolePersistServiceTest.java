@@ -40,8 +40,7 @@ public class RolePersistServiceTest extends BaseTest {
 
     @Before
     public void before() {
-        String data = readClassPath("test-data/roles.json");
-        roles = JacksonUtils.toObj(data, Roles.class);
+        roles = JacksonUtils.toObj(TestData.ROLES_JSON, Roles.class);
     }
 
 

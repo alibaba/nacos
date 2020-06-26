@@ -1,9 +1,0 @@
-{
-    "dataId": "userService",
-    "groupId": "DEFAULT_GROUP",
-    "datumId": "1",
-    "content": "logEnabled=true",
-    "gmtModified": 1591202332090,
-    "appName": "userService",
-    "tenantId": "userService"
-}

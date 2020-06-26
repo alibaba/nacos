@@ -42,8 +42,7 @@ public class PermissionPersistServiceTest extends BaseTest {
 
     @Before
     public void before() {
-        String data = readClassPath("test-data/permissions.json");
-        permissions = JacksonUtils.toObj(data, Permissions.class);
+        permissions = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, Permissions.class);
     }
 
     @Autowired

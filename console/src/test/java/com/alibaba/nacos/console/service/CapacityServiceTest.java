@@ -56,12 +56,9 @@ public class CapacityServiceTest extends BaseTest {
 
     @Before
     public void before() {
-        String data = readClassPath("test-data/config_info.json");
-        configInfo = JacksonUtils.toObj(data, ConfigInfo.class);
-        String tenantCapacityStr = readClassPath("test-data/tenant_capacity.json");
-        tenantCapacity = JacksonUtils.toObj(tenantCapacityStr, TenantCapacity.class);
-        String groupCapacityStr = readClassPath("test-data/group_capacity.json");
-        groupCapacity = JacksonUtils.toObj(groupCapacityStr, GroupCapacity.class);
+        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfo.class);
+        tenantCapacity = JacksonUtils.toObj(TestData.TENANT_CAPACITY_JSON, TenantCapacity.class);
+        groupCapacity = JacksonUtils.toObj(TestData.GROUP_CAPACITY_JSON, GroupCapacity.class);
 
         TenantCapacity result = tenantCapacityRepository.findOne(QTenantCapacity
             .tenantCapacity.tenantId.eq(tenantCapacity.getTenantId())).orElse(null);

@@ -44,8 +44,7 @@ public class UserPersistServiceTest extends BaseTest {
 
     @Before
     public void before() {
-        String data = readClassPath("test-data/users.json");
-        users = JacksonUtils.toObj(data, Users.class);
+        users = JacksonUtils.toObj(TestData.USERS_JSON, Users.class);
     }
 
 

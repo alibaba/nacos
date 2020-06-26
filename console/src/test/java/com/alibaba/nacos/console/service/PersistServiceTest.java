@@ -88,24 +88,16 @@ public class PersistServiceTest extends BaseTest {
     public void before() {
         initData();
         insertOrUpdateTest();
-//        configInfoTagRepository.save(configInfoTag);
     }
 
     private void initData() {
-        String configInfoStr = readClassPath("test-data/config_info.json");
-        configInfo = JacksonUtils.toObj(configInfoStr, ConfigInfo.class);
-        String configInfoTagStr = readClassPath("test-data/config_info_tag.json");
-        configInfoTag = JacksonUtils.toObj(configInfoTagStr, ConfigInfoTag.class);
-        String configInfoBetaStr = readClassPath("test-data/config_info_beta.json");
-        configInfoBeta = JacksonUtils.toObj(configInfoBetaStr, ConfigInfoBeta.class);
-        String configTagsRelationStr = readClassPath("test-data/config_tags_relation.json");
-        configTagsRelation = JacksonUtils.toObj(configTagsRelationStr, ConfigTagsRelation.class);
-        String hisConfigInfoStr = readClassPath("test-data/his_config_info.json");
-        hisConfigInfo = JacksonUtils.toObj(hisConfigInfoStr, HisConfigInfo.class);
-        String tenantInfoStr = readClassPath("test-data/tenant_info.json");
-        tenantInfo = JacksonUtils.toObj(tenantInfoStr, TenantInfo.class);
-        String configInfoAggrStr = readClassPath("test-data/config_info_aggr.json");
-        configInfoAggr = JacksonUtils.toObj(configInfoAggrStr, ConfigInfoAggr.class);
+        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfo.class);
+        configInfoTag = JacksonUtils.toObj(TestData.CONFIG_INFO_TAG_JSON, ConfigInfoTag.class);
+        configInfoBeta = JacksonUtils.toObj(TestData.CONFIG_INFO_BETA_JSON, ConfigInfoBeta.class);
+        configTagsRelation = JacksonUtils.toObj(TestData.CONFIG_TAGS_RELATION_JSON, ConfigTagsRelation.class);
+        hisConfigInfo = JacksonUtils.toObj(TestData.HIS_CONFIG_INFO_JSON, HisConfigInfo.class);
+        tenantInfo = JacksonUtils.toObj(TestData.TENANT_INFO_JSON, TenantInfo.class);
+        configInfoAggr = JacksonUtils.toObj(TestData.CONFIG_INFO_AGGR_JSON, ConfigInfoAggr.class);
     }
 
 

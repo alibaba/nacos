@@ -1,5 +1,0 @@
-{
-    "role": "ROLE_ADMIN",
-    "resource": ":*:*",
-    "action": "rw"
-}
