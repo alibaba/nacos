@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
 import java.io.Serializable;
@@ -24,17 +25,18 @@ import java.io.Serializable;
  * @since 1.2.0
  */
 public class User implements Serializable {
-
+    
     private static final long serialVersionUID = -8002966873087151367L;
+    
     /**
-     * Unique string representing user
+     * Unique string representing user.
      */
     private String userName;
-
+    
     public String getUserName() {
         return userName;
     }
-
+    
     public void setUserName(String userName) {
         this.userName = userName;
     }

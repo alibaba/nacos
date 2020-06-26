@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -25,32 +26,37 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.RandomUtils;
 
 /**
+ * Health check task.
+ *
  * @author nacos
  */
 public class HealthCheckTask implements Runnable {
-
+    
     private Cluster cluster;
-
-    private long checkRTNormalized = -1;
-    private long checkRTBest = -1;
-    private long checkRTWorst = -1;
-
-    private long checkRTLast = -1;
-    private long checkRTLastLast = -1;
-
+    
+    private long checkRtNormalized = -1;
+    
+    private long checkRtBest = -1;
+    
+    private long checkRtWorst = -1;
+    
+    private long checkRtLast = -1;
+    
+    private long checkRtLastLast = -1;
+    
     private long startTime;
-
+    
     private volatile boolean cancelled = false;
-
+    
     @JsonIgnore
-    private DistroMapper distroMapper;
-
+    private final DistroMapper distroMapper;
+    
     @JsonIgnore
-    private SwitchDomain switchDomain;
-
+    private final SwitchDomain switchDomain;
+    
     @JsonIgnore
-    private HealthCheckProcessor healthCheckProcessor;
-
+    private final HealthCheckProcessor healthCheckProcessor;
+    
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
         distroMapper = ApplicationUtils.getBean(DistroMapper.class);
@@ -58,116 +64,118 @@ public class HealthCheckTask implements Runnable {
         healthCheckProcessor = ApplicationUtils.getBean(HealthCheckProcessorDelegate.class);
         initCheckRT();
     }
-
-    public void initCheckRT() {
+    
+    private void initCheckRT() {
         // first check time delay
-        checkRTNormalized = 2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
-        checkRTBest = Long.MAX_VALUE;
-        checkRTWorst = 0L;
+        checkRtNormalized =
+                2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
+        checkRtBest = Long.MAX_VALUE;
+        checkRtWorst = 0L;
     }
-
+    
     @Override
     public void run() {
-
+        
         try {
-            if (distroMapper.responsible(cluster.getService().getName()) &&
-                switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
+            if (distroMapper.responsible(cluster.getService().getName()) && switchDomain
+                    .isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);
                 if (Loggers.EVT_LOG.isDebugEnabled()) {
-                    Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
+                    Loggers.EVT_LOG
+                            .debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
                 }
             }
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
-                cluster.getService().getName(), cluster.getName(), e);
+            Loggers.SRV_LOG
+                    .error("[HEALTH-CHECK] error while process health check for {}:{}", cluster.getService().getName(),
+                            cluster.getName(), e);
         } finally {
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
-
+                
                 // worst == 0 means never checked
-                if (this.getCheckRTWorst() > 0
-                    && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
-                    && distroMapper.responsible(cluster.getService().getName())) {
+                if (this.getCheckRtWorst() > 0 && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
+                        && distroMapper.responsible(cluster.getService().getName())) {
                     // TLog doesn't support float so we must convert it into long
-                    long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
-                        / this.getCheckRTLastLast();
-
-                    this.setCheckRTLastLast(this.getCheckRTLast());
-
+                    long diff =
+                            ((this.getCheckRtLast() - this.getCheckRtLastLast()) * 10000) / this.getCheckRtLastLast();
+                    
+                    this.setCheckRtLastLast(this.getCheckRtLast());
+                    
                     Cluster cluster = this.getCluster();
-
+                    
                     if (Loggers.CHECK_RT.isDebugEnabled()) {
                         Loggers.CHECK_RT.debug("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                            cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
-                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                            this.getCheckRTLast(), diff);
+                                cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                                this.getCheckRtNormalized(), this.getCheckRtWorst(), this.getCheckRtBest(),
+                                this.getCheckRtLast(), diff);
                     }
                 }
             }
         }
     }
-
+    
     public Cluster getCluster() {
         return cluster;
     }
-
+    
     public void setCluster(Cluster cluster) {
         this.cluster = cluster;
     }
-
-    public long getCheckRTNormalized() {
-        return checkRTNormalized;
+    
+    public long getCheckRtNormalized() {
+        return checkRtNormalized;
     }
-
-    public long getCheckRTBest() {
-        return checkRTBest;
+    
+    public long getCheckRtBest() {
+        return checkRtBest;
     }
-
-    public long getCheckRTWorst() {
-        return checkRTWorst;
+    
+    public long getCheckRtWorst() {
+        return checkRtWorst;
     }
-
-    public void setCheckRTWorst(long checkRTWorst) {
-        this.checkRTWorst = checkRTWorst;
+    
+    public void setCheckRtWorst(long checkRtWorst) {
+        this.checkRtWorst = checkRtWorst;
     }
-
-    public void setCheckRTBest(long checkRTBest) {
-        this.checkRTBest = checkRTBest;
+    
+    public void setCheckRtBest(long checkRtBest) {
+        this.checkRtBest = checkRtBest;
     }
-
-    public void setCheckRTNormalized(long checkRTNormalized) {
-        this.checkRTNormalized = checkRTNormalized;
+    
+    public void setCheckRtNormalized(long checkRtNormalized) {
+        this.checkRtNormalized = checkRtNormalized;
     }
-
+    
     public boolean isCancelled() {
         return cancelled;
     }
-
+    
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;
     }
-
+    
     public long getStartTime() {
         return startTime;
     }
-
+    
     public void setStartTime(long startTime) {
         this.startTime = startTime;
     }
-
-    public long getCheckRTLast() {
-        return checkRTLast;
+    
+    public long getCheckRtLast() {
+        return checkRtLast;
     }
-
-    public void setCheckRTLast(long checkRTLast) {
-        this.checkRTLast = checkRTLast;
+    
+    public void setCheckRtLast(long checkRtLast) {
+        this.checkRtLast = checkRtLast;
     }
-
-    public long getCheckRTLastLast() {
-        return checkRTLastLast;
+    
+    public long getCheckRtLastLast() {
+        return checkRtLastLast;
     }
-
-    public void setCheckRTLastLast(long checkRTLastLast) {
-        this.checkRTLastLast = checkRTLastLast;
+    
+    public void setCheckRtLastLast(long checkRtLastLast) {
+        this.checkRtLastLast = checkRtLastLast;
     }
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.pojo;
 
 import com.alibaba.nacos.api.naming.pojo.Cluster;
@@ -21,35 +22,34 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import java.util.List;
 
 /**
+ * Service manager.
+ *
  * @author nkorange
  */
 public class ServiceDetailView {
-
+    
     private Service service;
-
+    
     private List<Cluster> clusters;
-
+    
     public Service getService() {
         return service;
     }
-
+    
     public void setService(Service service) {
         this.service = service;
     }
-
+    
     public List<Cluster> getClusters() {
         return clusters;
     }
-
+    
     public void setClusters(List<Cluster> clusters) {
         this.clusters = clusters;
     }
-
+    
     @Override
     public String toString() {
-        return "ServiceDetailView{" +
-            "service=" + service +
-            ", clusters=" + clusters +
-            '}';
+        return "ServiceDetailView{" + "service=" + service + ", clusters=" + clusters + '}';
     }
 }

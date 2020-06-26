@@ -24,17 +24,17 @@ import com.alibaba.nacos.core.utils.InetUtils;
 import java.util.Collections;
 
 /**
- * Member node addressing mode in stand-alone mode
+ * Member node addressing mode in stand-alone mode.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class StandaloneMemberLookup extends AbstractMemberLookup {
-
-	@Override
-	public void start() {
-		if (start.compareAndSet(false, true)) {
-			String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort();
-			afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
-		}
-	}
+    
+    @Override
+    public void start() {
+        if (start.compareAndSet(false, true)) {
+            String url = InetUtils.getSelfIp() + ":" + ApplicationUtils.getPort();
+            afterLookup(MemberUtils.readServerConf(Collections.singletonList(url)));
+        }
+    }
 }

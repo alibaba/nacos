@@ -30,8 +30,10 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -89,6 +91,12 @@ public class ConfigAPI_CITCase {
             e.printStackTrace();
             Assert.fail();
         }
+    }
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
     }
 
     /**
@@ -383,10 +391,13 @@ public class ConfigAPI_CITCase {
         final AtomicInteger count = new AtomicInteger(0);
         final String dataId = "nacos_addListener_3";
         final String group = "nacos_addListener_3";
-        final String content = "test-abc";
-        final String newContent = "nacos_addListener_3";
+        final String content = "test-abc-" + System.currentTimeMillis();
+        final String newContent = "nacos_addListener_3-" + System.currentTimeMillis();
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
+        
+        // Maximum assurance level notification has been performed
+        ThreadUtils.sleep(5000);
 
         Listener ml = new AbstractListener() {
             @Override
@@ -395,7 +406,8 @@ public class ConfigAPI_CITCase {
                 Assert.assertEquals(newContent, configInfo);
             }
         };
-        iconfig.addListener(dataId, group, ml);
+        String receive = iconfig.getConfigAndSignListener(dataId, group, 5000L, ml);
+        Assert.assertEquals(content, receive);
         result = iconfig.publishConfig(dataId, group, newContent);
         Assert.assertTrue(result);
         // Get enough sleep to ensure that the monitor is triggered only once

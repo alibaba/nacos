@@ -25,8 +25,10 @@ import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,6 +48,12 @@ public class ConfigLongPollReturnChanges_CITCase {
     private int port;
 
     private ConfigService configService;
+    
+    @BeforeClass
+    @AfterClass
+    public static void cleanClientCache() throws Exception {
+        ConfigCleanUtils.cleanClientCache();
+    }
 
     @Before
     public void init() throws NacosException {

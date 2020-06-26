@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.lifecycle;
 
+package com.alibaba.nacos.common.lifecycle;
 
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * An interface is used to define the resource's close and shutdown,
- * such as IO Connection and ThreadPool.
+ * An interface is used to define the resource's close and shutdown, such as IO Connection and ThreadPool.
  *
  * @author zongtanghu
- *
  */
 public interface Closeable {
-
+    
     /**
      * Shutdown the Resources, such as Thread Pool.
      *
      * @throws NacosException exception.
      */
     public void shutdown() throws NacosException;
-
+    
 }

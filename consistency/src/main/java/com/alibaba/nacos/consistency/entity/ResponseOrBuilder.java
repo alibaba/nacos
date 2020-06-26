@@ -19,27 +19,28 @@
 
 package com.alibaba.nacos.consistency.entity;
 
+@SuppressWarnings("all")
 public interface ResponseOrBuilder extends
-    // @@protoc_insertion_point(interface_extends:Response)
-    com.google.protobuf.MessageOrBuilder {
-
-  /**
-   * <code>bytes data = 1;</code>
-   */
-  com.google.protobuf.ByteString getData();
-
-  /**
-   * <code>string errMsg = 2;</code>
-   */
-  String getErrMsg();
-  /**
-   * <code>string errMsg = 2;</code>
-   */
-  com.google.protobuf.ByteString
-      getErrMsgBytes();
-
-  /**
-   * <code>bool success = 3;</code>
-   */
-  boolean getSuccess();
+        // @@protoc_insertion_point(interface_extends:Response)
+        com.google.protobuf.MessageOrBuilder {
+    
+    /**
+     * <code>bytes data = 1;</code>
+     */
+    com.google.protobuf.ByteString getData();
+    
+    /**
+     * <code>string errMsg = 2;</code>
+     */
+    String getErrMsg();
+    
+    /**
+     * <code>string errMsg = 2;</code>
+     */
+    com.google.protobuf.ByteString getErrMsgBytes();
+    
+    /**
+     * <code>bool success = 3;</code>
+     */
+    boolean getSuccess();
 }

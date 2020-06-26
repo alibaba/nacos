@@ -23,28 +23,30 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
+ * Serialization factory.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class SerializeFactory {
-
-	public static final String HESSIAN_INDEX = "Kryo".toLowerCase();
-
-	private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(
-			4);
-
-	public static String DEFAULT_SERIALIZER = HESSIAN_INDEX;
-
-	static {
-		Serializer serializer = new HessianSerializer();
-		SERIALIZER_MAP.put(HESSIAN_INDEX, serializer);
-		ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
-		for (Serializer item : loader) {
-			SERIALIZER_MAP.put(item.name().toLowerCase(), item);
-		}
-	}
-
-	public static Serializer getDefault() {
-		return SERIALIZER_MAP.get(DEFAULT_SERIALIZER);
-	}
-
+    
+    public static final String HESSIAN_INDEX = "Hessian".toLowerCase();
+    
+    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
+    
+    @SuppressWarnings("checkstyle:StaticVariableName")
+    public static String DEFAULT_SERIALIZER = HESSIAN_INDEX;
+    
+    static {
+        Serializer serializer = new HessianSerializer();
+        SERIALIZER_MAP.put(HESSIAN_INDEX, serializer);
+        ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
+        for (Serializer item : loader) {
+            SERIALIZER_MAP.put(item.name().toLowerCase(), item);
+        }
+    }
+    
+    public static Serializer getDefault() {
+        return SERIALIZER_MAP.get(DEFAULT_SERIALIZER);
+    }
+    
 }

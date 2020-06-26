@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.naming.core.Instance;
@@ -23,17 +24,17 @@ import java.util.List;
 
 /**
  * Selector defines a rule for load-balance for service discovery.
- * <p>
- * Every service in Nacos can apply an existing selector and uses it to give the consumer
- * a subset of selected providers.
- * <p>
- * This selector itself does not implement any specific behavior of load-balance, every
- * real life selector should extend this class and implement the select method.
- * <p>
- * Every extended selector should also register its type to class SelectorType so Nacos
- * recognizes it and can correctly create this type of selector.
- * <p>
- * Sub class should register their type to JacksonUtil.
+ *
+ * <p>Every service in Nacos can apply an existing selector and uses it to give the consumer a subset of selected
+ * providers.
+ *
+ * <p>This selector itself does not implement any specific behavior of load-balance, every real life selector should
+ * extend this class and implement the select method.
+ *
+ * <p>Every extended selector should also register its type to class SelectorType so Nacos recognizes it and can
+ * correctly create this type of selector.
+ *
+ * <p>Sub class should register their type to JacksonUtil.
  *
  * @author nkorange
  * @see com.alibaba.nacos.api.selector.SelectorType
@@ -42,16 +43,16 @@ import java.util.List;
  */
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = NoneSelector.class)
 public interface Selector {
-
+    
     /**
-     * Get the type of this selector
+     * Get the type of this selector.
      *
      * @return type of selector
      */
     String getType();
-
+    
     /**
-     * Select qualified instances from providers
+     * Select qualified instances from providers.
      *
      * @param consumer  consumer address
      * @param providers candidate provider addresses

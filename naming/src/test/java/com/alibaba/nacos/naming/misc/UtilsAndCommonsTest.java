@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
 import org.junit.Assert;
@@ -22,31 +23,25 @@ import org.springframework.mock.env.MockEnvironment;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT;
 
-/**
- * {@link UtilsAndCommons}
- *
- * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
- * @since 0.2.2
- */
 public class UtilsAndCommonsTest {
-
+    
     @Test
     public void testControllerPathsDefaultValues() {
-
+        
         MockEnvironment environment = new MockEnvironment();
-
+        
         Assert.assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void testShakeUpException() {
         UtilsAndCommons.shakeUp(null, 0);
     }
-
+    
     @Test
     public void testShakeUp() {
         Assert.assertEquals(0, UtilsAndCommons.shakeUp(null, 1));
-        char[] chars = new char[]{2325, 9, 30, 12, 2};
+        char[] chars = new char[] {2325, 9, 30, 12, 2};
         Assert.assertEquals(0, UtilsAndCommons.shakeUp(new String(chars), 1));
     }
 }

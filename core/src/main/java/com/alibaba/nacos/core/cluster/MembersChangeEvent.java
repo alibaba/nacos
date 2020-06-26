@@ -17,12 +17,12 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.notify.Event;
+
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Publish this event when the node list changes，All interested in the node list change
- * event can listen to this event
+ * Publish this event when the node list changes，All interested in the node list change event can listen to this event.
  *
  * <ul>
  *     <li>{@link com.alibaba.nacos.core.distributed.ProtocolManager}</li>
@@ -32,48 +32,59 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class MemberChangeEvent implements Event {
-
+public class MembersChangeEvent implements Event {
+    
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
-
+    
     private static final long serialVersionUID = 7308126651076668976L;
-
+    
     private Collection<Member> members;
-
+    
     private long no = SEQUENCE.getAndIncrement();
-
+    
     public static MemberChangeEventBuilder builder() {
         return new MemberChangeEventBuilder();
     }
-
+    
     public Collection<Member> getMembers() {
         return members;
     }
-
+    
     public void setMembers(Collection<Member> members) {
         this.members = members;
     }
-
+    
     @Override
     public long sequence() {
         return no;
     }
-
+    
+    @Override
+    public String toString() {
+        return "MembersChangeEvent{" + "members=" + members + ", no=" + no + '}';
+    }
+    
     public static final class MemberChangeEventBuilder {
+        
         private Collection<Member> allMembers;
-
+        
         private MemberChangeEventBuilder() {
         }
-
+        
         public MemberChangeEventBuilder members(Collection<Member> allMembers) {
             this.allMembers = allMembers;
             return this;
         }
-
-        public MemberChangeEvent build() {
-            MemberChangeEvent memberChangeEvent = new MemberChangeEvent();
-            memberChangeEvent.setMembers(allMembers);
-            return memberChangeEvent;
+        
+        /**
+         * build MemberChangeEvent.
+         *
+         * @return {@link MembersChangeEvent}
+         */
+        public MembersChangeEvent build() {
+            MembersChangeEvent membersChangeEvent = new MembersChangeEvent();
+            membersChangeEvent.setMembers(allMembers);
+            return membersChangeEvent;
         }
     }
 }
