@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.cluster;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.Member;
@@ -67,8 +66,7 @@ public class ServerListManager extends MemberChangeListener {
     
     private volatile List<Member> servers;
     
-    public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager)
-            throws NacosException {
+    public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
         this.switchDomain = switchDomain;
         this.memberManager = memberManager;
         NotifyCenter.registerSubscriber(this);

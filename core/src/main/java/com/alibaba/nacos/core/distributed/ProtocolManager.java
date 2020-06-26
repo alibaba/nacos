@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -84,7 +83,7 @@ public class ProtocolManager extends MemberChangeListener implements Application
     }
     
     @PostConstruct
-    public void init() throws NacosException {
+    public void init() {
         this.memberManager = memberManager;
         NotifyCenter.registerSubscriber(this);
     }

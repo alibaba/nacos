@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.NotThreadSafe;
 
 import java.util.Collection;
@@ -130,16 +129,16 @@ public class MapUtils {
     /**
      * ComputeIfAbsent lazy load.
      *
-     * @param target target Map data.
-     * @param key map key.
+     * @param target          target Map data.
+     * @param key             map key.
      * @param mappingFunction funtion which is need to be executed.
-     * @param param1 function's parameter value1.
-     * @param param2 function's parameter value1.
-     * @return
+     * @param param1          function's parameter value1.
+     * @param param2          function's parameter value1.
+     * @return map's related value for key or mappingFunction.apply result.
      */
     @NotThreadSafe
     public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
-            Object param2) throws NacosException {
+            Object param2) {
         
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(key, "mappingFunction");

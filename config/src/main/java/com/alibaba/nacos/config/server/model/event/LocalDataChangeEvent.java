@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import java.util.List;
 
 /**
- * 本地数据发生变更的事件。
+ * The event when local data change.
  *
  * @author Nacos
  */

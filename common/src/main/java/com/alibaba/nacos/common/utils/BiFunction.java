@@ -16,17 +16,16 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
 /**
- * Represents a function that accepts two arguments and produces a result.
- * The following utility functions are extracted from org.apache.commons.lang3.
+ * Represents a function that accepts two arguments and produces a result. The following utility functions are extracted
+ * from org.apache.commons.lang3.
  *
  * <p>This is a <a href="package-summary.html">functional interface</a>
  * whose functional method is {@link #apply(Object, Object)}.
  *
  * @author zongtanghu
- *
  */
 public interface BiFunction<T, U, R> {
     
@@ -36,7 +35,7 @@ public interface BiFunction<T, U, R> {
      * @param t the first function argument
      * @param u the second function argument
      * @return the function result
-     * @throws NacosException function throws NacosException
+     * @throws NacosRuntimeException function throws NacosRuntimeException
      */
-    R apply(T t, U u) throws NacosException;
+    R apply(T t, U u) throws NacosRuntimeException;
 }

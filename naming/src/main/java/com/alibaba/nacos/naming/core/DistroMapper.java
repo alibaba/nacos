@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberUtils;
@@ -65,7 +64,7 @@ public class DistroMapper extends MemberChangeListener {
      * init server list.
      */
     @PostConstruct
-    public void init() throws NacosException {
+    public void init() {
         NotifyCenter.registerSubscriber(this);
         this.healthyList = MemberUtils.simpleMembers(memberManager.allMembers());
     }

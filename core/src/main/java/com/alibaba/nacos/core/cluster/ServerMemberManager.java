@@ -159,7 +159,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.lookup.start();
     }
     
-    private void registerClusterEvent() throws NacosException {
+    private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
                 ApplicationUtils.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));

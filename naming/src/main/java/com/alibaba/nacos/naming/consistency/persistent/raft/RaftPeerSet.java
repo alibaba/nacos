@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.Member;
@@ -75,7 +74,7 @@ public class RaftPeerSet extends MemberChangeListener {
     }
     
     @PostConstruct
-    public void init() throws NacosException {
+    public void init() {
         NotifyCenter.registerSubscriber(this);
         changePeers(memberManager.allMembers());
     }
@@ -313,7 +312,7 @@ public class RaftPeerSet extends MemberChangeListener {
         if (!oldMembers.isEmpty()) {
             changePeers(members);
         }
-    
+        
         oldMembers.clear();
         oldMembers.addAll(members);
     }
