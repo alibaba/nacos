@@ -14,26 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import org.springframework.jdbc.core.RowMapper;
+
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import org.springframework.jdbc.core.RowMapper;
-
 /**
+ * Derby database operation.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface DatabaseOperate {
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql sqk text
      * @param cls target type
@@ -41,9 +44,9 @@ public interface DatabaseOperate {
      * @return query result
      */
     <R> R queryOne(String sql, Class<R> cls);
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql  sqk text
      * @param args sql parameters
@@ -52,9 +55,9 @@ public interface DatabaseOperate {
      * @return query result
      */
     <R> R queryOne(String sql, Object[] args, Class<R> cls);
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql    sqk text
      * @param args   sql parameters
@@ -63,9 +66,9 @@ public interface DatabaseOperate {
      * @return query result
      */
     <R> R queryOne(String sql, Object[] args, RowMapper<R> mapper);
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql    sqk text
      * @param args   sql parameters
@@ -74,9 +77,9 @@ public interface DatabaseOperate {
      * @return query result
      */
     <R> List<R> queryMany(String sql, Object[] args, RowMapper<R> mapper);
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql    sqk text
      * @param args   sql parameters
@@ -85,38 +88,46 @@ public interface DatabaseOperate {
      * @return query result
      */
     <R> List<R> queryMany(String sql, Object[] args, Class<R> rClass);
-
+    
     /**
-     * Data query transaction
+     * Data query transaction.
      *
      * @param sql  sqk text
      * @param args sql parameters
      * @return query result
      */
     List<Map<String, Object>> queryMany(String sql, Object[] args);
-
+    
     /**
-     * data modify transaction
+     * data modify transaction.
      *
-     * @param modifyRequests {@link List<  ModifyRequest  >}
-     * @param consumer {@link BiConsumer}
+     * @param modifyRequests {@link List}
+     * @param consumer       {@link BiConsumer}
      * @return is success
      */
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
-
+    
     /**
-     * data modify transaction
+     * data importing, This method is suitable for importing data from external data sources into embedded data sources.
      *
-     * @param modifyRequests {@link List<  ModifyRequest  >}
+     * @param file {@link File}
+     * @return {@link CompletableFuture}
+     */
+    CompletableFuture<RestResult<String>> dataImport(File file);
+    
+    /**
+     * data modify transaction.
+     *
+     * @param modifyRequests {@link List}
      * @return is success
      */
     default Boolean update(List<ModifyRequest> modifyRequests) {
         return update(modifyRequests, null);
     }
-
+    
     /**
-     * data modify transaction
-     * The SqlContext to be executed in the current thread will be executed and automatically cleared
+     * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
+     * cleared.
      *
      * @return is success
      */
@@ -127,10 +138,10 @@ public interface DatabaseOperate {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-
+    
     /**
-     * data modify transaction
-     * The SqlContext to be executed in the current thread will be executed and automatically cleared
+     * data modify transaction The SqlContext to be executed in the current thread will be executed and automatically
+     * cleared.
      *
      * @return is success
      */
@@ -149,5 +160,5 @@ public interface DatabaseOperate {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-
+    
 }
