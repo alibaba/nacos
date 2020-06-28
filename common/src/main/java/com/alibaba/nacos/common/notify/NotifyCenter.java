@@ -47,9 +47,9 @@ public class NotifyCenter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
     
-    public static int RING_BUFFER_SIZE = 16384;
+    public static int ringBufferSize = 16384;
     
-    public static int SHARE_BUFFER_SIZE = 1024;
+    public static int shareBufferSize = 1024;
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
@@ -70,11 +70,11 @@ public class NotifyCenter {
         // Internal ArrayBlockingQueue buffer size. For applications with high write throughput,
         // this value needs to be increased appropriately. default value is 16384
         String ringBufferSizeProperty = "nacos.core.notify.ring-buffer-size";
-        RING_BUFFER_SIZE = Integer.getInteger(ringBufferSizeProperty, 16384);
+        ringBufferSize = Integer.getInteger(ringBufferSizeProperty, 16384);
         
         // The size of the public publisher's message staging queue buffer
         String shareBufferSizeProperty = "nacos.core.notify.share-buffer-size";
-        SHARE_BUFFER_SIZE = Integer.getInteger(shareBufferSizeProperty, 1024);
+        shareBufferSize = Integer.getInteger(shareBufferSizeProperty, 1024);
         
         final ServiceLoader<EventPublisher> loader = ServiceLoader.load(EventPublisher.class);
         Iterator<EventPublisher> iterator = loader.iterator();
@@ -104,7 +104,7 @@ public class NotifyCenter {
             
             // Create and init DefaultSharePublisher instance.
             INSTANCE.sharePublisher = new DefaultSharePublisher();
-            INSTANCE.sharePublisher.init(SlowEvent.class, SHARE_BUFFER_SIZE);
+            INSTANCE.sharePublisher.init(SlowEvent.class, shareBufferSize);
             
         } catch (Throwable ex) {
             LOGGER.error("Service class newInstance has error : {}", ex);
@@ -206,7 +206,7 @@ public class NotifyCenter {
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         synchronized (NotifyCenter.class) {
             // MapUtils.computeIfAbsent is a unsafe method.
-            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, RING_BUFFER_SIZE);
+            MapUtils.computeIfAbsent(INSTANCE.publisherMap, topic, publisherFactory, subscribeType, ringBufferSize);
         }
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         publisher.addSubscriber(consumer);

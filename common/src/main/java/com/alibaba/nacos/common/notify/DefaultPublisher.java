@@ -28,7 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.alibaba.nacos.common.notify.NotifyCenter.RING_BUFFER_SIZE;
+import static com.alibaba.nacos.common.notify.NotifyCenter.ringBufferSize;
 
 /**
  * The default event publisher implementation.
@@ -79,7 +79,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             // start just called once
             super.start();
             if (queueMaxSize == -1) {
-                queueMaxSize = RING_BUFFER_SIZE;
+                queueMaxSize = ringBufferSize;
             }
             initialized = true;
         }
