@@ -18,16 +18,21 @@ package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.model.RestResultUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -132,6 +137,34 @@ public class WebUtils {
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(body);
         response.setStatus(code);
+    }
+    
+    /**
+     * Handle file upload operations.
+     *
+     * @param multipartFile file
+     * @param consumer post processor
+     * @param response {@link DeferredResult}
+     */
+    public static void onFileUpload(MultipartFile multipartFile, Consumer<File> consumer,
+            DeferredResult<RestResult<String>> response) {
+        
+        if (Objects.isNull(multipartFile) || multipartFile.isEmpty()) {
+            response.setResult(RestResultUtils.failed("File is empty"));
+            return;
+        }
+        File tmpFile = null;
+        try {
+            tmpFile = DiskUtils.createTmpFile(multipartFile.getName(), ".tmp");
+            multipartFile.transferTo(tmpFile);
+            consumer.accept(tmpFile);
+        } catch (Throwable ex) {
+            if (!response.isSetOrExpired()) {
+                response.setResult(RestResultUtils.failed(ex.getMessage()));
+            }
+        } finally {
+            DiskUtils.deleteQuietly(tmpFile);
+        }
     }
     
     /**
