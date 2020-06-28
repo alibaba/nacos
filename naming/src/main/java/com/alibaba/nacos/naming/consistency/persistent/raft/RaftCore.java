@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -67,8 +71,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -99,17 +101,9 @@ public class RaftCore {
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
     
-    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.raft.notifier");
-            
-            return t;
-        }
-    });
+    private final ScheduledExecutorService executor = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
     
     public static final Lock OPERATE_LOCK = new ReentrantLock();
     

@@ -106,7 +106,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @PostConstruct
     public void init() {
-        GlobalExecutor.submit(loadDataTask);
+        GlobalExecutor.submitLoadDataTask(loadDataTask);
         GlobalExecutor.submitDistroNotifyTask(notifier);
     }
     
@@ -117,7 +117,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             try {
                 load();
                 if (!initialized) {
-                    GlobalExecutor.submit(this, globalConfig.getLoadDataRetryDelayMillis());
+                    GlobalExecutor.submitLoadDataTask(this, globalConfig.getLoadDataRetryDelayMillis());
                 } else {
                     Loggers.DISTRO.info("load data success");
                 }

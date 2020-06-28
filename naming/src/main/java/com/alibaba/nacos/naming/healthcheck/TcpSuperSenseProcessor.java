@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -40,12 +41,8 @@ import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
@@ -84,28 +81,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
      */
     private static final long TCP_KEEP_ALIVE_MILLIS = 0;
     
-    private static final ScheduledExecutorService TCP_CHECK_EXECUTOR = new ScheduledThreadPoolExecutor(1,
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("nacos.naming.tcp.check.worker");
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-    
-    private static final ScheduledExecutorService NIO_EXECUTOR = Executors
-            .newScheduledThreadPool(NIO_THREAD_COUNT, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("nacos.supersense.checker");
-                    return thread;
-                }
-            });
-    
     private Selector selector;
     
     /**
@@ -117,7 +92,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         try {
             selector = Selector.open();
             
-            TCP_CHECK_EXECUTOR.submit(this);
+            GlobalExecutor.submitTcpCheck(this);
             
         } catch (Exception e) {
             throw new IllegalStateException("Error while initializing SuperSense(TM).");
@@ -167,7 +142,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             tasks.add(new TaskProcessor(beat));
         } while (taskQueue.size() > 0 && tasks.size() < NIO_THREAD_COUNT * 64);
         
-        for (Future<?> f : NIO_EXECUTOR.invokeAll(tasks)) {
+        for (Future<?> f : GlobalExecutor.invokeAllTcpSuperSenseTask(tasks)) {
             f.get();
         }
     }
@@ -188,7 +163,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                     SelectionKey key = iter.next();
                     iter.remove();
                     
-                    NIO_EXECUTOR.execute(new PostProcessor(key));
+                    GlobalExecutor.executeTcpSuperSense(new PostProcessor(key));
                 }
             } catch (Throwable e) {
                 SRV_LOG.error("[HEALTH-CHECK] error while processing NIO task", e);
@@ -426,7 +401,8 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 
                 beat.setStartTime(System.currentTimeMillis());
                 
-                NIO_EXECUTOR.schedule(new TimeOutTask(key), CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                GlobalExecutor
+                        .scheduleTcpSuperSenseTask(new TimeOutTask(key), CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(),
                         "tcp:error:" + e.getMessage());
