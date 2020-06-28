@@ -43,7 +43,6 @@ import org.springframework.web.cors.CorsUtils;
  *
  * @author Nacos
  */
-@Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
 
