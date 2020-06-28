@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 public class SimpleReadWriteLockTest {
 
     @Test
-    public void test_双重读锁_全部释放_加写锁() {
+    public void testDoubleReadLockByAllReleaseAndWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());
@@ -40,14 +40,14 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_加写锁() {
+    public void testAddWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryWriteLock());
         lock.releaseWriteLock();
     }
 
     @Test
-    public void test_双重写锁() {
+    public void testDoubleWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
 
         assertTrue(lock.tryWriteLock());
@@ -55,7 +55,7 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_先读锁后写锁() {
+    public void testFirstReadLockThenWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
 
         assertTrue(lock.tryReadLock());
@@ -63,7 +63,7 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_双重读锁_释放一个_加写锁失败() {
+    public void testDoubleReadLockAndOneReleaseOneFailed() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());

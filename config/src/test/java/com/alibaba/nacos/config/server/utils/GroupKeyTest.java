@@ -30,7 +30,7 @@ public class GroupKeyTest {
   @Rule public final ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void test_parseGroupKey_非法的() {
+    public void testParseInvalidGroupKey() {
         String key = "11111+222+333333+444";
         try {
             GroupKey2.parseKey(key);
@@ -70,7 +70,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void getKey_ThreeParams() {
+    public void testGetKeyByThreeParams() {
 
         // Act
         final String actual = GroupKey.getKey(",", ",", "3");
@@ -80,7 +80,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void getKey_TwoParams() {
+    public void testGetKeyByTwoParams() {
 
         // Act
         final String actual = GroupKey.getKey("3", "\'");
@@ -90,7 +90,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void getKeyTenant_Plus_ThreeParams() {
+    public void testGetKeyTenantByPlusThreeParams() {
 
         // Act
         final String actual = GroupKey.getKeyTenant("3", "1", ",");
@@ -100,7 +100,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void getKeyTenant_Percent_ThreeParams() {
+    public void testGetKeyTenantByPercentThreeParams() {
 
         // Act
         final String actual = GroupKey.getKeyTenant("\u0000\u0000", "%+", null);
@@ -110,7 +110,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void parseKey_SingleCharacter() {
+    public void testParseKeyBySingleCharacter() {
 
         // Act
         final String[] actual = GroupKey.parseKey("/");
@@ -120,7 +120,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void parseKey_Plus_IllegalArgumentException() {
+    public void testParseKeyForPlusIllegalArgumentException() {
 
         // Act
         thrown.expect(IllegalArgumentException.class);
@@ -130,7 +130,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void parseKey_Percent_IllegalArgumentException() {
+    public void testParseKeyForPercentIllegalArgumentException() {
 
         // Act
         thrown.expect(IllegalArgumentException.class);
@@ -140,7 +140,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void parseKey_Invalid_StringIndexOutOfBoundsException() {
+    public void testParseKeyForInvalidStringIndexOutOfBoundsException() {
 
         // Act
         thrown.expect(StringIndexOutOfBoundsException.class);
@@ -150,7 +150,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void urlEncode_Plus() {
+    public void testUrlEncodePlus() {
 
         // Arrange
         final StringBuilder sb = new StringBuilder("????");
@@ -164,7 +164,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void urlEncode_Percent() {
+    public void testUrlEncodeByPercent() {
 
         // Arrange
         final StringBuilder sb = new StringBuilder("??????");
@@ -178,7 +178,7 @@ public class GroupKeyTest {
     }
 
     @Test
-    public void urlEncode_NullStringBuilder() {
+    public void testUrlEncodeForNullStringBuilder() {
 
         // Act
         thrown.expect(NullPointerException.class);
