@@ -124,10 +124,9 @@ public class ServiceManager implements RecordListener<Service> {
      */
     @PostConstruct
     public void init() {
+        GlobalExecutor.scheduleServiceReporter(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
         
-        UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
-        
-        UtilsAndCommons.SERVICE_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
+        GlobalExecutor.submitServiceUpdateManager(new UpdatedServiceProcessor());
         
         if (emptyServiceAutoClean) {
             
@@ -975,9 +974,8 @@ public class ServiceManager implements RecordListener<Service> {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending service status", e);
             } finally {
-                UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR
-                        .schedule(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(),
-                                TimeUnit.MILLISECONDS);
+                GlobalExecutor.scheduleServiceReporter(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(),
+                        TimeUnit.MILLISECONDS);
             }
         }
     }

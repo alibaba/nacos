@@ -20,8 +20,6 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.ClassUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +40,7 @@ import static com.alibaba.nacos.common.notify.NotifyCenter.ringBufferSize;
  */
 public class DefaultPublisher extends Thread implements EventPublisher {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(NotifyCenter.class);
     
     private volatile boolean initialized = false;
     
@@ -50,13 +48,13 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     private Class<? extends Event> eventType;
     
-    private final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
+    protected final ConcurrentHashSet<Subscriber> subscribers = new ConcurrentHashSet<Subscriber>();
     
     private int queueMaxSize = -1;
     
     private BlockingQueue<Event> queue;
     
-    private volatile Long lastEventSequence = -1L;
+    protected volatile Long lastEventSequence = -1L;
     
     private final AtomicReferenceFieldUpdater<DefaultPublisher, Long> updater = AtomicReferenceFieldUpdater
             .newUpdater(DefaultPublisher.class, Long.class, "lastEventSequence");
@@ -98,13 +96,17 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     void openEventHandler() {
         try {
+            
+            // This variable is defined to resolve the problem which message overstock in the queue.
+            int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
             for (; ; ) {
-                if (shutdown || hasSubscriber()) {
+                if (shutdown || hasSubscriber() || waitTimes <= 0) {
                     break;
                 }
                 ThreadUtils.sleep(1000L);
+                waitTimes--;
             }
             
             for (; ; ) {
@@ -162,9 +164,13 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         return initialized;
     }
     
+    /**
+     * Receive and notifySubscriber to process the event.
+     *
+     * @param event {@link Event}.
+     */
     void receiveEvent(Event event) {
         final long currentEventSequence = event.sequence();
-        final String sourceName = ClassUtils.getName(event);
         
         // Notification single event listener
         for (Subscriber subscriber : subscribers) {
@@ -175,10 +181,8 @@ public class DefaultPublisher extends Thread implements EventPublisher {
                 continue;
             }
             
-            final String targetName = ClassUtils.getName(subscriber.subscribeType());
-            if (!Objects.equals(sourceName, targetName)) {
-                continue;
-            }
+            // Because unifying smartSubscriber and subscriber, so here need to think of compatibility.
+            // Remove original judge part of codes.
             notifySubscriber(subscriber, event);
         }
     }

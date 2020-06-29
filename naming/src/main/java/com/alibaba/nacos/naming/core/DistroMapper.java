@@ -139,7 +139,6 @@ public class DistroMapper implements MemberChangeListener {
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);
         Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
-        old.clear();
     }
     
     @Override

@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.alibaba.nacos.core.notify.NotifyCenter.RING_BUFFER_SIZE;
@@ -95,13 +96,15 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     void openEventHandler() {
         try {
+            int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
             for (; ; ) {
-                if (shutdown || canOpen) {
+                if (shutdown || canOpen || waitTimes <= 0) {
                     break;
                 }
                 ThreadUtils.sleep(1_000L);
+                waitTimes--;
             }
             
             for (; ; ) {

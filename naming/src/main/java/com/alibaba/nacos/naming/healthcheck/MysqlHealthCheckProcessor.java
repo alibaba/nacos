@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -36,9 +37,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
@@ -67,22 +65,6 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     private static final String MYSQL_SLAVE_READONLY = "ON";
     
     private static final ConcurrentMap<String, Connection> CONNECTION_POOL = new ConcurrentHashMap<String, Connection>();
-    
-    private static ExecutorService executor;
-    
-    static {
-        
-        int processorCount = Runtime.getRuntime().availableProcessors();
-        executor = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.nacos.mysql.checker");
-                return thread;
-            }
-        });
-    }
     
     public MysqlHealthCheckProcessor() {
     }
@@ -120,7 +102,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                     continue;
                 }
                 
-                executor.execute(new MysqlCheckTask(ip, task));
+                GlobalExecutor.executeMysqlCheckTask(new MysqlCheckTask(ip, task));
                 MetricsMonitor.getMysqlHealthCheckMonitor().incrementAndGet();
             } catch (Exception e) {
                 ip.setCheckRt(switchDomain.getMysqlHealthParams().getMax());

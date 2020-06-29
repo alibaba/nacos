@@ -22,39 +22,40 @@ import com.alibaba.nacos.core.auth.AccessException;
 import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.auth.AuthSystemTypes;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import java.lang.reflect.Field;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.Field;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
-
+    
     @Mock
     private HttpServletRequest request;
-
+    
     @Mock
     private HttpServletResponse response;
-
+    
     @Mock
     private AuthConfigs authConfigs;
-
+    
     @Mock
     private NacosAuthManager authManager;
-
+    
     private UserController userController;
-
+    
     private NacosUser user;
-
+    
     @Before
     public void setUp() throws Exception {
         userController = new UserController();
@@ -65,7 +66,7 @@ public class UserControllerTest {
         injectObject("authConfigs", authConfigs);
         injectObject("authManager", authManager);
     }
-
+    
     @Test
     public void testLoginWithAuthedUser() throws AccessException {
         when(authManager.login(request)).thenReturn(user);
@@ -78,7 +79,7 @@ public class UserControllerTest {
         assertTrue(actualString.contains("\"tokenTtl\":18000"));
         assertTrue(actualString.contains("\"globalAdmin\":true"));
     }
-
+    
     private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
         Field field = UserController.class.getDeclaredField(fieldName);
         field.setAccessible(true);

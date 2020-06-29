@@ -24,16 +24,11 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Naming utils and common values.
@@ -123,15 +118,11 @@ public class UtilsAndCommons {
     public static final String DATA_BASE_DIR =
             ApplicationUtils.getNacosHome() + File.separator + "data" + File.separator + "naming";
     
+    public static final String RAFT_CACHE_FILE_SUFFIX = ".datum";
+    
+    public static final String RAFT_CACHE_FILE_PREFIX = "com.alibaba.nacos.naming";
+    
     public static final String NUMBER_PATTERN = "^\\d+$";
-    
-    public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
-    
-    public static final ScheduledExecutorService SERVICE_UPDATE_EXECUTOR;
-    
-    public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
-    
-    public static final Executor RAFT_PUBLISH_EXECUTOR;
     
     static {
 
@@ -151,38 +142,6 @@ public class UtilsAndCommons {
         JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
         JacksonUtils.registerSubtype(LabelSelector.class, SelectorType.label.name());
         
-        SERVICE_SYNCHRONIZATION_EXECUTOR = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.service.worker");
-            t.setDaemon(true);
-            return t;
-        });
-        
-        SERVICE_UPDATE_EXECUTOR = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.service.update.processor");
-            t.setDaemon(true);
-            return t;
-        });
-        
-        INIT_CONFIG_EXECUTOR = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.init.config.worker");
-            t.setDaemon(true);
-            return t;
-        });
-        
-        RAFT_PUBLISH_EXECUTOR = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.raft.publisher");
-            t.setDaemon(true);
-            return t;
-        });
-        
-    }
-    
-    public static String getSwitchDomainKey() {
-        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
     
     /**
