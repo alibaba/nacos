@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config;
 
 /**
- * Property Change Type
+ * Property Change Type.
  *
  * @author rushsky518
  */
 public enum PropertyChangeType {
-    /** add */
+    /**
+     * add.
+     */
     ADDED,
-    /** modified */
+    /**
+     * modified.
+     */
     MODIFIED,
-    /** deleted */
+    /**
+     * deleted.
+     */
     DELETED
 }
