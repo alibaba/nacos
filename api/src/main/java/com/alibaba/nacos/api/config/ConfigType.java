@@ -17,47 +17,48 @@
 package com.alibaba.nacos.api.config;
 
 /**
+ * Config data type.
+ *
  * @author liaochuntao
- * @date 2019-06-14 21:12
  **/
 public enum ConfigType {
-
+    
     /**
-     * config type is "properties"
+     * config type is "properties".
      */
     PROPERTIES("properties"),
-
+    
     /**
-     * config type is "xml"
+     * config type is "xml".
      */
     XML("xml"),
-
+    
     /**
-     * config type is "json"
+     * config type is "json".
      */
     JSON("json"),
-
+    
     /**
-     * config type is "text"
+     * config type is "text".
      */
     TEXT("text"),
-
+    
     /**
-     * config type is "html"
+     * config type is "html".
      */
     HTML("html"),
-
+    
     /**
-     * config type is "yaml"
+     * config type is "yaml".
      */
     YAML("yaml");
-
+    
     String type;
-
+    
     ConfigType(String type) {
         this.type = type;
     }
-
+    
     public String getType() {
         return type;
     }

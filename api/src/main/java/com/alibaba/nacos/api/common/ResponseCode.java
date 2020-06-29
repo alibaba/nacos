@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.common;
 
+package com.alibaba.nacos.api.common;
 
 /**
  * Response code definitions.
- * <p>
- * This class and inherited classes define codes separated from HTTP code to provide richer and preciser
- * information of the API results. A recommended rule for defining response code is:
+ *
+ * <p>This class and inherited classes define codes separated from HTTP code to provide richer and preciser information of
+ * the API results. A recommended rule for defining response code is:
  * <li> Global and common code starts with 10001.
  * <li> Naming module code starts with 20001.
  * <li> Config module code starts with 30001.
@@ -29,9 +29,9 @@ package com.alibaba.nacos.api.common;
  * @since 1.2.0
  */
 public class ResponseCode {
-
+    
     /**
-     * Everything normal
+     * Everything normal.
      */
     public static final int OK = 10200;
 }

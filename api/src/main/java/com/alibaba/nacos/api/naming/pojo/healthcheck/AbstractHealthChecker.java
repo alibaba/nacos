@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
@@ -25,28 +26,27 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 /**
+ * Abstract health checker.
+ *
  * @author nkorange
  */
-
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = None.class)
-@JsonSubTypes({
-    @JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
-    @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
-    @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class)
-})
+@JsonSubTypes({@JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
+        @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
+        @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class)})
 public abstract class AbstractHealthChecker implements Cloneable {
-
+    
     @JsonIgnore
     protected final String type;
-
+    
     protected AbstractHealthChecker(String type) {
         this.type = type;
     }
-
+    
     public String getType() {
         return type;
     }
-
+    
     /**
      * Clone all fields of this instance to another one.
      *
@@ -55,18 +55,18 @@ public abstract class AbstractHealthChecker implements Cloneable {
      */
     @Override
     public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
-
+    
     /**
      * Default implementation of Health checker.
      */
     public static class None extends AbstractHealthChecker {
-
+        
         public static final String TYPE = "NONE";
-
+        
         public None() {
             super(TYPE);
         }
-
+        
         @Override
         public AbstractHealthChecker clone() throws CloneNotSupportedException {
             return new None();

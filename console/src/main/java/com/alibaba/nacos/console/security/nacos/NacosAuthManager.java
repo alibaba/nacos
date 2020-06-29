@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
@@ -38,25 +39,25 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
- * Builtin access control entry of Nacos
+ * Builtin access control entry of Nacos.
  *
  * @author nkorange
  * @since 1.2.0
  */
 @Component
 public class NacosAuthManager implements AuthManager {
-
+    
     private static final String TOKEN_PREFIX = "Bearer ";
-
+    
     @Autowired
     private JwtTokenManager tokenManager;
-
+    
     @Autowired
     private AuthenticationManager authenticationManager;
-
+    
     @Autowired
     private NacosRoleServiceImpl roleService;
-
+    
     @Override
     public User login(Object request) throws AccessException {
         HttpServletRequest req = (HttpServletRequest) request;
@@ -64,7 +65,7 @@ public class NacosAuthManager implements AuthManager {
         if (StringUtils.isBlank(token)) {
             throw new AccessException("user not found!");
         }
-
+        
         try {
             tokenManager.validateToken(token);
         } catch (ExpiredJwtException e) {
@@ -72,10 +73,10 @@ public class NacosAuthManager implements AuthManager {
         } catch (Exception e) {
             throw new AccessException("token invalid!");
         }
-
+        
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
+        
         String username = authentication.getName();
         NacosUser user = new NacosUser();
         user.setUserName(username);
@@ -89,23 +90,23 @@ public class NacosAuthManager implements AuthManager {
                 }
             }
         }
-
+        
         return user;
     }
-
+    
     @Override
     public void auth(Permission permission, User user) throws AccessException {
         if (Loggers.AUTH.isDebugEnabled()) {
             Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
         }
-
+        
         if (!roleService.hasPermission(user.getUserName(), permission)) {
             throw new AccessException("authorization failed!");
         }
     }
-
+    
     /**
-     * Get token from header
+     * Get token from header.
      */
     private String resolveToken(HttpServletRequest request) throws AccessException {
         String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
@@ -118,19 +119,20 @@ public class NacosAuthManager implements AuthManager {
             String password = request.getParameter("password");
             bearerToken = resolveTokenFromUser(userName, password);
         }
-
+        
         return bearerToken;
     }
-
+    
     private String resolveTokenFromUser(String userName, String rawPassword) throws AccessException {
-
+        
         try {
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName, rawPassword);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName,
+                    rawPassword);
             authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
             throw new AccessException("unknown user!");
         }
-
+        
         return tokenManager.createToken(userName);
     }
 }

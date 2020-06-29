@@ -93,6 +93,10 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
     }
 
+    public DataSource getDatasource() {
+        return jt.getDataSource();
+    }
+
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl = "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(),

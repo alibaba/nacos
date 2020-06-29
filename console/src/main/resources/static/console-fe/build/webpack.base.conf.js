@@ -41,6 +41,9 @@ module.exports = {
       components: resolve('src/components'),
     },
   },
+  externals: {
+    jquery: 'jQuery'
+  },
   node: {
     fs: 'empty'
   },
