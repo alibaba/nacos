@@ -54,8 +54,7 @@ class ShowServiceCodeing extends React.Component {
     this.sprigcloudCode = 'TODO';
   }
 
-  componentDidMount() {
-  }
+  componentDidMount() {}
 
   openLoading() {
     this.setState({

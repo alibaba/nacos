@@ -123,7 +123,11 @@ window.require(['vs/editor/editor.main'], () => {
   // Register a tokens provider for the language
   window.monaco.languages.setMonarchTokensProvider('properties', {
     tokenizer: {
-      root: [[/^\#.*/, 'comment'], [/.*\=/, 'key'], [/^=.*/, 'value']],
+      root: [
+        [/^\#.*/, 'comment'],
+        [/.*\=/, 'key'],
+        [/^=.*/, 'value'],
+      ],
     },
   });
 

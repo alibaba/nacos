@@ -103,9 +103,7 @@ class ImportDialog extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    let uploadLink = `/diamond-ops/batch/import/serverId/${this.state.serverId}/tenant/${
-      this.state.tenant.id
-    }?policy=${this.state.policy}`;
+    let uploadLink = `/diamond-ops/batch/import/serverId/${this.state.serverId}/tenant/${this.state.tenant.id}?policy=${this.state.policy}`;
 
     if (isParentEdas()) {
       uploadLink = `/authgw/${window.edasprefix}${uploadLink}`;

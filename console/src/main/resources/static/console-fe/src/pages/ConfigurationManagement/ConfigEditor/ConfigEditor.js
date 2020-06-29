@@ -235,9 +235,7 @@ class ConfigEditor extends React.Component {
   goList() {
     const tenant = getParams('namespace');
     this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${tenant}`
+      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${tenant}`
     );
   }
 
