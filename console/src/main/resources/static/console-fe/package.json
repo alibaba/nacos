@@ -65,7 +65,6 @@
   "dependencies": {
     "@alifd/next": "^1.11.10",
     "axios": "^0.18.0",
-    "jquery": "^3.3.1",
     "moment": "^2.23.0",
     "prop-types": "^15.6.2",
     "react": "^16.7.0",
