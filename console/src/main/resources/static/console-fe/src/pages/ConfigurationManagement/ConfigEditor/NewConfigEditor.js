@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +17,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import request from '../../../utils/request';
 import validateContent from 'utils/validateContent';
 import SuccessDialog from '../../../components/SuccessDialog';
@@ -37,6 +41,8 @@ import {
   Grid,
   ConfigProvider,
 } from '@alifd/next';
+import { resolve } from 'url';
+import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -95,7 +101,19 @@ class ConfigEditor extends React.Component {
             dataId: getParams('dataId').trim(),
             group,
           },
-          () => this.getConfig()
+          () => {
+            this.getConfig(true).then(res => {
+              if (!res) {
+                this.getConfig();
+                return;
+              }
+              this.setState({
+                isBeta: true,
+                tabActiveKey: 'beta',
+                betaPublishSuccess: true,
+              });
+            });
+          }
         );
       } else {
         if (group) {
@@ -112,7 +130,7 @@ class ConfigEditor extends React.Component {
     this.monacoEditor = null;
     const options = {
       value,
-      language: this.state.configType,
+      language,
       codeLens: true,
       selectOnLineNumbers: true,
       roundedSelection: false,
@@ -154,14 +172,14 @@ class ConfigEditor extends React.Component {
   openDiff(cbName) {
     this.diffcb = cbName;
     let leftvalue = this.monacoEditor.getValue();
-    let rightvalue = this.codeVal;
+    let rightvalue = this.codeVal || '';
     leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
   }
 
   clickTab(tabActiveKey) {
-    this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'bata'));
+    this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'beta'));
   }
 
   getCodeVal() {
@@ -191,42 +209,39 @@ class ConfigEditor extends React.Component {
     if (validateContent.validate({ content, type })) {
       return this._publishConfig();
     } else {
-      Dialog.confirm({
-        content: locale.codeValErrorPrompt,
-        onOk: () => this._publishConfig(),
+      return new Promise((resolve, reject) => {
+        Dialog.confirm({
+          content: locale.codeValErrorPrompt,
+          onOk: () => resolve(this._publishConfig()),
+          onCancel: () => resolve(false),
+        });
       });
-      return false;
     }
   }
 
   _publishConfig(beta = false) {
-    const { locale } = this.props;
     const { betaIps, isNewConfig } = this.state;
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const data = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal() };
+    const payload = {};
+    Object.keys(form).forEach(key => {
+      payload[key] = form[key];
+    });
+    const stringify = require('qs/lib/stringify');
     return request({
       url: 'v1/cs/configs',
       method: 'post',
-      data,
-      transformRequest: [
-        function(data) {
-          let ret = '';
-          for (let it in data) {
-            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
-          }
-          return ret;
-        },
-      ],
+      data: stringify(payload),
       headers,
     }).then(res => {
       if (res) {
         if (isNewConfig) {
           this.setState({ isNewConfig: false });
         }
-        this.getConfig();
+        this.getConfig(beta);
       }
       return res;
     });
@@ -235,13 +250,11 @@ class ConfigEditor extends React.Component {
   publishBeta() {
     return this._publishConfig(true).then(res => {
       if (res) {
-        this.setState(
-          {
-            betaPublishSuccess: true,
-            tabActiveKey: 'beta',
-          },
-          () => this.getConfig(true)
-        );
+        this.setState({
+          betaPublishSuccess: true,
+          tabActiveKey: 'beta',
+        });
+        return res;
       }
     });
   }
@@ -249,12 +262,14 @@ class ConfigEditor extends React.Component {
   stopBeta() {
     const { locale } = this.props;
     const { dataId, group } = this.state.form;
+    const tenant = getParams('namespace');
     return request
       .delete('v1/cs/configs', {
         params: {
           beta: true,
           dataId,
           group,
+          tenant,
         },
       })
       .then(res => {
@@ -300,35 +315,48 @@ class ConfigEditor extends React.Component {
 
   goBack() {
     const serverId = getParams('serverId') || '';
-    const tenant = getParams('namespace');
-    const searchGroup = getParams('searchGroup') || '';
-    const searchDataId = getParams('searchDataId') || '';
+    const namespace = getParams('namespace');
+    const group = getParams('searchGroup') || '';
+    const dataId = getParams('searchDataId') || '';
+    const pageSize = getParams('pageSize');
+    const pageNo = getParams('pageNo');
     this.props.history.push(
-      `/configurationManagement?serverId=${serverId}&group=${searchGroup}&dataId=${searchDataId}&namespace=${tenant}`
+      generateUrl('/configurationManagement', {
+        serverId,
+        group,
+        dataId,
+        namespace,
+        pageSize,
+        pageNo,
+      })
     );
   }
 
-  getConfig(beta = false) {
+  getConfig(beta = false, decide = false) {
     const namespace = getParams('namespace');
     const { dataId, group } = this.state.form;
-    return request
-      .get('v1/cs/configs', {
-        params: {
-          dataId,
-          group,
-          beta,
-          show: 'all',
-          namespaceId: namespace,
-          tenant: namespace,
-        },
-      })
-      .then(res => {
-        const { type, content, configTags } = res;
-        this.changeForm({ ...res, config_tags: configTags ? configTags.split(',') : [] });
-        this.initMoacoEditor(type, content);
-        this.codeVal = content;
-        return res;
-      });
+    const params = {
+      dataId,
+      group,
+      namespaceId: namespace,
+      tenant: namespace,
+    };
+    if (beta) {
+      params.beta = true;
+    }
+    if (!beta) {
+      params.show = 'all';
+    }
+    return request.get('v1/cs/configs', { params }).then(res => {
+      const form = beta ? res.data : res;
+      if (!form) return false;
+      const { type, content, configTags, betaIps } = form;
+      this.setState({ betaIps });
+      this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
+      this.initMoacoEditor(type, content);
+      this.codeVal = content;
+      return res;
+    });
   }
 
   validation() {
@@ -359,6 +387,7 @@ class ConfigEditor extends React.Component {
   render() {
     const {
       loading,
+      betaIps,
       openAdvancedSettings,
       isBeta,
       isNewConfig,
@@ -457,6 +486,7 @@ class ConfigEditor extends React.Component {
                   <Input.TextArea
                     aria-label="TextArea"
                     placeholder="127.0.0.1,127.0.0.2"
+                    value={betaIps}
                     onChange={betaIps => this.setState({ betaIps })}
                   />
                 )}
@@ -464,9 +494,10 @@ class ConfigEditor extends React.Component {
             )}
             <Form.Item label={locale.format}>
               <Radio.Group
+                defaultValue="text"
                 value={form.type}
                 onChange={type => {
-                  this.initMoacoEditor(type, '');
+                  this.initMoacoEditor(type, form.content);
                   this.changeForm({ type });
                 }}
               >
@@ -517,7 +548,12 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
-                <Button size="large" type="primary" onClick={() => this.openDiff('publishBeta')}>
+                <Button
+                  size="large"
+                  type="primary"
+                  disabled={!betaIps || betaPublishSuccess}
+                  onClick={() => this.openDiff('publishBeta')}
+                >
                   {locale.release}
                 </Button>
               )}
@@ -537,22 +573,27 @@ class ConfigEditor extends React.Component {
           <DiffEditorDialog
             ref={this.diffEditorDialog}
             publishConfig={() => {
-              this[this.diffcb]();
-              let title = locale.toedit;
-              if (isNewConfig) {
-                title = locale.newConfigEditor;
-              }
-              if (this.diffcb === 'publishBeta') {
-                title = locale.betaPublish;
-              }
-              if (this.diffcb === 'publish' && tabActiveKey === 'beta') {
-                title = locale.stopPublishBeta;
-                this.stopBeta();
-              }
-              this.successDialog.current.getInstance().openDialog({
-                title: <div>{title}</div>,
-                isok: true,
-                ...form,
+              const res = this[this.diffcb]();
+              res.then(res => {
+                if (!res) {
+                  return;
+                }
+                let title = locale.toedit;
+                if (isNewConfig) {
+                  title = locale.newConfigEditor;
+                }
+                if (this.diffcb === 'publishBeta') {
+                  title = locale.betaPublish;
+                }
+                if (this.diffcb === 'publish' && tabActiveKey === 'beta') {
+                  title = locale.stopPublishBeta;
+                  this.stopBeta();
+                }
+                this.successDialog.current.getInstance().openDialog({
+                  title: <div>{title}</div>,
+                  isok: true,
+                  ...form,
+                });
               });
             }}
           />

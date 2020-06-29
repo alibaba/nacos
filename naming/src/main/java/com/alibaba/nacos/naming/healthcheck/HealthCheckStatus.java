@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.healthcheck;
 
+package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -25,48 +25,57 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Health check status.
+ *
  * @author nacos
  */
 public class HealthCheckStatus {
+    
     public AtomicBoolean isBeingChecked = new AtomicBoolean(false);
+    
     public AtomicInteger checkFailCount = new AtomicInteger(0);
-    public AtomicInteger checkOKCount = new AtomicInteger(0);
-    public long checkRT = -1L;
-
-    private static ConcurrentMap<String, HealthCheckStatus> statusMap =
-            new ConcurrentHashMap<String, HealthCheckStatus>();
-
+    
+    public AtomicInteger checkOkCount = new AtomicInteger(0);
+    
+    public long checkRt = -1L;
+    
+    private static ConcurrentMap<String, HealthCheckStatus> statusMap = new ConcurrentHashMap<>();
+    
     public static void reset(Instance instance) {
         statusMap.put(buildKey(instance), new HealthCheckStatus());
     }
-
+    
+    /**
+     * Get health check status of instance.
+     *
+     * @param instance instance
+     * @return health check status
+     */
     public static HealthCheckStatus get(Instance instance) {
         String key = buildKey(instance);
-
+        
         if (!statusMap.containsKey(key)) {
             statusMap.putIfAbsent(key, new HealthCheckStatus());
         }
-
+        
         return statusMap.get(key);
     }
-
+    
     public static void remv(Instance instance) {
         statusMap.remove(buildKey(instance));
     }
-
+    
     private static String buildKey(Instance instance) {
         try {
-
+            
             String clusterName = instance.getClusterName();
             String serviceName = instance.getServiceName();
             String datumKey = instance.getDatumKey();
-            return serviceName + ":"
-                    + clusterName + ":"
-                    + datumKey;
+            return serviceName + ":" + clusterName + ":" + datumKey;
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", instance.toJSON(), e);
+            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", instance.toJson(), e);
         }
-
+        
         return instance.getDefaultKey();
     }
 }

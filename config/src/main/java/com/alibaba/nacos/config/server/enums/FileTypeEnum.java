@@ -75,9 +75,7 @@ public enum FileTypeEnum {
      * @author klw
      * @Description: properties file
      */
-    PROPERTIES("properties")
-
-    ;
+    PROPERTIES("properties");
 
     /**
      * @author klw
@@ -85,14 +83,13 @@ public enum FileTypeEnum {
      */
     private String fileType;
 
-    FileTypeEnum(String fileType){
+    FileTypeEnum(String fileType) {
         this.fileType = fileType;
     }
 
-    public String getFileType(){
+    public String getFileType() {
         return this.fileType;
     }
-
 
 
 }

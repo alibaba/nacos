@@ -13,40 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
+package com.alibaba.nacos.api.naming.pojo;
 
 import java.util.List;
 
 /**
- * ListView
+ * ListView.
  *
  * @author nkorange
  */
 public class ListView<T> {
-
+    
     private List<T> data;
+    
     private int count;
-
+    
     public List<T> getData() {
         return data;
     }
-
+    
     public void setData(List<T> data) {
         this.data = data;
     }
-
+    
     public int getCount() {
         return count;
     }
-
+    
     public void setCount(int count) {
         this.count = count;
     }
-
+    
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "ListView{" + "data=" + data + ", count=" + count + '}';
     }
 }

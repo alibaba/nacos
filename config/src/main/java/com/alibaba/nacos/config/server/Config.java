@@ -19,18 +19,19 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.net.UnknownHostException;
-
 /**
  * Config main
  *
  * @author Nacos
  */
 @EnableScheduling
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.alibaba.nacos.config.server",
+        "com.alibaba.nacos.core"
+})
 public class Config {
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) {
         SpringApplication.run(Config.class, args);
     }
 }

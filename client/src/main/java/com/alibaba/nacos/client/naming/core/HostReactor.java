@@ -15,26 +15,41 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class HostReactor {
+public class HostReactor implements Closeable {
 
     private static final long DEFAULT_DELAY = 1000L;
 
@@ -50,6 +65,8 @@ public class HostReactor {
 
     private EventDispatcher eventDispatcher;
 
+    private BeatReactor beatReactor;
+
     private NamingProxy serverProxy;
 
     private FailoverReactor failoverReactor;
@@ -58,14 +75,14 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
+        this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
-
-        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
+        // init executorService
+        this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -74,8 +91,8 @@ public class HostReactor {
                 return thread;
             }
         });
-
         this.eventDispatcher = eventDispatcher;
+        this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         if (loadCacheAtStart) {
@@ -98,14 +115,17 @@ public class HostReactor {
     }
 
     public ServiceInfo processServiceJSON(String json) {
-        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+        ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
         }
 
+        boolean changed = false;
+
         if (oldService != null) {
+
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
                     + ", new-t: " + serviceInfo.getLastRefTime());
@@ -157,18 +177,22 @@ public class HostReactor {
             }
 
             if (newHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(newHosts));
             }
 
             if (remvHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(remvHosts));
             }
 
             if (modHosts.size() > 0) {
+                changed = true;
+                updateBeatInfo(modHosts);
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
+                    + serviceInfo.getKey() + " -> " + JacksonUtils.toJson(modHosts));
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -179,8 +203,9 @@ public class HostReactor {
             }
 
         } else {
-            NAMING_LOGGER.info("new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() + " -> " + JSON
-                .toJSONString(serviceInfo.getHosts()));
+            changed = true;
+            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " +
+                JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
             serviceInfo.setJsonFromServer(json);
@@ -189,10 +214,22 @@ public class HostReactor {
 
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
-        NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
-            " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+        if (changed) {
+            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() +
+                " -> " + JacksonUtils.toJson(serviceInfo.getHosts()));
+        }
 
         return serviceInfo;
+    }
+
+    private void updateBeatInfo(Set<Instance> modHosts) {
+        for (Instance instance : modHosts) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
     }
 
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
@@ -205,7 +242,7 @@ public class HostReactor {
     public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
-            return JSON.parseObject(result, ServiceInfo.class);
+            return JacksonUtils.toObj(result, ServiceInfo.class);
         }
         return null;
     }
@@ -248,6 +285,7 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
+
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -268,6 +306,7 @@ public class HostReactor {
         try {
 
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
             }
@@ -290,6 +329,14 @@ public class HostReactor {
         }
     }
 
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
         private String clusters;
@@ -302,12 +349,14 @@ public class HostReactor {
 
         @Override
         public void run() {
+            long delayTime = -1;
+
             try {
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
 
                 if (serviceObj == null) {
                     updateServiceNow(serviceName, clusters);
-                    executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+                    delayTime = DEFAULT_DELAY;
                     return;
                 }
 
@@ -320,11 +369,24 @@ public class HostReactor {
                     refreshOnly(serviceName, clusters);
                 }
 
-                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
-
                 lastRefTime = serviceObj.getLastRefTime();
+
+                if (!eventDispatcher.isSubscribed(serviceName, clusters) &&
+                    !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                    // abort the update task:
+                    NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
+                    return;
+                }
+
+                delayTime = serviceObj.getCacheMillis();
+
+
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
+            } finally {
+                if (delayTime > 0) {
+                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
+                }
             }
 
         }

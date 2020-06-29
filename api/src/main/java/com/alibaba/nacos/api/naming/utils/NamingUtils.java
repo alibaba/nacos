@@ -13,28 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.utils.StringUtils;
 
 /**
+ * NamingUtils.
+ *
  * @author nkorange
  * @since 1.0.0
  */
 public class NamingUtils {
-
-    public static String getGroupedName(String serviceName, String groupName) {
-        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+    
+    public static String getGroupedName(final String serviceName, final String groupName) {
+        final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return resultGroupedName.intern();
     }
-
-    public static String getServiceName(String serviceNameWithGroup) {
+    
+    public static String getServiceName(final String serviceNameWithGroup) {
+        if (StringUtils.isBlank(serviceNameWithGroup)) {
+            return StringUtils.EMPTY;
+        }
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return serviceNameWithGroup;
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
     }
-
-    public static String getGroupName(String serviceNameWithGroup) {
+    
+    public static String getGroupName(final String serviceNameWithGroup) {
+        if (StringUtils.isBlank(serviceNameWithGroup)) {
+            return StringUtils.EMPTY;
+        }
         if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return Constants.DEFAULT_GROUP;
         }

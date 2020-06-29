@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api;
 
-import java.util.Properties;
+package com.alibaba.nacos.api;
 
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainService;
-import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 
+import java.util.Properties;
+
 /**
- * Nacos Factory
+ * Nacos Factory.
  *
  * @author Nacos
  */
 public class NacosFactory {
-
+    
     /**
-     * Create config service
+     * Create config service.
      *
      * @param properties init param
      * @return config
@@ -42,9 +43,9 @@ public class NacosFactory {
     public static ConfigService createConfigService(Properties properties) throws NacosException {
         return ConfigFactory.createConfigService(properties);
     }
-
+    
     /**
-     * Create config service
+     * Create config service.
      *
      * @param serverAddr server list
      * @return config
@@ -53,9 +54,9 @@ public class NacosFactory {
     public static ConfigService createConfigService(String serverAddr) throws NacosException {
         return ConfigFactory.createConfigService(serverAddr);
     }
-
+    
     /**
-     * Create naming service
+     * Create naming service.
      *
      * @param serverAddr server list
      * @return Naming
@@ -64,9 +65,9 @@ public class NacosFactory {
     public static NamingService createNamingService(String serverAddr) throws NacosException {
         return NamingFactory.createNamingService(serverAddr);
     }
-
+    
     /**
-     * Create naming service
+     * Create naming service.
      *
      * @param properties init param
      * @return Naming
@@ -75,27 +76,26 @@ public class NacosFactory {
     public static NamingService createNamingService(Properties properties) throws NacosException {
         return NamingFactory.createNamingService(properties);
     }
-
+    
     /**
-     * Create maintain service
+     * Create maintain service.
      *
-     * @param serverAddr
+     * @param serverAddr server address
      * @return NamingMaintainService
      * @throws NacosException Exception
      */
     public static NamingMaintainService createMaintainService(String serverAddr) throws NacosException {
         return NamingMaintainFactory.createMaintainService(serverAddr);
     }
-
+    
     /**
-     * Create maintain service
+     * Create maintain service.
      *
-     * @param properties
+     * @param properties server address
      * @return NamingMaintainService
      * @throws NacosException Exception
      */
     public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
         return NamingMaintainFactory.createMaintainService(properties);
     }
-
 }

@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author nkorange
+ * @author alibaba
  */
 public class Chooser<K, T> {
 

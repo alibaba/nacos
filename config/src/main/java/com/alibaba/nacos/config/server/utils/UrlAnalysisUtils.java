@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public class UrlAnalysisUtils {
 
-    private static Pattern urlPattern = Pattern.compile("^(\\w+://)?([\\w\\.]+:)(\\d*)?(\\??.*)");
+    private static final Pattern URL_PATTERN = Pattern.compile("^(\\w+://)?([\\w\\.]+:)(\\d*)?(\\??.*)");
 
     public static String getContentIdentity(String content) {
 
@@ -35,7 +35,7 @@ public class UrlAnalysisUtils {
             return null;
         }
 
-        Matcher matcher = urlPattern.matcher(content);
+        Matcher matcher = URL_PATTERN.matcher(content);
         StringBuilder buf = new StringBuilder();
         if (matcher.find()) {
             String scheme = matcher.group(1);

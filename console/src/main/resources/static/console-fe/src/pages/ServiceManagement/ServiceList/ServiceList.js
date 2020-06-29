@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +28,10 @@ import {
   Dialog,
   Message,
   ConfigProvider,
+  Switch,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
@@ -55,8 +60,12 @@ class ServiceList extends React.Component {
       total: 0,
       pageSize: 10,
       currentPage: 1,
-      keyword: '',
       dataSource: [],
+      search: {
+        serviceName: '',
+        groupName: '',
+      },
+      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -71,23 +80,22 @@ class ServiceList extends React.Component {
 
   openEditServiceDialog() {
     try {
-      this.editServiceDialog.current.getInstance()
-        .show(this.state.service);
-    } catch (error) {
-    }
+      this.editServiceDialog.current.getInstance().show(this.state.service);
+    } catch (error) {}
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
     const parameter = [
+      `hasIpCount=${hasIpCount}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
-      `keyword=${keyword}`,
+      `serviceNameParam=${search.serviceName}`,
+      `groupNameParam=${search.groupName}`,
     ];
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
-      beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
           dataSource: serviceList,
@@ -100,7 +108,6 @@ class ServiceList extends React.Component {
           total: 0,
           currentPage: 0,
         }),
-      complete: () => this.closeLoading(),
     });
   }
 
@@ -119,8 +126,7 @@ class ServiceList extends React.Component {
    *
    */
   showSampleCode(record) {
-    this.showcode.current.getInstance()
-      .openDialog(record);
+    this.showcode.current.getInstance().openDialog(record);
   }
 
   deleteService(service) {
@@ -157,7 +163,6 @@ class ServiceList extends React.Component {
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
-
   render() {
     const { locale = {} } = this.props;
     const {
@@ -165,6 +170,9 @@ class ServiceList extends React.Component {
       serviceList,
       serviceName,
       serviceNamePlaceholder,
+      groupName,
+      groupNamePlaceholder,
+      hiddenEmptyService,
       query,
       create,
       operation,
@@ -172,7 +180,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -214,13 +222,35 @@ class ServiceList extends React.Component {
                   <Input
                     placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
-                    value={keyword}
-                    onChange={keyword => this.setState({ keyword })}
+                    value={search.serviceName}
+                    onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryServiceList())
                     }
                   />
                 </FormItem>
+                <FormItem label={groupName}>
+                  <Input
+                    placeholder={groupNamePlaceholder}
+                    style={{ width: 200 }}
+                    value={search.groupName}
+                    onChange={groupName => this.setState({ search: { ...search, groupName } })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
+                  />
+                </FormItem>
+                <Form.Item label={`${hiddenEmptyService}:`}>
+                  <Switch
+                    checked={hasIpCount}
+                    onChange={hasIpCount =>
+                      this.setState({ hasIpCount, currentPage: 1 }, () => {
+                        localStorage.setItem('hasIpCount', hasIpCount);
+                        this.queryServiceList();
+                      })
+                    }
+                  />
+                </Form.Item>
                 <FormItem label="">
                   <Button
                     type="primary"
@@ -253,6 +283,7 @@ class ServiceList extends React.Component {
                   title={locale.columnHealthyInstanceCount}
                   dataIndex="healthyInstanceCount"
                 />
+                <Column title={locale.columnTriggerFlag} dataIndex="triggerFlag" />
                 <Column
                   title={operation}
                   align="center"
@@ -264,10 +295,12 @@ class ServiceList extends React.Component {
                      */
                     <div>
                       <a
-                        onClick={() =>
+                        onClick={() => {
+                          const { name, groupName } = record;
                           this.props.history.push(
-                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`,
-                          )}
+                            generateUrl('/serviceDetail', { name, groupName })
+                          );
+                        }}
                         style={{ marginRight: 5 }}
                       >
                         {detail}
@@ -277,10 +310,7 @@ class ServiceList extends React.Component {
                         {sampleCode}
                       </a>
                       <span style={{ marginRight: 5 }}>|</span>
-                      <a
-                        onClick={() => this.deleteService(record)}
-                        style={{ marginRight: 5 }}
-                      >
+                      <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>
                         {deleteAction}
                       </a>
                     </div>
@@ -290,10 +320,11 @@ class ServiceList extends React.Component {
             </Col>
           </Row>
           {this.state.total > this.state.pageSize && (
-            <div style={{
-              marginTop: 10,
-              textAlign: 'right',
-            }}
+            <div
+              style={{
+                marginTop: 10,
+                textAlign: 'right',
+              }}
             >
               <Pagination
                 current={this.state.currentPage}

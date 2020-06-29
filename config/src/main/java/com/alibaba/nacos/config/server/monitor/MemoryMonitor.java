@@ -16,9 +16,9 @@
 package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.ClientTrackService;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -39,18 +39,18 @@ public class MemoryMonitor {
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
-        TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
+        ConfigExecutor.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
-        TimerTaskService.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
+        ConfigExecutor.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
-        TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
+        ConfigExecutor.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
 
     }
 
-    static final long DELAY_SECONDS = 10;
+    private static final long DELAY_SECONDS = 10;
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
@@ -70,7 +70,7 @@ class PrintMemoryTask implements Runnable {
 
     @Override
     public void run() {
-        int groupCount = ConfigService.groupCount();
+        int groupCount = ConfigCacheService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
         memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount,
@@ -89,9 +89,7 @@ class NotifyTaskQueueMonitorTask implements Runnable {
     @Override
     public void run() {
         int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
-        memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-            new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
-                size});
+        memoryLog.info("toNotifyTaskSize={}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }

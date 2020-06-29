@@ -39,7 +39,7 @@ public class ClientIpWhiteList {
      */
     static public boolean isLegalClient(String clientIp) {
         if (StringUtils.isBlank(clientIp)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("clientIp is empty");
         }
         clientIp = clientIp.trim();
         if (CLIENT_IP_WHITELIST.get().contains(clientIp)) {

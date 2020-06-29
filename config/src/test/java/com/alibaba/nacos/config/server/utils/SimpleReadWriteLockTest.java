@@ -15,23 +15,20 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class SimpleReadWriteLockTest {
 
     @Test
-    public void test_双重读锁_全部释放_加写锁() {
+    public void testDoubleReadLockByAllReleaseAndWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());
@@ -43,14 +40,14 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_加写锁() {
+    public void testAddWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryWriteLock());
         lock.releaseWriteLock();
     }
 
     @Test
-    public void test_双重写锁() {
+    public void testDoubleWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
 
         assertTrue(lock.tryWriteLock());
@@ -58,7 +55,7 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_先读锁后写锁() {
+    public void testFirstReadLockThenWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
 
         assertTrue(lock.tryReadLock());
@@ -66,7 +63,7 @@ public class SimpleReadWriteLockTest {
     }
 
     @Test
-    public void test_双重读锁_释放一个_加写锁失败() {
+    public void testDoubleReadLockAndOneReleaseOneFailed() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());

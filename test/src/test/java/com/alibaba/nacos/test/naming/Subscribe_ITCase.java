@@ -15,34 +15,30 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -51,8 +47,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class Subscribe_ITCase extends RestAPI_ITCase {
 
     private NamingService naming;
@@ -169,7 +165,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
 
-    @Test
+    @Test(timeout = 20*TIME_OUT)
     public void subscribeEmpty() throws Exception {
 
         String serviceName = randomDomainName();
@@ -231,9 +227,9 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
             HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        JSONObject body = JSON.parseObject(response.getBody());
+        JsonNode body = JacksonUtils.toObj(response.getBody());
 
-        Assert.assertEquals(1, body.getJSONArray("subscribers").size());
+        Assert.assertEquals(1, body.get("subscribers").size());
 
         NamingService naming2 = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
 
@@ -258,9 +254,9 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
             HttpMethod.GET);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        body = JSON.parseObject(response.getBody());
+        body = JacksonUtils.toObj(response.getBody());
 
-        Assert.assertEquals(2, body.getJSONArray("subscribers").size());
+        Assert.assertEquals(2, body.get("subscribers").size());
     }
 
 }

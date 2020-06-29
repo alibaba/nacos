@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
-import com.alibaba.nacos.common.util.ResourceUtils;
+import com.alibaba.nacos.common.utils.ResourceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -72,7 +72,7 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
     private Configuration loadConfiguration(LoggerContext loggerContext, String location) {
         try {
-            URL url = ResourceUtils.getResourceURL(location);
+            URL url = ResourceUtils.getResourceUrl(location);
             ConfigurationSource source = getConfigurationSource(url);
             // since log4j 2.7 getConfiguration(LoggerContext loggerContext, ConfigurationSource source)
             return ConfigurationFactory.getInstance().getConfiguration(loggerContext, source);

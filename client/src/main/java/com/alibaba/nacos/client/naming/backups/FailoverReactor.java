@@ -15,20 +15,30 @@
  */
 package com.alibaba.nacos.client.naming.backups;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Map;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.TimerTask;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -36,29 +46,31 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author nkorange
  */
-public class FailoverReactor {
+public class FailoverReactor implements Closeable {
 
     private String failoverDir;
 
     private HostReactor hostReactor;
 
+    private ScheduledExecutorService executorService;
+
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
         this.failoverDir = cacheDir + "/failover";
+        // init executorService
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.failover");
+                return thread;
+            }
+        });
         this.init();
     }
 
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        }
-    });
-
     private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
 
@@ -96,6 +108,14 @@ public class FailoverReactor {
         startDT.setTime(date);
         startDT.add(Calendar.DAY_OF_MONTH, num);
         return startDT.getTime();
+    }
+
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 
     class SwitchRefresher implements Runnable {
@@ -180,7 +200,7 @@ public class FailoverReactor {
                         String json;
                         if ((json = reader.readLine()) != null) {
                             try {
-                                dom = JSON.parseObject(json, ServiceInfo.class);
+                                dom = JacksonUtils.toObj(json, ServiceInfo.class);
                             } catch (Exception e) {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }

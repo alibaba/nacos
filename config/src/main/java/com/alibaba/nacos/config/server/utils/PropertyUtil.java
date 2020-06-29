@@ -15,22 +15,18 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * properties utils
  *
  * @author Nacos
  */
-@Component
-public class PropertyUtil {
+public class PropertyUtil implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     private final static Logger logger = LogUtil.defaultLog;
 
@@ -83,25 +79,171 @@ public class PropertyUtil {
     /**
      * 单机模式使用db
      */
-    private static boolean standaloneUseMysql = false;
+    private static boolean useExternalDB = false;
+    /**
+     * 内嵌存储 value = ${nacos.standalone}
+     */
+    private static boolean embeddedStorage = ApplicationUtils.getStandaloneMode();
 
+    public static int getNotifyConnectTimeout() {
+        return notifyConnectTimeout;
+    }
 
-    @Autowired
-    private Environment env;
+    public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
+        PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
+    }
 
-    @PostConstruct
-    public void init() {
+    public static int getNotifySocketTimeout() {
+        return notifySocketTimeout;
+    }
+
+    public static void setNotifySocketTimeout(int notifySocketTimeout) {
+        PropertyUtil.notifySocketTimeout = notifySocketTimeout;
+    }
+
+    public static int getMaxHealthCheckFailCount() {
+        return maxHealthCheckFailCount;
+    }
+
+    public static void setMaxHealthCheckFailCount(int maxHealthCheckFailCount) {
+        PropertyUtil.maxHealthCheckFailCount = maxHealthCheckFailCount;
+    }
+
+    public static boolean isHealthCheck() {
+        return isHealthCheck;
+    }
+
+    public static void setHealthCheck(boolean isHealthCheck) {
+        PropertyUtil.isHealthCheck = isHealthCheck;
+    }
+
+    public static int getMaxContent() {
+        return maxContent;
+    }
+
+    public static void setMaxContent(int maxContent) {
+        PropertyUtil.maxContent = maxContent;
+    }
+
+    public static boolean isManageCapacity() {
+        return isManageCapacity;
+    }
+
+    public static void setManageCapacity(boolean isManageCapacity) {
+        PropertyUtil.isManageCapacity = isManageCapacity;
+    }
+
+    public static int getDefaultClusterQuota() {
+        return defaultClusterQuota;
+    }
+
+    public static void setDefaultClusterQuota(int defaultClusterQuota) {
+        PropertyUtil.defaultClusterQuota = defaultClusterQuota;
+    }
+
+    public static boolean isCapacityLimitCheck() {
+        return isCapacityLimitCheck;
+    }
+
+    public static void setCapacityLimitCheck(boolean isCapacityLimitCheck) {
+        PropertyUtil.isCapacityLimitCheck = isCapacityLimitCheck;
+    }
+
+    public static int getDefaultGroupQuota() {
+        return defaultGroupQuota;
+    }
+
+    public static void setDefaultGroupQuota(int defaultGroupQuota) {
+        PropertyUtil.defaultGroupQuota = defaultGroupQuota;
+    }
+
+    public static int getDefaultTenantQuota() {
+        return defaultTenantQuota;
+    }
+
+    public static void setDefaultTenantQuota(int defaultTenantQuota) {
+        PropertyUtil.defaultTenantQuota = defaultTenantQuota;
+    }
+
+    public static int getInitialExpansionPercent() {
+        return initialExpansionPercent;
+    }
+
+    public static void setInitialExpansionPercent(int initialExpansionPercent) {
+        PropertyUtil.initialExpansionPercent = initialExpansionPercent;
+    }
+
+    public static int getDefaultMaxSize() {
+        return defaultMaxSize;
+    }
+
+    public static void setDefaultMaxSize(int defaultMaxSize) {
+        PropertyUtil.defaultMaxSize = defaultMaxSize;
+    }
+
+    public static int getDefaultMaxAggrCount() {
+        return defaultMaxAggrCount;
+    }
+
+    public static void setDefaultMaxAggrCount(int defaultMaxAggrCount) {
+        PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
+    }
+
+    public static int getDefaultMaxAggrSize() {
+        return defaultMaxAggrSize;
+    }
+
+    public static void setDefaultMaxAggrSize(int defaultMaxAggrSize) {
+        PropertyUtil.defaultMaxAggrSize = defaultMaxAggrSize;
+    }
+
+    public static int getCorrectUsageDelay() {
+        return correctUsageDelay;
+    }
+
+    public static void setCorrectUsageDelay(int correctUsageDelay) {
+        PropertyUtil.correctUsageDelay = correctUsageDelay;
+    }
+
+    public static boolean isStandaloneMode() {
+        return ApplicationUtils.getStandaloneMode();
+    }
+
+    public static boolean isUseExternalDB() {
+        return useExternalDB;
+    }
+
+    public static void setUseExternalDB(boolean useExternalDB) {
+        PropertyUtil.useExternalDB = useExternalDB;
+    }
+
+    public static boolean isEmbeddedStorage() {
+        return embeddedStorage;
+    }
+
+    // Determines whether to read the data directly
+    // if use mysql, Reduce database read pressure
+    // if use raft+derby, Reduce leader read pressure
+
+    public static boolean isDirectRead() {
+        return ApplicationUtils.getStandaloneMode() && isEmbeddedStorage();
+    }
+
+    public static void setEmbeddedStorage(boolean embeddedStorage) {
+        PropertyUtil.embeddedStorage = embeddedStorage;
+    }
+
+    private void loadSetting() {
         try {
-
-            setNotifyConnectTimeout(Integer.parseInt(env.getProperty("notifyConnectTimeout", "100")));
+            setNotifyConnectTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifyConnectTimeout", "100")));
             logger.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(env.getProperty("notifySocketTimeout", "200")));
+            setNotifySocketTimeout(Integer.parseInt(ApplicationUtils.getProperty("notifySocketTimeout", "200")));
             logger.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.valueOf(env.getProperty("isHealthCheck", "true")));
+            setHealthCheck(Boolean.parseBoolean(ApplicationUtils.getProperty("isHealthCheck", "true")));
             logger.info("isHealthCheck:{}", isHealthCheck);
-            setMaxHealthCheckFailCount(Integer.parseInt(env.getProperty("maxHealthCheckFailCount", "12")));
+            setMaxHealthCheckFailCount(Integer.parseInt(ApplicationUtils.getProperty("maxHealthCheckFailCount", "12")));
             logger.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
-            setMaxContent(Integer.parseInt(env.getProperty("maxContent", String.valueOf(maxContent))));
+            setMaxContent(Integer.parseInt(ApplicationUtils.getProperty("maxContent", String.valueOf(maxContent))));
             logger.info("maxContent:{}", maxContent);
             // 容量管理
             setManageCapacity(getBoolean("isManageCapacity", isManageCapacity));
@@ -114,31 +256,35 @@ public class PropertyUtil {
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            setStandaloneUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
 
+            // External data sources are used by default in cluster mode
+            setUseExternalDB("mysql".equalsIgnoreCase(getString("spring.datasource.platform", "")));
+
+            // must initialize after setUseExternalDB
+            // This value is true in stand-alone mode and false in cluster mode
+            // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
+            // default value is depend on ${nacos.standalone}
+
+            if (isUseExternalDB()) {
+                setEmbeddedStorage(false);
+            } else {
+                boolean embeddedStorage = PropertyUtil.embeddedStorage || Boolean.getBoolean("embeddedStorage");
+                setEmbeddedStorage(embeddedStorage);
+
+                // If the embedded data source storage is not turned on, it is automatically
+                // upgraded to the external data source storage, as before
+                if (!embeddedStorage) {
+                    setUseExternalDB(true);
+                }
+            }
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
+            throw e;
         }
     }
 
-    public static int getNotifyConnectTimeout() {
-        return notifyConnectTimeout;
-    }
-
-    public static int getNotifySocketTimeout() {
-        return notifySocketTimeout;
-    }
-
-    public static int getMaxHealthCheckFailCount() {
-        return maxHealthCheckFailCount;
-    }
-
-    public static boolean isHealthCheck() {
-        return isHealthCheck;
-    }
-
     private boolean getBoolean(String key, boolean defaultValue) {
-        return Boolean.valueOf(getString(key, String.valueOf(defaultValue)));
+        return Boolean.parseBoolean(getString(key, String.valueOf(defaultValue)));
     }
 
     private int getInt(String key, int defaultValue) {
@@ -146,7 +292,7 @@ public class PropertyUtil {
     }
 
     private String getString(String key, String defaultValue) {
-        String value = env.getProperty(key);
+        String value = getProperty(key);
         if (value == null) {
             return defaultValue;
         }
@@ -155,125 +301,16 @@ public class PropertyUtil {
     }
 
     public String getProperty(String key) {
-        return env.getProperty(key);
+        return ApplicationUtils.getProperty(key);
     }
 
     public String getProperty(String key, String defaultValue) {
-        return env.getProperty(key, defaultValue);
+        return ApplicationUtils.getProperty(key, defaultValue);
     }
 
-    public static int getMaxContent() {
-        return maxContent;
-    }
-
-    public static boolean isManageCapacity() {
-        return isManageCapacity;
-    }
-
-    public static int getDefaultClusterQuota() {
-        return defaultClusterQuota;
-    }
-
-    public static boolean isCapacityLimitCheck() {
-        return isCapacityLimitCheck;
-    }
-
-    public static int getDefaultGroupQuota() {
-        return defaultGroupQuota;
-    }
-
-    public static int getDefaultTenantQuota() {
-        return defaultTenantQuota;
-    }
-
-    public static int getInitialExpansionPercent() {
-        return initialExpansionPercent;
-    }
-
-    public static int getDefaultMaxSize() {
-        return defaultMaxSize;
-    }
-
-    public static int getDefaultMaxAggrCount() {
-        return defaultMaxAggrCount;
-    }
-
-    public static int getDefaultMaxAggrSize() {
-        return defaultMaxAggrSize;
-    }
-
-    public static int getCorrectUsageDelay() {
-        return correctUsageDelay;
-    }
-
-    public static boolean isStandaloneMode() {
-        return STANDALONE_MODE;
-    }
-
-    public static boolean isStandaloneUseMysql() {
-        return standaloneUseMysql;
-    }
-
-    public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
-        PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
-    }
-
-    public static void setNotifySocketTimeout(int notifySocketTimeout) {
-        PropertyUtil.notifySocketTimeout = notifySocketTimeout;
-    }
-
-    public static void setMaxHealthCheckFailCount(int maxHealthCheckFailCount) {
-        PropertyUtil.maxHealthCheckFailCount = maxHealthCheckFailCount;
-    }
-
-    public static void setHealthCheck(boolean isHealthCheck) {
-        PropertyUtil.isHealthCheck = isHealthCheck;
-    }
-
-    public static void setMaxContent(int maxContent) {
-        PropertyUtil.maxContent = maxContent;
-    }
-
-    public static void setManageCapacity(boolean isManageCapacity) {
-        PropertyUtil.isManageCapacity = isManageCapacity;
-    }
-
-    public static void setCapacityLimitCheck(boolean isCapacityLimitCheck) {
-        PropertyUtil.isCapacityLimitCheck = isCapacityLimitCheck;
-    }
-
-    public static void setDefaultClusterQuota(int defaultClusterQuota) {
-        PropertyUtil.defaultClusterQuota = defaultClusterQuota;
-    }
-
-    public static void setDefaultGroupQuota(int defaultGroupQuota) {
-        PropertyUtil.defaultGroupQuota = defaultGroupQuota;
-    }
-
-    public static void setDefaultTenantQuota(int defaultTenantQuota) {
-        PropertyUtil.defaultTenantQuota = defaultTenantQuota;
-    }
-
-    public static void setDefaultMaxSize(int defaultMaxSize) {
-        PropertyUtil.defaultMaxSize = defaultMaxSize;
-    }
-
-    public static void setDefaultMaxAggrCount(int defaultMaxAggrCount) {
-        PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
-    }
-
-    public static void setDefaultMaxAggrSize(int defaultMaxAggrSize) {
-        PropertyUtil.defaultMaxAggrSize = defaultMaxAggrSize;
-    }
-
-    public static void setInitialExpansionPercent(int initialExpansionPercent) {
-        PropertyUtil.initialExpansionPercent = initialExpansionPercent;
-    }
-
-    public static void setCorrectUsageDelay(int correctUsageDelay) {
-        PropertyUtil.correctUsageDelay = correctUsageDelay;
-    }
-    public static void setStandaloneUseMysql(boolean standaloneUseMysql) {
-        PropertyUtil.standaloneUseMysql = standaloneUseMysql;
+    @Override
+    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+        ApplicationUtils.injectEnvironment(configurableApplicationContext.getEnvironment());
+        loadSetting();
     }
 }

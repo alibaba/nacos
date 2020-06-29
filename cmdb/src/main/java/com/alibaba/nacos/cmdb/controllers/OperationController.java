@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.cmdb.controllers;
 
-import com.alibaba.nacos.cmdb.core.SwitchAndOptions;
 import com.alibaba.nacos.cmdb.memory.CmdbProvider;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
 import com.alibaba.nacos.core.utils.WebUtils;

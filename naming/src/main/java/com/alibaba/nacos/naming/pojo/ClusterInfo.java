@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.pojo;
 
 import java.io.Serializable;
 import java.util.List;
 
 /**
+ * Cluster info.
+ *
  * @author caogu.wyp
  * @version $Id: ClusterInfo.java, v 0.1 2018-09-17 上午11:36 caogu.wyp Exp $$
  */
 public class ClusterInfo implements Serializable {
-
+    
     private List<IpAddressInfo> hosts;
-
+    
     /**
      * Getter method for property <tt>hosts</tt>.
      *
@@ -34,7 +37,7 @@ public class ClusterInfo implements Serializable {
     public List<IpAddressInfo> getHosts() {
         return hosts;
     }
-
+    
     /**
      * Setter method for property <tt>hosts </tt>.
      *

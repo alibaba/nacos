@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +19,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
   Button,
@@ -144,6 +148,13 @@ class NewConfig extends React.Component {
     }
   }
 
+  tagSearch(value) {
+    const { tagLst } = this.state;
+    if (!tagLst.includes(value)) {
+      this.setState({ tagLst: [value, ...tagLst] });
+    }
+  }
+
   setConfigTags(value) {
     if (value.length > 5) {
       value.pop();
@@ -154,6 +165,7 @@ class NewConfig extends React.Component {
       }
     });
     this.setState({
+      tagLst: value,
       config_tags: value,
     });
   }
@@ -192,9 +204,12 @@ class NewConfig extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || '';
     this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
+      generateUrl('/configurationManagement', {
+        serverId: this.serverId,
+        group: this.searchGroup,
+        dataId: this.searchDataId,
+        namespace: this.tenant,
+      })
     );
   }
 
@@ -331,15 +346,15 @@ class NewConfig extends React.Component {
         }
         self.successDialog.current.getInstance().openDialog(_payload);
       },
-      complete() {
-        self.closeLoading();
+      complete: () => {
+        this.closeLoading();
       },
-      error(res) {
+      error: res => {
+        this.closeLoading();
         Dialog.alert({
           language: aliwareIntl.currentLanguageCode || 'zh-cn',
           content: locale.publishFailed,
         });
-        self.closeLoading();
       },
     });
   };
@@ -365,10 +380,10 @@ class NewConfig extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /[@#\$%\^&\*]+/g;
+    const chartReg = /[@#\$%\^&\*\s]+/g;
 
     if (chartReg.test(value)) {
-      callback(locale.doNotEnte);
+      callback(locale.doNotEnter);
     } else {
       callback();
     }
@@ -414,7 +429,7 @@ class NewConfig extends React.Component {
         label: 'YAML',
       },
       {
-        value: 'text/html',
+        value: 'html',
         label: 'HTML',
       },
       {
@@ -493,6 +508,7 @@ class NewConfig extends React.Component {
             >
               <Select
                 size={'medium'}
+                showSearch
                 hasArrow
                 style={{ width: '100%', height: '100%!important' }}
                 autoWidth
@@ -503,6 +519,7 @@ class NewConfig extends React.Component {
                 dataSource={this.state.tagLst}
                 value={this.state.config_tags}
                 onChange={this.setConfigTags.bind(this)}
+                onSearch={val => this.tagSearch(val)}
                 hasClear
               />
             </FormItem>
