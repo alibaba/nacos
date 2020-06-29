@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -68,7 +67,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
     
         @Override
         public HttpClientResponse intercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
-                HttpClientRequest httpClientRequest) {
+                HttpClientRequest httpClientRequest) throws Exception{
             return new HttpClientResponse() {
                 @Override
                 public Header getHeaders() {

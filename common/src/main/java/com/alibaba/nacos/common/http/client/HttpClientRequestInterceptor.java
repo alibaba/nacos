@@ -36,7 +36,9 @@ public interface HttpClientRequestInterceptor {
      * @param requestHttpEntity request entity
      * @param httpClientRequest http client
      * @return HttpClientResponse
+     * @throws Exception ex
      */
-    HttpClientResponse intercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, HttpClientRequest httpClientRequest);
+    HttpClientResponse intercept(URI uri, String httpMethod,
+            RequestHttpEntity requestHttpEntity, HttpClientRequest httpClientRequest) throws Exception;
     
 }
