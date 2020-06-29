@@ -31,23 +31,24 @@ public class InterceptingHttpClientRequest implements HttpClientRequest {
     
     private final HttpClientRequest httpClientRequest;
     
-    private final Iterator<HttpClientRequestInterceptor> iterator;
+    private final Iterator<HttpClientRequestInterceptor> interceptors;
     
     public InterceptingHttpClientRequest(HttpClientRequest httpClientRequest,
-            Iterator<HttpClientRequestInterceptor> iterator) {
+            Iterator<HttpClientRequestInterceptor> interceptors) {
         this.httpClientRequest = httpClientRequest;
-        this.iterator = iterator;
+        this.interceptors = interceptors;
     }
     
     @Override
     public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
             throws Exception {
-        if (iterator.hasNext()) {
-            HttpClientRequestInterceptor nextInterceptor = iterator.next();
-            return nextInterceptor.intercept(uri, httpMethod, requestHttpEntity, this);
-        } else {
-            return httpClientRequest.execute(uri, httpMethod, requestHttpEntity);
+        while (interceptors.hasNext()) {
+            HttpClientRequestInterceptor nextInterceptor = interceptors.next();
+            if (nextInterceptor.isIntercept(uri, httpMethod, requestHttpEntity)) {
+                return nextInterceptor.intercept();
+            }
         }
+        return httpClientRequest.execute(uri, httpMethod, requestHttpEntity);
     }
     
     @Override

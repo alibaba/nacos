@@ -19,7 +19,6 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.HttpClientRequest;
 import com.alibaba.nacos.common.http.client.HttpClientRequestInterceptor;
 import com.alibaba.nacos.common.http.client.HttpClientResponse;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -66,8 +65,7 @@ public class NacosRestTemplate_Interceptors_ITCase {
     private class TerminationInterceptor implements HttpClientRequestInterceptor {
     
         @Override
-        public HttpClientResponse intercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
-                HttpClientRequest httpClientRequest) throws Exception{
+        public HttpClientResponse intercept() {
             return new HttpClientResponse() {
                 @Override
                 public Header getHeaders() {
@@ -95,6 +93,12 @@ public class NacosRestTemplate_Interceptors_ITCase {
                 }
             };
         }
+    
+        @Override
+        public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
+            return true;
+        }
+        
     }
 
     @Before

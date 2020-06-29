@@ -28,17 +28,20 @@ import java.net.URI;
 public interface HttpClientRequestInterceptor {
     
     /**
-     * Intercept the given request, and return a response.
-     * The given {@link HttpClientRequest} allows the interceptor to pass on the
+     * is intercept
      *
-     * @param uri url
-     * @param httpMethod  http method
+     * @param uri uri
+     * @param httpMethod http method
      * @param requestHttpEntity request entity
-     * @param httpClientRequest http client
-     * @return HttpClientResponse
-     * @throws Exception ex
+     * @return boolean
      */
-    HttpClientResponse intercept(URI uri, String httpMethod,
-            RequestHttpEntity requestHttpEntity, HttpClientRequest httpClientRequest) throws Exception;
+    boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity);
     
+    /**
+     * if isIntercept method is true Intercept the given request, and return a response.
+     * Otherwise, the {@link HttpClientRequest} will be used for execution.
+     *
+     * @return HttpClientResponse
+     */
+    HttpClientResponse intercept();
 }

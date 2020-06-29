@@ -72,7 +72,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
         HttpRequestBase requestBase = httpMethod.getRequestBase();
-        getConfig(requestBase, requestHttpEntity.getHttpClientConfig());
+        replaceDefaultConfig(requestBase, requestHttpEntity.getHttpClientConfig());
         return requestBase;
     }
     
@@ -82,7 +82,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
      * @param requestBase requestBase
      * @param httpClientConfig http config
      */
-    private static void getConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
+    private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
         if (httpClientConfig == null) {
             return;
         }

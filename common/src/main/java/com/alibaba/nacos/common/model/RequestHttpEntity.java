@@ -39,22 +39,15 @@ public class RequestHttpEntity {
     private Object body;
     
     public RequestHttpEntity(Header header, Query query) {
-        handleHeader(header);
-        this.query = query;
-        this.httpClientConfig = null;
+        this(null, header, query);
     }
     
     public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query) {
-        handleHeader(header);
-        this.httpClientConfig = httpClientConfig;
-        this.query = query;
+       this(httpClientConfig, header, query, null);
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {
-        handleHeader(header);
-        this.query = query;
-        this.body = body;
-        this.httpClientConfig = null;
+        this(null, header, query, body);
     }
     
     public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query, Object body) {
