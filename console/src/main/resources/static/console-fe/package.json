@@ -58,9 +58,9 @@
     "style-loader": "^0.23.1",
     "uglifyjs-webpack-plugin": "^2.1.0",
     "url-loader": "^1.1.2",
-    "webpack": "^4.28.2",
-    "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.13"
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
     "@alifd/next": "^1.11.10",
