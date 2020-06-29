@@ -436,6 +436,14 @@ public class NacosRestTemplate {
         }
     }
     
+    /**
+     * Return the request interceptors that this accessor uses.
+     * <p>The returned {@link List} is active and may get appended to.
+     */
+    public List<HttpClientRequestInterceptor> getInterceptors() {
+        return interceptors;
+    }
+    
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());

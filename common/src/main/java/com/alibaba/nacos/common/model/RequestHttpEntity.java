@@ -83,6 +83,10 @@ public class RequestHttpEntity {
         return body;
     }
     
+    public HttpClientConfig getHttpClientConfig() {
+        return httpClientConfig;
+    }
+    
     public boolean isEmptyBody() {
         return body == null;
     }
