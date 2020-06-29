@@ -41,7 +41,6 @@ import java.util.Map;
  * NacosAsyncRestTemplate_ITCase
  *
  * @author mai.jh
- * @date 2020/5/29
  */
 @SuppressWarnings("all")
 @FixMethodOrder(MethodSorters.JVM)

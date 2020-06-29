@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.model;
 
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 
@@ -31,6 +32,8 @@ public class RequestHttpEntity {
     
     private final Header headers = Header.newInstance();
     
+    private final HttpClientConfig httpClientConfig;
+    
     private final Query query;
     
     private Object body;
@@ -38,10 +41,25 @@ public class RequestHttpEntity {
     public RequestHttpEntity(Header header, Query query) {
         handleHeader(header);
         this.query = query;
+        this.httpClientConfig = null;
+    }
+    
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query) {
+        handleHeader(header);
+        this.httpClientConfig = httpClientConfig;
+        this.query = query;
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {
         handleHeader(header);
+        this.query = query;
+        this.body = body;
+        this.httpClientConfig = null;
+    }
+    
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query, Object body) {
+        handleHeader(header);
+        this.httpClientConfig = httpClientConfig;
         this.query = query;
         this.body = body;
     }

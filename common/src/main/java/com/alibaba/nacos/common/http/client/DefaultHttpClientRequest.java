@@ -18,9 +18,11 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -69,7 +71,24 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         } else {
             httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
-        return httpMethod.getRequestBase();
+        HttpRequestBase requestBase = httpMethod.getRequestBase();
+        getConfig(requestBase, requestHttpEntity.getHttpClientConfig());
+        return requestBase;
+    }
+    
+    /**
+     * Replace the HTTP config created by default with the HTTP config specified in the request
+     *
+     * @param requestBase requestBase
+     * @param httpClientConfig http config
+     */
+    private static void getConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
+        if (httpClientConfig == null) {
+            return;
+        }
+        requestBase.setConfig(RequestConfig.custom().
+                setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     
     @Override
