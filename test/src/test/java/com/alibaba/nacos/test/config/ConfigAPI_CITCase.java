@@ -92,7 +92,7 @@ public class ConfigAPI_CITCase {
             Assert.fail();
         }
     }
-    
+
     @BeforeClass
     @AfterClass
     public static void cleanClientCache() throws Exception {
@@ -395,7 +395,7 @@ public class ConfigAPI_CITCase {
         final String newContent = "nacos_addListener_3-" + System.currentTimeMillis();
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
-        
+
         // Maximum assurance level notification has been performed
         ThreadUtils.sleep(5000);
 
