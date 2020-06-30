@@ -17,12 +17,18 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.utils.JSONUtils;
+import com.alibaba.nacos.core.utils.GenericType;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -79,7 +85,7 @@ public class NacosRestTemplate_ITCase {
     public void test_url_get_return_restResult() throws Exception{
         String url = IP + CONFIG_PATH + "/configs";
         Query query = Query.newInstance().addParam("beta", true).addParam("dataId","test-1").addParam("group", "DEFAULT_GROUP");
-        HttpRestResult<String> restResult = nacosRestTemplate.get(url, Header.newInstance(), query, RestResult.class);
+        HttpRestResult<ConfigInfo4Beta> restResult = nacosRestTemplate.get(url, Header.newInstance(), query,  new TypeReference<RestResult<ConfigInfo4Beta>>(){}.getType());
         Assert.assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());

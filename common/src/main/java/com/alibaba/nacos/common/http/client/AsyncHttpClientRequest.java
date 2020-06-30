@@ -37,10 +37,10 @@ public interface AsyncHttpClientRequest extends Closeable {
      * @param uri               http url
      * @param httpMethod        http request method
      * @param requestHttpEntity http request entity
-     * @param responseType      http response type
+     * @param responseHandler   http response handler
      * @param callback          http response callback
      * @throws Exception ex
      */
-    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType,
+    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final ResponseHandler<T> responseHandler,
             final Callback<T> callback) throws Exception;
 }
