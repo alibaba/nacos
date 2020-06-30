@@ -16,49 +16,33 @@
 
 package com.alibaba.nacos.common.http.client;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.apache.http.HttpStatus;
 
 import java.lang.reflect.Type;
-import java.util.List;
 
 /**
- * response converter handler
- * uses the given {@linkplain ResponseConverter entity converters},
- * to convert the response into a type {@link HttpRestResult}.
+ * Abstract response converter handler
  *
  * @author mai.jh
  */
-public class ResponseConverterHandler<T> implements ResponseHandler<T> {
+public abstract class AbstractResponseConverterHandler<T> implements ResponseHandler<T> {
     
     private Type responseType;
     
-    private List<ResponseConverter<?>> responseConverters;
-    
-    public ResponseConverterHandler(Type responseType, List<ResponseConverter<?>> responseConverters) {
+    @Override
+    public final void setResponseType(Type responseType) {
         this.responseType = responseType;
-        this.responseConverters = responseConverters;
     }
     
     @Override
-    @SuppressWarnings("unchecked")
-    public HttpRestResult<T> handle(HttpClientResponse response) throws Exception {
-        final Header headers = response.getHeaders();
-        String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
+    public final HttpRestResult<T> handle(HttpClientResponse response) throws Exception {
         if (HttpStatus.SC_OK != response.getStatusCode()) {
             return handleError(response);
         }
-        for (ResponseConverter<?> responseConverter : responseConverters) {
-            if (responseConverter.canConverter(responseType, contentType)) {
-                return (HttpRestResult<T>) responseConverter.converter(response, responseType);
-            }
-        }
-        throw new NacosException(NacosException.HTTP_CLIENT_ERROR_CODE, "Could not handle response: no suitable ResponseConverter found " +
-                "for response type [" + this.responseType + "] and content type [" + contentType + "]");
+        return convertResult(response, this.responseType);
     }
     
     private HttpRestResult<T> handleError(HttpClientResponse response) throws Exception{
@@ -66,5 +50,16 @@ public class ResponseConverterHandler<T> implements ResponseHandler<T> {
         String message = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<T>(headers, response.getStatusCode(), null, message);
     }
+    
+    /**
+     * Abstract convertResult method,
+     * Different types of converters for expansion
+     *
+     * @param response http client response
+     * @param responseType responseType
+     * @return HttpRestResult
+     * @throws Exception ex
+     */
+    public abstract HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception;
     
 }

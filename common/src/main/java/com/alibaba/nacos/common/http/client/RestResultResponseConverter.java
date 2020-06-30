@@ -18,23 +18,37 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.model.RestResult;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
- * bean response converter
- * Mainly converter response type as bean type
+ * RestResult response converter
+ * Mainly converter response type as {@link RestResult} type.
  *
  * @author mai.jh
  */
-public class BeanResponseConverter<T> extends AbstractResponseConverterHandler<T> {
+public class RestResultResponseConverter<T> extends AbstractResponseConverterHandler<T> {
     
     @Override
+    @SuppressWarnings("unchecked")
     public HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception {
         final Header headers = response.getHeaders();
         InputStream body = response.getBody();
         T extractBody = com.alibaba.nacos.common.http.handler.ResponseHandler.convert(body, responseType);
-        return new HttpRestResult<T>(headers, response.getStatusCode(), extractBody, null);
+        HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
+        httpRestResult.setHeader(headers);
+        return httpRestResult;
     }
+    
+    private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
+        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
+        httpRestResult.setCode(restResult.getCode());
+        httpRestResult.setData(restResult.getData());
+        httpRestResult.setMessage(restResult.getMessage());
+        return httpRestResult;
+    }
+    
+   
 }

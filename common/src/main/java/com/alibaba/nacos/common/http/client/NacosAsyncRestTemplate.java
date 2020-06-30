@@ -28,8 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,19 +37,15 @@ import java.util.Map;
  * @see AsyncHttpClientRequest
  * @see HttpClientResponse
  */
-public class NacosAsyncRestTemplate {
+public class NacosAsyncRestTemplate extends HttpConverter {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosAsyncRestTemplate.class);
     
     private AsyncHttpClientRequest clientRequest;
     
-    private final List<ResponseConverter<?>> responseConverters = new ArrayList<ResponseConverter<?>>();
-    
     public NacosAsyncRestTemplate(AsyncHttpClientRequest clientRequest) {
+        super();
         this.clientRequest = clientRequest;
-        // init response converter
-        responseConverters.add(new StringResponseConverter());
-        responseConverters.add(new BeanResponseConverter());
     }
     
     /**
@@ -71,8 +65,7 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void get(String url, Header header, Query query, Type responseType, Callback<T> callback)
             throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
-        execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseHandler, callback);
+        execute(url, HttpMethod.GET, new RequestHttpEntity(header, query), responseType, callback);
     }
     
     /**
@@ -92,9 +85,8 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void get(String url, Header header, Map<String, String> paramValues, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.GET, new RequestHttpEntity(header, Query.newInstance().initParams(paramValues)),
-                responseHandler, callback);
+                responseType, callback);
     }
     
     /**
@@ -116,8 +108,7 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void getLarge(String url, Header header, Query query, Object body, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
-        execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseHandler, callback);
+        execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType, callback);
     }
     
     /**
@@ -137,8 +128,7 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void delete(String url, Header header, Query query, Type responseType, Callback<T> callback)
             throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
-        execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseHandler, callback);
+        execute(url, HttpMethod.DELETE, new RequestHttpEntity(header, query), responseType, callback);
     }
     
     /**
@@ -161,8 +151,7 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void put(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback)
             throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
-        execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseHandler, callback);
+        execute(url, HttpMethod.PUT, new RequestHttpEntity(header, query, body), responseType, callback);
     }
     
     /**
@@ -186,9 +175,8 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                Query.newInstance().initParams(paramValues), body), responseHandler, callback);
+                Query.newInstance().initParams(paramValues), body), responseType, callback);
     }
     
     /**
@@ -212,10 +200,9 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.PUT,
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-                responseHandler, callback);
+                responseType, callback);
     }
     
     /**
@@ -239,9 +226,8 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void putForm(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues,
             Type responseType, Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.PUT, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-                Query.newInstance().initParams(paramValues), bodyValues), responseHandler, callback);
+                Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
     }
     
     /**
@@ -264,8 +250,7 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void post(String url, Header header, Query query, Object body, Type responseType, Callback<T> callback)
             throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
-        execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseHandler, callback);
+        execute(url, HttpMethod.POST, new RequestHttpEntity(header, query, body), responseType, callback);
     }
     
     /**
@@ -289,9 +274,8 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postJson(String url, Header header, Map<String, String> paramValues, String body, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.POST, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON),
-                Query.newInstance().initParams(paramValues), body), responseHandler, callback);
+                Query.newInstance().initParams(paramValues), body), responseType, callback);
     }
     
     /**
@@ -315,10 +299,9 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postForm(String url, Header header, Query query, Map<String, String> bodyValues, Type responseType,
             Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.POST,
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues),
-                responseHandler, callback);
+                responseType, callback);
     }
     
     /**
@@ -342,32 +325,21 @@ public class NacosAsyncRestTemplate {
      */
     public <T> void postForm(String url, Header header, Map<String, String> paramValues, Map<String, String> bodyValues,
             Type responseType, Callback<T> callback) throws Exception {
-        ResponseHandler<T> responseHandler = this.responseEntityHandler(responseType);
         execute(url, HttpMethod.POST,
                 new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-                        Query.newInstance().initParams(paramValues), bodyValues), responseHandler, callback);
+                        Query.newInstance().initParams(paramValues), bodyValues), responseType, callback);
         
     }
     
-    /**
-     * Add customization Converter
-     * @param responseConverter {@link ResponseConverter}
-     */
-    public void addResponseConverter(ResponseConverter responseConverter) {
-        this.responseConverters.add(responseConverter);
-    }
-    
-    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, ResponseHandler<T> responseHandler,
+    @SuppressWarnings("unchecked")
+    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP " + httpMethod + " " + url);
         }
+        ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
         clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);
-    }
-    
-    private <T> ResponseHandler<T> responseEntityHandler(Type responseType) {
-        return new ResponseConverterHandler<T>(responseType, this.responseConverters);
     }
     
     /**

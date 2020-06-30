@@ -28,15 +28,10 @@ import java.lang.reflect.Type;
  *
  * @author mai.jh
  */
-public class StringResponseConverter implements ResponseConverter<String> {
+public class StringResponseConverter extends AbstractResponseConverterHandler<String> {
     
     @Override
-    public boolean canConverter(Type responseType, String contentType) {
-        return String.class.toString().equals(responseType.toString());
-    }
-    
-    @Override
-    public HttpRestResult<String> converter(HttpClientResponse response, Type responseType) throws Exception {
+    public HttpRestResult<String> convertResult(HttpClientResponse response, Type responseType) throws Exception{
         final Header headers = response.getHeaders();
         String extractBody = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<String>(headers, response.getStatusCode(), extractBody, null);
