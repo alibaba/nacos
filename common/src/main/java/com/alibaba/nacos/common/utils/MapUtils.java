@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.NotThreadSafe;
 
 import java.util.Collection;
@@ -139,7 +138,7 @@ public class MapUtils {
      */
     @NotThreadSafe
     public static Object computeIfAbsent(Map target, Object key, BiFunction mappingFunction, Object param1,
-            Object param2) throws NacosException {
+            Object param2) {
         
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(key, "mappingFunction");

@@ -111,9 +111,7 @@ class ExportDialog extends React.Component {
     const query = `?dataId=${this.state.dataId}&group=${this.state.group}&appName=${
       this.state.appName
     }&tags=${this.state.configTags || ''}&data=${encodeURI(JSON.stringify(data))}`;
-    const baseLink = `/diamond-ops/batch/export/serverId/${this.state.serverId}/tenant/${
-      this.state.tenant.id
-    }${query}`;
+    const baseLink = `/diamond-ops/batch/export/serverId/${this.state.serverId}/tenant/${this.state.tenant.id}${query}`;
     if (window.globalConfig.isParentEdas()) {
       return `/authgw/${window.edasprefix}${baseLink}`;
     }

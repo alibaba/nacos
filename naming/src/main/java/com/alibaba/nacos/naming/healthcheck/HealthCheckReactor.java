@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,22 +32,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckReactor {
     
-    private static final ScheduledExecutorService EXECUTOR;
-    
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
-    
-    static {
-        int processorCount = Runtime.getRuntime().availableProcessors();
-        EXECUTOR = Executors.newScheduledThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.health");
-                return thread;
-            }
-        });
-    }
     
     /**
      * Schedule health check task.
@@ -59,7 +42,7 @@ public class HealthCheckReactor {
      */
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
         task.setStartTime(System.currentTimeMillis());
-        return EXECUTOR.schedule(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+        return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -68,7 +51,7 @@ public class HealthCheckReactor {
      * @param task client beat check task
      */
     public static void scheduleCheck(ClientBeatCheckTask task) {
-        futureMap.putIfAbsent(task.taskKey(), EXECUTOR.scheduleWithFixedDelay(task, 5000, 5000, TimeUnit.MILLISECONDS));
+        futureMap.putIfAbsent(task.taskKey(), GlobalExecutor.scheduleNamingHealth(task, 5000, 5000, TimeUnit.MILLISECONDS));
     }
     
     /**
@@ -95,6 +78,6 @@ public class HealthCheckReactor {
      * @return scheduled future
      */
     public static ScheduledFuture<?> scheduleNow(Runnable task) {
-        return EXECUTOR.schedule(task, 0, TimeUnit.MILLISECONDS);
+        return GlobalExecutor.scheduleNamingHealth(task, 0, TimeUnit.MILLISECONDS);
     }
 }

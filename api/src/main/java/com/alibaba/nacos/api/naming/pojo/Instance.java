@@ -182,10 +182,10 @@ public class Instance {
     
     @Override
     public String toString() {
-        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port
-                + ", weight=" + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral="
-                + ephemeral + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName
-                + '\'' + ", metadata=" + metadata + '}';
+        return "Instance{" + "instanceId='" + instanceId + '\'' + ", ip='" + ip + '\'' + ", port=" + port + ", weight="
+                + weight + ", healthy=" + healthy + ", enabled=" + enabled + ", ephemeral=" + ephemeral
+                + ", clusterName='" + clusterName + '\'' + ", serviceName='" + serviceName + '\'' + ", metadata="
+                + metadata + '}';
     }
     
     public String toInetAddr() {

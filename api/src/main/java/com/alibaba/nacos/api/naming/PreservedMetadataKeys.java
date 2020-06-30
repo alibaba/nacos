@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.naming;
 
 /**
- * Some keys of metadata that are recognized by Nacos
+ * Some keys of metadata that are recognized by Nacos.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public class PreservedMetadataKeys {
-
+    
     /**
      * The key to indicate the registry source of service instance, such as Dubbo, SpringCloud, etc.
      */
     public static final String REGISTER_SOURCE = "preserved.register.source";
-
+    
     public static final String HEART_BEAT_TIMEOUT = "preserved.heart.beat.timeout";
-
+    
     public static final String IP_DELETE_TIMEOUT = "preserved.ip.delete.timeout";
-
+    
     public static final String HEART_BEAT_INTERVAL = "preserved.heart.beat.interval";
-
+    
     public static final String INSTANCE_ID_GENERATOR = "preserved.instance.id.generator";
 }

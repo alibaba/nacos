@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -47,9 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
@@ -84,25 +83,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     
     private static int failedPush = 0;
     
-    private static ConcurrentHashMap<String, Long> lastPushMillisMap = new ConcurrentHashMap<>();
-    
     private static DatagramSocket udpSocket;
     
     private static ConcurrentMap<String, Future> futureMap = new ConcurrentHashMap<>();
-    
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        t.setName("com.alibaba.nacos.naming.push.retransmitter");
-        return t;
-    });
-    
-    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        t.setName("com.alibaba.nacos.naming.push.udpSender");
-        return t;
-    });
     
     static {
         try {
@@ -115,7 +98,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             inThread.setName("com.alibaba.nacos.naming.push.receiver");
             inThread.start();
             
-            executorService.scheduleWithFixedDelay(() -> {
+            GlobalExecutor.scheduleRetransmitter(() -> {
                 try {
                     removeClientIfZombie();
                 } catch (Throwable e) {
@@ -139,7 +122,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
         
-        Future future = udpSender.schedule(() -> {
+        Future future = GlobalExecutor.scheduleUdpSender(() -> {
             try {
                 Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
                 ConcurrentMap<String, PushClient> clients = clientMap
@@ -630,8 +613,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             
             ackEntry.increaseRetryTime();
             
-            executorService.schedule(new Retransmitter(ackEntry), TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS),
-                    TimeUnit.MILLISECONDS);
+            GlobalExecutor.scheduleRetransmitter(new Retransmitter(ackEntry),
+                    TimeUnit.NANOSECONDS.toMillis(ACK_TIMEOUT_NANOS), TimeUnit.MILLISECONDS);
             
             return ackEntry;
         } catch (Exception e) {

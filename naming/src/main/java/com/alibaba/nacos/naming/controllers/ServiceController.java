@@ -247,12 +247,11 @@ public class ServiceController {
         }
         
         int start = (pageNo - 1) * pageSize;
-        int end = start + pageSize;
-        
         if (start < 0) {
             start = 0;
         }
         
+        int end = start + pageSize;
         if (end > serviceNameList.size()) {
             end = serviceNameList.size();
         }
@@ -456,14 +455,12 @@ public class ServiceController {
             List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             
             int start = (pageNo - 1) * pageSize;
-            int end = start + pageSize;
-            
-            int count = subscribers.size();
-            
             if (start < 0) {
                 start = 0;
             }
             
+            int end = start + pageSize;
+            int count = subscribers.size();
             if (end > count) {
                 end = count;
             }
