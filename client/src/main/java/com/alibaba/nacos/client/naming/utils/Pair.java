@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.utils;
 
 /**
+ * Pair.
+ *
  * @author nkorange
  */
 public class Pair<T> {
-
-    private T item;
-    private double weight;
-
+    
+    private final T item;
+    
+    private final double weight;
+    
     public Pair(T item, double weight) {
         this.item = item;
         this.weight = weight;
     }
-
+    
     public T item() {
         return item;
     }
-
+    
     public double weight() {
         return weight;
     }
