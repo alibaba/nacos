@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.constant;
 
 /**
- * Response Handler Type
+ * Response Handler Type.
  *
  * @author mai.jh
  */

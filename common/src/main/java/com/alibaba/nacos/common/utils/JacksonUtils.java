@@ -267,7 +267,7 @@ public final class JacksonUtils {
     }
     
     /**
-     * construct java type -> Jackson Java Type
+     * construct java type -> Jackson Java Type.
      *
      * @param type java type
      * @return JavaType {@link JavaType}

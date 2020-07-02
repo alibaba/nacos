@@ -29,13 +29,13 @@ import java.lang.reflect.Type;
 public interface ResponseHandler<T> {
     
     /**
-     * set response type
+     * set response type.
      * @param responseType responseType
      */
     void setResponseType(Type responseType);
     
     /**
-     * handle response convert to HttpRestResult
+     * handle response convert to HttpRestResult.
      *
      * @param response http response
      * @return HttpRestResult {@link HttpRestResult}

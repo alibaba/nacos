@@ -37,7 +37,7 @@ import java.util.Map;
  * @see AsyncHttpClientRequest
  * @see HttpClientResponse
  */
-public class NacosAsyncRestTemplate extends HttpConverter {
+public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosAsyncRestTemplate.class);
     

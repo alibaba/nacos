@@ -24,11 +24,11 @@ import org.apache.http.HttpStatus;
 import java.lang.reflect.Type;
 
 /**
- * Abstract response converter handler
+ * Abstract response handler.
  *
  * @author mai.jh
  */
-public abstract class AbstractResponseConverterHandler<T> implements ResponseHandler<T> {
+public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
     
     private Type responseType;
     
@@ -53,7 +53,7 @@ public abstract class AbstractResponseConverterHandler<T> implements ResponseHan
     
     /**
      * Abstract convertResult method,
-     * Different types of converters for expansion
+     * Different types of converters for expansion.
      *
      * @param response http client response
      * @param responseType responseType

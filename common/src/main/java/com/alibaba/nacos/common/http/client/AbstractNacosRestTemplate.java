@@ -25,25 +25,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * http converter
  * For NacosRestTemplate and NacosAsyncRestTemplate,
- * provide initialization and register of response converter
+ * provide initialization and register of response converter.
  *
  * @author mai.jh
  */
-public class HttpConverter {
+public abstract class AbstractNacosRestTemplate {
     
     private final Map<String, ResponseHandler> responseConverterMap = new HashMap<String, ResponseHandler>();
     
-    public HttpConverter() {
+    public AbstractNacosRestTemplate() {
         // init response converter
-        responseConverterMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseConverter());
-        responseConverterMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseConverter());
-        responseConverterMap.put(ResponseHandlerType.DEFAULT_BEAN_TYPE, new BeanResponseConverter());
+        responseConverterMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseHandler());
+        responseConverterMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseHandler());
+        responseConverterMap.put(ResponseHandlerType.DEFAULT_BEAN_TYPE, new BeanResponseHandler());
     }
     
     /**
-     * register customization Response Handler
+     * register customization Response Handler.
      * @param responseHandler {@link ResponseHandler}
      */
     public void registerResponseHandler(String responseHandlerType, ResponseHandler responseHandler) {
@@ -51,7 +50,7 @@ public class HttpConverter {
     }
     
     /**
-     * Select a response handler by responseType
+     * Select a response handler by responseType.
      * @param responseType responseType
      * @return ResponseHandler
      */
