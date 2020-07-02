@@ -30,6 +30,7 @@ public interface ResponseHandler<T> {
     
     /**
      * set response type.
+     *
      * @param responseType responseType
      */
     void setResponseType(Type responseType);

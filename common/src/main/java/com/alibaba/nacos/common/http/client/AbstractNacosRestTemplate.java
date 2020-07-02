@@ -43,6 +43,7 @@ public abstract class AbstractNacosRestTemplate {
     
     /**
      * register customization Response Handler.
+     *
      * @param responseHandler {@link ResponseHandler}
      */
     public void registerResponseHandler(String responseHandlerType, ResponseHandler responseHandler) {
@@ -51,6 +52,7 @@ public abstract class AbstractNacosRestTemplate {
     
     /**
      * Select a response handler by responseType.
+     *
      * @param responseType responseType
      * @return ResponseHandler
      */
