@@ -32,13 +32,13 @@ import java.util.Map;
  */
 public abstract class AbstractNacosRestTemplate {
     
-    private final Map<String, ResponseHandler> responseConverterMap = new HashMap<String, ResponseHandler>();
+    private final Map<String, ResponseHandler> responseHandlerMap = new HashMap<String, ResponseHandler>();
     
     public AbstractNacosRestTemplate() {
-        // init response converter
-        responseConverterMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseHandler());
-        responseConverterMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseHandler());
-        responseConverterMap.put(ResponseHandlerType.DEFAULT_BEAN_TYPE, new BeanResponseHandler());
+        // init response handler
+        responseHandlerMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseHandler());
+        responseHandlerMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseHandler());
+        responseHandlerMap.put(ResponseHandlerType.DEFAULT_BEAN_TYPE, new BeanResponseHandler());
     }
     
     /**
@@ -47,7 +47,7 @@ public abstract class AbstractNacosRestTemplate {
      * @param responseHandler {@link ResponseHandler}
      */
     public void registerResponseHandler(String responseHandlerType, ResponseHandler responseHandler) {
-        responseConverterMap.put(responseHandlerType, responseHandler);
+        responseHandlerMap.put(responseHandlerType, responseHandler);
     }
     
     /**
@@ -59,17 +59,17 @@ public abstract class AbstractNacosRestTemplate {
     protected ResponseHandler selectResponseHandler(Type responseType) {
         ResponseHandler responseHandler = null;
         if (responseType == null){
-            responseHandler = responseConverterMap.get(ResponseHandlerType.STRING_TYPE);
+            responseHandler = responseHandlerMap.get(ResponseHandlerType.STRING_TYPE);
         }
         if (responseHandler == null) {
             JavaType javaType = JacksonUtils.constructJavaType(responseType);
             String name = javaType.getRawClass().getName();
-            responseHandler = responseConverterMap.get(name);
+            responseHandler = responseHandlerMap.get(name);
         }
         // When the corresponding type of response handler cannot be obtained,
         // the default bean response handler is used
         if (responseHandler == null) {
-            responseHandler = responseConverterMap.get(ResponseHandlerType.DEFAULT_BEAN_TYPE);
+            responseHandler = responseHandlerMap.get(ResponseHandlerType.DEFAULT_BEAN_TYPE);
         }
         responseHandler.setResponseType(responseType);
         return responseHandler;
