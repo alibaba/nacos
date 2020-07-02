@@ -56,7 +56,7 @@ public abstract class AbstractNacosRestTemplate {
      * @param responseType responseType
      * @return ResponseHandler
      */
-     protected ResponseHandler selectResponseHandler(Type responseType) {
+    protected ResponseHandler selectResponseHandler(Type responseType) {
         ResponseHandler responseHandler = null;
         if (responseType == null){
             responseHandler = responseConverterMap.get(ResponseHandlerType.STRING_TYPE);
