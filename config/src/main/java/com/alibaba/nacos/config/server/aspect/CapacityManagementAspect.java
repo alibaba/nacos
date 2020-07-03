@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -42,29 +43,30 @@ import java.nio.charset.Charset;
  */
 @Aspect
 public class CapacityManagementAspect {
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityManagementAspect.class);
-
-    private static final String SYNC_UPDATE_CONFIG_ALL
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
-        + "(request,response,dataId,group,content,appName,srcUser,tenant,tag,..)";
-
-    private static final String DELETE_CONFIG
-        = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
-        + "(request,response,dataId,group,tenant,..)";
-
+    
+    private static final String SYNC_UPDATE_CONFIG_ALL =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
+                    + "(request,response,dataId,group,content,appName,srcUser,tenant,tag,..)";
+    
+    private static final String DELETE_CONFIG =
+            "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
+                    + "(request,response,dataId,group,tenant,..)";
+    
     @Autowired
     private CapacityService capacityService;
+    
     @Autowired
     private PersistService persistService;
-
+    
     /**
      * 更新也需要判断content内容是否超过大小限制
      */
     @Around(SYNC_UPDATE_CONFIG_ALL)
     public Object aroundSyncUpdateConfigAll(ProceedingJoinPoint pjp, HttpServletRequest request,
-                                            HttpServletResponse response, String dataId, String group, String content,
-                                            String appName, String srcUser, String tenant, String tag)
-        throws Throwable {
+            HttpServletResponse response, String dataId, String group, String content, String appName, String srcUser,
+            String tenant, String tag) throws Throwable {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }
@@ -83,14 +85,14 @@ public class CapacityManagementAspect {
         }
         return pjp.proceed();
     }
-
+    
     /**
      * 更新操作：开启容量管理的限制检验功能，会检验"content的大小"是否超过限制
      *
      * @throws Throwable "实际操作"抛出的异常
      */
     private Object do4Update(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
-                             String dataId, String group, String tenant, String content) throws Throwable {
+            String dataId, String group, String tenant, String content) throws Throwable {
         if (!PropertyUtil.isCapacityLimitCheck()) {
             return pjp.proceed();
         }
@@ -105,15 +107,14 @@ public class CapacityManagementAspect {
         }
         return pjp.proceed();
     }
-
+    
     /**
      * 写入操作：1. 无论是否开启容量管理的限制检验功能都会计数（usage） 2.开启容量管理的限制检验功能，会检验"限额"和"content的大小"
      *
      * @throws Throwable "实际操作"抛出的异常
      */
-    private Object do4Insert(ProceedingJoinPoint pjp, HttpServletRequest request,
-                             HttpServletResponse response, String group, String tenant, String content)
-        throws Throwable {
+    private Object do4Insert(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
+            String group, String tenant, String content) throws Throwable {
         LOGGER.info("[capacityManagement] do4Insert");
         CounterMode counterMode = CounterMode.INCREMENT;
         boolean hasTenant = hasTenant(tenant);
@@ -129,22 +130,22 @@ public class CapacityManagementAspect {
         }
         return getResult(pjp, response, group, tenant, counterMode, hasTenant);
     }
-
+    
     private Object response4Limit(HttpServletRequest request, HttpServletResponse response, LimitType limitType) {
         response.setStatus(limitType.status);
         return String.valueOf(limitType.status);
     }
-
+    
     private boolean hasTenant(String tenant) {
         return StringUtils.isNotBlank(tenant);
     }
-
+    
     /**
      * 无论是否开启容量管理的限制检验功能，删除时候，计数模块中容量信息表中的usage都得减一
      */
     @Around(DELETE_CONFIG)
     public Object aroundDeleteConfig(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
-                                     String dataId, String group, String tenant) throws Throwable {
+            String dataId, String group, String tenant) throws Throwable {
         if (!PropertyUtil.isManageCapacity()) {
             return pjp.proceed();
         }
@@ -155,13 +156,12 @@ public class CapacityManagementAspect {
         }
         return do4Delete(pjp, response, group, tenant, configInfo);
     }
-
+    
     /**
      * @throws Throwable "实际操作"抛出的异常
      */
     private Object do4Delete(ProceedingJoinPoint pjp, HttpServletResponse response, String group, String tenant,
-                             ConfigInfo configInfo)
-        throws Throwable {
+            ConfigInfo configInfo) throws Throwable {
         boolean hasTenant = hasTenant(tenant);
         if (configInfo == null) {
             // "configInfo == null"有2种可能：
@@ -178,7 +178,7 @@ public class CapacityManagementAspect {
         insertOrUpdateUsage(group, tenant, counterMode, hasTenant);
         return getResult(pjp, response, group, tenant, counterMode, hasTenant);
     }
-
+    
     private void correctUsage(String group, String tenant, boolean hasTenant) {
         try {
             if (hasTenant) {
@@ -192,9 +192,9 @@ public class CapacityManagementAspect {
             LOGGER.error("[capacityManagement] correctUsage ", e);
         }
     }
-
+    
     private Object getResult(ProceedingJoinPoint pjp, HttpServletResponse response, String group, String tenant,
-                             CounterMode counterMode, boolean hasTenant) throws Throwable {
+            CounterMode counterMode, boolean hasTenant) throws Throwable {
         try {
             // 执行实际操作
             Object result = pjp.proceed();
@@ -202,13 +202,13 @@ public class CapacityManagementAspect {
             doResult(counterMode, response, group, tenant, result, hasTenant);
             return result;
         } catch (Throwable throwable) {
-            LOGGER.warn("[capacityManagement] inner operation throw exception, rollback, group: {}, tenant: {}",
-                group, tenant, throwable);
+            LOGGER.warn("[capacityManagement] inner operation throw exception, rollback, group: {}, tenant: {}", group,
+                    tenant, throwable);
             rollback(counterMode, group, tenant, hasTenant);
             throw throwable;
         }
     }
-
+    
     /**
      * usage计数器服务：无论容量管理的限制检验功能是否开启，都会进行计数
      */
@@ -224,9 +224,9 @@ public class CapacityManagementAspect {
             LOGGER.error("[capacityManagement] insertOrUpdateUsage ", e);
         }
     }
-
-    private LimitType getLimitType(CounterMode counterMode, String group, String tenant, String content, boolean
-        hasTenant) {
+    
+    private LimitType getLimitType(CounterMode counterMode, String group, String tenant, String content,
+            boolean hasTenant) {
         try {
             boolean clusterLimited = !capacityService.insertAndUpdateClusterUsage(counterMode, false);
             if (clusterLimited) {
@@ -237,8 +237,7 @@ public class CapacityManagementAspect {
                 return null;
             }
             int currentSize = getCurrentSize(content);
-            LimitType limitType = getGroupOrTenantLimitType(counterMode, group, tenant, currentSize,
-                hasTenant);
+            LimitType limitType = getGroupOrTenantLimitType(counterMode, group, tenant, currentSize, hasTenant);
             if (limitType != null) {
                 rollbackClusterUsage(counterMode);
                 return limitType;
@@ -248,7 +247,7 @@ public class CapacityManagementAspect {
         }
         return null;
     }
-
+    
     /**
      * 编码字节数
      */
@@ -260,9 +259,9 @@ public class CapacityManagementAspect {
         }
         return 0;
     }
-
-    private LimitType getGroupOrTenantLimitType(CounterMode counterMode, String group, String tenant,
-                                                int currentSize, boolean hasTenant) {
+    
+    private LimitType getGroupOrTenantLimitType(CounterMode counterMode, String group, String tenant, int currentSize,
+            boolean hasTenant) {
         if (group == null) {
             return null;
         }
@@ -282,7 +281,7 @@ public class CapacityManagementAspect {
         }
         return LimitType.OVER_GROUP_QUOTA;
     }
-
+    
     private boolean isUpdateSuccess(CounterMode counterMode, String group, String tenant, boolean hasTenant) {
         boolean updateSuccess;
         if (hasTenant) {
@@ -298,7 +297,7 @@ public class CapacityManagementAspect {
         }
         return updateSuccess;
     }
-
+    
     private void insertCapacity(String group, String tenant, boolean hasTenant) {
         if (hasTenant) {
             capacityService.initTenantCapacity(tenant);
@@ -306,7 +305,7 @@ public class CapacityManagementAspect {
             capacityService.initGroupCapacity(group);
         }
     }
-
+    
     private Capacity getCapacity(String group, String tenant, boolean hasTenant) {
         Capacity capacity;
         if (hasTenant) {
@@ -316,9 +315,9 @@ public class CapacityManagementAspect {
         }
         return capacity;
     }
-
+    
     private boolean isSizeLimited(String group, String tenant, int currentSize, boolean hasTenant, boolean isAggr,
-                                  Capacity capacity) {
+            Capacity capacity) {
         int defaultMaxSize = getDefaultMaxSize(isAggr);
         if (capacity != null) {
             Integer maxSize = getMaxSize(isAggr, capacity);
@@ -332,61 +331,60 @@ public class CapacityManagementAspect {
         // 不已经存在容量信息记录，使用"默认maxSize限制值"进行比较
         return isOverSize(group, tenant, currentSize, defaultMaxSize, hasTenant);
     }
-
+    
     private Integer getMaxSize(boolean isAggr, Capacity capacity) {
         if (isAggr) {
             return capacity.getMaxAggrSize();
         }
         return capacity.getMaxSize();
     }
-
+    
     private int getDefaultMaxSize(boolean isAggr) {
         if (isAggr) {
             return PropertyUtil.getDefaultMaxAggrSize();
         }
         return PropertyUtil.getDefaultMaxSize();
     }
-
+    
     private boolean isOverSize(String group, String tenant, int currentSize, int maxSize, boolean hasTenant) {
         if (currentSize > maxSize) {
             if (hasTenant) {
                 LOGGER.warn(
-                    "[capacityManagement] tenant content is over maxSize, tenant: {}, maxSize: {}, currentSize: {}",
-                    tenant, maxSize, currentSize);
+                        "[capacityManagement] tenant content is over maxSize, tenant: {}, maxSize: {}, currentSize: {}",
+                        tenant, maxSize, currentSize);
             } else {
                 LOGGER.warn(
-                    "[capacityManagement] group content is over maxSize, group: {}, maxSize: {}, currentSize: {}",
-                    group, maxSize, currentSize);
+                        "[capacityManagement] group content is over maxSize, group: {}, maxSize: {}, currentSize: {}",
+                        group, maxSize, currentSize);
             }
             return true;
         }
         return false;
     }
-
-    private void doResult(CounterMode counterMode, HttpServletResponse response, String group,
-                          String tenant, Object result, boolean hasTenant) {
+    
+    private void doResult(CounterMode counterMode, HttpServletResponse response, String group, String tenant,
+            Object result, boolean hasTenant) {
         try {
             if (!isSuccess(response, result)) {
                 LOGGER.warn(
-                    "[capacityManagement] inner operation is fail, rollback, counterMode: {}, group: {}, tenant: {}",
-                    counterMode, group, tenant);
+                        "[capacityManagement] inner operation is fail, rollback, counterMode: {}, group: {}, tenant: {}",
+                        counterMode, group, tenant);
                 rollback(counterMode, group, tenant, hasTenant);
             }
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] doResult ", e);
         }
     }
-
+    
     private boolean isSuccess(HttpServletResponse response, Object result) {
         int status = response.getStatus();
         if (status == HttpServletResponse.SC_OK) {
             return true;
         }
-        LOGGER.warn("[capacityManagement] response status is not 200, status: {}, result: {}", status,
-            result);
+        LOGGER.warn("[capacityManagement] response status is not 200, status: {}, result: {}", status, result);
         return false;
     }
-
+    
     private void rollback(CounterMode counterMode, String group, String tenant, boolean hasTenant) {
         try {
             rollbackClusterUsage(counterMode);
@@ -399,7 +397,7 @@ public class CapacityManagementAspect {
             LOGGER.error("[capacityManagement] rollback ", e);
         }
     }
-
+    
     private void rollbackClusterUsage(CounterMode counterMode) {
         try {
             if (!capacityService.updateClusterUsage(counterMode.reverse())) {
@@ -409,7 +407,7 @@ public class CapacityManagementAspect {
             LOGGER.error("[capacityManagement] rollback ", e);
         }
     }
-
+    
     /**
      * limit tyep
      *
@@ -423,9 +421,11 @@ public class CapacityManagementAspect {
         OVER_GROUP_QUOTA("超过该Group配置个数上限", 429),
         OVER_TENANT_QUOTA("超过该租户配置个数上限", 429),
         OVER_MAX_SIZE("超过配置的内容大小上限", 429);
+        
         public final String description;
+        
         public final int status;
-
+        
         LimitType(String description, int status) {
             this.description = description;
             this.status = status;

@@ -48,25 +48,31 @@ import javax.sql.DataSource;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbySnapshotOperation implements SnapshotOperation {
-
+    
     private final String backupSql = "CALL SYSCS_UTIL.SYSCS_BACKUP_DATABASE(?)";
+    
     private final String snapshotDir = "derby_data";
+    
     private final String snapshotArchive = "derby_data.zip";
+    
     private final String derbyBaseDir = Paths.get(ApplicationUtils.getNacosHome(), "data", "derby-data").toString();
+    
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
+    
     private final String checkSumKey = "checkSum";
+    
     private final ReentrantReadWriteLock.WriteLock writeLock;
-
+    
     public DerbySnapshotOperation(ReentrantReadWriteLock.WriteLock writeLock) {
         this.writeLock = writeLock;
     }
-
+    
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
         RaftExecutor.doSnapshot(() -> {
-
+            
             TimerContext.start("CONFIG_DERBY_SNAPSHOT_SAVE");
-
+            
             final Lock lock = writeLock;
             lock.lock();
             try {
@@ -74,21 +80,21 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 final String parentPath = Paths.get(writePath, snapshotDir).toString();
                 DiskUtils.deleteDirectory(parentPath);
                 DiskUtils.forceMkdir(parentPath);
-
+                
                 doDerbyBackup(parentPath);
-
+                
                 final String outputFile = Paths.get(writePath, snapshotArchive).toString();
                 final Checksum checksum = new CRC64();
                 DiskUtils.compress(writePath, snapshotDir, outputFile, checksum);
                 DiskUtils.deleteDirectory(parentPath);
-
+                
                 final LocalFileMeta meta = new LocalFileMeta();
                 meta.append(checkSumKey, Long.toHexString(checksum.getValue()));
-
+                
                 callFinally.accept(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
-                LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.",
-                        writer.getPath(), writer.listFiles(), t);
+                LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
+                        writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
@@ -96,35 +102,34 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             }
         });
     }
-
+    
     @Override
     public boolean onSnapshotLoad(Reader reader) {
         final String readerPath = reader.getPath();
         final String sourceFile = Paths.get(readerPath, snapshotArchive).toString();
-
+        
         TimerContext.start("CONFIG_DERBY_SNAPSHOT_LOAD");
         final Lock lock = writeLock;
         lock.lock();
         try {
             final Checksum checksum = new CRC64();
             DiskUtils.decompress(sourceFile, readerPath, checksum);
-
+            
             LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
-
+            
             if (fileMeta.getFileMeta().containsKey(checkSumKey)) {
                 if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(checkSumKey))) {
                     throw new IllegalArgumentException("Snapshot checksum failed");
                 }
             }
-
+            
             final String loadPath = Paths.get(readerPath, snapshotDir, "derby-data").toString();
-            LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath,
-                    derbyBaseDir);
-
+            LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
+            
             doDerbyRestoreFromBackup(() -> {
                 final File srcDir = new File(loadPath);
                 final File destDir = new File(derbyBaseDir);
-
+                
                 DiskUtils.copyDirectory(srcDir, destDir);
                 LogUtil.fatalLog.info("Complete database recovery");
                 return null;
@@ -133,15 +138,15 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             NotifyCenter.publishEvent(DerbyLoadEvent.INSTANCE);
             return true;
         } catch (final Throwable t) {
-            LogUtil.fatalLog.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath,
-                    reader.listFiles(), t);
+            LogUtil.fatalLog
+                    .error("Fail to load snapshot, path={}, file list={}, {}.", readerPath, reader.listFiles(), t);
             return false;
         } finally {
             lock.unlock();
             TimerContext.end(LogUtil.fatalLog);
         }
     }
-
+    
     private void doDerbyBackup(String backupDirectory) throws Exception {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         DataSource dataSource = sourceService.getJdbcTemplate().getDataSource();
@@ -151,11 +156,11 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             cs.execute();
         }
     }
-
+    
     private void doDerbyRestoreFromBackup(Callable<Void> callable) throws Exception {
         DataSourceService sourceService = DynamicDataSource.getInstance().getDataSource();
         LocalDataSourceServiceImpl localDataSourceService = (LocalDataSourceServiceImpl) sourceService;
         localDataSourceService.restoreDerby(restoreDB, callable);
     }
-
+    
 }

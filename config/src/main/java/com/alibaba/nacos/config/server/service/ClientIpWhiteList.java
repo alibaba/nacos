@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.ACLInfo;
@@ -33,7 +34,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  */
 @Service
 public class ClientIpWhiteList {
-
+    
     /**
      * 判断指定的ip在白名单中
      */
@@ -47,7 +48,7 @@ public class ClientIpWhiteList {
         }
         return false;
     }
-
+    
     /**
      * whether start client ip whitelist
      *
@@ -56,7 +57,7 @@ public class ClientIpWhiteList {
     static public boolean isEnableWhitelist() {
         return isOpen;
     }
-
+    
     /**
      * 传入内容，重新加载客户端ip白名单
      */
@@ -69,20 +70,20 @@ public class ClientIpWhiteList {
         }
         defaultLog.warn("[clientIpWhiteList] {}", content);
         try {
-            ACLInfo acl = (ACLInfo)JSONUtils.deserializeObject(content, ACLInfo.class);
+            ACLInfo acl = (ACLInfo) JSONUtils.deserializeObject(content, ACLInfo.class);
             isOpen = acl.getIsOpen();
             CLIENT_IP_WHITELIST.set(acl.getIps());
         } catch (Exception ioe) {
-            defaultLog.error(
-                "failed to load clientIpWhiteList, " + ioe.toString(), ioe);
+            defaultLog.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);
         }
     }
-
+    
     // =======================
-
+    
     static public final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
-
+    
     static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
-        new ArrayList<String>());
+            new ArrayList<String>());
+    
     static Boolean isOpen = false;
 }

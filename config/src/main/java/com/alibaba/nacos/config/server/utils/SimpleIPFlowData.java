@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import java.util.concurrent.Executors;
@@ -28,16 +29,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class SimpleIPFlowData {
-
+    
     private AtomicInteger[] data;
-
+    
     private int slotCount;
-
+    
     private int averageCount;
-
+    
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-
+        
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
@@ -45,18 +46,18 @@ public class SimpleIPFlowData {
             t.setDaemon(true);
             return t;
         }
-
+        
     });
-
+    
     class DefaultIPFlowDataManagerTask implements Runnable {
-
+        
         @Override
         public void run() {
             rotateSlot();
         }
-
+        
     }
-
+    
     public SimpleIPFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
@@ -69,7 +70,7 @@ public class SimpleIPFlowData {
         }
         timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
-
+    
     public int incrementAndGet(String ip) {
         int index = 0;
         if (ip != null) {
@@ -80,7 +81,7 @@ public class SimpleIPFlowData {
         }
         return data[index].incrementAndGet();
     }
-
+    
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {
@@ -89,7 +90,7 @@ public class SimpleIPFlowData {
         }
         this.averageCount = totalCount / this.slotCount;
     }
-
+    
     public int getCurrentCount(String ip) {
         int index = 0;
         if (ip != null) {
@@ -100,7 +101,7 @@ public class SimpleIPFlowData {
         }
         return data[index].get();
     }
-
+    
     public int getAverageCount() {
         return this.averageCount;
     }

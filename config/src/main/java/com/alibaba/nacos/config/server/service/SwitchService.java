@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -35,17 +36,19 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  */
 @Service
 public class SwitchService {
+    
     public static final String SWITCH_META_DATAID = "com.alibaba.nacos.meta.switch";
-
+    
     public static final String FIXED_POLLING = "isFixedPolling";
+    
     public static final String FIXED_POLLING_INTERVAL = "fixedPollingInertval";
-
+    
     public static final String FIXED_DELAY_TIME = "fixedDelayTime";
-
+    
     public static final String DISABLE_APP_COLLECTOR = "disableAppCollector";
-
+    
     private static volatile Map<String, String> switches = new HashMap<String, String>();
-
+    
     public static boolean getSwitchBoolean(String key, boolean defaultValue) {
         boolean rtn = defaultValue;
         try {
@@ -57,7 +60,7 @@ public class SwitchService {
         }
         return rtn;
     }
-
+    
     public static int getSwitchInteger(String key, int defaultValue) {
         int rtn = defaultValue;
         try {
@@ -69,33 +72,33 @@ public class SwitchService {
         }
         return rtn;
     }
-
+    
     public static String getSwitchString(String key, String defaultValue) {
         String value = switches.get(key);
         return StringUtils.isBlank(value) ? defaultValue : value;
     }
-
+    
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
             fatalLog.error("switch config is blank.");
             return;
         }
         fatalLog.warn("[switch-config] {}", config);
-
+        
         Map<String, String> map = new HashMap<String, String>(30);
         try {
             for (String line : IoUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
-
+                    
                     if (array == null || array.length != 2) {
                         LogUtil.fatalLog.error("corrupt switch record {}", line);
                         continue;
                     }
-
+                    
                     String key = array[0].trim();
                     String value = array[1].trim();
-
+                    
                     map.put(key, value);
                 }
                 switches = map;
@@ -105,10 +108,10 @@ public class SwitchService {
             LogUtil.fatalLog.warn("[reload-switches] error! {}", config);
         }
     }
-
+    
     public static String getSwitches() {
         StringBuilder sb = new StringBuilder();
-
+        
         String split = "";
         for (Map.Entry<String, String> entry : switches.entrySet()) {
             String key = entry.getKey();
@@ -119,8 +122,8 @@ public class SwitchService {
             sb.append(value);
             split = "; ";
         }
-
+        
         return sb.toString();
     }
-
+    
 }

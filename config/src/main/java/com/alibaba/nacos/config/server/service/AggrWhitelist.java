@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -37,17 +38,17 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  */
 @Service
 public class AggrWhitelist {
-
+    
     public static final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
-
+    
     /**
      * 判断指定的dataId是否在聚合dataId白名单。
      */
-     public static boolean isAggrDataId(String dataId) {
+    public static boolean isAggrDataId(String dataId) {
         if (null == dataId) {
             throw new IllegalArgumentException("dataId is null");
         }
-
+        
         for (Pattern pattern : AGGR_DATAID_WHITELIST.get()) {
             if (pattern.matcher(dataId).matches()) {
                 return true;
@@ -55,17 +56,17 @@ public class AggrWhitelist {
         }
         return false;
     }
-
+    
     /**
      * 传入内容，重新加载聚合白名单
      */
-     public static void load(String content) {
+    public static void load(String content) {
         if (StringUtils.isBlank(content)) {
             fatalLog.error("aggr dataId whitelist is blank.");
             return;
         }
         defaultLog.warn("[aggr-dataIds] {}", content);
-
+        
         try {
             List<String> lines = IoUtils.readLines(new StringReader(content));
             compile(lines);
@@ -73,10 +74,10 @@ public class AggrWhitelist {
             defaultLog.error("failed to load aggr whitelist, " + ioe.toString(), ioe);
         }
     }
-
+    
     static void compile(List<String> whitelist) {
         List<Pattern> list = new ArrayList<Pattern>(whitelist.size());
-
+        
         for (String line : whitelist) {
             if (!StringUtils.isBlank(line)) {
                 String regex = RegexParser.regexFormat(line.trim());
@@ -85,13 +86,13 @@ public class AggrWhitelist {
         }
         AGGR_DATAID_WHITELIST.set(list);
     }
-
+    
     public static List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-
+    
     // =======================
-
+    
     static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
-        new ArrayList<Pattern>());
+            new ArrayList<Pattern>());
 }

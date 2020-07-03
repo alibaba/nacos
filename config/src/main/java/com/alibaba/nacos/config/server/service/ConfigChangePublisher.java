@@ -25,12 +25,12 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConfigChangePublisher {
-
-	public static void notifyConfigChange(ConfigDataChangeEvent event) {
-		if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
-			return;
-		}
-		EventDispatcher.fireEvent(event);
-	}
-
+    
+    public static void notifyConfigChange(ConfigDataChangeEvent event) {
+        if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
+            return;
+        }
+        EventDispatcher.fireEvent(event);
+    }
+    
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,30 +25,31 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author leiwen.zh
  */
 public class TimeoutUtils {
-
+    
     /**
      * 累计的获取数据消耗的时间, 单位ms
      */
     private final AtomicLong totalTime = new AtomicLong(0L);
-
+    
     private volatile long lastResetTime;
-
+    
     private volatile boolean initialized = false;
-
+    
     /**
      * 获取数据的总体超时, 单位ms
      */
     private long totalTimeout;
+    
     /**
      * 累计的获取数据消耗的时间的过期时间, 单位ms
      */
     private long invalidThreshold;
-
+    
     public TimeoutUtils(long totalTimeout, long invalidThreshold) {
         this.totalTimeout = totalTimeout;
         this.invalidThreshold = invalidThreshold;
     }
-
+    
     public synchronized void initLastResetTime() {
         if (initialized) {
             return;
@@ -55,7 +57,7 @@ public class TimeoutUtils {
         lastResetTime = System.currentTimeMillis();
         initialized = true;
     }
-
+    
     /**
      * 累计总的时间
      *
@@ -64,7 +66,7 @@ public class TimeoutUtils {
     public void addTotalTime(long time) {
         totalTime.addAndGet(time);
     }
-
+    
     /**
      * 判断是否超时
      *
@@ -73,7 +75,7 @@ public class TimeoutUtils {
     public boolean isTimeout() {
         return totalTime.get() > this.totalTimeout;
     }
-
+    
     /**
      * 总的时间清零
      */
@@ -83,11 +85,11 @@ public class TimeoutUtils {
             lastResetTime = System.currentTimeMillis();
         }
     }
-
+    
     public AtomicLong getTotalTime() {
         return totalTime;
     }
-
+    
     private boolean isTotalTimeExpired() {
         return System.currentTimeMillis() - lastResetTime > this.invalidThreshold;
     }

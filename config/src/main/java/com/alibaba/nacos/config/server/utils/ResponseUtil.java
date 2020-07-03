@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import javax.servlet.http.HttpServletResponse;
@@ -26,9 +27,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  * @author Nacos
  */
 public class ResponseUtil {
-
-    public static void writeErrMsg(HttpServletResponse response, int httpCode,
-                                   String msg) {
+    
+    public static void writeErrMsg(HttpServletResponse response, int httpCode, String msg) {
         response.setStatus(httpCode);
         try {
             response.getWriter().println(msg);

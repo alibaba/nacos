@@ -23,27 +23,27 @@ import org.springframework.dao.DataAccessException;
  */
 @SuppressWarnings("all")
 public class NJdbcException extends DataAccessException {
-
+    
     private String originExceptionName;
-
+    
     public NJdbcException(String msg) {
         super(msg);
     }
-
+    
     public NJdbcException(String msg, String originExceptionName) {
         super(msg);
         this.originExceptionName = originExceptionName;
     }
-
+    
     public NJdbcException(String msg, Throwable cause, String originExceptionName) {
         super(msg, cause);
         this.originExceptionName = originExceptionName;
     }
-
+    
     public NJdbcException(String msg, Throwable cause) {
         super(msg, cause);
     }
-
+    
     public NJdbcException(Throwable cause) {
         super("", cause);
     }

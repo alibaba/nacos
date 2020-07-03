@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 /**
@@ -21,7 +22,7 @@ package com.alibaba.nacos.config.server.utils;
  * @author Nacos
  */
 public class SimpleReadWriteLock {
-
+    
     public synchronized boolean tryReadLock() {
         if (isWriteLocked()) {
             return false;
@@ -30,11 +31,11 @@ public class SimpleReadWriteLock {
             return true;
         }
     }
-
+    
     public synchronized void releaseReadLock() {
         status--;
     }
-
+    
     public synchronized boolean tryWriteLock() {
         if (!isFree()) {
             return false;
@@ -43,19 +44,19 @@ public class SimpleReadWriteLock {
             return true;
         }
     }
-
+    
     public synchronized void releaseWriteLock() {
         status = 0;
     }
-
+    
     private boolean isWriteLocked() {
         return status < 0;
     }
-
+    
     private boolean isFree() {
         return status == 0;
     }
-
+    
     /**
      * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
      */
