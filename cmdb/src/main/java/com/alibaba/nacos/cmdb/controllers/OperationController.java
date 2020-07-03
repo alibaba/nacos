@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.cmdb.controllers;
 
 import com.alibaba.nacos.cmdb.memory.CmdbProvider;
@@ -26,16 +27,25 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * Operation controller.
+ *
  * @author nkorange
  * @since 0.7.0
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_CMDB_CONTEXT + "/ops")
 public class OperationController {
-
+    
     @Autowired
     private CmdbProvider cmdbProvider;
-
+    
+    /**
+     * query label.
+     *
+     * @param request http request
+     * @return query result
+     * @throws Exception exception
+     */
     @RequestMapping(value = "/label", method = RequestMethod.GET)
     public String queryLabel(HttpServletRequest request) throws Exception {
         String entry = WebUtils.required(request, "entry");
