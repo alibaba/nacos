@@ -21,64 +21,61 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Scanner;
 
-/**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
 @Ignore
 public class ConfigTest {
-
-	private static ConfigService configService;
-
-	public static void main(String[] args) throws Exception {
-		before();
-		test();
-	}
-
-	public static void before() throws Exception {
-		Properties properties = new Properties();
-		properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-		configService = NacosFactory.createConfigService(properties);
-	}
-
+    
+    private static ConfigService configService;
+    
+    @Before
+    public static void before() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        configService = NacosFactory.createConfigService(properties);
+    }
+    
     @After
     public void cleanup() throws Exception {
-	    configService.shutDown();
+        configService.shutDown();
     }
-
-	@Test
-	public static void test() throws Exception {
-		final String dataId = "lessspring";
-		final String group = "lessspring";
-		final String content = "lessspring-" + System.currentTimeMillis();
-		boolean result = configService.publishConfig(dataId, group, content);
-		Assert.assertTrue(result);
-
-		ThreadUtils.sleep(10_000);
-
-		String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
-			@Override
-			public void receiveConfigInfo(String configInfo) {
-				System.err.println(configInfo);
-			}
-		});
-		Assert.assertEquals(content, response);
-
-		Scanner scanner = new Scanner(System.in);
-		System.out.println("input content");
-		while (scanner.hasNextLine()){
-			String s = scanner.next();
-			if (Objects.equals("exit", s)) {
-				scanner.close();
-				return;
-			}
-			configService.publishConfig(dataId, group, s);
-		}
-	}
-
+    
+    @Test
+    public static void test() throws Exception {
+        final String dataId = "lessspring";
+        final String group = "lessspring";
+        final String content = "lessspring-" + System.currentTimeMillis();
+        boolean result = configService.publishConfig(dataId, group, content);
+        Assert.assertTrue(result);
+        
+        ThreadUtils.sleep(10_000);
+        
+        String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.err.println(configInfo);
+            }
+        });
+        Assert.assertEquals(content, response);
+        
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("input content");
+        while (scanner.hasNextLine()) {
+            String s = scanner.next();
+            if (Objects.equals("exit", s)) {
+                scanner.close();
+                return;
+            }
+            configService.publishConfig(dataId, group, s);
+        }
+    }
+    
 }
