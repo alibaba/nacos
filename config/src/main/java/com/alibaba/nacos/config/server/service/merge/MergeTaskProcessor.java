@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.merge;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -42,16 +43,17 @@ import java.util.List;
  * @author Nacos
  */
 public class MergeTaskProcessor implements TaskProcessor {
+    
     final int PAGE_SIZE = 10000;
-
+    
     MergeTaskProcessor(PersistService persistService, MergeDatumService mergeService) {
         this.persistService = persistService;
         this.mergeService = mergeService;
     }
-
+    
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        MergeDataTask mergeTask = (MergeDataTask)task;
+        MergeDataTask mergeTask = (MergeDataTask) task;
         final String dataId = mergeTask.dataId;
         final String group = mergeTask.groupId;
         final String tenant = mergeTask.tenant;
@@ -60,29 +62,29 @@ public class MergeTaskProcessor implements TaskProcessor {
         try {
             List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
             int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
-            int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+            int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
             for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo,
-                    PAGE_SIZE);
+                Page<ConfigInfoAggr> page = persistService
+                        .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                 if (page != null) {
                     datumList.addAll(page.getPageItems());
                     log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(), rowCount);
                 }
             }
-
+            
             final Timestamp time = TimeUtils.getCurrentTime();
             // 聚合
             if (datumList.size() > 0) {
                 ConfigInfo cf = merge(dataId, group, tenant, datumList);
-
+                
                 persistService.insertOrUpdate(null, null, cf, time, null);
-
+                
                 log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
-                    cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
-
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils
-                                .getSelfIp(),
-                    ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
+                        cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
+                
+                ConfigTraceService
+                        .logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
+                                ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
             }
             // 删除
             else {
@@ -91,24 +93,24 @@ public class MergeTaskProcessor implements TaskProcessor {
                 } else {
                     persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
                 }
-
-                log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId
-                    + ", groupId=" + group);
-
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
-                    ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                
+                log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
+                
+                ConfigTraceService
+                        .logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
+                                ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             }
-
+            
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-
+            
         } catch (Exception e) {
             mergeService.addMergeTask(dataId, group, tenant, mergeTask.getClientIp());
             log.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
         }
-
+        
         return true;
     }
-
+    
     public static ConfigInfo merge(String dataId, String group, String tenant, List<ConfigInfoAggr> datumList) {
         StringBuilder sb = new StringBuilder();
         String appName = null;
@@ -122,11 +124,12 @@ public class MergeTaskProcessor implements TaskProcessor {
         String content = sb.substring(0, sb.lastIndexOf(Constants.NACOS_LINE_SEPARATOR));
         return new ConfigInfo(dataId, group, tenant, appName, content);
     }
-
+    
     // =====================
-
+    
     private static final Logger log = LoggerFactory.getLogger(MergeTaskProcessor.class);
-
+    
     private PersistService persistService;
+    
     private MergeDatumService mergeService;
 }

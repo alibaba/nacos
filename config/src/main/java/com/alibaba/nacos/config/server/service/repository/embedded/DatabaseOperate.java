@@ -108,7 +108,8 @@ public interface DatabaseOperate {
     Boolean update(List<ModifyRequest> modifyRequests, BiConsumer<Boolean, Throwable> consumer);
     
     /**
-     * data importing, This method is suitable for importing data from external data sources into embedded data sources.
+     * data importing, This method is suitable for importing data from external data sources into embedded data
+     * sources.
      *
      * @param file {@link File}
      * @return {@link CompletableFuture}

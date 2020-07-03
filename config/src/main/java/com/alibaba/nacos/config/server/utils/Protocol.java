@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 /**
@@ -22,6 +23,7 @@ package com.alibaba.nacos.config.server.utils;
  * @version 1.0 2011/05/03
  */
 public class Protocol {
+    
     /**
      * 解析类于2.0.4(major.minor.bug-fix这样的版本为数字)
      *

@@ -39,70 +39,69 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalPermissionPersistServiceImpl implements PermissionPersistService {
-
-	@Autowired
-	private ExternalStoragePersistServiceImpl persistService;
-
-	private JdbcTemplate jt;
-
-	@PostConstruct
-	protected void init() {
-		jt = persistService.getJdbcTemplate();
-	}
-
-	public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-		PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from permissions where ";
-		String sqlFetchRows
-				= "select role,resource,action from permissions where ";
-
-		String where = " role='" + role + "' ";
-
-		if (StringUtils.isBlank(role)) {
-			where = " 1=1 ";
-		}
-
-		try {
-			Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows
-							+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-					pageSize, PERMISSION_ROW_MAPPER);
-
-			if (pageInfo==null) {
-				pageInfo = new Page<>();
-				pageInfo.setTotalCount(0);
-				pageInfo.setPageItems(new ArrayList<>());
-			}
-
-			return pageInfo;
-
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public void addPermission(String role, String resource, String action) {
-
-		String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
-
-		try {
-			jt.update(sql, role, resource, action);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
-	public void deletePermission(String role, String resource, String action) {
-
-		String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
-		try {
-			jt.update(sql, role, resource, action);
-		} catch (CannotGetJdbcConnectionException e) {
-			LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
-			throw e;
-		}
-	}
-
+    
+    @Autowired
+    private ExternalStoragePersistServiceImpl persistService;
+    
+    private JdbcTemplate jt;
+    
+    @PostConstruct
+    protected void init() {
+        jt = persistService.getJdbcTemplate();
+    }
+    
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from permissions where ";
+        String sqlFetchRows = "select role,resource,action from permissions where ";
+        
+        String where = " role='" + role + "' ";
+        
+        if (StringUtils.isBlank(role)) {
+            where = " 1=1 ";
+        }
+        
+        try {
+            Page<PermissionInfo> pageInfo = helper
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                            pageSize, PERMISSION_ROW_MAPPER);
+            
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            
+            return pageInfo;
+            
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    public void addPermission(String role, String resource, String action) {
+        
+        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
+        
+        try {
+            jt.update(sql, role, resource, action);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    public void deletePermission(String role, String resource, String action) {
+        
+        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
+        try {
+            jt.update(sql, role, resource, action);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
 }

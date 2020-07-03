@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
@@ -23,34 +24,37 @@ import java.io.Serializable;
  * @author Nacos
  */
 public class TenantInfo implements Serializable {
-
+    
     private static final long serialVersionUID = -1498218072016383809L;
+    
     private String tenantId;
+    
     private String tenantName;
+    
     private String tenantDesc;
-
+    
     public String getTenantId() {
         return tenantId;
     }
-
+    
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
-
+    
     public String getTenantName() {
         return tenantName;
     }
-
+    
     public void setTenantName(String tenantName) {
         this.tenantName = tenantName;
     }
-
+    
     public String getTenantDesc() {
         return tenantDesc;
     }
-
+    
     public void setTenantDesc(String tenantDesc) {
         this.tenantDesc = tenantDesc;
     }
-
+    
 }

@@ -30,28 +30,26 @@ import javax.annotation.PostConstruct;
 @Conditional(ConditionOnExternalStorage.class)
 @Component
 public class ExternalDumpService extends DumpService {
-
-	/**
-	 * Here you inject the dependent objects constructively, ensuring that some
-	 * of the dependent functionality is initialized ahead of time
-	 *
-	 * @param persistService  {@link PersistService}
-	 * @param memberManager   {@link ServerMemberManager}
-	 */
-	public ExternalDumpService(PersistService persistService,
-			ServerMemberManager memberManager) {
-		super(persistService, memberManager);
-	}
-
-	@PostConstruct
-	@Override
-	protected void init() throws Throwable {
-		dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-				dumpAllTagProcessor);
-	}
-
-	@Override
-	protected boolean canExecute() {
-		return memberManager.isFirstIp();
-	}
+    
+    /**
+     * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
+     * initialized ahead of time
+     *
+     * @param persistService {@link PersistService}
+     * @param memberManager  {@link ServerMemberManager}
+     */
+    public ExternalDumpService(PersistService persistService, ServerMemberManager memberManager) {
+        super(persistService, memberManager);
+    }
+    
+    @PostConstruct
+    @Override
+    protected void init() throws Throwable {
+        dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+    }
+    
+    @Override
+    protected boolean canExecute() {
+        return memberManager.isFirstIp();
+    }
 }

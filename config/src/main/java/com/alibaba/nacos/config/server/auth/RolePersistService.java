@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
@@ -25,15 +26,15 @@ import com.alibaba.nacos.config.server.model.Page;
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface RolePersistService {
-
+    
     Page<RoleInfo> getRoles(int pageNo, int pageSize);
-
+    
     Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize);
-
+    
     void addRole(String role, String userName);
-
+    
     void deleteRole(String role);
-
+    
     void deleteRole(String role, String username);
-
+    
 }

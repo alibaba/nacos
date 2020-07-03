@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.datasource;
 
 import java.io.IOException;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -25,54 +27,54 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @author Nacos
  */
 public interface DataSourceService {
-
+    
     /**
      * Initialize the relevant resource information
      *
      * @throws Exception
      */
     void init() throws Exception;
-
+    
     /**
      * reload
      *
      * @throws IOException exception
      */
     void reload() throws IOException;
-
+    
     /**
      * check master db
      *
      * @return is master
      */
     boolean checkMasterWritable();
-
+    
     /**
      * get jdbc template
      *
      * @return JdbcTemplate
      */
     JdbcTemplate getJdbcTemplate();
-
+    
     /**
      * get transaction template
      *
      * @return TransactionTemplate
      */
     TransactionTemplate getTransactionTemplate();
-
+    
     /**
      * get current db url
      *
      * @return
      */
     String getCurrentDBUrl();
-
+    
     /**
      * get heath
      *
      * @return heath info
      */
     String getHealth();
-
+    
 }

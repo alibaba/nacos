@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -26,15 +27,15 @@ import java.util.regex.Pattern;
  * @author leiwen.zh
  */
 public class UrlAnalysisUtils {
-
+    
     private static final Pattern URL_PATTERN = Pattern.compile("^(\\w+://)?([\\w\\.]+:)(\\d*)?(\\??.*)");
-
+    
     public static String getContentIdentity(String content) {
-
+        
         if (!verifyIncrementPubContent(content)) {
             return null;
         }
-
+        
         Matcher matcher = URL_PATTERN.matcher(content);
         StringBuilder buf = new StringBuilder();
         if (matcher.find()) {
@@ -51,9 +52,9 @@ public class UrlAnalysisUtils {
         }
         return buf.toString();
     }
-
+    
     private static boolean verifyIncrementPubContent(String content) {
-
+        
         if (content == null || content.length() == 0) {
             return false;
         }

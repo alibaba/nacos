@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.trace;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -32,26 +33,37 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class ConfigTraceService {
+    
     public static final String PERSISTENCE_EVENT_PUB = "pub";
+    
     public static final String PERSISTENCE_EVENT_REMOVE = "remove";
+    
     public static final String PERSISTENCE_EVENT_MERGE = "merge";
-
+    
     public static final String NOTIFY_EVENT_OK = "ok";
+    
     public static final String NOTIFY_EVENT_ERROR = "error";
+    
     public static final String NOTIFY_EVENT_UNHEALTH = "unhealth";
+    
     public static final String NOTIFY_EVENT_EXCEPTION = "exception";
-
+    
     public static final String DUMP_EVENT_OK = "ok";
+    
     public static final String DUMP_EVENT_REMOVE_OK = "remove-ok";
+    
     public static final String DUMP_EVENT_ERROR = "error";
-
+    
     public static final String PULL_EVENT_OK = "ok";
+    
     public static final String PULL_EVENT_NOTFOUND = "not-found";
+    
     public static final String PULL_EVENT_CONFLICT = "conflict";
+    
     public static final String PULL_EVENT_ERROR = "error";
-
+    
     public static void logPersistenceEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-                                           String handleIp, String type, String content) {
+            String handleIp, String type, String content) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
@@ -62,13 +74,13 @@ public class ConfigTraceService {
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1] | ext
         // (md5)
         String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
-
+        
         LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
-            requestIpAppName, ts, handleIp, "persist", type, -1, md5);
+                requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }
-
+    
     public static void logNotifyEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-                                      String handleIp, String type, long delayed, String targetIp) {
+            String handleIp, String type, long delayed, String targetIp) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
@@ -80,11 +92,11 @@ public class ConfigTraceService {
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | ext
         // (targetIp)
         LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
-            requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
+                requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
     }
-
+    
     public static void logDumpEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-                                    String handleIp, String type, long delayed, long length) {
+            String handleIp, String type, long delayed, long length) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
@@ -94,11 +106,11 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | length
         LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
-            requestIpAppName, ts, handleIp, "dump", type, delayed, length);
+                requestIpAppName, ts, handleIp, "dump", type, delayed, length);
     }
-
+    
     public static void logDumpAllEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-                                       String handleIp, String type) {
+            String handleIp, String type) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
@@ -107,12 +119,13 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1]
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
-            requestIpAppName, ts, handleIp, "dump-all", type, -1);
+        LogUtil.traceLog
+                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
+                        ts, handleIp, "dump-all", type, -1);
     }
-
+    
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
-                                    String type, long delayed, String clientIp) {
+            String type, long delayed, String clientIp) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
@@ -121,7 +134,8 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] | ext(clientIp)
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
-            requestIpAppName, ts, "pull", type, delayed, clientIp);
+        LogUtil.traceLog
+                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
+                        ts, "pull", type, delayed, clientIp);
     }
 }

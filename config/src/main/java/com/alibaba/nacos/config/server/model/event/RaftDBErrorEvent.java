@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.core.notify.SlowEvent;
@@ -22,19 +23,19 @@ import com.alibaba.nacos.core.notify.SlowEvent;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class RaftDBErrorEvent implements SlowEvent {
-
-	private static final long serialVersionUID = 101591819161802336L;
-
-	private Throwable ex;
-
-	public RaftDBErrorEvent() {
-	}
-
-	public RaftDBErrorEvent(Throwable ex) {
-		this.ex = ex;
-	}
-
-	public Throwable getEx() {
-		return ex;
-	}
+    
+    private static final long serialVersionUID = 101591819161802336L;
+    
+    private Throwable ex;
+    
+    public RaftDBErrorEvent() {
+    }
+    
+    public RaftDBErrorEvent(Throwable ex) {
+        this.ex = ex;
+    }
+    
+    public Throwable getEx() {
+        return ex;
+    }
 }

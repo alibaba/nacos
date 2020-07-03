@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -34,13 +35,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  * @author Nacos
  */
 public class NacosWebFilter implements Filter {
-
+    
     static private String webRootPath;
-
+    
     static public String rootPath() {
         return webRootPath;
     }
-
+    
     /**
      * 方便测试
      *
@@ -49,19 +50,19 @@ public class NacosWebFilter implements Filter {
     static public void setWebRootPath(String path) {
         webRootPath = path;
     }
-
+    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         ServletContext ctx = filterConfig.getServletContext();
         setWebRootPath(ctx.getRealPath("/"));
     }
-
+    
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
         request.setCharacterEncoding(Constants.ENCODE);
         response.setContentType("application/json;charset=" + Constants.ENCODE);
-
+        
         try {
             chain.doFilter(request, response);
         } catch (IOException | ServletException ioe) {
@@ -69,9 +70,9 @@ public class NacosWebFilter implements Filter {
             throw ioe;
         }
     }
-
+    
     @Override
     public void destroy() {
     }
-
+    
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.result.core;
 
 /**
@@ -22,24 +23,24 @@ package com.alibaba.nacos.config.server.result.core;
  * @date 2019/6/28 14:44
  */
 public interface IResultCode {
-
+    
     /**
      * get the result code
      *
+     * @return java.lang.String
      * @author klw
      * @Date 2019/6/28 14:56
      * @Param []
-     * @return java.lang.String
      */
     int getCode();
-
+    
     /**
      * get the result code's message
      *
+     * @return java.lang.String
      * @author klw
      * @Date 2019/6/28 14:56
      * @Param []
-     * @return java.lang.String
      */
     String getCodeMsg();
 }

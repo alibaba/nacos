@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.manager;
 
 /**
@@ -22,12 +23,12 @@ package com.alibaba.nacos.config.server.manager;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface TaskManagerMBean {
-
+    
     /**
      * get task info
      *
      * @return info
      */
     String getTaskInfos();
-
+    
 }

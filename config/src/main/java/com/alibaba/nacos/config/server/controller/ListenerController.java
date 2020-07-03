@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -39,25 +40,23 @@ import java.util.Map;
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
 public class ListenerController {
-
+    
     private final ConfigSubService configSubService;
-
+    
     @Autowired
     public ListenerController(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
-
+    
     /**
      * 获取客户端订阅配置信息
      */
     @GetMapping
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
-                                                             @RequestParam(value = "all", required = false) boolean all,
-                                                             @RequestParam(value = "tenant", required = false)
-                                                                 String tenant,
-                                                             @RequestParam(value = "sampleTime", required = false,
-                                                                 defaultValue = "1") int sampleTime, ModelMap modelMap)
-        throws Exception {
+            @RequestParam(value = "all", required = false) boolean all,
+            @RequestParam(value = "tenant", required = false) String tenant,
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
+            throws Exception {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
@@ -83,9 +82,9 @@ public class ListenerController {
             }
             gls.setLisentersGroupkeyStatus(configMd5Status);
         }
-
+        
         return gls;
     }
-
+    
 }
 
