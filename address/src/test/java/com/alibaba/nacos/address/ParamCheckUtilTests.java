@@ -19,10 +19,6 @@ package com.alibaba.nacos.address;
 import com.alibaba.nacos.address.util.AddressServerParamCheckUtil;
 import org.junit.Test;
 
-/**
- * @author pbting
- * @date 2019-06-19 11:31 AM
- */
 public class ParamCheckUtilTests {
     
     @Test

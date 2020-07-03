@@ -27,10 +27,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 
-/**
- * @author pbting
- * @date 2019-06-18 2:40 PM
- */
 public class SimpleHttpTestUtils {
     
     private static final String REQUEST_METHOD_DELETE = "DELETE";
@@ -42,37 +38,35 @@ public class SimpleHttpTestUtils {
     private static final String REQUEST_METHOD_GET = "GET";
     
     /**
-     * 连接超时
+     * 连接超时.
      */
     private static final int CONNECT_TIME_OUT = 2000;
     
     /**
-     * 读取数据超时
+     * 读取数据超时.
      */
     private static final int READ_TIME_OUT = 2000;
     
     /**
-     * 请求编码
+     * 请求编码.
      */
-    public static String REQUEST_ENCODING = "UTF-8";
+    public static final String REQUEST_ENCODING = "UTF-8";
     
     /**
-     * 接收编码
+     * 接收编码.
      */
-    public static String RESPONSE_ENCODING = "UTF-8";
+    public static final String RESPONSE_ENCODING = "UTF-8";
     
     public static final short OK = 200;
     
-    public static final short Bad_Request = 400;
+    public static final short BAD_REQUEST = 400;
     
-    public static final short Internal_Server_Error = 500;
+    public static final short INTERNAL_SERVER_ERROR = 500;
     
     public static final short PARAM_ERROR_NO_ANALYSESOR = 1000;
     
     /**
-     * <pre>
-     * 发送带参数的GET的HTTP请求
-     * </pre>
+     * 发送带参数的GET的HTTP请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -83,9 +77,7 @@ public class SimpleHttpTestUtils {
     }
     
     /**
-     * <pre>
-     * 发送带参数的POST的HTTP请求
-     * </pre>
+     * 发送带参数的POST的HTTP请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -96,9 +88,7 @@ public class SimpleHttpTestUtils {
     }
     
     /**
-     * <pre>
-     * 发送带参数的 PUT 的 HTTP 请求
-     * </pre>
+     * 发送带参数的 PUT 的 HTTP 请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表
@@ -109,9 +99,7 @@ public class SimpleHttpTestUtils {
     }
     
     /**
-     * <pre>
-     * 发送带参数的 DELETE 的 HTTP 请求
-     * </pre>
+     * 发送带参数的 DELETE 的 HTTP 请求.
      *
      * @param reqUrl   HTTP请求URL
      * @param paramMap 参数映射表

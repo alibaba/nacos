@@ -39,8 +39,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
+ * Address server cluster controller.
+ *
  * @author pbting
- * @date 2019-06-10 9:59 AM
  * @since 1.1.0
  */
 @RestController
@@ -57,10 +58,12 @@ public class AddressServerClusterController {
     private AddressServerGeneratorManager addressServerGeneratorManager;
     
     /**
+     * Create new cluster.
+     *
      * @param product Ip list of products to be associated
      * @param cluster Ip list of product cluster to be associated
      * @param ips     will post ip list.
-     * @return
+     * @return result of create new cluster
      */
     @RequestMapping(value = "", method = RequestMethod.POST)
     public ResponseEntity postCluster(@RequestParam(required = false) String product,
@@ -73,7 +76,7 @@ public class AddressServerClusterController {
         //2. prepare the response name for product and cluster to client
         String rawProductName = addressServerManager.getRawProductName(product);
         String rawClusterName = addressServerManager.getRawClusterName(cluster);
-        Loggers.addressLogger.info("put cluster node,the cluster name is " + cluster + "; the product name=" + product
+        Loggers.ADDRESS_LOGGER.info("put cluster node,the cluster name is " + cluster + "; the product name=" + product
                 + "; the ip list=" + ips);
         ResponseEntity responseEntity;
         try {
@@ -105,10 +108,12 @@ public class AddressServerClusterController {
     }
     
     /**
+     * Delete cluster.
+     *
      * @param product Ip list of products to be associated
      * @param cluster Ip list of product cluster to be associated
      * @param ips     will delete ips.
-     * @return
+     * @return delete result
      */
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public ResponseEntity deleteCluster(@RequestParam(required = false) String product,

@@ -30,8 +30,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
+ * Server list controller.
+ *
  * @author pbting
- * @date 2019-06-18 5:04 PM
  * @since 1.1.0
  */
 @RestController
@@ -44,9 +45,11 @@ public class ServerListController {
     private AddressServerGeneratorManager addressServerBuilderManager;
     
     /**
+     * Get cluster.
+     *
      * @param product will get Ip list of that products to be associated
      * @param cluster will get Ip list of that product cluster to be associated
-     * @return
+     * @return result of get
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
     public ResponseEntity getCluster(@PathVariable String product, @PathVariable String cluster) {

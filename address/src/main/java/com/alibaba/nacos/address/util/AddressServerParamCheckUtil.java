@@ -20,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Provides a unified tool class for address server parameter verification
+ * Provides a unified tool class for address server parameter verification.
  *
  * @author pbting
  * @date 2019-06-19 11:19 AM
@@ -36,6 +36,12 @@ public class AddressServerParamCheckUtil {
     
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
     
+    /**
+     * Check ips.
+     *
+     * @param ips ips
+     * @return 'ok' if check passed, otherwise illegal ip
+     */
     public static String checkIps(String... ips) {
         
         if (ips == null || ips.length == 0) {

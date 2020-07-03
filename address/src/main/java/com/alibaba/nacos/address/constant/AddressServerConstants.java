@@ -19,7 +19,7 @@ package com.alibaba.nacos.address.constant;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 /**
- * Uniform constant parameter naming for address servers and default values ​​for related parameters
+ * Uniform constant parameter naming for address servers and default values ​​for related parameters.
  *
  * @author pbting
  * @date 2019-06-17 7:23 PM
@@ -44,7 +44,7 @@ public interface AddressServerConstants {
     String IP_PORT_SEPARATOR = ":";
     
     /**
-     * the separator for {@Service#name} between raw service name and group
+     * the separator for service name between raw service name and group.
      */
     String GROUP_SERVICE_NAME_SEP = "@@";
     
@@ -54,22 +54,22 @@ public interface AddressServerConstants {
     String DEFAULT_GET_CLUSTER = "serverlist";
     
     /**
-     * post multi ip will use the "," to separator
+     * post multi ip will use the "," to separator.
      */
     String MULTI_IPS_SEPARATOR = ",";
     
     /**
-     * the default product name when deploy nacos with naming and config
+     * the default product name when deploy nacos with naming and config.
      */
     String ALIWARE_NACOS_DEFAULT_PRODUCT_NAME = "nacos.as.default";
     
     /**
-     * when the config and naming will separate deploy,then must specify product name by the client。
+     * when the config and naming will separate deploy,then must specify product name by the client.
      */
     String ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE = "nacos.as.%s";
     
     /**
-     * the url for address server prefix
+     * the url for address server prefix.
      */
     String ADDRESS_SERVER_REQUEST_URL =
             UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";

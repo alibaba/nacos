@@ -21,10 +21,6 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-/**
- * @author pbting
- * @date 2019-06-18 2:37 PM
- */
 @Ignore
 public class AddressServerControllerTests {
     
@@ -40,9 +36,6 @@ public class AddressServerControllerTests {
     
     //-----------------product=nacos,cluster=DEFAULT -------------------//
     
-    /**
-     * test the default product and cluster
-     */
     @Test
     public void postCluster() {
         
@@ -88,10 +81,6 @@ public class AddressServerControllerTests {
     }
     
     //-----------------product=config,cluster=cluster01 -------------------//
-    
-    /**
-     * test with product
-     */
     
     @Test
     public void postClusterWithProduct() {
@@ -142,9 +131,6 @@ public class AddressServerControllerTests {
     
     //-----------------product=naming,cluster=cluster01 -------------------//
     
-    /**
-     * test with product and cluster
-     */
     @Test
     public void postClusterWithProductAndCluster() {
         

@@ -36,6 +36,12 @@ import java.util.List;
 @Component
 public class AddressServerGeneratorManager {
     
+    /**
+     * Generate product name.
+     *
+     * @param name name
+     * @return product
+     */
     public String generateProductName(String name) {
         
         if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
@@ -49,10 +55,10 @@ public class AddressServerGeneratorManager {
     /**
      * Note: if the parameter inputted is empty then will return the empty list.
      *
-     * @param serviceName
-     * @param clusterName
-     * @param ipArray
-     * @return
+     * @param serviceName service name
+     * @param clusterName cluster name
+     * @param ipArray array of ips
+     * @return instance list
      */
     public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName,
             String[] ipArray) {
@@ -78,7 +84,7 @@ public class AddressServerGeneratorManager {
         return instanceList;
     }
     
-    public String[] generateIpAndPort(String ip) {
+    private String[] generateIpAndPort(String ip) {
         
         int index = ip.indexOf(AddressServerConstants.IP_PORT_SEPARATOR);
         if (index != -1) {
@@ -90,6 +96,8 @@ public class AddressServerGeneratorManager {
     }
     
     /**
+     * Generate response ips.
+     *
      * @param instanceList a instance set will generate string response to client.
      * @return the result of response to client
      */
@@ -105,7 +113,9 @@ public class AddressServerGeneratorManager {
     }
     
     /**
-     * @param rawServiceName the raw service name will not contains the {@Constans.DEFAULT_GROUP}
+     * Generate nacos service name.
+     *
+     * @param rawServiceName the raw service name will not contains the {@link Constants#DEFAULT_GROUP}.
      * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {

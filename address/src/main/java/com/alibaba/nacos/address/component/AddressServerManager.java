@@ -17,6 +17,7 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -41,13 +42,11 @@ public class AddressServerManager {
     }
     
     /**
-     * <p>
-     * if the name is empty then return the default {@UtilAndCommons#DEFAULT_CLUSTER_NAME},
-     * <p>
-     * or return the source name by input
+     * If the name is empty then return the default {@link UtilsAndCommons#DEFAULT_CLUSTER_NAME}, or return the source
+     * name by input.
      *
-     * @param name
-     * @return
+     * @param name name
+     * @return default cluster name
      */
     public String getDefaultClusterNameIfEmpty(String name) {
         
@@ -64,8 +63,10 @@ public class AddressServerManager {
     }
     
     /**
+     * Split ips.
+     *
      * @param ips multi ip will separator by the ','
-     * @return
+     * @return array of ip
      */
     public String[] splitIps(String ips) {
         
