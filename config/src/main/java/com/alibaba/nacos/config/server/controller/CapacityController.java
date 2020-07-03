@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
@@ -35,20 +36,19 @@ import javax.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
 public class CapacityController {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityController.class);
-
+    
     private final CapacityService capacityService;
-
+    
     @Autowired
     public CapacityController(CapacityService capacityService) {
         this.capacityService = capacityService;
     }
-
+    
     @GetMapping
-    public RestResult<Capacity> getCapacity(HttpServletResponse response,
-                                            @RequestParam(required = false) String group,
-                                            @RequestParam(required = false) String tenant) {
+    public RestResult<Capacity> getCapacity(HttpServletResponse response, @RequestParam(required = false) String group,
+            @RequestParam(required = false) String tenant) {
         if (group == null && tenant == null) {
             RestResult<Capacity> restResult = new RestResult<Capacity>();
             response.setStatus(400);
@@ -84,18 +84,15 @@ public class CapacityController {
         }
         return restResult;
     }
-
+    
     /**
      * 修改Group或租户的容量，容量信息还没有初始化的则初始化记录
      */
     @PostMapping
     public RestResult<Boolean> updateCapacity(HttpServletResponse response,
-                                              @RequestParam(required = false) String group,
-                                              @RequestParam(required = false) String tenant,
-                                              @RequestParam(required = false) Integer quota,
-                                              @RequestParam(required = false) Integer maxSize,
-                                              @RequestParam(required = false) Integer maxAggrCount,
-                                              @RequestParam(required = false) Integer maxAggrSize) {
+            @RequestParam(required = false) String group, @RequestParam(required = false) String tenant,
+            @RequestParam(required = false) Integer quota, @RequestParam(required = false) Integer maxSize,
+            @RequestParam(required = false) Integer maxAggrCount, @RequestParam(required = false) Integer maxAggrSize) {
         if (StringUtils.isBlank(group) && StringUtils.isBlank(tenant)) {
             capacityService.initAllCapacity();
             RestResult<Boolean> restResult = new RestResult<Boolean>();
@@ -125,8 +122,8 @@ public class CapacityController {
             return restResult;
         }
         try {
-            boolean insertOrUpdateResult = capacityService.insertOrUpdateCapacity(group, tenant, quota, maxSize,
-                maxAggrCount, maxAggrSize);
+            boolean insertOrUpdateResult = capacityService
+                    .insertOrUpdateCapacity(group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             if (insertOrUpdateResult) {
                 setSuccessResult(response, restResult);
                 restResult.setMessage(String.format("成功更新%s为%s的容量信息配置", targetFieldName, targetFieldValue));
@@ -142,13 +139,13 @@ public class CapacityController {
             return restResult;
         }
     }
-
+    
     private void setFailResult(HttpServletResponse response, RestResult<Boolean> restResult, int statusCode) {
         response.setStatus(statusCode);
         restResult.setCode(statusCode);
         restResult.setData(false);
     }
-
+    
     private void setSuccessResult(HttpServletResponse response, RestResult<Boolean> restResult) {
         response.setStatus(200);
         restResult.setCode(200);

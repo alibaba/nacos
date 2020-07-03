@@ -28,7 +28,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConditionStandaloneEmbedStorage implements Condition {
-
+    
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         return PropertyUtil.isEmbeddedStorage() && ApplicationUtils.getStandaloneMode();

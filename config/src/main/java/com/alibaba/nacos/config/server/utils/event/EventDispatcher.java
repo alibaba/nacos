@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils.event;
 
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Nacos
  */
 public class EventDispatcher {
-
+    
     /**
      * add event listener
      */
@@ -36,7 +37,7 @@ public class EventDispatcher {
             getEntry(type).listeners.addIfAbsent(listener);
         }
     }
-
+    
     /**
      * fire event, notify listeners.
      */
@@ -44,7 +45,7 @@ public class EventDispatcher {
         if (null == event) {
             throw new IllegalArgumentException("event is null");
         }
-
+        
         for (AbstractEventListener listener : getEntry(event.getClass()).listeners) {
             try {
                 listener.onEvent(event);
@@ -53,14 +54,14 @@ public class EventDispatcher {
             }
         }
     }
-
+    
     /**
      * For only test purpose
      */
     static public void clear() {
         LISTENER_HUB.clear();
     }
-
+    
     /**
      * get event listener for eventType. Add Entry if not exist.
      */
@@ -71,7 +72,7 @@ public class EventDispatcher {
                     return entry;
                 }
             }
-
+            
             Entry tmp = new Entry(eventType);
             /**
              *  false means already exists
@@ -81,16 +82,18 @@ public class EventDispatcher {
             }
         }
     }
-
+    
     static private class Entry {
+        
         final Class<? extends Event> eventType;
+        
         final CopyOnWriteArrayList<AbstractEventListener> listeners;
-
+        
         Entry(Class<? extends Event> type) {
             eventType = type;
             listeners = new CopyOnWriteArrayList<AbstractEventListener>();
         }
-
+        
         @Override
         public boolean equals(Object obj) {
             if (null == obj || obj.getClass() != getClass()) {
@@ -99,39 +102,40 @@ public class EventDispatcher {
             if (this == obj) {
                 return true;
             }
-            return eventType == ((Entry)obj).eventType;
+            return eventType == ((Entry) obj).eventType;
         }
-
+        
         @Override
         public int hashCode() {
             return super.hashCode();
         }
-
+        
     }
-
+    
     static private final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
-
+    
     static final CopyOnWriteArrayList<Entry> LISTENER_HUB = new CopyOnWriteArrayList<Entry>();
-
+    
     public interface Event {
+    
     }
-
+    
     static public abstract class AbstractEventListener {
-
+        
         public AbstractEventListener() {
             /**
              * automatic register
              */
             EventDispatcher.addEventListener(this);
         }
-
+        
         /**
          * 感兴趣的事件列表
          *
          * @return event list
          */
         abstract public List<Class<? extends Event>> interest();
-
+        
         /**
          * 处理事件
          *
@@ -139,5 +143,5 @@ public class EventDispatcher {
          */
         abstract public void onEvent(Event event);
     }
-
+    
 }

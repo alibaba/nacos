@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -40,27 +41,27 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class NotifyTaskProcessor implements TaskProcessor {
-
+    
     public NotifyTaskProcessor(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-
+    
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        NotifyTask notifyTask = (NotifyTask)task;
+        NotifyTask notifyTask = (NotifyTask) task;
         String dataId = notifyTask.getDataId();
         String group = notifyTask.getGroup();
         String tenant = notifyTask.getTenant();
         long lastModified = notifyTask.getLastModified();
-
+        
         boolean isok = true;
-
+        
         for (Member ip : memberManager.allMembers()) {
             isok = notifyToDump(dataId, group, tenant, lastModified, ip.getAddress()) && isok;
         }
         return isok;
     }
-
+    
     /**
      * 通知其他server
      */
@@ -68,45 +69,42 @@ public class NotifyTaskProcessor implements TaskProcessor {
         long delayed = System.currentTimeMillis() - lastModified;
         try {
             // XXX 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
-            List<String> headers = Arrays.asList(
-                NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
-                NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
-            String urlString = MessageFormat.format(URL_PATTERN, serverIp, ApplicationUtils
-                            .getContextPath(), dataId,
-                group);
-
+            List<String> headers = Arrays
+                    .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
+                            NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
+            String urlString = MessageFormat
+                    .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
+            
             HttpResult result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.code == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
-                    ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
-
+                        ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+                
                 MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
-
+                
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
-                log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
-                    serverIp, result.code});
+                log.error("[notify-error] {}, {}, to {}, result {}",
+                        new Object[] {dataId, group, serverIp, result.code});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
-                    ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
+                        ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
             MetricsMonitor.getConfigNotifyException().increment();
-            log.error(
-                "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
-                    + e.toString());
+            log.error("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString());
             log.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
             ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
-                ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
+                    ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }
-
+    
     static final Logger log = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-
-    static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
-        + "?dataId={2}&group={3}";
-
+    
+    static final String URL_PATTERN =
+            "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
+    
     final ServerMemberManager memberManager;
 }

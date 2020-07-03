@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.constant;
 
 /**
@@ -30,7 +31,7 @@ public enum CounterMode {
      * 减少
      */
     DECREMENT;
-
+    
     public CounterMode reverse() {
         if (INCREMENT == this) {
             return DECREMENT;

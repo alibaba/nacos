@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -51,43 +52,42 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
  */
 @Service
 public class ConfigServletInner {
-
+    
     @Autowired
     private LongPollingService longPollingService;
-
+    
     @Autowired
     private PersistService persistService;
-
+    
     private static final int TRY_GET_LOCK_TIMES = 9;
-
+    
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
-
+    
     /**
      * 轮询接口
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-                                  Map<String, String> clientMd5Map, int probeRequestSize)
-        throws IOException {
-
+            Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
+        
         // 长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
-
+        
         // else 兼容短轮询逻辑
         List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
-
+        
         // 兼容短轮询result
         String oldResult = MD5Util.compareMd5OldResult(changedGroups);
         String newResult = MD5Util.compareMd5ResultString(changedGroups);
-
+        
         String version = request.getHeader(Constants.CLIENT_VERSION_HEADER);
         if (version == null) {
             version = "2.0.0";
         }
         int versionNum = Protocol.getVersionNumber(version);
-
+        
         /**
          * 2.0.4版本以前, 返回值放入header中
          */
@@ -97,9 +97,9 @@ public class ConfigServletInner {
         } else {
             request.setAttribute("content", newResult);
         }
-
+        
         Loggers.AUTH.info("new content:" + newResult);
-
+        
         // 禁用缓存
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -107,17 +107,17 @@ public class ConfigServletInner {
         response.setStatus(HttpServletResponse.SC_OK);
         return HttpServletResponse.SC_OK + "";
     }
-
+    
     /**
      * 同步配置获取接口
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-                              String tenant, String tag, String clientIp) throws IOException, ServletException {
+            String tenant, String tag, String clientIp) throws IOException, ServletException {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey);
-
+        
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
         if (lockResult > 0) {
@@ -163,9 +163,9 @@ public class ConfigServletInner {
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
-
+                            
                             response.setHeader("Vipserver-Tag",
-                                URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
+                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
@@ -178,12 +178,12 @@ public class ConfigServletInner {
                                 // FIXME CacheItem
                                 // 不存在了无法简单的计算推送delayed，这里简单的记做-1
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
-
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
-
+                                
                                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                                 response.getWriter().println("config data not exist");
                                 return HttpServletResponse.SC_NOT_FOUND + "";
@@ -210,20 +210,19 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // 不存在了无法简单的计算推送delayed，这里简单的记做-1
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                ConfigTraceService.PULL_EVENT_NOTFOUND,
-                                -1, requestIp);
-
+                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                            
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
                             // new Object[]{clientIp, groupKey});
-
+                            
                             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                             response.getWriter().println("config data not exist");
                             return HttpServletResponse.SC_NOT_FOUND + "";
                         }
                     }
                 }
-
+                
                 response.setHeader(Constants.CONTENT_MD5, md5);
                 /**
                  *  禁用缓存
@@ -237,27 +236,26 @@ public class ConfigServletInner {
                     fis = new FileInputStream(file);
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
-
+                
                 if (PropertyUtil.isDirectRead()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
                     out.flush();
                     out.close();
                 } else {
-                    fis.getChannel().transferTo(0L, fis.getChannel().size(),
-                        Channels.newChannel(response.getOutputStream()));
+                    fis.getChannel()
+                            .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
                 }
-
+                
                 LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
-
+                
                 final long delayed = System.currentTimeMillis() - lastModified;
-
+                
                 // TODO distinguish pull-get && push-get
                 // 否则无法直接把delayed作为推送延时的依据，因为主动get请求的delayed值都很大
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                    ConfigTraceService.PULL_EVENT_OK, delayed,
-                    requestIp);
-
+                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp);
+                
             } finally {
                 releaseConfigReadLock(groupKey);
                 if (null != fis) {
@@ -265,32 +263,33 @@ public class ConfigServletInner {
                 }
             }
         } else if (lockResult == 0) {
-
+            
             // FIXME CacheItem 不存在了无法简单的计算推送delayed，这里简单的记做-1
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
-
+            ConfigTraceService
+                    .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
+                            requestIp);
+            
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().println("config data not exist");
             return HttpServletResponse.SC_NOT_FOUND + "";
-
+            
         } else {
-
+            
             pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-
+            
             response.setStatus(HttpServletResponse.SC_CONFLICT);
             response.getWriter().println("requested file is being modified, please try later.");
             return HttpServletResponse.SC_CONFLICT + "";
-
+            
         }
-
+        
         return HttpServletResponse.SC_OK + "";
     }
-
+    
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-
+    
     private static int tryConfigReadLock(String groupKey) {
         /**
          *  默认加锁失败
@@ -307,7 +306,7 @@ public class ConfigServletInner {
             if (0 == lockResult) {
                 break;
             }
-
+            
             /**
              *  success
              */
@@ -324,19 +323,19 @@ public class ConfigServletInner {
                 }
             }
         }
-
+        
         return lockResult;
     }
-
+    
     private static boolean isUseTag(CacheItem cacheItem, String tag) {
         if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
             return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
         }
         return false;
     }
-
+    
     private static boolean fileNotExist(File file) {
         return file == null || !file.exists();
     }
-
+    
 }

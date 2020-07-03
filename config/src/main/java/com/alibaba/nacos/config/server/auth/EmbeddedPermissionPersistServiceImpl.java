@@ -39,48 +39,47 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistService {
-
-	@Autowired
-	private DatabaseOperate databaseOperate;
-
-	@Autowired
-	private EmbeddedStoragePersistServiceImpl persistService;
-
-	public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-		PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from permissions where ";
-		String sqlFetchRows
-				= "select role,resource,action from permissions where ";
-
-		String where = " role='" + role + "' ";
-
-		if (StringUtils.isBlank(role)) {
-			where = " 1=1 ";
-		}
-
-		Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows
-						+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-				pageSize, PERMISSION_ROW_MAPPER);
-
-		if (pageInfo == null) {
-			pageInfo = new Page<>();
-			pageInfo.setTotalCount(0);
-			pageInfo.setPageItems(new ArrayList<>());
-		}
-		return pageInfo;
-	}
-
-	public void addPermission(String role, String resource, String action) {
-		String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
-		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.blockUpdate();
-	}
-
-	public void deletePermission(String role, String resource, String action) {
-		String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
-		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.blockUpdate();
-	}
-
+    
+    @Autowired
+    private DatabaseOperate databaseOperate;
+    
+    @Autowired
+    private EmbeddedStoragePersistServiceImpl persistService;
+    
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from permissions where ";
+        String sqlFetchRows = "select role,resource,action from permissions where ";
+        
+        String where = " role='" + role + "' ";
+        
+        if (StringUtils.isBlank(role)) {
+            where = " 1=1 ";
+        }
+        
+        Page<PermissionInfo> pageInfo = helper
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                        pageSize, PERMISSION_ROW_MAPPER);
+        
+        if (pageInfo == null) {
+            pageInfo = new Page<>();
+            pageInfo.setTotalCount(0);
+            pageInfo.setPageItems(new ArrayList<>());
+        }
+        return pageInfo;
+    }
+    
+    public void addPermission(String role, String resource, String action) {
+        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
+        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        databaseOperate.blockUpdate();
+    }
+    
+    public void deletePermission(String role, String resource, String action) {
+        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
+        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        databaseOperate.blockUpdate();
+    }
+    
 }

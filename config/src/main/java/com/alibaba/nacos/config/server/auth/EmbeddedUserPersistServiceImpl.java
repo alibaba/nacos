@@ -39,69 +39,67 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedUserPersistServiceImpl implements UserPersistService {
-
-	@Autowired
-	private DatabaseOperate databaseOperate;
-
-	@Autowired
-	private EmbeddedStoragePersistServiceImpl persistService;
-
-	public void createUser(String username, String password) {
-		String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
-
-		try {
-			EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
-			databaseOperate.blockUpdate();
-		} finally {
-			EmbeddedStorageContextUtils.cleanAllContext();
-		}
-	}
-
-	public void deleteUser(String username) {
-		String sql = "DELETE from users WHERE username=?";
-		try {
-			EmbeddedStorageContextUtils.addSqlContext(sql, username);
-			databaseOperate.blockUpdate();
-		} finally {
-			EmbeddedStorageContextUtils.cleanAllContext();
-		}
-	}
-
-	public void updateUserPassword(String username, String password) {
-		try {
-			EmbeddedStorageContextUtils.addSqlContext(
-					"UPDATE users SET password = ? WHERE username=?",
-					password, username);
-			databaseOperate.blockUpdate();
-		} finally {
-			EmbeddedStorageContextUtils.cleanAllContext();
-		}
-	}
-
-	public User findUserByUsername(String username) {
-		String sql = "SELECT username,password FROM users WHERE username=? ";
-		return databaseOperate.queryOne(sql, new Object[]{username}, USER_ROW_MAPPER);
-	}
-
-	public Page<User> getUsers(int pageNo, int pageSize) {
-
-		PaginationHelper<User> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from users where ";
-		String sqlFetchRows
-				= "select username,password from users where ";
-
-		String where = " 1=1 ";
-		Page<User> pageInfo = helper.fetchPage(sqlCountRows
-						+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-				pageSize, USER_ROW_MAPPER);
-		if (pageInfo == null) {
-			pageInfo = new Page<>();
-			pageInfo.setTotalCount(0);
-			pageInfo.setPageItems(new ArrayList<>());
-		}
-		return pageInfo;
-	}
-
-
+    
+    @Autowired
+    private DatabaseOperate databaseOperate;
+    
+    @Autowired
+    private EmbeddedStoragePersistServiceImpl persistService;
+    
+    public void createUser(String username, String password) {
+        String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
+        
+        try {
+            EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
+            databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    public void deleteUser(String username) {
+        String sql = "DELETE from users WHERE username=?";
+        try {
+            EmbeddedStorageContextUtils.addSqlContext(sql, username);
+            databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    public void updateUserPassword(String username, String password) {
+        try {
+            EmbeddedStorageContextUtils
+                    .addSqlContext("UPDATE users SET password = ? WHERE username=?", password, username);
+            databaseOperate.blockUpdate();
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    public User findUserByUsername(String username) {
+        String sql = "SELECT username,password FROM users WHERE username=? ";
+        return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
+    }
+    
+    public Page<User> getUsers(int pageNo, int pageSize) {
+        
+        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from users where ";
+        String sqlFetchRows = "select username,password from users where ";
+        
+        String where = " 1=1 ";
+        Page<User> pageInfo = helper
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                        pageSize, USER_ROW_MAPPER);
+        if (pageInfo == null) {
+            pageInfo = new Page<>();
+            pageInfo.setTotalCount(0);
+            pageInfo.setPageItems(new ArrayList<>());
+        }
+        return pageInfo;
+    }
+    
+    
 }

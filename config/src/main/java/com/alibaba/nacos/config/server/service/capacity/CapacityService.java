@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.config.server.constant.CounterMode;
@@ -49,26 +50,30 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class CapacityService {
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityService.class);
-
+    
     private static final Integer ZERO = 0;
+    
     private static final int INIT_PAGE_SIZE = 500;
-
+    
     @Autowired
     private GroupCapacityPersistService groupCapacityPersistService;
+    
     @Autowired
     private TenantCapacityPersistService tenantCapacityPersistService;
+    
     @Autowired
     private PersistService persistService;
-
+    
     private ScheduledExecutorService scheduledExecutorService;
-
+    
     @PostConstruct
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // 每个Server都有修正usage的Job在跑，幂等
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
-            "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -77,34 +82,34 @@ public class CapacityService {
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 correctUsage();
                 LOGGER.info("[capacityManagement] end correct usage, cost: {}s", stopwatch.elapsed(TimeUnit.SECONDS));
-
+                
             }
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
     }
-
+    
     @PreDestroy
     public void destroy() {
         scheduledExecutorService.shutdown();
     }
-
+    
     public void correctUsage() {
         correctGroupUsage();
         correctTenantUsage();
     }
-
+    
     public void correctGroupUsage(String group) {
         groupCapacityPersistService.correctUsage(group, TimeUtils.getCurrentTime());
     }
-
+    
     public void correctTenantUsage(String tenant) {
         tenantCapacityPersistService.correctUsage(tenant, TimeUtils.getCurrentTime());
     }
-
+    
     public void initAllCapacity() {
         initAllCapacity(false);
         initAllCapacity(true);
     }
-
+    
     private void initAllCapacity(boolean isTenant) {
         int page = 1;
         while (true) {
@@ -134,7 +139,7 @@ public class CapacityService {
             ++page;
         }
     }
-
+    
     /**
      * 修正Group容量信息中的使用值（usage）
      */
@@ -142,8 +147,8 @@ public class CapacityService {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<GroupCapacity> groupCapacityList = groupCapacityPersistService.getCapacityList4CorrectUsage(lastId,
-                pageSize);
+            List<GroupCapacity> groupCapacityList = groupCapacityPersistService
+                    .getCapacityList4CorrectUsage(lastId, pageSize);
             if (groupCapacityList.isEmpty()) {
                 break;
             }
@@ -159,7 +164,7 @@ public class CapacityService {
             }
         }
     }
-
+    
     /**
      * 修正Tenant容量信息中的使用值（usage）
      */
@@ -167,8 +172,8 @@ public class CapacityService {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<TenantCapacity> tenantCapacityList = tenantCapacityPersistService.getCapacityList4CorrectUsage(lastId,
-                pageSize);
+            List<TenantCapacity> tenantCapacityList = tenantCapacityPersistService
+                    .getCapacityList4CorrectUsage(lastId, pageSize);
             if (tenantCapacityList.isEmpty()) {
                 break;
             }
@@ -184,7 +189,7 @@ public class CapacityService {
             }
         }
     }
-
+    
     /**
      * 集群：1. 如果容量信息不存在，则初始化容量信息<br/> 2. 更新容量的使用量usage，加一或减一
      *
@@ -197,15 +202,15 @@ public class CapacityService {
         if (capacity == null) {
             insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
         }
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
-            PropertyUtil.getDefaultClusterQuota(), ignoreQuotaLimit);
+        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
+                ignoreQuotaLimit);
     }
-
+    
     public boolean updateClusterUsage(CounterMode counterMode) {
-        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER,
-            PropertyUtil.getDefaultClusterQuota(), false);
+        return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
+                false);
     }
-
+    
     /**
      * 提供给关闭容量管理的限制检验功能时计数使用<br> Group：1. 如果容量信息不存在，则初始化容量信息<br/> 2. 更新容量的使用量usage，加一或减一
      *
@@ -221,27 +226,27 @@ public class CapacityService {
         }
         return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(), ignoreQuotaLimit);
     }
-
+    
     public GroupCapacity getGroupCapacity(String group) {
         return groupCapacityPersistService.getGroupCapacity(group);
     }
-
+    
     public boolean updateGroupUsage(CounterMode counterMode, String group) {
         return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(), false);
     }
-
+    
     /**
      * 初始化该Group的容量信息，如果到达限额，将自动扩容，以降低运维成本
      */
     public boolean initGroupCapacity(String group) {
         return initGroupCapacity(group, null, null, null, null);
     }
-
+    
     /**
      * 初始化该Group的容量信息，如果到达限额，将自动扩容，以降低运维成本
      */
     private boolean initGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
-                                      Integer maxAggrSize) {
+            Integer maxAggrSize) {
         boolean insertSuccess = insertGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
         if (quota != null) {
             return insertSuccess;
@@ -249,7 +254,7 @@ public class CapacityService {
         autoExpansion(group, null);
         return insertSuccess;
     }
-
+    
     /**
      * 自动扩容
      */
@@ -263,33 +268,34 @@ public class CapacityService {
         // 初始化的时候该Group/租户就已经到达限额，自动扩容，降低运维成本
         int initialExpansionPercent = PropertyUtil.getInitialExpansionPercent();
         if (initialExpansionPercent > 0) {
-            int finalQuota = (int)(usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
+            int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
-                LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant,
-                    usage, defaultQuota, finalQuota);
+                LogUtil.defaultLog
+                        .warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant, usage, defaultQuota,
+                                finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
-                LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group,
-                    usage, defaultQuota, finalQuota);
+                LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group, usage,
+                        defaultQuota, finalQuota);
             }
         }
     }
-
+    
     private int getDefaultQuota(boolean isTenant) {
         if (isTenant) {
             return PropertyUtil.getDefaultTenantQuota();
         }
         return PropertyUtil.getDefaultGroupQuota();
     }
-
+    
     public Capacity getCapacity(String group, String tenant) {
         if (tenant != null) {
             return getTenantCapacity(tenant);
         }
         return getGroupCapacity(group);
     }
-
+    
     public Capacity getCapacityWithDefault(String group, String tenant) {
         Capacity capacity;
         boolean isTenant = StringUtils.isNotBlank(tenant);
@@ -327,7 +333,7 @@ public class CapacityService {
         }
         return capacity;
     }
-
+    
     public boolean initCapacity(String group, String tenant) {
         if (StringUtils.isNotBlank(tenant)) {
             return initTenantCapacity(tenant);
@@ -338,13 +344,13 @@ public class CapacityService {
         // Group会自动扩容
         return initGroupCapacity(group);
     }
-
+    
     private boolean insertGroupCapacity(String group) {
         return insertGroupCapacity(group, null, null, null, null);
     }
-
+    
     private boolean insertGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
-                                        Integer maxAggrSize) {
+            Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
             GroupCapacity groupCapacity = new GroupCapacity();
@@ -364,9 +370,9 @@ public class CapacityService {
         }
         return false;
     }
-
+    
     private boolean updateGroupUsage(CounterMode counterMode, String group, int defaultQuota,
-                                     boolean ignoreQuotaLimit) {
+            boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setGroup(group);
@@ -378,11 +384,11 @@ public class CapacityService {
             }
             // 先按默认值限额更新，大部分情况下都是默认值，默认值表里面的quota字段为0
             return groupCapacityPersistService.incrementUsageWithDefaultQuotaLimit(groupCapacity)
-                || groupCapacityPersistService.incrementUsageWithQuotaLimit(groupCapacity);
+                    || groupCapacityPersistService.incrementUsageWithQuotaLimit(groupCapacity);
         }
         return groupCapacityPersistService.decrementUsage(groupCapacity);
     }
-
+    
     /**
      * 提供给关闭容量管理的限制检验功能时计数使用<br/> 租户： 1. 如果容量信息不存在，则初始化容量信息<br/> 2. 更新容量的使用量usage，加一或减一
      *
@@ -399,7 +405,7 @@ public class CapacityService {
         }
         return updateTenantUsage(counterMode, tenant, ignoreQuotaLimit);
     }
-
+    
     private boolean updateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
         TenantCapacity tenantCapacity = new TenantCapacity();
@@ -412,27 +418,27 @@ public class CapacityService {
             }
             // 先按默认值限额更新，大部分情况下都是默认值，默认值表里面的quota字段为0
             return tenantCapacityPersistService.incrementUsageWithDefaultQuotaLimit(tenantCapacity)
-                || tenantCapacityPersistService.incrementUsageWithQuotaLimit(tenantCapacity);
+                    || tenantCapacityPersistService.incrementUsageWithQuotaLimit(tenantCapacity);
         }
         return tenantCapacityPersistService.decrementUsage(tenantCapacity);
     }
-
+    
     public boolean updateTenantUsage(CounterMode counterMode, String tenant) {
         return updateTenantUsage(counterMode, tenant, false);
     }
-
+    
     /**
      * 初始化该租户的容量信息，如果到达限额，将自动扩容，以降低运维成本
      */
     public boolean initTenantCapacity(String tenant) {
         return initTenantCapacity(tenant, null, null, null, null);
     }
-
+    
     /**
      * 初始化该租户的容量信息，如果到达限额，将自动扩容，以降低运维成本
      */
     public boolean initTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
-                                      Integer maxAggrSize) {
+            Integer maxAggrSize) {
         boolean insertSuccess = insertTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
         if (quota != null) {
             return insertSuccess;
@@ -440,13 +446,13 @@ public class CapacityService {
         autoExpansion(null, tenant);
         return insertSuccess;
     }
-
+    
     private boolean insertTenantCapacity(String tenant) {
         return insertTenantCapacity(tenant, null, null, null, null);
     }
-
+    
     private boolean insertTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
-                                         Integer maxAggrSize) {
+            Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
             TenantCapacity tenantCapacity = new TenantCapacity();
@@ -466,11 +472,11 @@ public class CapacityService {
         }
         return false;
     }
-
+    
     public TenantCapacity getTenantCapacity(String tenant) {
         return tenantCapacityPersistService.getTenantCapacity(tenant);
     }
-
+    
     /**
      * 提供给API接口使用<br/> 租户：记录不存在则初始化，存在则直接更新容量限额或者内容大小
      *
@@ -480,15 +486,14 @@ public class CapacityService {
      * @param maxSize 配置内容（content）大小限制
      * @return 是否操作成功
      */
-    public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize, Integer
-        maxAggrCount, Integer maxAggrSize) {
+    public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize,
+            Integer maxAggrCount, Integer maxAggrSize) {
         if (StringUtils.isNotBlank(tenant)) {
             Capacity capacity = tenantCapacityPersistService.getTenantCapacity(tenant);
             if (capacity == null) {
                 return initTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             }
-            return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount,
-                maxAggrSize);
+            return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
         }
         Capacity capacity = groupCapacityPersistService.getGroupCapacity(group);
         if (capacity == null) {
