@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address.misc;
 
 import org.slf4j.Logger;
@@ -23,6 +24,6 @@ import org.slf4j.LoggerFactory;
  * @date 2019-07-04 4:34 PM
  */
 public class Loggers {
-
+    
     public static final Logger addressLogger = LoggerFactory.getLogger("com.alibaba.nacos.address.main");
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address.constant;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -25,52 +26,52 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  * @since 1.1.0
  */
 public interface AddressServerConstants {
-
-
+    
+    
     /**
      * the default server port when create the Instance object.
      */
     int DEFAULT_SERVER_PORT = 8848;
-
+    
     /**
      * when post ips is not given the product,then use the default.
      */
     String DEFAULT_PRODUCT = "nacos";
-
+    
     /**
      * the separator between ip and port.
      */
     String IP_PORT_SEPARATOR = ":";
-
+    
     /**
      * the separator for {@Service#name} between raw service name and group
      */
     String GROUP_SERVICE_NAME_SEP = "@@";
-
+    
     /**
      * when post ips is not given the cluster,then use the default.
      */
     String DEFAULT_GET_CLUSTER = "serverlist";
-
+    
     /**
      * post multi ip will use the "," to separator
      */
     String MULTI_IPS_SEPARATOR = ",";
-
+    
     /**
      * the default product name when deploy nacos with naming and config
      */
     String ALIWARE_NACOS_DEFAULT_PRODUCT_NAME = "nacos.as.default";
-
+    
     /**
      * when the config and naming will separate deploy,then must specify product name by the client。
      */
     String ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE = "nacos.as.%s";
-
+    
     /**
      * the url for address server prefix
      */
     String ADDRESS_SERVER_REQUEST_URL =
-        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
-
+            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
+    
 }

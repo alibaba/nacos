@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address;
 
 import org.junit.Ignore;
@@ -26,37 +27,40 @@ import java.util.HashMap;
  */
 @Ignore
 public class AddressServerControllerTests {
-
+    
     private static final String PRODUCT_NACOS = "nacos";
+    
     private static final String PRODUCT_CONFIG = "config";
+    
     private static final String PRODUCT_NAMING = "naming";
+    
     private static final String DEFAULT_URL_CLUSTER = "serverlist";
-
+    
     private static final String GET_SERVERLIST_URL_FORMART = "http://127.0.0.1:8080/%s/%s";
-
+    
     //-----------------product=nacos,cluster=DEFAULT -------------------//
-
+    
     /**
      * test the default product and cluster
      */
     @Test
     public void postCluster() {
-
+        
         String ips = "127.0.0.100,127.0.0.102,127.0.0.104";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);
         String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void getCluster() {
-
+        
         String getUrl = String.format(GET_SERVERLIST_URL_FORMART, PRODUCT_NACOS, DEFAULT_URL_CLUSTER);
         String response = SimpleHttpTestUtils.doGet(getUrl, new HashMap<>(), "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteCluster() {
         HashMap<String, String> deleteIp = new HashMap<>();
@@ -64,7 +68,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", deleteIp, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteClusterWithSpecIp() {
         HashMap<String, String> params = new HashMap<>();
@@ -72,26 +76,26 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void putCluster() {
-
+        
         String ips = "127.0.0.114";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);
         String response = SimpleHttpTestUtils.doPut("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     //-----------------product=config,cluster=cluster01 -------------------//
-
+    
     /**
      * test with product
      */
-
+    
     @Test
     public void postClusterWithProduct() {
-
+        
         String ips = "127.0.0.101,127.0.0.102,127.0.0.103";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);
@@ -99,7 +103,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void getClusterWithProduct() {
         HashMap<String, String> params = new HashMap<>();
@@ -107,7 +111,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doGet(getUrl, params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteClusterWithProduct() {
         HashMap<String, String> params = new HashMap<>();
@@ -115,7 +119,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteClusterWithProductAndIp() {
         HashMap<String, String> params = new HashMap<>();
@@ -124,10 +128,10 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void putClusterWithProduct() {
-
+        
         String ips = "127.0.0.196";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);
@@ -135,16 +139,15 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doPut("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
-
+    
     //-----------------product=naming,cluster=cluster01 -------------------//
-
+    
     /**
      * test with product and cluster
      */
     @Test
     public void postClusterWithProductAndCluster() {
-
+        
         String ips = "127.0.0.100,127.0.0.200,127.0.0.31";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);
@@ -153,7 +156,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void getClusterWithProductAndCluster() {
         HashMap<String, String> params = new HashMap<>();
@@ -161,7 +164,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doGet(getUrl, params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteClusterWithProductAndCluster() {
         HashMap<String, String> params = new HashMap<>();
@@ -170,7 +173,7 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void deleteClusterWithProductAndClusterAndIp() {
         HashMap<String, String> params = new HashMap<>();
@@ -180,10 +183,10 @@ public class AddressServerControllerTests {
         String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
         System.err.println(response);
     }
-
+    
     @Test
     public void putClusterWithProductAndCluster() {
-
+        
         String ips = "127.0.0.171";
         HashMap<String, String> params = new HashMap<>();
         params.put("ips", ips);

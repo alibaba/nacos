@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
@@ -28,17 +29,17 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class AddressServerManager {
-
+    
     public String getRawProductName(String name) {
-
+        
         if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
-
+            
             return AddressServerConstants.DEFAULT_PRODUCT;
         }
-
+        
         return name;
     }
-
+    
     /**
      * <p>
      * if the name is empty then return the default {@UtilAndCommons#DEFAULT_CLUSTER_NAME},
@@ -49,30 +50,30 @@ public class AddressServerManager {
      * @return
      */
     public String getDefaultClusterNameIfEmpty(String name) {
-
+        
         if (StringUtils.isEmpty(name) || AddressServerConstants.DEFAULT_GET_CLUSTER.equals(name)) {
             return AddressServerConstants.DEFAULT_GET_CLUSTER;
         }
-
+        
         return name;
     }
-
+    
     public String getRawClusterName(String name) {
-
+        
         return getDefaultClusterNameIfEmpty(name);
     }
-
+    
     /**
      * @param ips multi ip will separator by the ','
      * @return
      */
     public String[] splitIps(String ips) {
-
+        
         if (StringUtils.isBlank(ips)) {
-
+            
             return new String[0];
         }
-
+        
         return ips.split(AddressServerConstants.MULTI_IPS_SEPARATOR);
     }
 }
