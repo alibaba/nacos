@@ -2113,7 +2113,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     public boolean isExistTable(String tableName) {
-        String sql = String.format("select 1 from %s order by id limit 1", tableName);
+        String sql = String.format("select 1 from %s limit 1", tableName);
         try {
             databaseOperate.queryOne(sql, Integer.class);
             return true;
