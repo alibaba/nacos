@@ -41,21 +41,21 @@ import javax.servlet.http.HttpServletResponse;
 public class RequestLogAspect {
     
     /**
-     * publish config
+     * Publish config.
      */
     private static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
                     + "(request,response,dataId,group,tenant,content,..)";
     
     /**
-     * get config
+     * Get config.
      */
     private static final String CLIENT_INTERFACE_GET_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,"
                     + "response,dataId,group,tenant,..)";
     
     /**
-     * remove config
+     * Remove config.
      */
     private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
@@ -63,7 +63,7 @@ public class RequestLogAspect {
     
     
     /**
-     * publishSingle
+     * PublishSingle.
      */
     @Around(CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG)
     public Object interfacePublishSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
@@ -74,7 +74,7 @@ public class RequestLogAspect {
     }
     
     /**
-     * removeAll
+     * RemoveAll.
      */
     @Around(CLIENT_INTERFACE_REMOVE_ALL_CONFIG)
     public Object interfaceRemoveAll(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
@@ -83,7 +83,7 @@ public class RequestLogAspect {
     }
     
     /**
-     * getConfig
+     * GetConfig.
      */
     @Around(CLIENT_INTERFACE_GET_CONFIG)
     public Object interfaceGetConfig(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
@@ -95,7 +95,7 @@ public class RequestLogAspect {
     }
     
     /**
-     * client api request log rt | status | requestIp | opType | dataId | group | datumId | md5
+     * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
      */
     private Object logClientRequest(String requestType, ProceedingJoinPoint pjp, HttpServletRequest request,
             HttpServletResponse response, String dataId, String group, String tenant, String md5) throws Throwable {

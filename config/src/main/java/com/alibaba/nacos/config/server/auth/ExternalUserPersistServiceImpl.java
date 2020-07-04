@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
 /**
+ * Implemetation of ExternalUserPersistServiceImpl.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(value = ConditionOnExternalStorage.class)
@@ -51,6 +53,12 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         jt = persistService.getJdbcTemplate();
     }
     
+    /**
+     * Execute create user operation.
+     *
+     * @param username username string value.
+     * @param password password string value.
+     */
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
         
@@ -62,6 +70,11 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    /**
+     * Execute delete user operation.
+     *
+     * @param username username string value.
+     */
     public void deleteUser(String username) {
         String sql = "DELETE from users WHERE username=?";
         try {
@@ -72,6 +85,12 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    /**
+     * Execute update user password operation.
+     *
+     * @param username username string value.
+     * @param password password string value.
+     */
     public void updateUserPassword(String username, String password) {
         try {
             jt.update("UPDATE users SET password = ? WHERE username=?", password, username);
@@ -81,6 +100,12 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    /**
+     * Execute find user by username operation.
+     *
+     * @param username username string value.
+     * @return User model.
+     */
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
         try {
@@ -120,6 +145,4 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
-    
 }

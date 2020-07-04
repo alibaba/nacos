@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.auth;
 import com.alibaba.nacos.config.server.model.Page;
 
 /**
- * Role CRUD service
+ * Role CRUD service.
  *
  * @author nkorange
  * @since 1.2.0

@@ -23,7 +23,8 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * when embeddedStorage==false
+ * Judge whether to user StandaloneEmbedStorage by condition.
+ * When embeddedStorage==false.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

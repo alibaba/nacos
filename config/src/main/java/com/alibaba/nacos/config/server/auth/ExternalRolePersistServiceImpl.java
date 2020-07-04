@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
+ * Implemetation of ExternalRolePersistServiceImpl.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(value = ConditionOnExternalStorage.class)
@@ -101,6 +103,12 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    /**
+     * Execute add role operation.
+     *
+     * @param role role string value.
+     * @param userName username string value.
+     */
     public void addRole(String role, String userName) {
         
         String sql = "INSERT into roles (role, username) VALUES (?, ?)";
@@ -113,6 +121,11 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    /**
+     * Execute delete role operation.
+     *
+     * @param role role string value.
+     */
     public void deleteRole(String role) {
         String sql = "DELETE from roles WHERE role=?";
         try {
@@ -123,6 +136,12 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    /**
+     * Execute delete role operation.
+     *
+     * @param role role string value.
+     * @param username username string value.
+     */
     public void deleteRole(String role, String username) {
         String sql = "DELETE from roles WHERE role=? and username=?";
         try {
@@ -143,6 +162,4 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             return roleInfo;
         }
     }
-    
-    
 }
