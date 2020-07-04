@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
- * Implemetation of PermissionPersistServiceImpl.
+ * Implemetation of ExternalPermissionPersistServiceImpl.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
