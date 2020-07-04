@@ -3147,7 +3147,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 	}
 
 	public boolean isExistTable(String tableName) {
-		String sql = "SELECT COUNT(*) FROM " + tableName;
+		String sql = String.format("select 1 from %s limit 1", tableName);
 		try {
 			jt.queryForObject(sql, Integer.class);
 			return true;
