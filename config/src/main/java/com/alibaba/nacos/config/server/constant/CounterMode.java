@@ -17,21 +17,27 @@
 package com.alibaba.nacos.config.server.constant;
 
 /**
- * counter mode
+ * counter mode.
  *
  * @author hexu.hxy
  * @date 2018/3/13
  */
 public enum CounterMode {
+    
     /**
-     * 增加
+     * Increment.
      */
     INCREMENT,
     /**
-     * 减少
+     * Decrement.
      */
     DECREMENT;
     
+    /**
+     * Reverse the two mode value.
+     *
+     * @return
+     */
     public CounterMode reverse() {
         if (INCREMENT == this) {
             return DECREMENT;

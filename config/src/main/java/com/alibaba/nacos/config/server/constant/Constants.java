@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.constant;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 
 /**
- * Server Constants
+ * Server Constants.
  *
  * @author Nacos
  */
@@ -32,12 +32,14 @@ public class Constants {
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
     
     /**
-     * server端配置文件基目录
+     * Config file directory in server side.
+     *
      */
     public static final String BASE_DIR = "config-data";
     
     /**
-     * server端配置文件备份目录
+     * Back up file directory in server side.
+     *
      */
     public static final String CONFIG_BAK_DIR = System.getProperty("user.home", "/home/admin") + "/nacos/bak_data";
     
@@ -78,32 +80,32 @@ public class Constants {
     public static final String SPACING_INTERVAL = "client-spacing-interval";
     
     /**
-     * 秒
+     * Interval for async update address(unit: second).
      */
     public static final int ASYNC_UPDATE_ADDRESS_INTERVAL = 300;
     
     /**
-     * 秒
+     * Interval for polling(unit: second).
      */
     public static final int POLLING_INTERVAL_TIME = 15;
     
     /**
-     * 毫秒
+     * Unit: millisecond.
      */
     public static final int ONCE_TIMEOUT = 2000;
     
     /**
-     * 毫秒
+     * Unit: millisecond.
      */
     public static final int CONN_TIMEOUT = 2000;
     
     /**
-     * 毫秒
+     * Unit: millisecond.
      */
     public static final int SO_TIMEOUT = 60000;
     
     /**
-     * 毫秒
+     * Unit: millisecond.
      */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
     
@@ -142,48 +144,48 @@ public class Constants {
     public static final String NACOS_LINE_SEPARATOR = "\r\n";
     
     /**
-     * 从网络获取数据的总时间, 当超过此时间, 不再从网络获取数据, 单位ms
+     * Total time of threshold value when getting data from network(unit: millisecond).
      */
     public static final long TOTALTIME_FROM_SERVER = 10000;
     
     /**
-     * 从网络获取数据的总时间的失效时间, 单位ms
+     * Invalid total time of threshold value when getting data from network(unit: millisecond).
      */
     public static final long TOTALTIME_INVALID_THRESHOLD = 60000;
     
     /**
-     * 发生异常
+     * When exception or error occurs.
      */
     public static final int BATCH_OP_ERROR = -1;
     
     /**
-     * 批量操作时, 单条数据的状态码
+     * State code of single data when batch operation.
      */
     public static final String BATCH_OP_ERROR_IO_MSG = "get config dump error";
     
     public static final String BATCH_OP_ERROR_CONFLICT_MSG = "config get conflicts";
     
     /**
-     * 查询成功, 数据存在
+     * Batch query when data existent.
      */
     public static final int BATCH_QUERY_EXISTS = 1;
     
     public static final String BATCH_QUERY_EXISTS_MSG = "config exits";
     
     /**
-     * 查询成功, 数据不存在
+     * Batch query when data non-existent.
      */
     public static final int BATCH_QUERY_NONEXISTS = 2;
     
     public static final String BATCH_QUERY_NONEEXISTS_MSG = "config not exits";
     
     /**
-     * 新增成功
+     * Batch adding successfully.
      */
     public static final int BATCH_ADD_SUCCESS = 3;
     
     /**
-     * 更新成功
+     * Batch updating successfully.
      */
     public static final int BATCH_UPDATE_SUCCESS = 4;
     
@@ -200,27 +202,27 @@ public class Constants {
     public static final int MAX_ADDACK_COUNT = 5;
     
     /**
-     * 数据的初始版本号
+     * First version of data.
      */
     public static final int FIRST_VERSION = 1;
     
     /**
-     * 数据被删除的标识版本号
+     * Poison version when data is deleted.
      */
     public static final int POISON_VERSION = -1;
     
     /**
-     * 写磁盘文件时, 临时版本号
+     * Temporary version when disk file is full.
      */
     public static final int TEMP_VERSION = 0;
     
     /**
-     * 获取数据的顺序：容灾文件-> 服务器 -> 本地缓存
+     * Plain sequence of getting data: backup file -> server -> local file.
      */
     public static final int GETCONFIG_LOCAL_SERVER_SNAPSHOT = 1;
     
     /**
-     * 获取数据的顺序：容灾文件-> 本地缓存 -> 服务器
+     * Plain sequence of getting data: backup file -> local file -> server.
      */
     public static final int GETCONFIG_LOCAL_SNAPSHOT_SERVER = 2;
     
@@ -231,17 +233,17 @@ public class Constants {
     public static final String CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken";
     
     /**
-     * client, sdk请求server服务的身份
+     * Client, identity for sdk request to server.
      */
     public static final String REQUEST_IDENTITY = "Request-Identity";
     
     /**
-     * 转发给Leader节点
+     * Forward to leader node.
      */
     public static final String FORWARD_LEADER = "Forward-Leader";
     
     /**
-     * 鉴权结果信息
+     * Acl result information.
      */
     public static final String ACL_RESPONSE = "ACL-Response";
     
@@ -249,20 +251,20 @@ public class Constants {
     
     public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
     
-    public static int DATA_IN_BODY_VERSION = 204;
+    public static final int DATA_IN_BODY_VERSION = 204;
     
     /**
-     * Configure the dump event name
+     * Configure the dump event name.
      */
     public static final String EXTEND_INFO_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName();
     
     /**
-     * Configure the dump event-list name
+     * Configure the dump event-list name.
      */
     public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
     
     /**
-     * Specifies that reads wait without timeout
+     * Specifies that reads wait without timeout.
      */
     public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
 }
