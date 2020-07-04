@@ -168,16 +168,23 @@ public class CapacityManagementAspect {
             ConfigInfo configInfo) throws Throwable {
         boolean hasTenant = hasTenant(tenant);
         if (configInfo == null) {
-            // "configInfo == null"有2种可能：
-            // 1. 并发删除；2. 先是新增子配置，后来删除了所有子配置，这时合并写入到configInfo的task（异步)还没执行
-            // 关于第2点，那么接下会顺序执行"合并写入config_info的task"，"删除config_info的task"
-            // 主动修正usage，当刚好在上述的"合并写入config_info的task"执行完时修正usage，此时usage=1
-            // 而后面个"删除config_info的task"执行时并不会把usage-1，因为请求已经返回了。
-            // 因此还是需要定时修正usage的Job
+            // "configInfo == null", has two possible points.
+            // 1. Concurrently deletion.
+            // 2. First, new sub configurations are added, and then all sub configurations are deleted.
+            // At this time, the task (asynchronous) written to configinfo has not been executed.
+            //
+            // About 2 point, then it will execute to merge to write config_info's task orderly, and delete config_info's task.
+            // Active modification of usage, when it happens to be in the above "merging to write config_info's task".
+            // Modify usage when the task of info is finished, and usage = 1.
+            // The following "delete config_info" task will not be executed with usage-1, because the request has already returned.
+            // Therefore, it is necessary to modify the usage job regularly.
             correctUsage(group, tenant, hasTenant);
             return pjp.proceed();
         }
-        // 并发删除同一个记录，可能同时走到这里，加上这个接口是异步删除的（提交MergeDataTask给MergeTaskProcessor处理），可能导致usage不止减一。因此还是需要定时修正usage的Job
+
+        // The same record can be deleted concurrently. This interface can be deleted asynchronously(submit MergeDataTask
+        // to MergeTaskProcessor for processing), It may lead to more than one decrease in usage.
+        // Therefore, it is necessary to modify the usage job regularly.
         CounterMode counterMode = CounterMode.DECREMENT;
         insertOrUpdateUsage(group, tenant, counterMode, hasTenant);
         return getResult(pjp, response, group, tenant, counterMode, hasTenant);
