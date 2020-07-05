@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.merge;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 
 /**
- * 表示对数据进行聚合的任务。
+ * Represents the task of aggregating data.
  *
  * @author jiuRen
  */
@@ -36,7 +36,7 @@ class MergeDataTask extends AbstractTask {
         this.tag = tag;
         this.clientIp = clientIp;
         
-        // 聚合延迟
+        // aggregation delay
         setTaskInterval(DELAY);
         setLastProcessTime(System.currentTimeMillis());
     }

@@ -26,9 +26,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.slf4j.Logger;
@@ -42,9 +40,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 数据聚合服务。
- * <p>
- * 启动时做全量聚合 + 修改数据触发的单条聚合
+ * Data aggregation service.
+ *
+ * <p>Full aggregation at startup and single aggregation triggered by data modification.
  *
  * @author jiuRen
  */
@@ -79,7 +77,7 @@ public class MergeDatumService {
     }
     
     /**
-     * 数据变更后调用，添加聚合任务
+     * Called after data changes to add aggregation tasks.
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String tag, String clientIp) {
         if (!canExecute()) {
@@ -90,7 +88,7 @@ public class MergeDatumService {
     }
     
     /**
-     * 数据变更后调用，添加聚合任务
+     * Called after data changes to add aggregation tasks.
      */
     public void addMergeTask(String dataId, String groupId, String tenant, String clientIp) {
         if (!canExecute()) {
@@ -100,6 +98,9 @@ public class MergeDatumService {
         mergeTasks.addTask(task.getId(), task);
     }
     
+    /**
+     * Merge all.
+     */
     public void mergeAll() {
         if (!canExecute()) {
             return;
@@ -146,42 +147,40 @@ public class MergeDatumService {
                                 .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
-                            log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+                            LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
                                     rowCount);
                         }
                     }
                     
                     final Timestamp time = TimeUtils.getCurrentTime();
-                    // 聚合
+                    
                     if (datumList.size() > 0) {
+                        // merge
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                         persistService.insertOrUpdate(null, null, cf, time, null, false);
-                        log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+                        LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                 datumList.size(), cf.getContent().length(), cf.getMd5(),
                                 ContentUtils.truncateContent(cf.getContent()));
-                    }
-                    // 删除
-                    else {
+                    } else {
+                        // remove
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
-                        log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                 + group);
                     }
                     
                 } catch (Exception e) {
-                    log.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
+                    LOGGER.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
                 }
                 FINISHED.incrementAndGet();
                 if (FINISHED.get() % 100 == 0) {
-                    log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+                    LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
                 }
             }
-            log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+            LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
         }
     }
     
-    // =====================
-    
-    private static final Logger log = LoggerFactory.getLogger(MergeDatumService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
     
     final TaskManager mergeTasks;
     
