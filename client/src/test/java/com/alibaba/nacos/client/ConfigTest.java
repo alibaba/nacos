@@ -56,7 +56,7 @@ public class ConfigTest {
         boolean result = configService.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
         
-        ThreadUtils.sleep(10_000);
+        ThreadUtils.sleep(10000L);
         
         String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override
@@ -70,7 +70,7 @@ public class ConfigTest {
         System.out.println("input content");
         while (scanner.hasNextLine()) {
             String s = scanner.next();
-            if (Objects.equals("exit", s)) {
+            if ("exit".equals(s)) {
                 scanner.close();
                 return;
             }
