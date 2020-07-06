@@ -45,7 +45,7 @@ import java.util.List;
 
 /**
  * If the embedded distributed storage is enabled, all requests are routed to the Leader node for processing, and the
- * maximum number of forwards for a single request cannot exceed three
+ * maximum number of forwards for a single request cannot exceed three.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

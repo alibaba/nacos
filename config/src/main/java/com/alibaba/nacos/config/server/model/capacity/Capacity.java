@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * Capacity
+ * Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13

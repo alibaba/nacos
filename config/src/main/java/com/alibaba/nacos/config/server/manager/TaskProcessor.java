@@ -17,18 +17,18 @@
 package com.alibaba.nacos.config.server.manager;
 
 /**
- * task processor
+ * Task processor.
  *
  * @author Nacos
  */
 public interface TaskProcessor {
     
     /**
-     * process task
+     * Process task.
      *
-     * @param taskType task type
-     * @param task     task
-     * @return process task result
+     * @param taskType task type.
+     * @param task     task.
+     * @return process task result.
      */
     boolean process(String taskType, AbstractTask task);
 }

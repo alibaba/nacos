@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * tenant info
+ * TenantInfo.
  *
  * @author Nacos
  */

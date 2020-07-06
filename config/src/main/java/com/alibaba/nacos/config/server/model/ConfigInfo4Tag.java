@@ -17,15 +17,12 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * tag info
+ * ConfigInfo4Tag.
  *
  * @author Nacos
  */
 public class ConfigInfo4Tag extends ConfigInfo {
-    
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 296578467953931353L;
     
     private String tag;

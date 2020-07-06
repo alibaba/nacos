@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import java.io.Serializable;
 
 /**
- * group info
+ * GroupInfo.
  *
  * @author Nacos
  */

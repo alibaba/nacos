@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model.capacity;
 
 /**
- * Group Capacity
+ * Group Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13

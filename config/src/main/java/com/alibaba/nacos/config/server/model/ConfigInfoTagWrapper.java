@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
+ * ConfigInfoTagWrapper.
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConfigInfoTagWrapper extends ConfigInfo4Tag {

@@ -20,12 +20,12 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * acl info
+ * Acl info.
  *
  * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class ACLInfo implements Serializable {
+public class AclInfo implements Serializable {
     
     private static final long serialVersionUID = 1383026926036269457L;
     

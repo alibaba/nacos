@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * history Info
+ * ConfigHistoryInfo.
  *
  * @author Nacos
  */
@@ -31,16 +31,9 @@ public class ConfigHistoryInfo implements Serializable {
     
     private static final long serialVersionUID = -7827521105376245603L;
     
-    /**
-     * id, nid, data_id, group_id, content, md5, gmt_create, gmt_modified, （配置创建时间，配置变更时间） src_user, src_ip, (变更操作者)
-     * op_type（变更操作类型）
-     */
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
     
-    /**
-     * 上次改动历史的id
-     */
     private long lastId = -1;
     
     private String dataId;
@@ -164,7 +157,7 @@ public class ConfigHistoryInfo implements Serializable {
     private String srcUser;
     
     /**
-     * 操作类型, 包括插入、更新、删除
+     * Operation type, include inserting, updating and deleting.
      */
     private String opType;
     

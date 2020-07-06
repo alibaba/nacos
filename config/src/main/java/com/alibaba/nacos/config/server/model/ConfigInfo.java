@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * 配置信息类
+ * ConfigInfo.
  *
  * @author boyan
  * @date 2010-5-4
@@ -33,7 +33,6 @@ public class ConfigInfo extends ConfigInfoBase {
     private String type;
     
     public ConfigInfo() {
-    
     }
     
     public ConfigInfo(String dataId, String group, String content) {

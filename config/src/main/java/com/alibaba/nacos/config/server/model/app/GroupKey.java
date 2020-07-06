@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model.app;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 
 /**
- * config key util
+ * GroupKey.
  *
  * @author Nacos
  */
