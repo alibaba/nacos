@@ -114,8 +114,19 @@ public class BeatReactor implements Closeable {
      * @return new beat information
      */
     public BeatInfo buildBeatInfo(Instance instance) {
+        return buildBeatInfo(instance.getServiceName(), instance);
+    }
+    
+    /**
+     * Build new beat information.
+     *
+     * @param groupedServiceName service name with group name, format: ${groupName}@@${serviceName}
+     * @param instance instance
+     * @return new beat information
+     */
+    public BeatInfo buildBeatInfo(String groupedServiceName, Instance instance) {
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(instance.getServiceName());
+        beatInfo.setServiceName(groupedServiceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getClusterName());

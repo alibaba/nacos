@@ -192,11 +192,12 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         if (instance.isEphemeral()) {
-            BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
-            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
+            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
         }
-        serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+        serverProxy.registerService(groupedServiceName, groupName, instance);
     }
     
     @Override
