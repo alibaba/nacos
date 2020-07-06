@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 管理控制器。
+ * History management controller.
  *
  * @author Nacos
  */
@@ -43,6 +43,18 @@ public class HistoryController {
     @Autowired
     protected PersistService persistService;
     
+    /**
+     * Query the list history config.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param appName appName string value.
+     * @param pageNo pageNo string value.
+     * @param pageSize pageSize string value.
+     * @param modelMap modeMap.
+     * @return
+     */
     @GetMapping(params = "search=accurate")
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
             @RequestParam("group") String group, //
@@ -55,12 +67,12 @@ public class HistoryController {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        // configInfoBase没有appName字段
+        // configInfoBase has no appName field.
         return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }
     
     /**
-     * 查看配置历史信息详情
+     * Query the detailed configuration history informations.
      */
     @GetMapping
     public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
