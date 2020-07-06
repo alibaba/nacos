@@ -25,7 +25,8 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 
 /**
- * 不能增加字段，为了兼容老前台接口（老接口增加一个字段会出现不兼容问题）设置的model。
+ * ConfigInfoBase.
+ * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
  *
  * @author Nacos
  */
@@ -33,9 +34,6 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     
     static final long serialVersionUID = -1L;
     
-    /**
-     * 不能增加字段
-     */
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
     

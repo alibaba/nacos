@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * cache item
+ * Cache item.
  *
  * @author Nacos
  */
@@ -125,7 +125,7 @@ public class CacheItem {
     public volatile long lastModifiedTs;
     
     /**
-     * use for beta
+     * Use for beta.
      */
     public volatile boolean isBeta = false;
     
@@ -142,5 +142,4 @@ public class CacheItem {
     public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
     
     public String type;
-    
 }

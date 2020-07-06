@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * 变化的配置信息, 聚合时使用
+ * ConfigInfoChanged.
  *
  * @author leiwen.zh
  */

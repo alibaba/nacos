@@ -20,23 +20,23 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * 指数据发布事件。
+ * ConfigDataChangeEvent.
  *
  * @author Nacos
  */
 public class ConfigDataChangeEvent implements Event {
     
-    final public boolean isBeta;
+    public final boolean isBeta;
     
-    final public String dataId;
+    public final String dataId;
     
-    final public String group;
+    public final String group;
     
-    final public String tenant;
+    public final String tenant;
     
-    final public String tag;
+    public final String tag;
     
-    final public long lastModifiedTs;
+    public final long lastModifiedTs;
     
     public ConfigDataChangeEvent(String dataId, String group, long gmtModified) {
         this(false, dataId, group, gmtModified);

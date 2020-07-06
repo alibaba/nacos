@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.manager;
 
 /**
- * tasks
+ * TaskManagerMBean.
  *
  * @author Nacos
  */
@@ -25,7 +25,7 @@ package com.alibaba.nacos.config.server.manager;
 public interface TaskManagerMBean {
     
     /**
-     * get task info
+     * Get task info.
      *
      * @return info
      */

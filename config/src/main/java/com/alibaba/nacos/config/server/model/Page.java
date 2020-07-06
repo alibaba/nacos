@@ -21,9 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 分页对象
+ * Page.
  *
- * @param <E>
  * @author boyan
  * @date 2010-5-6
  */
@@ -32,22 +31,22 @@ public class Page<E> implements Serializable {
     static final long serialVersionUID = -1L;
     
     /**
-     * 总记录数
+     * totalCount.
      */
     private int totalCount;
     
     /**
-     * 页数
+     * pageNumber.
      */
     private int pageNumber;
     
     /**
-     * 总页数
+     * pagesAvailable.
      */
     private int pagesAvailable;
     
     /**
-     * 该页内容
+     * pageItems.
      */
     private List<E> pageItems = new ArrayList<E>();
     

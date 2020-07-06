@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model.app;
 
 /**
- * Application Publish Record
+ * ApplicationPublishRecord.
  *
  * @author Nacos
  */

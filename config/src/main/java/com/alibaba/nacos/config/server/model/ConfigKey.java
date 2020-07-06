@@ -19,15 +19,12 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * config key
+ * ConfigKey.
  *
  * @author Nacos
  */
 public class ConfigKey implements Serializable {
     
-    /**
-     *
-     */
     private static final long serialVersionUID = -1748953484511867580L;
     
     private String appName;

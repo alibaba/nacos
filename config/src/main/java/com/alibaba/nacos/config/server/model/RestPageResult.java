@@ -19,16 +19,12 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * rest page result
+ * RestPageResult.
  *
- * @param <T> data type
  * @author Nacos
  */
 public class RestPageResult<T> implements Serializable {
-    
-    /**
-     *
-     */
+
     private static final long serialVersionUID = -8048577763828650575L;
     
     private int code;

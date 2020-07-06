@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import java.io.Serializable;
 
 /**
- * 聚合前的配置信息类
+ * ConfigInfoAggr.
  *
  * @author leiwen.zh
  */

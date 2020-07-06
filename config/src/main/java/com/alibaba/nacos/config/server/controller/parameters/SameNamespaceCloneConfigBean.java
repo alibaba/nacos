@@ -17,9 +17,9 @@
 package com.alibaba.nacos.config.server.controller.parameters;
 
 /**
+ * SameNamespaceCloneConfigBean.
+ *
  * @author klw(213539 @ qq.com)
- * @ClassName: SameNamespaceCloneConfigBean
- * @Description: 同namespace克隆接口的配制bean
  * @date 2019/12/13 16:10
  */
 public class SameNamespaceCloneConfigBean {

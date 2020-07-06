@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * history context
+ * HistoryContext.
  *
  * @author Nacos
  */

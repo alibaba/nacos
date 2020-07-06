@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * ConfigInfo Wrapper
+ * ConfigInfo Wrapper.
  *
  * @author Nacos
  */
