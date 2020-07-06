@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.model.ACLInfo;
+import com.alibaba.nacos.config.server.model.AclInfo;
 import com.alibaba.nacos.config.server.utils.JSONUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -70,7 +70,7 @@ public class ClientIpWhiteList {
         }
         defaultLog.warn("[clientIpWhiteList] {}", content);
         try {
-            ACLInfo acl = (ACLInfo) JSONUtils.deserializeObject(content, ACLInfo.class);
+            AclInfo acl = (AclInfo) JSONUtils.deserializeObject(content, AclInfo.class);
             isOpen = acl.getIsOpen();
             CLIENT_IP_WHITELIST.set(acl.getIps());
         } catch (Exception ioe) {

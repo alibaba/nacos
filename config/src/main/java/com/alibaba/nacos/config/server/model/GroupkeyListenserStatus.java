@@ -20,15 +20,12 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * litener status
+ * GroupkeyListenserStatus.
  *
  * @author Nacos
  */
 public class GroupkeyListenserStatus implements Serializable {
     
-    /**
-     * 随机数
-     */
     private static final long serialVersionUID = -2094829323598842474L;
     
     private int collectStatus;

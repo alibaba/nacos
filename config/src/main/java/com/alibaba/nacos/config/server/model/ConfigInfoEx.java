@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * ConfigInfo的扩展类, 用于批量处理
+ * ConfigInfoEx.
  *
  * @author leiwen.zh
  */
@@ -26,12 +26,13 @@ public class ConfigInfoEx extends ConfigInfo {
     private static final long serialVersionUID = -1L;
     
     /**
-     * 批量查询时, 单条数据的状态码, 具体的状态码在Constants.java中
+     * Single message status code, when querying for batch.
+     * And details of message status code, you can see Constants.java.
      */
     private int status;
     
     /**
-     * 批量查询时, 单条数据的信息
+     * Single message information, when querying for batch.
      */
     private String message;
     

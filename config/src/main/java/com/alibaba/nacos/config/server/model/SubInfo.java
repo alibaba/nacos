@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * sub 数据结构体
+ * SubInfo.
  *
  * @author Nacos
  */

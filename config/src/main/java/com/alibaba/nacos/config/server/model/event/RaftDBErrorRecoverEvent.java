@@ -20,6 +20,8 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.notify.Event;
 
 /**
+ * RaftDBErrorRecoverEvent.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

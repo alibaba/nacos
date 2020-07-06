@@ -17,15 +17,12 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * beta Info
+ * ConfigInfo4Beta.
  *
  * @author Nacos
  */
 public class ConfigInfo4Beta extends ConfigInfo {
     
-    /**
-     *
-     */
     private static final long serialVersionUID = 296578467953931353L;
     
     private String betaIps;

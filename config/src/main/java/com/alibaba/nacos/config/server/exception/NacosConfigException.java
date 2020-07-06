@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.exception;
 
 /**
+ * NacosConfigException.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosConfigException extends RuntimeException {

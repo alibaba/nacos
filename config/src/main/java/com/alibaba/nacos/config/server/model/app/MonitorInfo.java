@@ -24,52 +24,52 @@ package com.alibaba.nacos.config.server.model.app;
 public class MonitorInfo {
     
     /**
-     * 可使用内存.
+     * Total memory can use.
      */
     private long totalMemory;
     
     /**
-     * 剩余内存.
+     * Free memory.
      */
     private long freeMemory;
     
     /**
-     * 最大可使用内存.
+     * Max memory can use.
      */
     private volatile long maxMemory;
     
     /**
-     * cpu使用率.
+     * Cpu ratio.
      */
     private double cpuRatio;
     
     /**
-     * 系统负载.
+     * System load.
      */
     private double load;
     
     /**
-     * ygc次数
+     * Young gc time counter.
      */
     private int ygc;
     
     /**
-     * ygc时间
+     * Young gc time.
      */
     private double ygct;
     
     /**
-     * fgc次数
+     * Full gc time counter.
      */
     private int fgc;
     
     /**
-     * fgc时间
+     * Full gc time.
      */
     private double fgct;
     
     /**
-     * gc时间
+     * Gc time.
      */
     private double gct;
     

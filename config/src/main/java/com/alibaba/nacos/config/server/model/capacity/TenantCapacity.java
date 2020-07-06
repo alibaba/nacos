@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model.capacity;
 
 /**
- * Tenant Capacity
+ * Tenant Capacity.
  *
  * @author hexu.hxy
  * @date 2018/3/13

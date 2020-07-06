@@ -17,15 +17,12 @@
 package com.alibaba.nacos.config.server.model;
 
 /**
- * beta Info
+ * ConfigAllInfo.
  *
  * @author Nacos
  */
 public class ConfigAllInfo extends ConfigInfo {
     
-    /**
-     *
-     */
     private static final long serialVersionUID = 296578467953931353L;
     
     private long createTime;

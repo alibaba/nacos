@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.io.IOException;
 
 /**
- * global exception handler
+ * Global exception handler.
  *
  * @author Nacos
  */
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
      * For IllegalArgumentException, we are returning void with status code as 400, so our error-page will be used in
      * this case.
      *
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException IllegalArgumentException.
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(Exception ex) throws IOException {
@@ -47,9 +47,9 @@ public class GlobalExceptionHandler {
     }
     
     /**
-     * For NacosException
+     * For NacosException.
      *
-     * @throws NacosException
+     * @throws NacosException NacosException.
      */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException ex) throws IOException {
@@ -58,14 +58,13 @@ public class GlobalExceptionHandler {
     }
     
     /**
-     * For DataAccessException
+     * For DataAccessException.
      *
-     * @throws DataAccessException
+     * @throws DataAccessException DataAccessException.
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
         MetricsMonitor.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-    
 }

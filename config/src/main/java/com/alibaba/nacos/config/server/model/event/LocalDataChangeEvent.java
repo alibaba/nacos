@@ -21,19 +21,19 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import java.util.List;
 
 /**
- * 本地数据发生变更的事件。
+ * LocalDataChangeEvent.
  *
  * @author Nacos
  */
 public class LocalDataChangeEvent implements Event {
     
-    final public String groupKey;
+    public final String groupKey;
     
-    final public boolean isBeta;
+    public final boolean isBeta;
     
-    final public List<String> betaIps;
+    public final List<String> betaIps;
     
-    final public String tag;
+    public final String tag;
     
     public LocalDataChangeEvent(String groupKey) {
         this.groupKey = groupKey;

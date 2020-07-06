@@ -19,6 +19,8 @@ package com.alibaba.nacos.config.server.model.event;
 import com.alibaba.nacos.core.notify.SlowEvent;
 
 /**
+ * DerbyLoadEvent.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbyLoadEvent implements SlowEvent {

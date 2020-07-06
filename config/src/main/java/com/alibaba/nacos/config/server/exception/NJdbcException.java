@@ -19,6 +19,8 @@ package com.alibaba.nacos.config.server.exception;
 import org.springframework.dao.DataAccessException;
 
 /**
+ * NJdbcException.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")

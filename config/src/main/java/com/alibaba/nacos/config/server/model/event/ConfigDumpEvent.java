@@ -19,6 +19,8 @@ package com.alibaba.nacos.config.server.model.event;
 import com.alibaba.nacos.core.notify.Event;
 
 /**
+ * ConfigDumpEvent.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConfigDumpEvent implements Event {
@@ -220,7 +222,12 @@ public class ConfigDumpEvent implements Event {
             this.lastModifiedTs = lastModifiedTs;
             return this;
         }
-        
+    
+        /**
+         * Build a configDumpEvent.
+         *
+         * @return ConfigDumpEvent object instance.
+         */
         public ConfigDumpEvent build() {
             ConfigDumpEvent configDumpEvent = new ConfigDumpEvent();
             configDumpEvent.setRemove(remove);

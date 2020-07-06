@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * Config advance info
+ * Config advance info.
  *
  * @author Nacos
  */
@@ -126,5 +126,4 @@ public class ConfigAdvanceInfo implements Serializable {
     public void setConfigTags(String configTags) {
         this.configTags = configTags;
     }
-    
 }

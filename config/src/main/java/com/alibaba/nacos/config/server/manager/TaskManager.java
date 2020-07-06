@@ -32,13 +32,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * 用于处理一定要执行成功的任务 单线程的方式处理任务，保证任务一定被成功处理
+ * TaskManager, is aim to process the task which is need to be done.
+ * And this class process the task by single thread to ensure task should be process successfully.
  *
  * @author huali
  */
 public final class TaskManager implements TaskManagerMBean {
     
-    private static final Logger log = LogUtil.defaultLog;
+    private static final Logger LOGGER = LogUtil.defaultLog;
     
     private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
     
@@ -52,7 +53,6 @@ public final class TaskManager implements TaskManagerMBean {
     
     private String name;
     
-    
     class ProcessRunnable implements Runnable {
         
         @Override
@@ -65,9 +65,7 @@ public final class TaskManager implements TaskManagerMBean {
                     LogUtil.dumpLog.error("execute dump process has error : {}", e);
                 }
             }
-            
         }
-        
     }
     
     ReentrantLock lock = new ReentrantLock();
@@ -108,6 +106,11 @@ public final class TaskManager implements TaskManagerMBean {
         this.processingThread.interrupt();
     }
     
+    /**
+     * Await for lock.
+     *
+     * @throws InterruptedException InterruptedException.
+     */
     public void await() throws InterruptedException {
         this.lock.lock();
         try {
@@ -119,6 +122,14 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
     
+    /**
+     * Await for lock by timeout.
+     *
+     * @param timeout timeout value.
+     * @param unit time unit.
+     * @return success or not.
+     * @throws InterruptedException InterruptedException.
+     */
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         this.lock.lock();
         boolean isawait = false;
@@ -140,6 +151,11 @@ public final class TaskManager implements TaskManagerMBean {
         this.taskProcessors.remove(type);
     }
     
+    /**
+     * Remove task.
+     *
+     * @param type task type.
+     */
     public void removeTask(String type) {
         this.lock.lock();
         try {
@@ -151,10 +167,10 @@ public final class TaskManager implements TaskManagerMBean {
     }
     
     /**
-     * 将任务加入到任务Map中
+     * Add task into the task map container.
      *
-     * @param type
-     * @param task
+     * @param type type of task.
+     * @param task task which needs to process.
      */
     public void addTask(String type, AbstractTask task) {
         this.lock.lock();
@@ -170,21 +186,21 @@ public final class TaskManager implements TaskManagerMBean {
     }
     
     /**
-     *
+     * Execute to process all tasks in the task map.
      */
     protected void process() {
         for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
             AbstractTask task = null;
             this.lock.lock();
             try {
-                // 获取任务
+                // Getting task.
                 task = entry.getValue();
                 if (null != task) {
                     if (!task.shouldProcess()) {
-                        // 任务当前不需要被执行，直接跳过
+                        // If current task needn't to process, then it will skip.
                         continue;
                     }
-                    // 先将任务从任务Map中删除
+                    // Remove task from task maps.
                     this.tasks.remove(entry.getKey());
                     MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
                 }
@@ -193,25 +209,25 @@ public final class TaskManager implements TaskManagerMBean {
             }
             
             if (null != task) {
-                // 获取任务处理器
+                // Getting task processor.
                 TaskProcessor processor = this.taskProcessors.get(entry.getKey());
                 if (null == processor) {
-                    // 如果没有根据任务类型设置的处理器，使用默认处理器
+                    // If has no related typpe processor, then it will use default processor.
                     processor = this.getDefaultTaskProcessor();
                 }
                 if (null != processor) {
                     boolean result = false;
                     try {
-                        // 处理任务
+                        // Execute the task.
                         result = processor.process(entry.getKey(), task);
                     } catch (Throwable t) {
-                        log.error("task_fail", "处理task失败", t);
+                        LOGGER.error("task_fail", "处理task失败", t);
                     }
                     if (!result) {
-                        // 任务处理失败，设置最后处理时间
+                        // If task is executed failed, the set lastProcessTime.
                         task.setLastProcessTime(System.currentTimeMillis());
                         
-                        // 将任务重新加入到任务Map中
+                        // Add task into task map again.
                         this.addTask(entry.getKey(), task);
                     }
                 }
@@ -267,12 +283,15 @@ public final class TaskManager implements TaskManagerMBean {
         return sb.toString();
     }
     
+    /**
+     * Init and register the mbean object.
+     */
     public void init() {
         try {
             ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
-            log.error("registerMBean_fail", "注册mbean出错", e);
+            LOGGER.error("registerMBean_fail", "注册mbean出错", e);
         }
     }
 }
