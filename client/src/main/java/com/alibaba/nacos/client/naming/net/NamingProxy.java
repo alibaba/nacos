@@ -480,7 +480,7 @@ public class NamingProxy implements Closeable {
         String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
         
         JsonNode json = JacksonUtils.toObj(result);
-        ListView<String> listView = new ListView<>();
+        ListView<String> listView = new ListView<String>();
         listView.setCount(json.get("count").asInt());
         listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
         }));
