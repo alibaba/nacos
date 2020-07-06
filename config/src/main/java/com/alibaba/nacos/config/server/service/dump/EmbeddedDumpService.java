@@ -28,7 +28,6 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.context.annotation.Conditional;
@@ -40,6 +39,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
+ * Embedded dump service.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(ConditionOnEmbeddedStorage.class)
@@ -49,18 +50,18 @@ public class EmbeddedDumpService extends DumpService {
     private final ProtocolManager protocolManager;
     
     /**
-     * If it's just a normal reading failure, it can be resolved by retrying
+     * If it's just a normal reading failure, it can be resolved by retrying.
      */
     final String[] retryMessages = new String[] {"The conformance protocol is temporarily unavailable for reading"};
     
     /**
-     * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying
+     * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying.
      */
     final String[] errorMessages = new String[] {"FSMCaller is overload.", "STATE_ERROR"};
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
-     * initialized ahead of time
+     * initialized ahead of time.
      *
      * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}

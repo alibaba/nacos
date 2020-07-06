@@ -25,6 +25,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 /**
+ * External dump service.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(ConditionOnExternalStorage.class)
@@ -33,7 +35,7 @@ public class ExternalDumpService extends DumpService {
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
-     * initialized ahead of time
+     * initialized ahead of time.
      *
      * @param persistService {@link PersistService}
      * @param memberManager  {@link ServerMemberManager}

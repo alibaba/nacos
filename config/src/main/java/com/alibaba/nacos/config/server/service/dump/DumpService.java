@@ -29,6 +29,16 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpChangeProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllBetaTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
@@ -60,7 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
- * Dump data service
+ * Dump data service.
  *
  * @author Nacos
  */
@@ -81,7 +91,7 @@ public abstract class DumpService {
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
-     * initialized ahead of time
+     * initialized ahead of time.
      *
      * @param persistService {@link PersistService}
      * @param memberManager  {@link ServerMemberManager}
@@ -115,9 +125,9 @@ public abstract class DumpService {
     }
     
     /**
-     * initialize
+     * initialize.
      *
-     * @throws Throwable
+     * @throws Throwable throws Exception when actually operate.
      */
     protected abstract void init() throws Throwable;
     
@@ -134,7 +144,7 @@ public abstract class DumpService {
             Runnable dumpAllTag = () -> dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             
             Runnable clearConfigHistory = () -> {
-                log.warn("clearConfigHistory start");
+                LOGGER.warn("clearConfigHistory start");
                 if (canExecute()) {
                     try {
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
@@ -142,16 +152,16 @@ public abstract class DumpService {
                         if (totalCount > 0) {
                             int pageSize = 1000;
                             int removeTime = (totalCount + pageSize - 1) / pageSize;
-                            log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
+                            LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
                                     startTime, totalCount, pageSize, removeTime);
                             while (removeTime > 0) {
-                                // 分页删除，以免批量太大报错
+                                // delete paging to avoid reporting errors in batches
                                 persistService.removeConfigHistory(startTime, pageSize);
                                 removeTime--;
                             }
                         }
                     } catch (Throwable e) {
-                        log.error("clearConfigHistory error : {}", e.toString());
+                        LOGGER.error("clearConfigHistory error : {}", e.toString());
                     }
                 }
             };
@@ -159,13 +169,13 @@ public abstract class DumpService {
             try {
                 dumpConfigInfo(dumpAllProcessor);
                 
-                // 更新beta缓存
+                // update Beta cache
                 LogUtil.defaultLog.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
                 if (persistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
                 }
-                // 更新Tag缓存
+                // update Tag cache
                 LogUtil.defaultLog.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
                 if (persistService.isExistTable(TAG_TABLE_NAME)) {
@@ -181,7 +191,7 @@ public abstract class DumpService {
                         MergeAllDataWorker work = new MergeAllDataWorker(list);
                         work.start();
                     }
-                    log.info("server start, schedule merge end.");
+                    LOGGER.info("server start, schedule merge end.");
                 }
             } catch (Exception e) {
                 LogUtil.fatalLog
@@ -284,13 +294,8 @@ public abstract class DumpService {
     
     private Timestamp getBeforeStamp(Timestamp date, int step) {
         Calendar cal = Calendar.getInstance();
-        /**
-         *  date 换成已经已知的Date对象
-         */
         cal.setTime(date);
-        /**
-         *  before 6 hour
-         */
+        // before 6 hour
         cal.add(Calendar.HOUR_OF_DAY, -step);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return Timestamp.valueOf(format.format(cal.getTime()));
@@ -393,13 +398,13 @@ public abstract class DumpService {
                                 .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
-                            log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+                            LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
                                     rowCount);
                         }
                     }
                     
                     final Timestamp time = TimeUtils.getCurrentTime();
-                    // 聚合
+                    // merge
                     if (datumList.size() > 0) {
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                         String aggrContent = cf.getContent();
@@ -408,44 +413,43 @@ public abstract class DumpService {
                         
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
                             persistService.insertOrUpdate(null, null, cf, time, null, false);
-                            log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+                            LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                     datumList.size(), cf.getContent().length(), cf.getMd5(),
                                     ContentUtils.truncateContent(cf.getContent()));
                         }
-                    }
-                    // 删除
-                    else {
+                    } else {
+                        // remove config info
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
-                        log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                 + group);
                     }
                     
                 } catch (Throwable e) {
-                    log.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
+                    LOGGER.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
                 }
                 FINISHED.incrementAndGet();
                 if (FINISHED.get() % 100 == 0) {
-                    log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+                    LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
                 }
             }
-            log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+            LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
         }
     }
     
     /**
-     * Used to determine whether the aggregation task, configuration history cleanup task can be performed
+     * Used to determine whether the aggregation task, configuration history cleanup task can be performed.
      *
      * @return {@link Boolean}
      */
     protected abstract boolean canExecute();
     
     /**
-     * 全量dump间隔
+     * full dump interval.
      */
     static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
     
     /**
-     * 全量dump间隔
+     * full dump delay.
      */
     static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
     
@@ -453,7 +457,7 @@ public abstract class DumpService {
     
     private TaskManager dumpAllTaskMgr;
     
-    private static final Logger log = LoggerFactory.getLogger(DumpService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
     
     static final AtomicInteger FINISHED = new AtomicInteger();
     
@@ -461,11 +465,11 @@ public abstract class DumpService {
     
     int total = 0;
     
-    private final static String TRUE_STR = "true";
+    private static final String TRUE_STR = "true";
     
-    private final static String BETA_TABLE_NAME = "config_info_beta";
+    private static final String BETA_TABLE_NAME = "config_info_beta";
     
-    private final static String TAG_TABLE_NAME = "config_info_tag";
+    private static final String TAG_TABLE_NAME = "config_info_tag";
     
     Boolean isQuickStart = false;
     
