@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
- * There is no self-augmented primary key
+ * There is no self-augmented primary key.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -85,6 +85,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
     }
     
+    /**
+     * Add user role.
+     *
+     * @param role role string value.
+     * @param userName username string value.
+     */
     public void addRole(String role, String userName) {
         
         String sql = "INSERT into roles (role, username) VALUES (?, ?)";
@@ -97,6 +103,11 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    /**
+     * Delete user role.
+     *
+     * @param role role string value.
+     */
     public void deleteRole(String role) {
         String sql = "DELETE from roles WHERE role=?";
         try {
@@ -107,6 +118,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         }
     }
     
+    /**
+     * Execute delete role sql operation.
+     *
+     * @param role role string value.
+     * @param username user string value.
+     */
     public void deleteRole(String role, String username) {
         String sql = "DELETE from roles WHERE role=? and username=?";
         try {

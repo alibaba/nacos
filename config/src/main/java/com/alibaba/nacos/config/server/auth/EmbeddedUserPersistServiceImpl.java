@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
 /**
- * There is no self-augmented primary key
+ * There is no self-augmented primary key.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -46,6 +46,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
     
+    /**
+     * Execute create user operation.
+     *
+     * @param username username string value.
+     * @param password password string value.
+     */
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
         
@@ -57,6 +63,11 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    /**
+     * Execute delete user operation.
+     *
+     * @param username username string value.
+     */
     public void deleteUser(String username) {
         String sql = "DELETE from users WHERE username=?";
         try {
@@ -67,6 +78,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         }
     }
     
+    /**
+     * Execute update user password operation.
+     *
+     * @param username username string value.
+     * @param password password string value.
+     */
     public void updateUserPassword(String username, String password) {
         try {
             EmbeddedStorageContextUtils
@@ -100,6 +117,4 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         }
         return pageInfo;
     }
-    
-    
 }

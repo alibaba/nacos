@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
- * There is no self-augmented primary key
+ * There is no self-augmented primary key.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -70,12 +70,26 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         return pageInfo;
     }
     
+    /**
+     * Execute ddd user permission operation.
+     *
+     * @param role role info string value.
+     * @param resource resource info string value.
+     * @param action action info string value.
+     */
     public void addPermission(String role, String resource, String action) {
         String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }
     
+    /**
+     * Execute delete user permission operation.
+     *
+     * @param role role info string value.
+     * @param resource resource info string value.
+     * @param action action info string value.
+     */
     public void deletePermission(String role, String resource, String action) {
         String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);

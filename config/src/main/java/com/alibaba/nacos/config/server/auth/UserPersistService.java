@@ -20,7 +20,7 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 
 /**
- * User CRUD service
+ * User CRUD service.
  *
  * @author nkorange
  * @since 1.2.0

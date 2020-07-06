@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Config resource parser
+ * Config resource parser.
  *
  * @author nkorange
  * @since 1.2.0

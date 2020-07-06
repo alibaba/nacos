@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.auth;
 import java.io.Serializable;
 
 /**
- * Role Info
+ * Role Info.
  *
  * @author nkorange
  * @since 1.2.0

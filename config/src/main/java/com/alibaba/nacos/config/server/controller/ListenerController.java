@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config longpolling
+ * Config longpolling.
  *
  * @author Nacos
  */
@@ -49,7 +49,7 @@ public class ListenerController {
     }
     
     /**
-     * 获取客户端订阅配置信息
+     * Get subscribe information from client side.
      */
     @GetMapping
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
@@ -69,7 +69,7 @@ public class ListenerController {
                         configMd5Status.put(config.getKey(), config.getValue());
                     }
                 } else {
-                    // 默认值获取公共配置，如果想看所有配置，要加all
+                    // Get common config default value, if want to get all config, you need to add "all".
                     if (all) {
                         configMd5Status.put(config.getKey(), config.getValue());
                     } else {

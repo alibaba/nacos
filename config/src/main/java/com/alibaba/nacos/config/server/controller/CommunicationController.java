@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 用于其他节点通知的控制器
+ * Controller for other node notification.
  *
  * @author boyan
  * @date 2010-5-7
@@ -55,7 +55,8 @@ public class CommunicationController {
     }
     
     /**
-     * 通知配置信息改变
+     * Notify the change of config information.
+     *
      */
     @GetMapping("/dataChange")
     public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
@@ -77,7 +78,8 @@ public class CommunicationController {
     }
     
     /**
-     * 在本台机器上获得订阅改配置的客户端信息
+     * Get client config information of subscriber in local machine.
+     *
      */
     @GetMapping("/configWatchers")
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -87,7 +89,8 @@ public class CommunicationController {
     }
     
     /**
-     * 在本台机器上获得客户端监听的配置列表
+     * Get client config listener lists of subscriber in local machine.
+     *
      */
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,

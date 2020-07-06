@@ -80,7 +80,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 软负载客户端发布数据专用控制器
+ * Special controller for soft load client to publish data.
  *
  * @author leiwen
  */
@@ -88,7 +88,7 @@ import java.util.stream.Collectors;
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
 public class ConfigController {
     
-    private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
     
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     
@@ -115,7 +115,7 @@ public class ConfigController {
     /**
      * Adds or updates non-aggregated data.
      *
-     * @throws NacosException
+     * @throws NacosException NacosException.
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
@@ -133,7 +133,7 @@ public class ConfigController {
             @RequestParam(value = "schema", required = false) String schema) throws NacosException {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
-        String requestIpApp = RequestUtil.getAppName(request);
+        final String requestIpApp = RequestUtil.getAppName(request);
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -148,7 +148,7 @@ public class ConfigController {
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
-            log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
+            LOGGER.warn("[aggr-conflict] {} attemp to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
             throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
         }
@@ -180,11 +180,11 @@ public class ConfigController {
     }
     
     /**
-     * get configure board infomation fail
+     * Get configure board infomation fail.
      *
-     * @throws ServletException
-     * @throws IOException
-     * @throws NacosException
+     * @throws ServletException ServletException.
+     * @throws IOException IOException.
+     * @throws NacosException NacosException.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -205,9 +205,9 @@ public class ConfigController {
     }
     
     /**
-     * Get the specific configuration information that the console USES
+     * Get the specific configuration information that the console USES.
      *
-     * @throws NacosException
+     * @throws NacosException NacosException.
      */
     @GetMapping(params = "show=all")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -223,9 +223,9 @@ public class ConfigController {
     }
     
     /**
-     * Synchronously delete all pre-aggregation data under a dataId
+     * Synchronously delete all pre-aggregation data under a dataId.
      *
-     * @throws NacosException
+     * @throws NacosException NacosException.
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
@@ -253,6 +253,8 @@ public class ConfigController {
     }
     
     /**
+     * Execute delete config operation.
+     *
      * @return java.lang.Boolean
      * @author klw
      * @Description: delete configuration based on multiple config ids
@@ -292,7 +294,7 @@ public class ConfigController {
     }
     
     /**
-     * The client listens for configuration changes
+     * The client listens for configuration changes.
      */
     @PostMapping("/listener")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -318,7 +320,7 @@ public class ConfigController {
     }
     
     /**
-     * Subscribe to configured client information
+     * Subscribe to configured client information.
      */
     @GetMapping("/listener")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
@@ -356,7 +358,7 @@ public class ConfigController {
             return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-            log.error(errorMsg, e);
+            LOGGER.error(errorMsg, e);
             throw new RuntimeException(errorMsg, e);
         }
     }
@@ -383,11 +385,19 @@ public class ConfigController {
             return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-            log.error(errorMsg, e);
+            LOGGER.error(errorMsg, e);
             throw new RuntimeException(errorMsg, e);
         }
     }
     
+    /**
+     * Execute to remove beta operation.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @return Execute to operate result.
+     */
     @DeleteMapping(params = "beta=true")
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
@@ -397,7 +407,7 @@ public class ConfigController {
         try {
             persistService.removeConfigInfo4Beta(dataId, group, tenant);
         } catch (Exception e) {
-            log.error("remove beta data error", e);
+            LOGGER.error("remove beta data error", e);
             rr.setCode(500);
             rr.setData(false);
             rr.setMessage("remove beta data error");
@@ -411,6 +421,14 @@ public class ConfigController {
         return rr;
     }
     
+    /**
+     * Execute to query beta operation.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @return RestResult for ConfigInfo4Beta.
+     */
     @GetMapping(params = "beta=true")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
@@ -424,13 +442,23 @@ public class ConfigController {
             rr.setMessage("stop beta ok");
             return rr;
         } catch (Exception e) {
-            log.error("remove beta data error", e);
+            LOGGER.error("remove beta data error", e);
             rr.setCode(500);
             rr.setMessage("remove beta data error");
             return rr;
         }
     }
     
+    /**
+     * Execute export config operation.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param appName appName string value.
+     * @param tenant tenant string value.
+     * @param ids id list value.
+     * @return ResponseEntity.
+     */
     @GetMapping(params = "export=true")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
@@ -473,6 +501,17 @@ public class ConfigController {
         return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
+    /**
+     * Execute import and publish config operation.
+     *
+     * @param request http servlet request .
+     * @param srcUser src user string value.
+     * @param namespace namespace string value.
+     * @param policy policy model.
+     * @param file MultipartFile.
+     * @return RestResult Map.
+     * @throws NacosException NacosException.
+     */
     @PostMapping(params = "import=true")
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
@@ -525,7 +564,7 @@ public class ConfigController {
                         tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId
                                 .substring(tempDataId.lastIndexOf(".") + 1);
                     }
-                    String metaDataId = group + "." + tempDataId + ".app";
+                    final String metaDataId = group + "." + tempDataId + ".app";
                     ConfigAllInfo ci = new ConfigAllInfo();
                     ci.setTenant(namespace);
                     ci.setGroup(group);
@@ -539,7 +578,7 @@ public class ConfigController {
             }
         } catch (IOException e) {
             failedData.put("succCount", 0);
-            log.error("parsing data failed", e);
+            LOGGER.error("parsing data failed", e);
             return ResultBuilder.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
         }
         if (configInfoList == null || configInfoList.isEmpty()) {
@@ -563,6 +602,17 @@ public class ConfigController {
         return ResultBuilder.buildSuccessResult("导入成功", saveResult);
     }
     
+    /**
+     * Execute clone config operation.
+     *
+     * @param request http servlet request .
+     * @param srcUser src user string value.
+     * @param namespace namespace string value.
+     * @param configBeansList config beans list.
+     * @param policy config policy model.
+     * @return RestResult for map.
+     * @throws NacosException NacosException.
+     */
     @PostMapping(params = "clone=true")
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
