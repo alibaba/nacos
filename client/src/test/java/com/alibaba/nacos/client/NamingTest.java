@@ -52,13 +52,13 @@ public class NamingTest {
         NamingService namingService = NacosFactory.createNamingService(properties);
         namingService.registerInstance("nacos.test.1", instance);
         
-        ThreadUtils.sleep(5_000L);
+        ThreadUtils.sleep(5000L);
         
         List<Instance> list = namingService.getAllInstances("nacos.test.1");
         
         System.out.println(list);
         
-        ThreadUtils.sleep(30_000L);
+        ThreadUtils.sleep(30000L);
         //        ExpressionSelector expressionSelector = new ExpressionSelector();
         //        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
         //        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
