@@ -132,7 +132,7 @@ public class PersistServiceTest extends BaseTest {
         Assert.assertTrue(list.size() > 0);
     }
 
-    //    @Test
+        @Test
     public void insertOrUpdateTest() {
 
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
