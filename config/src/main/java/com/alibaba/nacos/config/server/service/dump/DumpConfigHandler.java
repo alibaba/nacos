@@ -27,10 +27,19 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 
 /**
+ * Dump config subscriber.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DumpConfigHandler implements Subscribe<ConfigDumpEvent> {
     
+    /**
+     * trigger config dump event.
+     *
+     * @param event {@link ConfigDumpEvent}
+     * @return {@code true} if the config dump task success , else
+     *         {@code false}
+     */
     public static boolean configDump(ConfigDumpEvent event) {
         final String dataId = event.getDataId();
         final String group = event.getGroup();
