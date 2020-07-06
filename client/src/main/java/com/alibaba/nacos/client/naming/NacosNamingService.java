@@ -357,7 +357,7 @@ public class NacosNamingService implements NamingService {
     private List<Instance> selectInstances(ServiceInfo serviceInfo, boolean healthy) {
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<>();
+            return new ArrayList<Instance>();
         }
         
         Iterator<Instance> iterator = list.iterator();

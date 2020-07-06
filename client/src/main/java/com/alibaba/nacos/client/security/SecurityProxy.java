@@ -128,7 +128,7 @@ public class SecurityProxy {
         
         if (StringUtils.isNotBlank(username)) {
             Map<String, String> params = new HashMap<String, String>(2);
-            Map<String, String> bodyMap = new HashMap<>(2);
+            Map<String, String> bodyMap = new HashMap<String, String>(2);
             params.put("username", username);
             bodyMap.put("password", password);
             String url = "http://" + server + contextPath + LOGIN_URL;
