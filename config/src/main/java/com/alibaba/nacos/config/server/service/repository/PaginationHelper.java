@@ -20,6 +20,8 @@ import com.alibaba.nacos.config.server.model.Page;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
+ * Pagination Utils interface.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
