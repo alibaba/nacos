@@ -27,8 +27,11 @@ import org.springframework.jdbc.core.RowMapper;
 import java.util.List;
 
 /**
+ * External Storage Pagination utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+
 class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
     
     private final JdbcTemplate jdbcTemplate;
@@ -38,15 +41,15 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
     }
     
     /**
-     * 取分页
+     * Take paging.
      *
-     * @param sqlCountRows 查询总数的SQL
-     * @param sqlFetchRows 查询数据的sql
-     * @param args         查询参数
-     * @param pageNo       页数
-     * @param pageSize     每页大小
-     * @param rowMapper
-     * @return
+     * @param sqlCountRows query total SQL
+     * @param sqlFetchRows query data sql
+     * @param args         query parameters
+     * @param pageNo       page number
+     * @param pageSize     page size
+     * @param rowMapper    {@link RowMapper}
+     * @return Paginated data {@code <E>}
      */
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
@@ -59,19 +62,19 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         
-        // 查询当前记录总数
+        // Query the total number of current records.
         Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, args, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
         
-        // 计算页数
+        // Compute pages count
         int pageCount = rowCountInt / pageSize;
         if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
         
-        // 创建Page对象
+        // Create Page object
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
@@ -82,16 +85,16 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         final int startRow = (pageNo - 1) * pageSize;
-        String selectSQL = "";
+        String selectSql = "";
         if (isDerby()) {
-            selectSQL = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+            selectSql = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
         } else if (lastMaxId != null) {
-            selectSQL = sqlFetchRows + " and id > " + lastMaxId + " order by id asc" + " limit " + 0 + "," + pageSize;
+            selectSql = sqlFetchRows + " and id > " + lastMaxId + " order by id asc" + " limit " + 0 + "," + pageSize;
         } else {
-            selectSQL = sqlFetchRows + " limit " + startRow + "," + pageSize;
+            selectSql = sqlFetchRows + " limit " + startRow + "," + pageSize;
         }
         
-        List<E> result = jdbcTemplate.query(selectSQL, args, rowMapper);
+        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -103,19 +106,19 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
-        // 查询当前记录总数
+        // Query the total number of current records
         Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
         
-        // 计算页数
+        // Compute pages count
         int pageCount = rowCountInt / pageSize;
         if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
         
-        // 创建Page对象
+        // Create Page object
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
@@ -125,12 +128,12 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        String selectSQL = sqlFetchRows;
+        String selectSql = sqlFetchRows;
         if (isDerby()) {
-            selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
         
-        List<E> result = jdbcTemplate.query(selectSQL, args, rowMapper);
+        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -142,19 +145,19 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
-        // 查询当前记录总数
+        // Query the total number of current records
         Integer rowCountInt = jdbcTemplate.queryForObject(sqlCountRows, args1, Integer.class);
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
         
-        // 计算页数
+        // Compute pages count
         int pageCount = rowCountInt / pageSize;
         if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
         
-        // 创建Page对象
+        // Create Page object
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
@@ -164,12 +167,12 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        String selectSQL = sqlFetchRows;
+        String selectSql = sqlFetchRows;
         if (isDerby()) {
-            selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
         
-        List<E> result = jdbcTemplate.query(selectSQL, args2, rowMapper);
+        List<E> result = jdbcTemplate.query(selectSql, args2, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -181,15 +184,15 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
-        // 创建Page对象
+        // Create Page object
         final Page<E> page = new Page<E>();
         
-        String selectSQL = sqlFetchRows;
+        String selectSql = sqlFetchRows;
         if (isDerby()) {
-            selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
         
-        List<E> result = jdbcTemplate.query(selectSQL, args, rowMapper);
+        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }

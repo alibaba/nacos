@@ -85,6 +85,8 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
+ * Distributed Database Operate.
+ *
  * <pre>
  *                   ┌────────────────────┐
  *               ┌──▶│   PersistService   │
@@ -123,7 +125,7 @@ import java.util.stream.Collectors;
  *       4:execute result    └───────────────┘    └─────────────────────┘   │
  *               │                   │                       ▲              │
  *               │                   │                       │              │
- *               │                   │                  3:onApply         2:submit(List<ModifyRequest>)
+ *               │                   │                  3:onApply         2:submit(List&lt;ModifyRequest&gt;)
  *               │                   │                       │              │
  *               │                   ▼                       │              │
  *               │           ┌──────────────┐                │              │

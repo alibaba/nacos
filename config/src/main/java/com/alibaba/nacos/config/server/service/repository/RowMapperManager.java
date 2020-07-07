@@ -42,6 +42,8 @@ import java.util.Map;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
+ * Manager RowMapper {@link RowMapper} for database object mapping.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RowMapperManager {
@@ -195,6 +197,7 @@ public final class RowMapperManager {
             try {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException e) {
+                // ignore
             }
             return info;
         }
@@ -230,6 +233,7 @@ public final class RowMapperManager {
             try {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException e) {
+                // ignore
             }
             return info;
         }
@@ -265,6 +269,7 @@ public final class RowMapperManager {
             try {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException e) {
+                // ignore
             }
             return info;
         }
@@ -399,6 +404,7 @@ public final class RowMapperManager {
             try {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException e) {
+                // ignore
             }
             return info;
         }
@@ -429,6 +435,7 @@ public final class RowMapperManager {
             try {
                 info.setMd5(rs.getString("md5"));
             } catch (SQLException e) {
+                // ignore
             }
             return info;
         }
