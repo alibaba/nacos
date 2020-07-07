@@ -29,20 +29,14 @@ public interface IResultCode {
     /**
      * Get the result code.
      *
-     * @return java.lang.String
-     * @author klw
-     * @Date 2019/6/28 14:56
-     * @Param []
+     * @return code value.
      */
     int getCode();
     
     /**
      * Get the result code's message.
      *
-     * @return java.lang.String
-     * @author klw
-     * @Date 2019/6/28 14:56
-     * @Param []
+     * @return code's message.
      */
     String getCodeMsg();
 }
