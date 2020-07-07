@@ -45,6 +45,8 @@ import java.util.zip.Checksum;
 import javax.sql.DataSource;
 
 /**
+ * Derby Snapshot operation.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbySnapshotOperation implements SnapshotOperation {
