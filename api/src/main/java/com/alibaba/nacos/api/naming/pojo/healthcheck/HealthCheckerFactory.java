@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -30,13 +32,13 @@ import java.io.IOException;
  * @author yangyi
  */
 public class HealthCheckerFactory {
-    
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    
+
     static {
         MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
-    
+
     /**
      * Register new sub type of health checker to factory for serialize and deserialize.
      *
@@ -45,7 +47,7 @@ public class HealthCheckerFactory {
     public static void registerSubType(AbstractHealthChecker extendHealthChecker) {
         registerSubType(extendHealthChecker.getClass(), extendHealthChecker.getType());
     }
-    
+
     /**
      * Register new sub type of health checker to factory for serialize and deserialize.
      *
@@ -56,7 +58,7 @@ public class HealthCheckerFactory {
             String typeName) {
         MAPPER.registerSubtypes(new NamedType(extendHealthCheckerClass, typeName));
     }
-    
+
     /**
      * Create default {@link None} health checker.
      *
@@ -65,7 +67,7 @@ public class HealthCheckerFactory {
     public static None createNoneHealthChecker() {
         return new None();
     }
-    
+
     /**
      * Deserialize and create a instance of health checker.
      *
@@ -76,11 +78,10 @@ public class HealthCheckerFactory {
         try {
             return MAPPER.readValue(jsonString, AbstractHealthChecker.class);
         } catch (IOException e) {
-            // TODO replace with NacosDeserializeException.
-            throw new RuntimeException("Deserialize health checker from json failed", e);
+            throw new NacosDeserializationException("Nacos deserialize health checker from json failed", e);
         }
     }
-    
+
     /**
      * Serialize a instance of health checker to json.
      *
@@ -91,8 +92,7 @@ public class HealthCheckerFactory {
         try {
             return MAPPER.writeValueAsString(healthChecker);
         } catch (JsonProcessingException e) {
-            // TODO replace with NacosSerializeException.
-            throw new RuntimeException("Serialize health checker to json failed", e);
+            throw new NacosSerializationException(healthChecker.getClass(), e);
         }
     }
 }
