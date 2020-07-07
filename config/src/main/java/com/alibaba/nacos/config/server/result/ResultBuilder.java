@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.result.core.IResultCode;
 import org.springframework.util.Assert;
 
 /**
+ * ResultBuilder.
+ *
  * @author klw
  * @ClassName: ResultBuilder
  * @Description: util for generating {@link RestResult}
@@ -29,6 +31,14 @@ import org.springframework.util.Assert;
  */
 public class ResultBuilder {
     
+    /**
+     * BuildResult.
+     *
+     * @param resultCode resultCode.
+     * @param resultData resultData.
+     * @param <T> T.
+     * @return RestResult.
+     */
     public static <T extends Object> RestResult<T> buildResult(IResultCode resultCode, T resultData) {
         Assert.notNull(resultCode, "the resultCode can not be null");
         RestResult<T> rr = new RestResult<>(resultCode.getCode(), resultCode.getCodeMsg(), resultData);
@@ -39,6 +49,14 @@ public class ResultBuilder {
         return buildResult(ResultCodeEnum.SUCCESS, resultData);
     }
     
+    /**
+     * BuildSuccessResult.
+     *
+     * @param successMsg successMsg string value.
+     * @param resultData resultData.
+     * @param <T> T.
+     * @return RestResult.
+     */
     public static <T extends Object> RestResult<T> buildSuccessResult(String successMsg, T resultData) {
         RestResult<T> rr = buildResult(ResultCodeEnum.SUCCESS, resultData);
         rr.setMessage(successMsg);
@@ -49,6 +67,13 @@ public class ResultBuilder {
         return buildResult(ResultCodeEnum.SUCCESS, null);
     }
     
+    /**
+     * BuildSuccessResult.
+     *
+     * @param successMsg successMsg string value.
+     * @param <T> T.
+     * @return RestResult.
+     */
     public static <T extends Object> RestResult<T> buildSuccessResult(String successMsg) {
         RestResult<T> rr = buildResult(ResultCodeEnum.SUCCESS, null);
         rr.setMessage(successMsg);

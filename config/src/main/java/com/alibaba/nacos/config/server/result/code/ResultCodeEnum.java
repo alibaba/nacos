@@ -19,6 +19,8 @@ package com.alibaba.nacos.config.server.result.code;
 import com.alibaba.nacos.config.server.result.core.IResultCode;
 
 /**
+ * ResultCodeEnum.
+ *
  * @author klw
  * @ClassName: ResultCodeEnum
  * @Description: result code enum
@@ -27,13 +29,13 @@ import com.alibaba.nacos.config.server.result.core.IResultCode;
 public enum ResultCodeEnum implements IResultCode {
     
     /**
-     * common code
+     * Common code.
      **/
     SUCCESS(200, "处理成功"),
     ERROR(500, "服务器内部错误"),
     
     /**
-     * config use 100001 ~ 100999
+     * Config use 100001 ~ 100999.
      **/
     NAMESPACE_NOT_EXIST(100001, "目标 namespace 不存在"),
     
@@ -45,9 +47,7 @@ public enum ResultCodeEnum implements IResultCode {
     
     DATA_EMPTY(100005, "导入的文件数据为空"),
     
-    NO_SELECTED_CONFIG(100006, "没有选择任何配制"),
-    
-    ;
+    NO_SELECTED_CONFIG(100006, "没有选择任何配制");
     
     private int code;
     

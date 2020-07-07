@@ -14,35 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.result.core;
+package com.alibaba.nacos.config.server.monitor;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
 /**
- * IResultCode.
+ * PrintGetConfigResponeTask.
  *
- * @author klw
- * @ClassName: IResultCode
- * @Description: result code enum needs to be implemented this interface
- * @date 2019/6/28 14:44
+ * @author zongtanghu
  */
-public interface IResultCode {
+public class PrintGetConfigResponeTask implements Runnable {
+    @Override
+    public void run() {
+        memoryLog.info(ResponseMonitor.getStringForPrint());
+    }
     
-    /**
-     * Get the result code.
-     *
-     * @return java.lang.String
-     * @author klw
-     * @Date 2019/6/28 14:56
-     * @Param []
-     */
-    int getCode();
-    
-    /**
-     * Get the result code's message.
-     *
-     * @return java.lang.String
-     * @author klw
-     * @Date 2019/6/28 14:56
-     * @Param []
-     */
-    String getCodeMsg();
 }
