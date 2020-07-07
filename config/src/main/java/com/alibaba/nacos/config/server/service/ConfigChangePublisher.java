@@ -22,10 +22,16 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 
 /**
+ * ConfigChangePublisher.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConfigChangePublisher {
     
+    /**
+     * Notify ConfigChange.
+     * @param event ConfigDataChangeEvent instance.
+     */
     public static void notifyConfigChange(ConfigDataChangeEvent event) {
         if (PropertyUtil.isEmbeddedStorage() && !ApplicationUtils.getStandaloneMode()) {
             return;
