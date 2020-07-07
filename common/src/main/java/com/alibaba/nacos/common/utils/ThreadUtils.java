@@ -118,7 +118,7 @@ public final class ThreadUtils {
         while (retry > 0) {
             retry--;
             try {
-                if (executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                if (executor.awaitTermination(1, TimeUnit.SECONDS)) {
                     return;
                 }
             } catch (InterruptedException e) {
