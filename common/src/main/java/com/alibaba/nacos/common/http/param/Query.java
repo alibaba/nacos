@@ -99,10 +99,12 @@ public class Query {
         int i = entrySet.size();
         for (Map.Entry<String, Object> entry : entrySet) {
             try {
-                urlBuilder.append(entry.getKey()).append("=")
-                        .append(URLEncoder.encode(String.valueOf(entry.getValue()), "UTF-8"));
-                if (i > 1) {
-                    urlBuilder.append("&");
+                if (null != entry.getValue()) {
+                    urlBuilder.append(entry.getKey()).append("=")
+                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), "UTF-8"));
+                    if (i > 1) {
+                        urlBuilder.append("&");
+                    }
                 }
                 i--;
             } catch (UnsupportedEncodingException e) {
