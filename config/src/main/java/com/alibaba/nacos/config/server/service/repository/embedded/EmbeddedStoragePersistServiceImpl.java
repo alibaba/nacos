@@ -1941,9 +1941,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
         
         ConfigAdvanceInfo configAdvance = databaseOperate.queryOne(
-                "SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info "
-                        + "WHERE data_id=? AND group_id=? AND tenant_id=?", new Object[] {dataId, group, tenantTmp},
-                CONFIG_ADVANCE_INFO_ROW_MAPPER);
+                "SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+                new Object[] {dataId, group, tenantTmp}, CONFIG_ADVANCE_INFO_ROW_MAPPER);
         
         if (CollectionUtils.isNotEmpty(configTagList)) {
             StringBuilder configTagsTmp = new StringBuilder();

@@ -436,15 +436,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final Timestamp now = new Timestamp(System.currentTimeMillis());
-        String select =
-                "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND "
-                        + "datum_id = ?";
-        String insert =
-                "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) "
-                        + "VALUES(?,?,?,?,?,?,?) ";
-        String update =
-                "UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND "
-                        + "tenant_id = ? AND datum_id = ?";
+        String select = "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND datum_id = ?";
+        String insert = "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?) ";
+        String update = "UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
         
         try {
             try {
@@ -1874,8 +1868,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime) {
         try {
             List<Map<String, Object>> list = jt.queryForList(
-                    "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
-                            + "gmt_modified >=? AND gmt_modified <= ?", new Object[] {startTime, endTime});
+                    "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE gmt_modified >=? AND gmt_modified <= ?",
+                    new Object[] {startTime, endTime});
             return convertChangeConfig(list);
         } catch (DataAccessException e) {
             LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
@@ -1934,8 +1928,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
         try {
             List<Map<String, Object>> list = jt.queryForList(
-                    "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
-                            + "gmt_modified >=? AND gmt_modified <= ?", new Object[] {startTime, endTime});
+                    "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND gmt_modified >=? AND gmt_modified <= ?",
+                    new Object[] {startTime, endTime});
             return convertDeletedConfig(list);
         } catch (DataAccessException e) {
             LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
@@ -2170,9 +2164,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
             ConfigAdvanceInfo configAdvance = this.jt.queryForObject(
-                    "SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info "
-                            + "WHERE data_id=? AND group_id=? AND tenant_id=?", new Object[] {dataId, group, tenantTmp},
-                    CONFIG_ADVANCE_INFO_ROW_MAPPER);
+                    "SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+                    new Object[] {dataId, group, tenantTmp}, CONFIG_ADVANCE_INFO_ROW_MAPPER);
             if (configTagList != null && !configTagList.isEmpty()) {
                 StringBuilder configTagsTmp = new StringBuilder();
                 for (String configTag : configTagList) {
