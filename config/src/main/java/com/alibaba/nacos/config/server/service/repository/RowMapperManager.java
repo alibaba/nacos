@@ -181,23 +181,19 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -217,23 +213,19 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -253,23 +245,19 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -288,23 +276,19 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setType(rs.getString("type"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -353,18 +337,15 @@ public final class RowMapperManager {
             info.setAppName(rs.getString("app_name"));
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
             info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
@@ -393,18 +374,15 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -424,18 +402,15 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setMd5(rs.getString("md5"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }
@@ -452,13 +427,11 @@ public final class RowMapperManager {
             
             try {
                 info.setContent(rs.getString("content"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             try {
                 info.setId(rs.getLong("ID"));
-            } catch (SQLException e) {
-                // ignore
+            } catch (SQLException ignore) {
             }
             return info;
         }

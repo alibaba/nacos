@@ -47,20 +47,18 @@ import java.util.Map;
  *
  * @author boyan
  * @author leiwen.zh
+ * @author klw
  * @since 1.0
  */
 public interface PersistService {
     
     /**
      * constant variables.
-     *
-     * @author klw
      */
     String SPOT = ".";
     Object[] EMPTY_ARRAY = new Object[] {};
-    String SQL_FIND_ALL_CONFIG_INFO =
-            "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema "
-                    + "from config_info";
+    @SuppressWarnings("checkstyle:linelength")
+    String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
     String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
     String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
     String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
@@ -242,7 +240,7 @@ public interface PersistService {
      * @param ids     id list
      * @param srcIp   remote ip
      * @param srcUser user
-     * @return List&lt;ConfigInfo&gt; deleted configInfos
+     * @return {@link ConfigInfo} list
      * @author klw
      */
     List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
@@ -437,7 +435,7 @@ public interface PersistService {
      * @param pageSize Page size (must be greater than 0)
      * @param dataId   data id
      * @param tenant   tenant
-     * @return ConfigInfo list
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
             final String tenant);
@@ -450,7 +448,7 @@ public interface PersistService {
      * @param dataId   data id
      * @param tenant   tenant
      * @param appName  app name
-     * @return ConfigInfo list
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final String appName);
@@ -463,7 +461,7 @@ public interface PersistService {
      * @param dataId            data id
      * @param tenant            tenant
      * @param configAdvanceInfo advance info
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
             final String tenant, final Map<String, Object> configAdvanceInfo);
@@ -477,7 +475,7 @@ public interface PersistService {
      * @param group             group
      * @param tenant            tenant
      * @param configAdvanceInfo advance info
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo);
@@ -488,7 +486,7 @@ public interface PersistService {
      * @param pageNo   Page number (must be greater than 0)
      * @param pageSize Page size (must be greater than 0)
      * @param dataId   data id
-     * @return {@link Page &lt;ConfigInfoBase&gt;}
+     * @return {@link Page} with {@link ConfigInfoBase} generation
      */
     Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId);
     
@@ -499,7 +497,7 @@ public interface PersistService {
      * @param pageSize Page size (must be greater than 0)
      * @param group    group
      * @param tenant   tenant
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
             final String tenant);
@@ -512,7 +510,7 @@ public interface PersistService {
      * @param group    group
      * @param tenant   tenant
      * @param appName  app name
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
             final String tenant, final String appName);
@@ -525,7 +523,7 @@ public interface PersistService {
      * @param group             group
      * @param tenant            tenant
      * @param configAdvanceInfo advance info
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo);
@@ -537,7 +535,7 @@ public interface PersistService {
      * @param pageSize Page size (must be greater than 0)
      * @param tenant   tenant
      * @param appName  app name
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
             final String appName);
@@ -549,7 +547,7 @@ public interface PersistService {
      * @param pageSize          page size
      * @param tenant            tenant
      * @param configAdvanceInfo advance info
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
             final Map<String, Object> configAdvanceInfo);
@@ -560,7 +558,7 @@ public interface PersistService {
      * @param pageNo   Page number (must be greater than 0)
      * @param pageSize Page size (must be greater than 0)
      * @param group    group
-     * @return {@link Page &lt;ConfigInfoBase&gt;}
+     * @return {@link Page} with {@link ConfigInfoBase} generation
      */
     Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group);
     
@@ -662,7 +660,7 @@ public interface PersistService {
      * @param pageNo   Page number (starting at 1)
      * @param pageSize Page size (must be greater than 0)
      * @param tenant   tenant
-     * @return {@link Page &lt;ConfigInfoBase&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant);
     
@@ -672,7 +670,7 @@ public interface PersistService {
      * @param pageNo   Page number (starting at 1)
      * @param pageSize Page size (must be greater than 0)
      * @param tenant   tenant
-     * @return {@link Page &lt;ConfigKey&gt;}
+     * @return {@link Page} with {@link ConfigKey} generation
      */
     Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant);
     
@@ -681,7 +679,7 @@ public interface PersistService {
      *
      * @param pageNo   Page number (starting at 1)
      * @param pageSize Page size (must be greater than 0)
-     * @return {@link Page &lt;ConfigInfoBase&gt;}
+     * @return {@link Page} with {@link ConfigInfoBase} generation
      */
     @Deprecated
     Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize);
@@ -691,7 +689,7 @@ public interface PersistService {
      *
      * @param pageNo   page number
      * @param pageSize page size
-     * @return {@link Page &lt;ConfigInfoWrapper&gt;}
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize);
     
@@ -700,7 +698,7 @@ public interface PersistService {
      *
      * @param lastMaxId last max id
      * @param pageSize  page size
-     * @return {@link Page &lt;ConfigInfoWrapper&gt;}
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
     
@@ -709,7 +707,7 @@ public interface PersistService {
      *
      * @param pageNo   page number
      * @param pageSize page size
-     * @return {@link Page &lt;ConfigInfoBetaWrapper&gt;}
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize);
     
@@ -718,7 +716,7 @@ public interface PersistService {
      *
      * @param pageNo   page numbser
      * @param pageSize page sizxe
-     * @return {@link Page &lt;ConfigInfoTagWrapper&gt;}
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
     
@@ -731,7 +729,7 @@ public interface PersistService {
      * @param group         group
      * @param tenant        tenant
      * @param subQueryLimit sub query limit
-     * @return {@link ConfigInfo} list
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
             int subQueryLimit);
@@ -746,7 +744,7 @@ public interface PersistService {
      * @param tenant   Support fuzzy query
      * @param appName  app name
      * @param content  config content
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId, final String group,
             final String tenant, final String appName, final String content);
@@ -758,7 +756,7 @@ public interface PersistService {
      * @param pageSize   Page size (must be greater than 0)
      * @param configKeys Query configuration list
      * @param blacklist  Whether to blacklist
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
             final boolean blacklist);
@@ -772,7 +770,7 @@ public interface PersistService {
      * @param group             group
      * @param tenant            tenant
      * @param configAdvanceInfo advance info
-     * @return {@link Page &lt;ConfigInfo&gt;}
+     * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
@@ -785,7 +783,7 @@ public interface PersistService {
      * @param dataId   data id
      * @param group    group
      * @param content  config content
-     * @return {@link Page &lt;ConfigInfoBase&gt;}
+     * @return {@link Page} with {@link ConfigInfoBase} generation
      * @throws IOException exception
      */
     Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
@@ -820,7 +818,7 @@ public interface PersistService {
      * @param tenant   tenant
      * @param pageNo   page number
      * @param pageSize page size
-     * @return {@link Page &lt;ConfigInfoAggr&gt;}
+     * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
     Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize);
@@ -832,7 +830,7 @@ public interface PersistService {
      * @param pageSize   pageSize
      * @param configKeys aggregate data conditions
      * @param blacklist  blacklist
-     * @return {@link Page &lt;ConfigInfoAggr&gt;}
+     * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
     Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
             boolean blacklist);
@@ -875,7 +873,7 @@ public interface PersistService {
      * @param pageNo    pageNo
      * @param pageSize  pageSize
      * @param lastMaxId last max id
-     * @return {@link Page &lt;ConfigInfoWrapper&gt;}
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
             final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
@@ -1047,7 +1045,7 @@ public interface PersistService {
      * @param tenant   tenant
      * @param pageNo   no
      * @param pageSize size
-     * @return history info
+     * @return {@link Page} with {@link ConfigHistoryInfo} generation
      */
     Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
     
