@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Config trace
+ * Config trace.
  *
  * @author Nacos
  */
@@ -62,12 +62,24 @@ public class ConfigTraceService {
     
     public static final String PULL_EVENT_ERROR = "error";
     
+    /**
+     * log persistence event.
+     *
+     * @param dataId           data id
+     * @param group            group
+     * @param tenant           tenant
+     * @param requestIpAppName request ip app name
+     * @param ts               ts
+     * @param handleIp         handle ip
+     * @param type             type
+     * @param content          content
+     */
     public static void logPersistenceEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, String content) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
-        // 方便tlog切分
+        // Convenient tlog segmentation.
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
@@ -79,13 +91,26 @@ public class ConfigTraceService {
                 requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }
     
+    /**
+     * log notify event.
+     *
+     * @param dataId           data id
+     * @param group            group
+     * @param tenant           tenant
+     * @param requestIpAppName request ip app name
+     * @param ts               ts
+     * @param handleIp         handle ip
+     * @param type             type
+     * @param delayed          delayed
+     * @param targetIp         target ip
+     */
     public static void logNotifyEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, long delayed, String targetIp) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
         MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
-        // 方便tlog切分
+        // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
@@ -95,12 +120,25 @@ public class ConfigTraceService {
                 requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
     }
     
+    /**
+     * log dump event.
+     *
+     * @param dataId           data id
+     * @param group            group
+     * @param tenant           tenant
+     * @param requestIpAppName request ip app name
+     * @param ts               ts
+     * @param handleIp         handle ip
+     * @param type             type
+     * @param delayed          delayed
+     * @param length           length
+     */
     public static void logDumpEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, long delayed, long length) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
-        // 方便tlog切分
+        // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
@@ -109,12 +147,23 @@ public class ConfigTraceService {
                 requestIpAppName, ts, handleIp, "dump", type, delayed, length);
     }
     
+    /**
+     * log dump all event.
+     *
+     * @param dataId           data id
+     * @param group            group
+     * @param tenant           tenant
+     * @param requestIpAppName request ip app name
+     * @param ts               ts
+     * @param handleIp         handle ip
+     * @param type             type
+     */
     public static void logDumpAllEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
-        // 方便tlog切分
+        // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }
@@ -124,12 +173,24 @@ public class ConfigTraceService {
                         ts, handleIp, "dump-all", type, -1);
     }
     
+    /**
+     * log pull event.
+     *
+     * @param dataId           data id
+     * @param group            group
+     * @param tenant           tenant
+     * @param requestIpAppName request ip app name
+     * @param ts               ts
+     * @param type             type
+     * @param delayed          delayed
+     * @param clientIp         clientIp
+     */
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String type, long delayed, String clientIp) {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
-        // 方便tlog切分
+        // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;
         }

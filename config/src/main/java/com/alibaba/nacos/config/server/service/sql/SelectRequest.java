@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * Represents a database SELECT statement
+ * Represents a database SELECT statement.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -111,6 +111,11 @@ public class SelectRequest implements Serializable {
             return this;
         }
         
+        /**
+         * build select request.
+         *
+         * @return {@link SelectRequest}
+         */
         public SelectRequest build() {
             SelectRequest request = new SelectRequest();
             request.setQueryType(queryType);

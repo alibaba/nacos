@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Temporarily saves all insert, update, and delete statements under a transaction in the order in which they occur
+ * Temporarily saves all insert, update, and delete statements under a transaction in the order in which they occur.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -40,6 +40,12 @@ public class EmbeddedStorageContextUtils {
     
     private static final ThreadLocal<Map<String, String>> EXTEND_INFO_CONTEXT = ThreadLocal.withInitial(HashMap::new);
     
+    /**
+     * Add sql context.
+     *
+     * @param sql  sql
+     * @param args argument list
+     */
     public static void addSqlContext(String sql, Object... args) {
         ArrayList<ModifyRequest> requests = SQL_CONTEXT.get();
         ModifyRequest context = new ModifyRequest();
@@ -50,12 +56,23 @@ public class EmbeddedStorageContextUtils {
         SQL_CONTEXT.set(requests);
     }
     
+    /**
+     * Put extend info.
+     *
+     * @param key   key
+     * @param value value
+     */
     public static void putExtendInfo(String key, String value) {
         Map<String, String> old = EXTEND_INFO_CONTEXT.get();
         old.put(key, value);
         EXTEND_INFO_CONTEXT.set(old);
     }
     
+    /**
+     * Put all extend info.
+     *
+     * @param map all extend info
+     */
     public static void putAllExtendInfo(Map<String, String> map) {
         Map<String, String> old = EXTEND_INFO_CONTEXT.get();
         old.putAll(map);
@@ -64,7 +81,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param configInfo {@link ConfigInfo}
      * @param srcIp      The IP of the operator
@@ -85,7 +102,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param configInfo {@link ConfigInfo}
      * @param betaIps    Receive client IP for grayscale configuration publishing
@@ -107,7 +124,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param configInfo {@link ConfigInfo}
      * @param tag        tag info
@@ -129,7 +146,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param namespaceId namespaceId
      * @param group       groupName
@@ -151,9 +168,9 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
-     * @param configInfos {@link List<ConfigInfo>}
+     * @param configInfos {@link ConfigInfo} list
      */
     public static void onBatchDeleteConfigInfo(List<ConfigInfo> configInfos) {
         if (!ApplicationUtils.getStandaloneMode()) {
@@ -175,7 +192,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param namespaceId namespaceId
      * @param group       group
@@ -195,7 +212,7 @@ public class EmbeddedStorageContextUtils {
     
     /**
      * In the case of the in-cluster storage mode, the logic of horizontal notification is implemented asynchronously
-     * via the raft state machine, along with the information
+     * via the raft state machine, along with the information.
      *
      * @param namespaceId namespaceId
      * @param group       group
@@ -215,6 +232,12 @@ public class EmbeddedStorageContextUtils {
         }
     }
     
+    /**
+     * Determine if key is included.
+     *
+     * @param key key
+     * @return {@code true} if contains key
+     */
     public static boolean containsExtendInfo(String key) {
         Map<String, String> extendInfo = EXTEND_INFO_CONTEXT.get();
         boolean exist = extendInfo.containsKey(key);

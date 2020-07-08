@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 通知服务。数据库变更后，通知所有server，包括自己，加载新数据。
+ * Notification service. After the database changes, notify all servers, including themselves, to load new data.
  *
  * @author Nacos
  */
@@ -63,12 +63,15 @@ public class NotifyTaskProcessor implements TaskProcessor {
     }
     
     /**
-     * 通知其他server
+     * Notify other servers.
      */
     boolean notifyToDump(String dataId, String group, String tenant, long lastModified, String serverIp) {
         long delayed = System.currentTimeMillis() - lastModified;
         try {
-            // XXX 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
+            /*
+             In order to facilitate the system beta, without changing the notify.do interface,
+             the new lastModifed parameter is passed through the Http header
+             */
             List<String> headers = Arrays
                     .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
                             NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIp());
@@ -85,7 +88,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
-                log.error("[notify-error] {}, {}, to {}, result {}",
+                LOGGER.error("[notify-error] {}, {}, to {}, result {}",
                         new Object[] {dataId, group, serverIp, result.code});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                         ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
@@ -93,15 +96,15 @@ public class NotifyTaskProcessor implements TaskProcessor {
             }
         } catch (Exception e) {
             MetricsMonitor.getConfigNotifyException().increment();
-            log.error("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString());
-            log.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
+            LOGGER.error("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString());
+            LOGGER.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
             ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                     ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }
     
-    static final Logger log = LoggerFactory.getLogger(NotifyTaskProcessor.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
     
     static final String URL_PATTERN =
             "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
