@@ -47,6 +47,8 @@ public class PushReceiver implements Runnable, Closeable {
     
     private HostReactor hostReactor;
     
+    private volatile boolean shutdown = false;
+    
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
@@ -70,7 +72,7 @@ public class PushReceiver implements Runnable, Closeable {
     
     @Override
     public void run() {
-        while (true) {
+        while (!shutdown) {
             try {
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
@@ -113,6 +115,7 @@ public class PushReceiver implements Runnable, Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        shutdown = true;
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     

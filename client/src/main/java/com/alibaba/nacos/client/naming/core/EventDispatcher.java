@@ -54,6 +54,8 @@ public class EventDispatcher implements Closeable {
     
     private final ConcurrentMap<String, List<EventListener>> observerMap = new ConcurrentHashMap<String, List<EventListener>>();
     
+    private volatile boolean shutdown = false;
+    
     public EventDispatcher() {
         
         this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -146,6 +148,7 @@ public class EventDispatcher implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        shutdown = true;
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
@@ -153,7 +156,7 @@ public class EventDispatcher implements Closeable {
         
         @Override
         public void run() {
-            while (true) {
+            while (!shutdown) {
                 ServiceInfo serviceInfo = null;
                 try {
                     serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
