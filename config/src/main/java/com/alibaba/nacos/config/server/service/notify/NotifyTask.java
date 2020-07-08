@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 
 /**
- * Notify task
+ * Notify task.
  *
  * @author Nacos
  */
@@ -77,7 +77,7 @@ public class NotifyTask extends AbstractTask {
     
     @Override
     public void merge(AbstractTask task) {
-        // 进行merge, 但什么都不做, 相同的dataId和group的任务，后来的会代替之前的
+        // Perform merge, but do nothing, tasks with the same dataId and group, later will replace the previous
         
     }
     

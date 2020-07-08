@@ -20,7 +20,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * Represents a database UPDATE or INSERT or DELETE statement
+ * Represents a database UPDATE or INSERT or DELETE statement.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
