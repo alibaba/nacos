@@ -71,12 +71,8 @@ public class PushReceiver implements Runnable, Closeable {
     
     @Override
     public void run() {
-        while (true) {
+        while (!closed) {
             try {
-    
-                if (closed) {
-                    break;
-                }
                 
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];

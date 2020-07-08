@@ -156,11 +156,7 @@ public class EventDispatcher implements Closeable {
         
         @Override
         public void run() {
-            while (true) {
-                
-                if (closed) {
-                    break;
-                }
+            while (!closed) {
                 
                 ServiceInfo serviceInfo = null;
                 try {
