@@ -228,7 +228,7 @@ public class ConfigServletInner {
                 }
                 
                 response.setHeader(Constants.CONTENT_MD5, md5);
-
+                
                 // Disable cache.
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
@@ -255,7 +255,10 @@ public class ConfigServletInner {
                 final long delayed = System.currentTimeMillis() - lastModified;
                 
                 // TODO distinguish pull-get && push-get
-                // Otherwise, delayed cannot be used as the basis of push delay directly, because the delayed value of active get requests is very large.
+                /*
+                 Otherwise, delayed cannot be used as the basis of push delay directly,
+                 because the delayed value of active get requests is very large.
+                 */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
                         ConfigTraceService.PULL_EVENT_OK, delayed, requestIp);
                 
@@ -294,14 +297,14 @@ public class ConfigServletInner {
     }
     
     private static int tryConfigReadLock(String groupKey) {
-
+        
         // Lock failed by default.
         int lockResult = -1;
-
+        
         // Try to get lock times, max value: 10;
         for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
             lockResult = ConfigCacheService.tryReadLock(groupKey);
-
+            
             // The data is non-existent.
             if (0 == lockResult) {
                 break;
@@ -311,7 +314,7 @@ public class ConfigServletInner {
             if (lockResult > 0) {
                 break;
             }
-
+            
             // Retry.
             if (i > 0) {
                 try {

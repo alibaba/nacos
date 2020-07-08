@@ -57,7 +57,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Async notify service
+ * Async notify service.
  *
  * @author Nacos
  */
@@ -67,7 +67,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     @Override
     public List<Class<? extends Event>> interest() {
         List<Class<? extends Event>> types = new ArrayList<Class<? extends Event>>();
-        // 触发配置变更同步通知
+        // Trigger configuration change synchronization notification
         types.add(ConfigDataChangeEvent.class);
         return types;
     }
@@ -75,7 +75,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     @Override
     public void onEvent(Event event) {
         
-        // 并发产生 ConfigDataChangeEvent
+        // Generate ConfigDataChangeEvent concurrently
         if (event instanceof ConfigDataChangeEvent) {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
             long dumpTs = evt.lastModifiedTs;
@@ -85,7 +85,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             String tag = evt.tag;
             Collection<Member> ipList = memberManager.allMembers();
             
-            // 其实这里任何类型队列都可以
+            // In fact, any type of queue here can be
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
             for (Member member : ipList) {
                 queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(), evt.isBeta));
@@ -114,7 +114,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
             .build();
     
-    private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
     
     private ServerMemberManager memberManager;
     
@@ -135,10 +135,10 @@ public class AsyncNotifyService extends AbstractEventListener {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
                 if (memberManager.hasMember(targetIp)) {
-                    // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
+                    // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = memberManager.isUnHealth(targetIp);
                     if (unHealthNeedDelay) {
-                        // target ip 不健康，则放入通知列表中
+                        // target ip is unhealthy, then put it in the notification list
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                                 task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
                                 0, task.target);
@@ -189,7 +189,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                         task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_OK, delayed,
                         task.target);
             } else {
-                log.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
+                LOGGER.error("[notify-error] target:{} dataId:{} group:{} ts:{} code:{}", task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified(), response.getStatusLine().getStatusCode());
                 ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                         task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
@@ -211,7 +211,7 @@ public class AsyncNotifyService extends AbstractEventListener {
         public void failed(Exception ex) {
             
             long delayed = System.currentTimeMillis() - task.getLastModified();
-            log.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.target, task.getDataId(),
+            LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified(), ex.toString());
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
@@ -279,7 +279,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 dataId = URLEncoder.encode(dataId, Constants.ENCODE);
                 group = URLEncoder.encode(group, Constants.ENCODE);
             } catch (UnsupportedEncodingException e) {
-                log.error("URLEncoder encode error", e);
+                LOGGER.error("URLEncoder encode error", e);
             }
             if (StringUtils.isBlank(tenant)) {
                 this.url = MessageFormat.format(URL_PATTERN, target, ApplicationUtils.getContextPath(), dataId, group);
@@ -322,7 +322,7 @@ public class AsyncNotifyService extends AbstractEventListener {
     
     /**
      * get delayTime and also set failCount to task; The failure time index increases, so as not to retry invalid tasks
-     * in the offline scene, which affects the normal synchronization
+     * in the offline scene, which affects the normal synchronization.
      *
      * @param task notify task
      * @return delay
@@ -336,10 +336,10 @@ public class AsyncNotifyService extends AbstractEventListener {
         return delay;
     }
     
-    private static int MIN_RETRY_INTERVAL = 500;
+    private static final int MIN_RETRY_INTERVAL = 500;
     
-    private static int INCREASE_STEPS = 1000;
+    private static final int INCREASE_STEPS = 1000;
     
-    private static int MAX_COUNT = 6;
+    private static final int MAX_COUNT = 6;
     
 }
