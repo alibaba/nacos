@@ -362,6 +362,8 @@ public class HostReactor implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executor, NAMING_LOGGER);
+        pushReceiver.shutdown();
+        failoverReactor.shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
