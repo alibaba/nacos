@@ -20,7 +20,7 @@ import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Response Monitory
+ * Response Monitory.
  *
  * @author Nacos
  */
@@ -48,12 +48,20 @@ public class ResponseMonitor {
         refresh();
     }
     
+    /**
+     * Refresh for getting configCountDetail.
+     */
     public static void refresh() {
         for (int i = 0; i < getConfigCountDetail.length; i++) {
             getConfigCountDetail[i] = new AtomicLong();
         }
     }
     
+    /**
+     * AddConfigTime.
+     *
+     * @param time config time which is added.
+     */
     public static void addConfigTime(long time) {
         getConfigCount.incrementAndGet();
         if (time < MS_50) {

@@ -37,10 +37,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ExecutorCompletionService;
 
 /**
- * config sub service
+ * Config sub service.
  *
  * @author Nacos
  */
@@ -72,11 +83,11 @@ public class ConfigSubService {
     }
     
     /**
-     * 获得调用的URL
+     * Get and return called url string value.
      *
-     * @param ip           ip
-     * @param relativePath path
-     * @return all path
+     * @param ip           ip.
+     * @param relativePath path.
+     * @return all path.
      */
     private String getUrl(String ip, String relativePath) {
         return "http://" + ip + ApplicationUtils.getContextPath() + relativePath;
@@ -87,16 +98,16 @@ public class ConfigSubService {
         
         Collection<Member> ipList = memberManager.allMembers();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(ipList.size());
-        // 提交查询任务
+        // Submit query task.
         for (Member ip : ipList) {
             try {
                 completionService.submit(new Job(ip.getAddress(), url, params));
-            } catch (Exception e) { // 发送请求失败
+            } catch (Exception e) { // Send request failed.
                 LogUtil.defaultLog
                         .warn("Get client info from {} with exception: {} during submit job", ip, e.getMessage());
             }
         }
-        // 获取结果并合并
+        // Get and merge result.
         SampleResult sampleResults = null;
         for (Member member : ipList) {
             try {
@@ -125,6 +136,13 @@ public class ConfigSubService {
         return collectionResult;
     }
     
+    /**
+     * Merge SampleResult.
+     *
+     * @param sampleCollectResult sampleCollectResult.
+     * @param sampleResults sampleResults.
+     * @return SampleResult.
+     */
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
         Map<String, String> lisentersGroupkeyStatus = null;
@@ -146,7 +164,7 @@ public class ConfigSubService {
     }
     
     /**
-     * 去每个Nacos Server节点查询订阅者的任务
+     * Query subsrciber's task from every nacos server nodes.
      *
      * @author Nacos
      */
@@ -177,9 +195,8 @@ public class ConfigSubService {
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
                 com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
                         .invokeURL(urlAll, null, Constants.ENCODE);
-                /**
-                 *  http code 200
-                 */
+
+                // Http code 200
                 if (result.code == HttpURLConnection.HTTP_OK) {
                     String json = result.content;
                     SampleResult resultObj = JSONUtils.deserializeObject(json, new TypeReference<SampleResult>() {

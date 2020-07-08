@@ -32,7 +32,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
- * 聚合数据白名单。
+ * AggrWhitelist.
  *
  * @author Nacos
  */
@@ -42,7 +42,10 @@ public class AggrWhitelist {
     public static final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
     
     /**
-     * 判断指定的dataId是否在聚合dataId白名单。
+     * Judge whether specified dataId includes aggregation white list.
+     *
+     * @param dataId dataId string value.
+     * @return Whether to match aggregation rules.
      */
     public static boolean isAggrDataId(String dataId) {
         if (null == dataId) {
@@ -58,7 +61,9 @@ public class AggrWhitelist {
     }
     
     /**
-     * 传入内容，重新加载聚合白名单
+     * Load aggregation white lists based content parameter value.
+     *
+     * @param content content string value.
      */
     public static void load(String content) {
         if (StringUtils.isBlank(content)) {
@@ -90,8 +95,6 @@ public class AggrWhitelist {
     public static List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-    
-    // =======================
     
     static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
             new ArrayList<Pattern>());
