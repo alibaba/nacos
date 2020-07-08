@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
- * Client ip whitelist
+ * Client ip whitelist.
  *
  * @author Nacos
  */
@@ -36,13 +36,17 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 public class ClientIpWhiteList {
     
     /**
-     * 判断指定的ip在白名单中
+     * Judge whether specified client ip includes in the whitelist.
+     *
+     * @param clientIp clientIp string value.
+     * @return Judge result.
      */
-    static public boolean isLegalClient(String clientIp) {
+    public static boolean isLegalClient(String clientIp) {
         if (StringUtils.isBlank(clientIp)) {
             throw new IllegalArgumentException("clientIp is empty");
         }
         clientIp = clientIp.trim();
+        
         if (CLIENT_IP_WHITELIST.get().contains(clientIp)) {
             return true;
         }
@@ -50,18 +54,20 @@ public class ClientIpWhiteList {
     }
     
     /**
-     * whether start client ip whitelist
+     * Whether start client ip whitelist.
      *
      * @return true: enable ; false disable
      */
-    static public boolean isEnableWhitelist() {
+    public static boolean isEnableWhitelist() {
         return isOpen;
     }
     
     /**
-     * 传入内容，重新加载客户端ip白名单
+     * Load white lists based content parameter value.
+     *
+     * @param content content string value.
      */
-    static public void load(String content) {
+    public static void load(String content) {
         if (StringUtils.isBlank(content)) {
             defaultLog.warn("clientIpWhiteList is blank.close whitelist.");
             isOpen = false;
@@ -78,12 +84,10 @@ public class ClientIpWhiteList {
         }
     }
     
-    // =======================
+    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
     
-    static public final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
-    
-    static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
+    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
             new ArrayList<String>());
     
-    static Boolean isOpen = false;
+    private static Boolean isOpen = false;
 }

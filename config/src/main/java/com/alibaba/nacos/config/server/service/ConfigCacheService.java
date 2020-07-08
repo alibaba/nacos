@@ -33,14 +33,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Map;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.*;
+import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
- * config service
+ * Config service.
  *
  * @author Nacos
  */
@@ -49,18 +56,26 @@ public class ConfigCacheService {
     @Autowired
     private static PersistService persistService;
     
-    static public int groupCount() {
+    public static int groupCount() {
         return CACHE.size();
     }
     
-    static public boolean hasGroupKey(String groupKey) {
+    public static boolean hasGroupKey(String groupKey) {
         return CACHE.containsKey(groupKey);
     }
     
     /**
-     * 保存配置文件，并缓存md5.
+     * Save config file and update md5 value in cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param content content string value.
+     * @param lastModifiedTs lastModifiedTs.
+     * @param type file type.
+     * @return dumpChange success or not.
      */
-    static public boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
+    public static boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
             String type) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         CacheItem ci = makeSure(groupKey);
@@ -91,7 +106,7 @@ public class ConfigCacheService {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
                         .contains(DISK_QUATA_EN)) {
-                    // 磁盘写满保护代码
+                    // Protect from disk full.
                     fatalLog.error("磁盘满自杀退出", ioe);
                     System.exit(0);
                 }
@@ -103,9 +118,17 @@ public class ConfigCacheService {
     }
     
     /**
-     * 保存配置文件，并缓存md5.
+     * Save config file and update md5 value in cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param content content string value.
+     * @param lastModifiedTs lastModifiedTs.
+     * @param betaIps betaIps string value.
+     * @return dumpChange success or not.
      */
-    static public boolean dumpBeta(String dataId, String group, String tenant, String content, long lastModifiedTs,
+    public static boolean dumpBeta(String dataId, String group, String tenant, String content, long lastModifiedTs,
             String betaIps) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
@@ -140,9 +163,17 @@ public class ConfigCacheService {
     }
     
     /**
-     * 保存配置文件，并缓存md5.
+     * Save config file and update md5 value in cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param content content string value.
+     * @param lastModifiedTs lastModifiedTs.
+     * @param tag tag string value.
+     * @return dumpChange success or not.
      */
-    static public boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
+    public static boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
             long lastModifiedTs) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
@@ -176,9 +207,16 @@ public class ConfigCacheService {
     }
     
     /**
-     * 保存配置文件，并缓存md5.
+     * Save config file and update md5 value in cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param content content string value.
+     * @param lastModifiedTs lastModifiedTs.
+     * @return dumpChange success or not.
      */
-    static public boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs) {
+    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         makeSure(groupKey);
@@ -212,7 +250,10 @@ public class ConfigCacheService {
         }
     }
     
-    static public void reloadConfig() {
+    /**
+     * Reload config.
+     */
+    public static void reloadConfig() {
         String aggreds = null;
         try {
             if (PropertyUtil.isEmbeddedStorage()) {
@@ -268,10 +309,13 @@ public class ConfigCacheService {
         } catch (IOException e) {
             dumpLog.error("reload fail:" + SwitchService.SWITCH_META_DATAID, e);
         }
-        
     }
     
-    static public List<String> checkMd5() {
+    /**
+     * Check md5.
+     * @return return diff result list.
+     */
+    public static List<String> checkMd5() {
         List<String> diffList = new ArrayList<String>();
         long startTime = System.currentTimeMillis();
         for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
@@ -296,21 +340,24 @@ public class ConfigCacheService {
     }
     
     /**
-     * 删除配置文件，删除缓存。
+     * Delete config file, and delete cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @return remove success or not.
      */
-    static public boolean remove(String dataId, String group, String tenant) {
+    public static boolean remove(String dataId, String group, String tenant) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final int lockResult = tryWriteLock(groupKey);
-        /**
-         *  数据不存在
-         */
+    
+        // If data is non-existent.
         if (0 == lockResult) {
             dumpLog.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-        /**
-         * 加锁失败
-         */
+    
+        // try to lock failed
         if (lockResult < 0) {
             dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
@@ -330,21 +377,24 @@ public class ConfigCacheService {
     }
     
     /**
-     * 删除配置文件，删除缓存。
+     * Delete beta config file, and delete cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @return remove success or not.
      */
-    static public boolean removeBeta(String dataId, String group, String tenant) {
+    public static boolean removeBeta(String dataId, String group, String tenant) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final int lockResult = tryWriteLock(groupKey);
-        /**
-         *  数据不存在
-         */
+        
+        // If data is non-existent.
         if (0 == lockResult) {
             dumpLog.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-        /**
-         *  加锁失败
-         */
+
+        // try to lock failed
         if (lockResult < 0) {
             dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
@@ -365,21 +415,25 @@ public class ConfigCacheService {
     }
     
     /**
-     * 删除配置文件，删除缓存。
+     * Delete tag config file, and delete cache.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param tag tag string value.
+     * @return remove success or not.
      */
-    static public boolean removeTag(String dataId, String group, String tenant, String tag) {
+    public static boolean removeTag(String dataId, String group, String tenant, String tag) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final int lockResult = tryWriteLock(groupKey);
-        /**
-         *  数据不存在
-         */
+
+        // If data is non-existent.
         if (0 == lockResult) {
             dumpLog.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-        /**
-         *  加锁失败
-         */
+
+        // try to lock failed
         if (lockResult < 0) {
             dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
@@ -400,6 +454,13 @@ public class ConfigCacheService {
         }
     }
     
+    /**
+     * Update md5 value.
+     *
+     * @param groupKey groupKey string value.
+     * @param md5 md5 string value.
+     * @param lastModifiedTs lastModifiedTs long value.
+     */
     public static void updateMd5(String groupKey, String md5, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
         if (cache.md5 == null || !cache.md5.equals(md5)) {
@@ -409,6 +470,14 @@ public class ConfigCacheService {
         }
     }
     
+    /**
+     * Update Beta md5 value.
+     *
+     * @param groupKey groupKey string value.
+     * @param md5 md5 string value.
+     * @param ips4Beta ips4Beta List.
+     * @param lastModifiedTs lastModifiedTs long value.
+     */
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
         if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
@@ -420,6 +489,14 @@ public class ConfigCacheService {
         }
     }
     
+    /**
+     * Update tag md5 value.
+     *
+     * @param groupKey groupKey string value.
+     * @param tag tag string value.
+     * @param md5 md5 string value.
+     * @param lastModifiedTs lastModifiedTs long value.
+     */
     public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
         if (cache.tagMd5 == null) {
@@ -444,51 +521,14 @@ public class ConfigCacheService {
     }
     
     /**
-     * 返回cache的md5。零长度字符串表示没有该数据。
+     * Get and return content md5 value from cache. Empty string represents no data.
      */
-    static public String getContentMd5(String groupKey) {
+    public static String getContentMd5(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item) ? item.md5 : Constants.NULL;
     }
     
-    /**
-     * 返回cache的md5。零长度字符串表示没有该数据。
-     */
-    static public String getContentBetaMd5(String groupKey) {
-        CacheItem item = CACHE.get(groupKey);
-        return (null != item) ? item.md54Beta : Constants.NULL;
-    }
-    
-    /**
-     * 返回cache的md5。零长度字符串表示没有该数据。
-     */
-    static public String getContentTagMd5(String groupKey, String tag) {
-        CacheItem item = CACHE.get(groupKey);
-        if (item == null) {
-            return Constants.NULL;
-        }
-        if (item.tagMd5 == null) {
-            return Constants.NULL;
-        }
-        return item.tagMd5.get(tag);
-    }
-    
-    /**
-     * 返回beta Ip列表
-     */
-    static public List<String> getBetaIps(String groupKey) {
-        CacheItem item = CACHE.get(groupKey);
-        return (null != item) ? item.getIps4Beta() : Collections.<String>emptyList();
-    }
-    
-    /**
-     * 返回cache。
-     */
-    static public CacheItem getContentCache(String groupKey) {
-        return CACHE.get(groupKey);
-    }
-    
-    static public String getContentMd5(String groupKey, String ip, String tag) {
+    public static String getContentMd5(String groupKey, String ip, String tag) {
         CacheItem item = CACHE.get(groupKey);
         if (item != null && item.isBeta) {
             if (item.ips4Beta.contains(ip)) {
@@ -503,28 +543,76 @@ public class ConfigCacheService {
         return (null != item) ? item.md5 : Constants.NULL;
     }
     
-    static public long getLastModifiedTs(String groupKey) {
+    /**
+     * Get and return beta md5 value from cache. Empty string represents no data.
+     */
+    public static String getContentBetaMd5(String groupKey) {
+        CacheItem item = CACHE.get(groupKey);
+        return (null != item) ? item.md54Beta : Constants.NULL;
+    }
+    
+    /**
+     * Get and return tag md5 value from cache. Empty string represents no data.
+     *
+     * @param groupKey groupKey string value.
+     * @param tag      tag string value.
+     * @return Content Tag Md5 value.
+     */
+    public static String getContentTagMd5(String groupKey, String tag) {
+        CacheItem item = CACHE.get(groupKey);
+        if (item == null) {
+            return Constants.NULL;
+        }
+        if (item.tagMd5 == null) {
+            return Constants.NULL;
+        }
+        return item.tagMd5.get(tag);
+    }
+    
+    /**
+     * Get and return beta ip list.
+     *
+     * @param groupKey groupKey string value.
+     * @return list beta ips.
+     */
+    public static List<String> getBetaIps(String groupKey) {
+        CacheItem item = CACHE.get(groupKey);
+        return (null != item) ? item.getIps4Beta() : Collections.<String>emptyList();
+    }
+    
+    /**
+     * Get and return content cache.
+     *
+     * @param groupKey groupKey string value.
+     * @return CacheItem.
+     */
+    public static CacheItem getContentCache(String groupKey) {
+        return CACHE.get(groupKey);
+    }
+    
+    public static long getLastModifiedTs(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item) ? item.lastModifiedTs : 0L;
     }
     
-    static public boolean isUptodate(String groupKey, String md5) {
+    public static boolean isUptodate(String groupKey, String md5) {
         String serverMd5 = ConfigCacheService.getContentMd5(groupKey);
         return StringUtils.equals(md5, serverMd5);
     }
     
-    static public boolean isUptodate(String groupKey, String md5, String ip, String tag) {
+    public static boolean isUptodate(String groupKey, String md5, String ip, String tag) {
         String serverMd5 = ConfigCacheService.getContentMd5(groupKey, ip, tag);
         return StringUtils.equals(md5, serverMd5);
     }
     
     /**
-     * 给数据加读锁。如果成功，后面必须调用{@link #releaseReadLock(String)}，失败则不需要。
+     * Try to add read lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * failed.
      *
-     * @param groupKey
-     * @return 零表示没有数据，失败。正数表示成功，负数表示有写锁导致加锁失败。
+     * @param groupKey groupKey string value.
+     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
      */
-    static public int tryReadLock(String groupKey) {
+    public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
         int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryReadLock() ? 1 : -1);
         if (result < 0) {
@@ -533,7 +621,12 @@ public class ConfigCacheService {
         return result;
     }
     
-    static public void releaseReadLock(String groupKey) {
+    /**
+     * Release readLock.
+     *
+     * @param groupKey groupKey string value.
+     */
+    public static void releaseReadLock(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {
             item.rwLock.releaseReadLock();
@@ -541,10 +634,11 @@ public class ConfigCacheService {
     }
     
     /**
-     * 给数据加写锁。如果成功，后面必须调用{@link #releaseWriteLock(String)}，失败则不需要。
+     * Try to add write lock. If it successed, then it can call {@link #releaseWriteLock(String)}.And it won't call if
+     * failed.
      *
-     * @param groupKey
-     * @return 零表示没有数据，失败。正数表示成功，负数表示加锁失败。
+     * @param groupKey groupKey string value.
+     * @return 0 - No data and failed. Positive number 0 - Success. Negative number - lock failed。
      */
     static int tryWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
@@ -572,19 +666,19 @@ public class ConfigCacheService {
         return (null == item) ? tmp : item;
     }
     
-    private final static String NO_SPACE_CN = "设备上没有空间";
+    private static final String NO_SPACE_CN = "设备上没有空间";
     
-    private final static String NO_SPACE_EN = "No space left on device";
+    private static final String NO_SPACE_EN = "No space left on device";
     
-    private final static String DISK_QUATA_CN = "超出磁盘限额";
+    private static final String DISK_QUATA_CN = "超出磁盘限额";
     
-    private final static String DISK_QUATA_EN = "Disk quota exceeded";
+    private static final String DISK_QUATA_EN = "Disk quota exceeded";
     
-    static final Logger log = LoggerFactory.getLogger(ConfigCacheService.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
     
     /**
-     * groupKey -> cacheItem
+     * groupKey -> cacheItem.
      */
-    static private final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
+    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
 }
 

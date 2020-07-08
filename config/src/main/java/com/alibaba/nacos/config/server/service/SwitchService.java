@@ -30,7 +30,7 @@ import java.util.Map;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
- * Switch
+ * SwitchService.
  *
  * @author Nacos
  */
@@ -78,6 +78,11 @@ public class SwitchService {
         return StringUtils.isBlank(value) ? defaultValue : value;
     }
     
+    /**
+     * Load config.
+     *
+     * @param config config content string value.
+     */
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
             fatalLog.error("switch config is blank.");
@@ -125,5 +130,4 @@ public class SwitchService {
         
         return sb.toString();
     }
-    
 }
