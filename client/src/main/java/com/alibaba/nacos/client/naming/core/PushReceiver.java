@@ -47,11 +47,12 @@ public class PushReceiver implements Runnable, Closeable {
     
     private HostReactor hostReactor;
     
+    private volatile boolean closed = false;
+    
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
             this.udpSocket = new DatagramSocket();
-            
             this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
@@ -70,8 +71,9 @@ public class PushReceiver implements Runnable, Closeable {
     
     @Override
     public void run() {
-        while (true) {
+        while (!closed) {
             try {
+                
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -113,6 +115,8 @@ public class PushReceiver implements Runnable, Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        closed = true;
+        udpSocket.close();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
