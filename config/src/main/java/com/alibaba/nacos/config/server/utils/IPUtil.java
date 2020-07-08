@@ -20,37 +20,45 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ip util
+ * IP util.
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
 public class IPUtil {
-    
+
+    /**
+     * Determine if it is an IPV4 address.
+     */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static boolean isIPV4(String addr) {
         if (null == addr) {
             return false;
         }
         String rexp = "^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$";
-        
+
         Pattern pat = Pattern.compile(rexp);
-        
+
         Matcher mat = pat.matcher(addr);
-        
+
         boolean ipAddress = mat.find();
         return ipAddress;
     }
-    
+
+    /**
+     * Determine if it is an IPV6 address.
+     */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static boolean isIPV6(String addr) {
         if (null == addr) {
             return false;
         }
         String rexp = "^([\\da-fA-F]{1,4}:){7}[\\da-fA-F]{1,4}$";
-        
+
         Pattern pat = Pattern.compile(rexp);
-        
+
         Matcher mat = pat.matcher(addr);
-        
+
         boolean ipAddress = mat.find();
         return ipAddress;
     }

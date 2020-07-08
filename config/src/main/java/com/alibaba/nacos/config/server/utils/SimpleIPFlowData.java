@@ -23,22 +23,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 根据IP进行流控, 控制单个IP的数量以及IP总量
+ * According to IP flow control, control the number of individual IP and IP total.
  *
  * @author leiwen.zh
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
 public class SimpleIPFlowData {
-    
+
     private AtomicInteger[] data;
-    
+
     private int slotCount;
-    
+
     private int averageCount;
-    
+
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        
+
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
@@ -46,18 +46,18 @@ public class SimpleIPFlowData {
             t.setDaemon(true);
             return t;
         }
-        
+
     });
-    
+
     class DefaultIPFlowDataManagerTask implements Runnable {
-        
+
         @Override
         public void run() {
             rotateSlot();
         }
-        
+
     }
-    
+
     public SimpleIPFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
@@ -70,7 +70,8 @@ public class SimpleIPFlowData {
         }
         timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
-    
+
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public int incrementAndGet(String ip) {
         int index = 0;
         if (ip != null) {
@@ -81,7 +82,8 @@ public class SimpleIPFlowData {
         }
         return data[index].incrementAndGet();
     }
-    
+
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {
@@ -90,7 +92,7 @@ public class SimpleIPFlowData {
         }
         this.averageCount = totalCount / this.slotCount;
     }
-    
+
     public int getCurrentCount(String ip) {
         int index = 0;
         if (ip != null) {
@@ -101,7 +103,7 @@ public class SimpleIPFlowData {
         }
         return data[index].get();
     }
-    
+
     public int getAverageCount() {
         return this.averageCount;
     }

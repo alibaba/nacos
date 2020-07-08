@@ -22,16 +22,16 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 
 /**
- * Time util
+ * Time util.
  *
  * @author Nacos
  */
 public class TimeUtils {
-    
+
     public static Timestamp getCurrentTime() {
         return new Timestamp(System.currentTimeMillis());
     }
-    
+
     public static String getCurrentTimeStr() {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(System.currentTimeMillis());
