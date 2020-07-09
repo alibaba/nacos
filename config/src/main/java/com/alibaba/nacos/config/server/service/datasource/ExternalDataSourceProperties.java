@@ -29,13 +29,13 @@ import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
- * Properties of external DataSource
+ * Properties of external DataSource.
  *
  * @author Nacos
  */
 public class ExternalDataSourceProperties {
     
-    private final static String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
+    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
     public static final long CONNECTION_TIMEOUT_MS = 3000L;
     
@@ -84,6 +84,8 @@ public class ExternalDataSourceProperties {
     }
     
     /**
+     * Build serveral HikariDataSource.
+     *
      * @param environment {@link Environment}
      * @param callback    Callback function when constructing data source
      * @return List of {@link HikariDataSource}
@@ -115,15 +117,13 @@ public class ExternalDataSourceProperties {
         return dataSources;
     }
     
-    
     interface Callback<DataSource> {
         
         /**
-         * Perform custom logic
+         * Perform custom logic.
          *
-         * @param dataSource
+         * @param dataSource dataSource.
          */
         void accept(DataSource dataSource);
     }
-    
 }

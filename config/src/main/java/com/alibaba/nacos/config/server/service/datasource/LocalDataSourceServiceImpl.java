@@ -44,9 +44,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-
 /**
- * local data source
+ * local data source.
  *
  * @author Nacos
  */
@@ -107,6 +106,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         return jt.getDataSource();
     }
     
+    /**
+     * Clean and reopen Derby.
+     *
+     * @throws Exception exception.
+     */
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
@@ -114,6 +118,13 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         initialize(jdbcUrl);
     }
     
+    /**
+     * Restore derby.
+     *
+     * @param jdbcUrl jdbcUrl string value.
+     * @param callable callable.
+     * @throws Exception exception.
+     */
     public void restoreDerby(String jdbcUrl, Callable<Void> callable) throws Exception {
         doDerbyClean();
         callable.call();
@@ -189,11 +200,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     /**
-     * 读取SQL文件
+     * Load sql.
      *
-     * @param sqlFile sql
-     * @return sqls
-     * @throws Exception Exception
+     * @param sqlFile sql.
+     * @return sqls.
+     * @throws Exception Exception.
      */
     private List<String> loadSql(String sqlFile) throws Exception {
         List<String> sqlList = new ArrayList<String>();
@@ -234,11 +245,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     /**
-     * 执行SQL语句
+     * Execute sql.
      *
-     * @param conn    connect
-     * @param sqlFile sql
-     * @throws Exception Exception
+     * @param conn    connect.
+     * @param sqlFile sql.
+     * @throws Exception Exception.
      */
     private void execute(Connection conn, String sqlFile) throws Exception {
         Statement stmt = null;
