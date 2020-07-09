@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Accumulate Stat Count
+ * Accumulate Stat Count.
  *
  * @author Nacos
  */
@@ -33,6 +33,11 @@ public class AccumulateStatCount {
         return total.incrementAndGet();
     }
     
+    /**
+     * accumulate stat.
+     *
+     * @return
+     */
     public long stat() {
         long tmp = total.get() - lastStatValue;
         lastStatValue += tmp;

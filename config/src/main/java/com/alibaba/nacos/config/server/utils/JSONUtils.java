@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,11 +25,11 @@ import java.io.InputStream;
 
 
 /**
- * json util
+ * Json util.
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
 public class JSONUtils {
     
     static ObjectMapper mapper = new ObjectMapper();

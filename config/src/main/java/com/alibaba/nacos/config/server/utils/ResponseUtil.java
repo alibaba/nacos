@@ -22,12 +22,15 @@ import java.io.IOException;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
- * write response
+ * Write response.
  *
  * @author Nacos
  */
 public class ResponseUtil {
     
+    /**
+     * Write error msg.
+     */
     public static void writeErrMsg(HttpServletResponse response, int httpCode, String msg) {
         response.setStatus(httpCode);
         try {

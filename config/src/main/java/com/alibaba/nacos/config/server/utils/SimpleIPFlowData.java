@@ -23,11 +23,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 根据IP进行流控, 控制单个IP的数量以及IP总量
+ * According to IP flow control, control the number of individual IP and IP total.
  *
  * @author leiwen.zh
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
 public class SimpleIPFlowData {
     
     private AtomicInteger[] data;
@@ -71,6 +71,7 @@ public class SimpleIPFlowData {
         timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
     
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public int incrementAndGet(String ip) {
         int index = 0;
         if (ip != null) {
@@ -82,6 +83,7 @@ public class SimpleIPFlowData {
         return data[index].incrementAndGet();
     }
     
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Simple Flow data
+ * Simple Flow data.
  *
  * @author Nacos
  */
@@ -74,6 +74,7 @@ public class SimpleFlowData {
         return data[index].incrementAndGet();
     }
     
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public void rotateSlot() {
         int total = 0;
         
