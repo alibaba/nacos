@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.datasource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 
 /**
- * datasource adapter
+ * Datasource adapter.
  *
  * @author Nacos
  */
