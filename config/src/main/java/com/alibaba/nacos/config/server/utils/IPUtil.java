@@ -30,7 +30,6 @@ public class IPUtil {
     /**
      * Determine if it is an IPV4 address.
      */
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static boolean isIPV4(String addr) {
         if (null == addr) {
             return false;
@@ -48,7 +47,6 @@ public class IPUtil {
     /**
      * Determine if it is an IPV6 address.
      */
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static boolean isIPV6(String addr) {
         if (null == addr) {
             return false;
