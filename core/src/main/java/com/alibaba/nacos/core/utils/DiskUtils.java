@@ -96,7 +96,7 @@ public final class DiskUtils {
      * {@code Path} is associated with the same {@code FileSystem} as the given
      * directory.
      *
-     * <p> The details as to how the name of the file is constructed is
+     * <p>The details as to how the name of the file is constructed is
      * implementation dependent and therefore not specified. Where possible
      * the {@code prefix} and {@code suffix} are used to construct candidate
      * names in the same manner as the {@link
@@ -452,7 +452,7 @@ public final class DiskUtils {
      * to free internal resources. This can be done by calling the
      * {@link org.apache.commons.io.LineIterator#close()} or
      * {@link org.apache.commons.io.LineIterator#closeQuietly(org.apache.commons.io.LineIterator)} method.
-     * <p>
+     * </p>
      * The recommended usage pattern is:
      * <pre>
      * LineIterator it = FileUtils.lineIterator(file, "UTF-8");
@@ -468,6 +468,7 @@ public final class DiskUtils {
      * <p>
      * If an exception occurs during the creation of the iterator, the
      * underlying stream is closed.
+     * </p>
      *
      * @param file  the file to open for input, must not be <code>null</code>
      * @param encoding  the encoding to use, <code>null</code> means platform default
