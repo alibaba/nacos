@@ -26,12 +26,11 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
-
-import org.slf4j.Logger;
 
 /**
  * Response handler.
@@ -80,7 +79,7 @@ public final class ResponseHandler {
         T extractBody = null;
         final boolean typeToStr = String.class.toString().equals(type.toString());
         if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response
-            .getStatusCode()) {
+                .getStatusCode()) {
             // When the type is string type and the response contentType is [application/json],
             // then it should be serialized as string
             if (typeToStr) {
@@ -92,8 +91,7 @@ public final class ResponseHandler {
         if (extractBody == null) {
             if (!typeToStr) {
                 LOGGER.error(
-                    "if the response contentType is not [application/json]," +
-                    " only support to java.lang.String");
+                        "if the response contentType is not [application/json]," + " only support to java.lang.String");
                 throw new NacosDeserializationException(type);
             }
             extractBody = (T) IoUtils.toString(body, headers.getCharset());
