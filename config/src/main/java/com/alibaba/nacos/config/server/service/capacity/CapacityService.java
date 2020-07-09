@@ -148,8 +148,7 @@ public class CapacityService {
             lastId = tenantCapacityList.get(tenantCapacityList.size() - 1).getId();
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // Ignore.
+            } catch (InterruptedException ignored) {
             }
             for (TenantCapacity tenantCapacity : tenantCapacityList) {
                 String tenant = tenantCapacity.getTenant();
@@ -186,8 +185,7 @@ public class CapacityService {
             }
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // ignore
+            } catch (InterruptedException ignored) {
             }
             ++page;
         }
