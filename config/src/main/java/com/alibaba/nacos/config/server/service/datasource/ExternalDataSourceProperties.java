@@ -117,13 +117,13 @@ public class ExternalDataSourceProperties {
         return dataSources;
     }
     
-    interface Callback<DataSource> {
+    interface Callback<D> {
         
         /**
          * Perform custom logic.
          *
-         * @param dataSource dataSource.
+         * @param datasource dataSource.
          */
-        void accept(DataSource dataSource);
+        void accept(D datasource);
     }
 }

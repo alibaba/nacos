@@ -31,7 +31,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
@@ -186,19 +186,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
         this.transactionTemplate = dataSourceService.getTransactionTemplate();
         
         // Registers a Derby Raft state machine failure event for node degradation processing
-        NotifyCenter.registerToSharePublisher(RaftDBErrorEvent.class);
+        NotifyCenter.registerToSharePublisher(RaftDbErrorEvent.class);
         // Register the snapshot load event
         NotifyCenter.registerToSharePublisher(DerbyLoadEvent.class);
         
-        NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+        NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorEvent>() {
             @Override
-            public void onEvent(RaftDBErrorEvent event) {
+            public void onEvent(RaftDbErrorEvent event) {
                 dataSourceService.setHealthStatus("DOWN");
             }
             
             @Override
             public Class<? extends Event> subscribeType() {
-                return RaftDBErrorEvent.class;
+                return RaftDbErrorEvent.class;
             }
         });
         
@@ -549,7 +549,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
     @Override
     public void onError(Throwable throwable) {
         // Trigger reversion strategy
-        NotifyCenter.publishEvent(new RaftDBErrorEvent(throwable));
+        NotifyCenter.publishEvent(new RaftDbErrorEvent(throwable));
     }
     
     @Override

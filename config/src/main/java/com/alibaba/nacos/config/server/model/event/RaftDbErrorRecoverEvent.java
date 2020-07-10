@@ -16,28 +16,15 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.core.notify.Event;
 
 /**
- * RaftDBErrorEvent.
+ * RaftDBErrorRecoverEvent.
  *
- * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class RaftDBErrorEvent implements SlowEvent {
-    
-    private static final long serialVersionUID = 101591819161802336L;
-    
-    private Throwable ex;
-    
-    public RaftDBErrorEvent() {
-    }
-    
-    public RaftDBErrorEvent(Throwable ex) {
-        this.ex = ex;
-    }
-    
-    public Throwable getEx() {
-        return ex;
-    }
+@JustForTest
+public class RaftDbErrorRecoverEvent implements Event {
+
 }

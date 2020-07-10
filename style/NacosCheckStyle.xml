@@ -20,7 +20,7 @@
 
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
-    <property name="severity" value="warning"/>
+    <property name="severity" value="error"/>
     <property name="fileExtensions" value="java, properties, xml"/>
     
     <module name="FileTabCharacter">
@@ -94,7 +94,7 @@
             <property name="minLineCount" value="2"/>
             <property name="allowedAnnotations"
                 value="Override, Test, Before, After, BeforeClass, AfterClass, Parameterized, Parameters, Bean"/>
-            <property name="ignoreMethodNamesRegex" value="^set[A-Z].*|^get[A-Z].*"/>
+            <property name="ignoreMethodNamesRegex" value="^set[A-Z].*|^get[A-Z].*|main"/>
             <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="SingleLineJavadoc">

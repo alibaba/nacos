@@ -66,9 +66,9 @@ public interface DataSourceService {
     /**
      * Get current db url.
      *
-     * @return
+     * @return database url
      */
-    String getCurrentDBUrl();
+    String getCurrentDbUrl();
     
     /**
      * Get heath information.

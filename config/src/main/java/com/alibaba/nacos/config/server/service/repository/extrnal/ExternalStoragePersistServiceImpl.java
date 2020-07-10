@@ -166,7 +166,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public String getCurrentDBUrl() {
-        return this.dataSourceService.getCurrentDBUrl();
+        return this.dataSourceService.getCurrentDbUrl();
     }
     
     @Override

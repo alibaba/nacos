@@ -69,7 +69,6 @@ public class DumpTask extends AbstractTask {
     
     final String tag;
     
-    
     public String getGroupKey() {
         return groupKey;
     }

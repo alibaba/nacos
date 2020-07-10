@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.istio.mcp;
 
-
 /**
  * The collection types supported by Nacos.
  *

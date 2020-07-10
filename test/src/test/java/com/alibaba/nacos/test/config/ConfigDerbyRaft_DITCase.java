@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -296,21 +296,21 @@ public class ConfigDerbyRaft_DITCase
 				"this.is.raft_cluster=lessspring_7");
 		Assert.assertTrue(result);
 
-		NotifyCenter.registerToPublisher(RaftDBErrorRecoverEvent.class, 8);
+		NotifyCenter.registerToPublisher(RaftDbErrorRecoverEvent.class, 8);
 
 		CountDownLatch latch1 = new CountDownLatch(1);
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorEvent>() {
 			@Override
-			public void onEvent(RaftDBErrorEvent event) {
+			public void onEvent(RaftDbErrorEvent event) {
 				latch1.countDown();
 			}
 
 			@Override
 			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorEvent.class;
+				return RaftDbErrorEvent.class;
 			}
 		});
-		NotifyCenter.publishEvent(new RaftDBErrorEvent());
+		NotifyCenter.publishEvent(new RaftDbErrorEvent());
 		latch1.await(10_000L, TimeUnit.MILLISECONDS);
 
 		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
@@ -318,19 +318,19 @@ public class ConfigDerbyRaft_DITCase
 		Assert.assertFalse(result);
 
 		CountDownLatch latch2 = new CountDownLatch(1);
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorRecoverEvent>() {
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorRecoverEvent>() {
 
 			@Override
-			public void onEvent(RaftDBErrorRecoverEvent event) {
+			public void onEvent(RaftDbErrorRecoverEvent event) {
 				latch2.countDown();
 			}
 
 			@Override
 			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorRecoverEvent.class;
+				return RaftDbErrorRecoverEvent.class;
 			}
 		});
-		NotifyCenter.publishEvent(new RaftDBErrorRecoverEvent());
+		NotifyCenter.publishEvent(new RaftDbErrorRecoverEvent());
 		latch2.await(10_000L, TimeUnit.MILLISECONDS);
 
 		result = iconfig7.publishConfig("raft_test_raft_error", "cluster_test_1",
