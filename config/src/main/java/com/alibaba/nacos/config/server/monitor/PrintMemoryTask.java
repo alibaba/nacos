@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
+ * Print memory task.
+ *
  * @author zongtanghu
  */
 public class PrintMemoryTask implements Runnable {
