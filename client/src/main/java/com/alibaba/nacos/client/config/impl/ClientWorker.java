@@ -166,6 +166,7 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
+        remakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
@@ -178,9 +179,37 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
+        remakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+    }
+    
+    /**
+     * Remake cacheData taskId.
+     */
+    private void remakeCacheDataTaskId() {
+        int listenerSize = cacheMap.get().size();
+        int remakeTaskId = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        if (remakeTaskId < (int) currentLongingTaskCount) {
+            for (int i = 0; i < remakeTaskId; i++) {
+                int count = 0;
+                for (String key : cacheMap.get().keySet()) {
+                    if (count == ParamUtil.getPerTaskConfigSize()) {
+                        break;
+                    }
+                    CacheData cacheData = cacheMap.get().get(key);
+                    cacheData.setTaskId(i);
+                    synchronized (cacheMap) {
+                        Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
+                        copy.put(key, cacheData);
+                        cacheMap.set(copy);
+                    }
+                    count++;
+                }
+                
+            }
+        }
     }
     
     /**
@@ -249,6 +278,8 @@ public class ClientWorker implements Closeable {
                 cache.setInitializing(true);
             } else {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
+                cache.setTaskId(taskId);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     String[] ct = getServerConfig(dataId, group, tenant, 3000L);
@@ -276,6 +307,20 @@ public class ClientWorker implements Closeable {
             throw new IllegalArgumentException();
         }
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
+    }
+    
+    /**
+     * Update the thread state corresponding to taskId.
+     *
+     * @param schedulerId threads run taskId.
+     * @param run         whether to run.
+     */
+    private void updateSchedulerMap(Integer schedulerId, Boolean run) {
+        synchronized (schedulerMap) {
+            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(schedulerMap.get());
+            copy.put(schedulerId, run);
+            schedulerMap.set(copy);
+        }
     }
     
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
@@ -392,11 +437,17 @@ public class ClientWorker implements Closeable {
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
+                // Update the thread state corresponding to taskId.
+                updateSchedulerMap(i, true);
                 // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
-            currentLongingTaskCount = longingTaskCount;
+        } else if (longingTaskCount < currentLongingTaskCount) {
+            for (int i = longingTaskCount; i < (int) currentLongingTaskCount; i++) {
+                updateSchedulerMap(i, false);
+            }
         }
+        currentLongingTaskCount = longingTaskCount;
     }
     
     /**
@@ -657,8 +708,9 @@ public class ClientWorker implements Closeable {
                     }
                 }
                 inInitializingCacheList.clear();
-                
-                executorService.execute(this);
+                if (schedulerMap.get().get(taskId)) {
+                    executorService.execute(this);
+                }
                 
             } catch (Throwable e) {
                 
@@ -686,6 +738,9 @@ public class ClientWorker implements Closeable {
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
             new HashMap<String, CacheData>());
+    
+    private final AtomicReference<Map<Integer, Boolean>> schedulerMap = new AtomicReference<Map<Integer, Boolean>>(
+            new HashMap<Integer, Boolean>());
     
     private final HttpAgent agent;
     
