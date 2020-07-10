@@ -38,7 +38,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Tenant Capacity Service.
@@ -119,7 +119,7 @@ public class TenantCapacityPersistService {
             jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
             return generatedKeyHolder.getKey() != null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
         
@@ -140,7 +140,7 @@ public class TenantCapacityPersistService {
                     tenantCapacity.getQuota());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -158,7 +158,7 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
             
         }
@@ -176,7 +176,7 @@ public class TenantCapacityPersistService {
             int affectRow = jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -192,7 +192,7 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -235,7 +235,7 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -257,7 +257,7 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, tenant, gmtModified, tenant) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -287,7 +287,7 @@ public class TenantCapacityPersistService {
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -311,7 +311,7 @@ public class TenantCapacityPersistService {
             };
             return jdbcTemplate.update(preparedStatementCreator) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }

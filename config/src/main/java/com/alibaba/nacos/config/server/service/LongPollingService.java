@@ -52,8 +52,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
  * LongPollingService.
@@ -182,7 +182,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -206,7 +206,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -256,12 +256,12 @@ public class LongPollingService extends AbstractEventListener {
             List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
             if (changedGroups.size() > 0) {
                 generateResponse(req, rsp, changedGroups);
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
                 return;
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
                 return;
@@ -350,7 +350,7 @@ public class LongPollingService extends AbstractEventListener {
                         
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                         iter.remove(); // Delete subscribers' relationships.
-                        LogUtil.clientLog
+                        LogUtil.CLIENT_LOG
                                 .info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime), "in-advance",
                                         RequestUtil
                                                 .getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
@@ -359,7 +359,7 @@ public class LongPollingService extends AbstractEventListener {
                     }
                 }
             } catch (Throwable t) {
-                LogUtil.defaultLog.error("data change error: {}", ExceptionUtil.getStackTrace(t));
+                LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
         }
         
@@ -389,7 +389,7 @@ public class LongPollingService extends AbstractEventListener {
         
         @Override
         public void run() {
-            memoryLog.info("[long-pulling] client count " + allSubs.size());
+            MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
             MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }
@@ -408,7 +408,7 @@ public class LongPollingService extends AbstractEventListener {
                         allSubs.remove(ClientLongPolling.this);
                         
                         if (isFixedPolling()) {
-                            LogUtil.clientLog
+                            LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                             "polling", clientMd5Map.size(), probeRequestSize);
@@ -421,14 +421,14 @@ public class LongPollingService extends AbstractEventListener {
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.clientLog
+                            LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                             "polling", clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
                         }
                     } catch (Throwable t) {
-                        LogUtil.defaultLog.error("long polling error:" + t.getMessage(), t.getCause());
+                        LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                     }
                     
                 }
@@ -468,7 +468,7 @@ public class LongPollingService extends AbstractEventListener {
                 response.getWriter().println(respString);
                 asyncContext.complete();
             } catch (Exception ex) {
-                pullLog.error(ex.toString(), ex);
+                PULL_LOG.error(ex.toString(), ex);
                 asyncContext.complete();
             }
         }
@@ -525,7 +525,7 @@ public class LongPollingService extends AbstractEventListener {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println(respString);
         } catch (Exception ex) {
-            pullLog.error(ex.toString(), ex);
+            PULL_LOG.error(ex.toString(), ex);
         }
     }
     

@@ -78,7 +78,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
             return pageInfo;
             
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -97,7 +97,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         try {
             jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -115,7 +115,7 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         try {
             jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }

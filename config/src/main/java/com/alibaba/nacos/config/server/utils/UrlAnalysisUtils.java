@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 分析url的工具类
+ * Url util.
  *
  * @author leiwen.zh
  */

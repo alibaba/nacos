@@ -26,7 +26,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Dump all tag processor.
@@ -54,13 +54,13 @@ public class DumpAllTagProcessor implements TaskProcessor {
                     boolean result = ConfigCacheService
                             .dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(), cf.getContent(),
                                     cf.getLastModified());
-                    LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
+                    LogUtil.DUMP_LOG.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5());
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                defaultLog.info("[all-dump-tag] {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[all-dump-tag] {} / {}", actualRowCount, rowCount);
             }
         }
         return true;

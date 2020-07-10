@@ -23,12 +23,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 根据IP进行流控, 控制单个IP的数量以及IP总量
+ * According to IP flow control, control the number of individual IP and IP total.
  *
  * @author leiwen.zh
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class SimpleIPFlowData {
+public class SimpleIpFlowData {
     
     private AtomicInteger[] data;
     
@@ -49,7 +48,7 @@ public class SimpleIPFlowData {
         
     });
     
-    class DefaultIPFlowDataManagerTask implements Runnable {
+    class DefaultIpFlowDataManagerTask implements Runnable {
         
         @Override
         public void run() {
@@ -58,7 +57,7 @@ public class SimpleIPFlowData {
         
     }
     
-    public SimpleIPFlowData(int slotCount, int interval) {
+    public SimpleIpFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
         } else {
@@ -68,9 +67,12 @@ public class SimpleIPFlowData {
         for (int i = 0; i < data.length; i++) {
             data[i] = new AtomicInteger(0);
         }
-        timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
+        timer.scheduleAtFixedRate(new DefaultIpFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
     
+    /**
+     * Atomically increments by one the current value.
+     */
     public int incrementAndGet(String ip) {
         int index = 0;
         if (ip != null) {
@@ -82,6 +84,9 @@ public class SimpleIPFlowData {
         return data[index].incrementAndGet();
     }
     
+    /**
+     * Rotate the slot.
+     */
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {

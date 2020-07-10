@@ -19,13 +19,13 @@ package com.alibaba.nacos.config.server.utils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Group key util
+ * Group key util.
  *
  * @author Nacos
  */
 public class GroupKey2 {
     
-    static public String getKey(String dataId, String group) {
+    public static String getKey(String dataId, String group) {
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
@@ -33,7 +33,7 @@ public class GroupKey2 {
         return sb.toString();
     }
     
-    static public String getKey(String dataId, String group, String tenant) {
+    public static String getKey(String dataId, String group, String tenant) {
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
@@ -45,7 +45,10 @@ public class GroupKey2 {
         return sb.toString();
     }
     
-    static public String[] parseKey(String groupKey) {
+    /**
+     * Parse the group key.
+     */
+    public static String[] parseKey(String groupKey) {
         StringBuilder sb = new StringBuilder();
         String dataId = null;
         String group = null;
@@ -94,7 +97,7 @@ public class GroupKey2 {
     }
     
     /**
-     * + -> %2B % -> %25
+     * + -> %2B % -> %25.
      */
     static void urlEncode(String str, StringBuilder sb) {
         for (int idx = 0; idx < str.length(); ++idx) {

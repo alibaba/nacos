@@ -19,7 +19,9 @@ package com.alibaba.nacos.config.server.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +30,14 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
+ * ZipUtils for import and export.
+ *
  * @author klw
- * @Description: ZipUtils for import and export
  * @date 2019/5/14 16:59
  */
 public class ZipUtils {
     
-    private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZipUtils.class);
     
     public static class ZipItem {
         
@@ -71,7 +73,6 @@ public class ZipUtils {
         
         private ZipItem metaDataItem;
         
-        
         public UnZipResult(List<ZipItem> zipItemList, ZipItem metaDataItem) {
             this.zipItemList = zipItemList;
             this.metaDataItem = metaDataItem;
@@ -94,6 +95,9 @@ public class ZipUtils {
         }
     }
     
+    /**
+     * zip method.
+     */
     public static byte[] zip(List<ZipItem> source) {
         byte[] result = null;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(
@@ -106,13 +110,15 @@ public class ZipUtils {
             zipOut.finish();
             result = byteOut.toByteArray();
         } catch (IOException e) {
-            log.error("an error occurred while compressing data.", e);
+            LOGGER.error("an error occurred while compressing data.", e);
         }
         return result;
     }
     
+    /**
+     * unzip method.
+     */
     public static UnZipResult unzip(byte[] source) {
-        
         List<ZipItem> itemList = new ArrayList<>();
         ZipItem metaDataItem = null;
         try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
@@ -133,14 +139,13 @@ public class ZipUtils {
                         itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
                     }
                 } catch (IOException e) {
-                    log.error("unzip error", e);
+                    LOGGER.error("unzip error", e);
                 }
             }
         } catch (IOException e) {
-            log.error("unzip error", e);
+            LOGGER.error("unzip error", e);
         }
         return new UnZipResult(itemList, metaDataItem);
     }
-    
     
 }

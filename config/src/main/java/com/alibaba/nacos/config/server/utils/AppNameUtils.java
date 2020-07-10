@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 
 /**
- * App util
+ * App util.
  *
  * @author Nacos
  */

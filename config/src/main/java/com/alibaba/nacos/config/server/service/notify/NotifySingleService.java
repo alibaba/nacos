@@ -81,15 +81,15 @@ public class NotifySingleService {
                 this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
             } catch (Exception e) { // never goes here, but in case (never interrupts this notification thread)
                 this.isSuccess = false;
-                LogUtil.notifyLog
+                LogUtil.NOTIFY_LOG
                         .error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
                                 getLastModified());
-                LogUtil.notifyLog.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
+                LogUtil.NOTIFY_LOG.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
                         new Object[] {target, getDataId(), getGroup(), getLastModified()}, e);
             }
             
             if (!this.isSuccess) {
-                LogUtil.notifyLog
+                LogUtil.NOTIFY_LOG
                         .error("[notify-retry] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
                                 getLastModified());
                 try {
@@ -163,7 +163,7 @@ public class NotifySingleService {
         
     }
     
-    private static final Logger LOGGER = LogUtil.fatalLog;
+    private static final Logger LOGGER = LogUtil.FATAL_LOG;
     
     private ServerMemberManager memberManager;
     

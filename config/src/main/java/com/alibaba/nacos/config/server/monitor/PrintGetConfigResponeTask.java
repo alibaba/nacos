@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
  * PrintGetConfigResponeTask.
@@ -26,7 +26,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 public class PrintGetConfigResponeTask implements Runnable {
     @Override
     public void run() {
-        memoryLog.info(ResponseMonitor.getStringForPrint());
+        MEMORY_LOG.info(ResponseMonitor.getStringForPrint());
     }
     
 }

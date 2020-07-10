@@ -76,7 +76,7 @@ public class ConfigTraceService {
      */
     public static void logPersistenceEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, String content) {
-        if (!LogUtil.traceLog.isInfoEnabled()) {
+        if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
         // Convenient tlog segmentation.
@@ -87,7 +87,7 @@ public class ConfigTraceService {
         // (md5)
         String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
         
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }
     
@@ -106,7 +106,7 @@ public class ConfigTraceService {
      */
     public static void logNotifyEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, long delayed, String targetIp) {
-        if (!LogUtil.traceLog.isInfoEnabled()) {
+        if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
         MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
@@ -116,7 +116,7 @@ public class ConfigTraceService {
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | ext
         // (targetIp)
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
     }
     
@@ -135,7 +135,7 @@ public class ConfigTraceService {
      */
     public static void logDumpEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type, long delayed, long length) {
-        if (!LogUtil.traceLog.isInfoEnabled()) {
+        if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
         // Convenient tlog segmentation
@@ -143,7 +143,7 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | length
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, "dump", type, delayed, length);
     }
     
@@ -160,7 +160,7 @@ public class ConfigTraceService {
      */
     public static void logDumpAllEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String handleIp, String type) {
-        if (!LogUtil.traceLog.isInfoEnabled()) {
+        if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
         // Convenient tlog segmentation
@@ -168,7 +168,7 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1]
-        LogUtil.traceLog
+        LogUtil.TRACE_LOG
                 .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
                         ts, handleIp, "dump-all", type, -1);
     }
@@ -187,7 +187,7 @@ public class ConfigTraceService {
      */
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String type, long delayed, String clientIp) {
-        if (!LogUtil.traceLog.isInfoEnabled()) {
+        if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
         // Convenient tlog segmentation
@@ -195,7 +195,7 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] | ext(clientIp)
-        LogUtil.traceLog
+        LogUtil.TRACE_LOG
                 .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIp(), dataId, group, tenant, requestIpAppName,
                         ts, "pull", type, delayed, clientIp);
     }

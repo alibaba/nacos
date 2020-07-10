@@ -76,7 +76,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public synchronized void init() throws Exception {
         if (!PropertyUtil.isUseExternalDB()) {
             if (!initialize) {
-                LogUtil.defaultLog.info("use local db service for init");
+                LogUtil.DEFAULT_LOG.info("use local db service for init");
                 final String jdbcUrl =
                         "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString()
                                 + ";create=true";
@@ -95,8 +95,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         try {
             execute(ds.getConnection(), "META-INF/schema.sql");
         } catch (Exception e) {
-            if (LogUtil.defaultLog.isErrorEnabled()) {
-                LogUtil.defaultLog.error(e.getMessage(), e);
+            if (LogUtil.DEFAULT_LOG.isErrorEnabled()) {
+                LogUtil.DEFAULT_LOG.error(e.getMessage(), e);
             }
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load schema.sql error.", e);
         }
@@ -132,7 +132,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     private void doDerbyClean() throws Exception {
-        LogUtil.defaultLog.warn("use local db service for reopenDerby");
+        LogUtil.DEFAULT_LOG.warn("use local db service for reopenDerby");
         try {
             DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (Exception e) {
@@ -260,7 +260,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
-                    LogUtil.defaultLog.warn(e.getMessage());
+                    LogUtil.DEFAULT_LOG.warn(e.getMessage());
                 }
             }
         } finally {

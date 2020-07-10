@@ -20,9 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 一个带TTL的简单Cache，对于过期的entry没有清理
+ * A simple Cache with TTL, not cleared for expired entry.
  *
- * @param <E>
+ * @param <E> the cache type
  * @author fengHan, jiuRen
  */
 public class SimpleCache<E> {
@@ -41,6 +41,9 @@ public class SimpleCache<E> {
         }
     }
     
+    /**
+     * Put data.
+     */
     public void put(String key, E e, long ttlMs) {
         if (key == null || e == null) {
             return;
@@ -49,6 +52,9 @@ public class SimpleCache<E> {
         cache.put(key, entry);
     }
     
+    /**
+     * Get data.
+     */
     public E get(String key) {
         CacheEntry<E> entry = cache.get(key);
         if (entry != null && entry.expireTime > System.currentTimeMillis()) {

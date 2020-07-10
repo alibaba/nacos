@@ -25,7 +25,7 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 /**
- * System config
+ * System config.
  *
  * @author Nacos
  */
@@ -33,7 +33,7 @@ public class SystemConfig {
     
     public static final String LOCAL_IP = getHostAddress();
     
-    private static final Logger log = LoggerFactory.getLogger(SystemConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemConfig.class);
     
     private static String getHostAddress() {
         String address = System.getProperty("nacos.server.ip");
@@ -49,7 +49,7 @@ public class SystemConfig {
                 Enumeration<InetAddress> ads = ni.getInetAddresses();
                 while (ads.hasMoreElements()) {
                     InetAddress ip = ads.nextElement();
-                    // 兼容集团不规范11网段
+                    // Compatible group does not regulate 11 network segments
                     if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1
                         /* && ip.isSiteLocalAddress() */) {
                         return ip.getHostAddress();
@@ -57,7 +57,7 @@ public class SystemConfig {
                 }
             }
         } catch (Exception e) {
-            log.error("get local host address error", e);
+            LOGGER.error("get local host address error", e);
         }
         return address;
     }
