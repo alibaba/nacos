@@ -27,10 +27,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @SpringBootTest
 @WebAppConfiguration
 public class DumpServiceTest {
-
+    
     @Autowired
     DumpService service;
-
+    
     @Test
     public void init() throws Throwable {
         service.init();
