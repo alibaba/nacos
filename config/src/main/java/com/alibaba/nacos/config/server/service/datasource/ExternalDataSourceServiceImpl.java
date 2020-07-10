@@ -175,7 +175,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     }
     
     @Override
-    public String getCurrentDBUrl() {
+    public String getCurrentDbUrl() {
         DataSource ds = this.jt.getDataSource();
         if (ds == null) {
             return StringUtils.EMPTY;

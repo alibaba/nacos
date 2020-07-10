@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorRecoverEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;
@@ -125,18 +125,18 @@ public class CurcuitFilter implements Filter {
             public void onEvent(Event event) {
                 // @JustForTest
                 // This event only happens in the case of unit tests
-                if (event instanceof RaftDBErrorRecoverEvent) {
+                if (event instanceof RaftDbErrorRecoverEvent) {
                     isDowngrading = false;
                     return;
                 }
-                if (event instanceof RaftDBErrorEvent) {
+                if (event instanceof RaftDbErrorEvent) {
                     isDowngrading = true;
                 }
             }
             
             @Override
             public boolean canNotify(Event event) {
-                return (event instanceof RaftDBErrorEvent) || (event instanceof RaftDBErrorRecoverEvent);
+                return (event instanceof RaftDbErrorEvent) || (event instanceof RaftDbErrorRecoverEvent);
             }
         });
     }

@@ -186,7 +186,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     @Override
-    public String getCurrentDBUrl() {
+    public String getCurrentDbUrl() {
         return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
     }
     
