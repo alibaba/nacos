@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Write response.
@@ -36,7 +36,7 @@ public class ResponseUtil {
         try {
             response.getWriter().println(msg);
         } catch (IOException e) {
-            defaultLog.error("ResponseUtil:writeErrMsg wrong", e);
+            DEFAULT_LOG.error("ResponseUtil:writeErrMsg wrong", e);
         }
     }
 }

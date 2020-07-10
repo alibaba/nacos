@@ -27,8 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author leiwen.zh
  */
-@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
-public class SimpleIPFlowData {
+public class SimpleIpFlowData {
     
     private AtomicInteger[] data;
     
@@ -49,7 +48,7 @@ public class SimpleIPFlowData {
         
     });
     
-    class DefaultIPFlowDataManagerTask implements Runnable {
+    class DefaultIpFlowDataManagerTask implements Runnable {
         
         @Override
         public void run() {
@@ -58,7 +57,7 @@ public class SimpleIPFlowData {
         
     }
     
-    public SimpleIPFlowData(int slotCount, int interval) {
+    public SimpleIpFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
         } else {
@@ -68,10 +67,12 @@ public class SimpleIPFlowData {
         for (int i = 0; i < data.length; i++) {
             data[i] = new AtomicInteger(0);
         }
-        timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
+        timer.scheduleAtFixedRate(new DefaultIpFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
     
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Atomically increments by one the current value.
+     */
     public int incrementAndGet(String ip) {
         int index = 0;
         if (ip != null) {
@@ -83,7 +84,9 @@ public class SimpleIPFlowData {
         return data[index].incrementAndGet();
     }
     
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Rotate the slot.
+     */
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {

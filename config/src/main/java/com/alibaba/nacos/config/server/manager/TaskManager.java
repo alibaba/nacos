@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class TaskManager implements TaskManagerMBean {
     
-    private static final Logger LOGGER = LogUtil.defaultLog;
+    private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
     
     private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
     
@@ -62,7 +62,7 @@ public final class TaskManager implements TaskManagerMBean {
                     Thread.sleep(100);
                     TaskManager.this.process();
                 } catch (Throwable e) {
-                    LogUtil.dumpLog.error("execute dump process has error : {}", e);
+                    LogUtil.DUMP_LOG.error("execute dump process has error : {}", e);
                 }
             }
         }

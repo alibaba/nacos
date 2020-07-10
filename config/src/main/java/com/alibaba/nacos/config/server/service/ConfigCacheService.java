@@ -42,9 +42,9 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Config service.
@@ -84,7 +84,7 @@ public class ConfigCacheService {
         assert (lockResult != 0);
         
         if (lockResult < 0) {
-            dumpLog.warn("[dump-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
             return false;
         }
         
@@ -92,7 +92,7 @@ public class ConfigCacheService {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             
             if (md5.equals(ConfigCacheService.getContentMd5(groupKey))) {
-                dumpLog.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
@@ -101,13 +101,13 @@ public class ConfigCacheService {
             updateMd5(groupKey, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            dumpLog.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
                         .contains(DISK_QUATA_EN)) {
                     // Protect from disk full.
-                    fatalLog.error("磁盘满自杀退出", ioe);
+                    FATAL_LOG.error("磁盘满自杀退出", ioe);
                     System.exit(0);
                 }
             }
@@ -137,14 +137,14 @@ public class ConfigCacheService {
         assert (lockResult != 0);
         
         if (lockResult < 0) {
-            dumpLog.warn("[dump-beta-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[dump-beta-error] write lock failed. {}", groupKey);
             return false;
         }
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey))) {
-                dumpLog.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                DUMP_LOG.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
@@ -155,7 +155,7 @@ public class ConfigCacheService {
             updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            dumpLog.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -182,14 +182,14 @@ public class ConfigCacheService {
         assert (lockResult != 0);
         
         if (lockResult < 0) {
-            dumpLog.warn("[dump-tag-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[dump-tag-error] write lock failed. {}", groupKey);
             return false;
         }
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag))) {
-                dumpLog.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                DUMP_LOG.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
             } else if (!PropertyUtil.isDirectRead()) {
@@ -199,7 +199,7 @@ public class ConfigCacheService {
             updateTagMd5(groupKey, tag, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            dumpLog.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -224,7 +224,7 @@ public class ConfigCacheService {
         assert (lockResult != 0);
         
         if (lockResult < 0) {
-            dumpLog.warn("[dump-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
             return false;
         }
         
@@ -233,7 +233,7 @@ public class ConfigCacheService {
             if (!PropertyUtil.isDirectRead()) {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(loacalMd5)) {
-                    dumpLog.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+                    DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                     + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                             lastModifiedTs);
                 } else {
@@ -243,7 +243,7 @@ public class ConfigCacheService {
             updateMd5(groupKey, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            dumpLog.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -269,7 +269,7 @@ public class ConfigCacheService {
                 AggrWhitelist.load(aggreds);
             }
         } catch (IOException e) {
-            dumpLog.error("reload fail:" + AggrWhitelist.AGGRIDS_METADATA, e);
+            DUMP_LOG.error("reload fail:" + AggrWhitelist.AGGRIDS_METADATA, e);
         }
         
         String clientIpWhitelist = null;
@@ -288,7 +288,7 @@ public class ConfigCacheService {
                 ClientIpWhiteList.load(clientIpWhitelist);
             }
         } catch (IOException e) {
-            dumpLog.error("reload fail:" + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
+            DUMP_LOG.error("reload fail:" + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
         }
         
         String switchContent = null;
@@ -307,7 +307,7 @@ public class ConfigCacheService {
                 SwitchService.load(switchContent);
             }
         } catch (IOException e) {
-            dumpLog.error("reload fail:" + SwitchService.SWITCH_META_DATAID, e);
+            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATAID, e);
         }
     }
     
@@ -327,15 +327,15 @@ public class ConfigCacheService {
             try {
                 String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (!entry.getValue().md5.equals(loacalMd5)) {
-                    defaultLog.warn("[md5-different] dataId:{},group:{}", dataId, group);
+                    DEFAULT_LOG.warn("[md5-different] dataId:{},group:{}", dataId, group);
                     diffList.add(groupKey);
                 }
             } catch (IOException e) {
-                defaultLog.error("getLocalConfigMd5 fail,dataId:{},group:{}", dataId, group);
+                DEFAULT_LOG.error("getLocalConfigMd5 fail,dataId:{},group:{}", dataId, group);
             }
         }
         long endTime = System.currentTimeMillis();
-        defaultLog.warn("checkMd5 cost:{}; diffCount:{}", endTime - startTime, diffList.size());
+        DEFAULT_LOG.warn("checkMd5 cost:{}; diffCount:{}", endTime - startTime, diffList.size());
         return diffList;
     }
     
@@ -353,13 +353,13 @@ public class ConfigCacheService {
     
         // If data is non-existent.
         if (0 == lockResult) {
-            dumpLog.info("[remove-ok] {} not exist.", groupKey);
+            DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
     
         // try to lock failed
         if (lockResult < 0) {
-            dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
         }
         
@@ -390,13 +390,13 @@ public class ConfigCacheService {
         
         // If data is non-existent.
         if (0 == lockResult) {
-            dumpLog.info("[remove-ok] {} not exist.", groupKey);
+            DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
 
         // try to lock failed
         if (lockResult < 0) {
-            dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
         }
         
@@ -429,13 +429,13 @@ public class ConfigCacheService {
 
         // If data is non-existent.
         if (0 == lockResult) {
-            dumpLog.info("[remove-ok] {} not exist.", groupKey);
+            DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
 
         // try to lock failed
         if (lockResult < 0) {
-            dumpLog.warn("[remove-error] write lock failed. {}", groupKey);
+            DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
             return false;
         }
         
@@ -616,7 +616,7 @@ public class ConfigCacheService {
         CacheItem groupItem = CACHE.get(groupKey);
         int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryReadLock() ? 1 : -1);
         if (result < 0) {
-            defaultLog.warn("[read-lock] failed, {}, {}", result, groupKey);
+            DEFAULT_LOG.warn("[read-lock] failed, {}, {}", result, groupKey);
         }
         return result;
     }
@@ -644,7 +644,7 @@ public class ConfigCacheService {
         CacheItem groupItem = CACHE.get(groupKey);
         int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryWriteLock() ? 1 : -1);
         if (result < 0) {
-            defaultLog.warn("[write-lock] failed, {}, {}", result, groupKey);
+            DEFAULT_LOG.warn("[write-lock] failed, {}, {}", result, groupKey);
         }
         return result;
     }

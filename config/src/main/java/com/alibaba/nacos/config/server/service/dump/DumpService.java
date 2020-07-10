@@ -67,7 +67,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Dump data service.
@@ -135,7 +135,7 @@ public abstract class DumpService {
             DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
         TimerContext.start("CONFIG_DUMP_TO_FILE");
         try {
-            LogUtil.defaultLog.warn("DumpService start");
+            LogUtil.DEFAULT_LOG.warn("DumpService start");
             
             Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
             
@@ -170,13 +170,13 @@ public abstract class DumpService {
                 dumpConfigInfo(dumpAllProcessor);
                 
                 // update Beta cache
-                LogUtil.defaultLog.info("start clear all config-info-beta.");
+                LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
                 if (persistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
                 }
                 // update Tag cache
-                LogUtil.defaultLog.info("start clear all config-info-tag.");
+                LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
                 if (persistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
@@ -194,7 +194,7 @@ public abstract class DumpService {
                     LOGGER.info("server start, schedule merge end.");
                 }
             } catch (Exception e) {
-                LogUtil.fatalLog
+                LogUtil.FATAL_LOG
                         .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e
                                 .toString());
                 throw new NacosException(NacosException.SERVER_ERROR,
@@ -208,14 +208,14 @@ public abstract class DumpService {
                     try {
                         DiskUtil.saveHeartBeatToDisk(heartBeatTime);
                     } catch (IOException e) {
-                        LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
+                        LogUtil.FATAL_LOG.error("save heartbeat fail" + e.getMessage());
                     }
                 };
                 
                 ConfigExecutor.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
                 
                 long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
-                LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
+                LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
                 
                 ConfigExecutor
                         .scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
@@ -229,7 +229,7 @@ public abstract class DumpService {
             
             ConfigExecutor.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
-            TimerContext.end(LogUtil.dumpLog);
+            TimerContext.end(LogUtil.DUMP_LOG);
         }
         
     }
@@ -254,7 +254,7 @@ public abstract class DumpService {
                 }
             }
             if (isAllDump) {
-                LogUtil.defaultLog.info("start clear all config-info.");
+                LogUtil.DEFAULT_LOG.info("start clear all config-info.");
                 DiskUtil.clearAll();
                 dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
             } else {
@@ -263,7 +263,7 @@ public abstract class DumpService {
                         TimeUtils.getCurrentTime());
                 dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
                 Runnable checkMd5Task = () -> {
-                    LogUtil.defaultLog.error("start checkMd5Task");
+                    LogUtil.DEFAULT_LOG.error("start checkMd5Task");
                     List<String> diffList = ConfigCacheService.checkMd5();
                     for (String groupKey : diffList) {
                         String[] dg = GroupKey.parseKey(groupKey);
@@ -274,19 +274,19 @@ public abstract class DumpService {
                         ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
                                 configInfo.getLastModified());
                     }
-                    LogUtil.defaultLog.error("end checkMd5Task");
+                    LogUtil.DEFAULT_LOG.error("end checkMd5Task");
                 };
                 ConfigExecutor.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
             }
         } catch (IOException e) {
-            LogUtil.fatalLog.error("dump config fail" + e.getMessage());
+            LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
             throw e;
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LogUtil.defaultLog.warn("close file failed");
+                    LogUtil.DEFAULT_LOG.warn("close file failed");
                 }
             }
         }
@@ -308,9 +308,9 @@ public abstract class DumpService {
             if (val != null && TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
-            fatalLog.warn("isQuickStart:{}", isQuickStart);
+            FATAL_LOG.warn("isQuickStart:{}", isQuickStart);
         } catch (Exception e) {
-            fatalLog.error("read application.properties wrong", e);
+            FATAL_LOG.error("read application.properties wrong", e);
         }
         return isQuickStart;
     }
@@ -328,7 +328,7 @@ public abstract class DumpService {
                 retentionDays = tmp;
             }
         } catch (NumberFormatException nfe) {
-            fatalLog.error("read nacos.config.retention.days wrong", nfe);
+            FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
         }
         
         return retentionDays;

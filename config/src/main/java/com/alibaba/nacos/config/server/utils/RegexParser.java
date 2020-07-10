@@ -33,7 +33,7 @@ public class RegexParser {
      * '.* '? 'is replaced by '{n}', n is the number of consecutive ?; Other special characters that are not alphabetic
      * or numeric are preceded by '\'.
      *
-     * @param regex regex
+     * @param regex  The expression to be formatted
      * @return
      */
     public static String regexFormat(String regex) {

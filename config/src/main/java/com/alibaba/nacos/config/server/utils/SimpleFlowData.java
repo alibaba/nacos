@@ -74,7 +74,9 @@ public class SimpleFlowData {
         return data[index].incrementAndGet();
     }
     
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Rotate the slot.
+     */
     public void rotateSlot() {
         int total = 0;
         

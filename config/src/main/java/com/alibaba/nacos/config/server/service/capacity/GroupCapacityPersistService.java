@@ -34,7 +34,7 @@ import javax.annotation.PostConstruct;
 import java.sql.*;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * Group Capacity Service
@@ -141,7 +141,7 @@ public class GroupCapacityPersistService {
             jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
             return generatedKeyHolder.getKey() != null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -155,7 +155,7 @@ public class GroupCapacityPersistService {
                     .update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup(), groupCapacity.getQuota());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -167,7 +167,7 @@ public class GroupCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
             
         }
@@ -179,7 +179,7 @@ public class GroupCapacityPersistService {
             int affectRow = jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -189,7 +189,7 @@ public class GroupCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, groupCapacity.getGmtModified(), groupCapacity.getGroup()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -222,7 +222,7 @@ public class GroupCapacityPersistService {
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -243,7 +243,7 @@ public class GroupCapacityPersistService {
             try {
                 return jdbcTemplate.update(sql, gmtModified, group) == 1;
             } catch (CannotGetJdbcConnectionException e) {
-                fatalLog.error("[db-error]", e);
+                FATAL_LOG.error("[db-error]", e);
                 throw e;
             }
         } else {
@@ -253,7 +253,7 @@ public class GroupCapacityPersistService {
             try {
                 return jdbcTemplate.update(sql, group, gmtModified, group) == 1;
             } catch (CannotGetJdbcConnectionException e) {
-                fatalLog.error("[db-error]", e);
+                FATAL_LOG.error("[db-error]", e);
                 throw e;
             }
         }
@@ -283,7 +283,7 @@ public class GroupCapacityPersistService {
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -301,7 +301,7 @@ public class GroupCapacityPersistService {
             };
             return jdbcTemplate.update(preparedStatementCreator) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
         

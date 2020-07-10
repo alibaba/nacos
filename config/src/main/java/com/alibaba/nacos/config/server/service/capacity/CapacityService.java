@@ -271,12 +271,12 @@ public class CapacityService {
             int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
-                LogUtil.defaultLog
+                LogUtil.DEFAULT_LOG
                         .warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant, usage, defaultQuota,
                                 finalQuota);
             } else {
                 groupCapacityPersistService.updateQuota(group, finalQuota);
-                LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group, usage,
+                LogUtil.DEFAULT_LOG.warn("[capacityManagement] 初始化的时候该Group（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", group, usage,
                         defaultQuota, finalQuota);
             }
         }
@@ -366,7 +366,7 @@ public class CapacityService {
             return groupCapacityPersistService.insertGroupCapacity(groupCapacity);
         } catch (DuplicateKeyException e) {
             // 并发情况下同时insert会出现，ignore
-            LogUtil.defaultLog.warn("group: {}, message: {}", group, e.getMessage());
+            LogUtil.DEFAULT_LOG.warn("group: {}, message: {}", group, e.getMessage());
         }
         return false;
     }
@@ -468,7 +468,7 @@ public class CapacityService {
             return tenantCapacityPersistService.insertTenantCapacity(tenantCapacity);
         } catch (DuplicateKeyException e) {
             // 并发情况下同时insert会出现，ignore
-            LogUtil.defaultLog.warn("tenant: {}, message: {}", tenant, e.getMessage());
+            LogUtil.DEFAULT_LOG.warn("tenant: {}, message: {}", tenant, e.getMessage());
         }
         return false;
     }

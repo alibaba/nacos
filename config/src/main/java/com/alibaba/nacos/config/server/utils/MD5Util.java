@@ -42,9 +42,12 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  *
  * @author Nacos
  */
-@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:MissingJavadocMethod"})
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
     
+    /**
+     * Compare Md5.
+     */
     public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map) {
         List<String> changedGroupKeys = new ArrayList<String>();
@@ -61,9 +64,11 @@ public class MD5Util {
         return changedGroupKeys;
     }
     
+    /**
+     * Compare old Md5.
+     */
     public static String compareMd5OldResult(List<String> changedGroupKeys) {
         StringBuilder sb = new StringBuilder();
-        
         for (String groupKey : changedGroupKeys) {
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
@@ -74,6 +79,9 @@ public class MD5Util {
         return sb.toString();
     }
     
+    /**
+     * Join and encode changedGroupKeys string.
+     */
     public static String compareMd5ResultString(List<String> changedGroupKeys) throws IOException {
         if (null == changedGroupKeys) {
             return "";
@@ -158,12 +166,18 @@ public class MD5Util {
                 : toString(new InputStreamReader(input, encoding));
     }
     
+    /**
+     * Reader to String.
+     */
     public static String toString(Reader reader) throws IOException {
         CharArrayWriter sw = new CharArrayWriter();
         copy(reader, sw);
         return sw.toString();
     }
     
+    /**
+     * Copy data to buffer.
+     */
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1024];
         long count = 0;

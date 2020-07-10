@@ -182,15 +182,15 @@ public class DiskUtil {
     public static void clearAll() {
         File file = new File(ApplicationUtils.getNacosHome(), BASE_DIR);
         if (FileUtils.deleteQuietly(file)) {
-            LogUtil.defaultLog.info("clear all config-info success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info failed.");
         }
         File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BASE_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.defaultLog.info("clear all config-info-tenant success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-tenant success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info-tenant failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-tenant failed.");
         }
     }
     
@@ -200,15 +200,15 @@ public class DiskUtil {
     public static void clearAllBeta() {
         File file = new File(ApplicationUtils.getNacosHome(), BETA_DIR);
         if (FileUtils.deleteQuietly(file)) {
-            LogUtil.defaultLog.info("clear all config-info-beta success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-beta success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info-beta failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-beta failed.");
         }
         File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_BETA_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.defaultLog.info("clear all config-info-beta-tenant success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-beta-tenant success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info-beta-tenant failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-beta-tenant failed.");
         }
     }
     
@@ -218,15 +218,15 @@ public class DiskUtil {
     public static void clearAllTag() {
         File file = new File(ApplicationUtils.getNacosHome(), TAG_DIR);
         if (FileUtils.deleteQuietly(file)) {
-            LogUtil.defaultLog.info("clear all config-info-tag success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-tag success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info-tag failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-tag failed.");
         }
         File fileTenant = new File(ApplicationUtils.getNacosHome(), TENANT_TAG_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.defaultLog.info("clear all config-info-tag-tenant success.");
+            LogUtil.DEFAULT_LOG.info("clear all config-info-tag-tenant success.");
         } else {
-            LogUtil.defaultLog.warn("clear all config-info-tag-tenant failed.");
+            LogUtil.DEFAULT_LOG.warn("clear all config-info-tag-tenant failed.");
         }
     }
 }

@@ -86,7 +86,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.HISTORY_LIST_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * For Apache Derby.
@@ -2205,7 +2205,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public Boolean completeMd5() {
-        defaultLog.info("[start completeMd5]");
+        DEFAULT_LOG.info("[start completeMd5]");
         int perPageSize = 1000;
         int rowCount = configInfoCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / perPageSize);
@@ -2222,7 +2222,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
                         } catch (Throwable e) {
-                            LogUtil.defaultLog
+                            LogUtil.DEFAULT_LOG
                                     .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
                                             cf.getGroup(), new Timestamp(cf.getLastModified()));
                         }
@@ -2232,7 +2232,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                                 updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
                                         new Timestamp(cf.getLastModified()));
                             } catch (Throwable e) {
-                                LogUtil.defaultLog
+                                LogUtil.DEFAULT_LOG
                                         .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
                                                 cf.getGroup(), new Timestamp(cf.getLastModified()));
                             }
@@ -2241,7 +2241,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                defaultLog.info("[completeMd5] {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[completeMd5] {} / {}", actualRowCount, rowCount);
             }
         }
         return true;
@@ -2298,7 +2298,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 ParamUtils
                         .checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (Throwable e) {
-                defaultLog.error("data verification failed", e);
+                DEFAULT_LOG.error("data verification failed", e);
                 throw e;
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),

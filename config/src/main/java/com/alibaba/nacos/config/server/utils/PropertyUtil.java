@@ -28,7 +28,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  */
 public class PropertyUtil implements ApplicationContextInitializer<ConfigurableApplicationContext> {
     
-    private static final Logger LOGGER = LogUtil.defaultLog;
+    private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
     
     private static int notifyConnectTimeout = 100;
     

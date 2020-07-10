@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * AggrWhitelist.
@@ -67,16 +67,16 @@ public class AggrWhitelist {
      */
     public static void load(String content) {
         if (StringUtils.isBlank(content)) {
-            fatalLog.error("aggr dataId whitelist is blank.");
+            FATAL_LOG.error("aggr dataId whitelist is blank.");
             return;
         }
-        defaultLog.warn("[aggr-dataIds] {}", content);
+        DEFAULT_LOG.warn("[aggr-dataIds] {}", content);
         
         try {
             List<String> lines = IoUtils.readLines(new StringReader(content));
             compile(lines);
         } catch (Exception ioe) {
-            defaultLog.error("failed to load aggr whitelist, " + ioe.toString(), ioe);
+            DEFAULT_LOG.error("failed to load aggr whitelist, " + ioe.toString(), ioe);
         }
     }
     

@@ -27,7 +27,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * SwitchService.
@@ -56,7 +56,7 @@ public class SwitchService {
             rtn = value != null ? Boolean.parseBoolean(value) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
+            LogUtil.FATAL_LOG.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }
@@ -68,7 +68,7 @@ public class SwitchService {
             rtn = status != null ? Integer.parseInt(status) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
+            LogUtil.FATAL_LOG.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }
@@ -85,10 +85,10 @@ public class SwitchService {
      */
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
-            fatalLog.error("switch config is blank.");
+            FATAL_LOG.error("switch config is blank.");
             return;
         }
-        fatalLog.warn("[switch-config] {}", config);
+        FATAL_LOG.warn("[switch-config] {}", config);
         
         Map<String, String> map = new HashMap<String, String>(30);
         try {
@@ -97,7 +97,7 @@ public class SwitchService {
                     String[] array = line.split("=");
                     
                     if (array == null || array.length != 2) {
-                        LogUtil.fatalLog.error("corrupt switch record {}", line);
+                        LogUtil.FATAL_LOG.error("corrupt switch record {}", line);
                         continue;
                     }
                     
@@ -107,10 +107,10 @@ public class SwitchService {
                     map.put(key, value);
                 }
                 switches = map;
-                fatalLog.warn("[reload-switches] {}", getSwitches());
+                FATAL_LOG.warn("[reload-switches] {}", getSwitches());
             }
         } catch (IOException e) {
-            LogUtil.fatalLog.warn("[reload-switches] error! {}", config);
+            LogUtil.FATAL_LOG.warn("[reload-switches] error! {}", config);
         }
     }
     
