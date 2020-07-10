@@ -46,7 +46,7 @@ public class NacosRestTemplate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
     
-    private HttpClientRequest requestClient;
+    private final HttpClientRequest requestClient;
     
     private final List<HttpClientRequestInterceptor> interceptors = new ArrayList<HttpClientRequestInterceptor>();
     
@@ -450,21 +450,26 @@ public class NacosRestTemplate {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP " + httpMethod + " " + url);
         }
-        if (CollectionUtils.isNotEmpty(interceptors)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Execute via interceptor");
-            }
-            requestClient = new InterceptingHttpClientRequest(requestClient, interceptors.iterator());
-        }
         HttpClientResponse response = null;
         try {
-            response = requestClient.execute(uri, httpMethod, requestEntity);
+            response = this.requestClient().execute(uri, httpMethod, requestEntity);
             return ResponseHandler.responseEntityExtractor(response, responseType);
         } finally {
             if (response != null) {
                 response.close();
             }
         }
+    }
+    
+    private HttpClientRequest requestClient() {
+        if (CollectionUtils.isNotEmpty(interceptors)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Execute via interceptor");
+            }
+            return new InterceptingHttpClientRequest(requestClient,
+                    interceptors.iterator());
+        }
+        return requestClient;
     }
     
     /**
