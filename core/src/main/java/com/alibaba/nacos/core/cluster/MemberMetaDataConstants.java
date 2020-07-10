@@ -13,37 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.cluster;
 
 /**
- * The necessary metadata information for the node
+ * The necessary metadata information for the node.
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 public class MemberMetaDataConstants {
-
-	/**
-	 * Raft port，This parameter is dropped when GRPC is used as a whole
-	 */
-	public static final String RAFT_PORT = "raftPort";
-
-	public static final String SITE_KEY = "site";
-
-	public static final String AD_WEIGHT = "adWeight";
-
-	public static final String WEIGHT = "weight";
-
-	public static final String LAST_REFRESH_TIME = "lastRefreshTime";
-
-	public static final String VERSION = "version";
-
-	public static final String[] META_KEY_LIST = new String[]{
-			RAFT_PORT,
-			SITE_KEY,
-			AD_WEIGHT,
-			WEIGHT,
-			LAST_REFRESH_TIME,
-			VERSION,
-	};
-
+    
+    /**
+     * Raft port，This parameter is dropped when GRPC is used as a whole.
+     */
+    public static final String RAFT_PORT = "raftPort";
+    
+    public static final String SITE_KEY = "site";
+    
+    public static final String AD_WEIGHT = "adWeight";
+    
+    public static final String WEIGHT = "weight";
+    
+    public static final String LAST_REFRESH_TIME = "lastRefreshTime";
+    
+    public static final String VERSION = "version";
+    
+    public static final String[] META_KEY_LIST = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT,
+            LAST_REFRESH_TIME, VERSION};
+    
+    public static final String[] META_KEY_LIST_WITHOUT_LAST_REFRESH_TIME = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT,
+            WEIGHT, VERSION};
 }

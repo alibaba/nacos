@@ -17,14 +17,16 @@
 package com.alibaba.nacos.consistency.cp;
 
 /**
+ * Key value of metadata information of CP protocol.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MetadataKey {
-
+    
     public static final String LEADER_META_DATA = "leader";
-
+    
     public static final String TERM_META_DATA = "term";
-
+    
     public static final String RAFT_GROUP_MEMBER = "raftGroupMember";
-
+    
 }

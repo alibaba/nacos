@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.console.controller;
 
+package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -27,23 +27,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author xingxuechao
- * on:2019/2/27 11:17 AM
+ * Server state controller.
+ *
+ * @author xingxuechao on:2019/2/27 11:17 AM
  */
 @RestController
 @RequestMapping("/v1/console/server")
 public class ServerStateController {
-
+    
+    /**
+     * Get server state of current server.
+     *
+     * @return state json.
+     */
     @GetMapping("/state")
     public ResponseEntity serverState() {
-        Map<String,String> serverState = new HashMap<>(3);
-        serverState.put("standalone_mode", ApplicationUtils.getStandaloneMode() ?
-                ApplicationUtils.STANDALONE_MODE_ALONE : ApplicationUtils.STANDALONE_MODE_CLUSTER);
-
+        Map<String, String> serverState = new HashMap<>(3);
+        serverState.put("standalone_mode", ApplicationUtils.getStandaloneMode() ? ApplicationUtils.STANDALONE_MODE_ALONE
+                : ApplicationUtils.STANDALONE_MODE_CLUSTER);
+        
         serverState.put("function_mode", ApplicationUtils.getFunctionMode());
-        serverState.put("version", VersionUtils.VERSION);
-
+        serverState.put("version", VersionUtils.version);
+        
         return ResponseEntity.ok().body(serverState);
     }
-
+    
 }

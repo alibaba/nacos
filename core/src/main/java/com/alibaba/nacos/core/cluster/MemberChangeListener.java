@@ -20,22 +20,24 @@ import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 
 /**
+ * Node change listeners.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface MemberChangeListener extends Subscribe<MemberChangeEvent> {
-
+public interface MemberChangeListener extends Subscribe<MembersChangeEvent> {
+    
     /**
-     * return NodeChangeEvent.class info
+     * return NodeChangeEvent.class info.
      *
-     * @return {@link MemberChangeEvent#getClass()}
+     * @return {@link MembersChangeEvent#getClass()}
      */
     @Override
     default Class<? extends Event> subscribeType() {
-        return MemberChangeEvent.class;
+        return MembersChangeEvent.class;
     }
-
+    
     /**
-     * Whether to ignore expired events
+     * Whether to ignore expired events.
      *
      * @return default value is {@link Boolean#TRUE}
      */

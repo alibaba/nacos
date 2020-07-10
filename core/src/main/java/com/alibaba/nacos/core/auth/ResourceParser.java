@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
-
 /**
- * Resource parser
+ * Resource parser.
  *
  * @author nkorange
  * @since 1.2.0
  */
 public interface ResourceParser {
-
+    
     /**
-     * Parse a unique name of the resource from the request
+     * Parse a unique name of the resource from the request.
      *
-     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request,
-     *                we use a Object type for future accommodation.
+     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
+     *                Object type for future accommodation.
      * @return resource name
      */
     String parseName(Object request);

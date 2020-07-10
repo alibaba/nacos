@@ -17,29 +17,31 @@
 package com.alibaba.nacos.core.distributed.raft.exception;
 
 /**
+ * no this raft group exception.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NoSuchRaftGroupException extends Exception {
-
-	private static final long serialVersionUID = 1755681688785678765L;
-
-	public NoSuchRaftGroupException() {
-	}
-
-	public NoSuchRaftGroupException(String message) {
-		super(message);
-	}
-
-	public NoSuchRaftGroupException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public NoSuchRaftGroupException(Throwable cause) {
-		super(cause);
-	}
-
-	public NoSuchRaftGroupException(String message, Throwable cause,
-			boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
+public class NoSuchRaftGroupException extends RuntimeException {
+    
+    private static final long serialVersionUID = 1755681688785678765L;
+    
+    public NoSuchRaftGroupException() {
+    }
+    
+    public NoSuchRaftGroupException(String message) {
+        super(message);
+    }
+    
+    public NoSuchRaftGroupException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
+    public NoSuchRaftGroupException(Throwable cause) {
+        super(cause);
+    }
+    
+    public NoSuchRaftGroupException(String message, Throwable cause, boolean enableSuppression,
+            boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

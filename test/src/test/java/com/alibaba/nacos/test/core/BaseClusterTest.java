@@ -23,8 +23,8 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.NSyncHttpClient;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.config.server.model.event.RaftDBErrorEvent;
-import com.alibaba.nacos.config.server.service.repository.DistributedDatabaseOperateImpl;
+import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.notify.Event;
@@ -84,15 +84,15 @@ public class BaseClusterTest extends HttpClient4Test {
 		clusterInfo = "nacos.member.list=" + ip + ":8847," + ip
 				+ ":8848," + ip + ":8849";
 
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDBErrorEvent>() {
+		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorEvent>() {
 			@Override
-			public void onEvent(RaftDBErrorEvent event) {
+			public void onEvent(RaftDbErrorEvent event) {
 				System.out.print(event.getEx());
 			}
 
 			@Override
 			public Class<? extends Event> subscribeType() {
-				return RaftDBErrorEvent.class;
+				return RaftDbErrorEvent.class;
 			}
 		});
 	}
@@ -157,7 +157,14 @@ public class BaseClusterTest extends HttpClient4Test {
 				try {
 					System.out.println("start close : " + context);
 					context.close();
-				} catch (Exception ignore) {
+                    iconfig7.shutDown();
+                    iconfig8.shutDown();
+                    iconfig9.shutDown();
+
+                    inaming7.shutDown();
+                    inaming8.shutDown();
+                    inaming9.shutDown();
+                } catch (Exception ignore) {
 				} finally {
 					System.out.println("finished close : " + context);
 					latch.countDown();

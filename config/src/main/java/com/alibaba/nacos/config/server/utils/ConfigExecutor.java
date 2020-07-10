@@ -25,26 +25,26 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Config executor.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ConfigExecutor {
-
-	private static final Executor DUMP_EXECUTOR = ExecutorFactory.newFixExecutorService(
-			Config.class.getCanonicalName(),
-			1,
-			new NameThreadFactory("nacos.config.embedded.dump"));
-
-	private static ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.newScheduledExecutorService(Config.class.getCanonicalName(),
-			10,
-			new NameThreadFactory("com.alibaba.nacos.server.Timer"));
-
-	static public void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
-			TimeUnit unit) {
-		TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-	}
-
-	public static void executeEmbeddedDump(Runnable runnable) {
-		DUMP_EXECUTOR.execute(runnable);
-	}
-
+    
+    private static final Executor DUMP_EXECUTOR = ExecutorFactory
+            .newFixedExecutorService(Config.class.getCanonicalName(), 1,
+                    new NameThreadFactory("nacos.config.embedded.dump"));
+    
+    private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory
+            .newScheduledExecutorService(Config.class.getCanonicalName(), 10,
+                    new NameThreadFactory("com.alibaba.nacos.server.Timer"));
+    
+    public static void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+    
+    public static void executeEmbeddedDump(Runnable runnable) {
+        DUMP_EXECUTOR.execute(runnable);
+    }
+    
 }

@@ -16,22 +16,22 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MysqlTest {
-
+    
     private ObjectMapper objectMapper;
-
+    
     private Mysql mysql;
-
+    
     @Before
     public void setUp() throws Exception {
         mysql = new Mysql();
@@ -40,7 +40,7 @@ public class MysqlTest {
         mysql.setCmd("cmd");
         objectMapper = new ObjectMapper();
     }
-
+    
     @Test
     public void testSerialize() throws JsonProcessingException {
         String actual = objectMapper.writeValueAsString(mysql);
@@ -49,7 +49,7 @@ public class MysqlTest {
         assertTrue(actual.contains("\"pwd\":\"pwd\""));
         assertTrue(actual.contains("\"cmd\":\"cmd\""));
     }
-
+    
     @Test
     public void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";

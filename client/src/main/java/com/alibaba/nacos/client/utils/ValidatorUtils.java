@@ -17,53 +17,38 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * All parameter validation tools
+ * All parameter validation tools.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ValidatorUtils {
-
-	private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
-	private static final Pattern IP_MATCH = Pattern.compile("([^\\/:]+)(:\\d+)");
-
-	public static void checkInitParam(Properties properties) {
-		checkServerAddr(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
-		checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
-	}
-
-	public static void checkServerAddr(String serverAddr) {
-		if (StringUtils.isEmpty(serverAddr)) {
-			throw new IllegalArgumentException("Please set the serverAddr");
-		}
-		String[] addrs;
-		if (serverAddr.contains(StringUtils.COMMA)) {
-			addrs = serverAddr.split(StringUtils.COMMA);
-		} else {
-			addrs = new String[]{serverAddr};
-		}
-		for (String addr : addrs) {
-			Matcher matcher = IP_MATCH.matcher(addr.trim());
-			if (!matcher.find()) {
-				throw new IllegalArgumentException("Incorrect serverAddr address : " + addr + ", example should like ip:port or domain:port");
-			}
-		}
-	}
-
-	public static void checkContextPath(String contextPath) {
-		if (contextPath == null) {
-			return;
-		}
-		Matcher matcher = CONTEXT_PATH_MATCH.matcher(contextPath);
-		if (matcher.find()) {
-			throw new IllegalArgumentException("Illegal url path expression");
-		}
-	}
-
+    
+    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
+    
+    public static void checkInitParam(Properties properties) throws NacosException {
+        checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
+    }
+    
+    /**
+     * Check context path.
+     *
+     * @param contextPath context path
+     */
+    public static void checkContextPath(String contextPath) {
+        if (contextPath == null) {
+            return;
+        }
+        Matcher matcher = CONTEXT_PATH_MATCH.matcher(contextPath);
+        if (matcher.find()) {
+            throw new IllegalArgumentException("Illegal url path expression");
+        }
+    }
+    
 }

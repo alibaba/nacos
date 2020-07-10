@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,68 +12,69 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+
 package com.alibaba.nacos.config.server.service.datasource;
 
 import java.io.IOException;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * datasource interface
+ * Datasource interface.
  *
  * @author Nacos
  */
 public interface DataSourceService {
-
+    
     /**
-     * Initialize the relevant resource information
+     * Initialize the relevant resource information.
      *
-     * @throws Exception
+     * @throws Exception exception.
      */
     void init() throws Exception;
-
+    
     /**
-     * reload
+     * Reload.
      *
-     * @throws IOException exception
+     * @throws IOException exception.
      */
     void reload() throws IOException;
-
+    
     /**
-     * check master db
+     * Check master db.
      *
-     * @return is master
+     * @return is master.
      */
     boolean checkMasterWritable();
-
+    
     /**
-     * get jdbc template
+     * Get jdbc template.
      *
-     * @return JdbcTemplate
+     * @return JdbcTemplate.
      */
     JdbcTemplate getJdbcTemplate();
-
+    
     /**
-     * get transaction template
+     * Get transaction template.
      *
-     * @return TransactionTemplate
+     * @return TransactionTemplate.
      */
     TransactionTemplate getTransactionTemplate();
-
+    
     /**
-     * get current db url
+     * Get current db url.
      *
-     * @return
+     * @return database url
      */
-    String getCurrentDBUrl();
-
+    String getCurrentDbUrl();
+    
     /**
-     * get heath
+     * Get heath information.
      *
-     * @return heath info
+     * @return heath info.
      */
     String getHealth();
-
+    
 }

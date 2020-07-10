@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2019 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.common;
 
 import org.junit.Assert;
@@ -21,44 +22,40 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class GroupKeyTest {
-
+    
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-
+    
     @Test
     public void testGetKey() {
         Assert.assertEquals("1+foo", GroupKey.getKey("1", "foo"));
         Assert.assertEquals("1+foo+bar", GroupKey.getKey("1", "foo", "bar"));
-        Assert.assertEquals("1+f%2Boo+b%25ar",
-            GroupKey.getKey("1", "f+oo", "b%ar"));
+        Assert.assertEquals("1+f%2Boo+b%25ar", GroupKey.getKey("1", "f+oo", "b%ar"));
     }
-
+    
     @Test
     public void testGetKeyTenant() {
-        Assert.assertEquals("1+foo+bar",
-            GroupKey.getKeyTenant("1", "foo", "bar"));
+        Assert.assertEquals("1+foo+bar", GroupKey.getKeyTenant("1", "foo", "bar"));
     }
-
+    
     @Test
     public void testParseKey() {
-        Assert.assertArrayEquals(new String[]{null, "f+oo", null},
-            GroupKey.parseKey("f%2Boo"));
-        Assert.assertArrayEquals(new String[]{null, "f%oo", null},
-            GroupKey.parseKey("f%25oo"));
+        Assert.assertArrayEquals(new String[] {null, "f+oo", null}, GroupKey.parseKey("f%2Boo"));
+        Assert.assertArrayEquals(new String[] {null, "f%oo", null}, GroupKey.parseKey("f%25oo"));
     }
-
+    
     @Test
     public void testParseKeyIllegalArgumentException1() {
         thrown.expect(IllegalArgumentException.class);
         GroupKey.parseKey("");
     }
-
+    
     @Test
     public void testParseKeyIllegalArgumentException2() {
         thrown.expect(IllegalArgumentException.class);
         GroupKey.parseKey("f%oo");
     }
-
+    
     @Test
     public void testParseKeyIllegalArgumentException3() {
         thrown.expect(IllegalArgumentException.class);

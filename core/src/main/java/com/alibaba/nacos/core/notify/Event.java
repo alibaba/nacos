@@ -19,17 +19,19 @@ package com.alibaba.nacos.core.notify;
 import java.io.Serializable;
 
 /**
+ * event.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface Event extends Serializable {
-
+    
     /**
-     * Event sequence number, which can be used to handle the sequence of events
+     * Event sequence number, which can be used to handle the sequence of events.
      *
      * @return sequence num, It's best to make sure it's monotone
      */
     default long sequence() {
         return System.currentTimeMillis();
     }
-
+    
 }

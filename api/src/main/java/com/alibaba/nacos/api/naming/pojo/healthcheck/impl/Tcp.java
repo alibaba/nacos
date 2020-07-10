@@ -25,23 +25,23 @@ import com.google.common.base.Objects;
  * @author yangyi
  */
 public class Tcp extends AbstractHealthChecker {
-
+    
     public static final String TYPE = "TCP";
-
+    
     public Tcp() {
         super(TYPE);
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hashCode(TYPE);
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Tcp;
     }
-
+    
     @Override
     public Tcp clone() throws CloneNotSupportedException {
         return new Tcp();

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -23,7 +24,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 /**
- * Consistency delegate
+ * Consistency delegate.
  *
  * @author nkorange
  * @since 1.0.0
@@ -31,55 +32,55 @@ import org.springframework.stereotype.Service;
 @DependsOn("ProtocolManager")
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
-
+    
     private final PersistentConsistencyService persistentConsistencyService;
+    
     private final EphemeralConsistencyService ephemeralConsistencyService;
-
-    public DelegateConsistencyServiceImpl(
-            PersistentConsistencyService persistentConsistencyService,
+    
+    public DelegateConsistencyServiceImpl(PersistentConsistencyService persistentConsistencyService,
             EphemeralConsistencyService ephemeralConsistencyService) {
         this.persistentConsistencyService = persistentConsistencyService;
         this.ephemeralConsistencyService = ephemeralConsistencyService;
     }
-
+    
     @Override
     public void put(String key, Record value) throws NacosException {
         mapConsistencyService(key).put(key, value);
     }
-
+    
     @Override
     public void remove(String key) throws NacosException {
         mapConsistencyService(key).remove(key);
     }
-
+    
     @Override
     public Datum get(String key) throws NacosException {
         return mapConsistencyService(key).get(key);
     }
-
+    
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-
+        
         // this special key is listened by both:
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             persistentConsistencyService.listen(key, listener);
             ephemeralConsistencyService.listen(key, listener);
             return;
         }
-
+        
         mapConsistencyService(key).listen(key, listener);
     }
-
+    
     @Override
-    public void unlisten(String key, RecordListener listener) throws NacosException {
-        mapConsistencyService(key).unlisten(key, listener);
+    public void unListen(String key, RecordListener listener) throws NacosException {
+        mapConsistencyService(key).unListen(key, listener);
     }
-
+    
     @Override
     public boolean isAvailable() {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
-
+    
     private ConsistencyService mapConsistencyService(String key) {
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }

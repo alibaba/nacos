@@ -21,23 +21,26 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ServiceInfoTest {
-
+    
     private ObjectMapper mapper;
-
+    
     private ServiceInfo serviceInfo;
-
+    
     @Before
     public void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         serviceInfo = new ServiceInfo("testName", "testClusters");
     }
-
+    
     @Test
     public void testSerialize() throws JsonProcessingException {
         String actual = mapper.writeValueAsString(serviceInfo);
@@ -53,8 +56,9 @@ public class ServiceInfoTest {
         assertFalse(actual.contains("key"));
         assertFalse(actual.contains("keyEncoded"));
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() throws IOException {
         String example = "{\"name\":\"testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);

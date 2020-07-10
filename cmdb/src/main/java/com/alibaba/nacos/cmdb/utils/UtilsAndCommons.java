@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.cmdb.utils;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -20,28 +21,30 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
 /**
+ * Utils and constants.
+ *
  * @author nkorange
  * @since 0.7.0
  */
 public class UtilsAndCommons {
-
+    
     private static final String NACOS_SERVER_VERSION = "/v1";
-
+    
     public static final String NACOS_CMDB_CONTEXT = NACOS_SERVER_VERSION + "/cmdb";
-
+    
     public static final ScheduledExecutorService GLOBAL_EXECUTOR;
-
+    
     static {
-
-        GLOBAL_EXECUTOR
-                = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.cmdb.global.executor");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        
+        GLOBAL_EXECUTOR = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r);
+                        t.setName("nacos.cmdb.global.executor");
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
     }
 }

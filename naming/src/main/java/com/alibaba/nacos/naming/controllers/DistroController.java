@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -31,9 +32,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,36 +51,43 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
-
+    
     @Autowired
     private Serializer serializer;
-
+    
     @Autowired
     private DistroConsistencyServiceImpl consistencyService;
-
+    
     @Autowired
     private DataStore dataStore;
-
+    
     @Autowired
     private ServiceManager serviceManager;
-
+    
     @Autowired
     private SwitchDomain switchDomain;
-
+    
+    /**
+     * Synchronize datum.
+     *
+     * @param dataMap data map
+     * @return 'ok' if success
+     * @throws Exception if failed
+     */
     @PutMapping("/datum")
     public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
-
+        
         if (dataMap.isEmpty()) {
             Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
-
+        
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
-                if (!serviceManager.containService(namespaceId, serviceName)
-                    && switchDomain.isDefaultInstanceEphemeral()) {
+                if (!serviceManager.containService(namespaceId, serviceName) && switchDomain
+                        .isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
@@ -83,17 +95,31 @@ public class DistroController {
         }
         return ResponseEntity.ok("ok");
     }
-
+    
+    /**
+     * Checksum.
+     *
+     * @param source  source server
+     * @param dataMap checksum map
+     * @return 'ok'
+     */
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
-
+        
         consistencyService.onReceiveChecksums(dataMap, source);
         return ResponseEntity.ok("ok");
     }
-
+    
+    /**
+     * Get datum.
+     *
+     * @param body keys of data
+     * @return datum
+     * @throws Exception if failed
+     */
     @GetMapping("/datum")
     public ResponseEntity get(@RequestBody String body) throws Exception {
-
+        
         JsonNode bodyNode = JacksonUtils.toObj(body);
         String keys = bodyNode.get("keys").asText();
         String keySplitter = ",";
@@ -105,14 +131,19 @@ public class DistroController {
             }
             datumMap.put(key, datum);
         }
-
-        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
+        
+        byte[] content = serializer.serialize(datumMap);
         return ResponseEntity.ok(content);
     }
-
+    
+    /**
+     * Get all datums.
+     *
+     * @return all datums
+     */
     @GetMapping("/datums")
     public ResponseEntity getAllDatums() {
-        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
+        byte[] content = serializer.serialize(dataStore.getDataMap());
         return ResponseEntity.ok(content);
     }
 }

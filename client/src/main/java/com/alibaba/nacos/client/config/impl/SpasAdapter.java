@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.identify.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 适配spas接口
+ * 适配spas接口.
  *
  * @author Nacos
  */
 public class SpasAdapter {
-
+    
     public static List<String> getSignHeaders(String resource, String secretKey) {
         List<String> header = new ArrayList<String>();
         String timeStamp = String.valueOf(System.currentTimeMillis());
@@ -41,15 +47,15 @@ public class SpasAdapter {
             header.add("Spas-Signature");
             String signature = "";
             if (StringUtils.isBlank(resource)) {
-                signature = signWithhmacSHA1Encrypt(timeStamp, secretKey);
+                signature = signWithHmacSha1Encrypt(timeStamp, secretKey);
             } else {
-                signature = signWithhmacSHA1Encrypt(resource + "+" + timeStamp, secretKey);
+                signature = signWithHmacSha1Encrypt(resource + "+" + timeStamp, secretKey);
             }
             header.add(signature);
         }
         return header;
     }
-
+    
     public static List<String> getSignHeaders(List<String> paramValues, String secretKey) {
         if (null == paramValues) {
             return null;
@@ -73,25 +79,32 @@ public class SpasAdapter {
         }
         return getSignHeaders(resource, secretKey);
     }
-
+    
     public static String getSk() {
         return CredentialService.getInstance().getCredential().getSecretKey();
     }
-
+    
     public static String getAk() {
         return CredentialService.getInstance().getCredential().getAccessKey();
     }
-
-    public static String signWithhmacSHA1Encrypt(String encryptText, String encryptKey) {
+    
+    /**
+     * Sign with hmac SHA1 encrtpt.
+     *
+     * @param encryptText encrypt text
+     * @param encryptKey  encrypt key
+     * @return base64 string
+     */
+    public static String signWithHmacSha1Encrypt(String encryptText, String encryptKey) {
         try {
-            byte[] data = encryptKey.getBytes("UTF-8");
+            byte[] data = encryptKey.getBytes(StandardCharsets.UTF_8);
             // 根据给定的字节数组构造一个密钥,第二参数指定一个密钥算法的名称
             SecretKey secretKey = new SecretKeySpec(data, "HmacSHA1");
             // 生成一个指定 Mac 算法 的 Mac 对象
             Mac mac = Mac.getInstance("HmacSHA1");
             // 用给定密钥初始化 Mac 对象
             mac.init(secretKey);
-            byte[] text = encryptText.getBytes("UTF-8");
+            byte[] text = encryptText.getBytes(StandardCharsets.UTF_8);
             byte[] textFinal = mac.doFinal(text);
             // 完成 Mac 操作, base64编码，将byte数组转换为字符串
             return new String(Base64.encodeBase64(textFinal), Constants.ENCODE);
@@ -99,7 +112,8 @@ public class SpasAdapter {
             throw new RuntimeException("signWithhmacSHA1Encrypt fail", e);
         }
     }
-
+    
     private static final String GROUP_KEY = "group";
+    
     public static final String TENANT_KEY = "tenant";
 }
