@@ -27,7 +27,6 @@ import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.alibaba.nacos.core.notify.NotifyCenter.RING_BUFFER_SIZE;
@@ -85,6 +84,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
     
+    @Override
     public long currentEventSize() {
         return queue.size();
     }

@@ -31,13 +31,18 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
- * Group Capacity Service
+ * Group Capacity Service.
  *
  * @author hexu.hxy
  * @date 2018/03/05
@@ -90,31 +95,24 @@ public class GroupCapacityPersistService {
         return getGroupCapacity(CLUSTER);
     }
     
+    /**
+     * Insert GroupCapacity into db.
+     *
+     * @param capacity capacity object instance.
+     * @return operate result.
+     */
     public boolean insertGroupCapacity(final GroupCapacity capacity) {
         String sql;
         if (CLUSTER.equals(capacity.getGroup())) {
             sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
                     + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info;";
         } else {
-            // 注意这里要加"tenant_id = ''"条件
+            // Note: add "tenant_id = ''" condition.
             sql = "insert into group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
                     + "gmt_create, gmt_modified) select ?, ?, count(*), ?, ?, ?, ?, ? from config_info where "
                     + "group_id=? and tenant_id = '';";
         }
         return insertGroupCapacity(sql, capacity);
-    }
-    
-    public int getClusterUsage() {
-        Capacity clusterCapacity = getClusterCapacity();
-        if (clusterCapacity != null) {
-            return clusterCapacity.getUsage();
-        }
-        String sql = "SELECT count(*) FROM config_info";
-        Integer result = jdbcTemplate.queryForObject(sql, Integer.class);
-        if (result == null) {
-            throw new IllegalArgumentException("configInfoCount error");
-        }
-        return result.intValue();
     }
     
     private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {
@@ -146,6 +144,25 @@ public class GroupCapacityPersistService {
         }
     }
     
+    public int getClusterUsage() {
+        Capacity clusterCapacity = getClusterCapacity();
+        if (clusterCapacity != null) {
+            return clusterCapacity.getUsage();
+        }
+        String sql = "SELECT count(*) FROM config_info";
+        Integer result = jdbcTemplate.queryForObject(sql, Integer.class);
+        if (result == null) {
+            throw new IllegalArgumentException("configInfoCount error");
+        }
+        return result.intValue();
+    }
+    
+    /**
+     * Increment UsageWithDefaultQuotaLimit.
+     *
+     * @param groupCapacity groupCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity) {
         String sql =
                 "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` <"
@@ -160,6 +177,12 @@ public class GroupCapacityPersistService {
         }
     }
     
+    /**
+     * Increment UsageWithQuotaLimit.
+     *
+     * @param groupCapacity groupCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity) {
         String sql =
                 "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` < "
@@ -173,6 +196,12 @@ public class GroupCapacityPersistService {
         }
     }
     
+    /**
+     * Increment Usage.
+     *
+     * @param groupCapacity groupCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsage(GroupCapacity groupCapacity) {
         String sql = "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?";
         try {
@@ -184,6 +213,11 @@ public class GroupCapacityPersistService {
         }
     }
     
+    /**
+     * Decrement Usage.
+     * @param groupCapacity groupCapacity object instance.
+     * @return operate result.
+     */
     public boolean decrementUsage(GroupCapacity groupCapacity) {
         String sql = "UPDATE group_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE group_id = ? AND `usage` > 0";
         try {
@@ -194,6 +228,16 @@ public class GroupCapacityPersistService {
         }
     }
     
+    /**
+     * Update GroupCapacity.
+     *
+     * @param group group string value.
+     * @param quota quota int value.
+     * @param maxSize maxSize int value.
+     * @param maxAggrCount maxAggrCount int value.
+     * @param maxAggrSize maxAggrSize int value.
+     * @return
+     */
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         List<Object> argList = Lists.newArrayList();
@@ -235,6 +279,13 @@ public class GroupCapacityPersistService {
         return updateGroupCapacity(group, null, maxSize, null, null);
     }
     
+    /**
+     * Correct Usage.
+     *
+     * @param group group string value.
+     * @param gmtModified gmtModified.
+     * @return operate result.
+     */
     public boolean correctUsage(String group, Timestamp gmtModified) {
         String sql;
         if (CLUSTER.equals(group)) {
@@ -247,7 +298,7 @@ public class GroupCapacityPersistService {
                 throw e;
             }
         } else {
-            // 注意这里要加"tenant_id = ''"条件
+            // Note: add "tenant_id = ''" condition.
             sql = "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND "
                     + "tenant_id = ''), gmt_modified = ? WHERE group_id = ?";
             try {
@@ -260,11 +311,11 @@ public class GroupCapacityPersistService {
     }
     
     /**
-     * 获取GroupCapacity列表，只有id、groupId有值
+     * Get group capacity list, noly has id and groupId value.
      *
-     * @param lastId   id > lastId
-     * @param pageSize 页数
-     * @return GroupCapacity列表
+     * @param lastId lastId long value.
+     * @param pageSize pageSize long value.
+     * @return GroupCapacity list.
      */
     public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?";
@@ -288,6 +339,12 @@ public class GroupCapacityPersistService {
         }
     }
     
+    /**
+     * Delete GroupCapacity.
+     *
+     * @param group group string value.
+     * @return operate result.
+     */
     public boolean deleteGroupCapacity(final String group) {
         try {
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
