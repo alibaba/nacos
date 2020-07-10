@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -137,7 +137,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             new SelectMasterTask().run();
             new CheckDbHealthTask().run();
         } catch (RuntimeException e) {
-            fatalLog.error(DB_LOAD_ERROR_MSG, e);
+            FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
         }
     }
@@ -158,7 +158,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
         
@@ -219,8 +219,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         @Override
         public void run() {
-            if (defaultLog.isDebugEnabled()) {
-                defaultLog.debug("check master db.");
+            if (DEFAULT_LOG.isDebugEnabled()) {
+                DEFAULT_LOG.debug("check master db.");
             }
             boolean isFound = false;
             
@@ -232,7 +232,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 try {
                     testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
-                        fatalLog.warn("[master-db] {}", ds.getJdbcUrl());
+                        FATAL_LOG.warn("[master-db] {}", ds.getJdbcUrl());
                     }
                     jt.setDataSource(ds);
                     tm.setDataSource(ds);
@@ -245,7 +245,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             }
             
             if (!isFound) {
-                fatalLog.error("[master-db] master db not found.");
+                FATAL_LOG.error("[master-db] master db not found.");
                 MetricsMonitor.getDbException().increment();
             }
         }
@@ -256,8 +256,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         @Override
         public void run() {
-            if (defaultLog.isDebugEnabled()) {
-                defaultLog.debug("check db health.");
+            if (DEFAULT_LOG.isDebugEnabled()) {
+                DEFAULT_LOG.debug("check db health.");
             }
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
             
@@ -268,10 +268,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
-                        fatalLog.error("[db-error] master db {} down.",
+                        FATAL_LOG.error("[db-error] master db {} down.",
                                 getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     } else {
-                        fatalLog.error("[db-error] slave db {} down.",
+                        FATAL_LOG.error("[db-error] slave db {} down.",
                                 getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);

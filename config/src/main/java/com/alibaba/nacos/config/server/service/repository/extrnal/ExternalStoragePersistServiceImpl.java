@@ -187,7 +187,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                         configInfo.getTenant());
                 insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
             } catch (CannotGetJdbcConnectionException e) {
-                LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+                LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
                 throw e;
             }
             return Boolean.TRUE;
@@ -206,7 +206,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5, betaIps, srcIp, srcUser,
                     time, time);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -225,7 +225,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser,
                     time, time);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -255,7 +255,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 }
                 insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
             } catch (CannotGetJdbcConnectionException e) {
-                LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+                LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
                 throw e;
             }
             return Boolean.TRUE;
@@ -274,7 +274,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                             + "data_id=? AND group_id=? AND tenant_id=?", configInfo.getContent(), md5, srcIp, srcUser,
                     time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -292,7 +292,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                             + "data_id=? AND group_id=? AND tenant_id=? AND tag_id=?", configInfo.getContent(), md5,
                     srcIp, srcUser, time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -325,7 +325,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "UPDATE config_info SET md5 = ? WHERE data_id=? AND group_id=? AND tenant_id=? AND gmt_modified=?",
                     md5, dataId, group, tenantTmp, lastTime);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -371,7 +371,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                         insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+                    LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -402,7 +402,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     }
                     return configInfoList;
                 } catch (CannotGetJdbcConnectionException e) {
-                    LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+                    LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
             }
@@ -421,7 +421,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                             group, tenantTmp);
                 }
             } catch (CannotGetJdbcConnectionException e) {
-                LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+                LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
                 throw e;
             }
             return Boolean.TRUE;
@@ -454,7 +454,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 return jt.update(insert, dataId, group, tenantTmp, datumId, appNameTmp, content, now) > 0;
             }
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -477,7 +477,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -498,7 +498,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -518,7 +518,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             jt.update(sql, dataId, group, tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
         return true;
@@ -531,7 +531,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             helper.updateLimit(sql, new Object[] {startTime, limitSize});
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -580,7 +580,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
             return isPublishOk;
         } catch (TransactionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
     }
@@ -612,7 +612,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
             return isReplaceOk;
         } catch (TransactionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
         
@@ -628,10 +628,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) {
             return Collections.emptyList();
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -646,7 +646,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -663,7 +663,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -679,7 +679,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -728,7 +728,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
         
@@ -743,7 +743,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -757,7 +757,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -772,7 +772,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -787,7 +787,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,tenant_id,app_name,content from config_info where data_id=? and tenant_id=?",
                     new Object[] {dataId, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -802,7 +802,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,tenant_id,app_name,content from config_info where data_id=? and tenant_id=? and app_name=?",
                     new Object[] {dataId, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -859,7 +859,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -925,7 +925,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -938,7 +938,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,content from config_info where data_id=? and tenant_id=?",
                     new Object[] {dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -953,7 +953,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=?",
                     new Object[] {group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -968,7 +968,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=? and app_name =?",
                     new Object[] {group, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1027,7 +1027,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1042,7 +1042,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,tenant_id,app_name,content from config_info where tenant_id like ? and app_name=?",
                     new Object[] {generateLikeArgument(tenantTmp), appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1099,7 +1099,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1113,7 +1113,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "select ID,data_id,group_id,content from config_info where group_id=? and tenant_id=?",
                     new Object[] {group, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1237,7 +1237,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1277,7 +1277,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) {
             return page;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1295,7 +1295,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
                     pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1314,7 +1314,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1327,7 +1327,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPageLimit(select, new Object[] {lastMaxId, 0, pageSize}, 1, pageSize,
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1344,7 +1344,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     pageNo, pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1361,7 +1361,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     pageNo, pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1458,7 +1458,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1557,7 +1557,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
                     pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1631,7 +1631,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1667,7 +1667,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     CONFIG_INFO_BASE_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1684,10 +1684,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             // EmptyResultDataAccessException, indicating that the data does not exist, returns null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -1700,12 +1700,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             return this.jt.query(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return Collections.emptyList();
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -1725,7 +1725,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     CONFIG_INFO_AGGR_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1826,7 +1826,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                             pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
             return result;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1838,12 +1838,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             return jt.query(sql, new Object[] {}, CONFIG_INFO_CHANGED_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return null;
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -1859,7 +1859,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1872,7 +1872,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     new Object[] {startTime, endTime});
             return convertChangeConfig(list);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1919,7 +1919,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     lastMaxId, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1932,7 +1932,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     new Object[] {startTime, endTime});
             return convertDeletedConfig(list);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -1988,7 +1988,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
             return nu.longValue();
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2010,7 +2010,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)",
                     configId, tagName, null, dataId, group, tenant);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2020,7 +2020,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             jt.update("DELETE FROM config_tags_relation WHERE id=?", id);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2035,7 +2035,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2050,7 +2050,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2063,7 +2063,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             jt.update("DELETE FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?", dataId, group,
                     tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2088,7 +2088,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             jt.update(sql.toString(), paramList.toArray());
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2102,7 +2102,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             jt.update("DELETE FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?", dataId,
                     group, tenantTmp, tagTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2126,7 +2126,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     time, appNameTmp, desc, use, effect, type, schema, configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2153,7 +2153,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2181,7 +2181,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2211,7 +2211,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2228,7 +2228,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                             + "VALUES(?,?,?,?,?,?,?,?,?,?,?)", id, configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2249,7 +2249,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
                             HISTORY_LIST_ROW_MAPPER);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
+            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group}, e);
             throw e;
         }
         return page;
@@ -2264,7 +2264,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "INSERT INTO app_configdata_relation_subs(data_id,group_id,app_name,gmt_modified) VALUES(?,?,?,?)",
                     dataId, group, appNameTmp, date);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2278,7 +2278,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "UPDATE app_configdata_relation_subs SET gmt_modified=? WHERE data_id=? AND group_id=? AND app_name=?",
                     time, dataId, group, appNameTmp);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2291,7 +2291,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[list-config-history] error, nid:{}", new Object[] {nid}, e);
+            LogUtil.FATAL_LOG.error("[list-config-history] error, nid:{}", new Object[] {nid}, e);
             throw e;
         }
     }
@@ -2304,7 +2304,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "INSERT INTO tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?)",
                     kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2316,7 +2316,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     "UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?",
                     tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId);
         } catch (DataAccessException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2327,12 +2327,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return Collections.emptyList();
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -2343,12 +2343,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return null;
         } catch (Exception e) {
-            LogUtil.fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -2358,7 +2358,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             jt.update("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2425,7 +2425,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             
             return page.getPageItems();
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2452,7 +2452,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         } catch (EmptyResultDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2470,7 +2470,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public Boolean completeMd5() {
-        LogUtil.defaultLog.info("[start completeMd5]");
+        LogUtil.DEFAULT_LOG.info("[start completeMd5]");
         int perPageSize = 1000;
         int rowCount = configInfoCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / perPageSize);
@@ -2487,7 +2487,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
                         } catch (Exception e) {
-                            LogUtil.defaultLog.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
+                            LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
                                     new Object[] {cf.getDataId(), cf.getGroup(), new Timestamp(cf.getLastModified())});
                         }
                     } else {
@@ -2496,7 +2496,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                                 updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
                                         new Timestamp(cf.getLastModified()));
                             } catch (Exception e) {
-                                LogUtil.defaultLog.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
+                                LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
                                         new Object[] {cf.getDataId(), cf.getGroup(),
                                                 new Timestamp(cf.getLastModified())});
                             }
@@ -2505,7 +2505,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                LogUtil.defaultLog.info("[completeMd5] {} / {}", actualRowCount, rowCount);
+                LogUtil.DEFAULT_LOG.info("[completeMd5] {} / {}", actualRowCount, rowCount);
             }
         }
         return true;
@@ -2546,7 +2546,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.fatalLog.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -2566,7 +2566,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 ParamUtils
                         .checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
-                LogUtil.defaultLog.error("data verification failed", e);
+                LogUtil.DEFAULT_LOG.error("data verification failed", e);
                 throw e;
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),

@@ -198,7 +198,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 //get delay time and set fail count to the task
                 asyncTaskExecute(task);
                 
-                LogUtil.notifyLog
+                LogUtil.NOTIFY_LOG
                         .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                                 task.getGroup(), task.getLastModified());
                 
@@ -219,7 +219,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             
             //get delay time and set fail count to the task
             asyncTaskExecute(task);
-            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
+            LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
             
             MetricsMonitor.getConfigNotifyException().increment();
@@ -228,12 +228,12 @@ public class AsyncNotifyService extends AbstractEventListener {
         @Override
         public void cancelled() {
             
-            LogUtil.notifyLog.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}", task.target,
+            LogUtil.NOTIFY_LOG.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}", task.target,
                     task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
             
             //get delay time and set fail count to the task
             asyncTaskExecute(task);
-            LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
+            LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
             
             MetricsMonitor.getConfigNotifyException().increment();

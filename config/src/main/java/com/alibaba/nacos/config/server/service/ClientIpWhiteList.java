@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Client ip whitelist.
@@ -69,18 +69,18 @@ public class ClientIpWhiteList {
      */
     public static void load(String content) {
         if (StringUtils.isBlank(content)) {
-            defaultLog.warn("clientIpWhiteList is blank.close whitelist.");
+            DEFAULT_LOG.warn("clientIpWhiteList is blank.close whitelist.");
             isOpen = false;
             CLIENT_IP_WHITELIST.get().clear();
             return;
         }
-        defaultLog.warn("[clientIpWhiteList] {}", content);
+        DEFAULT_LOG.warn("[clientIpWhiteList] {}", content);
         try {
             AclInfo acl = (AclInfo) JSONUtils.deserializeObject(content, AclInfo.class);
             isOpen = acl.getIsOpen();
             CLIENT_IP_WHITELIST.set(acl.getIps());
         } catch (Exception ioe) {
-            defaultLog.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);
+            DEFAULT_LOG.error("failed to load clientIpWhiteList, " + ioe.toString(), ioe);
         }
     }
     

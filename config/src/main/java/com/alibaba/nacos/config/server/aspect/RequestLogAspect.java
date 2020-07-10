@@ -106,7 +106,7 @@ public class RequestLogAspect {
         final long rt = System.currentTimeMillis() - st;
         // rt | status | requestIp | opType | dataId | group | datumId | md5 |
         // appName
-        LogUtil.clientLog
+        LogUtil.CLIENT_LOG
                 .info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt, retVal, requestIp, requestType, dataId, group, tenant, md5,
                         appName);
         return retVal;

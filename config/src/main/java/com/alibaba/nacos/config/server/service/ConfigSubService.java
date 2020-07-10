@@ -103,7 +103,7 @@ public class ConfigSubService {
             try {
                 completionService.submit(new Job(ip.getAddress(), url, params));
             } catch (Exception e) { // Send request failed.
-                LogUtil.defaultLog
+                LogUtil.DEFAULT_LOG
                         .warn("Get client info from {} with exception: {} during submit job", ip, e.getMessage());
             }
         }
@@ -119,18 +119,18 @@ public class ConfigSubService {
                             collectionResult.add(sampleResults);
                         }
                     } else {
-                        LogUtil.defaultLog.warn("The task in ip: {}  did not completed in 1000ms ", member);
+                        LogUtil.DEFAULT_LOG.warn("The task in ip: {}  did not completed in 1000ms ", member);
                     }
                 } catch (TimeoutException e) {
                     if (f != null) {
                         f.cancel(true);
                     }
-                    LogUtil.defaultLog.warn("get task result with TimeoutException: {} ", e.getMessage());
+                    LogUtil.DEFAULT_LOG.warn("get task result with TimeoutException: {} ", e.getMessage());
                 }
             } catch (InterruptedException e) {
-                LogUtil.defaultLog.warn("get task result with InterruptedException: {} ", e.getMessage());
+                LogUtil.DEFAULT_LOG.warn("get task result with InterruptedException: {} ", e.getMessage());
             } catch (ExecutionException e) {
-                LogUtil.defaultLog.warn("get task result with ExecutionException: {} ", e.getMessage());
+                LogUtil.DEFAULT_LOG.warn("get task result with ExecutionException: {} ", e.getMessage());
             }
         }
         return collectionResult;
@@ -205,11 +205,11 @@ public class ConfigSubService {
                     
                 } else {
                     
-                    LogUtil.defaultLog.info("Can not get clientInfo from {} with {}", ip, result.code);
+                    LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.code);
                     return null;
                 }
             } catch (Exception e) {
-                LogUtil.defaultLog.warn("Get client info from {} with exception: {}", ip, e.getMessage());
+                LogUtil.DEFAULT_LOG.warn("Get client info from {} with exception: {}", ip, e.getMessage());
                 return null;
             }
         }
