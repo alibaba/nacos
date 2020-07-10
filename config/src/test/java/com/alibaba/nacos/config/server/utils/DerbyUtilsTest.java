@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings("checkstyle:linelength")
 public class DerbyUtilsTest {
     
     @Test
