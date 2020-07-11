@@ -84,6 +84,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         }
     }
     
+    @Override
     public long currentEventSize() {
         return queue.size();
     }
@@ -95,13 +96,15 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     
     void openEventHandler() {
         try {
+            int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
             for (; ; ) {
-                if (shutdown || canOpen) {
+                if (shutdown || canOpen || waitTimes <= 0) {
                     break;
                 }
                 ThreadUtils.sleep(1_000L);
+                waitTimes--;
             }
             
             for (; ; ) {

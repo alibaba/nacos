@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
@@ -87,14 +88,14 @@ public class NotifyCenter {
         publisherFactory = new BiFunction<Class<? extends Event>, Integer, EventPublisher>() {
             
             @Override
-            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) throws NacosException {
+            public EventPublisher apply(Class<? extends Event> cls, Integer buffer) {
                 try {
                     EventPublisher publisher = clazz.newInstance();
                     publisher.init(cls, buffer);
                     return publisher;
                 } catch (Throwable ex) {
                     LOGGER.error("Service class newInstance has error : {}", ex);
-                    throw new NacosException(SERVER_ERROR, ex);
+                    throw new NacosRuntimeException(SERVER_ERROR, ex);
                 }
             }
         };
@@ -169,7 +170,7 @@ public class NotifyCenter {
      * @param consumer subscriber
      * @param <T>      event type
      */
-    public static <T> void registerSubscriber(final Subscriber consumer) throws NacosException {
+    public static <T> void registerSubscriber(final Subscriber consumer) {
         final Class<? extends Event> cls = consumer.subscribeType();
         // If you want to listen to multiple events, you do it separately,
         // based on subclass's subscribeTypes method return list, it can register to publisher.
@@ -199,10 +200,8 @@ public class NotifyCenter {
      *
      * @param consumer      subscriber instance.
      * @param subscribeType subscribeType.
-     * @throws NacosException BiFunction mappingFunction may throw a NacosException.
      */
-    private static void addSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType)
-            throws NacosException {
+    private static void addSubscriber(final Subscriber consumer, Class<? extends Event> subscribeType) {
         
         final String topic = ClassUtils.getCanonicalName(subscribeType);
         synchronized (NotifyCenter.class) {

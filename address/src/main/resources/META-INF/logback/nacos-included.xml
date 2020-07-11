@@ -16,12 +16,12 @@
   -->
 
 <included>
-
+    
     <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
     <property name="LOG_HOME" value="${logPath}"/>
-
+    
     <appender name="nacos-address"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/nacos-address.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -36,7 +36,7 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
     <logger name="com.alibaba.nacos.address.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="nacos-address"/>

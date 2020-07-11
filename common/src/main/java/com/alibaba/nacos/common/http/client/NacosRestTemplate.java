@@ -404,8 +404,8 @@ public class NacosRestTemplate {
     }
     
     /**
-     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and
-     * returns the response as {@link HttpRestResult}.
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and returns
+     * the response as {@link HttpRestResult}.
      *
      * @param url          url
      * @param header       http header param
@@ -416,12 +416,11 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> exchangeForm(String url, Header header,
-                                              Map<String, String> paramValues, Map<String, String> bodyValues, String httpMethod, Type responseType) throws Exception{
+    public <T> HttpRestResult<T> exchangeForm(String url, Header header, Map<String, String> paramValues,
+            Map<String, String> bodyValues, String httpMethod, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
-            header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
-            Query.newInstance().initParams(paramValues),
-            bodyValues);
+                header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
+                Query.newInstance().initParams(paramValues), bodyValues);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     

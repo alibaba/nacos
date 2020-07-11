@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -39,9 +40,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -68,18 +67,11 @@ public class HealthCheckCommon {
     
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
     
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        thread.setName("com.taobao.health-check.notifier");
-        return thread;
-    });
-    
     /**
      * Init Health check.
      */
     public void init() {
-        executorService.schedule(() -> {
+        GlobalExecutor.scheduleNamingHealthCheck(() -> {
             List list = Arrays.asList(healthCheckResults.toArray());
             healthCheckResults.clear();
             

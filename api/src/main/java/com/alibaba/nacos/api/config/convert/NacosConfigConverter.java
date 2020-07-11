@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.convert;
 
 /**
- * Nacos Config Converter
+ * Nacos Config Converter.
  *
  * @param <T> the target type that wanted
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.0
  */
 public interface NacosConfigConverter<T> {
-
+    
     /**
-     * can convert to be target type or not
+     * can convert to be target type or not.
      *
      * @param targetType the type of target
      * @return If can , return <code>true</code>, or <code>false</code>
      */
     boolean canConvert(Class<T> targetType);
-
+    
     /**
      * convert the Naocs's config of type S to target type T.
      *
@@ -39,5 +40,5 @@ public interface NacosConfigConverter<T> {
      * @return the converted object, which must be an instance of T (potentially {@code null})
      */
     T convert(String config);
-
+    
 }

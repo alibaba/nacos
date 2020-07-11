@@ -30,6 +30,8 @@ set SERVER=nacos-server
 set MODE_INDEX=-1
 set FUNCTION_MODE_INDEX=-1
 set SERVER_INDEX=-1
+set EMBEDDED_STORAGE_INDEX=-1
+set EMBEDDED_STORAGE=""
 
 
 set i=0
@@ -37,6 +39,7 @@ for %%a in (%*) do (
    if "%%a" == "-m" ( set /a MODE_INDEX=!i!+1 )
    if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
    if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
+   if "%%a" == "-p" ( set /a EMBEDDED_STORAGE_INDEX=!i!+1 )
    set /a i+=1
 )
 
@@ -45,6 +48,7 @@ for %%a in (%*) do (
    if %MODE_INDEX% == !i! ( set MODE="%%a" )
    if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
    if %SERVER_INDEX% == !i! (set SERVER="%%a")
+   if %EMBEDDED_STORAGE_INDEX% == !i! (set EMBEDDED_STORAGE="%%a")
    set /a i+=1
 )
 
@@ -52,6 +56,9 @@ if %MODE% == "standalone" (
     set "JAVA_OPT=%JAVA_OPT% -Xms512m -Xmx512m -Xmn256m"
     set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
 ) else (
+    if %EMBEDDED_STORAGE% == "embedded" (
+		set "JAVA_OPT=%JAVA_OPT% -DembeddedStorage=true"
+		)
     set "JAVA_OPT=%JAVA_OPT% -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
     set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%BASE_DIR%\logs\java_heapdump.hprof"
     set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"

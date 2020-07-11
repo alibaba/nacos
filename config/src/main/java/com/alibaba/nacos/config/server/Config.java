@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server;
 
 import org.springframework.boot.SpringApplication;
@@ -20,17 +21,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Config main
+ * Config main.
  *
  * @author Nacos
  */
 @EnableScheduling
-@SpringBootApplication(scanBasePackages = {
-        "com.alibaba.nacos.config.server",
-        "com.alibaba.nacos.core"
-})
+@SpringBootApplication(scanBasePackages = {"com.alibaba.nacos.config.server", "com.alibaba.nacos.core"})
 public class Config {
-
+    
     public static void main(String[] args) {
         SpringApplication.run(Config.class, args);
     }

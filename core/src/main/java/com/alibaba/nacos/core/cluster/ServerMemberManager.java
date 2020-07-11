@@ -169,14 +169,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         NotifyCenter.registerSubscribe(new Subscribe<InetUtils.IPChangeEvent>() {
             @Override
             public void onEvent(InetUtils.IPChangeEvent event) {
-                String oldAddress = event.getOldIp() + ":" + port;
                 String newAddress = event.getNewIp() + ":" + port;
                 ServerMemberManager.this.localAddress = newAddress;
                 ApplicationUtils.setLocalAddress(localAddress);
-                
+    
                 Member self = ServerMemberManager.this.self;
                 self.setIp(event.getNewIp());
-                
+    
+                String oldAddress = event.getOldIp() + ":" + port;
                 ServerMemberManager.this.serverList.remove(oldAddress);
                 ServerMemberManager.this.serverList.put(newAddress, self);
                 

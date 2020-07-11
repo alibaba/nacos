@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.example;
 
 import java.util.Properties;
@@ -25,6 +26,8 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 
 /**
+ * Nacos naming example.
+ *
  * @author nkorange
  */
 public class NamingExample {
@@ -50,8 +53,8 @@ public class NamingExample {
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
             }
         });
     }
