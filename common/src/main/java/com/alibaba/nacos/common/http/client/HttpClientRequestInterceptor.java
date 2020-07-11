@@ -38,8 +38,8 @@ public interface HttpClientRequestInterceptor {
     boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity);
     
     /**
-     * if isIntercept method is true Intercept the given request, and return a response.
-     * Otherwise, the {@link HttpClientRequest} will be used for execution.
+     * if isIntercept method is true Intercept the given request, and return a response Otherwise,
+     * the {@link HttpClientRequest} will be used for execution.
      *
      * @return HttpClientResponse
      */
