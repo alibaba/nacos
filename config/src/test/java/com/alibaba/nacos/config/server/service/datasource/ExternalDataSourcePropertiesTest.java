@@ -97,6 +97,20 @@ public class ExternalDataSourcePropertiesTest {
         }));
         Assert.assertEquals(dataSources.size(), 2);
     }
+
+    @Test
+    public void externalDatasourceToAssertMinIdle() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("db.num", "1");
+        environment.setProperty("db.user", USERNAME);
+        environment.setProperty("db.password", PASSWORD);
+        environment.setProperty("db.url.0", JDBC_URL);
+        List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
+            dataSource.validate();
+            Assert.assertEquals(dataSource.getMinimumIdle(), ExternalDataSourceProperties.DEFAULT_MINIMUM_IDLE);
+        }));
+        Assert.assertEquals(dataSources.size(), 1);
+    }
     
     @Test(expected = IllegalArgumentException.class)
     public void externalDatasourceFailureWithLarkInfo() {
