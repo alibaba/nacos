@@ -16,17 +16,17 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,18 +37,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Callable;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Config sub service.
@@ -58,24 +55,12 @@ import java.util.concurrent.ExecutorCompletionService;
 @Service
 public class ConfigSubService {
     
-    private ScheduledExecutorService scheduler;
-    
     private ServerMemberManager memberManager;
     
     @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ConfigSubService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
-        
-        scheduler = Executors.newScheduledThreadPool(ThreadUtils.getSuitableThreadCount(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.ConfigSubService");
-                return t;
-            }
-        });
     }
     
     protected ConfigSubService() {
@@ -140,7 +125,7 @@ public class ConfigSubService {
      * Merge SampleResult.
      *
      * @param sampleCollectResult sampleCollectResult.
-     * @param sampleResults sampleResults.
+     * @param sampleResults       sampleResults.
      * @return SampleResult.
      */
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
@@ -195,7 +180,7 @@ public class ConfigSubService {
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
                 com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
                         .invokeURL(urlAll, null, Constants.ENCODE);
-
+                
                 // Http code 200
                 if (result.code == HttpURLConnection.HTTP_OK) {
                     String json = result.content;
@@ -227,8 +212,8 @@ public class ConfigSubService {
         }
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
                 memberManager.getServerList().size());
-        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
-                queue);
+        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
+                ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
@@ -247,8 +232,8 @@ public class ConfigSubService {
         params.put("ip", ip);
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
                 memberManager.getServerList().size());
-        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
-                queue);
+        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
+                ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {

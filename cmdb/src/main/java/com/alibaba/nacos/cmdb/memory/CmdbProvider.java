@@ -117,11 +117,9 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         initCmdbService();
         load();
         
-        UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
-        UtilsAndCommons.GLOBAL_EXECUTOR
-                .schedule(new CmdbLabelTask(), switches.getLabelTaskInterval(), TimeUnit.SECONDS);
-        UtilsAndCommons.GLOBAL_EXECUTOR
-                .schedule(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
+        UtilsAndCommons.scheduleCmdbTask(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
+        UtilsAndCommons.scheduleCmdbTask(new CmdbLabelTask(), switches.getLabelTaskInterval(), TimeUnit.SECONDS);
+        UtilsAndCommons.scheduleCmdbTask(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
     }
     
     @Override
@@ -205,7 +203,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("CMDB-LABEL-TASK {}", "dump failed!", e);
             } finally {
-                UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
+                UtilsAndCommons.scheduleCmdbTask(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
             }
         }
     }
@@ -227,7 +225,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("DUMP-TASK {}", "dump failed!", e);
             } finally {
-                UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getDumpTaskInterval(), TimeUnit.SECONDS);
+                UtilsAndCommons.scheduleCmdbTask(this, switches.getDumpTaskInterval(), TimeUnit.SECONDS);
             }
         }
     }
@@ -271,7 +269,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             } catch (Exception e) {
                 Loggers.MAIN.error("CMDB-EVENT {}", "event task failed!", e);
             } finally {
-                UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getEventTaskInterval(), TimeUnit.SECONDS);
+                UtilsAndCommons.scheduleCmdbTask(this, switches.getEventTaskInterval(), TimeUnit.SECONDS);
             }
         }
     }

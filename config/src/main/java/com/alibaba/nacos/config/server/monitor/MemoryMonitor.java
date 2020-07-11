@@ -30,17 +30,17 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 @Service
-public class MemoryMonitor {
+class MemoryMonitor {
     
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
         
-        ConfigExecutor.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+        ConfigExecutor.scheduleConfigTask(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
         
-        ConfigExecutor.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS,
+        ConfigExecutor.scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS,
                 TimeUnit.SECONDS);
         
-        ConfigExecutor.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
+        ConfigExecutor.scheduleConfigTask(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
                 DELAY_SECONDS, TimeUnit.SECONDS);
         
     }
