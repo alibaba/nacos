@@ -43,7 +43,7 @@ public class RequestHttpEntity {
     }
     
     public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query) {
-       this(httpClientConfig, header, query, null);
+        this(httpClientConfig, header, query, null);
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {

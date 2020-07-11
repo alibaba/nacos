@@ -77,17 +77,17 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     
     /**
-     * Replace the HTTP config created by default with the HTTP config specified in the request
+     * Replace the HTTP config created by default with the HTTP config specified in the request.
      *
-     * @param requestBase requestBase
+     * @param requestBase      requestBase
      * @param httpClientConfig http config
      */
     private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
         if (httpClientConfig == null) {
             return;
         }
-        requestBase.setConfig(RequestConfig.custom().
-                setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+        requestBase.setConfig(RequestConfig.custom()
+                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     

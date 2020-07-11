@@ -105,7 +105,7 @@ public class NacosRestTemplate {
      * @throws Exception ex
      */
     public <T> HttpRestResult<T> get(String url, HttpClientConfig config, Header header,
-            Map<String, String> paramValues, Type responseType) throws Exception{
+            Map<String, String> paramValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header,
                 Query.newInstance().initParams(paramValues));
         return execute(url, HttpMethod.GET, requestHttpEntity, responseType);
@@ -156,15 +156,15 @@ public class NacosRestTemplate {
      * @param url          url
      * @param config       http config
      * @param header       http header param
-     * @param paramValues        http query param
+     * @param paramValues  http query param
      * @param responseType return type
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> delete(String url, HttpClientConfig config,
-            Header header, Map<String, String> paramValues, Type responseType) throws Exception {
-        return execute(url, HttpMethod.DELETE, new RequestHttpEntity(config, header,
-                Query.newInstance().initParams(paramValues)), responseType);
+    public <T> HttpRestResult<T> delete(String url, HttpClientConfig config, Header header,
+            Map<String, String> paramValues, Type responseType) throws Exception {
+        return execute(url, HttpMethod.DELETE,
+                new RequestHttpEntity(config, header, Query.newInstance().initParams(paramValues)), responseType);
     }
     
     /**
@@ -276,9 +276,8 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> putForm(String url, HttpClientConfig config,
-            Header header, Map<String, String> paramValues,
-            Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> putForm(String url, HttpClientConfig config, Header header,
+            Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config,
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
                 Query.newInstance().initParams(paramValues), bodyValues);
@@ -394,9 +393,8 @@ public class NacosRestTemplate {
      * @return {@link HttpRestResult}
      * @throws Exception ex
      */
-    public <T> HttpRestResult<T> postForm(String url, HttpClientConfig config,
-            Header header, Map<String, String> paramValues,
-            Map<String, String> bodyValues, Type responseType) throws Exception {
+    public <T> HttpRestResult<T> postForm(String url, HttpClientConfig config, Header header,
+            Map<String, String> paramValues, Map<String, String> bodyValues, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config,
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED),
                 Query.newInstance().initParams(paramValues), bodyValues);
@@ -467,8 +465,7 @@ public class NacosRestTemplate {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Execute via interceptor");
             }
-            return new InterceptingHttpClientRequest(requestClient,
-                    interceptors.iterator());
+            return new InterceptingHttpClientRequest(requestClient, interceptors.iterator());
         }
         return requestClient;
     }
