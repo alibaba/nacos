@@ -23,7 +23,7 @@ import java.net.URI;
 import java.util.Iterator;
 
 /**
- * Wrap http client request and perform corresponding interception
+ * Wrap http client request and perform corresponding interception.
  *
  * @author mai.jh
  */
