@@ -21,14 +21,14 @@ import com.alibaba.nacos.common.model.RequestHttpEntity;
 import java.net.URI;
 
 /**
- * Intercepts client-side HTTP requests. Implementations of this interface can be
+ * Intercepts client-side HTTP requests. Implementations of this interface can be.
  *
  * @author mai.jh
  */
 public interface HttpClientRequestInterceptor {
     
     /**
-     * is intercept
+     * is intercept.
      *
      * @param uri uri
      * @param httpMethod http method

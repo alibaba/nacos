@@ -426,6 +426,7 @@ public class NacosRestTemplate {
     
     /**
      * Set the request interceptors that this accessor should use.
+     *
      * @param interceptors {@link HttpClientRequestInterceptor}
      */
     public void setInterceptors(List<HttpClientRequestInterceptor> interceptors) {
@@ -437,6 +438,7 @@ public class NacosRestTemplate {
     
     /**
      * Return the request interceptors that this accessor uses.
+     *
      * <p>The returned {@link List} is active and may get appended to.
      */
     public List<HttpClientRequestInterceptor> getInterceptors() {
