@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * MetricsHttpAgent
- *
- * @author Nacos
- */
+
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,25 +25,26 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * MetricsHttpAgent
+ * MetricsHttpAgent.
  *
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
-
-    private HttpAgent httpAgent;
-
+    
+    private final HttpAgent httpAgent;
+    
     public MetricsHttpAgent(HttpAgent httpAgent) {
         this.httpAgent = httpAgent;
     }
-
+    
     @Override
     public void start() throws NacosException {
         httpAgent.start();
     }
-
+    
     @Override
-    public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
+    public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
+            long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
         HttpResult result;
         try {
@@ -58,12 +55,13 @@ public class MetricsHttpAgent implements HttpAgent {
             timer.observeDuration();
             timer.close();
         }
-
+        
         return result;
     }
-
+    
     @Override
-    public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
+    public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
+            long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
         HttpResult result;
         try {
@@ -74,49 +72,50 @@ public class MetricsHttpAgent implements HttpAgent {
             timer.observeDuration();
             timer.close();
         }
-
+        
         return result;
     }
-
+    
     @Override
-    public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
+    public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
+            long readTimeoutMs) throws IOException {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
         HttpResult result;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
-
+            
             throw e;
         } finally {
             timer.observeDuration();
             timer.close();
         }
-
+        
         return result;
     }
-
+    
     @Override
     public String getName() {
         return httpAgent.getName();
     }
-
+    
     @Override
     public String getNamespace() {
         return httpAgent.getNamespace();
     }
-
+    
     @Override
     public String getTenant() {
         return httpAgent.getTenant();
     }
-
+    
     @Override
     public String getEncode() {
         return httpAgent.getEncode();
     }
-
+    
     @Override
-    public void shutdown() throws NacosException{
+    public void shutdown() throws NacosException {
         httpAgent.shutdown();
     }
 }

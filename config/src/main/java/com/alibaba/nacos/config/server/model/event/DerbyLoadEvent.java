@@ -19,12 +19,14 @@ package com.alibaba.nacos.config.server.model.event;
 import com.alibaba.nacos.core.notify.SlowEvent;
 
 /**
+ * DerbyLoadEvent.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbyLoadEvent implements SlowEvent {
-
-	public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
-
-	private static final long serialVersionUID = 875401667921565121L;
-
+    
+    public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
+    
+    private static final long serialVersionUID = 875401667921565121L;
+    
 }

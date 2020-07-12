@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.cmdb.core;
+
+package com.alibaba.nacos.config.server.model.event;
+
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.core.notify.Event;
 
 /**
- * @author nkorange
- * @since 0.7.0
+ * RaftDBErrorRecoverEvent.
+ *
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class CmdbManager {
+@JustForTest
+public class RaftDbErrorRecoverEvent implements Event {
+
 }

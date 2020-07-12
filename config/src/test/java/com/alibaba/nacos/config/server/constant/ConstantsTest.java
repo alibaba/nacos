@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.constant;
 
 import org.junit.Assert;
@@ -26,17 +27,11 @@ import static com.alibaba.nacos.config.server.constant.Constants.HISTORY_CONTROL
 import static com.alibaba.nacos.config.server.constant.Constants.LISTENER_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.NAMESPACE_CONTROLLER_PATH;
 
-/**
- * {@link Constants} Test
- *
- * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
- * @since 0.2.2
- */
 public class ConstantsTest {
-
+    
     @Test
     public void testControllerPathsDefaultValues() {
-
+        
         Assert.assertEquals("/v1/cs/capacity", CAPACITY_CONTROLLER_PATH);
         Assert.assertEquals("/v1/cs/communication", COMMUNICATION_CONTROLLER_PATH);
         Assert.assertEquals("/v1/cs/configs", CONFIG_CONTROLLER_PATH);

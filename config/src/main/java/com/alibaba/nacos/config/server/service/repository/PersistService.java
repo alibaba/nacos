@@ -41,762 +41,1192 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
+ * Database service, providing access to ConfigInfo in the database
+ * <br> 3.0 starts to increase the data version number, and changes the physical deletion to logical deletion
+ * <br> 3.0 adds the database switching function.
  *
  * @author boyan
  * @author leiwen.zh
+ * @author klw
  * @since 1.0
  */
-@SuppressWarnings("all")
 public interface PersistService {
-
-	/**
-	 * @author klw
-	 * @Description: constant variables
-	 */
-	String SPOT = ".";
-	Object[] EMPTY_ARRAY = new Object[]{};
-	String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
-	String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
-	String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
-	String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
-	int QUERY_LIMIT_SIZE = 50;
-	String PATTERN_STR = "*";
-
-	<E> PaginationHelper<E> createPaginationHelper();
-
-	/**
-	 * 添加普通配置信息，发布数据变更事件
-	 */
-	void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
-			final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
-
-	/**
-	 * 添加普通配置信息，发布数据变更事件
-	 */
-	void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
-			String srcIp, String srcUser, Timestamp time, boolean notify);
-
-	/**
-	 * 添加普通配置信息，发布数据变更事件
-	 */
-	void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-			boolean notify);
-
-	/**
-	 * 更新配置信息
-	 */
-	void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-			final Timestamp time, final Map<String, Object> configAdvanceInfo,
-			final boolean notify);
-
-	/**
-	 * 更新配置信息
-	 */
-	void updateConfigInfo4Beta(ConfigInfo configInfo,
-			String betaIps, String srcIp, String srcUser, Timestamp time,
-			boolean notify);
-
-	/**
-	 * 更新配置信息
-	 */
-	void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-			boolean notify);
-
-	void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
-			final String srcUser, final Timestamp time, final boolean notify);
-
-	void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
-			final String srcUser, final Timestamp time, final boolean notify);
-
-	/**
-	 * 更新md5
-	 */
-	void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime);
-
-	void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-			Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 写入主表，插入或更新
-	 */
-	void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-			Map<String, Object> configAdvanceInfo, boolean notify);
-
-	// ----------------------- config_aggr_info 表 insert update delete
-
-	/**
-	 * 写入主表，插入或更新
-	 */
-	void insertOrUpdateSub(SubInfo subInfo);
-
-	/**
-	 * 删除配置信息, 物理删除
-	 */
-	void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
-			final String srcUser);
-
-	/**
-	 * @return List<ConfigInfo> deleted configInfos
-	 * @author klw
-	 * @Description: delete config info by ids
-	 * @Date 2019/7/5 16:45
-	 * @Param [ids, srcIp, srcUser]
-	 */
-	List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
-
-	/**
-	 * 删除beta配置信息, 物理删除
-	 */
-	void removeConfigInfo4Beta(final String dataId, final String group, final String tenant);
-
-	/**
-	 * 增加聚合前数据到数据库, select -> update or insert
-	 */
-	boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
-			String appName, final String content);
-
-	/**
-	 * 删除单条聚合前数据
-	 */
-	void removeSingleAggrConfigInfo(final String dataId,
-			final String group, final String tenant, final String datumId);
-
-	/**
-	 * 删除一个dataId下面所有的聚合前数据
-	 */
-	void removeAggrConfigInfo(final String dataId, final String group, final String tenant);
-
-	/**
-	 * 批量删除聚合数据，需要指定datum的列表
-	 *
-	 * @param dataId dataId
-	 * @param group group
-	 * @param datumList datumList
-	 */
-	boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
-			final List<String> datumList);
-
-	/**
-	 * 删除startTime前的数据
-	 */
-	void removeConfigHistory(final Timestamp startTime, final int limitSize);
-
-	/**
-	 * 获取指定时间前配置条数
-	 */
-	int findConfigHistoryCountByTime(final Timestamp startTime);
-
-	/**
-	 * 获取最大maxId
-	 */
-	long findConfigMaxId();
-
-	/**
-	 * 批量添加或者更新数据.事务过程中出现任何异常都会强制抛出TransactionSystemException
-	 *
-	 * @param dataId dataId
-	 * @param group group
-	 * @param datumMap datumMap
-	 * @return
-	 */
-	boolean batchPublishAggr(final String dataId, final String group, final String tenant,
-			final Map<String, String> datumMap, final String appName);
-
-	/**
-	 * 批量替换，先全部删除聚合表中指定DataID+Group的数据，再插入数据. 事务过程中出现任何异常都会强制抛出TransactionSystemException
-	 *
-	 * @param dataId dataId
-	 * @param group group
-	 * @param datumMap datumMap
-	 * @return
-	 */
-	boolean replaceAggr(final String dataId, final String group, final String tenant,
-			final Map<String, String> datumMap, final String appName);
-
-	/**
-	 * 查找所有的dataId和group。保证不返回NULL。
-	 */
-	@Deprecated
-	List<ConfigInfo> findAllDataIdAndGroup();
-
-	/**
-	 * 根据dataId和group查询配置信息
-	 */
-	ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant);
-
-	/**
-	 * 根据dataId和group查询配置信息
-	 */
-	ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
-			final String tag);
-
-	/**
-	 * 根据dataId和group查询配置信息
-	 */
-	ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
-			final String appName);
-
-	/**
-	 * 根据dataId和group查询配置信息
-	 */
-	ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 根据dataId和group查询配置信息
-	 */
-	ConfigInfoBase findConfigInfoBase(final String dataId, final String group);
-
-	/**
-	 * 根据数据库主键ID查询配置信息
-	 *
-	 * @param id id
-	 * @return {@link ConfigInfo}
-	 */
-	ConfigInfo findConfigInfo(long id);
-
-	/**
-	 * 根据dataId查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param dataId
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
-			final String tenant);
-
-	/**
-	 * 根据dataId查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param dataId
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
-			final String tenant, final String appName);
-
-	Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
-			final String tenant,
-			final Map<String, Object> configAdvanceInfo);
-
-	Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
-			final String group,
-			final String tenant, final Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 根据dataId查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param dataId
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo,
-			final int pageSize, final String dataId);
-
-	/**
-	 * 根据group查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param group
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
-			final String tenant);
-
-	/**
-	 * 根据group查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param group
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo,
-			final int pageSize, final String group, final String tenant,
-			final String appName);
-
-	Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo,
-			final int pageSize, final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 根据group查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
-			final int pageSize, final String tenant, final String appName);
-
-	Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo,
-			final int pageSize, final String tenant,
-			final Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 根据group查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param group
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo,
-			final int pageSize, final String group);
-
-	/**
-	 * 返回配置项个数
-	 */
-	int configInfoCount();
-
-	/**
-	 * 返回配置项个数
-	 */
-	int configInfoCount(String tenant);
-
-	/**
-	 * 返回beta配置项个数
-	 */
-	int configInfoBetaCount();
-
-	/**
-	 * 返回beta配置项个数
-	 */
-	int configInfoTagCount();
-
-	List<String> getTenantIdList(int page, int pageSize);
-
-	List<String> getGroupIdList(int page, int pageSize);
-
-	int aggrConfigInfoCount(String dataId, String group, String tenant);
-
-	int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds);
-
-	int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds);
-
-	int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds,
-			boolean isIn);
-
-	/**
-	 * 分页查询所有的配置信息
-	 *
-	 * @param pageNo   页码(从1开始)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant);
-
-	/**
-	 * 分页查询所有的配置信息
-	 *
-	 * @param pageNo   页码(从1开始)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant);
-
-	/**
-	 * 分页查询所有的配置信息
-	 *
-	 * @param pageNo   页码(从1开始)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @return ConfigInfo对象的集合
-	 */
-	@Deprecated
-	Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo,
-			final int pageSize);
-
-	Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(
-			final int pageNo, final int pageSize);
-
-	Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
-
-	Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(
-			final int pageNo, final int pageSize);
-
-	Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(
-			final int pageNo, final int pageSize);
-
-	/**
-	 * 通过select in方式实现db记录的批量查询； subQueryLimit指定in中条件的个数，上限20
-	 */
-	List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds,
-			final String group, final String tenant, int subQueryLimit);
-
-	/**
-	 * 根据dataId和group模糊查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param dataId   支持模糊查询
-	 * @param group    支持模糊查询
-	 * @param tenant   支持模糊查询
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId,
-			final String group, final String tenant, final String appName,
-			final String content);
-
-	Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
-			final String group, final String tenant,
-			final Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 根据dataId和group模糊查询配置信息
-	 *
-	 * @param pageNo     页码(必须大于0)
-	 * @param pageSize   每页大小(必须大于0)
-	 * @param configKeys 查询配置列表
-	 * @param blacklist  是否黑名单
-	 * @return ConfigInfo对象的集合
-	 */
-	Page<ConfigInfo> findConfigInfoLike(final int pageNo,
-			final int pageSize, final ConfigKey[] configKeys,
-			final boolean blacklist);
-
-	/**
-	 * 根据dataId和group模糊查询配置信息
-	 *
-	 * @param pageNo   页码(必须大于0)
-	 * @param pageSize 每页大小(必须大于0)
-	 * @param dataId
-	 * @param group
-	 * @return ConfigInfo对象的集合
-	 * @throws IOException
-	 */
-	Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo,
-			final int pageSize, final String dataId, final String group,
-			final String content) throws IOException;
-
-	/**
-	 * 查找聚合前的单条数据
-	 *
-	 * @param dataId
-	 * @param group
-	 * @param datumId
-	 * @return {@link ConfigInfoAggr}
-	 */
-	ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId);
-
-	/**
-	 * 查找一个dataId下面的所有聚合前的数据. 保证不返回NULL.
-	 */
-	List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant);
-
-	Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
-			final int pageSize);
-
-	/**
-	 * 查询符合条件的聚合数据
-	 *
-	 * @param pageNo     pageNo
-	 * @param pageSize   pageSize
-	 * @param configKeys 聚合数据条件
-	 * @param blacklist  黑名单
-	 * @return {@link Page<ConfigInfoAggr>}
-	 */
-	Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
-			boolean blacklist);
-
-	/**
-	 * 找到所有聚合数据组。
-	 */
-	List<ConfigInfoChanged> findAllAggrGroup();
-
-	/**
-	 * 由datum内容查找datumId
-	 *
-	 * @param dataId  data id
-	 * @param groupId group
-	 * @param content content
-	 * @return datum keys
-	 */
-	List<String> findDatumIdByContent(String dataId, String groupId,
-			String content);
-
-	List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime,
-			final Timestamp endTime);
-
-	/**
-	 * 根据时间段和配置条件查询符合条件的配置
-	 *
-	 * @param dataId    dataId 支持模糊
-	 * @param group     dataId 支持模糊
-	 * @param appName   产品名
-	 * @param startTime 起始时间
-	 * @param endTime   截止时间
-	 * @param pageNo    pageNo
-	 * @param pageSize  pageSize
-	 * @return {@link Page<ConfigInfoWrapper>}
-	 */
-	Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
-			final String appName, final Timestamp startTime,
-			final Timestamp endTime, final int pageNo,
-			final int pageSize, final long lastMaxId);
-
-	List<ConfigInfo> findDeletedConfig(final Timestamp startTime,
-			final Timestamp endTime);
-
-	/**
-	 * 增加配置；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param srcIp             ip
-	 * @param srcUser           user
-	 * @param configInfo        info
-	 * @param time              time
-	 * @param configAdvanceInfo advance info
-	 * @return excute sql result
-	 */
-	long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
-			final Timestamp time,
-			Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 增加配置；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param configId id
-	 * @param tagName  tag
-	 * @param dataId   data id
-	 * @param group    group
-	 * @param tenant   tenant
-	 */
-	void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant);
-
-	/**
-	 * 增加配置；数据库原子操作
-	 *
-	 * @param configId   config id
-	 * @param configTags tags
-	 * @param dataId     dataId
-	 * @param group      group
-	 * @param tenant     tenant
-	 */
-	void addConfigTagsRelation(long configId, String configTags, String dataId, String group,
-			String tenant);
-
-	void removeTagByIdAtomic(long id);
-
-	List<String> getConfigTagsByTenant(String tenant);
-
-	List<String> selectTagByConfig(String dataId, String group, String tenant);
-
-	/**
-	 * 删除配置；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId  dataId
-	 * @param group   group
-	 * @param tenant  tenant
-	 * @param srcIp   ip
-	 * @param srcUser user
-	 */
-	void removeConfigInfoAtomic(final String dataId, final String group, final String tenant,
-			final String srcIp,
-			final String srcUser);
-
-	/**
-	 * @return void
-	 * @author klw
-	 * @Description: Delete configuration; database atomic operation, minimum SQL action, no business encapsulation
-	 * @Date 2019/7/5 16:39
-	 * @Param [id]
-	 */
-	void removeConfigInfoByIdsAtomic(final String ids);
-
-	/**
-	 * 删除配置；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId  dataId
-	 * @param group   group
-	 * @param tenant  tenant
-	 * @param tag     tag
-	 * @param srcIp   ip
-	 * @param srcUser user
-	 */
-	void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
-			final String srcIp,
-			final String srcUser);
-
-	/**
-	 * 更新配置;数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param configInfo        config info
-	 * @param srcIp             ip
-	 * @param srcUser           user
-	 * @param time              time
-	 * @param configAdvanceInfo advance info
-	 */
-	void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-			final Timestamp time, Map<String, Object> configAdvanceInfo);
-
-	/**
-	 * 查询配置信息；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId dataId
-	 * @param group  group
-	 * @param tenant tenant
-	 * @return config info
-	 */
-	ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant);
-
-	/**
-	 * @return {@link java.util.List<com.alibaba.nacos.config.server.model.ConfigInfo>}
-	 * @author klw
-	 * @Description: find ConfigInfo by ids
-	 * @Date 2019/7/5 16:37
-	 * @Param [ids]
-	 */
-	List<ConfigInfo> findConfigInfosByIds(final String ids);
-
-	/**
-	 * 查询配置信息；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId dataId
-	 * @param group  group
-	 * @param tenant tenant
-	 * @return advance info
-	 */
-	ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant);
-
-	/**
-	 * 查询配置信息；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId dataId
-	 * @param group  group
-	 * @param tenant tenant
-	 * @return advance info
-	 */
-	ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant);
-
-	/**
-	 * 更新变更记录；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param configHistoryId         id
-	 * @param configInfo config info
-	 * @param srcIp      ip
-	 * @param srcUser    user
-	 * @param time       time
-	 * @param ops        ops type
-	 */
-	void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-			final Timestamp time, String ops);
-
-	/**
-	 * list配置的历史变更记录
-	 *
-	 * @param dataId   data Id
-	 * @param group    group
-	 * @param tenant   tenant
-	 * @param pageNo   no
-	 * @param pageSize size
-	 * @return history info
-	 */
-	Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
-			int pageSize);
-
-	/**
-	 * 增加配置；数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId  dataId
-	 * @param group   group
-	 * @param appName appName
-	 * @param date    date
-	 */
-	void addConfigSubAtomic(final String dataId, final String group, final String appName,
-			final Timestamp date);
-
-	/**
-	 * 更新配置;数据库原子操作，最小sql动作，无业务封装
-	 *
-	 * @param dataId  data Id
-	 * @param group   group
-	 * @param appName app name
-	 * @param time    time
-	 */
-	void updateConfigSubAtomic(final String dataId, final String group, final String appName,
-			final Timestamp time);
-
-	ConfigHistoryInfo detailConfigHistory(Long nid);
-
-	/**
-	 * insert tenant info
-	 *
-	 * @param kp         kp
-	 * @param tenantId   tenant Id
-	 * @param tenantName tenant name
-	 * @param tenantDesc tenant description
-	 * @param time       time
-	 */
-	void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-			String createResoure, final long time);
-
-	/**
-	 * Update tenantInfo showname
-	 *
-	 * @param kp         kp
-	 * @param tenantId   tenant Id
-	 * @param tenantName tenant name
-	 * @param tenantDesc tenant description
-	 */
-	void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc);
-
-	List<TenantInfo> findTenantByKp(String kp);
-
-	TenantInfo findTenantByKp(String kp, String tenantId);
-
-	void removeTenantInfoAtomic(final String kp, final String tenantId);
-
-	List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list);
-
-	List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list);
-
-	/**
-	 * 获取所有的配置的Md5值，通过分页方式获取。
-	 *
-	 * @return {@link List<ConfigInfoWrapper>}
-	 */
-	List<ConfigInfoWrapper> listAllGroupKeyMd5();
-
-	List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize);
-
-	String generateLikeArgument(String s);
-
-	ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant);
-
-	boolean isExistTable(String tableName);
-
-	Boolean completeMd5();
-
-	/**
-	 * query all configuration information according to group, appName, tenant (for export)
-	 *
-	 * @param group
-	 * @return Collection of ConfigInfo objects
-	 */
-	List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-			final String appName, final List<Long> ids);
-
-	/**
-	 * batch operation,insert or update
-	 * the format of the returned:
-	 * succCount: number of successful imports
-	 * skipCount: number of import skips (only with skip for the same configs)
-	 * failData: import failed data (only with abort for the same configs)
-	 * skipData: data skipped at import  (only with skip for the same configs)
-	 */
-	Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-			Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws
-			NacosException;
-
-	/**
-	 * query tenantInfo (namespace) existence based by tenantId
-	 *
-	 * @param tenantId
-	 * @return count by tenantId
-	 */
-	int tenantInfoCountByTenantId(String tenantId);
+    
+    /**
+     * constant variables.
+     */
+    String SPOT = ".";
+    Object[] EMPTY_ARRAY = new Object[] {};
+    @SuppressWarnings("checkstyle:linelength")
+    String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
+    String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
+    String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
+    String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
+    int QUERY_LIMIT_SIZE = 50;
+    String PATTERN_STR = "*";
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
+    
+    /**
+     * Add common configuration information and publish data change events.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
+            final Map<String, Object> configAdvanceInfo, final boolean notify);
+    
+    /**
+     * Add beta configuration information and publish data change events.
+     *
+     * @param configInfo config info
+     * @param betaIps    ip for push
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+            boolean notify);
+    
+    /**
+     * Add tag configuration information and publish data change events.
+     *
+     * @param configInfo config info
+     * @param tag        tag
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+            boolean notify);
+    
+    /**
+     * Update common configuration information.
+     *
+     * @param configInfo        config info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
+            final Map<String, Object> configAdvanceInfo, final boolean notify);
+    
+    /**
+     * Update beta configuration information.
+     *
+     * @param configInfo config info
+     * @param betaIps    ip for push
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+            boolean notify);
+    
+    /**
+     * Update tag configuration information.
+     *
+     * @param configInfo config info
+     * @param tag        tag
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+            boolean notify);
+    
+    /**
+     * insert or update beta config.
+     *
+     * @param configInfo config info
+     * @param betaIps    ip for push
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp, final String srcUser,
+            final Timestamp time, final boolean notify);
+    
+    /**
+     * insert or update tag config.
+     *
+     * @param configInfo config info
+     * @param tag        tag
+     * @param srcIp      remote ip
+     * @param srcUser    user
+     * @param time       time
+     * @param notify     whether to push
+     */
+    void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
+            final Timestamp time, final boolean notify);
+    
+    /**
+     * update md5.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param md5      md5
+     * @param lastTime last modified time
+     */
+    void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime);
+    
+    /**
+     * insert or update.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     */
+    void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Write to the main table, insert or update.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @param notify            whether to push
+     */
+    void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+            Map<String, Object> configAdvanceInfo, boolean notify);
+    
+    // ----------------------- config_aggr_info table insert update delete
+    
+    /**
+     * Write to the main table, insert or update.
+     *
+     * @param subInfo sub info
+     */
+    void insertOrUpdateSub(SubInfo subInfo);
+    
+    /**
+     * Delete configuration information, physical deletion.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param srcIp   remote ip
+     * @param srcUser user
+     */
+    void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
+            final String srcUser);
+    
+    /**
+     * Delete config info by ids.
+     *
+     * @param ids     id list
+     * @param srcIp   remote ip
+     * @param srcUser user
+     * @return {@link ConfigInfo} list
+     * @author klw
+     */
+    List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
+    
+    /**
+     * Delete configuration information, physical deletion.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     */
+    void removeConfigInfo4Beta(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Add data before aggregation to the database, select -> update or insert .
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param datumId datum id
+     * @param appName app name
+     * @param content config content
+     * @return {@code true} if add success
+     */
+    boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
+            String appName, final String content);
+    
+    /**
+     * Delete a single piece of data before aggregation.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param datumId datum id
+     */
+    void removeSingleAggrConfigInfo(final String dataId, final String group, final String tenant, final String datumId);
+    
+    /**
+     * Delete all pre-aggregation data under a dataId.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     */
+    void removeAggrConfigInfo(final String dataId, final String group, final String tenant);
+    
+    /**
+     * To delete aggregated data in bulk, you need to specify a list of datum.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param tenant    tenant
+     * @param datumList datumList
+     * @return {@code true} if remove success
+     */
+    boolean batchRemoveAggr(final String dataId, final String group, final String tenant, final List<String> datumList);
+    
+    /**
+     * Delete data before startTime.
+     *
+     * @param startTime start time
+     * @param limitSize limit size
+     */
+    void removeConfigHistory(final Timestamp startTime, final int limitSize);
+    
+    /**
+     * Get the number of configurations before the specified time.
+     *
+     * @param startTime start time
+     * @return count of history config that meet the conditions
+     */
+    int findConfigHistoryCountByTime(final Timestamp startTime);
+    
+    /**
+     * Get the maxId.
+     *
+     * @return config max id
+     */
+    long findConfigMaxId();
+    
+    /**
+     * Add or update data in batches. Any exception during the transaction will force a TransactionSystemException to be
+     * thrown.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param tenant   tenant
+     * @param appName  app name
+     * @param datumMap datumMap
+     * @return {@code true} if publish success
+     */
+    boolean batchPublishAggr(final String dataId, final String group, final String tenant,
+            final Map<String, String> datumMap, final String appName);
+    
+    /**
+     * Batch replacement, first delete all the specified DataID+Group data in the aggregation table, and then insert the
+     * data. Any exception during the transaction process will force a TransactionSystemException to be thrown.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param tenant   tenant
+     * @param appName  app name
+     * @param datumMap datumMap
+     * @return {@code true} if replace success
+     */
+    boolean replaceAggr(final String dataId, final String group, final String tenant,
+            final Map<String, String> datumMap, final String appName);
+    
+    /**
+     * Find all dataId and group. It is guaranteed not to return NULL.
+     *
+     * @return {@link com.alibaba.nacos.config.server.Config} list
+     */
+    @Deprecated
+    List<ConfigInfo> findAllDataIdAndGroup();
+    
+    /**
+     * Query beta configuration information based on dataId and group.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return {@link ConfigInfo4Beta}
+     */
+    ConfigInfo4Beta findConfigInfo4Beta(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Query tag configuration information based on dataId and group.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @param tag    tag
+     * @return {@link ConfigInfo4Tag}
+     */
+    ConfigInfo4Tag findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
+    
+    /**
+     * Query common configuration information based on dataId and group.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param appName app name
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant, final String appName);
+    
+    /**
+     * Query configuration information based on dataId and group.
+     *
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link com.alibaba.nacos.config.server.Config}
+     */
+    ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
+            final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Query configuration information based on dataId and group.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @return {@link ConfigInfoBase}
+     */
+    ConfigInfoBase findConfigInfoBase(final String dataId, final String group);
+    
+    /**
+     * Query configuration information by primary key ID.
+     *
+     * @param id id
+     * @return {@link ConfigInfo}
+     */
+    ConfigInfo findConfigInfo(long id);
+    
+    /**
+     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return config info
+     */
+    ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Query configuration information based on dataId.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param dataId   data id
+     * @param tenant   tenant
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
+            final String tenant);
+    
+    /**
+     * Query configuration information based on dataId.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param dataId   data id
+     * @param tenant   tenant
+     * @param appName  app name
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
+            final String tenant, final String appName);
+    
+    /**
+     * find config info.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
+            final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * find config info.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
+            final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Query configuration information based on dataId.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param dataId   data id
+     * @return {@link Page} with {@link ConfigInfoBase} generation
+     */
+    Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId);
+    
+    /**
+     * Query configuration information based on group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param group    group
+     * @param tenant   tenant
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
+            final String tenant);
+    
+    /**
+     * Query configuration information based on group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param group    group
+     * @param tenant   tenant
+     * @param appName  app name
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
+            final String tenant, final String appName);
+    
+    /**
+     * Query configuration information.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
+            final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Query configuration information based on group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param tenant   tenant
+     * @param appName  app name
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
+            final String appName);
+    
+    /**
+     * Query configuration information.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
+            final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Query configuration information based on group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param group    group
+     * @return {@link Page} with {@link ConfigInfoBase} generation
+     */
+    Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group);
+    
+    /**
+     * Returns the number of configuration items.
+     *
+     * @return number of configuration items.
+     */
+    int configInfoCount();
+    
+    /**
+     * Returns the number of configuration items.
+     *
+     * @param tenant tenant
+     * @return number of configuration items.
+     */
+    int configInfoCount(String tenant);
+    
+    /**
+     * Returns the number of beta configuration items.
+     *
+     * @return number of configuration items..
+     */
+    int configInfoBetaCount();
+    
+    /**
+     * Returns the number of beta configuration items.
+     *
+     * @return number of configuration items..
+     */
+    int configInfoTagCount();
+    
+    /**
+     * get tenant id list  by page.
+     *
+     * @param page     page number
+     * @param pageSize page size
+     * @return tenant id list
+     */
+    List<String> getTenantIdList(int page, int pageSize);
+    
+    /**
+     * get group id list  by page.
+     *
+     * @param page     page number
+     * @param pageSize page size
+     * @return group id list
+     */
+    List<String> getGroupIdList(int page, int pageSize);
+    
+    /**
+     * Get count of aggregation config info.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return count
+     */
+    int aggrConfigInfoCount(String dataId, String group, String tenant);
+    
+    /**
+     * Get count of aggregation config info.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param datumIds datum id list
+     * @param isIn     search condition
+     * @return count
+     */
+    int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn);
+    
+    /**
+     * Get count of aggregation config info.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param datumIds datum id
+     * @return count
+     */
+    int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds);
+    
+    /**
+     * Get count of aggregation config info.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param datumIds datum id
+     * @return count
+     */
+    int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds);
+    
+    
+    /**
+     * Query all configuration information by page.
+     *
+     * @param pageNo   Page number (starting at 1)
+     * @param pageSize Page size (must be greater than 0)
+     * @param tenant   tenant
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant);
+    
+    /**
+     * Query all configuration information by page.
+     *
+     * @param pageNo   Page number (starting at 1)
+     * @param pageSize Page size (must be greater than 0)
+     * @param tenant   tenant
+     * @return {@link Page} with {@link ConfigKey} generation
+     */
+    Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant);
+    
+    /**
+     * Query all configuration information by page.
+     *
+     * @param pageNo   Page number (starting at 1)
+     * @param pageSize Page size (must be greater than 0)
+     * @return {@link Page} with {@link ConfigInfoBase} generation
+     */
+    @Deprecated
+    Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize);
+    
+    /**
+     * Query all configuration information by page for dump task.
+     *
+     * @param pageNo   page number
+     * @param pageSize page size
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize);
+    
+    /**
+     * Query all config info.
+     *
+     * @param lastMaxId last max id
+     * @param pageSize  page size
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
+    
+    /**
+     * Query all beta config info for dump task.
+     *
+     * @param pageNo   page number
+     * @param pageSize page size
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize);
+    
+    /**
+     * Query all tag config info for dump task.
+     *
+     * @param pageNo   page numbser
+     * @param pageSize page sizxe
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
+    
+    
+    /**
+     * Use select in to realize batch query of db records; subQueryLimit specifies the number of conditions in in, with
+     * an upper limit of 20.
+     *
+     * @param dataIds       data id list
+     * @param group         group
+     * @param tenant        tenant
+     * @param subQueryLimit sub query limit
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
+            int subQueryLimit);
+    
+    /**
+     * Fuzzy query configuration information based on dataId and group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param dataId   Support fuzzy query
+     * @param group    Support fuzzy query
+     * @param tenant   Support fuzzy query
+     * @param appName  app name
+     * @param content  config content
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId, final String group,
+            final String tenant, final String appName, final String content);
+    
+    /**
+     * Fuzzy query configuration information based on dataId and group.
+     *
+     * @param pageNo     Page number (must be greater than 0)
+     * @param pageSize   Page size (must be greater than 0)
+     * @param configKeys Query configuration list
+     * @param blacklist  Whether to blacklist
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
+            final boolean blacklist);
+    
+    /**
+     * Query config info.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+            final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Fuzzy query configuration information based on dataId and group.
+     *
+     * @param pageNo   Page number (must be greater than 0)
+     * @param pageSize Page size (must be greater than 0)
+     * @param dataId   data id
+     * @param group    group
+     * @param content  config content
+     * @return {@link Page} with {@link ConfigInfoBase} generation
+     * @throws IOException exception
+     */
+    Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
+            final String group, final String content) throws IOException;
+    
+    /**
+     * Find a single piece of data before aggregation.
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param datumId datum id
+     * @return {@link ConfigInfoAggr}
+     */
+    ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId);
+    
+    /**
+     * Find all data before aggregation under a dataId. It is guaranteed not to return NULL.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return {@link ConfigInfoAggr} list
+     */
+    List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant);
+    
+    /**
+     * Query aggregation config info.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param pageNo   page number
+     * @param pageSize page size
+     * @return {@link Page} with {@link ConfigInfoAggr} generation
+     */
+    Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
+            final int pageSize);
+    
+    /**
+     * Query eligible aggregated data.
+     *
+     * @param pageNo     pageNo
+     * @param pageSize   pageSize
+     * @param configKeys aggregate data conditions
+     * @param blacklist  blacklist
+     * @return {@link Page} with {@link ConfigInfoAggr} generation
+     */
+    Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
+            boolean blacklist);
+    
+    /**
+     * Find all aggregated data sets.
+     *
+     * @return {@link ConfigInfoChanged} list
+     */
+    List<ConfigInfoChanged> findAllAggrGroup();
+    
+    /**
+     * Find datumId by datum content.
+     *
+     * @param dataId  data id
+     * @param groupId group
+     * @param content content
+     * @return datum keys
+     */
+    List<String> findDatumIdByContent(String dataId, String groupId, String content);
+    
+    /**
+     * Query change config.
+     *
+     * @param startTime start time
+     * @param endTime   end time
+     * @return {@link ConfigInfoWrapper} list
+     */
+    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime);
+    
+    /**
+     * According to the time period and configuration conditions to query the eligible configuration.
+     *
+     * @param dataId    dataId Support Fuzzy query
+     * @param group     dataId Support Fuzzy query
+     * @param tenant    tenant
+     * @param appName   app name
+     * @param startTime start time
+     * @param endTime   end time
+     * @param pageNo    pageNo
+     * @param pageSize  pageSize
+     * @param lastMaxId last max id
+     * @return {@link Page} with {@link ConfigInfoWrapper} generation
+     */
+    Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
+            final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
+            final int pageSize, final long lastMaxId);
+    
+    /**
+     * Query deleted config.
+     *
+     * @param startTime start time
+     * @param endTime   end time
+     * @return {@link ConfigInfo} list
+     */
+    List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime);
+    
+    /**
+     * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param id                id
+     * @param srcIp             ip
+     * @param srcUser           user
+     * @param configInfo        info
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     * @return execute sql result
+     */
+    long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            final Timestamp time, Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param configId id
+     * @param tagName  tag
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     */
+    void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant);
+    
+    /**
+     * Add configuration; database atomic operation.
+     *
+     * @param configId   config id
+     * @param configTags tags
+     * @param dataId     dataId
+     * @param group      group
+     * @param tenant     tenant
+     */
+    void addConfigTagsRelation(long configId, String configTags, String dataId, String group, String tenant);
+    
+    /**
+     * Delete tag.
+     *
+     * @param id id
+     */
+    void removeTagByIdAtomic(long id);
+    
+    /**
+     * Query config tag list.
+     *
+     * @param tenant tenant
+     * @return config tag list
+     */
+    List<String> getConfigTagsByTenant(String tenant);
+    
+    /**
+     * Query tag list.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return tag list
+     */
+    List<String> selectTagByConfig(String dataId, String group, String tenant);
+    
+    /**
+     * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param tenant  tenant
+     * @param srcIp   ip
+     * @param srcUser user
+     */
+    void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
+            final String srcUser);
+    
+    /**
+     * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param ids ids
+     */
+    void removeConfigInfoByIdsAtomic(final String ids);
+    
+    /**
+     * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param tenant  tenant
+     * @param tag     tag
+     * @param srcIp   remote ip
+     * @param srcUser user
+     */
+    void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
+            final String srcIp, final String srcUser);
+    
+    /**
+     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param configInfo        config info
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param time              time
+     * @param configAdvanceInfo advance info
+     */
+    void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Timestamp time, Map<String, Object> configAdvanceInfo);
+    
+    
+    /**
+     * find ConfigInfo by ids.
+     *
+     * @param ids id list
+     * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo} list
+     * @author klw
+     * @date 2019/7/5 16:37
+     */
+    List<ConfigInfo> findConfigInfosByIds(final String ids);
+    
+    /**
+     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return advance info
+     */
+    ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return advance info
+     */
+    ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
+     *
+     * @param id         id
+     * @param configInfo config info
+     * @param srcIp      ip
+     * @param srcUser    user
+     * @param time       time
+     * @param ops        ops type
+     */
+    void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
+            String ops);
+    
+    /**
+     * List configuration history change record.
+     *
+     * @param dataId   data Id
+     * @param group    group
+     * @param tenant   tenant
+     * @param pageNo   no
+     * @param pageSize size
+     * @return {@link Page} with {@link ConfigHistoryInfo} generation
+     */
+    Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
+    
+    /**
+     * Increase configuration; database atomic operation, minimum sql action, no business encapsulation.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param appName appName
+     * @param date    date
+     */
+    void addConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp date);
+    
+    /**
+     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param dataId  data Id
+     * @param group   group
+     * @param appName app name
+     * @param time    time
+     */
+    void updateConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp time);
+    
+    /**
+     * Get history config detail.
+     *
+     * @param nid nid
+     * @return {@link ConfigHistoryInfo}
+     */
+    ConfigHistoryInfo detailConfigHistory(Long nid);
+    
+    /**
+     * insert tenant info.
+     *
+     * @param kp            kp
+     * @param tenantId      tenant Id
+     * @param tenantName    tenant name
+     * @param tenantDesc    tenant description
+     * @param createResoure create resouce
+     * @param time          time
+     */
+    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResoure,
+            final long time);
+    
+    /**
+     * Update tenantInfo showname.
+     *
+     * @param kp         kp
+     * @param tenantId   tenant Id
+     * @param tenantName tenant name
+     * @param tenantDesc tenant description
+     */
+    void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc);
+    
+    /**
+     * Query tenant info.
+     *
+     * @param kp kp
+     * @return {@link TenantInfo} list
+     */
+    List<TenantInfo> findTenantByKp(String kp);
+    
+    /**
+     * Query tenant info.
+     *
+     * @param kp       kp
+     * @param tenantId tenant id
+     * @return {@link TenantInfo}
+     */
+    TenantInfo findTenantByKp(String kp, String tenantId);
+    
+    /**
+     * Remote tenant info.
+     *
+     * @param kp       kp
+     * @param tenantId tenant id
+     */
+    void removeTenantInfoAtomic(final String kp, final String tenantId);
+    
+    /**
+     * Convert delete config.
+     *
+     * @param list origin data
+     * @return {@link ConfigInfo} list
+     */
+    List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list);
+    
+    /**
+     * Convert change config.
+     *
+     * @param list origin data
+     * @return {@link ConfigInfoWrapper} list
+     */
+    List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list);
+    
+    /**
+     * Get the Md5 value of all configurations, through the paging method.
+     *
+     * @return {@link ConfigInfoWrapper} list
+     */
+    List<ConfigInfoWrapper> listAllGroupKeyMd5();
+    
+    /**
+     * list group key md5 by page.
+     *
+     * @param pageNo   page no
+     * @param pageSize page size
+     * @return {@link ConfigInfoWrapper} list
+     */
+    List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize);
+    
+    /**
+     * Generate fuzzy search Sql.
+     *
+     * @param s origin string
+     * @return fuzzy search Sql
+     */
+    String generateLikeArgument(String s);
+    
+    /**
+     * Query config info.
+     *
+     * @param dataId data id
+     * @param group  group
+     * @param tenant tenant
+     * @return {@link ConfigInfoWrapper}
+     */
+    ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant);
+    
+    /**
+     * Determine whether the table exists.
+     *
+     * @param tableName table name
+     * @return {@code true} if table exist
+     */
+    boolean isExistTable(String tableName);
+    
+    /**
+     * complete md5.
+     *
+     * @return {@code true} if success
+     */
+    Boolean completeMd5();
+    
+    /**
+     * query all configuration information according to group, appName, tenant (for export).
+     *
+     * @param dataId  data id
+     * @param group   group
+     * @param tenant  tenant
+     * @param appName appName
+     * @param ids     ids
+     * @return Collection of ConfigInfo objects
+     */
+    List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
+            final String appName, final List<Long> ids);
+    
+    /**
+     * batch operation,insert or update the format of the returned: succCount: number of successful imports skipCount:
+     * number of import skips (only with skip for the same configs) failData: import failed data (only with abort for
+     * the same configs) skipData: data skipped at import  (only with skip for the same configs).
+     *
+     * @param configInfoList    config info list
+     * @param srcUser           user
+     * @param srcIp             remote ip
+     * @param configAdvanceInfo advance info
+     * @param time              time
+     * @param notify            whether to push
+     * @param policy            {@link SameConfigPolicy}
+     * @return map containing the number of affected rows
+     * @throws NacosException nacos exception
+     */
+    Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
+            Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
+            throws NacosException;
+    
+    /**
+     * query tenantInfo (namespace) existence based by tenantId.
+     *
+     * @param tenantId tenant Id
+     * @return count by tenantId
+     */
+    int tenantInfoCountByTenantId(String tenantId);
 }

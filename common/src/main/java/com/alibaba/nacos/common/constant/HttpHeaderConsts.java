@@ -33,6 +33,6 @@ public interface HttpHeaderConsts {
     String CONTENT_ENCODING = "Content-Encoding";
     String CONNECTION = "Connection";
     String REQUEST_ID = "RequestId";
-    String REQUEST_MODULE = "REQUEST_MODULE";
+    String REQUEST_MODULE = "Request-Module";
     
 }

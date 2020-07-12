@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTag;
-import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoBetaMapStruct;
-import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoMapStruct;
-import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoTagMapStruct;
-import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.config.server.utils.MD5Util;
+import com.alibaba.nacos.config.server.utils.Protocol;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,10 +49,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
- * ConfigServlet inner for aop
+ * ConfigServlet inner for aop.
  *
  * @author Nacos
  */
@@ -65,30 +65,26 @@ public class ConfigServletInner {
     @Autowired
     private PersistService persistService;
 
-    @Autowired
-    private PersistServiceTmp persistServiceTmp;
-
     private static final int TRY_GET_LOCK_TIMES = 9;
 
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
 
     /**
-     * 轮询接口
+     * 轮询接口.
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-                                  Map<String, String> clientMd5Map, int probeRequestSize)
-        throws IOException {
+                                  Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
 
-        // 长轮询
+        // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
 
-        // else 兼容短轮询逻辑
+        // Compatible with short polling logic.
         List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
 
-        // 兼容短轮询result
+        // Compatible with short polling result.
         String oldResult = MD5Util.compareMd5OldResult(changedGroups);
         String newResult = MD5Util.compareMd5ResultString(changedGroups);
 
@@ -98,9 +94,7 @@ public class ConfigServletInner {
         }
         int versionNum = Protocol.getVersionNumber(version);
 
-        /**
-         * 2.0.4版本以前, 返回值放入header中
-         */
+        // Befor 2.0.4 version, return value is put into header.
         if (versionNum < START_LONG_POLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
@@ -110,7 +104,7 @@ public class ConfigServletInner {
 
         Loggers.AUTH.info("new content:" + newResult);
 
-        // 禁用缓存
+        // Disable cache.
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
         response.setHeader("Cache-Control", "no-cache,no-store");
@@ -119,7 +113,7 @@ public class ConfigServletInner {
     }
 
     /**
-     * 同步配置获取接口
+     * Execute to get config API.
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
                               String tenant, String tag, String clientIp) throws IOException, ServletException {
@@ -152,8 +146,7 @@ public class ConfigServletInner {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (PropertyUtil.isDirectRead()) {
-                        ConfigInfoBeta configInfoBeta = persistServiceTmp.findConfigInfo4Beta(dataId, group, tenant);
-                        configInfoBase = ConfigInfoBetaMapStruct.MAPPER.convertConfigInfoBase(configInfoBeta);
+                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
@@ -170,8 +163,7 @@ public class ConfigServletInner {
                                 }
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, autoTag);
-                                configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
+                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
@@ -182,14 +174,13 @@ public class ConfigServletInner {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
-                                ConfigInfo configInfo = persistServiceTmp.findConfigInfo(dataId, group, tenant);
-                                configInfoBase = ConfigInfoMapStruct.MAPPER.convertConfigInfoBase(configInfo);
+                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
                             if (configInfoBase == null && fileNotExist(file)) {
                                 // FIXME CacheItem
-                                // 不存在了无法简单的计算推送delayed，这里简单的记做-1
+                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
                                     ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
 
@@ -215,17 +206,15 @@ public class ConfigServletInner {
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
-                            ConfigInfoTag configInfoTag = persistServiceTmp.findConfigInfo4Tag(dataId, group, tenant, tag);
-                            configInfoBase = ConfigInfoTagMapStruct.MAPPER.convertConfigInfoBase(configInfoTag);
+                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
                         if (configInfoBase == null && fileNotExist(file)) {
                             // FIXME CacheItem
-                            // 不存在了无法简单的计算推送delayed，这里简单的记做-1
+                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                ConfigTraceService.PULL_EVENT_NOTFOUND,
-                                -1, requestIp);
+                                ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
 
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -239,9 +228,8 @@ public class ConfigServletInner {
                 }
 
                 response.setHeader(Constants.CONTENT_MD5, md5);
-                /**
-                 *  禁用缓存
-                 */
+
+                // Disable cache.
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
@@ -258,19 +246,21 @@ public class ConfigServletInner {
                     out.flush();
                     out.close();
                 } else {
-                    fis.getChannel().transferTo(0L, fis.getChannel().size(),
-                        Channels.newChannel(response.getOutputStream()));
+                    fis.getChannel()
+                        .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
                 }
 
-                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
+                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
 
                 final long delayed = System.currentTimeMillis() - lastModified;
 
                 // TODO distinguish pull-get && push-get
-                // 否则无法直接把delayed作为推送延时的依据，因为主动get请求的delayed值都很大
+                /*
+                 Otherwise, delayed cannot be used as the basis of push delay directly,
+                 because the delayed value of active get requests is very large.
+                 */
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                    ConfigTraceService.PULL_EVENT_OK, delayed,
-                    requestIp);
+                    ConfigTraceService.PULL_EVENT_OK, delayed, requestIp);
 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -280,9 +270,10 @@ public class ConfigServletInner {
             }
         } else if (lockResult == 0) {
 
-            // FIXME CacheItem 不存在了无法简单的计算推送delayed，这里简单的记做-1
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+            // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
+            ConfigTraceService
+                .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
+                    requestIp);
 
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().println("config data not exist");
@@ -290,7 +281,7 @@ public class ConfigServletInner {
 
         } else {
 
-            pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
+            PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
 
             response.setStatus(HttpServletResponse.SC_CONFLICT);
             response.getWriter().println("requested file is being modified, please try later.");
@@ -306,35 +297,30 @@ public class ConfigServletInner {
     }
 
     private static int tryConfigReadLock(String groupKey) {
-        /**
-         *  默认加锁失败
-         */
+
+        // Lock failed by default.
         int lockResult = -1;
-        /**
-         *  尝试加锁，最多10次
-         */
+
+        // Try to get lock times, max value: 10;
         for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
             lockResult = ConfigCacheService.tryReadLock(groupKey);
-            /**
-             *  数据不存在
-             */
+
+            // The data is non-existent.
             if (0 == lockResult) {
                 break;
             }
 
-            /**
-             *  success
-             */
+            // Success
             if (lockResult > 0) {
                 break;
             }
-            /**
-             *  retry
-             */
+
+            // Retry.
             if (i > 0) {
                 try {
                     Thread.sleep(1);
                 } catch (Exception e) {
+                    LogUtil.PULL_CHECK_LOG.error("An Exception occurred while thread sleep", e);
                 }
             }
         }
@@ -352,4 +338,5 @@ public class ConfigServletInner {
     private static boolean fileNotExist(File file) {
         return file == null || !file.exists();
     }
+
 }

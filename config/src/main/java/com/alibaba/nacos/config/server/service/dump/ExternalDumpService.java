@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.service.PersistServiceTmp;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import org.springframework.context.annotation.Conditional;
@@ -26,33 +25,33 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 /**
+ * External dump service.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(ConditionOnExternalStorage.class)
 @Component
 public class ExternalDumpService extends DumpService {
 
-	/**
-	 * Here you inject the dependent objects constructively, ensuring that some
-	 * of the dependent functionality is initialized ahead of time
-	 *
-	 * @param persistService  {@link PersistService}
-	 * @param memberManager   {@link ServerMemberManager}
-	 */
-	public ExternalDumpService(PersistServiceTmp persistService,
-                               ServerMemberManager memberManager) {
-		super(persistService, memberManager);
-	}
+    /**
+     * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
+     * initialized ahead of time.
+     *
+     * @param persistService {@link PersistService}
+     * @param memberManager  {@link ServerMemberManager}
+     */
+    public ExternalDumpService(PersistService persistService, ServerMemberManager memberManager) {
+        super(persistService, memberManager);
+    }
 
-	@PostConstruct
-	@Override
-	protected void init() throws Throwable {
-		dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor,
-				dumpAllTagProcessor);
-	}
+    @PostConstruct
+    @Override
+    protected void init() throws Throwable {
+        dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+    }
 
-	@Override
-	protected boolean canExecute() {
-		return memberManager.isFirstIp();
-	}
+    @Override
+    protected boolean canExecute() {
+        return memberManager.isFirstIp();
+    }
 }

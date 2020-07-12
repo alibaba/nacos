@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.event;
+package com.alibaba.nacos.config.server.monitor;
 
-import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
+ * PrintGetConfigResponeTask.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author zongtanghu
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-@JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
-
+public class PrintGetConfigResponeTask implements Runnable {
+    @Override
+    public void run() {
+        MEMORY_LOG.info(ResponseMonitor.getStringForPrint());
+    }
+    
 }

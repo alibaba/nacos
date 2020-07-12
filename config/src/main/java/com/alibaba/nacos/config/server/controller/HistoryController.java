@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.modules.entity.HisConfigInfo;
-import com.alibaba.nacos.config.server.modules.mapstruct.HisConfigInfoMapStruct;
-import com.alibaba.nacos.config.server.service.PersistServiceTmp;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 管理控制器。
+ * History management controller.
  *
  * @author Nacos
  */
@@ -45,36 +43,41 @@ public class HistoryController {
     @Autowired
     protected PersistService persistService;
 
-    @Autowired
-    private PersistServiceTmp persistServiceTmp;
-
+    /**
+     * Query the list history config.
+     *
+     * @param dataId dataId string value.
+     * @param group group string value.
+     * @param tenant tenant string value.
+     * @param appName appName string value.
+     * @param pageNo pageNo string value.
+     * @param pageSize pageSize string value.
+     * @param modelMap modeMap.
+     * @return
+     */
     @GetMapping(params = "search=accurate")
-    public Page<HisConfigInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
-                                                 @RequestParam("group") String group, //
-                                                 @RequestParam(value = "tenant", required = false,
-                                                     defaultValue = StringUtils.EMPTY) String tenant,
-                                                 @RequestParam(value = "appName", required = false) String appName,
-                                                 @RequestParam(value = "pageNo", required = false) Integer pageNo,
-                                                 //
-                                                 @RequestParam(value = "pageSize", required = false)
-                                                     Integer pageSize, //
-                                                 ModelMap modelMap) {
-        pageNo = null == pageNo ? 0 : pageNo;
+    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
+                                                     @RequestParam("group") String group, //
+                                                     @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+                                                     @RequestParam(value = "appName", required = false) String appName,
+                                                     @RequestParam(value = "pageNo", required = false) Integer pageNo,
+                                                     //
+                                                     @RequestParam(value = "pageSize", required = false) Integer pageSize, //
+                                                     ModelMap modelMap) {
+        pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        // configInfoBase没有appName字段
-        return persistServiceTmp.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        // configInfoBase has no appName field.
+        return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }
 
     /**
-     * 查看配置历史信息详情
+     * Query the detailed configuration history informations.
      */
     @GetMapping
     public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
                                                   @RequestParam("nid") Long nid, ModelMap modelMap) {
-        HisConfigInfo hisConfigInfo = persistServiceTmp.detailConfigHistory(nid);
-        ConfigHistoryInfo historyInfo = HisConfigInfoMapStruct.MAPPER.convertConfigHistoryInfo(hisConfigInfo);
-        return historyInfo;
+        return persistService.detailConfigHistory(nid);
     }
 
 }
