@@ -27,9 +27,9 @@ import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
@@ -84,7 +84,7 @@ public class BaseClusterTest extends HttpClient4Test {
 		clusterInfo = "nacos.member.list=" + ip + ":8847," + ip
 				+ ":8848," + ip + ":8849";
 
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {
 			@Override
 			public void onEvent(RaftDbErrorEvent event) {
 				System.out.print(event.getEx());

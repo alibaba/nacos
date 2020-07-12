@@ -26,9 +26,9 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.SmartSubscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.AccessControlException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -119,8 +120,8 @@ public class CurcuitFilter implements Filter {
     }
     
     private void registerSubscribe() {
-        NotifyCenter.registerSubscribe(new SmartSubscribe() {
-            
+        NotifyCenter.registerSubscriber(new SmartSubscriber() {
+    
             @Override
             public void onEvent(Event event) {
                 // @JustForTest
@@ -135,8 +136,8 @@ public class CurcuitFilter implements Filter {
             }
             
             @Override
-            public boolean canNotify(Event event) {
-                return (event instanceof RaftDbErrorEvent) || (event instanceof RaftDbErrorRecoverEvent);
+            public List<Class<? extends Event>> subscribeTypes() {
+                return Arrays.asList(RaftDbErrorRecoverEvent.class, RaftDbErrorEvent.class);
             }
         });
     }
