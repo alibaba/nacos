@@ -222,7 +222,7 @@ public class ConfigDumpEvent extends Event {
             this.lastModifiedTs = lastModifiedTs;
             return this;
         }
-    
+        
         /**
          * Build a configDumpEvent.
          *
