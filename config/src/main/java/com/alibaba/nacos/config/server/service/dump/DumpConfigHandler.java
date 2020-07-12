@@ -17,14 +17,14 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 /**
  * Dump config subscriber.
@@ -37,8 +37,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
      * trigger config dump event.
      *
      * @param event {@link ConfigDumpEvent}
-     * @return {@code true} if the config dump task success , else
-     *         {@code false}
+     * @return {@code true} if the config dump task success , else {@code false}
      */
     public static boolean configDump(ConfigDumpEvent event) {
         final String dataId = event.getDataId();
