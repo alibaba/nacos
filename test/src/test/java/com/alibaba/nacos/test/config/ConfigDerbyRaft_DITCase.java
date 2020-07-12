@@ -27,9 +27,9 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -299,7 +299,7 @@ public class ConfigDerbyRaft_DITCase
 		NotifyCenter.registerToPublisher(RaftDbErrorRecoverEvent.class, 8);
 
 		CountDownLatch latch1 = new CountDownLatch(1);
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {
 			@Override
 			public void onEvent(RaftDbErrorEvent event) {
 				latch1.countDown();
@@ -318,7 +318,7 @@ public class ConfigDerbyRaft_DITCase
 		Assert.assertFalse(result);
 
 		CountDownLatch latch2 = new CountDownLatch(1);
-		NotifyCenter.registerSubscribe(new Subscribe<RaftDbErrorRecoverEvent>() {
+		NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorRecoverEvent>() {
 
 			@Override
 			public void onEvent(RaftDbErrorRecoverEvent event) {

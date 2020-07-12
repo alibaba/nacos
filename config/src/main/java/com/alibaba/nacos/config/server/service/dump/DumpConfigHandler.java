@@ -23,15 +23,15 @@ import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 
 /**
  * Dump config subscriber.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class DumpConfigHandler implements Subscribe<ConfigDumpEvent> {
+public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
     
     /**
      * trigger config dump event.
