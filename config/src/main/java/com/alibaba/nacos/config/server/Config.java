@@ -30,9 +30,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {
         "com.alibaba.nacos.config.server",
         "com.alibaba.nacos.core",
-},exclude = {DataSourceAutoConfiguration.class})
+})
 public class Config {
-    
+
     public static void main(String[] args) {
         SpringApplication.run(Config.class, args);
     }

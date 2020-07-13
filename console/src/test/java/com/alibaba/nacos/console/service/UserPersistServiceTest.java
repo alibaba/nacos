@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.UserPersistServiceTmp;
 import com.alibaba.nacos.config.server.modules.entity.Users;
@@ -36,7 +37,7 @@ import java.util.Random;
  * @version $Id: UserPersistServiceTest.java,v 0.1 2020年06月06日 15:21 $Exp
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = Nacos.class)
 public class UserPersistServiceTest extends BaseTest {
 
 

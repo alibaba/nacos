@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.PermissionPersistServiceTmp;
 import com.alibaba.nacos.config.server.modules.entity.Permissions;
@@ -35,7 +36,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @version $Id: PermissionPersistServiceTest.java,v 0.1 2020年06月06日 14:58 $Exp
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = Nacos.class)
 public class PermissionPersistServiceTest extends BaseTest {
 
     private Permissions permissions;

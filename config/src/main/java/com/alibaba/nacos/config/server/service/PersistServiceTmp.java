@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.modules.repository.*;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.querydsl.core.BooleanBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,12 +56,12 @@ import javax.persistence.criteria.Root;
 import java.sql.Timestamp;
 import java.util.stream.Collectors;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+
 
 /**
  * @author Nacos
  */
+@Slf4j
 @Service
 public class PersistServiceTmp {
 
@@ -141,7 +142,7 @@ public class PersistServiceTmp {
                     }
                     return configInfoList;
                 } catch (CannotGetJdbcConnectionException e) {
-                    fatalLog.error("[db-error] " + e.toString(), e);
+                    log.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
             }
@@ -231,7 +232,7 @@ public class PersistServiceTmp {
             }
 
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            log.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -263,7 +264,7 @@ public class PersistServiceTmp {
                     tenantTmp, time.getTime()));
             }
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            log.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -296,7 +297,7 @@ public class PersistServiceTmp {
                     configInfo.getGroupId(), tenantTmp, tagTmp, time.getTime()));
             }
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            log.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -330,7 +331,7 @@ public class PersistServiceTmp {
             }
 
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            log.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
@@ -571,7 +572,7 @@ public class PersistServiceTmp {
                         insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    fatalLog.error("[db-error] " + e.toString(), e);
+                    log.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -695,7 +696,7 @@ public class PersistServiceTmp {
                         configInfoBetaRepository.deleteById(configInfoBeta.getId());
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    fatalLog.error("[db-error] " + e.toString(), e);
+                    log.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -774,7 +775,7 @@ public class PersistServiceTmp {
                                 configInfo.getTenantId(), time.getTime()));
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    fatalLog.error("[db-error] " + e.toString(), e);
+                    log.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -890,7 +891,7 @@ public class PersistServiceTmp {
                             configInfo.getGroupId(), configInfo.getTenantId(), time.getTime()));
                     }
                 } catch (CannotGetJdbcConnectionException e) {
-                    fatalLog.error("[db-error] " + e.toString(), e);
+                    log.error("[db-error] " + e.toString(), e);
                     throw e;
                 }
                 return Boolean.TRUE;
@@ -948,7 +949,7 @@ public class PersistServiceTmp {
             try {
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
-                defaultLog.error("data verification failed", e);
+                log.error("data verification failed", e);
                 throw e;
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),

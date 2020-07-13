@@ -56,25 +56,25 @@ import java.util.zip.ZipOutputStream;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DiskUtils {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskUtils.class);
-    
+
     private static final String NO_SPACE_CN = "设备上没有空间";
-    
+
     private static final String NO_SPACE_EN = "No space left on device";
-    
+
     private static final String DISK_QUATA_CN = "超出磁盘限额";
-    
+
     private static final String DISK_QUATA_EN = "Disk quota exceeded";
-    
+
     private static final Charset CHARSET = StandardCharsets.UTF_8;
-    
+
     private static final CharsetDecoder DECODER = CHARSET.newDecoder();
-    
+
     public static void touch(String path, String fileName) throws IOException {
         FileUtils.touch(Paths.get(path, fileName).toFile());
     }
-    
+
     /**
      * Implements the same behaviour as the "touch" utility on Unix. It creates a new file with size 0 or, if the file
      * exists already, it is opened and closed without modifying it, but updating the file date and time.
@@ -89,7 +89,7 @@ public final class DiskUtils {
     public static void touch(File file) throws IOException {
         FileUtils.touch(file);
     }
-    
+
     /**
      * Creates a new empty file in the specified directory, using the given
      * prefix and suffix strings to generate its name. The resulting
@@ -131,7 +131,7 @@ public final class DiskUtils {
     public static File createTmpFile(String dir, String prefix, String suffix) throws IOException {
         return Files.createTempFile(Paths.get(dir), prefix, suffix).toFile();
     }
-    
+
     /**
      * Creates an empty file in the default temporary-file directory, using
      * the given prefix and suffix to generate its name. The resulting {@code
@@ -164,7 +164,7 @@ public final class DiskUtils {
     public static File createTmpFile(String prefix, String suffix) throws IOException {
         return Files.createTempFile(prefix, suffix).toFile();
     }
-    
+
     /**
      * read file which under the path.
      *
@@ -179,7 +179,7 @@ public final class DiskUtils {
         }
         return null;
     }
-    
+
     /**
      * read file content by {@link InputStream}.
      *
@@ -198,7 +198,7 @@ public final class DiskUtils {
             return null;
         }
     }
-    
+
     /**
      * read this file content.
      *
@@ -225,7 +225,7 @@ public final class DiskUtils {
             return null;
         }
     }
-    
+
     /**
      * read this file content then return bytes.
      *
@@ -241,12 +241,12 @@ public final class DiskUtils {
         }
         return null;
     }
-    
+
     public static byte[] readFileBytes(String path, String fileName) {
         File file = openFile(path, fileName);
         return readFileBytes(file);
     }
-    
+
     /**
      * Writes the contents to the target file.
      *
@@ -264,7 +264,7 @@ public final class DiskUtils {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
-                        .contains(DISK_QUATA_EN)) {
+                    .contains(DISK_QUATA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }
@@ -272,17 +272,17 @@ public final class DiskUtils {
         }
         return false;
     }
-    
+
     public static void deleteQuietly(File file) {
         Objects.requireNonNull(file, "file");
         FileUtils.deleteQuietly(file);
     }
-    
+
     public static void deleteQuietly(Path path) {
         Objects.requireNonNull(path, "path");
         FileUtils.deleteQuietly(path.toFile());
     }
-    
+
     /**
      * delete target file.
      *
@@ -297,36 +297,36 @@ public final class DiskUtils {
         }
         return false;
     }
-    
+
     public static void deleteDirectory(String path) throws IOException {
         FileUtils.deleteDirectory(new File(path));
     }
-    
+
     public static void forceMkdir(String path) throws IOException {
         FileUtils.forceMkdir(new File(path));
     }
-    
+
     public static void forceMkdir(File file) throws IOException {
         FileUtils.forceMkdir(file);
     }
-    
+
     public static void deleteDirThenMkdir(String path) throws IOException {
         deleteDirectory(path);
         forceMkdir(path);
     }
-    
+
     public static void copyDirectory(File srcDir, File destDir) throws IOException {
         FileUtils.copyDirectory(srcDir, destDir);
     }
-    
+
     public static void copyFile(File src, File target) throws IOException {
         FileUtils.copyFile(src, target);
     }
-    
+
     public static File openFile(String path, String fileName) {
         return openFile(path, fileName, false);
     }
-    
+
     /**
      * open file.
      *
@@ -366,9 +366,9 @@ public final class DiskUtils {
         }
         return file;
     }
-    
+
     // copy from sofa-jraft
-    
+
     /**
      * Compress a folder in a directory.
      *
@@ -379,20 +379,20 @@ public final class DiskUtils {
      * @throws IOException IOException
      */
     public static void compress(final String rootDir, final String sourceDir, final String outputFile,
-            final Checksum checksum) throws IOException {
+                                final Checksum checksum) throws IOException {
         try (final FileOutputStream fos = new FileOutputStream(
-                outputFile); final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
-                final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
+            outputFile); final CheckedOutputStream cos = new CheckedOutputStream(fos, checksum);
+             final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(cos))) {
             compressDirectoryToZipFile(rootDir, sourceDir, zos);
             zos.flush();
             fos.getFD().sync();
         }
     }
-    
+
     // copy from sofa-jraft
-    
+
     private static void compressDirectoryToZipFile(final String rootDir, final String sourceDir,
-            final ZipOutputStream zos) throws IOException {
+                                                   final ZipOutputStream zos) throws IOException {
         final String dir = Paths.get(rootDir, sourceDir).toString();
         final File[] files = Objects.requireNonNull(new File(dir).listFiles(), "files");
         for (final File file : files) {
@@ -402,15 +402,15 @@ public final class DiskUtils {
             } else {
                 zos.putNextEntry(new ZipEntry(child));
                 try (final FileInputStream fis = new FileInputStream(
-                        file); final BufferedInputStream bis = new BufferedInputStream(fis)) {
+                    file); final BufferedInputStream bis = new BufferedInputStream(fis)) {
                     IOUtils.copy(bis, zos);
                 }
             }
         }
     }
-    
+
     // copy from sofa-jraft
-    
+
     /**
      * Unzip the target file to the specified folder.
      *
@@ -420,17 +420,17 @@ public final class DiskUtils {
      * @throws IOException IOException
      */
     public static void decompress(final String sourceFile, final String outputDir, final Checksum checksum)
-            throws IOException {
+        throws IOException {
         try (final FileInputStream fis = new FileInputStream(
-                sourceFile); final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
-                final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
+            sourceFile); final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
+             final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 final String fileName = entry.getName();
                 final File entryFile = new File(Paths.get(outputDir, fileName).toString());
                 FileUtils.forceMkdir(entryFile.getParentFile());
                 try (final FileOutputStream fos = new FileOutputStream(
-                        entryFile); final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                    entryFile); final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                     IOUtils.copy(zis, bos);
                     bos.flush();
                     fos.getFD().sync();
@@ -443,7 +443,7 @@ public final class DiskUtils {
             IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
         }
     }
-    
+
     /**
      * Returns an Iterator for the lines in a <code>File</code>.
      * <p>
@@ -479,7 +479,7 @@ public final class DiskUtils {
     public static LineIterator lineIterator(File file, String encoding) throws IOException {
         return new LineIterator(FileUtils.lineIterator(file, encoding));
     }
-    
+
     /**
      * Returns an Iterator for the lines in a <code>File</code> using the default encoding for the VM.
      *
@@ -492,11 +492,11 @@ public final class DiskUtils {
     public static LineIterator lineIterator(File file) throws IOException {
         return new LineIterator(FileUtils.lineIterator(file, null));
     }
-    
+
     public static class LineIterator implements AutoCloseable {
-    
+
         private final org.apache.commons.io.LineIterator target;
-    
+
         /**
          * Constructs an iterator of the lines for a <code>Reader</code>.
          *
@@ -505,31 +505,31 @@ public final class DiskUtils {
         LineIterator(org.apache.commons.io.LineIterator target) {
             this.target = target;
         }
-    
+
         public boolean hasNext() {
             return target.hasNext();
         }
-        
+
         public String next() {
             return target.next();
         }
-    
+
         public String nextLine() {
             return target.nextLine();
         }
-    
+
         @Override
-        public void close() {
+        public void close() throws IOException {
             target.close();
         }
-    
+
         public void remove() {
             target.remove();
         }
-    
+
         public void forEachRemaining(Consumer<? super String> action) {
             target.forEachRemaining(action);
         }
     }
-    
+
 }

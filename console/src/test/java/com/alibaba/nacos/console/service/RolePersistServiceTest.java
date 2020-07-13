@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RolePersistServiceTmp;
 import com.alibaba.nacos.config.server.modules.entity.Roles;
@@ -33,7 +34,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @version $Id: RolePersistServiceTest.java,v 0.1 2020年06月06日 14:59 $Exp
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = Nacos.class)
 public class RolePersistServiceTest extends BaseTest {
 
     private Roles roles;

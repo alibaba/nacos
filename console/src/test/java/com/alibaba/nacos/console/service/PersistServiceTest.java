@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -43,7 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = Nacos.class)
 public class PersistServiceTest extends BaseTest {
 
     @Autowired

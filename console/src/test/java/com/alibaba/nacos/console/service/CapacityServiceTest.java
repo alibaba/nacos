@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.service;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.modules.entity.*;
@@ -36,7 +37,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = Nacos.class)
 public class CapacityServiceTest extends BaseTest {
 
     @Autowired
