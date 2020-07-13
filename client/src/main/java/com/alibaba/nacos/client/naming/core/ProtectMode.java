@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.core;
 
 /**
+ * Protect mode.
+ *
  * @author nkorange
  */
 public class ProtectMode {
-
+    
     private float protectThreshold;
-
+    
     public ProtectMode() {
         this.protectThreshold = 0.8F;
     }
-
+    
     public float getProtectThreshold() {
         return protectThreshold;
     }
-
+    
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
     }

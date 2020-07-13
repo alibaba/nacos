@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.utils;
 
-/**
- * Created by harold on 2015/12/7.
- */
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Provides utility methods and decorators for {@link Collection} instances.
@@ -41,22 +42,22 @@ import java.util.*;
  * @since Commons Collections 1.0
  */
 public class CollectionUtils {
-
+    
     /**
-     * Constant to avoid repeated object creation
+     * Constant to avoid repeated object creation.
      */
     private static final Integer INTEGER_ONE = 1;
-
+    
     /**
      * <code>CollectionUtils</code> should not normally be instantiated.
      */
     public CollectionUtils() {
     }
-
+    
     /**
      * Returns a new {@link Collection} containing <tt><i>a</i> - <i>b</i></tt>. The cardinality of each element
-     * <i>e</i> in the returned {@link Collection} will be the cardinality of <i>e</i> in <i>a</i> minus the cardinality
-     * of <i>e</i> in <i>b</i>, or zero, whichever is greater.
+     * <i>e</i> in the returned {@link Collection} will be the cardinality of <i>e</i> in <i>a</i> minus the
+     * cardinality of <i>e</i> in <i>b</i>, or zero, whichever is greater.
      *
      * @param a the collection to subtract from, must not be null
      * @param b the collection to subtract, must not be null
@@ -70,12 +71,12 @@ public class CollectionUtils {
         }
         return list;
     }
-
+    
     /**
      * Returns a {@link Map} mapping each unique element in the given {@link Collection} to an {@link Integer}
      * representing the number of occurrences of that element in the {@link Collection}.
-     * <p>
-     * Only those elements present in the collection will appear as keys in the map.
+     *
+     * <p>Only those elements present in the collection will appear as keys in the map.
      *
      * @param coll the collection to get the cardinality map for, must not be null
      * @return the populated cardinality map
@@ -84,7 +85,7 @@ public class CollectionUtils {
         Map count = new HashMap(coll.size());
         for (Iterator it = coll.iterator(); it.hasNext(); ) {
             Object obj = it.next();
-            Integer c = (Integer)(count.get(obj));
+            Integer c = (Integer) (count.get(obj));
             if (c == null) {
                 count.put(obj, INTEGER_ONE);
             } else {
@@ -93,12 +94,12 @@ public class CollectionUtils {
         }
         return count;
     }
-
+    
     /**
      * Returns <tt>true</tt> iff the given {@link Collection}s contain exactly the same elements with exactly the same
      * cardinalities.
-     * <p>
-     * That is, iff the cardinality of <i>e</i> in <i>a</i> is equal to the cardinality of <i>e</i> in <i>b</i>, for
+     *
+     * <p>That is, iff the cardinality of <i>e</i> in <i>a</i> is equal to the cardinality of <i>e</i> in <i>b</i>, for
      * each element <i>e</i> in <i>a</i> or <i>b</i>.
      *
      * @param a the first collection, must not be null
@@ -125,13 +126,13 @@ public class CollectionUtils {
             }
         }
     }
-
+    
     //-----------------------------------------------------------------------
-
+    
     /**
      * Null-safe check if the specified collection is empty.
-     * <p>
-     * Null returns true.
+     *
+     * <p>Null returns true.
      *
      * @param coll the collection to check, may be null
      * @return true if empty or null
@@ -140,9 +141,9 @@ public class CollectionUtils {
     public static boolean isEmpty(Collection coll) {
         return (coll == null || coll.isEmpty());
     }
-
+    
     private static int getFreq(final Object obj, final Map freqMap) {
-        Integer count = (Integer)freqMap.get(obj);
+        Integer count = (Integer) freqMap.get(obj);
         if (count != null) {
             return count.intValue();
         }

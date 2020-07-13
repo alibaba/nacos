@@ -81,8 +81,8 @@ public class KeyBuilder {
     }
     
     public static boolean matchSwitchKey(String key) {
-        return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME) ||
-                key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME + UtilsAndCommons.RAFT_CACHE_FILE_SUFFIX);
+        return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME) || key
+                .endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME + UtilsAndCommons.RAFT_CACHE_FILE_SUFFIX);
     }
     
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {

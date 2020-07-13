@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.cmdb.core;
+
+package com.alibaba.nacos.config.server.monitor;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
- * @author nkorange
- * @since 0.7.0
+ * PrintGetConfigResponeTask.
+ *
+ * @author zongtanghu
  */
-public class CmdbManager {
+public class PrintGetConfigResponeTask implements Runnable {
+    @Override
+    public void run() {
+        MEMORY_LOG.info(ResponseMonitor.getStringForPrint());
+    }
+    
 }

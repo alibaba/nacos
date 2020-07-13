@@ -13,36 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.model;
 
-import java.io.Serializable;
-import java.util.List;
+package com.alibaba.nacos.config.server.model.event;
+
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * acl info
+ * RaftDBErrorEvent.
  *
- * @author Nacos
+ * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class ACLInfo implements Serializable {
-
-    private static final long serialVersionUID = 1383026926036269457L;
-    private Boolean isOpen;
-    private List<String> ips;
-
-    public List<String> getIps() {
-        return ips;
+public class RaftDbErrorEvent extends SlowEvent {
+    
+    private static final long serialVersionUID = 101591819161802336L;
+    
+    private Throwable ex;
+    
+    public RaftDbErrorEvent() {
     }
-
-    public void setIps(List<String> ips) {
-        this.ips = ips;
+    
+    public RaftDbErrorEvent(Throwable ex) {
+        this.ex = ex;
     }
-
-    public Boolean getIsOpen() {
-        return isOpen;
-    }
-
-    public void setIsOpen(Boolean isOpen) {
-        this.isOpen = isOpen;
+    
+    public Throwable getEx() {
+        return ex;
     }
 }

@@ -29,7 +29,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -128,8 +127,8 @@ public class RaftStore {
                 Loggers.RAFT.warn("warning: encountered directory in cache dir: {}", cache.getAbsolutePath());
             }
             
-            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key)) &&
-                    !StringUtils.equals(cache.getName(), encodeDatumKey(key) + RAFT_CACHE_FILE_SUFFIX)) {
+            if (!StringUtils.equals(cache.getName(), encodeDatumKey(key)) && !StringUtils
+                    .equals(cache.getName(), encodeDatumKey(key) + RAFT_CACHE_FILE_SUFFIX)) {
                 continue;
             }
             

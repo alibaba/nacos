@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.event;
+package com.alibaba.nacos.config.server.service.dump.task;
 
-import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.config.server.manager.AbstractTask;
 
 /**
+ * Dump all beta task.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author Nacos
+ * @date 2020/7/5 12:19 PM
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-@JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
-
+public class DumpAllBetaTask extends AbstractTask {
+    
+    @Override
+    public void merge(AbstractTask task) {
+    }
+    
+    public static final String TASK_ID = "dumpAllBetaConfigTask";
 }

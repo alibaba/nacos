@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.utils;
 
 import org.slf4j.Logger;
@@ -26,9 +27,9 @@ import java.util.Map;
  * @author Nacos
  */
 public class EnvUtil {
-
-    final static public Logger LOGGER = LogUtils.logger(EnvUtil.class);
-
+    
+    public static final Logger LOGGER = LogUtils.logger(EnvUtil.class);
+    
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
             List<String> amorayTagTmp = headers.get(AMORY_TAG);
@@ -44,7 +45,7 @@ public class EnvUtil {
                     LOGGER.warn("selfAmoryTag:{}", selfAmorayTag);
                 }
             }
-
+            
             List<String> vipserverTagTmp = headers.get(VIPSERVER_TAG);
             if (vipserverTagTmp == null) {
                 if (selfVipserverTag != null) {
@@ -73,19 +74,19 @@ public class EnvUtil {
             }
         }
     }
-
+    
     public static String getSelfAmorayTag() {
         return selfAmorayTag;
     }
-
+    
     public static String getSelfVipserverTag() {
         return selfVipserverTag;
     }
-
+    
     public static String getSelfLocationTag() {
         return selfLocationTag;
     }
-
+    
     private static String listToString(List<String> list) {
         if (list == null || list.isEmpty()) {
             return null;
@@ -97,11 +98,16 @@ public class EnvUtil {
         }
         return result.toString().substring(0, result.length() - 1);
     }
-
+    
     private static String selfAmorayTag;
+    
     private static String selfVipserverTag;
+    
     private static String selfLocationTag;
-    private final static String AMORY_TAG = "Amory-Tag";
-    private final static String VIPSERVER_TAG = "Vipserver-Tag";
-    private final static String LOCATION_TAG = "Location-Tag";
+    
+    private static final String AMORY_TAG = "Amory-Tag";
+    
+    private static final String VIPSERVER_TAG = "Vipserver-Tag";
+    
+    private static final String LOCATION_TAG = "Location-Tag";
 }

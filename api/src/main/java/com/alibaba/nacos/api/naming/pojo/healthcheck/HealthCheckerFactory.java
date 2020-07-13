@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -76,8 +78,7 @@ public class HealthCheckerFactory {
         try {
             return MAPPER.readValue(jsonString, AbstractHealthChecker.class);
         } catch (IOException e) {
-            // TODO replace with NacosDeserializeException.
-            throw new RuntimeException("Deserialize health checker from json failed", e);
+            throw new NacosDeserializationException(AbstractHealthChecker.class, e);
         }
     }
     
@@ -91,8 +92,7 @@ public class HealthCheckerFactory {
         try {
             return MAPPER.writeValueAsString(healthChecker);
         } catch (JsonProcessingException e) {
-            // TODO replace with NacosSerializeException.
-            throw new RuntimeException("Serialize health checker to json failed", e);
+            throw new NacosSerializationException(healthChecker.getClass(), e);
         }
     }
 }

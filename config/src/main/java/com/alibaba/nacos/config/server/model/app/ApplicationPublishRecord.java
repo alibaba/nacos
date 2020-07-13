@@ -13,37 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model.app;
 
 /**
- * Application Publish Record
+ * ApplicationPublishRecord.
  *
  * @author Nacos
  */
 public class ApplicationPublishRecord {
-
+    
     private String appName;
+    
     private GroupKey configInfo;
-
+    
     public ApplicationPublishRecord(String appName, String dataId, String groupId) {
         this.appName = appName;
         this.configInfo = new GroupKey(dataId, groupId);
     }
-
+    
     public String getAppName() {
         return appName;
     }
-
+    
     public void setAppName(String appName) {
         this.appName = appName;
     }
-
+    
     public GroupKey getConfigInfo() {
         return configInfo;
     }
-
+    
     public void setConfigInfo(GroupKey configInfo) {
         this.configInfo = configInfo;
     }
-
+    
 }

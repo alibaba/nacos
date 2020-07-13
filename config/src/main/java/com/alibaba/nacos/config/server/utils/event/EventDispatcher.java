@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils.event;
 
 import org.slf4j.Logger;
@@ -22,47 +23,47 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Event dispatcher
+ * Event dispatcher.
  *
  * @author Nacos
  */
 public class EventDispatcher {
-
+    
     /**
-     * add event listener
+     * add event listener.
      */
-    static public void addEventListener(AbstractEventListener listener) {
+    public static void addEventListener(AbstractEventListener listener) {
         for (Class<? extends Event> type : listener.interest()) {
             getEntry(type).listeners.addIfAbsent(listener);
         }
     }
-
+    
     /**
      * fire event, notify listeners.
      */
-    static public void fireEvent(Event event) {
+    public static void fireEvent(Event event) {
         if (null == event) {
             throw new IllegalArgumentException("event is null");
         }
-
+        
         for (AbstractEventListener listener : getEntry(event.getClass()).listeners) {
             try {
                 listener.onEvent(event);
             } catch (Exception e) {
-                log.error(e.toString(), e);
+                LOGGER.error(e.toString(), e);
             }
         }
     }
-
+    
     /**
-     * For only test purpose
+     * For only test purpose.
      */
-    static public void clear() {
+    public static void clear() {
         LISTENER_HUB.clear();
     }
-
+    
     /**
-     * get event listener for eventType. Add Entry if not exist.
+     * Get event listener for eventType. Add Entry if not exist.
      */
     static Entry getEntry(Class<? extends Event> eventType) {
         for (; ; ) {
@@ -71,26 +72,26 @@ public class EventDispatcher {
                     return entry;
                 }
             }
-
+            
             Entry tmp = new Entry(eventType);
-            /**
-             *  false means already exists
-             */
+            // false means already exists
             if (LISTENER_HUB.addIfAbsent(tmp)) {
                 return tmp;
             }
         }
     }
-
-    static private class Entry {
+    
+    private static class Entry {
+        
         final Class<? extends Event> eventType;
+        
         final CopyOnWriteArrayList<AbstractEventListener> listeners;
-
+        
         Entry(Class<? extends Event> type) {
             eventType = type;
             listeners = new CopyOnWriteArrayList<AbstractEventListener>();
         }
-
+        
         @Override
         public boolean equals(Object obj) {
             if (null == obj || obj.getClass() != getClass()) {
@@ -99,45 +100,44 @@ public class EventDispatcher {
             if (this == obj) {
                 return true;
             }
-            return eventType == ((Entry)obj).eventType;
+            return eventType == ((Entry) obj).eventType;
         }
-
+        
         @Override
         public int hashCode() {
             return super.hashCode();
         }
-
+        
     }
-
-    static private final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventDispatcher.class);
+    
     static final CopyOnWriteArrayList<Entry> LISTENER_HUB = new CopyOnWriteArrayList<Entry>();
-
+    
     public interface Event {
+    
     }
-
-    static public abstract class AbstractEventListener {
-
+    
+    public abstract static class AbstractEventListener {
+        
         public AbstractEventListener() {
-            /**
-             * automatic register
-             */
+            // automatic register
             EventDispatcher.addEventListener(this);
         }
-
+        
         /**
-         * 感兴趣的事件列表
+         * List of events of interest.
          *
          * @return event list
          */
-        abstract public List<Class<? extends Event>> interest();
-
+        public abstract List<Class<? extends Event>> interest();
+        
         /**
-         * 处理事件
+         * Handle events.
          *
          * @param event event
          */
-        abstract public void onEvent(Event event);
+        public abstract void onEvent(Event event);
     }
-
+    
 }

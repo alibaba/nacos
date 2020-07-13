@@ -13,37 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.example;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+package com.alibaba.nacos.config.server.model.event;
+
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.notify.Event;
 
 /**
- * Unit test for simple App.
+ * RaftDBErrorRecoverEvent.
+ *
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class AppTest
-    extends TestCase {
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest(String testName) {
-        super(testName);
-    }
+@JustForTest
+public class RaftDbErrorRecoverEvent extends Event {
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(AppTest.class);
-    }
-
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp() {
-        assertTrue(true);
-    }
 }

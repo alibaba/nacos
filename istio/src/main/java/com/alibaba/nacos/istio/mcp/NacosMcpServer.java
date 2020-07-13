@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.istio.misc.IstioConfig;
@@ -28,54 +29,61 @@ import java.io.IOException;
 
 
 /**
- * Nacos MCP server
- * <p>
- * This MCP serves as a ResourceSource defined by Istio.
+ * Nacos MCP server.
+ *
+ * <p>This MCP serves as a ResourceSource defined by Istio.
  *
  * @author nkorange
  * @since 1.1.4
  */
 @Service
 public class NacosMcpServer {
-
+    
     private final int port = 18848;
-
+    
     private Server server;
-
+    
     @Autowired
     private IstioConfig istioConfig;
-
+    
     @Autowired
     private McpServerIntercepter intercepter;
-
+    
     @Autowired
     private NacosMcpService nacosMcpService;
-
+    
+    /**
+     * Start.
+     *
+     * @throws IOException io exception
+     */
     @PostConstruct
     public void start() throws IOException {
-
+        
         if (!istioConfig.isMcpServerEnabled()) {
             return;
         }
-
+        
         Loggers.MAIN.info("MCP server, starting Nacos MCP server...");
-
-        server = ServerBuilder.forPort(port)
-            .addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
-            .build();
+        
+        server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
+                .build();
         server.start();
-
+        
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-
+                
                 System.out.println("Stopping Nacos MCP server...");
                 NacosMcpServer.this.stop();
                 System.out.println("Nacos MCP server stopped...");
             }
         });
     }
-
+    
+    /**
+     * Stop.
+     */
     public void stop() {
         if (server != null) {
             server.shutdown();

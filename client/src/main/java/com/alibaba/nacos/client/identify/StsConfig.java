@@ -13,116 +13,121 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.identify;
 
+package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
- * Sts config
+ * Sts config.
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public class STSConfig {
-    private static final String RAM_SECURITY_CREDENTIALS_URL
-        = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
+public class StsConfig {
+    
+    private static final String RAM_SECURITY_CREDENTIALS_URL = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
+    
     private String ramRoleName;
+    
     /**
-     * STS 临时凭证有效期剩余多少时开始刷新（允许本地时间比 STS 服务时间最多慢多久）
+     * STS 临时凭证有效期剩余多少时开始刷新（允许本地时间比 STS 服务时间最多慢多久）.
      */
     private int timeToRefreshInMillisecond = 3 * 60 * 1000;
+    
     /**
-     * 获取 STS 临时凭证的元数据接口（包含角色名称）
+     * 获取 STS 临时凭证的元数据接口（包含角色名称）.
      */
     private String securityCredentialsUrl;
+    
     /**
-     * 设定 STS 临时凭证，不再通过元数据接口获取
+     * 设定 STS 临时凭证，不再通过元数据接口获取.
      */
     private String securityCredentials;
+    
     /**
-     * 是否缓存
+     * 是否缓存.
      */
     private boolean cacheSecurityCredentials = true;
-
+    
     private static class Singleton {
-        private static final STSConfig INSTANCE = new STSConfig();
+        
+        private static final StsConfig INSTANCE = new StsConfig();
     }
-
-    private STSConfig() {
+    
+    private StsConfig() {
         String ramRoleName = System.getProperty("ram.role.name");
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
-
+        
         String timeToRefreshInMillisecond = System.getProperty("time.to.refresh.in.millisecond");
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
-
+        
         String securityCredentials = System.getProperty("security.credentials");
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
-
+        
         String securityCredentialsUrl = System.getProperty("security.credentials.url");
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
-
+        
         String cacheSecurityCredentials = System.getProperty("cache.security.credentials");
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
     }
-
-    public static STSConfig getInstance() {
+    
+    public static StsConfig getInstance() {
         return Singleton.INSTANCE;
     }
-
+    
     public String getRamRoleName() {
         return ramRoleName;
     }
-
+    
     public void setRamRoleName(String ramRoleName) {
         this.ramRoleName = ramRoleName;
     }
-
+    
     public int getTimeToRefreshInMillisecond() {
         return timeToRefreshInMillisecond;
     }
-
+    
     public void setTimeToRefreshInMillisecond(int timeToRefreshInMillisecond) {
         this.timeToRefreshInMillisecond = timeToRefreshInMillisecond;
     }
-
+    
     public String getSecurityCredentialsUrl() {
         if (securityCredentialsUrl == null && ramRoleName != null) {
             return RAM_SECURITY_CREDENTIALS_URL + ramRoleName;
         }
         return securityCredentialsUrl;
     }
-
+    
     public void setSecurityCredentialsUrl(String securityCredentialsUrl) {
         this.securityCredentialsUrl = securityCredentialsUrl;
     }
-
+    
     public String getSecurityCredentials() {
         return securityCredentials;
     }
-
+    
     public void setSecurityCredentials(String securityCredentials) {
         this.securityCredentials = securityCredentials;
     }
-
-    public boolean isSTSOn() {
+    
+    public boolean isStsOn() {
         return StringUtils.isNotEmpty(getSecurityCredentials()) || StringUtils.isNotEmpty(getSecurityCredentialsUrl());
     }
-
+    
     public boolean isCacheSecurityCredentials() {
         return cacheSecurityCredentials;
     }
-
+    
     public void setCacheSecurityCredentials(boolean cacheSecurityCredentials) {
         this.cacheSecurityCredentials = cacheSecurityCredentials;
     }

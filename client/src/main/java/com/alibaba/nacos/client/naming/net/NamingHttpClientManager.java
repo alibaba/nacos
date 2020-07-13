@@ -23,18 +23,19 @@ import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 /**
- * http Manager
+ * http Manager.
  *
  * @author mai.jh
  */
 public class NamingHttpClientManager {
     
     private static final int READ_TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
-    private static final int CON_TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    private static final boolean ENABLE_HTTPS = Boolean
-        .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+    
+    private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    
+    private static final boolean ENABLE_HTTPS = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    
     private static final int MAX_REDIRECTS = 5;
     
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new NamingHttpClientFactory();
@@ -54,10 +55,8 @@ public class NamingHttpClientManager {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder()
-                .setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                .setReadTimeOutMillis(READ_TIME_OUT_MILLIS)
-                .setMaxRedirects(MAX_REDIRECTS).build();
+            return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
+                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS).build();
         }
     }
 }
