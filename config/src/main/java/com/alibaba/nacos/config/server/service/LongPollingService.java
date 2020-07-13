@@ -278,25 +278,6 @@ public class LongPollingService {
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
     
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
-        eventTypes.add(LocalDataChangeEvent.class);
-        return eventTypes;
-    }
-    
-    @Override
-    public void onEvent(Event event) {
-        if (isFixedPolling()) {
-            // Ignore.
-        } else {
-            if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-            }
-        }
-    }
-    
     public static boolean isSupportLongPolling(HttpServletRequest req) {
         return null != req.getHeader(LONG_POLLING_HEADER);
     }
@@ -306,7 +287,7 @@ public class LongPollingService {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
         
         ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
- 
+        
         // Register LocalDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
         
