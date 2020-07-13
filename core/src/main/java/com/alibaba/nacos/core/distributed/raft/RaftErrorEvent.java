@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.core.notify.Event;
+import com.alibaba.nacos.common.notify.Event;
 
 /**
  * The RAFT protocol runs an exception event. If this event is published, it means that the current raft Group cannot
@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.notify.Event;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class RaftErrorEvent implements Event {
+public class RaftErrorEvent extends Event {
     
     private static final long serialVersionUID = 3016514657754158167L;
     
