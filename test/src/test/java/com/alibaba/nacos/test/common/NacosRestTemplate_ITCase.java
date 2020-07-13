@@ -46,7 +46,6 @@ import java.util.Map;
  *  NacosRestTemplate_ITCase
  *
  * @author mai.jh
- * @date 2020/5/30
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
