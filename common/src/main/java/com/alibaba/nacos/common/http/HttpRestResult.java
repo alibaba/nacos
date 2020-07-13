@@ -34,7 +34,7 @@ public class HttpRestResult<T> extends RestResult<T> {
     }
     
     public HttpRestResult(Header header, int code, T data, String message) {
-        super(code,message, data);
+        super(code, message, data);
         this.header = header;
     }
     

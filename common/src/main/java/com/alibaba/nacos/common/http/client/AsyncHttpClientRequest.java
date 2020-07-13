@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.Closeable;
-import java.lang.reflect.Type;
 import java.net.URI;
 
 /**
@@ -41,6 +40,6 @@ public interface AsyncHttpClientRequest extends Closeable {
      * @param callback          http response callback
      * @throws Exception ex
      */
-    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final ResponseHandler<T> responseHandler,
-            final Callback<T> callback) throws Exception;
+    <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
+            final ResponseHandler<T> responseHandler, final Callback<T> callback) throws Exception;
 }

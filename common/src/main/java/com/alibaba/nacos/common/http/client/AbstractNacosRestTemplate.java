@@ -25,8 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * For NacosRestTemplate and NacosAsyncRestTemplate,
- * provide initialization and register of response converter.
+ * For NacosRestTemplate and NacosAsyncRestTemplate, provide initialization and register of response converter.
  *
  * @author mai.jh
  */
@@ -58,7 +57,7 @@ public abstract class AbstractNacosRestTemplate {
      */
     protected ResponseHandler selectResponseHandler(Type responseType) {
         ResponseHandler responseHandler = null;
-        if (responseType == null){
+        if (responseType == null) {
             responseHandler = responseHandlerMap.get(ResponseHandlerType.STRING_TYPE);
         }
         if (responseHandler == null) {

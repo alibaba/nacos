@@ -45,17 +45,16 @@ public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
         return convertResult(response, this.responseType);
     }
     
-    private HttpRestResult<T> handleError(HttpClientResponse response) throws Exception{
+    private HttpRestResult<T> handleError(HttpClientResponse response) throws Exception {
         Header headers = response.getHeaders();
         String message = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<T>(headers, response.getStatusCode(), null, message);
     }
     
     /**
-     * Abstract convertResult method,
-     * Different types of converters for expansion.
+     * Abstract convertResult method, Different types of converters for expansion.
      *
-     * @param response http client response
+     * @param response     http client response
      * @param responseType responseType
      * @return HttpRestResult
      * @throws Exception ex
