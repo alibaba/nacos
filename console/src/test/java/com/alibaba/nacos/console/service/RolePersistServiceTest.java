@@ -50,6 +50,7 @@ public class RolePersistServiceTest extends BaseTest {
 
     @Test
     public void getRolesTest() {
+        rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
         Page<Roles> page = rolePersistServiceTmp.getRoles(0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);
