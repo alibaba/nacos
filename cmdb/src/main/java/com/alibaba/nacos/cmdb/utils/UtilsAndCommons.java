@@ -16,14 +16,6 @@
 
 package com.alibaba.nacos.cmdb.utils;
 
-import com.alibaba.nacos.cmdb.CmdbApp;
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.core.utils.ClassUtils;
-
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 /**
  * Utils and constants.
  *
@@ -36,12 +28,4 @@ public class UtilsAndCommons {
     
     public static final String NACOS_CMDB_CONTEXT = NACOS_SERVER_VERSION + "/cmdb";
     
-    private static final ScheduledExecutorService GLOBAL_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(CmdbApp.class),
-                    Runtime.getRuntime().availableProcessors(),
-                    new NameThreadFactory("com.alibaba.nacos.cmdb.global.executor"));
-    
-    public static void scheduleCmdbTask(Runnable runnable, long delay, TimeUnit unit) {
-        GLOBAL_EXECUTOR.schedule(runnable, delay, unit);
-    }
 }
