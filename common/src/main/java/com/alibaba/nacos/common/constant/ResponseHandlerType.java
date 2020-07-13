@@ -14,35 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http;
-
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.RestResult;
+package com.alibaba.nacos.common.constant;
 
 /**
- * Http RestResult.
+ * Response Handler Type.
  *
  * @author mai.jh
  */
-public class HttpRestResult<T> extends RestResult<T> {
+public final class ResponseHandlerType {
     
-    private static final long serialVersionUID = 3766947816720175947L;
+    public static final String STRING_TYPE = "java.lang.String";
     
-    private Header header;
+    public static final String RESTRESULT_TYPE = "com.alibaba.nacos.common.model.RestResult";
     
-    public HttpRestResult() {
-    }
+    public static final String DEFAULT_BEAN_TYPE = "default_bean_handler";
     
-    public HttpRestResult(Header header, int code, T data, String message) {
-        super(code, message, data);
-        this.header = header;
-    }
-    
-    public Header getHeader() {
-        return header;
-    }
-    
-    public void setHeader(Header header) {
-        this.header = header;
-    }
 }

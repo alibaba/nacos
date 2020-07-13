@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
@@ -38,13 +37,14 @@ import java.util.Map;
  * @see HttpClientRequest
  * @see HttpClientResponse
  */
-public class NacosRestTemplate {
+public class NacosRestTemplate extends AbstractNacosRestTemplate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
     
     private HttpClientRequest requestClient;
     
     public NacosRestTemplate(HttpClientRequest requestClient) {
+        super();
         this.requestClient = requestClient;
     }
     
@@ -319,16 +319,18 @@ public class NacosRestTemplate {
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     
+    @SuppressWarnings("unchecked")
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP " + httpMethod + " " + url);
         }
+        ResponseHandler<T> responseHandler = super.selectResponseHandler(responseType);
         HttpClientResponse response = null;
         try {
             response = requestClient.execute(uri, httpMethod, requestEntity);
-            return ResponseHandler.responseEntityExtractor(response, responseType);
+            return responseHandler.handle(response);
         } finally {
             if (response != null) {
                 response.close();
