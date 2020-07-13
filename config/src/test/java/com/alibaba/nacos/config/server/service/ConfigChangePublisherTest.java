@@ -25,7 +25,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConfigChangePublisherTest {
