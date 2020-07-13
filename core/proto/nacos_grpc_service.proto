@@ -1,0 +1,47 @@
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.alibaba.nacos.core.remote.grpc";
+
+message GrpcMetadata {
+
+    string name = 1;
+
+    string client_ip=2;
+
+    string connection_id=3;
+
+    google.protobuf.Timestamp create_time = 4;
+
+    string version = 5;
+
+    map<string,string> labels = 6;
+}
+
+message Request {
+    // Common metadata describing the resource.
+    GrpcMetadata metadata = 1;
+    // The primary payload for the resource.
+    google.protobuf.Any body = 2;
+}
+
+
+message Response {
+    int32 code = 1;
+    // reponse body
+    google.protobuf.Any body = 2;
+}
+
+service RequestStream {
+    // build a streamRequest
+    rpc requestStream (Request) returns (stream Response) {}
+}
+
+service CommonRequest {
+    // Sends a commonRequest
+    rpc commonRequest (Request) returns (stream Response) {}
+}
