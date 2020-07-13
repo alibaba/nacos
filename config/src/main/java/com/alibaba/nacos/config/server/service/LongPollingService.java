@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -25,8 +28,6 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -61,7 +62,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
  * @author Nacos
  */
 @Service
-public class LongPollingService extends AbstractEventListener {
+public class LongPollingService {
     
     private static final int FIXED_POLLING_INTERVAL_MS = 10000;
     
@@ -126,8 +127,8 @@ public class LongPollingService extends AbstractEventListener {
     }
     
     /**
-     * Aggregate the sampling IP and monitoring configuration information in the sampling results.
-     * There is no problem for the merging strategy to cover the previous one with the latter.
+     * Aggregate the sampling IP and monitoring configuration information in the sampling results. There is no problem
+     * for the merging strategy to cover the previous one with the latter.
      *
      * @param sampleResults sample Results.
      * @return Results.
@@ -147,6 +148,7 @@ public class LongPollingService extends AbstractEventListener {
     
     /**
      * Collect application subscribe configinfos.
+     *
      * @return configinfos results.
      */
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
@@ -232,9 +234,9 @@ public class LongPollingService extends AbstractEventListener {
     /**
      * Add LongPollingClient.
      *
-     * @param req HttpServletRequest.
-     * @param rsp HttpServletResponse.
-     * @param clientMd5Map clientMd5Map.
+     * @param req              HttpServletRequest.
+     * @param rsp              HttpServletResponse.
+     * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
@@ -245,7 +247,7 @@ public class LongPollingService extends AbstractEventListener {
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-
+        
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
@@ -279,25 +281,6 @@ public class LongPollingService extends AbstractEventListener {
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
     
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
-        eventTypes.add(LocalDataChangeEvent.class);
-        return eventTypes;
-    }
-    
-    @Override
-    public void onEvent(Event event) {
-        if (isFixedPolling()) {
-            // Ignore.
-        } else {
-            if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-            }
-        }
-    }
-    
     public static boolean isSupportLongPolling(HttpServletRequest req) {
         return null != req.getHeader(LONG_POLLING_HEADER);
     }
@@ -316,6 +299,31 @@ public class LongPollingService extends AbstractEventListener {
             }
         });
         scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        
+        // Register LocalDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        
+        // Register A Subscriber.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                if (isFixedPolling()) {
+                    // Ignore.
+                } else {
+                    if (event instanceof LocalDataChangeEvent) {
+                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                        scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    }
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return LocalDataChangeEvent.class;
+            }
+        });
+        
     }
     
     public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
@@ -403,7 +411,7 @@ public class LongPollingService extends AbstractEventListener {
                 public void run() {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+                        
                         // Delete subsciber's relations.
                         allSubs.remove(ClientLongPolling.this);
                         
@@ -439,7 +447,7 @@ public class LongPollingService extends AbstractEventListener {
         }
         
         void sendResponse(List<String> changedGroups) {
-
+            
             // Cancel time out task.
             if (null != asyncTimeoutFuture) {
                 asyncTimeoutFuture.cancel(false);
@@ -449,7 +457,7 @@ public class LongPollingService extends AbstractEventListener {
         
         void generateResponse(List<String> changedGroups) {
             if (null == changedGroups) {
-
+                
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;
