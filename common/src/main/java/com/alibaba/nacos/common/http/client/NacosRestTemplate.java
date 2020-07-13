@@ -463,7 +463,7 @@ public class NacosRestTemplate {
     private HttpClientRequest requestClient() {
         if (CollectionUtils.isNotEmpty(interceptors)) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Execute via interceptor");
+                LOGGER.info("Execute via interceptors :{}", interceptors);
             }
             return new InterceptingHttpClientRequest(requestClient, interceptors.iterator());
         }
