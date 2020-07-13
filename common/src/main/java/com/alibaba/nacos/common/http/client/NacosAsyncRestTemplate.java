@@ -37,13 +37,14 @@ import java.util.Map;
  * @see AsyncHttpClientRequest
  * @see HttpClientResponse
  */
-public class NacosAsyncRestTemplate {
+public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosAsyncRestTemplate.class);
     
     private AsyncHttpClientRequest clientRequest;
     
     public NacosAsyncRestTemplate(AsyncHttpClientRequest clientRequest) {
+        super();
         this.clientRequest = clientRequest;
     }
     
@@ -330,13 +331,15 @@ public class NacosAsyncRestTemplate {
         
     }
     
-    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type responseType,
+    @SuppressWarnings("unchecked")
+    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP " + httpMethod + " " + url);
         }
-        clientRequest.execute(uri, httpMethod, requestEntity, responseType, callback);
+        ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
+        clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);
     }
     
     /**
