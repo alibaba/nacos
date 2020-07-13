@@ -14,35 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http;
+package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.IoUtils;
+
+import java.lang.reflect.Type;
 
 /**
- * Http RestResult.
+ * string response handler, Mainly converter response type as string type.
  *
  * @author mai.jh
  */
-public class HttpRestResult<T> extends RestResult<T> {
+public class StringResponseHandler extends AbstractResponseHandler<String> {
     
-    private static final long serialVersionUID = 3766947816720175947L;
-    
-    private Header header;
-    
-    public HttpRestResult() {
-    }
-    
-    public HttpRestResult(Header header, int code, T data, String message) {
-        super(code, message, data);
-        this.header = header;
-    }
-    
-    public Header getHeader() {
-        return header;
-    }
-    
-    public void setHeader(Header header) {
-        this.header = header;
+    @Override
+    public HttpRestResult<String> convertResult(HttpClientResponse response, Type responseType) throws Exception {
+        final Header headers = response.getHeaders();
+        String extractBody = IoUtils.toString(response.getBody(), headers.getCharset());
+        return new HttpRestResult<String>(headers, response.getStatusCode(), extractBody, null);
     }
 }

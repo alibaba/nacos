@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
@@ -263,5 +264,15 @@ public final class JacksonUtils {
      */
     public static JsonNode transferToJsonNode(Object obj) {
         return mapper.valueToTree(obj);
+    }
+    
+    /**
+     * construct java type -> Jackson Java Type.
+     *
+     * @param type java type
+     * @return JavaType {@link JavaType}
+     */
+    public static JavaType constructJavaType(Type type) {
+        return mapper.constructType(type);
     }
 }
