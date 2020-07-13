@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.http.client;
 import com.alibaba.nacos.common.constant.ResponseHandlerType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JavaType;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -29,11 +30,19 @@ import java.util.Map;
  *
  * @author mai.jh
  */
+@SuppressWarnings("all")
 public abstract class AbstractNacosRestTemplate {
     
     private final Map<String, ResponseHandler> responseHandlerMap = new HashMap<String, ResponseHandler>();
     
-    public AbstractNacosRestTemplate() {
+    protected final Logger logger;
+    
+    public AbstractNacosRestTemplate(Logger logger) {
+        this.logger = logger;
+        initDefaultResponseHandler();
+    }
+    
+    private void initDefaultResponseHandler() {
         // init response handler
         responseHandlerMap.put(ResponseHandlerType.STRING_TYPE, new StringResponseHandler());
         responseHandlerMap.put(ResponseHandlerType.RESTRESULT_TYPE, new RestResultResponseHandler());
