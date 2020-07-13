@@ -303,7 +303,7 @@ public class LongPollingService {
         // Register LocalDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
         
-        // Register A Subscriber.
+        // Register A Subscriber to subscribe LocalDataChangeEvent.
         NotifyCenter.registerSubscriber(new Subscriber() {
             
             @Override

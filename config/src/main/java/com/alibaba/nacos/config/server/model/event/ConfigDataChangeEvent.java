@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import com.alibaba.nacos.common.notify.Event;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author Nacos
  */
-public class ConfigDataChangeEvent implements Event {
+public class ConfigDataChangeEvent extends Event {
     
     public final boolean isBeta;
     
