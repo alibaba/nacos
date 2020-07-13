@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -39,12 +38,10 @@ import java.util.Map;
  */
 public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosAsyncRestTemplate.class);
+    private final AsyncHttpClientRequest clientRequest;
     
-    private AsyncHttpClientRequest clientRequest;
-    
-    public NacosAsyncRestTemplate(AsyncHttpClientRequest clientRequest) {
-        super();
+    public NacosAsyncRestTemplate(Logger logger, AsyncHttpClientRequest clientRequest) {
+        super(logger);
         this.clientRequest = clientRequest;
     }
     
@@ -335,8 +332,8 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("HTTP " + httpMethod + " " + url);
+        if (logger.isDebugEnabled()) {
+            logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
         }
         ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
         clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);

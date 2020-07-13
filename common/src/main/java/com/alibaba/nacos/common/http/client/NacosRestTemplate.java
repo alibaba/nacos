@@ -26,7 +26,6 @@ import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -43,14 +42,12 @@ import java.util.Map;
  */
 public class NacosRestTemplate extends AbstractNacosRestTemplate {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(NacosRestTemplate.class);
-    
     private final HttpClientRequest requestClient;
     
     private final List<HttpClientRequestInterceptor> interceptors = new ArrayList<HttpClientRequestInterceptor>();
     
-    public NacosRestTemplate(HttpClientRequest requestClient) {
-        super();
+    public NacosRestTemplate(Logger logger, HttpClientRequest requestClient) {
+        super(logger);
         this.requestClient = requestClient;
     }
     
@@ -447,9 +444,10 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     private <T> HttpRestResult<T> execute(String url, String httpMethod, RequestHttpEntity requestEntity,
             Type responseType) throws Exception {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("HTTP " + httpMethod + " " + url);
+        if (logger.isDebugEnabled()) {
+            logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
         }
+
         ResponseHandler<T> responseHandler = super.selectResponseHandler(responseType);
         HttpClientResponse response = null;
         try {
@@ -464,8 +462,8 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     
     private HttpClientRequest requestClient() {
         if (CollectionUtils.isNotEmpty(interceptors)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.info("Execute via interceptors :{}", interceptors);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Execute via interceptors :{}", interceptors);
             }
             return new InterceptingHttpClientRequest(requestClient, interceptors.iterator());
         }

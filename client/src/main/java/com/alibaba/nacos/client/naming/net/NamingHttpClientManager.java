@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.client.naming.net;
 
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import org.slf4j.Logger;
 
 /**
  * http Manager.
@@ -57,6 +59,11 @@ public class NamingHttpClientManager {
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                     .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS).build();
+        }
+    
+        @Override
+        protected Logger assignLogger() {
+            return LogUtils.NAMING_LOGGER;
         }
     }
 }
