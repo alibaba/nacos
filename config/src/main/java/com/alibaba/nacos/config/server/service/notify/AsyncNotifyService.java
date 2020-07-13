@@ -17,9 +17,10 @@
 package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
@@ -50,10 +51,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -90,7 +87,7 @@ public class AsyncNotifyService extends AbstractEventListener {
             for (Member member : ipList) {
                 queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(), evt.isBeta));
             }
-            EXECUTOR.execute(new AsyncTask(httpclient, queue));
+            ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, queue));
         }
     }
     
@@ -99,13 +96,6 @@ public class AsyncNotifyService extends AbstractEventListener {
         this.memberManager = memberManager;
         httpclient.start();
     }
-    
-    public Executor getExecutor() {
-        return EXECUTOR;
-    }
-    
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static final Executor EXECUTOR = Executors.newScheduledThreadPool(100, new NotifyThreadFactory());
     
     private RequestConfig requestConfig = RequestConfig.custom()
             .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
@@ -169,7 +159,7 @@ public class AsyncNotifyService extends AbstractEventListener {
         Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
         queue.add(task);
         AsyncTask asyncTask = new AsyncTask(httpclient, queue);
-        ((ScheduledThreadPoolExecutor) EXECUTOR).schedule(asyncTask, delay, TimeUnit.MILLISECONDS);
+        ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
     
     class AsyncNotifyCallBack implements FutureCallback<HttpResponse> {
@@ -308,16 +298,6 @@ public class AsyncNotifyService extends AbstractEventListener {
             return target;
         }
         
-    }
-    
-    static class NotifyThreadFactory implements ThreadFactory {
-        
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.alibaba.nacos.AsyncNotifyServiceThread");
-            thread.setDaemon(true);
-            return thread;
-        }
     }
     
     /**
