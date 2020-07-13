@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
@@ -34,24 +35,20 @@ import org.springframework.stereotype.Service;
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Future;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.Arrays;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -277,8 +274,27 @@ public class LongPollingService {
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
         
-        scheduler.execute(
+        ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+    }
+    
+    @Override
+    public List<Class<? extends Event>> interest() {
+        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
+        eventTypes.add(LocalDataChangeEvent.class);
+        return eventTypes;
+    }
+    
+    @Override
+    public void onEvent(Event event) {
+        if (isFixedPolling()) {
+            // Ignore.
+        } else {
+            if (event instanceof LocalDataChangeEvent) {
+                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+            }
+        }
     }
     
     public static boolean isSupportLongPolling(HttpServletRequest req) {
@@ -289,17 +305,8 @@ public class LongPollingService {
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
         
-        scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.LongPolling");
-                return t;
-            }
-        });
-        scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
-        
+        ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+ 
         // Register LocalDataChangeEvent to NotifyCenter.
         NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
         
@@ -313,7 +320,7 @@ public class LongPollingService {
                 } else {
                     if (event instanceof LocalDataChangeEvent) {
                         LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                        scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
                     }
                 }
             }
@@ -329,8 +336,6 @@ public class LongPollingService {
     public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
     
     public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
-    
-    final ScheduledExecutorService scheduler;
     
     /**
      * ClientLongPolling subscibers.
@@ -406,7 +411,7 @@ public class LongPollingService {
         
         @Override
         public void run() {
-            asyncTimeoutFuture = scheduler.schedule(new Runnable() {
+            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(new Runnable() {
                 @Override
                 public void run() {
                     try {
