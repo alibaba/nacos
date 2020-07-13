@@ -21,11 +21,11 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.base.Stopwatch;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +34,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -66,8 +62,6 @@ public class CapacityService {
     @Autowired
     private PersistService persistService;
     
-    private ScheduledExecutorService scheduledExecutorService;
-    
     /**
      * Init.
      */
@@ -75,10 +69,7 @@ public class CapacityService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // All servers have jobs that modify usage, idempotent.
-        ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
+        ConfigExecutor.scheduleCorrectUsageTask(new Runnable() {
             @Override
             public void run() {
                 LOGGER.info("[capacityManagement] start correct usage");
@@ -88,11 +79,6 @@ public class CapacityService {
                 
             }
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
-    }
-    
-    @PreDestroy
-    public void destroy() {
-        scheduledExecutorService.shutdown();
     }
     
     public void correctUsage() {
@@ -192,11 +178,10 @@ public class CapacityService {
     }
     
     /**
-     * To Cluster.
-     * 1.If the capacity information does not exist, initialize the capacity information.
-     * 2.Update capacity usage, plus or minus one.
+     * To Cluster. 1.If the capacity information does not exist, initialize the capacity information. 2.Update capacity
+     * usage, plus or minus one.
      *
-     * @param counterMode increase or decrease mode.
+     * @param counterMode      increase or decrease mode.
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
      * @return
      */
@@ -215,12 +200,11 @@ public class CapacityService {
     }
     
     /**
-     * It is used for counting when the limit check function of capacity management is turned off.
-     * 1.If the capacity information does not exist, initialize the capacity information.
-     * 2.Update capacity usage, plus or minus one.
+     * It is used for counting when the limit check function of capacity management is turned off. 1.If the capacity
+     * information does not exist, initialize the capacity information. 2.Update capacity usage, plus or minus one.
      *
-     * @param counterMode increase or decrease mode.
-     * @param group tenant string value.
+     * @param counterMode      increase or decrease mode.
+     * @param group            tenant string value.
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
      * @return operate successfully or not.
      */
@@ -260,8 +244,8 @@ public class CapacityService {
     }
     
     /**
-     * Initialize the capacity information of the group.
-     * If the quota is reached, the capacity will be automatically expanded to reduce the operation and maintenance cost.
+     * Initialize the capacity information of the group. If the quota is reached, the capacity will be automatically
+     * expanded to reduce the operation and maintenance cost.
      *
      * @param group group string value.
      * @return init result.
@@ -271,14 +255,14 @@ public class CapacityService {
     }
     
     /**
-     * Initialize the capacity information of the group. If the quota is reached,
-     * the capacity will be automatically expanded to reduce the operation and maintenance cost.
+     * Initialize the capacity information of the group. If the quota is reached, the capacity will be automatically
+     * expanded to reduce the operation and maintenance cost.
      *
-     * @param group group string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param group        group string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return init result.
      */
     private boolean initGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
@@ -290,11 +274,11 @@ public class CapacityService {
         autoExpansion(group, null);
         return insertSuccess;
     }
-
+    
     /**
      * Expand capacity automatically.
      *
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      */
     private void autoExpansion(String group, String tenant) {
@@ -377,7 +361,7 @@ public class CapacityService {
     /**
      * Init capacity.
      *
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      * @return init result.
      */
@@ -423,12 +407,11 @@ public class CapacityService {
     }
     
     /**
-     * It is used for counting when the limit check function of capacity management is turned off.
-     * 1.If the capacity information does not exist, initialize the capacity information.
-     * 2.Update capacity usage, plus or minus one.
+     * It is used for counting when the limit check function of capacity management is turned off. 1.If the capacity
+     * information does not exist, initialize the capacity information. 2.Update capacity usage, plus or minus one.
      *
-     * @param counterMode increase or decrease mode.
-     * @param tenant tenant string value.
+     * @param counterMode      increase or decrease mode.
+     * @param tenant           tenant string value.
      * @param ignoreQuotaLimit ignoreQuotaLimit flag.
      * @return operate successfully or not.
      */
@@ -464,8 +447,8 @@ public class CapacityService {
     }
     
     /**
-     * Initialize the capacity information of the tenant. If the quota is reached,
-     * the capacity will be automatically expanded to reduce the operation and maintenance cos.
+     * Initialize the capacity information of the tenant. If the quota is reached, the capacity will be automatically
+     * expanded to reduce the operation and maintenance cos.
      *
      * @param tenant tenant string value.
      * @return init result.
@@ -475,14 +458,14 @@ public class CapacityService {
     }
     
     /**
-     * Initialize the capacity information of the tenant. If the quota is reached,
-     * the capacity will be automatically expanded to reduce the operation and maintenance cost
+     * Initialize the capacity information of the tenant. If the quota is reached, the capacity will be automatically
+     * expanded to reduce the operation and maintenance cost
      *
-     * @param tenant tenant string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param tenant       tenant string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return
      */
     public boolean initTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
@@ -530,15 +513,15 @@ public class CapacityService {
     }
     
     /**
-     * Support for API interface, Tenant: initialize if the record does not exist,
-     * and update the capacity quota or content size directly if it exists.
+     * Support for API interface, Tenant: initialize if the record does not exist, and update the capacity quota or
+     * content size directly if it exists.
      *
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param quota quota int value.
-     * @param maxSize maxSize int value.
+     * @param group        group string value.
+     * @param tenant       tenant string value.
+     * @param quota        quota int value.
+     * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
-     * @param maxAggrSize maxAggrSize int value.
+     * @param maxAggrSize  maxAggrSize int value.
      * @return operate successfully or not.
      */
     public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize,
