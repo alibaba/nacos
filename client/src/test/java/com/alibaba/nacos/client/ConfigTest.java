@@ -58,8 +58,8 @@ public class ConfigTest {
         final String content = "lessspring-" + System.currentTimeMillis();
         boolean result = configService.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
-        
-        ThreadUtils.sleep(100000L);
+    
+        ThreadUtils.sleep(200L);
         
         String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override

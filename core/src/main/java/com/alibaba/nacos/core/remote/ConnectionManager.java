@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote;
 
 import java.util.HashMap;
@@ -23,31 +24,39 @@ import com.alibaba.nacos.api.remote.connection.Connection;
 import org.springframework.stereotype.Service;
 
 /**
+ * connect manager.
  * @author liuzunfei
  * @version $Id: ConnectionManager.java, v 0.1 2020年07月13日 7:07 PM liuzunfei Exp $
  */
 @Service
 public class ConnectionManager {
-
-    private Map<String, Connection> connetions=new HashMap<String,Connection>();
-
-    public void register(String clientId,Connection connection){
-        connetions.putIfAbsent(clientId,connection);
-        System.out.println("connetions updated, connetions:"+ connetions);
+    
+    private Map<String, Connection> connetions = new HashMap<String, Connection>();
+    
+    public void register(String connectionId, Connection connection) {
+        connetions.putIfAbsent(connectionId, connection);
+        System.out.println("connetions updated, connetions:" + connetions);
     }
-
-    public void unregister(String clientId){
-        this.connetions.remove(clientId);
+    
+    public void unregister(String connectionId) {
+        this.connetions.remove(connectionId);
     }
-
-    public void refreshActiveTime(String connnectionId){
-        System.out.println("connetions activetime update , connnectionId:"+ connnectionId);
-
+    
+    public Connection getConnection(String connectionId) {
+        return connetions.get(connectionId);
+    }
+    
+    /**
+     * regresh connection active time.
+     *
+     * @param connnectionId connnectionId.
+     */
+    public void refreshActiveTime(String connnectionId) {
+        System.out.println("connetions activetime update , connnectionId:" + connnectionId);
         Connection connection = connetions.get(connnectionId);
-        if (connection!=null){
+        if (connection != null) {
             connection.freshActiveTime();
         }
     }
-
 
 }

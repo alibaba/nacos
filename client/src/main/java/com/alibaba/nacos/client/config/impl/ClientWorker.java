@@ -54,7 +54,6 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
 import com.alibaba.nacos.client.remote.ConnectionEventListener;
-import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.ServerListFactory;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -95,6 +94,13 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+    
+        try {
+            rpcClientProxy.listenConfigChange(dataId, group, "");
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
+    
     }
     
     /**
@@ -113,6 +119,13 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group);
             }
         }
+    
+        try {
+            rpcClientProxy.unListenConfigChange(dataId, group, "");
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
+    
     }
     
     /**
@@ -131,6 +144,9 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+    
+        rpcClientProxy.unListenConfigChange(dataId, group, tenant);
+    
     }
     
     /**
@@ -151,6 +167,9 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+    
+        rpcClientProxy.listenConfigChange(dataId, group, tenant);
+    
     }
     
     /**
@@ -170,6 +189,13 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group, tenant);
             }
         }
+    
+        try {
+            rpcClientProxy.unListenConfigChange(dataId, group, tenant);
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
+    
     }
     
     private void removeCache(String dataId, String group) {
@@ -590,19 +616,19 @@ public class ClientWorker implements Closeable {
                     serverListManager.refreshCurrentServerAddr();
                     return serverListManager.getCurrentServerAddr();
                 }
-            
+    
                 @Override
                 public String getCurrentServer() {
                     return agent.getServerListManager().getCurrentServerAddr();
                 }
-            
+    
                 ;
             });
         
             rpcClientProxy.start();
         }
     
-        /**
+        /*
          * Register Listen Change Handler
          */
         rpcClientProxy.getRpcClient().registerChangeListenHandler(new ChangeListenResponseHandler() {
@@ -626,7 +652,7 @@ public class ClientWorker implements Closeable {
                                 cache.setType(ct[1]);
                             }
                             cache.checkListenerMd5();
-                
+    
                             //Send Ack
                         } catch (Exception e) {
                             //TODO
@@ -635,14 +661,14 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }
-
+    
             @Override
             public Response parseBodyString(String bodyString) {
                 return (ConfigChangeNotifyResponse) JacksonUtils.toObj(bodyString, ConfigChangeNotifyResponse.class);
             }
         });
     
-        /**
+        /*
          *
          */
         rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
@@ -650,7 +676,7 @@ public class ClientWorker implements Closeable {
             public void onConnected() {
             
             }
-        
+    
             @Override
             public void onReconnected() {
                 Collection<CacheData> values = cacheMap.get().values();
@@ -661,13 +687,12 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }
-        
+    
             @Override
             public void onDisConnect() {
-
+        
             }
         });
-    
     
     }
     

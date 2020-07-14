@@ -13,31 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
 /**
+ * NacosRemoteConstants.
+ *
  * @author liuzunfei
- * @version $Id: DataChangeLisenerNotifier.java, v 0.1 2020年07月14日 10:44 AM liuzunfei Exp $
+ * @version $Id: NacosRemoteConstants.java, v 0.1 2020年07月14日 9:22 PM liuzunfei Exp $
  */
-
-@Service
-public class DataChangeLisenerNotifier {
-
-    /**
-     *
-     */
-    ConnectionManager connectionManager;
-
-    /**
-     *
-     */
-    AsyncListenContext asyncListenContext;
-
-
-
-
-
+public class NacosRemoteConstants {
+    
+    public static final String LISTEN_CONTEXT_CONFIG = "CONFIG";
+    
+    public static final String LISTEN_CONTEXT_NAMING = "NAMING";
+    
+    
 }

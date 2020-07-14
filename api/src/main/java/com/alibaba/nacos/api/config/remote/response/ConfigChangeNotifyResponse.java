@@ -16,13 +16,13 @@
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
  * @author liuzunfei
  * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
 public class ConfigChangeNotifyResponse extends Response {
-    
     
     private String ackId;
 
@@ -37,6 +37,22 @@ public class ConfigChangeNotifyResponse extends Response {
         super(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, resultCode, message);
     }
     
+    /**
+     * build success response.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return ConfigChangeNotifyResponse
+     */
+    public static ConfigChangeNotifyResponse buildSuccessResponse(String dataId, String group, String tenant) {
+        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse(ResponseCode.SUCCESS.getCode(),
+                "data changed");
+        response.setDataId(dataId);
+        response.setGroup(group);
+        response.setTenant(tenant);
+        return response;
+    }
     /**
      * Getter method for property <tt>ackId</tt>.
      *

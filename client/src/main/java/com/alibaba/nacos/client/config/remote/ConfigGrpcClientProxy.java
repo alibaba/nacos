@@ -36,7 +36,7 @@ public class ConfigGrpcClientProxy {
         rpcClient.switchServer();
     }
     
-    public <T extends Response> T request(Request request) {
+    public Response request(Request request) {
         return rpcClient.request(request);
     }
     
