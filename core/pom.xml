@@ -185,5 +185,13 @@
         </dependency>
         <!--   micrometer end    -->
 
+
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>protoc-gen-grpc-java</artifactId>
+            <type>pom</type>
+        </dependency>
+
+
     </dependencies>
 </project>

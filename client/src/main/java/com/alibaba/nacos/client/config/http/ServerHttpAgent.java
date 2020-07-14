@@ -352,7 +352,12 @@ public class ServerHttpAgent implements HttpAgent {
     private void initMaxRetry(Properties properties) {
         maxRetry = ConvertUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
     }
-    
+
+    @Override
+    public ServerListManager getServerListManager() {
+        return this.serverListMgr;
+    }
+
     @Override
     public void start() throws NacosException {
         serverListMgr.start();

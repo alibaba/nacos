@@ -36,9 +36,9 @@ public class ConfigTest {
     private static ConfigService configService;
     
     @Before
-    public static void before() throws Exception {
+    public  void before() throws Exception {
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
         configService = NacosFactory.createConfigService(properties);
     }
     
@@ -48,14 +48,17 @@ public class ConfigTest {
     }
     
     @Test
-    public static void test() throws Exception {
+    public  void test() throws Exception {
+
+
+
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
         boolean result = configService.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
         
-        ThreadUtils.sleep(10000L);
+        ThreadUtils.sleep(100000L);
         
         String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override

@@ -34,5 +34,7 @@ public class Loggers {
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.raft");
     
     public static final Logger CLUSTER = LoggerFactory.getLogger("com.alibaba.nacos.core.cluster");
-    
+
+    public static final Logger GRPC = LoggerFactory.getLogger("com.alibaba.nacos.core.grpc");
+
 }
