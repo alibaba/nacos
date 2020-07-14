@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -23,8 +26,6 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -46,10 +47,8 @@ import org.springframework.stereotype.Service;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
@@ -59,42 +58,46 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 @Service
-public class AsyncNotifyService extends AbstractEventListener {
-    
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> types = new ArrayList<Class<? extends Event>>();
-        // Trigger configuration change synchronization notification
-        types.add(ConfigDataChangeEvent.class);
-        return types;
-    }
-    
-    @Override
-    public void onEvent(Event event) {
-        
-        // Generate ConfigDataChangeEvent concurrently
-        if (event instanceof ConfigDataChangeEvent) {
-            ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
-            long dumpTs = evt.lastModifiedTs;
-            String dataId = evt.dataId;
-            String group = evt.group;
-            String tenant = evt.tenant;
-            String tag = evt.tag;
-            Collection<Member> ipList = memberManager.allMembers();
-            
-            // In fact, any type of queue here can be
-            Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
-            for (Member member : ipList) {
-                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(), evt.isBeta));
-            }
-            ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, queue));
-        }
-    }
+public class AsyncNotifyService {
     
     @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         httpclient.start();
+        
+        // Register ConfigDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        
+        // Register A Subscriber to subscribe ConfigDataChangeEvent.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                // Generate ConfigDataChangeEvent concurrently
+                if (event instanceof ConfigDataChangeEvent) {
+                    ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
+                    long dumpTs = evt.lastModifiedTs;
+                    String dataId = evt.dataId;
+                    String group = evt.group;
+                    String tenant = evt.tenant;
+                    String tag = evt.tag;
+                    Collection<Member> ipList = memberManager.allMembers();
+                    
+                    // In fact, any type of queue here can be
+                    Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
+                    for (Member member : ipList) {
+                        queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
+                                evt.isBeta));
+                    }
+                    ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, queue));
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ConfigDataChangeEvent.class;
+            }
+        });
     }
     
     private RequestConfig requestConfig = RequestConfig.custom()
