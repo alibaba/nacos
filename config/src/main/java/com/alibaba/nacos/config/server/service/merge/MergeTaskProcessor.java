@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.merge;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -79,8 +79,9 @@ public class MergeTaskProcessor implements TaskProcessor {
                 
                 persistService.insertOrUpdate(null, null, cf, time, null);
                 
-                LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
-                        cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
+                LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+                        datumList.size(), cf.getContent().length(), cf.getMd5(),
+                        ContentUtils.truncateContent(cf.getContent()));
                 
                 ConfigTraceService
                         .logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
@@ -93,14 +94,14 @@ public class MergeTaskProcessor implements TaskProcessor {
                     persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
                 }
                 
-                LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
+                LOGGER.warn(
+                        "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
                 
                 ConfigTraceService
                         .logPersistenceEvent(dataId, group, tenant, null, time.getTime(), InetUtils.getSelfIp(),
                                 ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             }
-            
-            EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+            NotifyCenter.publishEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
             
         } catch (Exception e) {
             mergeService.addMergeTask(dataId, group, tenant, mergeTask.getClientIp());
@@ -113,9 +114,9 @@ public class MergeTaskProcessor implements TaskProcessor {
     /**
      * merge datumList {@link ConfigInfoAggr}.
      *
-     * @param dataId data id
-     * @param group group
-     * @param tenant tenant
+     * @param dataId    data id
+     * @param group     group
+     * @param tenant    tenant
      * @param datumList datumList
      * @return {@link ConfigInfo}
      */
