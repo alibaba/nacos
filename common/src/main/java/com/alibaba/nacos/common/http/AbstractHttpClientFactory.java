@@ -17,11 +17,10 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
-import com.alibaba.nacos.common.http.client.DefaultHttpClientRequest;
+import com.alibaba.nacos.common.http.client.JdkHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
 
@@ -34,9 +33,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @Override
     public final NacosRestTemplate createNacosRestTemplate() {
-        RequestConfig requestConfig = getRequestConfig();
-        return new NacosRestTemplate(assignLogger(),
-                new DefaultHttpClientRequest(HttpClients.custom().setDefaultRequestConfig(requestConfig).build()));
+        HttpClientConfig httpClientConfig = buildHttpClientConfig();
+        return new NacosRestTemplate(assignLogger(), new JdkHttpClientRequest(httpClientConfig));
     }
     
     @Override

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class HttpClientBeanHolder {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientBeanHolder.class);
     
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
     
