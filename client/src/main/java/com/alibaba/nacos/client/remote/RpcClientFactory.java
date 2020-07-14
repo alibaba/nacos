@@ -17,11 +17,12 @@ import sun.management.resources.agent;
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
-
-    private RpcClient sharedClient;
-    Map<String ,RpcClient> clientMap=new HashMap<String ,RpcClient>();
-
-    public RpcClient getClient(String module){
+    
+    static private RpcClient sharedClient;
+    
+    static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
+    
+    public static RpcClient getClient(String module) {
         String useIndependentClient = System.getProperty("rpc.client.independent");
         if ("Y".equalsIgnoreCase(useIndependentClient)){
             if(clientMap.get(module)==null){
@@ -37,7 +38,8 @@ public class RpcClientFactory {
                 sharedClient=new GrpcClient();
                 return sharedClient;
             }
-
         }
     }
+    
+    
 }

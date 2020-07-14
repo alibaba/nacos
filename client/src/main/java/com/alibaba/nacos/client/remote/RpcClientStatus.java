@@ -14,7 +14,8 @@ public enum RpcClientStatus {
 
     WAIT_INIT(0,"wait to  init serverlist factory... "),
     INITED(1,"server list factory is ready,wait to start"),
-    RUNNING(0,"client is running...");
+    STARTING(2, "server list factory is ready,wait to start"),
+    RUNNING(3, "client is running...");
 
     int status;
     String desc;

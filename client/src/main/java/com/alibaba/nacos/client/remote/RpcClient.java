@@ -10,8 +10,9 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * @author liuzunfei
@@ -29,8 +30,8 @@ public abstract class RpcClient {
      * check is this client is inited
      * @return
      */
-    public boolean isInited(){
-        return this.rpcClientStatus!=RpcClientStatus.WAIT_INIT;
+    public boolean isWaitInited() {
+        return this.rpcClientStatus == RpcClientStatus.WAIT_INIT;
     }
     /**
      *  listener called where connect status changed
@@ -45,6 +46,13 @@ public abstract class RpcClient {
     public RpcClient(){
 
     }
+    
+    
+    public void init(ServerListFactory serverListFactory) {
+        this.serverListFactory = serverListFactory;
+        this.connectionId = UUID.randomUUID().toString();
+        this.rpcClientStatus = RpcClientStatus.INITED;
+    }
 
     public RpcClient(ServerListFactory serverListFactory){
         this.serverListFactory=serverListFactory;
@@ -57,7 +65,7 @@ public abstract class RpcClient {
      * Start this client
      */
     @PostConstruct
-    abstract public void start() throws Exception;
+    abstract public void start() throws NacosException;
 
 
     /**
@@ -72,15 +80,6 @@ public abstract class RpcClient {
      * @return
      */
     abstract  public <T extends Response> T request( Request  request);
-
-    /**
-     *
-     * @param request
-     * @param <T>
-     * @return
-     */
-    abstract  public <T extends Response> T listenChange( Request  request);
-
 
 
     /**

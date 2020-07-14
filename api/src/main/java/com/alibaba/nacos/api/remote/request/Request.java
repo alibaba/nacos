@@ -25,12 +25,6 @@ public abstract class Request {
 
     private String bodyString;
 
-    /**
-     * Getter method for property <tt>model</tt>.
-     *
-     * @return property value of model
-     */
-    abstract public String getModel();
 
     /**
      * Getter method for property <tt>bodyString</tt>.
@@ -57,8 +51,12 @@ public abstract class Request {
      */
     abstract public String getType() ;
 
+
     /**
+     * Getter method for property <tt>type</tt>.
      *
+     * @return property value of type
      */
     abstract public String getModule() ;
+    
 }

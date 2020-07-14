@@ -10,16 +10,15 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
-
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
 import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientStatus;
@@ -63,11 +62,13 @@ public class GrpcClient extends RpcClient {
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() throws NacosException {
 
         if (rpcClientStatus!=RpcClientStatus.INITED){
             return;
         }
+    
+        rpcClientStatus = RpcClientStatus.STARTING;
 
         buildClient();
         ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
@@ -86,6 +87,9 @@ public class GrpcClient extends RpcClient {
                 sendBeat();
             }
         }, 5000, 5000, TimeUnit.MILLISECONDS);
+    
+        rpcClientStatus = RpcClientStatus.RUNNING;
+
     }
 
 
@@ -102,8 +106,8 @@ public class GrpcClient extends RpcClient {
         GrpcResponse response = grpcServiceStub.request(streamRequest);
         System.out.println("Send heart beat message,response :"+response);
     }
-
-    private void buildClient() throws UnknownHostException {
+    
+    private void buildClient() throws NacosException {
 
         String serverAddress =getServerListFactory().genNextServer();
 
@@ -189,9 +193,6 @@ public class GrpcClient extends RpcClient {
 
         return null;
     }
-
-    @Override
-    public <T extends Response> T listenChange(Request request) {
-        return null;
-    }
+    
+    
 }

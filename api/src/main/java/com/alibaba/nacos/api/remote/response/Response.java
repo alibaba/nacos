@@ -13,29 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.response;
 
 /**
+ * abstract response model via rpc channel.
+ *
  * @author liuzunfei
  * @version $Id: Response.java, v 0.1 2020年07月13日 6:03 PM liuzunfei Exp $
  */
 public abstract class Response<T> {
-
-
+    
     int resultCode;
-
+    
     int errorCode;
-
+    
     String message;
-
+    
     String type;
-
-    public Response(String type,int resultCode,String message){
-        this.type=type;
-        this.resultCode=resultCode;
-        this.message=message;
+    
+    String bodyString;
+    
+    /**
+     * Check Response  is Successd.
+     *
+     * @return
+     */
+    public boolean isSuccess() {
+        return this.resultCode == ResponseCode.SUCCESS.getCode();
     }
-
+    
+    public Response(String type, int resultCode, String message) {
+        this.type = type;
+        this.resultCode = resultCode;
+        this.message = message;
+    }
+    
+    /**
+     * Getter method for property <tt>bodyString</tt>.
+     *
+     * @return property value of bodyString
+     */
+    public String getBodyString() {
+        return bodyString;
+    }
+    
+    /**
+     * Setter method for property <tt>bodyString</tt>.
+     *
+     * @param bodyString value to be assigned to property bodyString
+     */
+    public void setBodyString(String bodyString) {
+        this.bodyString = bodyString;
+    }
+    
     /**
      * Getter method for property <tt>resultCode</tt>.
      *
@@ -44,7 +75,7 @@ public abstract class Response<T> {
     public int getResultCode() {
         return resultCode;
     }
-
+    
     /**
      * Setter method for property <tt>resultCode</tt>.
      *
@@ -53,7 +84,7 @@ public abstract class Response<T> {
     public void setResultCode(int resultCode) {
         this.resultCode = resultCode;
     }
-
+    
     /**
      * Getter method for property <tt>message</tt>.
      *
@@ -62,7 +93,7 @@ public abstract class Response<T> {
     public String getMessage() {
         return message;
     }
-
+    
     /**
      * Setter method for property <tt>message</tt>.
      *
@@ -71,7 +102,7 @@ public abstract class Response<T> {
     public void setMessage(String message) {
         this.message = message;
     }
-
+    
     /**
      * Getter method for property <tt>errorCode</tt>.
      *
@@ -80,7 +111,7 @@ public abstract class Response<T> {
     public int getErrorCode() {
         return errorCode;
     }
-
+    
     /**
      * Setter method for property <tt>errorCode</tt>.
      *
@@ -89,9 +120,16 @@ public abstract class Response<T> {
     public void setErrorCode(int errorCode) {
         this.errorCode = errorCode;
     }
-
-
-
+    
+    /**
+     * Getter method for property <tt>type</tt>.
+     *
+     * @return property value of type
+     */
+    public String getType() {
+        return type;
+    }
+    
     /**
      * Setter method for property <tt>type</tt>.
      *

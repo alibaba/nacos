@@ -13,46 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.core.remote;
 
-import java.util.List;
+package com.alibaba.nacos.naming.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
+import com.alibaba.nacos.api.naming.remote.NamingRequestTypeConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
-import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-
+import com.alibaba.nacos.core.remote.AsyncListenContext;
+import com.alibaba.nacos.core.remote.RequestHandler;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
+ * handler to handle service instance change listen request.
+ *
  * @author liuzunfei
- * @version $Id: HeartBeatRequestHandler.java, v 0.1 2020年07月14日 1:58 PM liuzunfei Exp $
+ * @version $Id: ServiceInstanceChangeListenRequestHandler.java, v 0.1 2020年07月14日 7:55 PM liuzunfei Exp $
  */
 @Component
-public class HeartBeatRequestHandler extends RequestHandler{
-
+public class ServiceInstanceChangeListenRequestHandler extends RequestHandler {
+    
     @Autowired
-    ConnectionManager connectionManager;
-
+    AsyncListenContext asyncListenContext;
+    
+    private static final String LISTEN_CONTEXT_TYPE = "CONFIG";
+    
     @Override
     public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, HeartBeatRequest.class);
+        return null;
     }
-
+    
     @Override
     public Response handle(Request request, RequestMeta meta) throws NacosException {
-        String connectionId = meta.getConnectionId();
-        connectionManager.refreshActiveTime(connectionId);
-        return new HeartBeatResponse(200,"heart beat success");
+        return null;
     }
+    
     @Override
     public List<String> getRequestTypes() {
-        return Lists.newArrayList(RequestTypeConstants.HEART_BEAT);
+        return Lists.newArrayList(NamingRequestTypeConstants.SERVICE_INSTANCE_CHANGE);
     }
 }

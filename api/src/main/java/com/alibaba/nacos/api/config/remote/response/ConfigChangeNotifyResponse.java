@@ -22,17 +22,37 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
 public class ConfigChangeNotifyResponse extends Response {
-
+    
+    
+    private String ackId;
 
     private String dataId;
 
     private String group;
 
     private String tenant;
-
-
-    public ConfigChangeNotifyResponse( int resultCode, String message) {
+    
+    
+    public ConfigChangeNotifyResponse(int resultCode, String message) {
         super(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, resultCode, message);
+    }
+    
+    /**
+     * Getter method for property <tt>ackId</tt>.
+     *
+     * @return property value of ackId
+     */
+    public String getAckId() {
+        return ackId;
+    }
+    
+    /**
+     * Setter method for property <tt>ackId</tt>.
+     *
+     * @param ackId value to be assigned to property ackId
+     */
+    public void setAckId(String ackId) {
+        this.ackId = ackId;
     }
 
     /**
