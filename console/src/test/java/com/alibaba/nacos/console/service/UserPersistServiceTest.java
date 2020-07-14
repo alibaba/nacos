@@ -79,6 +79,7 @@ public class UserPersistServiceTest extends BaseTest {
 
     @Test
     public void getUsersTest() {
+        userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
         Page<Users> page = userPersistServiceTmp.getUsers(0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);

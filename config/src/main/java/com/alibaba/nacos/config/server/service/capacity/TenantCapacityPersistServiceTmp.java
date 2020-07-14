@@ -70,7 +70,7 @@ public class TenantCapacityPersistServiceTmp {
     public boolean incrementUsageWithQuotaLimit(TenantCapacity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
         TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
-            .and(qTenantCapacity.usage.lt(tenantCapacity.getUsage()))
+            .and(qTenantCapacity.usage.lt(tenantCapacity.getQuota()))
             .and(qTenantCapacity.quota.ne(0)))
             .orElse(null);
         if (result == null) {

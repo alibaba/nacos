@@ -597,9 +597,6 @@ public class PersistServiceTest extends BaseTest {
     //
     @Test
     public void findChangeConfigTest() {
-
-        Timestamp startTime;
-        Timestamp endTime;
         List<ConfigInfo> result = (List<ConfigInfo>) configInfoRepository.findAll();
         if (CollectionUtils.isEmpty(result)) {
             configInfoRepository.save(configInfo);
@@ -607,14 +604,8 @@ public class PersistServiceTest extends BaseTest {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
             }
-            startTime = new Timestamp(configInfo.getGmtModified().getTime());
-            endTime = new Timestamp(configInfo.getGmtModified().getTime());
-        } else {
-            startTime = new Timestamp(result.get(0).getGmtModified().getTime());
-            endTime = new Timestamp(result.get(0).getGmtModified().getTime());
         }
-
-        List<ConfigInfo> list = persistService.findChangeConfig(startTime, endTime);
+        List<ConfigInfo> list = persistService.findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -622,6 +613,8 @@ public class PersistServiceTest extends BaseTest {
     //
     @Test
     public void findDeletedConfigTest() {
+        hisConfigInfo.setGmtModified(new Date());
+        hisConfigInfoRepository.save(hisConfigInfo);
         List<HisConfigInfo> list = persistService.findDeletedConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
