@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
@@ -28,6 +29,10 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
+import com.alibaba.nacos.client.remote.RpcClient;
+import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.client.remote.grpc.GrpcClient;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -566,6 +571,34 @@ public class ClientWorker implements Closeable {
                 }
             }
         }, 1L, 10L, TimeUnit.MILLISECONDS);
+
+
+        rpcClient=new GrpcClient(new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                ServerListManager serverListManager = agent.getServerListManager();
+                serverListManager.refreshCurrentServerAddr();
+                return serverListManager.getCurrentServerAddr();
+            }
+
+            @Override
+            public String getCurrentServer() {
+                return agent.getServerListManager().getCurrentServerAddr();
+            }
+        });
+
+
+        rpcClient.registerChangeListenHandler(new ChangeListenResponseHandler() {
+            @Override
+            public void responseReply(Response response) {
+
+            }
+
+            @Override
+            public Response parseBodyString(String bodyString) {
+                return null;
+            }
+        });
     }
     
     private void init(Properties properties) {
@@ -694,6 +727,8 @@ public class ClientWorker implements Closeable {
     private boolean isHealthServer = true;
     
     private long timeout;
+
+    private RpcClient rpcClient;
     
     private double currentLongingTaskCount = 0;
     

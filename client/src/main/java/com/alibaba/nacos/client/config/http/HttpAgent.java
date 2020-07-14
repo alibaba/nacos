@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.io.IOException;
@@ -29,7 +30,14 @@ import java.util.List;
  * @author Nacos
  */
 public interface HttpAgent extends Closeable {
-    
+
+    /**
+     * get server list manager
+     * @return
+     */
+    ServerListManager getServerListManager();
+
+
     /**
      * start to get nacos ip list.
      *

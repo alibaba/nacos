@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import io.prometheus.client.Histogram;
 
@@ -36,7 +37,12 @@ public class MetricsHttpAgent implements HttpAgent {
     public MetricsHttpAgent(HttpAgent httpAgent) {
         this.httpAgent = httpAgent;
     }
-    
+
+    @Override
+    public ServerListManager getServerListManager() {
+        return httpAgent.getServerListManager();
+    }
+
     @Override
     public void start() throws NacosException {
         httpAgent.start();
