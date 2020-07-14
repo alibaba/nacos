@@ -44,9 +44,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-
 /**
- * local data source
+ * local data source.
  *
  * @author Nacos
  */
@@ -77,7 +76,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public synchronized void init() throws Exception {
         if (!PropertyUtil.isUseExternalDB()) {
             if (!initialize) {
-                LogUtil.defaultLog.info("use local db service for init");
+                LogUtil.DEFAULT_LOG.info("use local db service for init");
                 final String jdbcUrl =
                         "jdbc:derby:" + Paths.get(ApplicationUtils.getNacosHome(), derbyBaseDir).toString()
                                 + ";create=true";
@@ -96,8 +95,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         try {
             execute(ds.getConnection(), "META-INF/schema.sql");
         } catch (Exception e) {
-            if (LogUtil.defaultLog.isErrorEnabled()) {
-                LogUtil.defaultLog.error(e.getMessage(), e);
+            if (LogUtil.DEFAULT_LOG.isErrorEnabled()) {
+                LogUtil.DEFAULT_LOG.error(e.getMessage(), e);
             }
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load schema.sql error.", e);
         }
@@ -107,6 +106,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         return jt.getDataSource();
     }
     
+    /**
+     * Clean and reopen Derby.
+     *
+     * @throws Exception exception.
+     */
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
@@ -114,6 +118,13 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         initialize(jdbcUrl);
     }
     
+    /**
+     * Restore derby.
+     *
+     * @param jdbcUrl jdbcUrl string value.
+     * @param callable callable.
+     * @throws Exception exception.
+     */
     public void restoreDerby(String jdbcUrl, Callable<Void> callable) throws Exception {
         doDerbyClean();
         callable.call();
@@ -121,7 +132,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     private void doDerbyClean() throws Exception {
-        LogUtil.defaultLog.warn("use local db service for reopenDerby");
+        LogUtil.DEFAULT_LOG.warn("use local db service for reopenDerby");
         try {
             DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (Exception e) {
@@ -175,7 +186,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     @Override
-    public String getCurrentDBUrl() {
+    public String getCurrentDbUrl() {
         return "jdbc:derby:" + ApplicationUtils.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
     }
     
@@ -189,11 +200,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     /**
-     * 读取SQL文件
+     * Load sql.
      *
-     * @param sqlFile sql
-     * @return sqls
-     * @throws Exception Exception
+     * @param sqlFile sql.
+     * @return sqls.
+     * @throws Exception Exception.
      */
     private List<String> loadSql(String sqlFile) throws Exception {
         List<String> sqlList = new ArrayList<String>();
@@ -234,11 +245,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     /**
-     * 执行SQL语句
+     * Execute sql.
      *
-     * @param conn    connect
-     * @param sqlFile sql
-     * @throws Exception Exception
+     * @param conn    connect.
+     * @param sqlFile sql.
+     * @throws Exception Exception.
      */
     private void execute(Connection conn, String sqlFile) throws Exception {
         Statement stmt = null;
@@ -249,7 +260,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
-                    LogUtil.defaultLog.warn(e.getMessage());
+                    LogUtil.DEFAULT_LOG.warn(e.getMessage());
                 }
             }
         } finally {

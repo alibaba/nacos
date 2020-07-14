@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -310,8 +309,7 @@ public class NotifyCenter {
      * @param eventType    class Instances type of the event type.
      * @param queueMaxSize the publisher's queue max size.
      */
-    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize)
-            throws NacosException {
+    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize) {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher;
         }

@@ -33,8 +33,8 @@ public class HttpRestResult<T> extends RestResult<T> {
     public HttpRestResult() {
     }
     
-    public HttpRestResult(Header header, int code, T data) {
-        super(code, data);
+    public HttpRestResult(Header header, int code, T data, String message) {
+        super(code, message, data);
         this.header = header;
     }
     

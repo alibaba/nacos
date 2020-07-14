@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.cluster;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
@@ -23,7 +24,6 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -54,7 +54,7 @@ import java.util.Optional;
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 @Component("serverListManager")
-public class ServerListManager implements MemberChangeListener {
+public class ServerListManager extends MemberChangeListener {
     
     private static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
     
@@ -69,7 +69,7 @@ public class ServerListManager implements MemberChangeListener {
     public ServerListManager(final SwitchDomain switchDomain, final ServerMemberManager memberManager) {
         this.switchDomain = switchDomain;
         this.memberManager = memberManager;
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
         this.servers = new ArrayList<>(memberManager.allMembers());
     }
     

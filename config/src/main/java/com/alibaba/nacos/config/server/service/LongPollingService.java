@@ -16,44 +16,43 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Future;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.Arrays;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
  * LongPollingService.
@@ -61,7 +60,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
  * @author Nacos
  */
 @Service
-public class LongPollingService extends AbstractEventListener {
+public class LongPollingService {
     
     private static final int FIXED_POLLING_INTERVAL_MS = 10000;
     
@@ -126,8 +125,8 @@ public class LongPollingService extends AbstractEventListener {
     }
     
     /**
-     * Aggregate the sampling IP and monitoring configuration information in the sampling results.
-     * There is no problem for the merging strategy to cover the previous one with the latter.
+     * Aggregate the sampling IP and monitoring configuration information in the sampling results. There is no problem
+     * for the merging strategy to cover the previous one with the latter.
      *
      * @param sampleResults sample Results.
      * @return Results.
@@ -147,6 +146,7 @@ public class LongPollingService extends AbstractEventListener {
     
     /**
      * Collect application subscribe configinfos.
+     *
      * @return configinfos results.
      */
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
@@ -182,7 +182,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -206,7 +206,7 @@ public class LongPollingService extends AbstractEventListener {
                 try {
                     Thread.sleep(SAMPLE_PERIOD);
                 } catch (InterruptedException e) {
-                    LogUtil.clientLog.error("sleep wrong", e);
+                    LogUtil.CLIENT_LOG.error("sleep wrong", e);
                 }
             }
         }
@@ -232,9 +232,9 @@ public class LongPollingService extends AbstractEventListener {
     /**
      * Add LongPollingClient.
      *
-     * @param req HttpServletRequest.
-     * @param rsp HttpServletResponse.
-     * @param clientMd5Map clientMd5Map.
+     * @param req              HttpServletRequest.
+     * @param rsp              HttpServletResponse.
+     * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
@@ -245,7 +245,7 @@ public class LongPollingService extends AbstractEventListener {
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-
+        
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
@@ -256,12 +256,12 @@ public class LongPollingService extends AbstractEventListener {
             List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
             if (changedGroups.size() > 0) {
                 generateResponse(req, rsp, changedGroups);
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
                 return;
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
-                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+                LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
                 return;
@@ -275,27 +275,8 @@ public class LongPollingService extends AbstractEventListener {
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
         
-        scheduler.execute(
+        ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
-    }
-    
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
-        eventTypes.add(LocalDataChangeEvent.class);
-        return eventTypes;
-    }
-    
-    @Override
-    public void onEvent(Event event) {
-        if (isFixedPolling()) {
-            // Ignore.
-        } else {
-            if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-            }
-        }
     }
     
     public static boolean isSupportLongPolling(HttpServletRequest req) {
@@ -306,23 +287,37 @@ public class LongPollingService extends AbstractEventListener {
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
         
-        scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+        ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        
+        // Register LocalDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        
+        // Register A Subscriber to subscribe LocalDataChangeEvent.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
             @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.LongPolling");
-                return t;
+            public void onEvent(Event event) {
+                if (isFixedPolling()) {
+                    // Ignore.
+                } else {
+                    if (event instanceof LocalDataChangeEvent) {
+                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    }
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return LocalDataChangeEvent.class;
             }
         });
-        scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        
     }
     
     public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
     
     public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
-    
-    final ScheduledExecutorService scheduler;
     
     /**
      * ClientLongPolling subscibers.
@@ -350,7 +345,7 @@ public class LongPollingService extends AbstractEventListener {
                         
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                         iter.remove(); // Delete subscribers' relationships.
-                        LogUtil.clientLog
+                        LogUtil.CLIENT_LOG
                                 .info("{}|{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - changeTime), "in-advance",
                                         RequestUtil
                                                 .getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
@@ -359,7 +354,7 @@ public class LongPollingService extends AbstractEventListener {
                     }
                 }
             } catch (Throwable t) {
-                LogUtil.defaultLog.error("data change error: {}", ExceptionUtil.getStackTrace(t));
+                LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
         }
         
@@ -389,7 +384,7 @@ public class LongPollingService extends AbstractEventListener {
         
         @Override
         public void run() {
-            memoryLog.info("[long-pulling] client count " + allSubs.size());
+            MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
             MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }
@@ -398,17 +393,17 @@ public class LongPollingService extends AbstractEventListener {
         
         @Override
         public void run() {
-            asyncTimeoutFuture = scheduler.schedule(new Runnable() {
+            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+                        
                         // Delete subsciber's relations.
                         allSubs.remove(ClientLongPolling.this);
                         
                         if (isFixedPolling()) {
-                            LogUtil.clientLog
+                            LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                             "polling", clientMd5Map.size(), probeRequestSize);
@@ -421,14 +416,14 @@ public class LongPollingService extends AbstractEventListener {
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.clientLog
+                            LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
                                             RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                             "polling", clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
                         }
                     } catch (Throwable t) {
-                        LogUtil.defaultLog.error("long polling error:" + t.getMessage(), t.getCause());
+                        LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                     }
                     
                 }
@@ -439,7 +434,7 @@ public class LongPollingService extends AbstractEventListener {
         }
         
         void sendResponse(List<String> changedGroups) {
-
+            
             // Cancel time out task.
             if (null != asyncTimeoutFuture) {
                 asyncTimeoutFuture.cancel(false);
@@ -449,7 +444,7 @@ public class LongPollingService extends AbstractEventListener {
         
         void generateResponse(List<String> changedGroups) {
             if (null == changedGroups) {
-
+                
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;
@@ -468,7 +463,7 @@ public class LongPollingService extends AbstractEventListener {
                 response.getWriter().println(respString);
                 asyncContext.complete();
             } catch (Exception ex) {
-                pullLog.error(ex.toString(), ex);
+                PULL_LOG.error(ex.toString(), ex);
                 asyncContext.complete();
             }
         }
@@ -525,7 +520,7 @@ public class LongPollingService extends AbstractEventListener {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println(respString);
         } catch (Exception ex) {
-            pullLog.error(ex.toString(), ex);
+            PULL_LOG.error(ex.toString(), ex);
         }
     }
     

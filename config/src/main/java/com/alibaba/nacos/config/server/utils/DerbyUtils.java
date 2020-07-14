@@ -20,6 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Derby util.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DerbyUtils {
@@ -30,7 +32,7 @@ public final class DerbyUtils {
     
     /**
      * Because Derby's database table name is uppercase, you need to do a conversion to the insert statement that was
-     * inserted
+     * inserted.
      *
      * @param sql external database insert sql
      * @return derby insert sql

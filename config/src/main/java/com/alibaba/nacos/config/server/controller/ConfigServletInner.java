@@ -49,7 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
  * ConfigServlet inner for aop.
@@ -250,7 +250,7 @@ public class ConfigServletInner {
                             .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
                 }
                 
-                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
+                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
                 
                 final long delayed = System.currentTimeMillis() - lastModified;
                 
@@ -281,7 +281,7 @@ public class ConfigServletInner {
             
         } else {
             
-            pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
+            PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
             
             response.setStatus(HttpServletResponse.SC_CONFLICT);
             response.getWriter().println("requested file is being modified, please try later.");
@@ -320,7 +320,7 @@ public class ConfigServletInner {
                 try {
                     Thread.sleep(1);
                 } catch (Exception e) {
-                    LogUtil.pullCheckLog.error("An Exception occurred while thread sleep", e);
+                    LogUtil.PULL_CHECK_LOG.error("An Exception occurred while thread sleep", e);
                 }
             }
         }

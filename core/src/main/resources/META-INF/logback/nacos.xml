@@ -200,7 +200,7 @@
         <level value="INFO"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.core.notify.NotifyCenter">
+    <logger name="com.alibaba.nacos.common.notify.NotifyCenter">
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>

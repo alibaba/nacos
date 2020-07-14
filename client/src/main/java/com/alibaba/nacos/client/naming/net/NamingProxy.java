@@ -56,8 +56,6 @@ import org.apache.http.HttpStatus;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -418,11 +416,7 @@ public class NamingProxy implements Closeable {
         Map<String, String> params = new HashMap<String, String>(8);
         Map<String, String> bodyMap = new HashMap<String, String>(2);
         if (!lightBeatEnabled) {
-            try {
-                bodyMap.put("beat", URLEncoder.encode(JacksonUtils.toJson(beatInfo), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw new NacosException(NacosException.SERVER_ERROR, "encode beatInfo error", e);
-            }
+            bodyMap.put("beat", JacksonUtils.toJson(beatInfo));
         }
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());

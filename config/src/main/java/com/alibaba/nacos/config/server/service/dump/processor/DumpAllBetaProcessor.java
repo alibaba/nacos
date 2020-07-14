@@ -26,7 +26,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Dump all beta processor.
@@ -55,13 +55,13 @@ public class DumpAllBetaProcessor implements TaskProcessor {
                     boolean result = ConfigCacheService
                             .dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
                                     cf.getLastModified(), cf.getBetaIps());
-                    LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
+                    LogUtil.DUMP_LOG.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5());
                 }
                 
                 actualRowCount += page.getPageItems().size();
-                defaultLog.info("[all-dump-beta] {} / {}", actualRowCount, rowCount);
+                DEFAULT_LOG.info("[all-dump-beta] {} / {}", actualRowCount, rowCount);
             }
         }
         return true;

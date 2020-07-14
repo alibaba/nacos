@@ -60,7 +60,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
         DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
-        LogUtil.defaultLog.info("use StandaloneDatabaseOperateImpl");
+        LogUtil.DEFAULT_LOG.info("use StandaloneDatabaseOperateImpl");
     }
     
     @Override
@@ -120,7 +120,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 return RestResult.<String>builder()
                         .withCode(BooleanUtils.and(results.toArray(new Boolean[0])) ? 200 : 500).withData("").build();
             } catch (Throwable ex) {
-                LogUtil.defaultLog.error("An exception occurred when external data was imported into Derby : {}", ex);
+                LogUtil.DEFAULT_LOG.error("An exception occurred when external data was imported into Derby : {}", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });

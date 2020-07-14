@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class HttpClientBeanHolder {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientBeanHolder.class);
     
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
     
@@ -52,8 +52,8 @@ public final class HttpClientBeanHolder {
         });
     }
     
-    public static NacosRestTemplate getNacosRestTemplate() {
-        return getNacosRestTemplate(new DefaultHttpClientFactory());
+    public static NacosRestTemplate getNacosRestTemplate(Logger logger) {
+        return getNacosRestTemplate(new DefaultHttpClientFactory(logger));
     }
     
     public static NacosRestTemplate getNacosRestTemplate(HttpClientFactory httpClientFactory) {
@@ -75,8 +75,8 @@ public final class HttpClientBeanHolder {
         return nacosRestTemplate;
     }
     
-    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-        return getNacosAsyncRestTemplate(new DefaultHttpClientFactory());
+    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(Logger logger) {
+        return getNacosAsyncRestTemplate(new DefaultHttpClientFactory(logger));
     }
     
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(HttpClientFactory httpClientFactory) {

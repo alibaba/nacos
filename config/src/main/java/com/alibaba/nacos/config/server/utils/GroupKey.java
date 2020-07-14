@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * 合成dataId+groupId的形式。对dataId和groupId中的保留字符做转义。
+ * Synthesize dataId+groupId form. Escape reserved characters in dataId and groupId.
  *
  * @author jiuRen
  */
@@ -29,12 +29,12 @@ public class GroupKey {
         return doGetKey(dataId, group, "");
     }
     
-    public static String getKeyTenant(String dataId, String group, String tenant) {
-        return doGetKey(dataId, group, tenant);
-    }
-    
     public static String getKey(String dataId, String group, String datumStr) {
         return doGetKey(dataId, group, datumStr);
+    }
+    
+    public static String getKeyTenant(String dataId, String group, String tenant) {
+        return doGetKey(dataId, group, tenant);
     }
     
     private static String doGetKey(String dataId, String group, String datumStr) {
@@ -50,6 +50,9 @@ public class GroupKey {
         return sb.toString();
     }
     
+    /**
+     * Parse the group key.
+     */
     public static String[] parseKey(String groupKey) {
         StringBuilder sb = new StringBuilder();
         String dataId = null;
@@ -99,7 +102,7 @@ public class GroupKey {
     }
     
     /**
-     * + -> %2B % -> %25
+     * + -> %2B % -> %25.
      */
     static void urlEncode(String str, StringBuilder sb) {
         for (int idx = 0; idx < str.length(); ++idx) {

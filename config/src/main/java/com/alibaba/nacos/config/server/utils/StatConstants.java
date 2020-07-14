@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 /**
- * Stat constant
+ * Stat constant.
  *
  * @author Nacos
  */

@@ -22,7 +22,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 
 /**
- * Time util
+ * Time util.
  *
  * @author Nacos
  */

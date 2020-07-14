@@ -30,13 +30,18 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
- * Tenant Capacity Service
+ * Tenant Capacity Service.
  *
  * @author hexu.hxy
  * @date 2018/03/05
@@ -83,6 +88,12 @@ public class TenantCapacityPersistService {
         return list.get(0);
     }
     
+    /**
+     * Insert TenantCapacity.
+     *
+     * @param tenantCapacity tenantCapacity object instance.
+     * @return operate result.
+     */
     public boolean insertTenantCapacity(final TenantCapacity tenantCapacity) {
         final String sql =
                 "INSERT INTO tenant_capacity (tenant_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
@@ -108,12 +119,18 @@ public class TenantCapacityPersistService {
             jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
             return generatedKeyHolder.getKey() != null;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
         
     }
     
+    /**
+     * Increment UsageWithDefaultQuotaLimit.
+     *
+     * @param tenantCapacity tenantCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsageWithDefaultQuotaLimit(TenantCapacity tenantCapacity) {
         String sql =
                 "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` <"
@@ -123,11 +140,17 @@ public class TenantCapacityPersistService {
                     tenantCapacity.getQuota());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
     
+    /**
+     * Increment UsageWithQuotaLimit.
+     *
+     * @param tenantCapacity tenantCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsageWithQuotaLimit(TenantCapacity tenantCapacity) {
         String sql =
                 "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` < "
@@ -135,33 +158,55 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
             
         }
     }
     
+    /**
+     * Increment Usage.
+     *
+     * @param tenantCapacity tenantCapacity object instance.
+     * @return operate result.
+     */
     public boolean incrementUsage(TenantCapacity tenantCapacity) {
         String sql = "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?";
         try {
             int affectRow = jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant());
             return affectRow == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
     
+    /**
+     * DecrementUsage.
+     *
+     * @param tenantCapacity tenantCapacity object instance.
+     * @return operate result.
+     */
     public boolean decrementUsage(TenantCapacity tenantCapacity) {
         String sql = "UPDATE tenant_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` > 0";
         try {
             return jdbcTemplate.update(sql, tenantCapacity.getGmtModified(), tenantCapacity.getTenant()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
     
+    /**
+     * Update TenantCapacity.
+     *
+     * @param tenant tenant string value.
+     * @param quota quota int value.
+     * @param maxSize maxSize int value.
+     * @param maxAggrCount maxAggrCount int value.
+     * @param maxAggrSize maxAggrSize int value.
+     * @return operate result.
+     */
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         List<Object> argList = Lists.newArrayList();
@@ -190,7 +235,7 @@ public class TenantCapacityPersistService {
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
@@ -199,23 +244,30 @@ public class TenantCapacityPersistService {
         return updateTenantCapacity(tenant, quota, null, null, null);
     }
     
+    /**
+     * Correct Usage.
+     *
+     * @param tenant tenant.
+     * @param gmtModified gmtModified.
+     * @return operate result.
+     */
     public boolean correctUsage(String tenant, Timestamp gmtModified) {
         String sql = "UPDATE tenant_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
                 + "gmt_modified = ? WHERE tenant_id = ?";
         try {
             return jdbcTemplate.update(sql, tenant, gmtModified, tenant) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
     
     /**
-     * 获取TenantCapacity列表，只有id、tenantId有值
+     * Get TenantCapacity List, only including id and tenantId value.
      *
-     * @param lastId   id > lastId
-     * @param pageSize 页数
-     * @return TenantCapacity列表
+     * @param lastId   lastId long value.
+     * @param pageSize pageSize int value.
+     * @return TenantCapacity List.
      */
     public List<TenantCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
@@ -235,11 +287,17 @@ public class TenantCapacityPersistService {
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
     
+    /**
+     * Delete TenantCapacity.
+     *
+     * @param tenant tenant string value.
+     * @return operate result.
+     */
     public boolean deleteTenantCapacity(final String tenant) {
         try {
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
@@ -253,7 +311,7 @@ public class TenantCapacityPersistService {
             };
             return jdbcTemplate.update(preparedStatementCreator) == 1;
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error]", e);
+            FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }

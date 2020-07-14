@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
@@ -27,7 +28,6 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.DiskUtils;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;
@@ -95,12 +95,12 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 
                 callFinally.accept(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
-                LogUtil.fatalLog.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
+                LogUtil.FATAL_LOG.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
                         writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
-                TimerContext.end(LogUtil.fatalLog);
+                TimerContext.end(LogUtil.FATAL_LOG);
             }
         });
     }
@@ -126,26 +126,26 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             }
             
             final String loadPath = Paths.get(readerPath, snapshotDir, "derby-data").toString();
-            LogUtil.fatalLog.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
+            LogUtil.FATAL_LOG.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
             
             doDerbyRestoreFromBackup(() -> {
                 final File srcDir = new File(loadPath);
                 final File destDir = new File(derbyBaseDir);
                 
                 DiskUtils.copyDirectory(srcDir, destDir);
-                LogUtil.fatalLog.info("Complete database recovery");
+                LogUtil.FATAL_LOG.info("Complete database recovery");
                 return null;
             });
             DiskUtils.deleteDirectory(loadPath);
             NotifyCenter.publishEvent(DerbyLoadEvent.INSTANCE);
             return true;
         } catch (final Throwable t) {
-            LogUtil.fatalLog
+            LogUtil.FATAL_LOG
                     .error("Fail to load snapshot, path={}, file list={}, {}.", readerPath, reader.listFiles(), t);
             return false;
         } finally {
             lock.unlock();
-            TimerContext.end(LogUtil.fatalLog);
+            TimerContext.end(LogUtil.FATAL_LOG);
         }
     }
     

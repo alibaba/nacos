@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,18 +46,18 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
- * Base data source
+ * Base data source.
  *
  * @author Nacos
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
     
-    private static final Logger log = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
     
-    private final static String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
+    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
     /**
-     * JDBC执行超时时间, 单位秒
+     * JDBC execute timeout value, unit:second.
      */
     private int queryTimeout = 3;
     
@@ -77,14 +77,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private JdbcTemplate testMasterWritableJT;
     
-    volatile private List<JdbcTemplate> testJTList;
+    private volatile List<JdbcTemplate> testJtList;
     
-    volatile private List<Boolean> isHealthList;
+    private volatile List<Boolean> isHealthList;
     
     private volatile int masterIndex;
     
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    
     
     @Override
     public void init() {
@@ -103,14 +102,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         //  Database health check
         
-        testJTList = new ArrayList<JdbcTemplate>();
+        testJtList = new ArrayList<JdbcTemplate>();
         isHealthList = new ArrayList<Boolean>();
         
         tm = new DataSourceTransactionManager();
         tjt = new TransactionTemplate(tm);
-        /**
-         *  Transaction timeout needs to be distinguished from ordinary operations
-         */
+        
+        // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
         if (PropertyUtil.isUseExternalDB()) {
             try {
@@ -120,8 +118,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
             
-            ConfigExecutor.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
-            ConfigExecutor.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10, TimeUnit.SECONDS);
+            ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
     
@@ -133,13 +131,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);
-                        testJTList.add(jdbcTemplate);
+                        testJtList.add(jdbcTemplate);
                         isHealthList.add(Boolean.TRUE);
                     });
             new SelectMasterTask().run();
-            new CheckDBHealthTask().run();
+            new CheckDbHealthTask().run();
         } catch (RuntimeException e) {
-            fatalLog.error(DB_LOAD_ERROR_MSG, e);
+            FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
         }
     }
@@ -160,7 +158,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
+            FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
         
@@ -177,7 +175,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     }
     
     @Override
-    public String getCurrentDBUrl() {
+    public String getCurrentDbUrl() {
         DataSource ds = this.jt.getDataSource();
         if (ds == null) {
             return StringUtils.EMPTY;
@@ -191,12 +189,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         for (int i = 0; i < isHealthList.size(); i++) {
             if (!isHealthList.get(i)) {
                 if (i == masterIndex) {
-                    // The master is unhealthy
+                    // The master is unhealthy.
                     return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 } else {
-                    /**
-                     * The slave  is unhealthy
-                     */
+                    // The slave  is unhealthy.
                     return "WARN:" + getIpFromUrl(dataSourceList.get(i).getJdbcUrl());
                 }
             }
@@ -223,8 +219,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         @Override
         public void run() {
-            if (defaultLog.isDebugEnabled()) {
-                defaultLog.debug("check master db.");
+            if (DEFAULT_LOG.isDebugEnabled()) {
+                DEFAULT_LOG.debug("check master db.");
             }
             boolean isFound = false;
             
@@ -236,7 +232,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 try {
                     testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
-                        fatalLog.warn("[master-db] {}", ds.getJdbcUrl());
+                        FATAL_LOG.warn("[master-db] {}", ds.getJdbcUrl());
                     }
                     jt.setDataSource(ds);
                     tm.setDataSource(ds);
@@ -249,33 +245,33 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             }
             
             if (!isFound) {
-                fatalLog.error("[master-db] master db not found.");
+                FATAL_LOG.error("[master-db] master db not found.");
                 MetricsMonitor.getDbException().increment();
             }
         }
     }
     
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-    class CheckDBHealthTask implements Runnable {
+    class CheckDbHealthTask implements Runnable {
         
         @Override
         public void run() {
-            if (defaultLog.isDebugEnabled()) {
-                defaultLog.debug("check db health.");
+            if (DEFAULT_LOG.isDebugEnabled()) {
+                DEFAULT_LOG.debug("check db health.");
             }
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
             
-            for (int i = 0; i < testJTList.size(); i++) {
-                JdbcTemplate jdbcTemplate = testJTList.get(i);
+            for (int i = 0; i < testJtList.size(); i++) {
+                JdbcTemplate jdbcTemplate = testJtList.get(i);
                 try {
                     jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
-                        fatalLog.error("[db-error] master db {} down.",
+                        FATAL_LOG.error("[db-error] master db {} down.",
                                 getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     } else {
-                        fatalLog.error("[db-error] slave db {} down.",
+                        FATAL_LOG.error("[db-error] slave db {} down.",
                                 getIpFromUrl(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);

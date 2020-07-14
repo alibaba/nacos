@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * 参数合法性检查工具类
+ * Parameter validity check util.
  *
  * @author Nacos
  */
@@ -30,15 +30,13 @@ public class ParamUtils {
     
     private static char[] validChars = new char[] {'_', '-', '.', ':'};
     
-    private final static int TAG_MAX_LEN = 16;
+    private static final int TAG_MAX_LEN = 16;
     
-    private final static int TANANT_MAX_LEN = 128;
+    private static final int TANANT_MAX_LEN = 128;
     
     /**
-     * 白名单的方式检查, 合法的参数只能包含字母、数字、以及validChars中的字符, 并且不能为空
-     *
-     * @param param
-     * @return
+     * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
+     * cannot be empty.
      */
     public static boolean isValid(String param) {
         if (param == null) {
@@ -63,6 +61,9 @@ public class ParamUtils {
         return false;
     }
     
+    /**
+     * Check the parameter.
+     */
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
         if (StringUtils.isBlank(dataId) || !isValid(dataId.trim())) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId : " + dataId);
@@ -78,6 +79,9 @@ public class ParamUtils {
         }
     }
     
+    /**
+     * Check the tag.
+     */
     public static void checkParam(String tag) {
         if (StringUtils.isNotBlank(tag)) {
             if (!isValid(tag.trim())) {
@@ -89,17 +93,9 @@ public class ParamUtils {
         }
     }
     
-    public static void checkTenant(String tenant) {
-        if (StringUtils.isNotBlank(tenant)) {
-            if (!isValid(tenant.trim())) {
-                throw new IllegalArgumentException("invalid tenant");
-            }
-            if (tenant.length() > TANANT_MAX_LEN) {
-                throw new IllegalArgumentException("too long tag, over 128");
-            }
-        }
-    }
-    
+    /**
+     * Check the config info.
+     */
     public static void checkParam(Map<String, Object> configAdvanceInfo) throws NacosException {
         for (Map.Entry<String, Object> configAdvanceInfoTmp : configAdvanceInfo.entrySet()) {
             if ("config_tags".equals(configAdvanceInfoTmp.getKey())) {
@@ -141,6 +137,20 @@ public class ParamUtils {
                 }
             } else {
                 throw new NacosException(NacosException.INVALID_PARAM, "invalid param");
+            }
+        }
+    }
+    
+    /**
+     * Check the tenant.
+     */
+    public static void checkTenant(String tenant) {
+        if (StringUtils.isNotBlank(tenant)) {
+            if (!isValid(tenant.trim())) {
+                throw new IllegalArgumentException("invalid tenant");
+            }
+            if (tenant.length() > TANANT_MAX_LEN) {
+                throw new IllegalArgumentException("too long tag, over 128");
             }
         }
     }

@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.config.server.model.event;
 
-import java.io.Serializable;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * event.
+ * RaftDBErrorEvent.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-public interface Event extends Serializable {
+public class RaftDbErrorEvent extends SlowEvent {
     
-    /**
-     * Event sequence number, which can be used to handle the sequence of events.
-     *
-     * @return sequence num, It's best to make sure it's monotone
-     */
-    default long sequence() {
-        return System.currentTimeMillis();
+    private static final long serialVersionUID = 101591819161802336L;
+    
+    private Throwable ex;
+    
+    public RaftDbErrorEvent() {
     }
     
+    public RaftDbErrorEvent(Throwable ex) {
+        this.ex = ex;
+    }
+    
+    public Throwable getEx() {
+        return ex;
+    }
 }

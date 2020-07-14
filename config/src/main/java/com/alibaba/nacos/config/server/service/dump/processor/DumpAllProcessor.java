@@ -31,7 +31,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
  * Dump all processor.
@@ -74,11 +74,11 @@ public class DumpAllProcessor implements TaskProcessor {
                     
                     final String content = cf.getContent();
                     final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-                    LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
+                    LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={}, md5={}",
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
                             md5);
                 }
-                defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
+                DEFAULT_LOG.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
             } else {
                 lastMaxId += PAGE_SIZE;
             }

@@ -51,13 +51,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @org.springframework.stereotype.Service
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
-    private AtomicInteger connectIdGenerator = new AtomicInteger(0);
+    private final AtomicInteger connectIdGenerator = new AtomicInteger(0);
     
-    private Map<Integer, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>(16);
+    private final Map<Integer, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>(16);
     
-    private Map<String, Resource> resourceMap = new ConcurrentHashMap<>(16);
+    private final Map<String, Resource> resourceMap = new ConcurrentHashMap<>(16);
     
-    private Map<String, String> checksumMap = new ConcurrentHashMap<>(16);
+    private final Map<String, String> checksumMap = new ConcurrentHashMap<>(16);
     
     private static final String SERVICE_NAME_SPLITTER = "nacos";
     
@@ -204,7 +204,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         
         return new StreamObserver<RequestResources>() {
             
-            private int connectionId = id;
+            private final int connectionId = id;
             
             @Override
             public void onNext(RequestResources value) {

@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.event;
-
-import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.notify.Event;
+package com.alibaba.nacos.common.constant;
 
 /**
- * RaftDBErrorRecoverEvent.
+ * Response Handler Type.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author mai.jh
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-@JustForTest
-public class RaftDBErrorRecoverEvent implements Event {
-
+public final class ResponseHandlerType {
+    
+    public static final String STRING_TYPE = "java.lang.String";
+    
+    public static final String RESTRESULT_TYPE = "com.alibaba.nacos.common.model.RestResult";
+    
+    public static final String DEFAULT_BEAN_TYPE = "default_bean_handler";
+    
 }

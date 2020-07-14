@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -28,9 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -81,15 +81,15 @@ public class NotifySingleService {
                 this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
             } catch (Exception e) { // never goes here, but in case (never interrupts this notification thread)
                 this.isSuccess = false;
-                LogUtil.notifyLog
+                LogUtil.NOTIFY_LOG
                         .error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
                                 getLastModified());
-                LogUtil.notifyLog.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
+                LogUtil.NOTIFY_LOG.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
                         new Object[] {target, getDataId(), getGroup(), getLastModified()}, e);
             }
             
             if (!this.isSuccess) {
-                LogUtil.notifyLog
+                LogUtil.NOTIFY_LOG
                         .error("[notify-retry] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
                                 getLastModified());
                 try {
@@ -99,22 +99,6 @@ public class NotifySingleService {
                             e);
                 }
             }
-        }
-    }
-    
-    static class NotifyThreadFactory implements ThreadFactory {
-        
-        private final String notifyTarget;
-        
-        NotifyThreadFactory(String notifyTarget) {
-            this.notifyTarget = notifyTarget;
-        }
-        
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.alibaba.nacos.NotifySingleServiceThread-" + notifyTarget);
-            thread.setDaemon(true);
-            return thread;
         }
     }
     
@@ -141,8 +125,8 @@ public class NotifySingleService {
              * there will be no continuous task accumulation,
              * there is occasional instantaneous pressure)
              */
-            @SuppressWarnings("PMD.ThreadPoolCreationRule") Executor executor = Executors
-                    .newScheduledThreadPool(1, new NotifyThreadFactory(address));
+            Executor executor = ExecutorFactory.newSingleScheduledExecutorService(
+                    new NameThreadFactory("com.alibaba.nacos.config.NotifySingleServiceThread-" + address));
             
             if (null == executors.putIfAbsent(address, executor)) {
                 LOGGER.warn("[notify-thread-pool] setup thread target ip {} ok.", address);
@@ -163,7 +147,7 @@ public class NotifySingleService {
         
     }
     
-    private static final Logger LOGGER = LogUtil.fatalLog;
+    private static final Logger LOGGER = LogUtil.FATAL_LOG;
     
     private ServerMemberManager memberManager;
     

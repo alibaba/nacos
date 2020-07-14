@@ -48,22 +48,22 @@ public class DumpChangeProcessor implements TaskProcessor {
     
     @Override
     public boolean process(String taskType, AbstractTask task) {
-        LogUtil.defaultLog.warn("quick start; startTime:{},endTime:{}", startTime, endTime);
-        LogUtil.defaultLog.warn("updateMd5 start");
+        LogUtil.DEFAULT_LOG.warn("quick start; startTime:{},endTime:{}", startTime, endTime);
+        LogUtil.DEFAULT_LOG.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();
         List<ConfigInfoWrapper> updateMd5List = persistService.listAllGroupKeyMd5();
-        LogUtil.defaultLog.warn("updateMd5 count:{}", updateMd5List.size());
+        LogUtil.DEFAULT_LOG.warn("updateMd5 count:{}", updateMd5List.size());
         for (ConfigInfoWrapper config : updateMd5List) {
             final String groupKey = GroupKey2.getKey(config.getDataId(), config.getGroup());
             ConfigCacheService.updateMd5(groupKey, config.getMd5(), config.getLastModified());
         }
         long endUpdateMd5 = System.currentTimeMillis();
-        LogUtil.defaultLog.warn("updateMd5 done,cost:{}", endUpdateMd5 - startUpdateMd5);
+        LogUtil.DEFAULT_LOG.warn("updateMd5 done,cost:{}", endUpdateMd5 - startUpdateMd5);
         
-        LogUtil.defaultLog.warn("deletedConfig start");
+        LogUtil.DEFAULT_LOG.warn("deletedConfig start");
         long startDeletedConfigTime = System.currentTimeMillis();
         List<ConfigInfo> configDeleted = persistService.findDeletedConfig(startTime, endTime);
-        LogUtil.defaultLog.warn("deletedConfig count:{}", configDeleted.size());
+        LogUtil.DEFAULT_LOG.warn("deletedConfig count:{}", configDeleted.size());
         for (ConfigInfo configInfo : configDeleted) {
             if (persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant())
                     == null) {
@@ -71,24 +71,24 @@ public class DumpChangeProcessor implements TaskProcessor {
             }
         }
         long endDeletedConfigTime = System.currentTimeMillis();
-        LogUtil.defaultLog.warn("deletedConfig done,cost:{}", endDeletedConfigTime - startDeletedConfigTime);
+        LogUtil.DEFAULT_LOG.warn("deletedConfig done,cost:{}", endDeletedConfigTime - startDeletedConfigTime);
         
-        LogUtil.defaultLog.warn("changeConfig start");
+        LogUtil.DEFAULT_LOG.warn("changeConfig start");
         final long startChangeConfigTime = System.currentTimeMillis();
         List<ConfigInfoWrapper> changeConfigs = persistService.findChangeConfig(startTime, endTime);
-        LogUtil.defaultLog.warn("changeConfig count:{}", changeConfigs.size());
+        LogUtil.DEFAULT_LOG.warn("changeConfig count:{}", changeConfigs.size());
         for (ConfigInfoWrapper cf : changeConfigs) {
             boolean result = ConfigCacheService
                     .dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified());
             final String content = cf.getContent();
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            LogUtil.defaultLog.info("[dump-change-ok] {}, {}, length={}, md5={}",
+            LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={}",
                     new Object[] {GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             content.length(), md5});
         }
         ConfigCacheService.reloadConfig();
         long endChangeConfigTime = System.currentTimeMillis();
-        LogUtil.defaultLog.warn("changeConfig done,cost:{}", endChangeConfigTime - startChangeConfigTime);
+        LogUtil.DEFAULT_LOG.warn("changeConfig done,cost:{}", endChangeConfigTime - startChangeConfigTime);
         return true;
     }
     

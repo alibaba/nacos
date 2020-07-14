@@ -20,13 +20,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ip util
+ * Ip util.
  *
  * @author Nacos
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
 public class IPUtil {
     
+    /**
+     * Determine if it is an IPV4 address.
+     */
     public static boolean isIPV4(String addr) {
         if (null == addr) {
             return false;
@@ -41,6 +44,9 @@ public class IPUtil {
         return ipAddress;
     }
     
+    /**
+     * Determine if it is an IPV6 address.
+     */
     public static boolean isIPV6(String addr) {
         if (null == addr) {
             return false;

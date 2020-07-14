@@ -17,10 +17,9 @@
 package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
  * NotifyTaskQueueMonitorTask.
@@ -37,8 +36,8 @@ public class NotifyTaskQueueMonitorTask implements Runnable {
     
     @Override
     public void run() {
-        int size = ((ScheduledThreadPoolExecutor) notifySingleService.getExecutor()).getQueue().size();
-        memoryLog.info("toNotifyTaskSize = {}", size);
+        int size = ConfigExecutor.asyncNotifyQueueSize();
+        MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }
