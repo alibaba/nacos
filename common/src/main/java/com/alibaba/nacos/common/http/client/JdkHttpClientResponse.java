@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.IoUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,12 +73,6 @@ public class JdkHttpClientResponse implements HttpClientResponse {
     
     @Override
     public void close() {
-        if (this.responseStream != null) {
-            try {
-                this.responseStream.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
+        IoUtils.closeQuietly(this.responseStream);
     }
 }
