@@ -13,54 +13,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote;
 
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-
+import com.alibaba.nacos.api.remote.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
+import java.util.List;
+
 /**
+ * Nacos based request handler.
+ *
  * @author liuzunfei
- * @version $Id: RequestHandler.java, v 0.1 2020年07月13日 8:22 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public abstract class RequestHandler<T> {
-
-
+public abstract class RequestHandler<T extends Request> {
+    
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
-
+    
     @PostConstruct
-    public void init(){
+    public void init() {
         requestHandlerRegistry.registryHandler(this);
     }
-
+    
     /**
+     * Parse request body to specified {@link Request}.
      *
-     * @param bodyString
-     * @param <T>
-     * @return
+     * @param bodyString body string
+     * @return request
      */
-    abstract public <T extends  Request> T parseBodyString(String bodyString);
-
+    public abstract T parseBodyString(String bodyString);
+    
     /**
-     * handler request
-     * @param request
-     * @return
-     * @throws NacosException
+     * Handler request.
+     *
+     * @param request request
+     * @param meta    request meta data
+     * @return response
+     * @throws NacosException nacos exception when handle request has problem.
      */
-    abstract public Response handle(Request request, RequestMeta meta) throws NacosException;
-
+    public abstract Response handle(Request request, RequestMeta meta) throws NacosException;
+    
     /**
-     * retrun the request type that this handler can handler
-     * @return
+     * Return the request type that this handler can handler.
+     *
+     * @return request types this handler responsible.
      */
-    abstract public List<String> getRequestTypes();
-
+    public abstract List<String> getRequestTypes();
+    
 }
