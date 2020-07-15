@@ -16,15 +16,16 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.connection.Connection;
+import com.alibaba.nacos.core.utils.Loggers;
+import org.springframework.stereotype.Service;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
-
-import org.springframework.stereotype.Service;
-
 /**
  * connect manager.
+ *
  * @author liuzunfei
  * @version $Id: ConnectionManager.java, v 0.1 2020年07月13日 7:07 PM liuzunfei Exp $
  */
@@ -33,13 +34,28 @@ public class ConnectionManager {
     
     Map<String, Connection> connetions = new HashMap<String, Connection>();
     
+    /**
+     * register a new connect.
+     *
+     * @param connectionId connectionId
+     * @param connection   connection
+     */
     public void register(String connectionId, Connection connection) {
-        connetions.putIfAbsent(connectionId, connection);
-        System.out.println("connetions updated, connetions:" + connetions);
+        Connection connectionInner = connetions.putIfAbsent(connectionId, connection);
+        if (connectionInner == null) {
+            Loggers.GRPC.info("new connection registered successfully, connectionid = {} ", connectionId);
+        }
     }
     
+    /**
+     * unregister a connection .
+     * @param connectionId connectionId.
+     */
     public void unregister(String connectionId) {
-        this.connetions.remove(connectionId);
+        Connection remove = this.connetions.remove(connectionId);
+        if (remove != null) {
+            Loggers.GRPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+        }
     }
     
     public Connection getConnection(String connectionId) {
@@ -52,11 +68,10 @@ public class ConnectionManager {
      * @param connnectionId connnectionId.
      */
     public void refreshActiveTime(String connnectionId) {
-        System.out.println("connetions activetime update , connnectionId:" + connnectionId);
         Connection connection = connetions.get(connnectionId);
         if (connection != null) {
             connection.freshActiveTime();
         }
     }
-
+    
 }

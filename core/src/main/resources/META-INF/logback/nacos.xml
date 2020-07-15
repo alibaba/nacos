@@ -84,13 +84,13 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
-    <appender name="core-grpc"
+    
+    <appender name="grpc-core"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/core-grpc.log</file>
+        <file>${LOG_HOME}/grpc-core.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/core-grpc.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/grpc-core.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <maxHistory>7</maxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -101,8 +101,25 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
-
+    
+    <appender name="grpc-digest"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/grpc-digest.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/grpc-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    
     <appender name="protocol-distro"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/protocol-distro.log</file>
@@ -165,10 +182,14 @@
     </logger>
     <logger name="com.alibaba.nacos.core.grpc" additivity="false">
         <level value="DEBUG"/>
-        <appender-ref ref="core-grpc"/>
+        <appender-ref ref="grpc-core"/>
     </logger>
-
-
+    
+    <logger name="com.alibaba.nacos.core.grpc.digest" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="grpc-digest"/>
+    </logger>
+    
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="protocol-raft"/>
