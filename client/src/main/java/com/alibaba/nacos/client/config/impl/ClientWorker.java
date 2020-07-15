@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeListenRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
@@ -44,6 +45,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
+import sun.management.resources.agent;
 
 import java.io.File;
 import java.io.IOException;
@@ -313,11 +315,25 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
+    /**
+     * check whether still using http .
+     *
+     * @return
+     */
+    private boolean useHttpSwitch() {
+        String useHttpSwitch = System.getProperty("clientworker.use.http.switch");
+        return "Y".equalsIgnoreCase(useHttpSwitch);
+    }
+    
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
         String[] ct = new String[2];
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
+        }
+    
+        if (!useHttpSwitch()) {
+            return getServerConfigInRpc(dataId, group, tenant, readTimeout);
         }
         
         HttpResult result = null;
@@ -369,6 +385,37 @@ public class ClientWorker implements Closeable {
                         "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant="
                                 + tenant);
             }
+        }
+    }
+    
+    String[] getServerConfigInRpc(String dataId, String group, String tenant, long readTimeout) throws NacosException {
+        ConfigQueryResponse response = rpcClientProxy.queryConfig(dataId, group, tenant);
+        
+        String[] ct = new String[2];
+        if (response.isSuccess()) {
+            LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, response.getContent());
+            ct[0] = response.getContent();
+            if (StringUtils.isNotBlank(response.getContentType())) {
+                ct[1] = response.getContentType();
+            } else {
+                ct[1] = ConfigType.TEXT.getType();
+            }
+            return ct;
+        } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
+            LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
+            return ct;
+        } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_QUERY_CONFLICT) {
+            LOGGER.error("[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                    + "tenant={}", agent.getName(), dataId, group, tenant);
+            throw new NacosException(NacosException.CONFLICT,
+                    "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+        } else {
+            LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
+                    group, tenant, response.getErrorCode());
+            throw new NacosException(response.getErrorCode(),
+                    "http error, code=" + response.getErrorCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
+                            + tenant);
+            
         }
     }
     
