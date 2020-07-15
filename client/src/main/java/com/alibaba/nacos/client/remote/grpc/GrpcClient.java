@@ -66,7 +66,6 @@ public class GrpcClient extends RpcClient {
             start();
         } catch (Exception e) {
             System.out.println("GrpcClient  start fail .....");
-    
             e.printStackTrace();
         }
     }
@@ -114,7 +113,6 @@ public class GrpcClient extends RpcClient {
                 .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
                         .build()).build();
         GrpcResponse response = grpcServiceStub.request(streamRequest);
-        System.out.println("Send heart beat message,response :" + response);
     }
     
     private void buildClient() throws NacosException {
@@ -145,8 +143,6 @@ public class GrpcClient extends RpcClient {
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).build();
         
         //LOGGER.info("[GRPC ]init config listen stream......." );
-    
-        System.out.println("GrpcClient  send stream....." + streamRequest);
         
         grpcStreamServiceStub.requestStream(streamRequest, new NacosStreamObserver());
     
@@ -187,12 +183,11 @@ public class GrpcClient extends RpcClient {
         
         GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
                 .build();
-        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
+        GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
                 .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
-        GrpcResponse response = grpcServiceStub.request(streamRequest);
+        GrpcResponse response = grpcServiceStub.request(grpcrequest);
         String bodyString = response.getBody().getValue().toStringUtf8();
         return new HeartBeatResponse(200, "sucess");
     }
-    
     
 }

@@ -31,7 +31,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConnectionManager {
     
-    private Map<String, Connection> connetions = new HashMap<String, Connection>();
+    Map<String, Connection> connetions = new HashMap<String, Connection>();
     
     public void register(String connectionId, Connection connection) {
         connetions.putIfAbsent(connectionId, connection);

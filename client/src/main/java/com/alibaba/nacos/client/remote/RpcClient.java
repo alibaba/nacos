@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * abstract remote client to connect to server.
+ *
  * @author liuzunfei
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
@@ -59,7 +60,6 @@ public abstract class RpcClient {
     List<ChangeListenResponseHandler> changeListenReplyListeners = new ArrayList<ChangeListenResponseHandler>();
     
     public RpcClient() {
-    
     }
     
     /**
@@ -92,6 +92,7 @@ public abstract class RpcClient {
     
     /**
      * send request.
+     *
      * @param request request.
      * @return
      */
@@ -99,6 +100,7 @@ public abstract class RpcClient {
     
     /**
      * register connection handler.will be notified wher inner connect chanfed.
+     *
      * @param connectionEventListener connectionEventListener
      */
     public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
@@ -107,6 +109,7 @@ public abstract class RpcClient {
     
     /**
      * register change listeners ,will be called when server send change notify response th current client.
+     *
      * @param changeListenResponseHandler changeListenResponseHandler
      */
     public void registerChangeListenHandler(ChangeListenResponseHandler changeListenResponseHandler) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,12 +69,12 @@ public final class NacosGrpcService {
       "try\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"`\n\013G" +
       "rpcRequest\022\014\n\004type\030\002 \001(\t\022\037\n\010metadata\030\001 \001" +
       "(\0132\r.GrpcMetadata\022\"\n\004body\030\003 \001(\0132\024.google",
-      ".protobuf.Any\"@\n\014GrpcResponse\022\014\n\004code\030\001 " +
-      "\001(\005\022\"\n\004body\030\002 \001(\0132\024.google.protobuf.Any2" +
-      "A\n\rRequestStream\0220\n\rrequestStream\022\014.Grpc" +
-      "Request\032\r.GrpcResponse\"\0000\00123\n\007Request\022(\n" +
-      "\007request\022\014.GrpcRequest\032\r.GrpcResponse\"\000B" +
-      "\036\n\032com.alibaba.nacos.api.grpcP\001b\006proto3"
+            ".protobuf.Any\"N\n\014GrpcResponse\022\014\n\004code\030\001 "
+                    + "\001(\005\022\"\n\004body\030\002 \001(\0132\024.google.protobuf.Any\022"
+                    + "\014\n\004type\030\003 \001(\t2A\n\rRequestStream\0220\n\rreques"
+                    + "tStream\022\014.GrpcRequest\032\r.GrpcResponse\"\0000\001"
+                    + "23\n\007Request\022(\n\007request\022\014.GrpcRequest\032\r.G"
+                    + "rpcResponse\"\000B\036\n\032com.alibaba.nacos.api.g" + "rpcP\001b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -112,8 +112,7 @@ public final class NacosGrpcService {
       getDescriptor().getMessageTypes().get(2);
     internal_static_GrpcResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_GrpcResponse_descriptor,
-        new String[] { "Code", "Body", });
+        internal_static_GrpcResponse_descriptor, new String[] {"Code", "Body", "Type",});
     com.google.protobuf.AnyProto.getDescriptor();
     com.google.protobuf.TimestampProto.getDescriptor();
   }

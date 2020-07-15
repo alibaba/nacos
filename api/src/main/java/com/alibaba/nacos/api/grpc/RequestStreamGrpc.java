@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,7 @@ public final class RequestStreamGrpc {
      * build a streamRequest
      * </pre>
      */
-    public void requestStream(GrpcRequest request,
-                              io.grpc.stub.StreamObserver<GrpcResponse> responseObserver) {
+    public void requestStream(GrpcRequest request, io.grpc.stub.StreamObserver<GrpcResponse> responseObserver) {
       asyncUnimplementedUnaryCall(getRequestStreamMethod(), responseObserver);
     }
 
@@ -148,8 +147,7 @@ public final class RequestStreamGrpc {
      * build a streamRequest
      * </pre>
      */
-    public void requestStream(GrpcRequest request,
-                              io.grpc.stub.StreamObserver<GrpcResponse> responseObserver) {
+    public void requestStream(GrpcRequest request, io.grpc.stub.StreamObserver<GrpcResponse> responseObserver) {
       asyncServerStreamingCall(
           getChannel().newCall(getRequestStreamMethod(), getCallOptions()), request, responseObserver);
     }
