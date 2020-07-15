@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
-
-import java.io.Serializable;
+package com.alibaba.nacos.common.constant;
 
 /**
- * event.
+ * Response Handler Type.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author mai.jh
  */
-public interface Event extends Serializable {
+public final class ResponseHandlerType {
     
-    /**
-     * Event sequence number, which can be used to handle the sequence of events.
-     *
-     * @return sequence num, It's best to make sure it's monotone
-     */
-    default long sequence() {
-        return System.currentTimeMillis();
-    }
+    public static final String STRING_TYPE = "java.lang.String";
+    
+    public static final String RESTRESULT_TYPE = "com.alibaba.nacos.common.model.RestResult";
+    
+    public static final String DEFAULT_BEAN_TYPE = "default_bean_handler";
     
 }

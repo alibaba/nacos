@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.core.notify.SlowEvent;
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  * RaftDBErrorEvent.
  *
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-public class RaftDbErrorEvent implements SlowEvent {
+public class RaftDbErrorEvent extends SlowEvent {
     
     private static final long serialVersionUID = 101591819161802336L;
     

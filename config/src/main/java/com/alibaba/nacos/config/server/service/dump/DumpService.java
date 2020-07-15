@@ -152,7 +152,8 @@ public abstract class DumpService {
                         if (totalCount > 0) {
                             int pageSize = 1000;
                             int removeTime = (totalCount + pageSize - 1) / pageSize;
-                            LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
+                            LOGGER.warn(
+                                "clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
                                 startTime, totalCount, pageSize, removeTime);
                             while (removeTime > 0) {
                                 // delete paging to avoid reporting errors in batches
@@ -212,22 +213,21 @@ public abstract class DumpService {
                     }
                 };
 
-                ConfigExecutor.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
+                ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
 
                 long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
                 LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
 
+                ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+
                 ConfigExecutor
-                    .scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                    .scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
 
-                ConfigExecutor.scheduleWithFixedDelay(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                    TimeUnit.MINUTES);
-
-                ConfigExecutor.scheduleWithFixedDelay(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                    TimeUnit.MINUTES);
+                ConfigExecutor
+                    .scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
             }
 
-            ConfigExecutor.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+            ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
             TimerContext.end(LogUtil.DUMP_LOG);
         }
@@ -276,7 +276,7 @@ public abstract class DumpService {
                     }
                     LogUtil.DEFAULT_LOG.error("end checkMd5Task");
                 };
-                ConfigExecutor.scheduleWithFixedDelay(checkMd5Task, 0, 12, TimeUnit.HOURS);
+                ConfigExecutor.scheduleConfigTask(checkMd5Task, 0, 12, TimeUnit.HOURS);
             }
         } catch (IOException e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
@@ -420,8 +420,9 @@ public abstract class DumpService {
                     } else {
                         // remove config info
                         persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIp(), null);
-                        LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                            + group);
+                        LOGGER.warn(
+                            "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                                + group);
                     }
 
                 } catch (Throwable e) {
