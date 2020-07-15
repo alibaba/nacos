@@ -18,8 +18,8 @@ package com.alibaba.nacos.api.remote.request;
 
 /**
  * Request.
+ *
  * @author liuzunfei
- * @version $Id: Request.java, v 0.1 2020年07月13日 3:46 PM liuzunfei Exp $
  */
 public abstract class Request {
     

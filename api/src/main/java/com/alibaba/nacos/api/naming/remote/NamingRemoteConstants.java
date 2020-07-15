@@ -16,15 +16,18 @@
 
 package com.alibaba.nacos.api.naming.remote;
 
-import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
-
 /**
- * retain all naming module request type constants.
+ * Retain all naming module request type constants.
  *
  * @author liuzunfei
- * @version $Id: NamingRequestTypeConstants.java, v 0.1 2020年07月13日 9:12 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class NamingRequestTypeConstants extends RequestTypeConstants {
+public class NamingRemoteConstants {
     
-    public static final String SERVICE_INSTANCE_CHANGE = "SERVICE_INSTANCE_CHANGE";
+    public static final String REGISTER_INSTANCE = "registerInstance";
+    
+    public static final String DE_REGISTER_INSTANCE = "deregisterInstance";
+    
+    public static final String SUBSCRIBE_SERVICE = "subscribeService";
+    
 }
