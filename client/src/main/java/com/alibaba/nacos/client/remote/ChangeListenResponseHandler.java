@@ -13,29 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.remote;
 
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 
 /**
+ * ChangeListenResponseHandler.
  * @author liuzunfei
  * @version $Id: ChangeListenResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
 public abstract interface ChangeListenResponseHandler<T> {
 
     /**
-     *
-     * @param response
+     * handle logic when response ceceive.
+     * @param response.
      */
-    abstract public void responseReply(Response  response);
-
-    /**
-     *
-     * @param bodyString
-     * @param <T>
-     * @return
-     */
-    public <T extends Response> T parseBodyString(String bodyString);
+    public abstract void responseReply(Response response);
 
 }

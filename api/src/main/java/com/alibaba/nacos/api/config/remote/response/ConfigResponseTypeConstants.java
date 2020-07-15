@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
 
 /**
+ * response type defined in config module
  * @author liuzunfei
  * @version $Id: ConfigResponseTypeConstants.java, v 0.1 2020年07月14日 3:10 PM liuzunfei Exp $
  */
 public class ConfigResponseTypeConstants extends ResponseTypeConstants {
-
-    public static final String CONFIG_CHANGE="CONFIG_CHANGE";
-
-    public static final String CONFIG_CHANGE_NOTIFY="CONFIG_CHANGE_NOTIFY";
-
-    public static final String CONFIG_QUERY="CONFIG_QUERY";
-
-
+    
+    public static final String CONFIG_CHANGE = "CONFIG_CHANGE";
+    
+    public static final String CONFIG_CHANGE_NOTIFY = "CONFIG_CHANGE_NOTIFY";
+    
+    public static final String CONFIG_QUERY = "CONFIG_QUERY";
+    
+    
 }

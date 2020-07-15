@@ -57,7 +57,7 @@ public abstract class RpcClient {
     /**
      * change listeners handler registry.
      */
-    List<ChangeListenResponseHandler> changeListenReplyListeners = new ArrayList<ChangeListenResponseHandler>();
+    protected List<ChangeListenResponseHandler> changeListenReplyListeners = new ArrayList<ChangeListenResponseHandler>();
     
     public RpcClient() {
     }

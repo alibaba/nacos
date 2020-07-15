@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
@@ -35,44 +36,44 @@ import org.springframework.stereotype.Service;
  * @version $Id: GrpcRequestHandlerReactor.java, v 0.1 2020年07月13日 4:25 PM liuzunfei Exp $
  */
 @Service
-public class GrpcRequestHandlerReactor extends  RequestGrpc.RequestImplBase {
-
+public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
+    
     @Autowired
     RequestHandlerRegistry requestHandlerRegistry;
-
+    
     @Override
     public void request(GrpcRequest grpcRequest, StreamObserver<GrpcResponse> responseObserver) {
-
-        Loggers.GRPC.debug(" gRpc Server receive request :"+grpcRequest);
-
-        String type =grpcRequest.getType();
-
+        
+        Loggers.GRPC.debug(" gRpc Server receive request :" + grpcRequest);
+        
+        String type = grpcRequest.getType();
+        
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
-        if (requestHandler!=null){
-            String bodyString=grpcRequest.getBody().getValue().toStringUtf8();
+        if (requestHandler != null) {
+            String bodyString = grpcRequest.getBody().getValue().toStringUtf8();
             Request request = requestHandler.parseBodyString(bodyString);
             try {
-                Response response = requestHandler.handle(request,convertMeta(grpcRequest.getMetadata()));
+                Response response = requestHandler.handle(request, convertMeta(grpcRequest.getMetadata()));
                 responseObserver.onNext(GrpcUtils.convert(response));
                 responseObserver.onCompleted();
             } catch (Exception e) {
-                Loggers.GRPC.error(" gRpc Server handle  request  exception :"+e.getMessage(),e);
+                Loggers.GRPC.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
                 responseObserver.onNext(GrpcUtils.buildFailResponse("Error"));
                 responseObserver.onCompleted();
             }
-        }else{
+        } else {
             Loggers.GRPC.error(" gRpc Server requestHandler Not found ！ ");
             responseObserver.onNext(GrpcUtils.buildFailResponse("RequestHandler Not Found"));
             responseObserver.onCompleted();
         }
     }
-
-    private RequestMeta convertMeta(GrpcMetadata metadata){
-        RequestMeta requestMeta=new RequestMeta();
+    
+    private RequestMeta convertMeta(GrpcMetadata metadata) {
+        RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp(metadata.getClientIp());
         requestMeta.setConnectionId(metadata.getConnectionId());
         return requestMeta;
     }
-
-
+    
+    
 }

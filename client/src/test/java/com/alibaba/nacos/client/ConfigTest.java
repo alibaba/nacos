@@ -36,7 +36,7 @@ public class ConfigTest {
     private static ConfigService configService;
     
     @Before
-    public  void before() throws Exception {
+    public void before() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
         configService = NacosFactory.createConfigService(properties);
@@ -49,10 +49,8 @@ public class ConfigTest {
     
     
     @Test
-    public  void test() throws Exception {
-
-
-
+    public void test() throws Exception {
+        
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
@@ -60,15 +58,19 @@ public class ConfigTest {
         Assert.assertTrue(result);
     
         ThreadUtils.sleep(200L);
-        
-        String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                System.err.println(configInfo);
-            }
-        });
-        Assert.assertEquals(content, response);
-        
+    
+        ConfigListener1 listener1 = new ConfigListener1();
+        ConfigListener2 listener2 = new ConfigListener2();
+    
+        configService.getConfigAndSignListener(dataId, group, 5000, listener1);
+        configService.getConfigAndSignListener(dataId, group, 5000, listener2);
+    
+        configService.publishConfig(dataId, group, "testchange");
+    
+        configService.getConfigAndSignListener("lessspring2", group, 5000, listener1);
+    
+        configService.publishConfig("lessspring2", group, "lessspring2value");
+    
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {
@@ -81,4 +83,21 @@ public class ConfigTest {
         }
     }
     
+}
+
+
+class ConfigListener1 extends AbstractListener {
+    
+    @Override
+    public void receiveConfigInfo(String configInfo) {
+        System.err.println("Listener1 invoked." + configInfo);
+    }
+}
+
+class ConfigListener2 extends AbstractListener {
+    
+    @Override
+    public void receiveConfigInfo(String configInfo) {
+        System.err.println("Listener2 invoked." + configInfo);
+    }
 }

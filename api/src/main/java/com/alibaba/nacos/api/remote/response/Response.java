@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: Response.java, v 0.1 2020年07月13日 6:03 PM liuzunfei Exp $
  */
-public abstract class Response<T> {
+public abstract class Response {
     
     int resultCode;
     
@@ -32,39 +32,22 @@ public abstract class Response<T> {
     
     String type;
     
-    String bodyString;
-    
     /**
      * Check Response  is Successd.
-     *
      * @return
      */
     public boolean isSuccess() {
         return this.resultCode == ResponseCode.SUCCESS.getCode();
     }
     
+    public Response() {
+    
+    }
+    
     public Response(String type, int resultCode, String message) {
         this.type = type;
         this.resultCode = resultCode;
         this.message = message;
-    }
-    
-    /**
-     * Getter method for property <tt>bodyString</tt>.
-     *
-     * @return property value of bodyString
-     */
-    public String getBodyString() {
-        return bodyString;
-    }
-    
-    /**
-     * Setter method for property <tt>bodyString</tt>.
-     *
-     * @param bodyString value to be assigned to property bodyString
-     */
-    public void setBodyString(String bodyString) {
-        this.bodyString = bodyString;
     }
     
     /**
@@ -138,4 +121,5 @@ public abstract class Response<T> {
     public void setType(String type) {
         this.type = type;
     }
+    
 }

@@ -22,11 +22,14 @@ import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
 import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.ResponseRegistry;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
+import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
+import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
+import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientStatus;
 import com.alibaba.nacos.client.remote.ServerListFactory;
@@ -41,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * gRPC Client.
@@ -93,11 +97,25 @@ public class GrpcClient extends RpcClient {
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                //sendBeat();
+                sendBeat();
             }
-        }, 5000, 5000, TimeUnit.MILLISECONDS);
+        }, 5000, 10000, TimeUnit.MILLISECONDS);
         
         rpcClientStatus = RpcClientStatus.RUNNING;
+    
+        super.registerChangeListenHandler(new ChangeListenResponseHandler() {
+            @Override
+            public void responseReply(Response response) {
+                if (response instanceof ConnectResetResponse) {
+                    try {
+                        buildClient();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                
+                }
+            }
+        });
         
     }
     
@@ -130,8 +148,6 @@ public class GrpcClient extends RpcClient {
             serverPort = Integer.valueOf(serverAddress.split(":")[1]);
         }
     
-        //Loggers.info("[GRPC ]init config listen stream.......,server list:"+server );
-    
         this.channel = ManagedChannelBuilder.forAddress(serverIp, serverPort + 1000).usePlaintext(true).build();
         
         grpcStreamServiceStub = RequestStreamGrpc.newStub(channel);
@@ -141,24 +157,50 @@ public class GrpcClient extends RpcClient {
         GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
                 .build();
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).build();
-        
-        //LOGGER.info("[GRPC ]init config listen stream......." );
-        
-        grpcStreamServiceStub.requestStream(streamRequest, new NacosStreamObserver());
     
-        //relistenKeyIfNecessary();
+        grpcStreamServiceStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
+            @Override
+            public void onNext(GrpcResponse grpcResponse) {
+                String message = grpcResponse.getBody().getValue().toStringUtf8();
+            
+                String type = grpcResponse.getType();
+                String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
+                Class classByType = ResponseRegistry.getClassByType(type);
+                final Response response;
+                if (classByType != null) {
+                    response = (Response) JacksonUtils.toObj(bodyString, classByType);
+                } else {
+                    PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
+                    myresponse.setBodyString(bodyString);
+                    response = myresponse;
+                }
+            
+                changeListenReplyListeners.forEach(new Consumer<ChangeListenResponseHandler>() {
+                    @Override
+                    public void accept(ChangeListenResponseHandler changeListenResponseHandler) {
+                        changeListenResponseHandler.responseReply(response);
+                    }
+                });
+            }
+        
+            @Override
+            public void onError(Throwable throwable) {
+            
+            }
+        
+            @Override
+            public void onCompleted() {
+            
+            }
+        });
+        
     }
     
     private class NacosStreamObserver implements StreamObserver<GrpcResponse> {
         
         @Override
-        public void onNext(GrpcResponse value) {
-            //LOGGER.info("[GRPC] receive config data: " + value.toString());
-            String message = value.getBody().getValue().toStringUtf8();
-            System.out.println("Receive Stream Response：" + message);
-            //JSONObject json = JSON.parseObject(message.trim());
-            //LOGGER.info("[GRPC] receive config data: " + json);
-            //abstractStreamMessageHandler.onResponse(json);
+        public void onNext(GrpcResponse response) {
+        
         }
         
         @Override
@@ -176,6 +218,7 @@ public class GrpcClient extends RpcClient {
     
     @Override
     public void switchServer() {
+    
     }
     
     @Override
@@ -186,8 +229,18 @@ public class GrpcClient extends RpcClient {
         GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
                 .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
         GrpcResponse response = grpcServiceStub.request(grpcrequest);
+        String type = response.getType();
         String bodyString = response.getBody().getValue().toStringUtf8();
-        return new HeartBeatResponse(200, "sucess");
+        // transfrom grpcResponse to response model
+        Class classByType = ResponseRegistry.getClassByType(type);
+        if (classByType != null) {
+            Object object = JacksonUtils.toObj(bodyString, classByType);
+            return (Response) object;
+        } else {
+            PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
+            myresponse.setBodyString(bodyString);
+            return (PlainBodyResponse) myresponse;
+        }
     }
     
 }

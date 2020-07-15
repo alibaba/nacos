@@ -6,6 +6,7 @@ package com.alibaba.nacos.client.config.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -16,6 +17,7 @@ import com.alibaba.nacos.client.remote.ServerListFactory;
 
 /**
  * config grpc client proxy.
+ *
  * @author liuzunfei
  * @version $Id: ConfigGrpcClientProxy.java, v 0.1 2020年07月14日 3:37 PM liuzunfei Exp $
  */
@@ -60,7 +62,7 @@ public class ConfigGrpcClientProxy {
     public void listenConfigChange(String dataId, String group, String tenat) throws NacosException {
         ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
                 .buildListenRequest(dataId, group, tenat);
-        Response response = rpcClient.request(configChangeListenRequest);
+        ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
         if (!response.isSuccess()) {
             throw new NacosException(NacosException.SERVER_ERROR, "Fail to Listen Config Change");
         }
@@ -68,14 +70,15 @@ public class ConfigGrpcClientProxy {
     
     /**
      * sned cancel listen congif change request .
+     *
      * @param dataId dataId
-     * @param group group
-     * @param tenat tenat
+     * @param group  group
+     * @param tenat  tenat
      */
     public void unListenConfigChange(String dataId, String group, String tenat) throws NacosException {
         ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
                 .buildUnListenRequest(dataId, group, tenat);
-        Response response = rpcClient.request(configChangeListenRequest);
+        ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
         if (!response.isSuccess()) {
             throw new NacosException(NacosException.SERVER_ERROR, "Fail to UnListen Config Change");
         }
@@ -92,8 +95,7 @@ public class ConfigGrpcClientProxy {
      */
     public ConfigQueryResponse queryConfig(String dataId, String group, String tenat) throws NacosException {
         ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenat);
-        Response response = rpcClient.request(request);
+        ConfigQueryResponse response = (ConfigQueryResponse) rpcClient.request(request);
         return (ConfigQueryResponse) response;
-        
     }
 }

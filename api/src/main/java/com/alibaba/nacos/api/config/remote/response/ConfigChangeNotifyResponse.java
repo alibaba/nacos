@@ -32,6 +32,9 @@ public class ConfigChangeNotifyResponse extends Response {
 
     private String tenant;
     
+    public ConfigChangeNotifyResponse() {
+    
+    }
     
     public ConfigChangeNotifyResponse(int resultCode, String message) {
         super(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, resultCode, message);

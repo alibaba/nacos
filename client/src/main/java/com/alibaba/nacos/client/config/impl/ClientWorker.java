@@ -16,32 +16,12 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeListenRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
@@ -60,13 +40,29 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-
 import org.slf4j.Logger;
-import sun.management.resources.agent;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -594,18 +590,18 @@ public class ClientWorker implements Closeable {
                         return t;
                     }
                 });
+        // cancel long polling config check task
+        //        this.executor.scheduleWithFixedDelay(new Runnable() {
+        //            @Override
+        //            public void run() {
+        //                try {
+        //                    checkConfigInfo();
+        //                } catch (Throwable e) {
+        //                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+        //                }
+        //            }
+        //        }, 1L, 10L, TimeUnit.MILLISECONDS);
         
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
-    
         rpcClientProxy = new ConfigGrpcClientProxy();
     
         if (rpcClientProxy.getRpcClient().isWaitInited()) {
@@ -621,8 +617,6 @@ public class ClientWorker implements Closeable {
                 public String getCurrentServer() {
                     return agent.getServerListManager().getCurrentServerAddr();
                 }
-    
-                ;
             });
         
             rpcClientProxy.start();
@@ -633,39 +627,34 @@ public class ClientWorker implements Closeable {
          */
         rpcClientProxy.getRpcClient().registerChangeListenHandler(new ChangeListenResponseHandler() {
             @Override
-            public void responseReply(Response response) {
+            public void responseReply(Response myresponse) {
     
-                if (response.getType().equalsIgnoreCase(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY)) {
-        
-                    ConfigChangeNotifyResponse myresponse = (ConfigChangeNotifyResponse) parseBodyString(
-                            response.getBodyString());
+                if (myresponse instanceof ConfigChangeNotifyResponse) {
+                    ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
                     String groupKey = GroupKey
-                            .getKeyTenant(myresponse.getDataId(), myresponse.getGroup(), myresponse.getTenant());
-        
+                            .getKeyTenant(configChangeNotifyResponse.getDataId(), configChangeNotifyResponse.getGroup(),
+                                    configChangeNotifyResponse.getTenant());
+                    
                     if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
                         CacheData cache = cacheMap.get().get(groupKey);
                         try {
-                            String[] ct = getServerConfig(myresponse.getDataId(), myresponse.getGroup(),
-                                    myresponse.getTenant(), 3000L);
+                            String[] ct = getServerConfig(configChangeNotifyResponse.getDataId(),
+                                    configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant(),
+                                    3000L);
                             cache.setContent(ct[0]);
                             if (null != ct[1]) {
                                 cache.setType(ct[1]);
                             }
                             cache.checkListenerMd5();
     
-                            //Send Ack
                         } catch (Exception e) {
-                            //TODO
                             e.printStackTrace();
                         }
                     }
                 }
+    
             }
     
-            @Override
-            public Response parseBodyString(String bodyString) {
-                return (ConfigChangeNotifyResponse) JacksonUtils.toObj(bodyString, ConfigChangeNotifyResponse.class);
-            }
         });
     
         /*

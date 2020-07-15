@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * HeartBeatResponse.
+ * ConnectResetResponse.
  *
  * @author liuzunfei
- * @version $Id: HeartBeatResponse.java, v 0.1 2020年07月14日 3:03 PM liuzunfei Exp $
+ * @version $Id: ConnectResetResponse.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
  */
-public class HeartBeatResponse extends Response {
+public class ConnectResetResponse extends Response {
     
-    public HeartBeatResponse(int resultCode, String message) {
-        super(ResponseTypeConstants.HEART_BEAT, resultCode, message);
+    public ConnectResetResponse(int resultCode, String message) {
+        super(ResponseTypeConstants.CONNECT_SWITCH, resultCode, message);
     }
-    
 }
