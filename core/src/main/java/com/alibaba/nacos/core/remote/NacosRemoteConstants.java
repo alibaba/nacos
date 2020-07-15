@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.remote.request;
+
+package com.alibaba.nacos.core.remote;
 
 /**
+ * NacosRemoteConstants.
+ *
  * @author liuzunfei
- * @version $Id: ChangeListenRequest.java, v 0.1 2020年07月13日 8:45 PM liuzunfei Exp $
+ * @version $Id: NacosRemoteConstants.java, v 0.1 2020年07月14日 9:22 PM liuzunfei Exp $
  */
-public abstract class CommonRequest extends Request {
-
-    @Override
-    public String getModel() {
-        return RequestMode.COMMON.mode;
-    }
-
+public class NacosRemoteConstants {
+    
+    public static final String LISTEN_CONTEXT_CONFIG = "CONFIG";
+    
+    public static final String LISTEN_CONTEXT_NAMING = "NAMING";
+    
+    
 }

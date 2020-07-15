@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -27,30 +28,31 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import com.alibaba.nacos.core.remote.DataChangeListenerNotifier;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Future;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.Arrays;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -70,6 +72,9 @@ public class LongPollingService extends AbstractEventListener {
     private static final int SAMPLE_TIMES = 3;
     
     private static final String TRUE_STR = "true";
+    
+    @Autowired
+    private DataChangeListenerNotifier dataChangeListenerNotifier;
     
     private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
     
@@ -126,8 +131,8 @@ public class LongPollingService extends AbstractEventListener {
     }
     
     /**
-     * Aggregate the sampling IP and monitoring configuration information in the sampling results.
-     * There is no problem for the merging strategy to cover the previous one with the latter.
+     * Aggregate the sampling IP and monitoring configuration information in the sampling results. There is no problem
+     * for the merging strategy to cover the previous one with the latter.
      *
      * @param sampleResults sample Results.
      * @return Results.
@@ -147,6 +152,7 @@ public class LongPollingService extends AbstractEventListener {
     
     /**
      * Collect application subscribe configinfos.
+     *
      * @return configinfos results.
      */
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
@@ -232,9 +238,9 @@ public class LongPollingService extends AbstractEventListener {
     /**
      * Add LongPollingClient.
      *
-     * @param req HttpServletRequest.
-     * @param rsp HttpServletResponse.
-     * @param clientMd5Map clientMd5Map.
+     * @param req              HttpServletRequest.
+     * @param rsp              HttpServletResponse.
+     * @param clientMd5Map     clientMd5Map.
      * @param probeRequestSize probeRequestSize.
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
@@ -245,7 +251,7 @@ public class LongPollingService extends AbstractEventListener {
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-
+    
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
@@ -358,6 +364,15 @@ public class LongPollingService extends AbstractEventListener {
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
+    
+                String[] strings = GroupKey.parseKey(groupKey);
+                String dataid = strings[0];
+                String group = strings[1];
+                String tenant = strings.length > 2 ? strings[2] : "";
+                ConfigChangeNotifyResponse notifyResponse = ConfigChangeNotifyResponse
+                        .buildSuccessResponse(dataid, group, tenant);
+                dataChangeListenerNotifier.configDataChanged(groupKey, notifyResponse);
+                
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
@@ -403,7 +418,7 @@ public class LongPollingService extends AbstractEventListener {
                 public void run() {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+    
                         // Delete subsciber's relations.
                         allSubs.remove(ClientLongPolling.this);
                         
@@ -439,7 +454,7 @@ public class LongPollingService extends AbstractEventListener {
         }
         
         void sendResponse(List<String> changedGroups) {
-
+    
             // Cancel time out task.
             if (null != asyncTimeoutFuture) {
                 asyncTimeoutFuture.cancel(false);
@@ -449,7 +464,7 @@ public class LongPollingService extends AbstractEventListener {
         
         void generateResponse(List<String> changedGroups) {
             if (null == changedGroups) {
-
+    
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;

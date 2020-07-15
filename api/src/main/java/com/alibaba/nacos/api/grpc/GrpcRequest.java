@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -594,7 +594,7 @@ public  final class GrpcRequest extends
       if (value == null) {
     throw new NullPointerException();
   }
-
+  
       type_ = value;
       onChanged();
       return this;
@@ -603,7 +603,7 @@ public  final class GrpcRequest extends
      * <code>string type = 2;</code>
      */
     public Builder clearType() {
-
+  
       type_ = getDefaultInstance().getType();
       onChanged();
       return this;
@@ -617,7 +617,7 @@ public  final class GrpcRequest extends
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-
+  
       type_ = value;
       onChanged();
       return this;
@@ -736,7 +736,7 @@ public  final class GrpcRequest extends
      * <code>.GrpcMetadata metadata = 1;</code>
      */
     public GrpcMetadata.Builder getMetadataBuilder() {
-
+  
       onChanged();
       return getMetadataFieldBuilder().getBuilder();
     }
@@ -889,7 +889,7 @@ public  final class GrpcRequest extends
      * <code>.google.protobuf.Any body = 3;</code>
      */
     public com.google.protobuf.Any.Builder getBodyBuilder() {
-
+  
       onChanged();
       return getBodyFieldBuilder().getBuilder();
     }

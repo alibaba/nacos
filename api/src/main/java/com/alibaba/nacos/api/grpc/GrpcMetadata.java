@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -834,7 +834,7 @@ public  final class GrpcMetadata extends
       if (value == null) {
     throw new NullPointerException();
   }
-
+  
       name_ = value;
       onChanged();
       return this;
@@ -843,7 +843,7 @@ public  final class GrpcMetadata extends
      * <code>string name = 1;</code>
      */
     public Builder clearName() {
-
+  
       name_ = getDefaultInstance().getName();
       onChanged();
       return this;
@@ -857,7 +857,7 @@ public  final class GrpcMetadata extends
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-
+  
       name_ = value;
       onChanged();
       return this;
@@ -903,7 +903,7 @@ public  final class GrpcMetadata extends
       if (value == null) {
     throw new NullPointerException();
   }
-
+  
       clientIp_ = value;
       onChanged();
       return this;
@@ -912,7 +912,7 @@ public  final class GrpcMetadata extends
      * <code>string client_ip = 2;</code>
      */
     public Builder clearClientIp() {
-
+  
       clientIp_ = getDefaultInstance().getClientIp();
       onChanged();
       return this;
@@ -926,7 +926,7 @@ public  final class GrpcMetadata extends
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-
+  
       clientIp_ = value;
       onChanged();
       return this;
@@ -972,7 +972,7 @@ public  final class GrpcMetadata extends
       if (value == null) {
     throw new NullPointerException();
   }
-
+  
       connectionId_ = value;
       onChanged();
       return this;
@@ -981,7 +981,7 @@ public  final class GrpcMetadata extends
      * <code>string connection_id = 3;</code>
      */
     public Builder clearConnectionId() {
-
+  
       connectionId_ = getDefaultInstance().getConnectionId();
       onChanged();
       return this;
@@ -995,7 +995,7 @@ public  final class GrpcMetadata extends
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-
+  
       connectionId_ = value;
       onChanged();
       return this;
@@ -1086,7 +1086,7 @@ public  final class GrpcMetadata extends
      * <code>.google.protobuf.Timestamp create_time = 4;</code>
      */
     public com.google.protobuf.Timestamp.Builder getCreateTimeBuilder() {
-
+  
       onChanged();
       return getCreateTimeFieldBuilder().getBuilder();
     }
@@ -1158,7 +1158,7 @@ public  final class GrpcMetadata extends
       if (value == null) {
     throw new NullPointerException();
   }
-
+  
       version_ = value;
       onChanged();
       return this;
@@ -1167,7 +1167,7 @@ public  final class GrpcMetadata extends
      * <code>string version = 5;</code>
      */
     public Builder clearVersion() {
-
+  
       version_ = getDefaultInstance().getVersion();
       onChanged();
       return this;
@@ -1181,7 +1181,7 @@ public  final class GrpcMetadata extends
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
-
+  
       version_ = value;
       onChanged();
       return this;

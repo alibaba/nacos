@@ -13,53 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.remote.connection;
 
-import java.util.Date;
+package com.alibaba.nacos.api.remote.connection;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
+ * Connection.
+ *
  * @author liuzunfei
  * @version $Id: Connection.java, v 0.1 2020年07月13日 7:08 PM liuzunfei Exp $
  */
 public abstract class Connection {
-
-
-    private ConnectionMetaInfo metaInfo;
-
-
-    public Connection(ConnectionMetaInfo metaInfo){
-        this.metaInfo=metaInfo;
+    
+    private final ConnectionMetaInfo metaInfo;
+    
+    public Connection(ConnectionMetaInfo metaInfo) {
+        this.metaInfo = metaInfo;
     }
-
-
+    
     /**
-     * Send response to this client that associated to this connection
-     * @param reponse
+     * Send response to this client that associated to this connection.
+     *
+     * @param reponse reponse
      */
     public abstract void sendResponse(Response reponse);
-
+    
     /**
-     * Close this connection, if this connection is not active yet,
+     * Close this connection, if this connection is not active yet.
      */
-    public  abstract void closeGrapcefully();
-
+    public abstract void closeGrapcefully();
+    
     /**
      * Update last Active Time to now.
      */
-    public void freshActiveTime(){
-        metaInfo.lastActiveTime=new Date();
+    public void freshActiveTime() {
+        metaInfo.setLastActiveTime(System.currentTimeMillis());
     }
-
+    
     /**
-     * return last active time, include request occurs and
+     * return last active time, include request occurs and.
      * @return
      */
-    public Date getLastActiveTime(){
+    public long getLastActiveTimestamp() {
         return metaInfo.lastActiveTime;
     }
-
-
+    
+    public String getConnectionId() {
+        return metaInfo.connectionId;
+    }
+    
 }
 

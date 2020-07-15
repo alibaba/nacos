@@ -15,13 +15,12 @@
  */
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.remote.request.ChangeListenRequest;
 
 /**
  * @author liuzunfei
  * @version $Id: ConfigChangeListenRequest.java, v 0.1 2020年07月13日 9:01 PM liuzunfei Exp $
  */
-public class ConfigChangeListenRequest extends ChangeListenRequest {
+public class ConfigChangeListenRequest extends ConfigCommonRequest {
 
 
     private static final String LISTEN="listen";

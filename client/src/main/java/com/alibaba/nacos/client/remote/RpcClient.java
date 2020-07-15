@@ -1,7 +1,19 @@
-/**
- * Alipay.com Inc.
- * Copyright (c) 2004-2020 All Rights Reserved.
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package com.alibaba.nacos.client.remote;
 
 import java.util.ArrayList;
@@ -10,95 +22,100 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
+ * abstract remote client to connect to server.
+ *
  * @author liuzunfei
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
 public abstract class RpcClient {
-
+    
     private ServerListFactory serverListFactory;
-
+    
     protected String connectionId;
-
-    protected  RpcClientStatus rpcClientStatus=RpcClientStatus.WAIT_INIT;
-
+    
+    protected RpcClientStatus rpcClientStatus = RpcClientStatus.WAIT_INIT;
+    
     /**
-     * check is this client is inited
+     * check is this client is inited.
+     *
      * @return
      */
-    public boolean isInited(){
-        return this.rpcClientStatus!=RpcClientStatus.WAIT_INIT;
+    public boolean isWaitInited() {
+        return this.rpcClientStatus == RpcClientStatus.WAIT_INIT;
     }
+    
     /**
-     *  listener called where connect status changed
+     * listener called where connect status changed.
      */
-    List<ConnectionEventListener> connectionEventListeners=new ArrayList<ConnectionEventListener>();
-
+    List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
+    
     /**
-     * change listeners handler registry
+     * change listeners handler registry.
      */
-    List<ChangeListenResponseHandler> changeListenReplyListeners=new ArrayList<ChangeListenResponseHandler>();
-
-    public RpcClient(){
-
+    protected List<ChangeListenResponseHandler> changeListenReplyListeners = new ArrayList<ChangeListenResponseHandler>();
+    
+    public RpcClient() {
     }
-
-    public RpcClient(ServerListFactory serverListFactory){
-        this.serverListFactory=serverListFactory;
-        this.connectionId= UUID.randomUUID().toString();
-        this.rpcClientStatus=RpcClientStatus.INITED;
-    }
-
-
+    
     /**
-     * Start this client
+     * init server list factory.
+     *
+     * @param serverListFactory serverListFactory
+     */
+    public void init(ServerListFactory serverListFactory) {
+        this.serverListFactory = serverListFactory;
+        this.connectionId = UUID.randomUUID().toString();
+        this.rpcClientStatus = RpcClientStatus.INITED;
+    }
+    
+    public RpcClient(ServerListFactory serverListFactory) {
+        this.serverListFactory = serverListFactory;
+        this.connectionId = UUID.randomUUID().toString();
+        this.rpcClientStatus = RpcClientStatus.INITED;
+    }
+    
+    /**
+     * Start this client.
      */
     @PostConstruct
-    abstract public void start() throws Exception;
-
-
+    public abstract void start() throws NacosException;
+    
     /**
-     *
+     * Switch Server.
      */
-    abstract public void switchServer();
-
+    public abstract void switchServer();
+    
     /**
+     * send request.
      *
-     * @param request
-     * @param <T>
+     * @param request request.
      * @return
      */
-    abstract  public <T extends Response> T request( Request  request);
-
+    public abstract Response request(Request request);
+    
     /**
+     * register connection handler.will be notified wher inner connect chanfed.
      *
-     * @param request
-     * @param <T>
-     * @return
+     * @param connectionEventListener connectionEventListener
      */
-    abstract  public <T extends Response> T listenChange( Request  request);
-
-
-
-    /**
-     *
-     * @param connectionEventListener
-     */
-    public void registerConnectionListener(ConnectionEventListener connectionEventListener){
+    public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
         this.connectionEventListeners.add(connectionEventListener);
     }
-
+    
     /**
+     * register change listeners ,will be called when server send change notify response th current client.
      *
-     * @param changeListenResponseHandler
+     * @param changeListenResponseHandler changeListenResponseHandler
      */
-    public void registerChangeListenHandler(ChangeListenResponseHandler changeListenResponseHandler){
+    public void registerChangeListenHandler(ChangeListenResponseHandler changeListenResponseHandler) {
         this.changeListenReplyListeners.add(changeListenResponseHandler);
     }
-
+    
     /**
      * Getter method for property <tt>serverListFactory</tt>.
      *
@@ -107,6 +124,5 @@ public abstract class RpcClient {
     public ServerListFactory getServerListFactory() {
         return serverListFactory;
     }
-
-
+    
 }

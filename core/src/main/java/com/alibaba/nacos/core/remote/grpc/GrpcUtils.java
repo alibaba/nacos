@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote.grpc;
 
 import java.io.UnsupportedEncodingException;
@@ -26,20 +27,23 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 /**
+ * GrpcUtils.
+ *
  * @author liuzunfei
  * @version $Id: GrpcUtils.java, v 0.1 2020年07月14日 12:15 AM liuzunfei Exp $
  */
 public class GrpcUtils {
-
+    
     /**
-     * convert Response to GrpcResponse
-     * @param response
+     * convert Response to GrpcResponse.
+     *
+     * @param response response.
      * @return
      */
-    public static GrpcResponse convert(Response response)  {
-
-        String jsonString= JacksonUtils.toJson(response);
-        byte[]  bytes= null;
+    public static GrpcResponse convert(Response response) {
+        
+        String jsonString = JacksonUtils.toJson(response);
+        byte[] bytes = null;
         try {
             bytes = jsonString.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -47,19 +51,20 @@ public class GrpcUtils {
             return null;
         }
         GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
-        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).
-            build();
+        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setType(response.getType())
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return grpcResponse;
     }
-
+    
     /**
-     * buildFailResponse
-     * @param msg
+     * build fail response.
+     *
+     * @param msg errorMsg
      * @return
      */
-    public static GrpcResponse buildFailResponse(String msg)  {
-
-        byte[]  bytes= new byte[0];
+    public static GrpcResponse buildFailResponse(String msg) {
+        
+        byte[] bytes = new byte[0];
         try {
             bytes = msg.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -67,12 +72,9 @@ public class GrpcUtils {
             return null;
         }
         GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
-        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).
-            build();
+        GrpcResponse grpcResponse = GrpcResponse.newBuilder()
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return grpcResponse;
     }
-
-
-
-
+    
 }

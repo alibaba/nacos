@@ -13,47 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.connection;
 
 import java.util.Date;
 
 /**
+ * ConnectionMetaInfo.
+ *
  * @author liuzunfei
  * @version $Id: ConnectionMetaInfo.java, v 0.1 2020年07月13日 7:28 PM liuzunfei Exp $
  */
-public class ConnectionMetaInfo{
-
+public class ConnectionMetaInfo {
+    
     /**
      * ConnectionType
      */
     String connectType;
+    
     /**
      * Client IP Address
      */
     String clientIp;
-
+    
     /**
      * Identify Unique connectionId
      */
     String connectionId;
-
+    
     /**
      * create time
      */
     Date createTime;
-
+    
     /**
      * astActiveTime
      */
-    Date lastActiveTime;
-
-    public ConnectionMetaInfo(String connectionId,String clientIp,String connectType){
-        this.connectionId=connectionId;
-        this.clientIp=clientIp;
-        this.connectType=connectType;
-        this.createTime=new Date();
-        this.lastActiveTime=new Date();
+    long lastActiveTime;
+    
+    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType) {
+        this.connectionId = connectionId;
+        this.clientIp = clientIp;
+        this.connectType = connectType;
+        this.createTime = new Date();
+        this.lastActiveTime = System.currentTimeMillis();
     }
+    
     /**
      * Getter method for property <tt>clientIp</tt>.
      *
@@ -62,7 +67,7 @@ public class ConnectionMetaInfo{
     public String getClientIp() {
         return clientIp;
     }
-
+    
     /**
      * Setter method for property <tt>clientIp</tt>.
      *
@@ -71,7 +76,7 @@ public class ConnectionMetaInfo{
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }
-
+    
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -80,7 +85,7 @@ public class ConnectionMetaInfo{
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     /**
      * Setter method for property <tt>connectionId</tt>.
      *
@@ -89,7 +94,7 @@ public class ConnectionMetaInfo{
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-
+    
     /**
      * Getter method for property <tt>createTime</tt>.
      *
@@ -98,7 +103,7 @@ public class ConnectionMetaInfo{
     public Date getCreateTime() {
         return createTime;
     }
-
+    
     /**
      * Setter method for property <tt>createTime</tt>.
      *
@@ -107,22 +112,22 @@ public class ConnectionMetaInfo{
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
-
+    
     /**
      * Getter method for property <tt>lastActiveTime</tt>.
      *
      * @return property value of lastActiveTime
      */
-    public Date getLastActiveTime() {
+    public long getLastActiveTime() {
         return lastActiveTime;
     }
-
+    
     /**
      * Setter method for property <tt>lastActiveTime</tt>.
      *
      * @param lastActiveTime value to be assigned to property lastActiveTime
      */
-    public void setLastActiveTime(Date lastActiveTime) {
+    public void setLastActiveTime(long lastActiveTime) {
         this.lastActiveTime = lastActiveTime;
     }
 }

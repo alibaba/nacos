@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
+ * ConfigChangeListenResponse.
+ *
  * @author liuzunfei
  * @version $Id: ConfigChangeListenResponse.java, v 0.1 2020年07月14日 3:07 PM liuzunfei Exp $
  */
 public class ConfigChangeListenResponse extends Response {
-
+    
+    
+    public ConfigChangeListenResponse() {
+        super();
+    }
+    
     public ConfigChangeListenResponse(int resultCode, String message) {
         super(ConfigResponseTypeConstants.CONFIG_CHANGE, resultCode, message);
     }
-
+    
 }
