@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -26,8 +29,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -58,7 +60,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
  * @author Nacos
  */
 @Service
-public class LongPollingService extends AbstractEventListener {
+public class LongPollingService {
     
     private static final int FIXED_POLLING_INTERVAL_MS = 10000;
     
@@ -277,25 +279,6 @@ public class LongPollingService extends AbstractEventListener {
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
     
-    @Override
-    public List<Class<? extends Event>> interest() {
-        List<Class<? extends Event>> eventTypes = new ArrayList<Class<? extends Event>>();
-        eventTypes.add(LocalDataChangeEvent.class);
-        return eventTypes;
-    }
-    
-    @Override
-    public void onEvent(Event event) {
-        if (isFixedPolling()) {
-            // Ignore.
-        } else {
-            if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-            }
-        }
-    }
-    
     public static boolean isSupportLongPolling(HttpServletRequest req) {
         return null != req.getHeader(LONG_POLLING_HEADER);
     }
@@ -305,6 +288,31 @@ public class LongPollingService extends AbstractEventListener {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
         
         ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        
+        // Register LocalDataChangeEvent to NotifyCenter.
+        NotifyCenter.registerToPublisher(LocalDataChangeEvent.class, NotifyCenter.ringBufferSize);
+        
+        // Register A Subscriber to subscribe LocalDataChangeEvent.
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                if (isFixedPolling()) {
+                    // Ignore.
+                } else {
+                    if (event instanceof LocalDataChangeEvent) {
+                        LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
+                        ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+                    }
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return LocalDataChangeEvent.class;
+            }
+        });
+        
     }
     
     public static final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
