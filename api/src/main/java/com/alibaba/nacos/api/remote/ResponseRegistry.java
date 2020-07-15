@@ -20,7 +20,8 @@ import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
-import com.alibaba.nacos.api.naming.remote.NamingRequestTypeConstants;
+import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
@@ -51,6 +52,8 @@ public class ResponseRegistry {
         
         //naming response registry
         //REGISTRY_RESPONSES.put(NamingRequestTypeConstants.SERVICE_INSTANCE_CHANGE, ServiceI.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.REGISTER_INSTANCE, InstanceResponse.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.DE_REGISTER_INSTANCE, InstanceResponse.class);
     }
     
     public static Class getClassByType(String type) {

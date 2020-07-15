@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.remote.NamingRequestTypeConstants;
+import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -30,18 +30,16 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * handler to handle service instance change listen request.
+ * Handler to handle subscribe service.
  *
  * @author liuzunfei
- * @version $Id: ServiceInstanceChangeListenRequestHandler.java, v 0.1 2020年07月14日 7:55 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
 @Component
-public class ServiceInstanceChangeListenRequestHandler extends RequestHandler {
+public class SubscribeServiceRequestHandler extends RequestHandler {
     
     @Autowired
     AsyncListenContext asyncListenContext;
-    
-    private static final String LISTEN_CONTEXT_TYPE = "CONFIG";
     
     @Override
     public Request parseBodyString(String bodyString) {
@@ -55,6 +53,6 @@ public class ServiceInstanceChangeListenRequestHandler extends RequestHandler {
     
     @Override
     public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRequestTypeConstants.SERVICE_INSTANCE_CHANGE);
+        return Lists.newArrayList(NamingRemoteConstants.SUBSCRIBE_SERVICE);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.remote;
+package com.alibaba.nacos.api.naming.remote.response;
 
-import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * uniform remote request of naming module
+ * Instance response.
  *
- * @author liuzunfei
- * @version $Id: NamingCommonRequest.java, v 0.1 2020年07月14日 7:26 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public abstract class NamingCommonRequest extends Request {
+public class InstanceResponse extends Response {
     
-    @Override
-    public String getModule() {
-        return "naming";
+    public InstanceResponse() {
+    }
+    
+    public InstanceResponse(int resultCode, String message, String type) {
+        this(resultCode, 0, message, type);
+    }
+    
+    public InstanceResponse(int resultCode, int errorCode, String message, String type) {
+        super(type, resultCode, message);
+        setErrorCode(errorCode);
     }
 }
