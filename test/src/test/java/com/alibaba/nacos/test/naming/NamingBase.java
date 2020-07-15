@@ -33,7 +33,7 @@ import java.util.*;
  */
 public class NamingBase extends HttpClient4Test {
 
-    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getNacosRestTemplate();
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
 
     public static final String TEST_DOM_1 = "nacos.test.1";
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";

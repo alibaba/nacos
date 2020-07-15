@@ -46,7 +46,7 @@ public class SecurityProxy {
     
     private static final String LOGIN_URL = "/v1/auth/users/login";
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
     private String contextPath;
     
