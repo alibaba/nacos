@@ -28,17 +28,21 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientStatus;
 import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import sun.management.resources.agent;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -54,6 +58,8 @@ import java.util.function.Consumer;
  */
 public class GrpcClient extends RpcClient {
     
+    private static final Logger LOGGER = LogUtils.logger(GrpcClient.class);
+    
     protected ManagedChannel channel;
     
     protected RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub;
@@ -66,21 +72,18 @@ public class GrpcClient extends RpcClient {
     
     public GrpcClient(ServerListFactory serverListFactory) {
         super(serverListFactory);
-        try {
-            start();
-        } catch (Exception e) {
-            System.out.println("GrpcClient  start fail .....");
-            e.printStackTrace();
-        }
     }
     
     @Override
     public void start() throws NacosException {
-        
-        if (rpcClientStatus != RpcClientStatus.INITED) {
+    
+        if (rpcClientStatus == RpcClientStatus.WAIT_INIT) {
+            LOGGER.error("RpcClient has not init yet, please check init ServerListFactory...");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "RpcClient not init yet");
+        }
+        if (rpcClientStatus == RpcClientStatus.RUNNING || rpcClientStatus == RpcClientStatus.STARTING) {
             return;
         }
-        
         rpcClientStatus = RpcClientStatus.STARTING;
         
         buildClient();
@@ -112,7 +115,7 @@ public class GrpcClient extends RpcClient {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                
+    
                 }
             }
         });
@@ -133,36 +136,43 @@ public class GrpcClient extends RpcClient {
         GrpcResponse response = grpcServiceStub.request(streamRequest);
     }
     
+    
     private void buildClient() throws NacosException {
-    
+        
         String serverAddress = getServerListFactory().genNextServer();
-    
+        
         String serverIp = "";
-        int serverPort = 0;
+        int serverPort = 1000;
         
         if (serverAddress.contains("http")) {
             serverIp = serverAddress.split(":")[1].replaceAll("//", "");
-            serverPort = Integer.valueOf(serverAddress.split(":")[2].replaceAll("//", ""));
+            serverPort += Integer.valueOf(serverAddress.split(":")[2].replaceAll("//", ""));
         } else {
             serverIp = serverAddress.split(":")[0];
-            serverPort = Integer.valueOf(serverAddress.split(":")[1]);
+            serverPort += Integer.valueOf(serverAddress.split(":")[1]);
         }
-    
-        this.channel = ManagedChannelBuilder.forAddress(serverIp, serverPort + 1000).usePlaintext(true).build();
+        
+        LOGGER.info("GrpcClient start to connect to rpc server, serverIp={},port={}", serverIp, serverPort);
+        
+        this.channel = ManagedChannelBuilder.forAddress(serverIp, serverPort).usePlaintext(true).build();
         
         grpcStreamServiceStub = RequestStreamGrpc.newStub(channel);
-    
+        
         grpcServiceStub = RequestGrpc.newBlockingStub(channel);
-    
+        
         GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
                 .build();
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).build();
-    
+        
+        LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
+        
         grpcStreamServiceStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
             @Override
             public void onNext(GrpcResponse grpcResponse) {
+    
+                LOGGER.info(" stream response receive  ,original reponse :{}", grpcResponse);
+                
                 String message = grpcResponse.getBody().getValue().toStringUtf8();
-            
                 String type = grpcResponse.getType();
                 String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
                 Class classByType = ResponseRegistry.getClassByType(type);
@@ -174,7 +184,7 @@ public class GrpcClient extends RpcClient {
                     myresponse.setBodyString(bodyString);
                     response = myresponse;
                 }
-            
+    
                 changeListenReplyListeners.forEach(new Consumer<ChangeListenResponseHandler>() {
                     @Override
                     public void accept(ChangeListenResponseHandler changeListenResponseHandler) {
@@ -182,43 +192,18 @@ public class GrpcClient extends RpcClient {
                     }
                 });
             }
-        
+    
             @Override
             public void onError(Throwable throwable) {
             
             }
-        
+    
             @Override
             public void onCompleted() {
             
             }
         });
         
-    }
-    
-    private class NacosStreamObserver implements StreamObserver<GrpcResponse> {
-        
-        @Override
-        public void onNext(GrpcResponse response) {
-        
-        }
-        
-        @Override
-        public void onError(Throwable t) {
-            //LOGGER.error("[GRPC] config error", t);
-            //rebuildClient();
-        }
-        
-        @Override
-        public void onCompleted() {
-            //LOGGER.info("[GRPC] config connection closed.");
-            //rebuildClient();
-        }
-    }
-    
-    @Override
-    public void switchServer() {
-    
     }
     
     @Override

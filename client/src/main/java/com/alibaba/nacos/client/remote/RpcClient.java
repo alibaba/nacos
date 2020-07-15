@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.client.remote;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.annotation.PostConstruct;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.remote.grpc.GrpcClient;
+import com.alibaba.nacos.client.utils.LogUtils;
+import org.slf4j.Logger;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * abstract remote client to connect to server.
@@ -33,6 +35,8 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
 public abstract class RpcClient {
+    
+    private static final Logger LOGGER = LogUtils.logger(RpcClient.class);
     
     private ServerListFactory serverListFactory;
     
@@ -68,15 +72,23 @@ public abstract class RpcClient {
      * @param serverListFactory serverListFactory
      */
     public void init(ServerListFactory serverListFactory) {
+        if (!isWaitInited()) {
+            return;
+        }
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
         this.rpcClientStatus = RpcClientStatus.INITED;
+    
+        LOGGER.info("RpcClient init ,connectionId={}, ServerListFactory ={}", this.connectionId,
+                serverListFactory.getClass().getName());
     }
     
     public RpcClient(ServerListFactory serverListFactory) {
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
         this.rpcClientStatus = RpcClientStatus.INITED;
+        LOGGER.info("RpcClient init in constructor ,connectionId={}, ServerListFactory ={}", this.connectionId,
+                serverListFactory.getClass().getName());
     }
     
     /**
@@ -84,11 +96,6 @@ public abstract class RpcClient {
      */
     @PostConstruct
     public abstract void start() throws NacosException;
-    
-    /**
-     * Switch Server.
-     */
-    public abstract void switchServer();
     
     /**
      * send request.
@@ -104,6 +111,9 @@ public abstract class RpcClient {
      * @param connectionEventListener connectionEventListener
      */
     public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
+    
+        LOGGER.info(" Registry connection listener to current client,connectionId={}, connectionEventListener={}",
+                this.connectionId, connectionEventListener.getClass().getName());
         this.connectionEventListeners.add(connectionEventListener);
     }
     
@@ -113,6 +123,10 @@ public abstract class RpcClient {
      * @param changeListenResponseHandler changeListenResponseHandler
      */
     public void registerChangeListenHandler(ChangeListenResponseHandler changeListenResponseHandler) {
+        LOGGER.info(
+                " Registry change listen response  listener to current client,connectionId={}, connectionEventListener={}",
+                this.connectionId, changeListenResponseHandler.getClass().getName());
+        
         this.changeListenReplyListeners.add(changeListenResponseHandler);
     }
     

@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.remote.ConfigGrpcClientProxy;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
+import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
@@ -45,7 +46,6 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
-import sun.management.resources.agent;
 
 import java.io.File;
 import java.io.IOException;
@@ -315,15 +315,6 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    /**
-     * check whether still using http .
-     *
-     * @return
-     */
-    private boolean useHttpSwitch() {
-        String useHttpSwitch = System.getProperty("clientworker.use.http.switch");
-        return "Y".equalsIgnoreCase(useHttpSwitch);
-    }
     
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
@@ -332,7 +323,7 @@ public class ClientWorker implements Closeable {
             group = Constants.DEFAULT_GROUP;
         }
     
-        if (!useHttpSwitch()) {
+        if (!ParamUtils.useHttpSwitch()) {
             return getServerConfigInRpc(dataId, group, tenant, readTimeout);
         }
         
@@ -637,99 +628,98 @@ public class ClientWorker implements Closeable {
                         return t;
                     }
                 });
-        // cancel long polling config check task
-        //        this.executor.scheduleWithFixedDelay(new Runnable() {
-        //            @Override
-        //            public void run() {
-        //                try {
-        //                    checkConfigInfo();
-        //                } catch (Throwable e) {
-        //                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-        //                }
-        //            }
-        //        }, 1L, 10L, TimeUnit.MILLISECONDS);
-        
-        rpcClientProxy = new ConfigGrpcClientProxy();
     
-        if (rpcClientProxy.getRpcClient().isWaitInited()) {
-            rpcClientProxy.getRpcClient().init(new ServerListFactory() {
+        if (ParamUtils.useHttpSwitch()) {
+            this.executor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        checkConfigInfo();
+                    } catch (Throwable e) {
+                        LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                    }
+                }
+            }, 1L, 10L, TimeUnit.MILLISECONDS);
+        
+        } else {
+            rpcClientProxy = new ConfigGrpcClientProxy();
+        
+            rpcClientProxy.initAndStart(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
                     ServerListManager serverListManager = agent.getServerListManager();
                     serverListManager.refreshCurrentServerAddr();
                     return serverListManager.getCurrentServerAddr();
                 }
-    
+            
                 @Override
                 public String getCurrentServer() {
                     return agent.getServerListManager().getCurrentServerAddr();
                 }
             });
         
-            rpcClientProxy.start();
-        }
-    
-        /*
-         * Register Listen Change Handler
-         */
-        rpcClientProxy.getRpcClient().registerChangeListenHandler(new ChangeListenResponseHandler() {
-            @Override
-            public void responseReply(Response myresponse) {
-    
-                if (myresponse instanceof ConfigChangeNotifyResponse) {
-                    ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
-                    String groupKey = GroupKey
-                            .getKeyTenant(configChangeNotifyResponse.getDataId(), configChangeNotifyResponse.getGroup(),
-                                    configChangeNotifyResponse.getTenant());
+            /*
+             * Register Listen Change Handler
+             */
+            rpcClientProxy.getRpcClient().registerChangeListenHandler(new ChangeListenResponseHandler() {
+                @Override
+                public void responseReply(Response myresponse) {
+                
+                    if (myresponse instanceof ConfigChangeNotifyResponse) {
+                        ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
+                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyResponse.getDataId(),
+                                configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant());
                     
-                    if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-                        CacheData cache = cacheMap.get().get(groupKey);
-                        try {
-                            String[] ct = getServerConfig(configChangeNotifyResponse.getDataId(),
-                                    configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant(),
-                                    3000L);
-                            cache.setContent(ct[0]);
-                            if (null != ct[1]) {
-                                cache.setType(ct[1]);
+                        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
+                            CacheData cache = cacheMap.get().get(groupKey);
+                            try {
+                                String[] ct = getServerConfig(configChangeNotifyResponse.getDataId(),
+                                        configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant(),
+                                        3000L);
+                                cache.setContent(ct[0]);
+                                if (null != ct[1]) {
+                                    cache.setType(ct[1]);
+                                }
+                                cache.checkListenerMd5();
+                            
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                            cache.checkListenerMd5();
-    
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        }
+                    }
+                
+                }
+            
+            });
+        
+            /*
+             *
+             */
+            rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
+                @Override
+                public void onConnected() {
+                
+                }
+            
+                @Override
+                public void onReconnected() {
+                    Collection<CacheData> values = cacheMap.get().values();
+                    for (CacheData cacheData : values) {
+                        if (!CollectionUtils.isEmpty(cacheData.getListeners())) {
+                            rpcClientProxy.request(ConfigChangeListenRequest
+                                    .buildListenRequest(cacheData.dataId, cacheData.group, cacheData.tenant));
                         }
                     }
                 }
-    
-            }
-    
-        });
-    
-        /*
-         *
-         */
-        rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
-            @Override
-            public void onConnected() {
             
-            }
-    
-            @Override
-            public void onReconnected() {
-                Collection<CacheData> values = cacheMap.get().values();
-                for (CacheData cacheData : values) {
-                    if (!CollectionUtils.isEmpty(cacheData.getListeners())) {
-                        rpcClientProxy.request(ConfigChangeListenRequest
-                                .buildListenRequest(cacheData.dataId, cacheData.group, cacheData.tenant));
-                    }
+                @Override
+                public void onDisConnect() {
+                
                 }
-            }
-    
-            @Override
-            public void onDisConnect() {
+            });
+        }
         
-            }
-        });
-    
+        
     }
     
     private void init(Properties properties) {
