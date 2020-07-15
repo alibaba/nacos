@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.response;
 
 /**
+ * ResponseCode.
  * @author liuzunfei
  * @version $Id: ResponseCode.java, v 0.1 2020年07月14日 2:04 PM liuzunfei Exp $
  */
 public enum ResponseCode {
-
-
-    SUCCESS(200,"response ok"),
-
-    FAIL(500,"response fail");
-
-
+    
+    SUCCESS(200, "response ok"),
+    
+    FAIL(500, "response fail");
+    
     int code;
+    
     String desc;
-
-    ResponseCode(int code,String decs){
-        this.code=code;
-        this.desc=desc;
+    
+    ResponseCode(int code, String decs) {
+        this.code = code;
+        this.desc = desc;
     }
-
+    
     /**
      * Getter method for property <tt>code</tt>.
      *
@@ -43,7 +44,7 @@ public enum ResponseCode {
     public int getCode() {
         return code;
     }
-
+    
     /**
      * Setter method for property <tt>code</tt>.
      *
@@ -52,7 +53,7 @@ public enum ResponseCode {
     public void setCode(int code) {
         this.code = code;
     }
-
+    
     /**
      * Getter method for property <tt>desc</tt>.
      *
@@ -61,7 +62,7 @@ public enum ResponseCode {
     public String getDesc() {
         return desc;
     }
-
+    
     /**
      * Setter method for property <tt>desc</tt>.
      *

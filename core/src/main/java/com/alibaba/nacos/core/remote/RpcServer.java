@@ -20,14 +20,15 @@ package com.alibaba.nacos.core.remote;
  * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
 public abstract class RpcServer {
-
-
+    
     /**
      * Start sever
      */
     abstract public void start() throws Exception;
-
+    
+    /**
+     * @throws Exception
+     */
     abstract public void stop() throws Exception;
-
 
 }
