@@ -13,34 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.remote.request;
 
 /**
+ * request to query config content.
+ *
  * @author liuzunfei
  * @version $Id: ConfigQueryRequest.java, v 0.1 2020年07月13日 9:06 PM liuzunfei Exp $
  */
-public class ConfigQueryRequest extends ConfigCommonRequest{
-
-
+public class ConfigQueryRequest extends ConfigCommonRequest {
+    
     private String dataId;
-
+    
     private String group;
-
+    
     private String tenant;
-
+    
     @Override
     public String getType() {
         return ConfigRequestTypeConstants.QUERY_CONFIG;
     }
-
-
-    public static ConfigQueryRequest build(String dataId, String group,String tenant){
-        ConfigQueryRequest request=new ConfigQueryRequest();
+    
+    /**
+     * request builder.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return ConfigQueryRequest instance.
+     */
+    public static ConfigQueryRequest build(String dataId, String group, String tenant) {
+        ConfigQueryRequest request = new ConfigQueryRequest();
         request.setDataId(dataId);
         request.setGroup(group);
         request.setTenant(tenant);
         return request;
     }
+    
     /**
      * Getter method for property <tt>dataId</tt>.
      *
@@ -49,7 +59,7 @@ public class ConfigQueryRequest extends ConfigCommonRequest{
     public String getDataId() {
         return dataId;
     }
-
+    
     /**
      * Setter method for property <tt>dataId</tt>.
      *
@@ -58,7 +68,7 @@ public class ConfigQueryRequest extends ConfigCommonRequest{
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     /**
      * Getter method for property <tt>group</tt>.
      *
@@ -67,7 +77,7 @@ public class ConfigQueryRequest extends ConfigCommonRequest{
     public String getGroup() {
         return group;
     }
-
+    
     /**
      * Setter method for property <tt>group</tt>.
      *
@@ -76,7 +86,7 @@ public class ConfigQueryRequest extends ConfigCommonRequest{
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     /**
      * Getter method for property <tt>tenant</tt>.
      *
@@ -85,7 +95,7 @@ public class ConfigQueryRequest extends ConfigCommonRequest{
     public String getTenant() {
         return tenant;
     }
-
+    
     /**
      * Setter method for property <tt>tenant</tt>.
      *

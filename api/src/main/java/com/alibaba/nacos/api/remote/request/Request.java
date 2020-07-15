@@ -17,48 +17,24 @@
 package com.alibaba.nacos.api.remote.request;
 
 /**
+ * Request.
  * @author liuzunfei
  * @version $Id: Request.java, v 0.1 2020年07月13日 3:46 PM liuzunfei Exp $
  */
 public abstract class Request {
-
-
-    private String bodyString;
-
-    /**
-     * Getter method for property <tt>model</tt>.
-     *
-     * @return property value of model
-     */
-    abstract public String getModel();
-
-    /**
-     * Getter method for property <tt>bodyString</tt>.
-     *
-     * @return property value of bodyString
-     */
-    public String getBodyString() {
-        return bodyString;
-    }
-
-    /**
-     * Setter method for property <tt>bodyString</tt>.
-     *
-     * @param bodyString value to be assigned to property bodyString
-     */
-    public void setBodyString(String bodyString) {
-        this.bodyString = bodyString;
-    }
-
+    
     /**
      * Getter method for property <tt>type</tt>.
      *
      * @return property value of type
      */
-    abstract public String getType() ;
-
+    public abstract String getType();
+    
     /**
+     * Getter method for property <tt>type</tt>.
      *
+     * @return property value of type
      */
-    abstract public String getModule() ;
+    public abstract String getModule();
+    
 }

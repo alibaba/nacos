@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.response;
 
 /**
+ * internal ResponseTypeConstants.
  * @author liuzunfei
  * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
  */
 public class ResponseTypeConstants {
-
-    public static final String HEART_BEAT="HEART_BEAT";
-
+    
+    public static final String PLAIN_BODY_STRING = "PLAIN_BODY_STRING";
+    
+    public static final String HEART_BEAT = "HEART_BEAT";
+    
+    public static final String CONNECT_SWITCH = "CONNECT_SWITCH";
+    
 }
