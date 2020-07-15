@@ -13,20 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.request;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
+ * RequestMeta info.
  * @author liuzunfei
  * @version $Id: RequestMeta.java, v 0.1 2020年07月14日 10:32 AM liuzunfei Exp $
  */
 public class RequestMeta {
-
-
+    
     private String connectionId;
-
+    
     private String clientIp;
-
-
+    
+    private Map<String, String> labels = new HashMap<String, String>();
+    
+    /**
+     * Getter method for property <tt>labels</tt>.
+     *
+     * @return property value of labels
+     */
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    
+    /**
+     * Setter method for property <tt>labels</tt>.
+     *
+     * @param labels value to be assigned to property labels
+     */
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
+    
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -35,7 +58,7 @@ public class RequestMeta {
     public String getConnectionId() {
         return connectionId;
     }
-
+    
     /**
      * Setter method for property <tt>connectionId</tt>.
      *
@@ -44,7 +67,7 @@ public class RequestMeta {
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-
+    
     /**
      * Getter method for property <tt>clientIp</tt>.
      *
@@ -53,7 +76,7 @@ public class RequestMeta {
     public String getClientIp() {
         return clientIp;
     }
-
+    
     /**
      * Setter method for property <tt>clientIp</tt>.
      *

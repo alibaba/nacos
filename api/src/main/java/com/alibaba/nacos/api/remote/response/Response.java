@@ -34,6 +34,7 @@ public abstract class Response {
     
     /**
      * Check Response  is Successd.
+     *
      * @return
      */
     public boolean isSuccess() {
@@ -42,6 +43,10 @@ public abstract class Response {
     
     public Response() {
     
+    }
+    
+    public Response(String type) {
+        this.type = type;
     }
     
     public Response(String type, int resultCode, String message) {

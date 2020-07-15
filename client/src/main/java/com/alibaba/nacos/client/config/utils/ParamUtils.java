@@ -207,4 +207,15 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "content invalid");
         }
     }
+    
+    /**
+     * check whether still using http .
+     *
+     * @return
+     */
+    public static boolean useHttpSwitch() {
+        String useHttpSwitch = System.getProperty("clientworker.use.http.switch");
+        return "Y".equalsIgnoreCase(useHttpSwitch);
+    }
+    
 }

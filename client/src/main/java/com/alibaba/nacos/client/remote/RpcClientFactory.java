@@ -13,44 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.remote;
+
+import com.alibaba.nacos.client.remote.grpc.GrpcClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.client.config.impl.ServerListManager;
-import com.alibaba.nacos.client.remote.grpc.GrpcClient;
-
-import sun.management.resources.agent;
-
 /**
+ * RpcClientFactory.to support muti client for diffrent client.
+ *
  * @author liuzunfei
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
     
-    static private RpcClient sharedClient;
+    private static RpcClient sharedClient;
     
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
     public static RpcClient getClient(String module) {
         String useIndependentClient = System.getProperty("rpc.client.independent");
-        if ("Y".equalsIgnoreCase(useIndependentClient)){
-            if(clientMap.get(module)==null){
-                RpcClient moduleClient=new GrpcClient();
-                return clientMap.putIfAbsent(module,moduleClient);
-            }else{
+        if ("Y".equalsIgnoreCase(useIndependentClient)) {
+            if (clientMap.get(module) == null) {
+                RpcClient moduleClient = new GrpcClient();
+                return clientMap.putIfAbsent(module, moduleClient);
+            } else {
                 return clientMap.get(module);
             }
-        }else{
-            if (sharedClient!=null){
+        } else {
+            if (sharedClient != null) {
                 return sharedClient;
-            }else{
-                sharedClient=new GrpcClient();
-                return sharedClient;
+            } else {
+            
+                synchronized (RpcClientFactory.class) {
+                    if (sharedClient == null) {
+                        sharedClient = new GrpcClient();
+                        return sharedClient;
+                    } else {
+                        return sharedClient;
+                    }
+                }
             }
         }
     }
-    
     
 }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -62,9 +63,13 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
                         if (currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
                             conn.closeGrapcefully();
                             connectionManager.unregister(conn.getConnectionId());
+                            Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ",
+                                    conn.getConnectionId());
+                            
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Loggers.GRPC.error("error occurs when get rid of expire connection ，connectionid={} ",
+                                conn.getConnectionId(), e);
                     }
                 }
             }

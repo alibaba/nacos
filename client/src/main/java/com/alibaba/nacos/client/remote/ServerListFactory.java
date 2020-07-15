@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.remote;
 
 /**
+ *
  * @author liuzunfei
  * @version $Id: ServerListFactory.java, v 0.1 2020年07月14日 1:11 PM liuzunfei Exp $
  */
 public interface ServerListFactory {
-
-
+    
+    
     String genNextServer();
 
     String getCurrentServer();

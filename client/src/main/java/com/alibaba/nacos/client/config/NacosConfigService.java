@@ -279,6 +279,10 @@ public class NacosConfigService implements ConfigService {
         
     }
     
+    public boolean publishConfigWithRpc() {
+        return true;
+    }
+    
     @Override
     public String getServerStatus() {
         if (worker.isHealthServer()) {

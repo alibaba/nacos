@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
@@ -40,14 +41,6 @@ public class ConfigGrpcClientProxy {
     
     public ConfigGrpcClientProxy() {
         rpcClient = RpcClientFactory.getClient("config");
-    }
-    
-    public void start() throws NacosException {
-        rpcClient.start();
-    }
-    
-    public void switchServer() {
-        rpcClient.switchServer();
     }
     
     public Response request(Request request) {
@@ -72,6 +65,10 @@ public class ConfigGrpcClientProxy {
      * @throws NacosException throws when listen fail.
      */
     public void listenConfigChange(String dataId, String group, String tenat) throws NacosException {
+    
+        if (ParamUtils.useHttpSwitch()) {
+            return;
+        }
         ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
                 .buildListenRequest(dataId, group, tenat);
         ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
@@ -88,6 +85,10 @@ public class ConfigGrpcClientProxy {
      * @param tenat  tenat
      */
     public void unListenConfigChange(String dataId, String group, String tenat) throws NacosException {
+    
+        if (ParamUtils.useHttpSwitch()) {
+            return;
+        }
         ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
                 .buildUnListenRequest(dataId, group, tenat);
         ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
@@ -106,6 +107,7 @@ public class ConfigGrpcClientProxy {
      * @throws NacosException throw where query fail .
      */
     public ConfigQueryResponse queryConfig(String dataId, String group, String tenat) throws NacosException {
+    
         ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenat);
         ConfigQueryResponse response = (ConfigQueryResponse) rpcClient.request(request);
         return (ConfigQueryResponse) response;

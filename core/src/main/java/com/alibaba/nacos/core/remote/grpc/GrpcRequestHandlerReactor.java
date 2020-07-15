@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
+ * grpc request handler reactor,to connect to thw request handler module.
  * @author liuzunfei
  * @version $Id: GrpcRequestHandlerReactor.java, v 0.1 2020年07月13日 4:25 PM liuzunfei Exp $
  */
@@ -43,26 +44,25 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
     
     @Override
     public void request(GrpcRequest grpcRequest, StreamObserver<GrpcResponse> responseObserver) {
-        
-        Loggers.GRPC.debug(" gRpc Server receive request :" + grpcRequest);
-        
+    
+        Loggers.GRPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
         String type = grpcRequest.getType();
-        
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
         if (requestHandler != null) {
             String bodyString = grpcRequest.getBody().getValue().toStringUtf8();
             Request request = requestHandler.parseBodyString(bodyString);
             try {
                 Response response = requestHandler.handle(request, convertMeta(grpcRequest.getMetadata()));
+    
                 responseObserver.onNext(GrpcUtils.convert(response));
                 responseObserver.onCompleted();
             } catch (Exception e) {
-                Loggers.GRPC.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
+                Loggers.GRPC_DIGEST.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
                 responseObserver.onNext(GrpcUtils.buildFailResponse("Error"));
                 responseObserver.onCompleted();
             }
         } else {
-            Loggers.GRPC.error(" gRpc Server requestHandler Not found ！ ");
+            Loggers.GRPC_DIGEST.error(" gRpc Server requestHandler Not found ！ ");
             responseObserver.onNext(GrpcUtils.buildFailResponse("RequestHandler Not Found"));
             responseObserver.onCompleted();
         }
@@ -74,6 +74,5 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
         requestMeta.setConnectionId(metadata.getConnectionId());
         return requestMeta;
     }
-    
     
 }

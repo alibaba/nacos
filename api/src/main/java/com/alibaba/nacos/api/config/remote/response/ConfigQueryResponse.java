@@ -19,19 +19,40 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * ConfigQueryResponse.
+ *
  * @author liuzunfei
  * @version $Id: ConfigQueryResponse.java, v 0.1 2020年07月14日 2:47 PM liuzunfei Exp $
  */
 public class ConfigQueryResponse extends Response {
     
-    
-    String content;
-    
     public static final int CONFIG_NOT_FOUND = 300;
     
     public static final int CONFIG_QUERY_CONFLICT = 400;
+    
+    String content;
+    
+    String contentType;
+    
+    Map<String, String> labels = new HashMap<String, String>();
+    
+    public ConfigQueryResponse() {
+        super(ConfigResponseTypeConstants.CONFIG_QUERY);
+    }
+    
+    /**
+     * add label to this response.
+     *
+     * @param key
+     * @param value
+     */
+    public void addLabel(String key, String value) {
+        this.labels.put(key, value);
+    }
     
     /**
      * Buid fail response.
@@ -47,15 +68,33 @@ public class ConfigQueryResponse extends Response {
     }
     
     /**
-     * Buidl success resposne
+     * Buidl success resposne.
      *
-     * @param content
+     * @param content.
      * @return
      */
     public static ConfigQueryResponse buildSuccessResponse(String content) {
         ConfigQueryResponse response = new ConfigQueryResponse(ResponseCode.SUCCESS.getCode(), "");
         response.setContent(content);
         return response;
+    }
+    
+    /**
+     * Getter method for property <tt>labels</tt>.
+     *
+     * @return property value of labels
+     */
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    
+    /**
+     * Setter method for property <tt>labels</tt>.
+     *
+     * @param labels value to be assigned to property labels
+     */
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
     
     /**
@@ -80,4 +119,21 @@ public class ConfigQueryResponse extends Response {
         super(ConfigResponseTypeConstants.CONFIG_QUERY, resultCode, message);
     }
     
+    /**
+     * Getter method for property <tt>contentType</tt>.
+     *
+     * @return property value of contentType
+     */
+    public String getContentType() {
+        return contentType;
+    }
+    
+    /**
+     * Setter method for property <tt>contentType</tt>.
+     *
+     * @param contentType value to be assigned to property contentType
+     */
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
 }

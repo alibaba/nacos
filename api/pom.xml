@@ -41,24 +41,24 @@
             </plugin>
 
             <!--  reuse when you need to update grpc model  -->
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.5.0</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:3.3.0:exe:osx-x86_64</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.20.0:exe:osx-x86_64</pluginArtifact>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+            <!--<groupId>org.xolstice.maven.plugins</groupId>-->
+            <!--<artifactId>protobuf-maven-plugin</artifactId>-->
+            <!--<version>0.5.0</version>-->
+            <!--<configuration>-->
+            <!--<protocArtifact>com.google.protobuf:protoc:3.3.0:exe:osx-x86_64</protocArtifact>-->
+            <!--<pluginId>grpc-java</pluginId>-->
+            <!--<pluginArtifact>io.grpc:protoc-gen-grpc-java:1.20.0:exe:osx-x86_64</pluginArtifact>-->
+            <!--</configuration>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<goals>-->
+            <!--<goal>compile</goal>-->
+            <!--<goal>compile-custom</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
         </plugins>
     </build>
     

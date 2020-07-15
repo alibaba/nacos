@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.remote.request;
 
 
@@ -21,57 +22,71 @@ package com.alibaba.nacos.api.config.remote.request;
  * @version $Id: ConfigChangeListenRequest.java, v 0.1 2020年07月13日 9:01 PM liuzunfei Exp $
  */
 public class ConfigChangeListenRequest extends ConfigCommonRequest {
-
-
-    private static final String LISTEN="listen";
-    private static final String UNLISTEN="unlisten";
-
+    
+    
+    private static final String LISTEN = "listen";
+    
+    private static final String UNLISTEN = "unlisten";
+    
     private String dataId;
-
+    
     private String group;
-
+    
     private String tenant;
-
-    private String operation=LISTEN;
-
-
-    public boolean isCancelListen(){
+    
+    private String operation = LISTEN;
+    
+    
+    public boolean isCancelListen() {
         return UNLISTEN.equals(this.operation);
     }
-
-
-
-    public static ConfigChangeListenRequest buildListenRequest(String dataId, String group,String tenant){
+    
+    /**
+     * build listen request.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return ConfigChangeListenRequest.
+     */
+    public static ConfigChangeListenRequest buildListenRequest(String dataId, String group, String tenant) {
         ConfigChangeListenRequest configChangeListenRequest = buildBase(dataId, group, tenant);
-        configChangeListenRequest.operation=LISTEN;
+        configChangeListenRequest.operation = LISTEN;
         return configChangeListenRequest;
     }
-
-    public static ConfigChangeListenRequest buildUnListenRequest(String dataId, String group,String tenant){
+    
+    /**
+     * build cancel listen request.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @return
+     */
+    public static ConfigChangeListenRequest buildUnListenRequest(String dataId, String group, String tenant) {
         ConfigChangeListenRequest configChangeListenRequest = buildBase(dataId, group, tenant);
-        configChangeListenRequest.operation=UNLISTEN;
+        configChangeListenRequest.operation = UNLISTEN;
         return configChangeListenRequest;
     }
-
-
-    private static ConfigChangeListenRequest  buildBase(String dataId, String group,String tenant){
-        ConfigChangeListenRequest request=new ConfigChangeListenRequest();
+    
+    private static ConfigChangeListenRequest buildBase(String dataId, String group, String tenant) {
+        ConfigChangeListenRequest request = new ConfigChangeListenRequest();
         request.setDataId(dataId);
         request.setGroup(group);
         request.setTenant(tenant);
         return request;
     }
-
+    
     @Override
     public String getType() {
         return ConfigRequestTypeConstants.CHANGE_LISTEN_CONFIG_OPERATION;
     }
-
+    
     @Override
     public String getModule() {
         return "config";
     }
-
+    
     /**
      * Getter method for property <tt>dataId</tt>.
      *
@@ -80,7 +95,7 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     public String getDataId() {
         return dataId;
     }
-
+    
     /**
      * Setter method for property <tt>dataId</tt>.
      *
@@ -89,7 +104,7 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     /**
      * Getter method for property <tt>group</tt>.
      *
@@ -98,7 +113,7 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     public String getGroup() {
         return group;
     }
-
+    
     /**
      * Setter method for property <tt>group</tt>.
      *
@@ -107,7 +122,7 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     /**
      * Getter method for property <tt>tenant</tt>.
      *
@@ -116,7 +131,7 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     public String getTenant() {
         return tenant;
     }
-
+    
     /**
      * Setter method for property <tt>tenant</tt>.
      *

@@ -30,6 +30,8 @@ public class ConfigQueryRequest extends ConfigCommonRequest {
     
     private String tenant;
     
+    private String tag;
+    
     @Override
     public String getType() {
         return ConfigRequestTypeConstants.QUERY_CONFIG;
@@ -103,5 +105,23 @@ public class ConfigQueryRequest extends ConfigCommonRequest {
      */
     public void setTenant(String tenant) {
         this.tenant = tenant;
+    }
+    
+    /**
+     * Getter method for property <tt>tag</tt>.
+     *
+     * @return property value of tag
+     */
+    public String getTag() {
+        return tag;
+    }
+    
+    /**
+     * Setter method for property <tt>tag</tt>.
+     *
+     * @param tag value to be assigned to property tag
+     */
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }
