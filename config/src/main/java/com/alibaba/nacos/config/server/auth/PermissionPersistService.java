@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
 
 /**
- * Permission CRUD service
+ * Permission CRUD service.
  *
  * @author nkorange
  * @since 1.2.0
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface PermissionPersistService {
-
-	Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
-
-	void addPermission(String role, String resource, String action);
-
-	void deletePermission(String role, String resource, String action);
-
+    
+    Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize);
+    
+    void addPermission(String role, String resource, String action);
+    
+    void deletePermission(String role, String resource, String action);
+    
 }

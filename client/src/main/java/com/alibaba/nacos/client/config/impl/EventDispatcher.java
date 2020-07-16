@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -30,26 +31,26 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Nacos
  */
 public class EventDispatcher {
-
+    
     private static final Logger LOGGER = LogUtils.logger(EventDispatcher.class);
-
+    
     /**
-     * 添加事件监听器
+     * 添加事件监听器.
      */
-    static public void addEventListener(AbstractEventListener listener) {
+    public static void addEventListener(AbstractEventListener listener) {
         for (Class<? extends AbstractEvent> type : listener.interest()) {
             getListenerList(type).addIfAbsent(listener);
         }
     }
-
+    
     /**
-     * 发布事件，首先发布该事件暗示的其他事件，最后通知所有对应的监听器。
+     * 发布事件，首先发布该事件暗示的其他事件，最后通知所有对应的监听器.
      */
-    static public void fireEvent(AbstractEvent abstractEvent) {
+    public static void fireEvent(AbstractEvent abstractEvent) {
         if (null == abstractEvent) {
             return;
         }
-
+        
         // 发布该事件暗示的其他事件
         for (AbstractEvent implyEvent : abstractEvent.implyEvents()) {
             try {
@@ -61,7 +62,7 @@ public class EventDispatcher {
                 LOGGER.warn(e.toString(), e);
             }
         }
-
+        
         for (AbstractEventListener listener : getListenerList(abstractEvent.getClass())) {
             try {
                 listener.onEvent(abstractEvent);
@@ -70,9 +71,9 @@ public class EventDispatcher {
             }
         }
     }
-
+    
     static synchronized CopyOnWriteArrayList<AbstractEventListener> getListenerList(
-        Class<? extends AbstractEvent> eventType) {
+            Class<? extends AbstractEvent> eventType) {
         CopyOnWriteArrayList<AbstractEventListener> listeners = LISTENER_MAP.get(eventType);
         if (null == listeners) {
             listeners = new CopyOnWriteArrayList<AbstractEventListener>();
@@ -80,54 +81,48 @@ public class EventDispatcher {
         }
         return listeners;
     }
-
-    // ========================
-
-    static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP
-        = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
-
-    // ========================
-
+    
+    @SuppressWarnings("checkstyle:linelength")
+    static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
+    
     /**
-     * Client事件。
+     * Client事件.
      */
-    static public abstract class AbstractEvent {
-
+    public abstract static class AbstractEvent {
+        
         @SuppressWarnings("unchecked")
         protected List<AbstractEvent> implyEvents() {
             return Collections.EMPTY_LIST;
         }
     }
-
+    
     /**
-     * 事件监听器。
+     * 事件监听器.
      */
-    static public abstract class AbstractEventListener {
+    public abstract static class AbstractEventListener {
+        
         public AbstractEventListener() {
-            /**
-             * 自动注册给EventDispatcher
-             */
             EventDispatcher.addEventListener(this);
         }
-
+        
         /**
-         * 感兴趣的事件列表
+         * 感兴趣的事件列表.
          *
          * @return event list
          */
-        abstract public List<Class<? extends AbstractEvent>> interest();
-
+        public abstract List<Class<? extends AbstractEvent>> interest();
+        
         /**
-         * 处理事件
+         * 处理事件.
          *
          * @param abstractEvent event to do
          */
-        abstract public void onEvent(AbstractEvent abstractEvent);
+        public abstract void onEvent(AbstractEvent abstractEvent);
     }
-
+    
     /**
-     * serverList has changed
+     * serverList has changed.
      */
-    static public class ServerlistChangeEvent extends AbstractEvent {
+    public static  class ServerlistChangeEvent extends AbstractEvent {
     }
 }

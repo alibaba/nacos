@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -28,52 +29,52 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.PostConstruct;
 
 /**
- * health service
+ * Health service.
  *
  * @author Nacos
  */
 @RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
-
-	private DataSourceService dataSourceService;
-	private String heathUpStr = "UP";
-	private String heathDownStr = "DOWN";
-	private String heathWarnStr = "WARN";
-
-	@Autowired
-	private ServerMemberManager memberManager;
-
-	@PostConstruct
-	public void init() {
-		dataSourceService = DynamicDataSource.getInstance().getDataSource();
-	}
-
-	@GetMapping
-	public String getHealth() {
-		// TODO UP DOWN WARN
-		StringBuilder sb = new StringBuilder();
-		String dbStatus = dataSourceService.getHealth();
-		if (dbStatus.contains(heathUpStr) && memberManager.isInIpList()) {
-			sb.append(heathUpStr);
-		}
-		else if (dbStatus.contains(heathWarnStr) && memberManager.isInIpList()) {
-			sb.append("WARN:");
-			sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
-		}
-		else {
-			sb.append("DOWN:");
-			if (dbStatus.contains(heathDownStr)) {
-				sb.append("master db (").append(dbStatus.split(":")[1])
-						.append(") down. ");
-			}
-			if (!memberManager.isInIpList()) {
-				sb.append("server ip ").append(InetUtils.getSelfIp())
-						.append(" is not in the serverList of address server. ");
-			}
-		}
-
-		return sb.toString();
-	}
-
+    
+    private DataSourceService dataSourceService;
+    
+    private String heathUpStr = "UP";
+    
+    private String heathDownStr = "DOWN";
+    
+    private String heathWarnStr = "WARN";
+    
+    @Autowired
+    private ServerMemberManager memberManager;
+    
+    @PostConstruct
+    public void init() {
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
+    }
+    
+    @GetMapping
+    public String getHealth() {
+        // TODO UP DOWN WARN
+        StringBuilder sb = new StringBuilder();
+        String dbStatus = dataSourceService.getHealth();
+        if (dbStatus.contains(heathUpStr) && memberManager.isInIpList()) {
+            sb.append(heathUpStr);
+        } else if (dbStatus.contains(heathWarnStr) && memberManager.isInIpList()) {
+            sb.append("WARN:");
+            sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
+        } else {
+            sb.append("DOWN:");
+            if (dbStatus.contains(heathDownStr)) {
+                sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
+            }
+            if (!memberManager.isInIpList()) {
+                sb.append("server ip ").append(InetUtils.getSelfIp())
+                        .append(" is not in the serverList of address server. ");
+            }
+        }
+        
+        return sb.toString();
+    }
+    
 }

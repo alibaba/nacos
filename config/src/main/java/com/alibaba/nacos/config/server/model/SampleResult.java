@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /**
- * sample result
+ * SampleResult.
  *
  * @author Nacos
  */
 public class SampleResult implements Serializable {
-
-    /**
-     * 随机数
-     */
+    
     private static final long serialVersionUID = 2587823382317389453L;
-
+    
     private Map<String, String> lisentersGroupkeyStatus;
-
+    
     public Map<String, String> getLisentersGroupkeyStatus() {
         return lisentersGroupkeyStatus;
     }
-
-    public void setLisentersGroupkeyStatus(
-        Map<String, String> lisentersGroupkeyStatus) {
+    
+    public void setLisentersGroupkeyStatus(Map<String, String> lisentersGroupkeyStatus) {
         this.lisentersGroupkeyStatus = lisentersGroupkeyStatus;
     }
-
+    
 }

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.listener.impl;
 
+package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.client.config.impl.ConfigChangeHandler;
@@ -25,15 +25,16 @@ import java.io.IOException;
 import java.util.Map;
 
 public class ConfigChangeHandlerTest {
+    
     @Test
     public void testParseProperties() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app.name = nacos", "properties");
-        Assert.assertEquals("nacos", ((ConfigChangeItem)properties.get("app.name")).getNewValue());
+        Assert.assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
-
+    
     @Test
     public void testParseYaml() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app:\n  name: nacos", "yaml");
-        Assert.assertEquals("nacos", ((ConfigChangeItem)properties.get("app.name")).getNewValue());
+        Assert.assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
 }

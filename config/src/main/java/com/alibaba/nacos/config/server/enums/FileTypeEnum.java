@@ -13,83 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.enums;
 
 /**
+ * Config file type enum.
+ *
  * @author klw
- * @ClassName: FileTypeEnum
- * @Description: config file type enum
  * @date 2019/7/1 10:21
  */
 public enum FileTypeEnum {
-
+    
     /**
-     * @author klw
-     * @Description: yaml file
+     * Yaml file.
      */
     YML("yaml"),
-
+    
     /**
-     * @author klw
-     * @Description: yaml file
+     * Yaml file.
      */
     YAML("yaml"),
-
+    
     /**
-     * @author klw
-     * @Description: text file
+     * Text file.
      */
     TXT("text"),
-
+    
     /**
-     * @author klw
-     * @Description: text file
+     * Text file.
      */
     TEXT("text"),
-
+    
     /**
-     * @author klw
-     * @Description: json file
+     * Json file.
      */
     JSON("json"),
-
+    
     /**
-     * @author klw
-     * @Description: xml file
+     * Xml file.
      */
     XML("xml"),
-
+    
     /**
-     * @author klw
-     * @Description: html file
+     * Html file.
      */
     HTM("html"),
-
+    
     /**
-     * @author klw
-     * @Description: html file
+     * Html file.
      */
     HTML("html"),
-
+    
     /**
-     * @author klw
-     * @Description: properties file
+     * Properties file.
      */
     PROPERTIES("properties");
-
+    
     /**
-     * @author klw
-     * @Description: file type corresponding to file extension
+     * File type corresponding to file extension.
      */
     private String fileType;
-
+    
     FileTypeEnum(String fileType) {
         this.fileType = fileType;
     }
-
+    
     public String getFileType() {
         return this.fileType;
     }
-
-
 }

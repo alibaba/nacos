@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.common.Constants;
@@ -20,14 +21,20 @@ import com.alibaba.nacos.api.common.Constants;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 /**
- * Content Util
+ * Content Util.
  *
  * @author Nacos
  */
 public class ContentUtils {
-
+    
+    /**
+     * Verify increment pub content.
+     *
+     * @param content content
+     * @throws IllegalArgumentException if content is not valid
+     */
     public static void verifyIncrementPubContent(String content) {
-
+        
         if (content == null || content.length() == 0) {
             throw new IllegalArgumentException("发布/删除内容不能为空");
         }
@@ -41,7 +48,7 @@ public class ContentUtils {
             }
         }
     }
-
+    
     public static String getContentIdentity(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -49,7 +56,7 @@ public class ContentUtils {
         }
         return content.substring(0, index);
     }
-
+    
     public static String getContent(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -57,7 +64,13 @@ public class ContentUtils {
         }
         return content.substring(index + 1);
     }
-
+    
+    /**
+     * Truncate content.
+     *
+     * @param content content
+     * @return truncated content
+     */
     public static String truncateContent(String content) {
         if (content == null) {
             return "";
@@ -67,6 +80,6 @@ public class ContentUtils {
             return content.substring(0, SHOW_CONTENT_SIZE) + "...";
         }
     }
-
-    private static int SHOW_CONTENT_SIZE = 100;
+    
+    private static final int SHOW_CONTENT_SIZE = 100;
 }

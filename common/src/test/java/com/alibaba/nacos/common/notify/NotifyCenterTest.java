@@ -31,10 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- * @author zongtanghu
- */
 @FixMethodOrder(value = MethodSorters.NAME_ASCENDING)
 public class NotifyCenterTest {
     
@@ -98,7 +94,6 @@ public class NotifyCenterTest {
         Assert.assertTrue(NotifyCenter.publishEvent(new TestSlowEvent()));
         
         ThreadUtils.sleep(5000L);
-        
         
         latch.await(5000L, TimeUnit.MILLISECONDS);
         
@@ -269,7 +264,6 @@ public class NotifyCenterTest {
         
     }
     
-    
     static class SmartEvent1 extends Event {
         
         @Override
@@ -286,12 +280,6 @@ public class NotifyCenterTest {
         }
     }
     
-    /**
-     * One SmartSubscriber can listen serveral Events.
-     * And then, Notify publish events by Publisher.
-     *
-     * @throws Exception
-     */
     @Test
     public void testSeveralEventsPublishedBySinglePublisher() throws Exception {
         
@@ -347,19 +335,12 @@ public class NotifyCenterTest {
     private static class TestSlowEvent2 extends SlowEvent {
     }
     
-    /**
-     * Two general subscriber can listen two kinds of SlowEvents.
-     * And then, Notify publish events by SharePublisher.
-     *
-     * @throws Exception
-     */
     @Test
     public void testMutipleSlowEventsListenedBySubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent1.class);
         NotifyCenter.registerToSharePublisher(TestSlowEvent2.class);
-    
-    
+        
         final AtomicInteger count1 = new AtomicInteger(0);
         final AtomicInteger count2 = new AtomicInteger(0);
     
@@ -414,18 +395,11 @@ public class NotifyCenterTest {
     private static class TestSlowEvent4 extends SlowEvent {
     }
     
-    /**
-     * One SmartSubscriber can listen serveral SlowEvents.
-     * And then, Notify publish events by SharePublisher.
-     *
-     * @throws Exception
-     */
     @Test
     public void testMutipleSlowEventsListenedBySmartsubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent3.class);
         NotifyCenter.registerToSharePublisher(TestSlowEvent4.class);
-        
         
         final AtomicInteger count1 = new AtomicInteger(0);
         final AtomicInteger count2 = new AtomicInteger(0);
@@ -478,18 +452,11 @@ public class NotifyCenterTest {
     private static class TestEvent6 extends Event {
     }
     
-    /**
-     * One SmartSubscriber can listen mutiple kinds of event: SlowEvent and General Event.
-     * And then, Notify publish events by SharePublisher and default pusbisher.
-     *
-     * @throws Exception
-     */
     @Test
     public void testMutipleKindsEventsCanListenBySmartsubscriber() throws Exception {
         
         NotifyCenter.registerToSharePublisher(TestSlowEvent5.class);
         NotifyCenter.registerToPublisher(TestEvent6.class, 1024);
-        
         
         final AtomicInteger count1 = new AtomicInteger(0);
         final AtomicInteger count2 = new AtomicInteger(0);
