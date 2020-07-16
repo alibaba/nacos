@@ -181,7 +181,7 @@ public class NacosConfigService implements ConfigService {
         Map<String, String> params = new HashMap<String, String>(4);
         params.put("dataId", dataId);
         params.put("group", group);
-
+        
         if (StringUtils.isNotEmpty(tenant)) {
             params.put("tenant", tenant);
         }
@@ -195,17 +195,17 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ex.toString());
             return false;
         }
-
+        
         if (result.ok()) {
             LOGGER.info("[{}] [remove] ok, dataId={}, group={}, tenant={}", agent.getName(), dataId, group, tenant);
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.getCode()) {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
-                group, tenant, result.getCode(), result.getMessage());
+                    group, tenant, result.getCode(), result.getMessage());
             throw new NacosException(result.getCode(), result.getMessage());
         } else {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
-                group, tenant, result.getCode(), result.getMessage());
+                    group, tenant, result.getCode(), result.getMessage());
             return false;
         }
     }
@@ -222,7 +222,7 @@ public class NacosConfigService implements ConfigService {
         cr.setContent(content);
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
-
+        
         String url = Constants.CONFIG_CONTROLLER_PATH;
         Map<String, String> params = new HashMap<String, String>(6);
         params.put("dataId", dataId);
@@ -241,27 +241,27 @@ public class NacosConfigService implements ConfigService {
         if (StringUtils.isNotEmpty(betaIps)) {
             headers.put("betaIps", betaIps);
         }
-
+        
         HttpRestResult<String> result = null;
         try {
             result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
         } catch (Exception ex) {
-            LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
-                group, ex.toString());
+            LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId, group,
+                    ex.toString());
             return false;
         }
-
+        
         if (result.ok()) {
             LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(), dataId,
-                group, tenant, ContentUtils.truncateContent(content));
+                    group, tenant, ContentUtils.truncateContent(content));
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.getCode()) {
             LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
-                dataId, group, tenant, result.getCode(), result.getMessage());
+                    dataId, group, tenant, result.getCode(), result.getMessage());
             throw new NacosException(result.getCode(), result.getMessage());
         } else {
             LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
-                dataId, group, tenant, result.getCode(), result.getMessage());
+                    dataId, group, tenant, result.getCode(), result.getMessage());
             return false;
         }
         
