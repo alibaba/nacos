@@ -64,7 +64,7 @@ public class ConfigChangeListenRequestHandler extends RequestHandler {
         } else {
             asyncListenContext.addListen(NacosRemoteConstants.LISTEN_CONTEXT_CONFIG, configKey, connectionId);
         }
-        return new ConfigChangeListenResponse(200, "success");
+        return ConfigChangeListenResponse.buildSucessResponse();
     }
 
     @Override

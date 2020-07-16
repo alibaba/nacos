@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,15 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * internal ResponseTypeConstants.
+ * UnKnowResponse.
+ *
  * @author liuzunfei
- * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
+ * @version $Id: UnKnowResponse.java, v 0.1 2020年07月16日 9:47 PM liuzunfei Exp $
  */
-public class ResponseTypeConstants {
+public class UnKnowResponse extends Response {
     
-    public static final String PLAIN_BODY_STRING = "PLAIN_BODY_STRING";
-    
-    public static final String HEART_BEAT = "HEART_BEAT";
-    
-    public static final String CONNECT_SWITCH = "CONNECT_SWITCH";
-    
-    public static final String UNKNOW = "UNKNOW";
-    
-    
+    @Override
+    public String getType() {
+        return ResponseTypeConstants.UNKNOW;
+    }
 }

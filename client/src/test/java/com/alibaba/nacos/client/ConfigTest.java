@@ -38,7 +38,7 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.239.113.204:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
         configService = NacosFactory.createConfigService(properties);
     }
     
@@ -69,7 +69,7 @@ public class ConfigTest {
         String config = configService.getConfig(dataId, group, 3000L);
         System.out.println("查询配置：content=" + config);
     
-        // configService.removeConfig(dataId, group);
+        configService.removeConfig(dataId, group);
     
         String config2 = configService.getConfig(dataId, group, 3000L);
         System.out.println("移除后查询配置：content=" + config2);

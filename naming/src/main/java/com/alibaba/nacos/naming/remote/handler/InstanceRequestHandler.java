@@ -81,18 +81,18 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         instance.setMarked(true);
         instance.validate();
         serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
-        return new InstanceResponse(200, "success", NamingRemoteConstants.REGISTER_INSTANCE);
+        return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
     private Response deregisterInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
             RequestMeta meta) throws NacosException {
         if (!serviceManager.containService(namespace, serviceName)) {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
-            return new InstanceResponse(200, "success", NamingRemoteConstants.DE_REGISTER_INSTANCE);
+            return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
         }
         Instance instance = parseInstance(instanceRequest.getInstance());
         serviceManager.removeInstance(namespace, serviceName, instance.isEphemeral(), instance);
-        return new InstanceResponse(200, "success", NamingRemoteConstants.DE_REGISTER_INSTANCE);
+        return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     
     private Instance parseInstance(com.alibaba.nacos.api.naming.pojo.Instance instance) {
