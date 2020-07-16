@@ -19,7 +19,7 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
 
 /**
- * response type defined in config module
+ * response type defined in config module.
  * @author liuzunfei
  * @version $Id: ConfigResponseTypeConstants.java, v 0.1 2020年07月14日 3:10 PM liuzunfei Exp $
  */
@@ -31,5 +31,8 @@ public class ConfigResponseTypeConstants extends ResponseTypeConstants {
     
     public static final String CONFIG_QUERY = "CONFIG_QUERY";
     
+    public static final String CONFIG_PUBLISH = "CONFIG_PUBLISH";
+    
+    public static final String CONFIG_REMOVE = "CONFIG_REMOVE";
     
 }

@@ -19,11 +19,11 @@ package com.alibaba.nacos.client.remote;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * ChangeListenResponseHandler.
+ * ServerPushResponseHandler.
  * @author liuzunfei
- * @version $Id: ChangeListenResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-public abstract interface ChangeListenResponseHandler<T> {
+public abstract interface ServerPushResponseHandler<T> {
 
     /**
      * handle logic when response ceceive.
