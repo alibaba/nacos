@@ -37,8 +37,11 @@ public class Header {
     
     private final Map<String, String> header;
     
+    private final Map<String, List<String>> originalResponseHeader;
+    
     private Header() {
         header = new LinkedHashMap<String, String>();
+        originalResponseHeader = new LinkedHashMap<String, List<String>>();
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
         addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip");
@@ -120,6 +123,31 @@ public class Header {
         }
     }
     
+    /**
+     * set original format response header.
+     *
+     * Currently only corresponds to the response header of JDK.
+     *
+     * @param headers original response header
+     */
+    public void setOriginalResponseHeader(Map<String, List<String>> headers) {
+        this.originalResponseHeader.putAll(headers);
+        for (Map.Entry<String, List<String>> entry : this.originalResponseHeader.entrySet()) {
+            addParam(entry.getKey(), entry.getValue().get(0));
+        }
+    }
+    
+    /**
+     * get original format response header.
+     *
+     * Currently only corresponds to the response header of JDK.
+     *
+     * @return Map original response header
+     */
+    public Map<String, List<String>> getOriginalResponseHeader() {
+        return this.originalResponseHeader;
+    }
+    
     public String getCharset() {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
@@ -145,6 +173,7 @@ public class Header {
     
     public void clear() {
         header.clear();
+        originalResponseHeader.clear();
     }
     
     @Override

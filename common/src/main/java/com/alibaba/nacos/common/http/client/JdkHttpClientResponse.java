@@ -47,10 +47,7 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         if (this.responseHeader == null) {
             this.responseHeader = Header.newInstance();
         }
-        
-        for (Map.Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
-            this.responseHeader.addParam(entry.getKey(), entry.getValue().get(0));
-        }
+        this.responseHeader.setOriginalResponseHeader(conn.getHeaderFields());
         return this.responseHeader;
     }
     

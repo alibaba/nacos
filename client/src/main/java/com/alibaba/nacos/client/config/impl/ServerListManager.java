@@ -348,7 +348,7 @@ public class ServerListManager implements Closeable {
 
             if (httpResult.ok()) {
                 if (DEFAULT_NAME.equals(name)) {
-                    EnvUtil.setSelfEnv(httpResult.getHeader());
+                    EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
                 }
                 List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
                 List<String> result = new ArrayList<String>(lines.size());
