@@ -89,7 +89,6 @@ public class ConfigQueryRequestHandler extends RequestHandler {
         } catch (Exception e) {
             ConfigQueryResponse contextFail = ConfigQueryResponse
                     .buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
-            e.printStackTrace();
             return contextFail;
         }
         
@@ -175,7 +174,7 @@ public class ConfigQueryRequestHandler extends RequestHandler {
                                 
                                 response.setErrorCode(ConfigQueryResponse.CONFIG_NOT_FOUND);
                                 response.setMessage("config data not exist");
-                                
+                                return response;
                             }
                         }
                     } else {
@@ -207,6 +206,7 @@ public class ConfigQueryRequestHandler extends RequestHandler {
                             
                             response.setErrorCode(ConfigQueryResponse.CONFIG_NOT_FOUND);
                             response.setMessage("config data not exist");
+                            return response;
                             
                         }
                     }

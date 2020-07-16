@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.client.utils;
+
+import com.alibaba.nacos.common.utils.VersionUtils;
 
 /**
- * abstrat rpc server .
+ * ClientCommonUtils.
+ *
  * @author liuzunfei
- * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
+ * @version $Id: ClientCommonUtils.java, v 0.1 2020年07月16日 11:53 AM liuzunfei Exp $
  */
-public abstract class RpcServer {
+public class ClientCommonUtils {
     
-    /**
-     * register a ClientConnectionEventListener.
-     *
-     * @param eventListener eventListener.
-     */
-    public abstract void registerClientConnectionEventListener(ClientConnectionEventListener eventListener);
+    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
     
-    /**
-     * Start sever.
-     */
-    public abstract void start() throws Exception;
-    
-    /**
-     * Stop Server.
-     */
-    public abstract void stop() throws Exception;
     
 }

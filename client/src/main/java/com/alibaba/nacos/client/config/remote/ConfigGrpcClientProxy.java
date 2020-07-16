@@ -17,9 +17,13 @@
 package com.alibaba.nacos.client.config.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeListenRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -111,5 +115,37 @@ public class ConfigGrpcClientProxy {
         ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenat);
         ConfigQueryResponse response = (ConfigQueryResponse) rpcClient.request(request);
         return (ConfigQueryResponse) response;
+    }
+    
+    /**
+     * publish config.
+     *
+     * @param dataid
+     * @param group
+     * @param tenat
+     * @return
+     * @throws NacosException throw where publish fail.
+     */
+    public ConfigPubishResponse publishConfig(String dataid, String group, String tenat, String content)
+            throws NacosException {
+        ConfigPublishRequest request = new ConfigPublishRequest(dataid, group, tenat, content);
+        ConfigPubishResponse response = (ConfigPubishResponse) rpcClient.request(request);
+        return (ConfigPubishResponse) response;
+    }
+    
+    /**
+     * remove config.
+     *
+     * @param dataid
+     * @param group
+     * @param tenat
+     * @return
+     * @throws NacosException throw where publish fail.
+     */
+    public ConfigRemoveResponse removeConfig(String dataid, String group, String tenat, String tag)
+            throws NacosException {
+        ConfigRemoveRequest request = new ConfigRemoveRequest(dataid, group, tenat, tag);
+        ConfigRemoveResponse response = (ConfigRemoveResponse) rpcClient.request(request);
+        return (ConfigRemoveResponse) response;
     }
 }

@@ -22,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class ConnectCoordinator implements ConnectionHeathyChecker {
+    
+    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
     
     @Autowired
     ConnectionManager connectionManager;
@@ -65,15 +69,22 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
                             connectionManager.unregister(conn.getConnectionId());
                             Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ",
                                     conn.getConnectionId());
+                            for (ClientConnectionEventListener listener : clientConnectionEventListeners) {
+                                listener.clientDisConnected(conn);
+                            }
                             
                         }
                     } catch (Exception e) {
-                        Loggers.GRPC.error("error occurs when get rid of expire connection ，connectionid={} ",
+                        Loggers.GRPC.error("error occurs when expel expire connection ，connectionid={} ",
                                 conn.getConnectionId(), e);
                     }
                 }
             }
         }, 500L, 5000L, TimeUnit.MILLISECONDS);
+    }
+    
+    public void registerClientConnectionEventListener(ClientConnectionEventListener listener) {
+        this.clientConnectionEventListeners.add(listener);
     }
     
 }

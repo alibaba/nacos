@@ -34,7 +34,7 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
+import com.alibaba.nacos.client.remote.ServerPushResponseHandler;
 import com.alibaba.nacos.client.remote.ConnectionEventListener;
 import com.alibaba.nacos.client.remote.ServerListFactory;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -96,7 +96,8 @@ public class ClientWorker implements Closeable {
         try {
             rpcClientProxy.listenConfigChange(dataId, group, "");
         } catch (NacosException e) {
-            e.printStackTrace();
+            LOGGER.error("[{}] [sub-server-error] add listen error , dataId={}, group={}, tenant={}", "rpcClientProxy",
+                    dataId, group, "");
         }
     
     }
@@ -121,7 +122,9 @@ public class ClientWorker implements Closeable {
         try {
             rpcClientProxy.unListenConfigChange(dataId, group, "");
         } catch (NacosException e) {
-            e.printStackTrace();
+            LOGGER.error("[{}] [sub-server-error] remove listen error , dataId={}, group={}, tenant={}",
+                    "rpcClientProxy", dataId, group, "");
+            
         }
     
     }
@@ -191,7 +194,8 @@ public class ClientWorker implements Closeable {
         try {
             rpcClientProxy.unListenConfigChange(dataId, group, tenant);
         } catch (NacosException e) {
-            e.printStackTrace();
+            LOGGER.error("[{}] [sub-server-error] rmove listen error , dataId={}, group={}, tenant={}",
+                    "rpcClientProxy", dataId, group, tenant);
         }
     
     }
@@ -315,7 +319,6 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
         String[] ct = new String[2];
@@ -402,7 +405,7 @@ public class ClientWorker implements Closeable {
                     "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
         } else {
             LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
-                    group, tenant, response.getErrorCode());
+                    group, tenant, response);
             throw new NacosException(response.getErrorCode(),
                     "http error, code=" + response.getErrorCode() + ",dataId=" + dataId + ",group=" + group + ",tenant="
                             + tenant);
@@ -661,15 +664,15 @@ public class ClientWorker implements Closeable {
             /*
              * Register Listen Change Handler
              */
-            rpcClientProxy.getRpcClient().registerChangeListenHandler(new ChangeListenResponseHandler() {
+            rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerPushResponseHandler() {
                 @Override
                 public void responseReply(Response myresponse) {
-                
+    
                     if (myresponse instanceof ConfigChangeNotifyResponse) {
                         ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyResponse.getDataId(),
                                 configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant());
-                    
+        
                         if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
                             CacheData cache = cacheMap.get().get(groupKey);
                             try {
@@ -681,13 +684,13 @@ public class ClientWorker implements Closeable {
                                     cache.setType(ct[1]);
                                 }
                                 cache.checkListenerMd5();
-                            
+    
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
                     }
-                
+    
                 }
             
             });
@@ -700,7 +703,7 @@ public class ClientWorker implements Closeable {
                 public void onConnected() {
                 
                 }
-            
+    
                 @Override
                 public void onReconnected() {
                     Collection<CacheData> values = cacheMap.get().values();
@@ -711,14 +714,13 @@ public class ClientWorker implements Closeable {
                         }
                     }
                 }
-            
+    
                 @Override
                 public void onDisConnect() {
                 
                 }
             });
         }
-        
         
     }
     
@@ -856,4 +858,13 @@ public class ClientWorker implements Closeable {
     private int taskPenaltyTime;
     
     private boolean enableRemoteSyncConfig = false;
+    
+    /**
+     * Getter method for property <tt>rpcClientProxy</tt>.
+     *
+     * @return property value of rpcClientProxy
+     */
+    public ConfigGrpcClientProxy getRpcClientProxy() {
+        return rpcClientProxy;
+    }
 }

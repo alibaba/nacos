@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
@@ -192,6 +194,11 @@ public class NacosConfigService implements ConfigService {
             params.add("tag");
             params.add(tag);
         }
+    
+        if (!ParamUtils.useHttpSwitch()) {
+            return removeConfigInRpc(tenant, dataId, group, tag);
+        }
+        
         HttpResult result = null;
         try {
             result = agent.httpDelete(url, null, params, encode, POST_TIMEOUT);
@@ -210,6 +217,19 @@ public class NacosConfigService implements ConfigService {
         } else {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
                     group, tenant, result.code, result.content);
+            return false;
+        }
+    }
+    
+    
+    private boolean removeConfigInRpc(String tenant, String dataId, String group, String tag) {
+        
+        try {
+            ConfigRemoveResponse removeResponse = worker.getRpcClientProxy().removeConfig(dataId, group, tenant, tag);
+            return removeResponse.isSuccess();
+        } catch (Exception e) {
+            LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                    dataId, group, tenant, "unkonw", e.getMessage());
             return false;
         }
     }
@@ -253,6 +273,10 @@ public class NacosConfigService implements ConfigService {
             headers.add("betaIps");
             headers.add(betaIps);
         }
+    
+        if (!ParamUtils.useHttpSwitch()) {
+            return publishConfigWithRpc(dataId, group, tenant, content);
+        }
         
         HttpResult result = null;
         try {
@@ -279,8 +303,17 @@ public class NacosConfigService implements ConfigService {
         
     }
     
-    public boolean publishConfigWithRpc() {
-        return true;
+    boolean publishConfigWithRpc(String dataId, String group, String tenant, String content) {
+        
+        try {
+            ConfigPubishResponse configPubishResponse = worker.getRpcClientProxy()
+                    .publishConfig(dataId, group, tenant, content);
+            return configPubishResponse.isSuccess();
+        } catch (Exception e) {
+            LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                    dataId, group, tenant, "unkonw", e.getMessage());
+            return false;
+        }
     }
     
     @Override

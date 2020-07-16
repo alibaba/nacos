@@ -63,10 +63,17 @@ public class ConfigTest {
         ConfigListener2 listener2 = new ConfigListener2();
     
         configService.getConfigAndSignListener(dataId, group, 5000, listener1);
-        configService.getConfigAndSignListener(dataId, group, 5000, listener2);
     
-        configService.publishConfig(dataId, group, "testchange");
+        boolean testchange = configService.publishConfig(dataId, group, "testchange" + System.currentTimeMillis());
+        System.out.println("发布配置：testchange");
+        String config = configService.getConfig(dataId, group, 3000L);
+        System.out.println("查询配置：content=" + config);
     
+        configService.removeConfig(dataId, group);
+    
+        String config2 = configService.getConfig(dataId, group, 3000L);
+        System.out.println("移除后查询配置：content=" + config2);
+        
         configService.getConfigAndSignListener("lessspring2", group, 5000, listener1);
     
         configService.publishConfig("lessspring2", group, "lessspring2value");

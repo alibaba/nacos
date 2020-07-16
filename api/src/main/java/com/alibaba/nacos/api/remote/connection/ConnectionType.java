@@ -13,22 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.connection;
 
 /**
+ * ConnectionType
  * @author liuzunfei
  * @version $Id: ConnectionType.java, v 0.1 2020年07月13日 7:15 PM liuzunfei Exp $
  */
 public enum ConnectionType {
-
-
-    GRPC("GRPC","Grpc Connection");
-
+    
+    GRPC("GRPC", "Grpc Connection");
+    
     String type;
+    
     String name;
-
-    private ConnectionType(String type, String name){
-        this.type=type;
-        this.name=name;
+    
+    private ConnectionType(String type, String name) {
+        this.type = type;
+        this.name = name;
+    }
+    
+    /**
+     * Getter method for property <tt>type</tt>.
+     *
+     * @return property value of type
+     */
+    public String getType() {
+        return type;
+    }
+    
+    /**
+     * Setter method for property <tt>type</tt>.
+     *
+     * @param type value to be assigned to property type
+     */
+    public void setType(String type) {
+        this.type = type;
+    }
+    
+    /**
+     * Getter method for property <tt>name</tt>.
+     *
+     * @return property value of name
+     */
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * Setter method for property <tt>name</tt>.
+     *
+     * @param name value to be assigned to property name
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 }

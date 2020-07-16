@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.connection.Connection;
 
 /**
- * ChangeListenResponseHandler.
+ * ClientConnectionEventListener.
+ *
  * @author liuzunfei
- * @version $Id: ChangeListenResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: ClientConnectionEventListener.java, v 0.1 2020年07月16日 3:06 PM liuzunfei Exp $
  */
-public abstract interface ChangeListenResponseHandler<T> {
-
+public interface ClientConnectionEventListener {
+    
     /**
-     * handle logic when response ceceive.
-     * @param response.
+     * notified when a client connected.
+     *
+     * @param connect connect.
      */
-    public abstract void responseReply(Response response);
-
+    public void clientConnected(Connection connect);
+    
+    /**
+     * notified when a client disconnected.
+     *
+     * @param connect connect.
+     */
+    public void clientDisConnected(Connection connect);
+    
 }

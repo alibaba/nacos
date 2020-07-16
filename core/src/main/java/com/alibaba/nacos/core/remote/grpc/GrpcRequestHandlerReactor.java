@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * grpc request handler reactor,to connect to thw request handler module.
+ *
  * @author liuzunfei
  * @version $Id: GrpcRequestHandlerReactor.java, v 0.1 2020年07月13日 4:25 PM liuzunfei Exp $
  */
@@ -72,6 +73,7 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp(metadata.getClientIp());
         requestMeta.setConnectionId(metadata.getConnectionId());
+        requestMeta.setClientVersion(metadata.getVersion());
         return requestMeta;
     }
     

@@ -27,34 +27,40 @@ import java.util.Date;
 public class ConnectionMetaInfo {
     
     /**
-     * ConnectionType
+     * ConnectionType.
      */
     String connectType;
     
     /**
-     * Client IP Address
+     * Client IP Address.
      */
     String clientIp;
     
     /**
-     * Identify Unique connectionId
+     * Client version.
+     */
+    String version;
+    
+    /**
+     * Identify Unique connectionId.
      */
     String connectionId;
     
     /**
-     * create time
+     * create time.
      */
     Date createTime;
     
     /**
-     * astActiveTime
+     * astActiveTime.
      */
     long lastActiveTime;
     
-    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType) {
+    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType, String version) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
+        this.version = version;
         this.createTime = new Date();
         this.lastActiveTime = System.currentTimeMillis();
     }
@@ -129,5 +135,41 @@ public class ConnectionMetaInfo {
      */
     public void setLastActiveTime(long lastActiveTime) {
         this.lastActiveTime = lastActiveTime;
+    }
+    
+    /**
+     * Getter method for property <tt>connectType</tt>.
+     *
+     * @return property value of connectType
+     */
+    public String getConnectType() {
+        return connectType;
+    }
+    
+    /**
+     * Setter method for property <tt>connectType</tt>.
+     *
+     * @param connectType value to be assigned to property connectType
+     */
+    public void setConnectType(String connectType) {
+        this.connectType = connectType;
+    }
+    
+    /**
+     * Getter method for property <tt>version</tt>.
+     *
+     * @return property value of version
+     */
+    public String getVersion() {
+        return version;
+    }
+    
+    /**
+     * Setter method for property <tt>version</tt>.
+     *
+     * @param version value to be assigned to property version
+     */
+    public void setVersion(String version) {
+        this.version = version;
     }
 }
