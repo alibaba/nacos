@@ -18,15 +18,10 @@ package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Create a rest template to ensure that each custom client config and rest template are in one-to-one correspondence.
@@ -35,25 +30,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class HttpClientBeanHolder {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
-    
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
     
-    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(10);
+    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(
+            10);
     
-    private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
-    
-    static {
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
-    }
-    
-    public static NacosRestTemplate getNacosRestTemplate() {
-        return getNacosRestTemplate(new DefaultHttpClientFactory());
+    public static NacosRestTemplate getNacosRestTemplate(Logger logger) {
+        return getNacosRestTemplate(new DefaultHttpClientFactory(logger));
     }
     
     public static NacosRestTemplate getNacosRestTemplate(HttpClientFactory httpClientFactory) {
@@ -75,8 +58,8 @@ public final class HttpClientBeanHolder {
         return nacosRestTemplate;
     }
     
-    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate() {
-        return getNacosAsyncRestTemplate(new DefaultHttpClientFactory());
+    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(Logger logger) {
+        return getNacosAsyncRestTemplate(new DefaultHttpClientFactory(logger));
     }
     
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(HttpClientFactory httpClientFactory) {
@@ -99,40 +82,41 @@ public final class HttpClientBeanHolder {
     }
     
     /**
-     * Shutdown http client holder and close all template.
+     * Shutdown http client holder and close remove template.
+     *
+     * @param className HttpClientFactory implement class name
+     * @throws Exception ex
      */
-    public static void shutdown() {
-        if (!ALREADY_SHUTDOWN.compareAndSet(false, true)) {
-            return;
-        }
-        LOGGER.warn("[HttpClientBeanFactory] Start destroying NacosRestTemplate");
-        try {
-            nacostRestTemplateShutdown();
-            nacosAsyncRestTemplateShutdown();
-        } catch (Exception ex) {
-            LOGGER.error("[HttpClientBeanFactory] An exception occurred when the HTTP client was closed : {}",
-                    ExceptionUtil.getStackTrace(ex));
-        }
-        LOGGER.warn("[HttpClientBeanFactory] Destruction of the end");
+    public static void shutdown(String className) throws Exception {
+        shutdownNacostSyncRest(className);
+        shutdownNacosAsyncRest(className);
     }
     
-    private static void nacostRestTemplateShutdown() throws Exception {
-        if (!SINGLETON_REST.isEmpty()) {
-            Collection<NacosRestTemplate> nacosRestTemplates = SINGLETON_REST.values();
-            for (NacosRestTemplate nacosRestTemplate : nacosRestTemplates) {
-                nacosRestTemplate.close();
-            }
-            SINGLETON_REST.clear();
+    /**
+     * Shutdown sync http client holder and remove template.
+     *
+     * @param className HttpClientFactory implement class name
+     * @throws Exception ex
+     */
+    public static void shutdownNacostSyncRest(String className) throws Exception {
+        final NacosRestTemplate nacosRestTemplate = SINGLETON_REST.get(className);
+        if (nacosRestTemplate != null) {
+            nacosRestTemplate.close();
+            SINGLETON_REST.remove(className);
         }
     }
     
-    private static void nacosAsyncRestTemplateShutdown() throws Exception {
-        if (!SINGLETON_ASYNC_REST.isEmpty()) {
-            Collection<NacosAsyncRestTemplate> nacosAsyncRestTemplates = SINGLETON_ASYNC_REST.values();
-            for (NacosAsyncRestTemplate nacosAsyncRestTemplate : nacosAsyncRestTemplates) {
-                nacosAsyncRestTemplate.close();
-            }
-            SINGLETON_ASYNC_REST.clear();
+    /**
+     * Shutdown async http client holder and remove template.
+     *
+     * @param className HttpClientFactory implement class name
+     * @throws Exception ex
+     */
+    public static void shutdownNacosAsyncRest(String className) throws Exception {
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate = SINGLETON_ASYNC_REST.get(className);
+        if (nacosAsyncRestTemplate != null) {
+            nacosAsyncRestTemplate.close();
+            SINGLETON_ASYNC_REST.remove(className);
         }
     }
 }

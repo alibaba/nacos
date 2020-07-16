@@ -16,22 +16,10 @@
 
 package com.alibaba.nacos.common.http.handler;
 
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.HttpClientResponse;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.MediaType;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.apache.http.HttpStatus;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
-
-import org.slf4j.Logger;
 
 /**
  * Response handler.
@@ -39,8 +27,6 @@ import org.slf4j.Logger;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ResponseHandler {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHandler.class);
     
     public static <T> T convert(String s, Class<T> cls) throws Exception {
         return JacksonUtils.toObj(s, cls);
@@ -52,57 +38,5 @@ public final class ResponseHandler {
     
     public static <T> T convert(InputStream inputStream, Type type) throws Exception {
         return JacksonUtils.toObj(inputStream, type);
-    }
-    
-    private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
-        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
-        httpRestResult.setCode(restResult.getCode());
-        httpRestResult.setData(restResult.getData());
-        httpRestResult.setMessage(restResult.getMessage());
-        return httpRestResult;
-    }
-    
-    /**
-     * Extract response entity to {@link HttpRestResult}.
-     *
-     * @param response response
-     * @param type     type
-     * @param <T>      general type
-     * @return {@link HttpRestResult}
-     * @throws Exception exception
-     */
-    @SuppressWarnings({"unchecked", "rawtypes", "resource"})
-    public static <T> HttpRestResult<T> responseEntityExtractor(HttpClientResponse response, Type type)
-            throws Exception {
-        Header headers = response.getHeaders();
-        String contentType = headers.getValue(HttpHeaderConsts.CONTENT_TYPE);
-        InputStream body = response.getBody();
-        T extractBody = null;
-        final boolean typeToStr = String.class.toString().equals(type.toString());
-        if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JSON) && HttpStatus.SC_OK == response
-            .getStatusCode()) {
-            // When the type is string type and the response contentType is [application/json],
-            // then it should be serialized as string
-            if (typeToStr) {
-                extractBody = (T) IoUtils.toString(body, headers.getCharset());
-            } else {
-                extractBody = convert(body, type);
-            }
-        }
-        if (extractBody == null) {
-            if (!typeToStr) {
-                LOGGER.error(
-                    "if the response contentType is not [application/json]," +
-                    " only support to java.lang.String");
-                throw new NacosDeserializationException(type);
-            }
-            extractBody = (T) IoUtils.toString(body, headers.getCharset());
-        }
-        if (extractBody instanceof RestResult) {
-            HttpRestResult<T> httpRestResult = convert((RestResult<T>) extractBody);
-            httpRestResult.setHeader(headers);
-            return httpRestResult;
-        }
-        return new HttpRestResult<T>(response.getHeaders(), response.getStatusCode(), extractBody);
     }
 }

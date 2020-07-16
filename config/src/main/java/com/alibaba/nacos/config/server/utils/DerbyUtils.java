@@ -20,27 +20,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Derby util.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class DerbyUtils {
-
-	private static final String INSERT_INTO_VALUES = "(INSERT INTO .+? VALUES)";
-	private static final Pattern INSERT_INTO_PATTERN = Pattern.compile(INSERT_INTO_VALUES);
-
-	/**
-	 * Because Derby's database table name is uppercase, you need to do a conversion to the insert statement that was inserted
-	 *
-	 * @param sql external database insert sql
-	 * @return derby insert sql
-	 */
-	public static String insertStatementCorrection(String sql) {
-		Matcher matcher = INSERT_INTO_PATTERN.matcher(sql);
-		if (!matcher.find()) {
-			return sql;
-		}
-		final String target = matcher.group(0);
-		final String upperCase = target.toUpperCase().replace("`", "");
-		return sql.replaceFirst(INSERT_INTO_VALUES, upperCase).replace(";", "");
-	}
-
+    
+    private static final String INSERT_INTO_VALUES = "(INSERT INTO .+? VALUES)";
+    
+    private static final Pattern INSERT_INTO_PATTERN = Pattern.compile(INSERT_INTO_VALUES);
+    
+    /**
+     * Because Derby's database table name is uppercase, you need to do a conversion to the insert statement that was
+     * inserted.
+     *
+     * @param sql external database insert sql
+     * @return derby insert sql
+     */
+    public static String insertStatementCorrection(String sql) {
+        Matcher matcher = INSERT_INTO_PATTERN.matcher(sql);
+        if (!matcher.find()) {
+            return sql;
+        }
+        final String target = matcher.group(0);
+        final String upperCase = target.toUpperCase().replace("`", "");
+        return sql.replaceFirst(INSERT_INTO_VALUES, upperCase).replace(";", "");
+    }
+    
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
@@ -23,18 +24,20 @@ import org.slf4j.Logger;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
+ * Log utils.
+ *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @since 0.9.0
  */
 public class LogUtils {
-
+    
     public static final Logger NAMING_LOGGER;
-
+    
     static {
         try {
             boolean isLogback = false;
             AbstractNacosLogging nacosLogging;
-
+            
             try {
                 Class.forName("ch.qos.logback.classic.Logger");
                 nacosLogging = new LogbackNacosLogging();
@@ -42,27 +45,27 @@ public class LogUtils {
             } catch (ClassNotFoundException e) {
                 nacosLogging = new Log4J2NacosLogging();
             }
-
+            
             try {
                 nacosLogging.loadConfiguration();
             } catch (Throwable t) {
                 if (isLogback) {
-                    getLogger(LogUtils.class).warn("Load Logback Configuration of Nacos fail, message: {}",
-                        t.getMessage());
+                    getLogger(LogUtils.class)
+                            .warn("Load Logback Configuration of Nacos fail, message: {}", t.getMessage());
                 } else {
-                    getLogger(LogUtils.class).warn("Load Log4j Configuration of Nacos fail, message: {}",
-                        t.getMessage());
+                    getLogger(LogUtils.class)
+                            .warn("Load Log4j Configuration of Nacos fail, message: {}", t.getMessage());
                 }
             }
-        } catch (Throwable t1) {
-            getLogger(LogUtils.class).warn("Init Nacos Logging fail, message: {}", t1.getMessage());
+        } catch (Throwable ex) {
+            getLogger(LogUtils.class).warn("Init Nacos Logging fail, message: {}", ex.getMessage());
         }
-
+        
         NAMING_LOGGER = getLogger("com.alibaba.nacos.client.naming");
     }
-
+    
     public static Logger logger(Class<?> clazz) {
         return getLogger(clazz);
     }
-
+    
 }

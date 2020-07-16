@@ -19,41 +19,41 @@ package com.alibaba.nacos.client.utils;
 import org.junit.Test;
 
 public class ValidatorUtilsTest {
-
-	@Test
-	public void test_context_path_legal() {
-		String contextPath1 = "/nacos";
-		ValidatorUtils.checkContextPath(contextPath1);
-		String contextPath2 = "nacos";
-		ValidatorUtils.checkContextPath(contextPath2);
-		String contextPath3 = "/";
-		ValidatorUtils.checkContextPath(contextPath3);
-		String contextPath4 = "";
-		ValidatorUtils.checkContextPath(contextPath4);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_context_path_illegal_1() {
-		String contextPath1 = "//nacos/";
-		ValidatorUtils.checkContextPath(contextPath1);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_context_path_illegal_2() {
-		String contextPath2 = "/nacos//";
-		ValidatorUtils.checkContextPath(contextPath2);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_context_path_illegal_3() {
-		String contextPath3 = "///";
-		ValidatorUtils.checkContextPath(contextPath3);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_context_path_illegal_4() {
-		String contextPath4 = "//";
-		ValidatorUtils.checkContextPath(contextPath4);
-	}
-
+    
+    @Test
+    public void testContextPathLegal() {
+        String contextPath1 = "/nacos";
+        ValidatorUtils.checkContextPath(contextPath1);
+        String contextPath2 = "nacos";
+        ValidatorUtils.checkContextPath(contextPath2);
+        String contextPath3 = "/";
+        ValidatorUtils.checkContextPath(contextPath3);
+        String contextPath4 = "";
+        ValidatorUtils.checkContextPath(contextPath4);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testContextPathIllegal1() {
+        String contextPath1 = "//nacos/";
+        ValidatorUtils.checkContextPath(contextPath1);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testContextPathIllegal2() {
+        String contextPath2 = "/nacos//";
+        ValidatorUtils.checkContextPath(contextPath2);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testContextPathIllegal3() {
+        String contextPath3 = "///";
+        ValidatorUtils.checkContextPath(contextPath3);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testContextPathIllegal4() {
+        String contextPath4 = "//";
+        ValidatorUtils.checkContextPath(contextPath4);
+    }
+    
 }
