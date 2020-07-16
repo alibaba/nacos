@@ -109,7 +109,7 @@ public class NamingProxy implements Closeable {
     
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
-        this.securityProxy = new SecurityProxy(properties);
+        this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;

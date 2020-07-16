@@ -82,7 +82,7 @@ public class ParamUtil {
         LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
         
         try {
-            InputStream in = HttpSimpleClient.class.getClassLoader().getResourceAsStream("application.properties");
+            InputStream in = ValidatorUtils.class.getClassLoader().getResourceAsStream("application.properties");
             Properties props = new Properties();
             props.load(in);
             String val = null;
