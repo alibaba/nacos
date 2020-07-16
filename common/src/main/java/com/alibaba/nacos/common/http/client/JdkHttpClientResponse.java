@@ -22,8 +22,6 @@ import com.alibaba.nacos.common.utils.IoUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.util.List;
-import java.util.Map;
 
 /**
  * JDk http client response implement.

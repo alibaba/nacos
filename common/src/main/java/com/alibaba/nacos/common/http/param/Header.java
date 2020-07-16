@@ -126,7 +126,7 @@ public class Header {
     /**
      * set original format response header.
      *
-     * Currently only corresponds to the response header of JDK.
+     * <p>Currently only corresponds to the response header of JDK.
      *
      * @param headers original response header
      */
@@ -140,7 +140,7 @@ public class Header {
     /**
      * get original format response header.
      *
-     * Currently only corresponds to the response header of JDK.
+     * <p>Currently only corresponds to the response header of JDK.
      *
      * @return Map original response header
      */
