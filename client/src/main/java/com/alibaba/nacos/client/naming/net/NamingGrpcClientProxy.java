@@ -18,8 +18,12 @@ package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
+import com.alibaba.nacos.api.naming.remote.response.ServiceQueryResponse;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
@@ -43,18 +47,8 @@ public class NamingGrpcClientProxy {
         rpcClient = RpcClientFactory.getClient("naming");
     }
     
-    public void start() throws NacosException {
-        rpcClient.init(new ServerListFactory() {
-            @Override
-            public String genNextServer() {
-                return "localhost:8848";
-            }
-            
-            @Override
-            public String getCurrentServer() {
-                return "localhost:8848";
-            }
-        });
+    public void start(ServerListFactory serverListFactory) throws NacosException {
+        rpcClient.init(serverListFactory);
         rpcClient.start();
     }
     
@@ -72,9 +66,7 @@ public class NamingGrpcClientProxy {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
         Response response = rpcClient.request(request);
-        if (200 != response.getResultCode()) {
-            throw new NacosException(response.getErrorCode(), response.getMessage());
-        }
+        requestToServer(request, Response.class);
     }
     
     /**
@@ -90,9 +82,43 @@ public class NamingGrpcClientProxy {
                         instance);
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
-        Response response = rpcClient.request(request);
-        if (200 != response.getResultCode()) {
-            throw new NacosException(response.getErrorCode(), response.getMessage());
+        requestToServer(request, Response.class);
+    }
+    
+    /**
+     * Query instance list.
+     *
+     * @param serviceName service name
+     * @param clusters    clusters
+     * @param udpPort     udp port
+     * @param healthyOnly healthy only
+     * @return service info
+     * @throws NacosException nacos exception
+     */
+    public ServiceInfo queryInstancesOfService(String serviceName, String clusters, int udpPort, boolean healthyOnly)
+            throws NacosException {
+        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, serviceName);
+        request.setCluster(clusters);
+        request.setHealthyOnly(healthyOnly);
+        request.setUdpPort(udpPort);
+        ServiceQueryResponse response = requestToServer(request, ServiceQueryResponse.class);
+        return response.getServiceInfo();
+    }
+    
+    private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
+        try {
+            Response response = rpcClient.request(request);
+            if (200 != response.getResultCode()) {
+                throw new NacosException(response.getErrorCode(), response.getMessage());
+            }
+            if (responseClass.isAssignableFrom(response.getClass())) {
+                return (T) response;
+            }
+            NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
+                    response.getClass().getName(), responseClass.getName());
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
+        throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
     }
 }
