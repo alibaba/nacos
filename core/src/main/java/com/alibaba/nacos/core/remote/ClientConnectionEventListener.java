@@ -16,28 +16,28 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.connection.Connection;
+
 /**
- * abstrat rpc server .
+ * ClientConnectionEventListener.
+ *
  * @author liuzunfei
- * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
+ * @version $Id: ClientConnectionEventListener.java, v 0.1 2020年07月16日 3:06 PM liuzunfei Exp $
  */
-public abstract class RpcServer {
+public interface ClientConnectionEventListener {
     
     /**
-     * register a ClientConnectionEventListener.
+     * notified when a client connected.
      *
-     * @param eventListener eventListener.
+     * @param connect connect.
      */
-    public abstract void registerClientConnectionEventListener(ClientConnectionEventListener eventListener);
+    public void clientConnected(Connection connect);
     
     /**
-     * Start sever.
+     * notified when a client disconnected.
+     *
+     * @param connect connect.
      */
-    public abstract void start() throws Exception;
-    
-    /**
-     * Stop Server.
-     */
-    public abstract void stop() throws Exception;
+    public void clientDisConnected(Connection connect);
     
 }

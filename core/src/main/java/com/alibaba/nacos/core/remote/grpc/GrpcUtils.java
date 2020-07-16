@@ -21,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import com.google.protobuf.Any;
@@ -63,14 +64,11 @@ public class GrpcUtils {
      * @return
      */
     public static GrpcResponse buildFailResponse(String msg) {
-        
-        byte[] bytes = new byte[0];
-        try {
-            bytes = msg.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
+    
+        Response response = new Response();
+        response.setErrorCode(ResponseCode.FAIL.getCode());
+        response.setMessage(msg);
+        byte[] bytes = JacksonUtils.toJsonBytes(response);
         GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
         GrpcResponse grpcResponse = GrpcResponse.newBuilder()
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
