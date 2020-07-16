@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,48 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
+package com.alibaba.nacos.api.config.remote.request;
 
 /**
+ * request to remove a config .
+ *
  * @author liuzunfei
- * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
+ * @version $Id: ConfigRemoveRequest.java, v 0.1 2020年07月16日 4:31 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyResponse extends Response {
+public class ConfigRemoveRequest extends ConfigCommonRequest {
     
-    private String dataId;
-
-    private String group;
-
-    private String tenant;
+    String dataId;
     
-    public ConfigChangeNotifyResponse() {
+    String group;
+    
+    String tenant;
+    
+    String tag;
+    
+    public ConfigRemoveRequest() {
     
     }
     
-    public ConfigChangeNotifyResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, resultCode, message);
+    public ConfigRemoveRequest(String dataId, String group, String tenant, String tag) {
+        this.dataId = dataId;
+        this.group = group;
+        this.tag = tag;
+        this.tenant = tenant;
     }
     
-    /**
-     * build success response.
-     *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenant tenant
-     * @return ConfigChangeNotifyResponse
-     */
-    public static ConfigChangeNotifyResponse buildSuccessResponse(String dataId, String group, String tenant) {
-        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse(ResponseCode.SUCCESS.getCode(),
-                "data changed");
-        response.setDataId(dataId);
-        response.setGroup(group);
-        response.setTenant(tenant);
-        return response;
+    @Override
+    public String getType() {
+        return ConfigRequestTypeConstants.REMOVE_CONFIG;
     }
-
+    
     /**
      * Getter method for property <tt>dataId</tt>.
      *
@@ -63,7 +56,25 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getDataId() {
         return dataId;
     }
-
+    
+    /**
+     * Getter method for property <tt>tag</tt>.
+     *
+     * @return property value of tag
+     */
+    public String getTag() {
+        return tag;
+    }
+    
+    /**
+     * Setter method for property <tt>tag</tt>.
+     *
+     * @param tag value to be assigned to property tag
+     */
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+    
     /**
      * Setter method for property <tt>dataId</tt>.
      *
@@ -72,7 +83,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     /**
      * Getter method for property <tt>group</tt>.
      *
@@ -81,7 +92,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getGroup() {
         return group;
     }
-
+    
     /**
      * Setter method for property <tt>group</tt>.
      *
@@ -90,7 +101,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     /**
      * Getter method for property <tt>tenant</tt>.
      *
@@ -99,7 +110,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getTenant() {
         return tenant;
     }
-
+    
     /**
      * Setter method for property <tt>tenant</tt>.
      *

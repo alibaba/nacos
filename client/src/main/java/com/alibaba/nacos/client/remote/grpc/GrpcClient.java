@@ -28,12 +28,12 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
-import com.alibaba.nacos.client.remote.ChangeListenResponseHandler;
+import com.alibaba.nacos.client.remote.ServerPushResponseHandler;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientStatus;
 import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.client.utils.ClientCommonUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.google.protobuf.Any;
@@ -42,7 +42,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
-import sun.management.resources.agent;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -106,14 +105,14 @@ public class GrpcClient extends RpcClient {
         
         rpcClientStatus = RpcClientStatus.RUNNING;
     
-        super.registerChangeListenHandler(new ChangeListenResponseHandler() {
+        super.registerServerPushResponseHandler(new ServerPushResponseHandler() {
             @Override
             public void responseReply(Response response) {
                 if (response instanceof ConnectResetResponse) {
                     try {
                         buildClient();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOGGER.error("rebuildClient error ", e);
                     }
     
                 }
@@ -135,7 +134,6 @@ public class GrpcClient extends RpcClient {
                         .build()).build();
         GrpcResponse response = grpcServiceStub.request(streamRequest);
     }
-    
     
     private void buildClient() throws NacosException {
         
@@ -161,7 +159,7 @@ public class GrpcClient extends RpcClient {
         grpcServiceStub = RequestGrpc.newBlockingStub(channel);
         
         GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                .build();
+                .setVersion(ClientCommonUtils.VERSION).build();
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).build();
         
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
@@ -185,10 +183,10 @@ public class GrpcClient extends RpcClient {
                     response = myresponse;
                 }
     
-                changeListenReplyListeners.forEach(new Consumer<ChangeListenResponseHandler>() {
+                serverPushResponseListeners.forEach(new Consumer<ServerPushResponseHandler>() {
                     @Override
-                    public void accept(ChangeListenResponseHandler changeListenResponseHandler) {
-                        changeListenResponseHandler.responseReply(response);
+                    public void accept(ServerPushResponseHandler serverPushResponseHandler) {
+                        serverPushResponseHandler.responseReply(response);
                     }
                 });
             }

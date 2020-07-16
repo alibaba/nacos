@@ -18,7 +18,9 @@ package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
@@ -50,9 +52,10 @@ public class ResponseRegistry {
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_CHANGE, ConfigChangeListenResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, ConfigChangeNotifyResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_QUERY, ConfigQueryResponse.class);
-        
+        REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_PUBLISH, ConfigPubishResponse.class);
+        REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_REMOVE, ConfigRemoveResponse.class);
+    
         //naming response registry
-        //REGISTRY_RESPONSES.put(NamingRequestTypeConstants.SERVICE_INSTANCE_CHANGE, ServiceI.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.REGISTER_INSTANCE, InstanceResponse.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.DE_REGISTER_INSTANCE, InstanceResponse.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.QUERY_SERVICE, ServiceQueryResponse.class);
