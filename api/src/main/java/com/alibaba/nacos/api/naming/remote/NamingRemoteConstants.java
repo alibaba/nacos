@@ -30,4 +30,6 @@ public class NamingRemoteConstants {
     
     public static final String SUBSCRIBE_SERVICE = "subscribeService";
     
+    public static final String QUERY_SERVICE = "queryService";
+    
 }

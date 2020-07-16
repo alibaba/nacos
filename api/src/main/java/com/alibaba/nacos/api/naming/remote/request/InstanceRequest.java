@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 
 /**
  * Nacos instances request.
@@ -31,10 +30,6 @@ public class InstanceRequest extends NamingCommonRequest {
     private Instance instance;
     
     public InstanceRequest() {
-    }
-    
-    public InstanceRequest(String namespace, String type, Instance instance) {
-        this(namespace, instance.getServiceName(), NamingUtils.getGroupName(instance.getServiceName()), type, instance);
     }
     
     public InstanceRequest(String namespace, String serviceName, String type, Instance instance) {

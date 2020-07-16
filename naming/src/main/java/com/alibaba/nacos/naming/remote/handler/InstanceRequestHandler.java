@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.remote;
+package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
@@ -59,30 +59,40 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         String serviceName = instanceRequest.getServiceName();
         switch (instanceRequest.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
-                if (!serviceManager.containService(namespace, serviceName)) {
-                    serviceManager.createEmptyService(namespace, serviceName, false);
-                }
-                Instance instance = parseInstance(instanceRequest.getInstance());
-                instance.setServiceName(serviceName);
-                instance.setInstanceId(instance.generateInstanceId());
-                instance.setLastBeat(System.currentTimeMillis());
-                // Register instance by connection, do not need keep alive by beat.
-                instance.setMarked(true);
-                instance.validate();
-                serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
-                break;
+                return registerInstance(namespace, serviceName, instanceRequest, meta);
             case NamingRemoteConstants.DE_REGISTER_INSTANCE:
-                if (!serviceManager.containService(namespace, serviceName)) {
-                    Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
-                    return new InstanceResponse(200, "success", request.getType());
-                }
-                instance = parseInstance(instanceRequest.getInstance());
-                serviceManager.removeInstance(namespace, serviceName, instance.isEphemeral(), instance);
-                break;
+                return deregisterInstance(namespace, serviceName, instanceRequest, meta);
             default:
-                throw new NacosException(NacosException.INVALID_PARAM, String.format("Unsupported request type %s", instanceRequest.getType()));
+                throw new NacosException(NacosException.INVALID_PARAM,
+                        String.format("Unsupported request type %s", instanceRequest.getType()));
         }
-        return new InstanceResponse(200, "success", request.getType());
+    }
+    
+    private Response registerInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
+            RequestMeta meta) throws NacosException {
+        if (!serviceManager.containService(namespace, serviceName)) {
+            serviceManager.createEmptyService(namespace, serviceName, false);
+        }
+        Instance instance = parseInstance(instanceRequest.getInstance());
+        instance.setServiceName(serviceName);
+        instance.setInstanceId(instance.generateInstanceId());
+        instance.setLastBeat(System.currentTimeMillis());
+        // Register instance by connection, do not need keep alive by beat.
+        instance.setMarked(true);
+        instance.validate();
+        serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
+        return new InstanceResponse(200, "success", NamingRemoteConstants.REGISTER_INSTANCE);
+    }
+    
+    private Response deregisterInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
+            RequestMeta meta) throws NacosException {
+        if (!serviceManager.containService(namespace, serviceName)) {
+            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
+            return new InstanceResponse(200, "success", NamingRemoteConstants.DE_REGISTER_INSTANCE);
+        }
+        Instance instance = parseInstance(instanceRequest.getInstance());
+        serviceManager.removeInstance(namespace, serviceName, instance.isEphemeral(), instance);
+        return new InstanceResponse(200, "success", NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     
     private Instance parseInstance(com.alibaba.nacos.api.naming.pojo.Instance instance) {
@@ -98,7 +108,6 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     
     @Override
     public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRemoteConstants.REGISTER_INSTANCE,
-                NamingRemoteConstants.DE_REGISTER_INSTANCE);
+        return Lists.newArrayList(NamingRemoteConstants.REGISTER_INSTANCE, NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
 }
