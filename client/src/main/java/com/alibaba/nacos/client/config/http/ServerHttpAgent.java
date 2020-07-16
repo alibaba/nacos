@@ -153,7 +153,7 @@ public class ServerHttpAgent implements HttpAgent {
                 }
                 HttpRestResult<String> result = NACOS_RESTTEMPLATE
                         .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
-                                new HashMap<String, String>(), paramValues, String.class);
+                                new HashMap<String, String>(0), paramValues, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,

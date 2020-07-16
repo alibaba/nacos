@@ -178,7 +178,7 @@ public class NacosConfigService implements ConfigService {
         group = null2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         String url = Constants.CONFIG_CONTROLLER_PATH;
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<String, String>(4);
         params.put("dataId", dataId);
         params.put("group", group);
 
@@ -224,7 +224,7 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
 
         String url = Constants.CONFIG_CONTROLLER_PATH;
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<String, String>(6);
         params.put("dataId", dataId);
         params.put("group", group);
         params.put("content", content);
@@ -237,7 +237,7 @@ public class NacosConfigService implements ConfigService {
         if (StringUtils.isNotEmpty(tag)) {
             params.put("tag", tag);
         }
-        Map<String, String> headers = new HashMap<String, String>();
+        Map<String, String> headers = new HashMap<String, String>(1);
         if (StringUtils.isNotEmpty(betaIps)) {
             headers.put("betaIps", betaIps);
         }

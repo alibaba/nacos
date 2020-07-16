@@ -35,7 +35,7 @@ import java.util.Map;
 public class SpasAdapter {
 
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
-        Map<String, String> header = new HashMap<String, String>();
+        Map<String, String> header = new HashMap<String, String>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
         header.put("Timestamp", timeStamp);
         if (secretKey != null) {
