@@ -15,9 +15,11 @@
  */
 package com.alibaba.nacos.config.server.configuration.datasource;
 
+import com.alibaba.nacos.config.server.configuration.NacosMultipleDataSourceProperties;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
@@ -25,6 +27,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -34,36 +37,58 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Nacos
  */
 @Slf4j
 public class DynamicDataSource implements DataSource, InitializingBean {
+
     public static final String KEEPALIVE_SQL = "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'";
-    private final HikariDataSource master;
-    private final HikariDataSource slave;
+
+    private List<HikariDataSource> dataSourceList;
+    private final NacosMultipleDataSourceProperties multipleDataSourceProperties;
+    private final DataSourceProperties properties;
     private volatile HikariDataSource currentDataSource;
     private static ScheduledExecutorService scheduledExecutorService = Executors
-            .newScheduledThreadPool(10, new ThreadFactory() {
-                AtomicInteger count = new AtomicInteger(0);
+        .newScheduledThreadPool(10, new ThreadFactory() {
+            AtomicInteger count = new AtomicInteger(0);
 
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setDaemon(true);
-                    t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
-                    return t;
-                }
-            });
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
+                return t;
+            }
+        });
 
-    public DynamicDataSource(HikariDataSource master, HikariDataSource slave) {
-        this.master = master;
-        this.slave = slave;
-        this.currentDataSource = master;
+    public DynamicDataSource(NacosMultipleDataSourceProperties multipleDataSourceProperties, DataSourceProperties properties) {
+        this.multipleDataSourceProperties = multipleDataSourceProperties;
+        this.properties = properties;
+        initDataSource();
+        initMasterDataSource();
     }
 
+    private void initDataSource() {
+        List<DataSourceProperties> dsPropertiesList = multipleDataSourceProperties.getRelational().getDsList();
+        dataSourceList = dsPropertiesList.stream().map(this::createDataSource).collect(Collectors.toList());
+    }
+
+    private void initMasterDataSource() {
+        dataSourceList.stream()
+            .filter(dataSource -> checkMasterDataSource(dataSource))
+            .findFirst()
+            .ifPresent(dataSource -> this.currentDataSource = dataSource);
+    }
+
+    private HikariDataSource createDataSource(DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+    }
+
+    private boolean checkMasterDataSource(DataSource dataSource) {
+        return true;
+    }
 
     @Override
     public Connection getConnection() throws SQLException {
@@ -114,15 +139,14 @@ public class DynamicDataSource implements DataSource, InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         scheduledExecutorService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
-                TimeUnit.SECONDS);
+            TimeUnit.SECONDS);
     }
 
     class SelectMasterTask implements Runnable {
 
         @Override
         public void run() {
-            List<HikariDataSource> dataSources = Stream.of(master, slave).collect(Collectors.toList());
-            for (HikariDataSource dataSource : dataSources) {
+            for (HikariDataSource dataSource : dataSourceList) {
                 try {
                     executeSql(dataSource);
                     if (!Objects.equals(currentDataSource, dataSource)) {
@@ -132,9 +156,8 @@ public class DynamicDataSource implements DataSource, InitializingBean {
                     break;
                 } catch (SQLException e) {
                     log.error("{} was down, Error Code:{}", dataSource.getPoolName(),
-                            e.getMessage());
+                        e.getMessage());
                 }
-
             }
         }
     }
@@ -145,4 +168,6 @@ public class DynamicDataSource implements DataSource, InitializingBean {
             statement.execute(KEEPALIVE_SQL);
         }
     }
+
+
 }

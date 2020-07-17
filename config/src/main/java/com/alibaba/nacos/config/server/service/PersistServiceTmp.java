@@ -30,7 +30,6 @@ import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.modules.entity.TenantInfo;
 import com.alibaba.nacos.config.server.modules.repository.*;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -226,10 +225,10 @@ public class PersistServiceTmp {
             configInfoBeta.setSrcIp(srcIp);
             configInfoBeta.setSrcUser(srcUser);
             configInfoBetaRepository.save(configInfoBeta);
-            if (notify) {
-                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
-                    tenantTmp, time.getTime()));
-            }
+//            if (notify) {
+//                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
+//                    tenantTmp, time.getTime()));
+//            }
 
         } catch (CannotGetJdbcConnectionException e) {
             log.error("[db-error] " + e.toString(), e);
@@ -259,10 +258,10 @@ public class PersistServiceTmp {
             configInfoBeta.setSrcIp(srcIp);
             configInfoBeta.setTenantId(tenantTmp);
             configInfoBetaRepository.save(configInfoBeta);
-            if (notify) {
-                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
-                    tenantTmp, time.getTime()));
-            }
+//            if (notify) {
+//                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
+//                    tenantTmp, time.getTime()));
+//            }
         } catch (CannotGetJdbcConnectionException e) {
             log.error("[db-error] " + e.toString(), e);
             throw e;
@@ -292,10 +291,10 @@ public class PersistServiceTmp {
             configInfoTag.setSrcUser(srcUser);
             configInfoTag.setSrcIp(srcIp);
             configInfoTagRepository.save(configInfoTag);
-            if (notify) {
-                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-                    configInfo.getGroupId(), tenantTmp, tagTmp, time.getTime()));
-            }
+//            if (notify) {
+//                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
+//                    configInfo.getGroupId(), tenantTmp, tagTmp, time.getTime()));
+//            }
         } catch (CannotGetJdbcConnectionException e) {
             log.error("[db-error] " + e.toString(), e);
             throw e;
@@ -325,10 +324,10 @@ public class PersistServiceTmp {
             configInfoTag.setSrcUser(srcUser);
             configInfoTag.setSrcIp(srcIp);
             configInfoTagRepository.save(configInfoTag);
-            if (notify) {
-                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
-                    tenantTmp, tagTmp, time.getTime()));
-            }
+//            if (notify) {
+//                EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, configInfo.getDataId(), configInfo.getGroupId(),
+//                    tenantTmp, tagTmp, time.getTime()));
+//            }
 
         } catch (CannotGetJdbcConnectionException e) {
             log.error("[db-error] " + e.toString(), e);
@@ -769,11 +768,11 @@ public class PersistServiceTmp {
                     addConfigTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroupId(),
                         configInfo.getTenantId());
                     insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
-                    if (notify) {
-                        EventDispatcher.fireEvent(
-                            new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroupId(),
-                                configInfo.getTenantId(), time.getTime()));
-                    }
+//                    if (notify) {
+//                        EventDispatcher.fireEvent(
+//                            new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroupId(),
+//                                configInfo.getTenantId(), time.getTime()));
+//                    }
                 } catch (CannotGetJdbcConnectionException e) {
                     log.error("[db-error] " + e.toString(), e);
                     throw e;
@@ -886,10 +885,10 @@ public class PersistServiceTmp {
                             configInfo.getGroupId(), configInfo.getTenantId());
                     }
                     insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
-                    if (notify) {
-                        EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-                            configInfo.getGroupId(), configInfo.getTenantId(), time.getTime()));
-                    }
+//                    if (notify) {
+//                        EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
+//                            configInfo.getGroupId(), configInfo.getTenantId(), time.getTime()));
+//                    }
                 } catch (CannotGetJdbcConnectionException e) {
                     log.error("[db-error] " + e.toString(), e);
                     throw e;

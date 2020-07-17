@@ -78,9 +78,9 @@
 //        return Streamable.of("com.alibaba.nacos.config.server.modules.repository");
 //    }
 //
-////    @EnableJpaRepositories
-////    private static class EnableJpaRepositoriesConfiguration {
-////
-////    }
+//    @EnableJpaRepositories
+//    private static class EnableJpaRepositoriesConfiguration {
+//
+//    }
 //
 //}
