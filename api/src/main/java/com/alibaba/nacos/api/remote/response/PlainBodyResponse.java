@@ -30,8 +30,9 @@ public class PlainBodyResponse extends Response {
     
     }
     
-    public PlainBodyResponse(int resultCode, String message) {
-        super(ResponseTypeConstants.PLAIN_BODY_STRING, resultCode, message);
+    @Override
+    public String getType() {
+        return ResponseTypeConstants.PLAIN_BODY_STRING;
     }
     
     /**

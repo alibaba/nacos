@@ -31,8 +31,9 @@ public class ConfigRemoveResponse extends Response {
         super();
     }
     
-    public ConfigRemoveResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_REMOVE, resultCode, message);
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_REMOVE;
     }
     
     /**
@@ -41,7 +42,7 @@ public class ConfigRemoveResponse extends Response {
      * @return
      */
     public static ConfigRemoveResponse buildSuccessResponse() {
-        return new ConfigRemoveResponse(ResponseCode.SUCCESS.getCode(), "");
+        return new ConfigRemoveResponse();
     }
     
     /**
@@ -50,6 +51,9 @@ public class ConfigRemoveResponse extends Response {
      * @return
      */
     public static ConfigRemoveResponse buildFailResponse(String errorMsg) {
-        return new ConfigRemoveResponse(ResponseCode.FAIL.getCode(), errorMsg);
+        ConfigRemoveResponse removeResponse = new ConfigRemoveResponse();
+        removeResponse.setResultCode(ResponseCode.FAIL.getCode());
+        removeResponse.setMessage(errorMsg);
+        return removeResponse;
     }
 }

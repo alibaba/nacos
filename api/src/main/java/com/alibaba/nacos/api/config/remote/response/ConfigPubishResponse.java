@@ -31,8 +31,9 @@ public class ConfigPubishResponse extends Response {
         super();
     }
     
-    public ConfigPubishResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_PUBLISH, resultCode, message);
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_PUBLISH;
     }
     
     /**
@@ -41,7 +42,7 @@ public class ConfigPubishResponse extends Response {
      * @return
      */
     public static ConfigPubishResponse buildSuccessResponse() {
-        return new ConfigPubishResponse(ResponseCode.SUCCESS.getCode(), "");
+        return new ConfigPubishResponse();
     }
     
     /**
@@ -50,6 +51,9 @@ public class ConfigPubishResponse extends Response {
      * @return
      */
     public static ConfigPubishResponse buildFailResponse(String errorMsg) {
-        return new ConfigPubishResponse(ResponseCode.FAIL.getCode(), errorMsg);
+        ConfigPubishResponse configPubishResponse = new ConfigPubishResponse();
+        configPubishResponse.setResultCode(ResponseCode.FAIL.getCode());
+        configPubishResponse.setMessage(errorMsg);
+        return configPubishResponse;
     }
 }

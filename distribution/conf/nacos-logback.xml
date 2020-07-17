@@ -476,7 +476,43 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
+    
+    
+    <appender name="grpc-core"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/grpc-core.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/grpc-core.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="grpc-digest"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/grpc-digest.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/grpc-digest.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    
     <logger name="com.alibaba.nacos.address.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="nacos-address"/>
@@ -486,7 +522,17 @@
         <level value="INFO"/>
         <appender-ref ref="cmdb-main"/>
     </logger>
-
+    
+    <logger name="com.alibaba.nacos.core.grpc" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="grpc-core"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.core.grpc.digest" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="grpc-digest"/>
+    </logger>
+    
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="async-naming-server"/>

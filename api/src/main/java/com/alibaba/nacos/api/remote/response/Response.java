@@ -24,13 +24,11 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class Response {
     
-    int resultCode;
+    int resultCode = ResponseCode.SUCCESS.getCode();
     
     int errorCode;
     
     String message;
-    
-    String type;
     
     /**
      * Check Response  is Successd.
@@ -42,18 +40,14 @@ public class Response {
     }
     
     public Response() {
-    
     }
     
-    public Response(String type) {
-        this.type = type;
-    }
-    
-    public Response(String type, int resultCode, String message) {
-        this.type = type;
-        this.resultCode = resultCode;
-        this.message = message;
-    }
+    /**
+     * get type.
+     *
+     * @return type value;
+     */
+    public abstract String getType();
     
     /**
      * Getter method for property <tt>resultCode</tt>.
@@ -107,24 +101,6 @@ public class Response {
      */
     public void setErrorCode(int errorCode) {
         this.errorCode = errorCode;
-    }
-    
-    /**
-     * Getter method for property <tt>type</tt>.
-     *
-     * @return property value of type
-     */
-    public String getType() {
-        return type;
-    }
-    
-    /**
-     * Setter method for property <tt>type</tt>.
-     *
-     * @param type value to be assigned to property type
-     */
-    public void setType(String type) {
-        this.type = type;
     }
     
 }

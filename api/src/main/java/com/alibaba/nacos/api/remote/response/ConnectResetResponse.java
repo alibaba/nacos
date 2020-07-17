@@ -24,7 +24,8 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class ConnectResetResponse extends Response {
     
-    public ConnectResetResponse(int resultCode, String message) {
-        super(ResponseTypeConstants.CONNECT_SWITCH, resultCode, message);
+    @Override
+    public String getType() {
+        return ResponseTypeConstants.CONNECT_SWITCH;
     }
 }
