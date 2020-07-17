@@ -64,7 +64,6 @@ public class GrpcUtils {
      * @return
      */
     public static GrpcResponse buildFailResponse(String msg) {
-    
         UnKnowResponse response = new UnKnowResponse();
         response.setErrorCode(ResponseCode.FAIL.getCode());
         response.setMessage(msg);

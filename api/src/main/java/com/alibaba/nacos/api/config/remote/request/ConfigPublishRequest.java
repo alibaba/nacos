@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,48 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.response;
-
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
+package com.alibaba.nacos.api.config.remote.request;
 
 /**
+ * request to publish a config.
+ *
  * @author liuzunfei
- * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
+ * @version $Id: ConfigPublishRequest.java, v 0.1 2020年07月16日 4:30 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyResponse extends Response {
+public class ConfigPublishRequest extends ConfigCommonRequest {
     
-    private String dataId;
+    String dataId;
     
-    private String group;
+    String group;
     
-    private String tenant;
+    String tenant;
     
-    public ConfigChangeNotifyResponse() {
+    String content;
     
+    public ConfigPublishRequest() {
+    
+    }
+    
+    public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
+        this.content = content;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = tenant;
     }
     
     @Override
     public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY;
+        return ConfigRequestTypeConstants.PUBLISH_CONFIG;
     }
     
-    /**
-     * build success response.
-     *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenant tenant
-     * @return ConfigChangeNotifyResponse
-     */
-    public static ConfigChangeNotifyResponse buildSuccessResponse(String dataId, String group, String tenant) {
-        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse();
-        response.setDataId(dataId);
-        response.setGroup(group);
-        response.setTenant(tenant);
-        return response;
-    }
-
     /**
      * Getter method for property <tt>dataId</tt>.
      *
@@ -90,6 +82,24 @@ public class ConfigChangeNotifyResponse extends Response {
      */
     public void setGroup(String group) {
         this.group = group;
+    }
+    
+    /**
+     * Getter method for property <tt>content</tt>.
+     *
+     * @return property value of content
+     */
+    public String getContent() {
+        return content;
+    }
+    
+    /**
+     * Setter method for property <tt>content</tt>.
+     *
+     * @param content value to be assigned to property content
+     */
+    public void setContent(String content) {
+        this.content = content;
     }
     
     /**

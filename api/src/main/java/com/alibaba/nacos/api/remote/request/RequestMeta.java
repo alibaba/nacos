@@ -21,6 +21,7 @@ import java.util.Map;
 
 /**
  * RequestMeta info.
+ *
  * @author liuzunfei
  * @version $Id: RequestMeta.java, v 0.1 2020年07月14日 10:32 AM liuzunfei Exp $
  */
@@ -30,7 +31,27 @@ public class RequestMeta {
     
     private String clientIp;
     
+    private String clientVersion;
+    
     private Map<String, String> labels = new HashMap<String, String>();
+    
+    /**
+     * Getter method for property <tt>clientVersion</tt>.
+     *
+     * @return property value of clientVersion
+     */
+    public String getClientVersion() {
+        return clientVersion;
+    }
+    
+    /**
+     * Setter method for property <tt>clientVersion</tt>.
+     *
+     * @param clientVersion value to be assigned to property clientVersion
+     */
+    public void setClientVersion(String clientVersion) {
+        this.clientVersion = clientVersion;
+    }
     
     /**
      * Getter method for property <tt>labels</tt>.

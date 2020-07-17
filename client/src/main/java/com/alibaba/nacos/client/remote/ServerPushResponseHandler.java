@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.client.remote;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * abstrat rpc server .
+ * ServerPushResponseHandler.
  * @author liuzunfei
- * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
+ * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-public abstract class RpcServer {
-    
+public abstract interface ServerPushResponseHandler<T> {
+
     /**
-     * register a ClientConnectionEventListener.
-     *
-     * @param eventListener eventListener.
+     * handle logic when response ceceive.
+     * @param response.
      */
-    public abstract void registerClientConnectionEventListener(ClientConnectionEventListener eventListener);
-    
-    /**
-     * Start sever.
-     */
-    public abstract void start() throws Exception;
-    
-    /**
-     * Stop Server.
-     */
-    public abstract void stop() throws Exception;
-    
+    public abstract void responseReply(Response response);
+
 }

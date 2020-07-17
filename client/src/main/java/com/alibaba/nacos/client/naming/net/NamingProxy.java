@@ -36,6 +36,7 @@ import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.ClientCommonUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -647,7 +648,7 @@ public class NamingProxy implements Closeable {
     public Header builderHeader() {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
-        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION);
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, ClientCommonUtils.VERSION);
         header.addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip,deflate,sdch");
         header.addParam(HttpHeaderConsts.CONNECTION, "Keep-Alive");
         header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());

@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.remote.grpc.GrpcClient;
 import com.alibaba.nacos.client.utils.LogUtils;
 import org.slf4j.Logger;
 
@@ -61,7 +60,7 @@ public abstract class RpcClient {
     /**
      * change listeners handler registry.
      */
-    protected List<ChangeListenResponseHandler> changeListenReplyListeners = new ArrayList<ChangeListenResponseHandler>();
+    protected List<ServerPushResponseHandler> serverPushResponseListeners = new ArrayList<ServerPushResponseHandler>();
     
     public RpcClient() {
     }
@@ -120,14 +119,14 @@ public abstract class RpcClient {
     /**
      * register change listeners ,will be called when server send change notify response th current client.
      *
-     * @param changeListenResponseHandler changeListenResponseHandler
+     * @param serverPushResponseHandler serverPushResponseHandler
      */
-    public void registerChangeListenHandler(ChangeListenResponseHandler changeListenResponseHandler) {
+    public void registerServerPushResponseHandler(ServerPushResponseHandler serverPushResponseHandler) {
         LOGGER.info(
-                " Registry change listen response  listener to current client,connectionId={}, connectionEventListener={}",
-                this.connectionId, changeListenResponseHandler.getClass().getName());
-        
-        this.changeListenReplyListeners.add(changeListenResponseHandler);
+                " Registry server push response  listener to current client,connectionId={}, connectionEventListener={}",
+                this.connectionId, serverPushResponseHandler.getClass().getName());
+    
+        this.serverPushResponseListeners.add(serverPushResponseHandler);
     }
     
     /**
