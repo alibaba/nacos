@@ -41,14 +41,18 @@ public class ConfigQueryResponse extends Response {
     Map<String, String> labels = new HashMap<String, String>();
     
     public ConfigQueryResponse() {
-        super(ConfigResponseTypeConstants.CONFIG_QUERY);
+    }
+    
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_QUERY;
     }
     
     /**
      * add label to this response.
      *
-     * @param key
-     * @param value
+     * @param key   key.
+     * @param value value.
      */
     public void addLabel(String key, String value) {
         this.labels.put(key, value);
@@ -62,19 +66,21 @@ public class ConfigQueryResponse extends Response {
      * @return
      */
     public static ConfigQueryResponse buildFailResponse(int errorCode, String message) {
-        ConfigQueryResponse response = new ConfigQueryResponse(ResponseCode.FAIL.getCode(), message);
+        ConfigQueryResponse response = new ConfigQueryResponse();
+        response.setResultCode(ResponseCode.FAIL.getCode());
         response.setErrorCode(errorCode);
+        response.setMessage(message);
         return response;
     }
     
     /**
      * Buidl success resposne.
      *
-     * @param content.
+     * @param content content.
      * @return
      */
     public static ConfigQueryResponse buildSuccessResponse(String content) {
-        ConfigQueryResponse response = new ConfigQueryResponse(ResponseCode.SUCCESS.getCode(), "");
+        ConfigQueryResponse response = new ConfigQueryResponse();
         response.setContent(content);
         return response;
     }
@@ -113,10 +119,6 @@ public class ConfigQueryResponse extends Response {
      */
     public void setContent(String content) {
         this.content = content;
-    }
-    
-    public ConfigQueryResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_QUERY, resultCode, message);
     }
     
     /**

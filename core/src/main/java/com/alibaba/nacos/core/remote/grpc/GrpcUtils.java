@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import java.io.UnsupportedEncodingException;
-
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.remote.response.UnKnowResponse;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * GrpcUtils.
@@ -64,8 +64,7 @@ public class GrpcUtils {
      * @return
      */
     public static GrpcResponse buildFailResponse(String msg) {
-    
-        Response response = new Response();
+        UnKnowResponse response = new UnKnowResponse();
         response.setErrorCode(ResponseCode.FAIL.getCode());
         response.setMessage(msg);
         byte[] bytes = JacksonUtils.toJsonBytes(response);

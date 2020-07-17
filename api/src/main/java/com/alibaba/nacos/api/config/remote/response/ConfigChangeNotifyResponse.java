@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
@@ -25,17 +26,18 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 public class ConfigChangeNotifyResponse extends Response {
     
     private String dataId;
-
+    
     private String group;
-
+    
     private String tenant;
     
     public ConfigChangeNotifyResponse() {
     
     }
     
-    public ConfigChangeNotifyResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, resultCode, message);
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY;
     }
     
     /**
@@ -47,8 +49,7 @@ public class ConfigChangeNotifyResponse extends Response {
      * @return ConfigChangeNotifyResponse
      */
     public static ConfigChangeNotifyResponse buildSuccessResponse(String dataId, String group, String tenant) {
-        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse(ResponseCode.SUCCESS.getCode(),
-                "data changed");
+        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse();
         response.setDataId(dataId);
         response.setGroup(group);
         response.setTenant(tenant);
@@ -63,7 +64,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getDataId() {
         return dataId;
     }
-
+    
     /**
      * Setter method for property <tt>dataId</tt>.
      *
@@ -72,7 +73,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
+    
     /**
      * Getter method for property <tt>group</tt>.
      *
@@ -81,7 +82,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getGroup() {
         return group;
     }
-
+    
     /**
      * Setter method for property <tt>group</tt>.
      *
@@ -90,7 +91,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public void setGroup(String group) {
         this.group = group;
     }
-
+    
     /**
      * Getter method for property <tt>tenant</tt>.
      *
@@ -99,7 +100,7 @@ public class ConfigChangeNotifyResponse extends Response {
     public String getTenant() {
         return tenant;
     }
-
+    
     /**
      * Setter method for property <tt>tenant</tt>.
      *

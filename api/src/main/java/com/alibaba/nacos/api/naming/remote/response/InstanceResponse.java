@@ -25,15 +25,18 @@ import com.alibaba.nacos.api.remote.response.Response;
  */
 public class InstanceResponse extends Response {
     
+    private String type;
+    
     public InstanceResponse() {
     }
     
-    public InstanceResponse(int resultCode, String message, String type) {
-        this(resultCode, 0, message, type);
+    @Override
+    public String getType() {
+        return this.type;
     }
     
-    public InstanceResponse(int resultCode, int errorCode, String message, String type) {
-        super(type, resultCode, message);
-        setErrorCode(errorCode);
+    public InstanceResponse(String type) {
+        this.type = type;
     }
+    
 }

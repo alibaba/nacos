@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
  * ConfigChangeListenResponse.
@@ -26,13 +27,37 @@ import com.alibaba.nacos.api.remote.response.Response;
  */
 public class ConfigChangeListenResponse extends Response {
     
-    
     public ConfigChangeListenResponse() {
         super();
     }
     
-    public ConfigChangeListenResponse(int resultCode, String message) {
-        super(ConfigResponseTypeConstants.CONFIG_CHANGE, resultCode, message);
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_CHANGE;
+    }
+    
+    /**
+     * build sucess response.
+     *
+     * @return
+     */
+    public static ConfigChangeListenResponse buildSucessResponse() {
+        ConfigChangeListenResponse response = new ConfigChangeListenResponse();
+        response.setResultCode(ResponseCode.SUCCESS.getCode());
+        return response;
+    }
+    
+    /**
+     * build fail response.
+     *
+     * @param errorMessage errorMessage.
+     * @return
+     */
+    public static ConfigChangeListenResponse buildFailResponse(String errorMessage) {
+        ConfigChangeListenResponse response = new ConfigChangeListenResponse();
+        response.setResultCode(ResponseCode.FAIL.getCode());
+        response.setMessage(errorMessage);
+        return response;
     }
     
 }
