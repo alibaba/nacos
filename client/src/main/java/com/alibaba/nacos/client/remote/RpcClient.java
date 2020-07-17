@@ -70,6 +70,33 @@ public abstract class RpcClient {
     }
     
     /**
+     * check is this client is running.
+     *
+     * @return
+     */
+    public boolean isRunning() {
+        return this.rpcClientStatus.get() == RpcClientStatus.RUNNING;
+    }
+    
+    /**
+     * check is this client is in init status,have not start th client.
+     *
+     * @return
+     */
+    public boolean isInitStatus() {
+        return this.rpcClientStatus.get() == RpcClientStatus.INITED;
+    }
+    
+    /**
+     * check is this client is in starting process.
+     *
+     * @return
+     */
+    public boolean isStarting() {
+        return this.rpcClientStatus.get() == RpcClientStatus.STARTING;
+    }
+    
+    /**
      * listener called where connect status changed.
      */
     protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
