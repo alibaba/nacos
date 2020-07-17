@@ -26,6 +26,8 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * abstract remote client to connect to server.
@@ -41,7 +43,22 @@ public abstract class RpcClient {
     
     protected String connectionId;
     
-    protected RpcClientStatus rpcClientStatus = RpcClientStatus.WAIT_INIT;
+    protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
+            RpcClientStatus.WAIT_INIT);
+    
+    /**
+     * Notify when client connected.
+     */
+    protected void notifyReConnected() {
+        if (!this.connectionEventListeners.isEmpty()) {
+            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                @Override
+                public void accept(ConnectionEventListener connectionEventListener) {
+                    connectionEventListener.onReconnected();
+                }
+            });
+        }
+    }
     
     /**
      * check is this client is inited.
@@ -49,13 +66,13 @@ public abstract class RpcClient {
      * @return
      */
     public boolean isWaitInited() {
-        return this.rpcClientStatus == RpcClientStatus.WAIT_INIT;
+        return this.rpcClientStatus.get() == RpcClientStatus.WAIT_INIT;
     }
     
     /**
      * listener called where connect status changed.
      */
-    List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
+    protected List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>();
     
     /**
      * change listeners handler registry.
@@ -76,8 +93,8 @@ public abstract class RpcClient {
         }
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
-        this.rpcClientStatus = RpcClientStatus.INITED;
-    
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
+        
         LOGGER.info("RpcClient init ,connectionId={}, ServerListFactory ={}", this.connectionId,
                 serverListFactory.getClass().getName());
     }
@@ -85,7 +102,7 @@ public abstract class RpcClient {
     public RpcClient(ServerListFactory serverListFactory) {
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
-        this.rpcClientStatus = RpcClientStatus.INITED;
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
         LOGGER.info("RpcClient init in constructor ,connectionId={}, ServerListFactory ={}", this.connectionId,
                 serverListFactory.getClass().getName());
     }
@@ -102,7 +119,7 @@ public abstract class RpcClient {
      * @param request request.
      * @return
      */
-    public abstract Response request(Request request);
+    public abstract Response request(Request request) throws NacosException;
     
     /**
      * register connection handler.will be notified wher inner connect chanfed.
