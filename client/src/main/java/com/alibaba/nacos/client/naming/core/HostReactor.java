@@ -125,6 +125,17 @@ public class HostReactor implements Closeable {
      */
     public ServiceInfo processServiceJson(String json) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
+        serviceInfo.setJsonFromServer(json);
+        return processServiceJson(serviceInfo);
+    }
+    
+    /**
+     * Process service info.
+     *
+     * @param serviceInfo new service info
+     * @return service info
+     */
+    public ServiceInfo processServiceJson(ServiceInfo serviceInfo) {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
@@ -204,8 +215,6 @@ public class HostReactor implements Closeable {
                         + JacksonUtils.toJson(modHosts));
             }
             
-            serviceInfo.setJsonFromServer(json);
-            
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
                 eventDispatcher.serviceChanged(serviceInfo);
                 DiskCache.write(serviceInfo, cacheDir);
@@ -217,8 +226,11 @@ public class HostReactor implements Closeable {
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
-            serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
+        }
+        
+        if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
+            serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
         
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
@@ -271,10 +283,10 @@ public class HostReactor implements Closeable {
             serviceObj = new ServiceInfo(serviceName, clusters);
             
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
-            
-            updatingMap.put(serviceName, new Object());
+    
+            updatingService(serviceName);
             updateServiceNow(serviceName, clusters);
-            updatingMap.remove(serviceName);
+            finishUpdating(serviceName);
             
         } else if (updatingMap.containsKey(serviceName)) {
             
@@ -365,6 +377,14 @@ public class HostReactor implements Closeable {
         pushReceiver.shutdown();
         failoverReactor.shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+    
+    public void updatingService(String serviceName) {
+        updatingMap.put(serviceName, new Object());
+    }
+    
+    public void finishUpdating(String serviceName) {
+        updatingMap.remove(serviceName);
     }
     
     public class UpdateTask implements Runnable {

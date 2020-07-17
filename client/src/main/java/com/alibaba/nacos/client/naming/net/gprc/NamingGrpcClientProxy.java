@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.net;
+package com.alibaba.nacos.client.naming.net.gprc;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -22,9 +22,12 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
+import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
@@ -40,11 +43,14 @@ public class NamingGrpcClientProxy {
     
     private final String namespaceId;
     
+    private HostReactor hostReactor;
+    
     private RpcClient rpcClient;
     
-    public NamingGrpcClientProxy(String namespaceId) {
+    public NamingGrpcClientProxy(String namespaceId, HostReactor hostReactor) {
         this.namespaceId = namespaceId;
-        rpcClient = RpcClientFactory.getClient("naming");
+        this.hostReactor = hostReactor;
+        this.rpcClient = RpcClientFactory.getClient("naming");
     }
     
     public void start(ServerListFactory serverListFactory) throws NacosException {
@@ -103,6 +109,28 @@ public class NamingGrpcClientProxy {
         request.setUdpPort(udpPort);
         QueryServiceResponse response = requestToServer(request, QueryServiceResponse.class);
         return response.getServiceInfo();
+    }
+    
+    /**
+     * Subscribe service.
+     *
+     * @param serviceName full service name with group
+     * @param clusters    clusters, current only support subscribe all clusters
+     * @return current ervice info of subscribe service
+     * @throws NacosException nacos exception
+     */
+    public ServiceInfo subscribe(String serviceName, String clusters) throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo(serviceName, clusters);
+        if (hostReactor.getServiceInfoMap().containsKey(serviceInfo.getKey())) {
+            return hostReactor.getServiceInfoMap().get(serviceInfo.getKey());
+        }
+        hostReactor.updatingService(serviceName);
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, clusters, true);
+        SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
+        ServiceInfo result = response.getServiceInfo();
+        hostReactor.getServiceInfoMap().put(result.getKey(), result);
+        hostReactor.finishUpdating(serviceName);
+        return result;
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {

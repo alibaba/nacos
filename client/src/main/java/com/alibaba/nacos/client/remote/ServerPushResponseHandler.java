@@ -20,15 +20,16 @@ import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * ServerPushResponseHandler.
+ *
  * @author liuzunfei
  * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-public abstract interface ServerPushResponseHandler<T> {
+public interface ServerPushResponseHandler<T> {
 
     /**
-     * handle logic when response ceceive.
-     * @param response.
+     * Handle logic when response received.
+     * @param response response
      */
-    public abstract void responseReply(Response response);
+    void responseReply(Response response);
 
 }

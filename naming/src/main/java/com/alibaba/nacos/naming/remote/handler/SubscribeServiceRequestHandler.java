@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
@@ -25,12 +26,13 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.AsyncListenContext;
 import com.alibaba.nacos.core.remote.NacosRemoteConstants;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.google.common.collect.Lists;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -44,8 +46,15 @@ import java.util.List;
 @Component
 public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest> {
     
-    @Autowired
-    AsyncListenContext asyncListenContext;
+    private final AsyncListenContext asyncListenContext;
+    
+    private final ServiceInfoGenerator serviceInfoGenerator;
+    
+    public SubscribeServiceRequestHandler(AsyncListenContext asyncListenContext,
+            ServiceInfoGenerator serviceInfoGenerator) {
+        this.asyncListenContext = asyncListenContext;
+        this.serviceInfoGenerator = serviceInfoGenerator;
+    }
     
     @Override
     public SubscribeServiceRequest parseBodyString(String bodyString) {
@@ -54,15 +63,19 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     @Override
     public Response handle(Request request, RequestMeta meta) throws NacosException {
-        SubscribeServiceRequest subRequest = (SubscribeServiceRequest) request;
-        String serviceKey = UtilsAndCommons.assembleFullServiceName(subRequest.getNamespace(), subRequest.getServiceName());
+        SubscribeServiceRequest subscribeServiceRequest = (SubscribeServiceRequest) request;
+        String namespaceId = subscribeServiceRequest.getNamespace();
+        String serviceName = subscribeServiceRequest.getServiceName();
+        String serviceKey = UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName);
         String connectionId = meta.getConnectionId();
-        if (subRequest.isSubscribe()) {
+        ServiceInfo serviceInfo = serviceInfoGenerator
+                .generateServiceInfo(namespaceId, serviceName, StringUtils.EMPTY, false, meta.getClientIp());
+        if (subscribeServiceRequest.isSubscribe()) {
             asyncListenContext.addListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
         } else {
             asyncListenContext.removeListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
         }
-        return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success");
+        return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }
     
     @Override
