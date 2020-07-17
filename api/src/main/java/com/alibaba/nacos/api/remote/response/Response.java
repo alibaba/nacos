@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: Response.java, v 0.1 2020年07月13日 6:03 PM liuzunfei Exp $
  */
-public class Response {
+public abstract class Response {
     
     int resultCode = ResponseCode.SUCCESS.getCode();
     
@@ -37,9 +37,6 @@ public class Response {
      */
     public boolean isSuccess() {
         return this.resultCode == ResponseCode.SUCCESS.getCode();
-    }
-    
-    public Response() {
     }
     
     /**
