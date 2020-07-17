@@ -26,11 +26,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  *
  * @author xiweng.yy
  */
-public class ServiceQueryResponse extends Response {
+public class QueryServiceResponse extends Response {
     
     private ServiceInfo serviceInfo;
     
-    public ServiceQueryResponse() {
+    public QueryServiceResponse() {
     }
     
     @Override
@@ -38,21 +38,31 @@ public class ServiceQueryResponse extends Response {
         return NamingRemoteConstants.QUERY_SERVICE;
     }
     
-    public ServiceQueryResponse(ServiceInfo serviceInfo) {
+    private QueryServiceResponse(ServiceInfo serviceInfo) {
         this.serviceInfo = serviceInfo;
     }
     
-    public static ServiceQueryResponse buildSuccessResponse(ServiceInfo serviceInfo) {
-        ServiceQueryResponse serviceQueryResponse = new ServiceQueryResponse();
-        serviceQueryResponse.setServiceInfo(serviceInfo);
-        return serviceQueryResponse;
+    /**
+     * Build Success response.
+     *
+     * @param serviceInfo service info
+     * @return service query response
+     */
+    public static QueryServiceResponse buildSuccessResponse(ServiceInfo serviceInfo) {
+        return new QueryServiceResponse(serviceInfo);
     }
     
-    public static ServiceQueryResponse buildFailResponse(String message) {
-        ServiceQueryResponse serviceQueryResponse = new ServiceQueryResponse();
-        serviceQueryResponse.setResultCode(ResponseCode.FAIL.getCode());
-        serviceQueryResponse.setMessage(message);
-        return serviceQueryResponse;
+    /**
+     * Build fail response.
+     *
+     * @param message message
+     * @return service query response
+     */
+    public static QueryServiceResponse buildFailResponse(String message) {
+        QueryServiceResponse queryServiceResponse = new QueryServiceResponse();
+        queryServiceResponse.setResultCode(ResponseCode.FAIL.getCode());
+        queryServiceResponse.setMessage(message);
+        return queryServiceResponse;
     }
     
     public ServiceInfo getServiceInfo() {

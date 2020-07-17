@@ -95,4 +95,17 @@ public class AsyncListenContext {
         return null;
     }
     
+    /**
+     * Judge whether contain listener for item.
+     *
+     * @param requestType request type
+     * @param listenKey listen key
+     * @return true if has contained, otherwise false
+     */
+    public boolean containListener(String requestType, String listenKey) {
+        if (!listenContexts.containsKey(requestType)) {
+            return false;
+        }
+        return listenContexts.get(requestType).containsKey(listenKey);
+    }
 }

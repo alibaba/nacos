@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
-import com.alibaba.nacos.api.naming.remote.response.ServiceQueryResponse;
+import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.remote.RpcClient;
@@ -101,7 +101,7 @@ public class NamingGrpcClientProxy {
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
         request.setUdpPort(udpPort);
-        ServiceQueryResponse response = requestToServer(request, ServiceQueryResponse.class);
+        QueryServiceResponse response = requestToServer(request, QueryServiceResponse.class);
         return response.getServiceInfo();
     }
     

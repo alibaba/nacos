@@ -16,31 +16,27 @@
 
 package com.alibaba.nacos.api.naming.remote.response;
 
+import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Instance response.
+ * Nacos naming subscribe service response.
  *
  * @author xiweng.yy
  */
-public class InstanceResponse extends Response {
+public class SubscribeServiceResponse extends Response {
     
-    private String type;
-    
-    public InstanceResponse() {
+    public SubscribeServiceResponse() {
     }
     
-    public InstanceResponse(String type) {
-        this.type = type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
+    public SubscribeServiceResponse(int resultCode, String message) {
+        super();
+        setResultCode(resultCode);
+        setMessage(message);
     }
     
     @Override
     public String getType() {
-        return this.type;
+        return NamingRemoteConstants.SUBSCRIBE_SERVICE;
     }
-    
 }
