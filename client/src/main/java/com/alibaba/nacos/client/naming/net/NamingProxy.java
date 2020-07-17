@@ -79,7 +79,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class NamingProxy implements Closeable {
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
@@ -591,7 +591,7 @@ public class NamingProxy implements Closeable {
             if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
                 curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
             }
-            url = NamingHttpClientManager.getPrefix() + curServer + api;
+            url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         
         try {
@@ -714,6 +714,7 @@ public class NamingProxy implements Closeable {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NamingHttpClientManager.getInstance().shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }
