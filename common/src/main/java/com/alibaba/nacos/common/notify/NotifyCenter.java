@@ -290,7 +290,9 @@ public class NotifyCenter {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
             return publisher.publish(event);
         }
-        throw new NoSuchElementException("There are no [" + topic + "] publishers for this event, please register");
+        
+        LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
+        return false;
     }
     
     /**
