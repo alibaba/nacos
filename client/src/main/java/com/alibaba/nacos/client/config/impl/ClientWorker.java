@@ -686,13 +686,14 @@ public class ClientWorker implements Closeable {
                                 cache.checkListenerMd5();
     
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                LOGGER.error("[{}] [listennotify] {}", "grpc", groupKey, e);
+    
                             }
                         }
                     }
     
                 }
-            
+    
             });
         
             /*
@@ -709,8 +710,13 @@ public class ClientWorker implements Closeable {
                     Collection<CacheData> values = cacheMap.get().values();
                     for (CacheData cacheData : values) {
                         if (!CollectionUtils.isEmpty(cacheData.getListeners())) {
-                            rpcClientProxy.request(ConfigChangeListenRequest
-                                    .buildListenRequest(cacheData.dataId, cacheData.group, cacheData.tenant));
+                            try {
+                                rpcClientProxy.listenConfigChange(cacheData.dataId, cacheData.group, cacheData.tenant);
+                            } catch (NacosException e) {
+                                LOGGER.error("[{}] [listen] {},{},{}", "grpc", cacheData.dataId, cacheData.group,
+                                        cacheData.tenant, e);
+        
+                            }
                         }
                     }
                 }
