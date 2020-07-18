@@ -101,13 +101,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         testMasterWritableJT.setQueryTimeout(1);
         
         //  Database health check
-    
+        
         testJtList = new ArrayList<JdbcTemplate>();
         isHealthList = new ArrayList<Boolean>();
         
         tm = new DataSourceTransactionManager();
         tjt = new TransactionTemplate(tm);
-
+        
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
         if (PropertyUtil.isUseExternalDB()) {
@@ -118,8 +118,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
             
-            ConfigExecutor.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
-            ConfigExecutor.scheduleWithFixedDelay(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
+            ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
     
