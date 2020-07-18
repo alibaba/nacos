@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -291,7 +290,9 @@ public class NotifyCenter {
             EventPublisher publisher = INSTANCE.publisherMap.get(topic);
             return publisher.publish(event);
         }
-        throw new NoSuchElementException("There are no [" + topic + "] publishers for this event, please register");
+        
+        LOGGER.warn("There are no [{}] publishers for this event, please register", topic);
+        return false;
     }
     
     /**
@@ -310,8 +311,7 @@ public class NotifyCenter {
      * @param eventType    class Instances type of the event type.
      * @param queueMaxSize the publisher's queue max size.
      */
-    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize)
-            throws NacosException {
+    public static EventPublisher registerToPublisher(final Class<? extends Event> eventType, final int queueMaxSize) {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, eventType)) {
             return INSTANCE.sharePublisher;
         }

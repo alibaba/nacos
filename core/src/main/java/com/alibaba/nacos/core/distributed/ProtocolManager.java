@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ap.APProtocol;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import org.springframework.beans.factory.DisposableBean;
@@ -49,7 +49,7 @@ import java.util.Set;
 @SuppressWarnings("all")
 @Component(value = "ProtocolManager")
 @DependsOn("serverMemberManager")
-public class ProtocolManager implements ApplicationListener<ContextStartedEvent>, DisposableBean, MemberChangeListener {
+public class ProtocolManager extends MemberChangeListener implements ApplicationListener<ContextStartedEvent>, DisposableBean {
     
     private CPProtocol cpProtocol;
     
@@ -85,7 +85,7 @@ public class ProtocolManager implements ApplicationListener<ContextStartedEvent>
     @PostConstruct
     public void init() {
         this.memberManager = memberManager;
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
     }
     
     public CPProtocol getCpProtocol() {

@@ -17,6 +17,9 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
@@ -32,9 +35,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
-import com.alibaba.nacos.core.notify.Event;
-import com.alibaba.nacos.core.notify.NotifyCenter;
-import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
 
@@ -123,7 +123,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, LogPr
             
             // There is only one consumer to ensure that the internal consumption
             // is sequential and there is no concurrent competition
-            NotifyCenter.registerSubscribe(new Subscribe<RaftEvent>() {
+            NotifyCenter.registerSubscriber(new Subscriber<RaftEvent>() {
                 @Override
                 public void onEvent(RaftEvent event) {
                     Loggers.RAFT.info("This Raft event changes : {}", event);
