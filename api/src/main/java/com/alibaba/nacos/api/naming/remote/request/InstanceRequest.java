@@ -32,12 +32,6 @@ public class InstanceRequest extends NamingCommonRequest {
     public InstanceRequest() {
     }
     
-    public InstanceRequest(String namespace, String serviceName, String type, Instance instance) {
-        super(namespace, serviceName, null);
-        this.type = type;
-        this.instance = instance;
-    }
-    
     public InstanceRequest(String namespace, String serviceName, String groupName, String type, Instance instance) {
         super(namespace, serviceName, groupName);
         this.type = type;

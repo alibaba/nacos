@@ -14,33 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.remote.response;
+package com.alibaba.nacos.client.naming.net.gprc;
 
+import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.naming.core.HostReactor;
+import com.alibaba.nacos.client.remote.ServerPushResponseHandler;
 
 /**
- * Instance response.
+ * Naming push response handler.
  *
  * @author xiweng.yy
  */
-public class InstanceResponse extends Response {
+public class NamingPushResponseHandler implements ServerPushResponseHandler<NotifySubscriberResponse> {
     
-    private String type;
+    private final HostReactor hostReactor;
     
-    public InstanceResponse() {
-    }
-    
-    public InstanceResponse(String type) {
-        this.type = type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
+    public NamingPushResponseHandler(HostReactor hostReactor) {
+        this.hostReactor = hostReactor;
     }
     
     @Override
-    public String getType() {
-        return this.type;
+    public void responseReply(Response response) {
+        NotifySubscriberResponse notifyResponse = (NotifySubscriberResponse) response;
+        hostReactor.processServiceJson(notifyResponse.getServiceInfo());
     }
-    
 }

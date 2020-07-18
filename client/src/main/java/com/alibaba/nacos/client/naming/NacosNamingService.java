@@ -26,15 +26,16 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
-import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.net.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.remote.ServerListFactory;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Nacos Naming Service.
@@ -73,6 +75,8 @@ public class NacosNamingService implements NamingService {
     
     private NamingProxy serverProxy;
     
+    private NamingGrpcClientProxy grpcClientProxy;
+    
     public NacosNamingService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -97,6 +101,24 @@ public class NacosNamingService implements NamingService {
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
         this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
                 isLoadCacheAtStart(properties), initPollingThreadCount(properties));
+        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, hostReactor);
+        grpcClientProxy.start(new ServerListFactory() {
+            
+            private final AtomicInteger index = new AtomicInteger();
+            
+            private final String[] serverLists = serverList.split(",");
+            
+            @Override
+            public String genNextServer() {
+                int nextIndex = index.getAndIncrement() % serverLists.length;
+                return serverLists[nextIndex];
+            }
+            
+            @Override
+            public String getCurrentServer() {
+                return serverLists[index.get() % serverLists.length];
+            }
+        });
     }
     
     private int initClientBeatThreadCount(Properties properties) {
@@ -192,12 +214,13 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        if (instance.isEphemeral()) {
-            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
-            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
-        }
-        serverProxy.registerService(groupedServiceName, groupName, instance);
+        //        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        //        if (instance.isEphemeral()) {
+        //            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
+        //            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
+        //        }
+        //        serverProxy.registerService(groupedServiceName, groupName, instance);
+        grpcClientProxy.registerService(serviceName, groupName, instance);
     }
     
     @Override
@@ -233,11 +256,12 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        if (instance.isEphemeral()) {
-            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
-                    instance.getPort());
-        }
-        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
+        //        if (instance.isEphemeral()) {
+        //            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
+        //                    instance.getPort());
+        //        }
+        //        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
+        grpcClientProxy.deregisterService(serviceName, groupName, instance);
     }
     
     @Override
@@ -287,9 +311,11 @@ public class NacosNamingService implements NamingService {
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
                     StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor
-                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
-                            StringUtils.join(clusters, ","));
+            //            serviceInfo = hostReactor
+            //                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
+            //                            StringUtils.join(clusters, ","));
+            serviceInfo = grpcClientProxy.queryInstancesOfService(NamingUtils.getGroupedName(serviceName, groupName),
+                    StringUtils.join(clusters, ","), 0, false);
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -442,8 +468,11 @@ public class NacosNamingService implements NamingService {
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        eventDispatcher.addListener(hostReactor
-                        .getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
+        //        eventDispatcher.addListener(hostReactor
+        //                        .getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
+        //                StringUtils.join(clusters, ","), listener);
+        eventDispatcher.addListener(grpcClientProxy
+                        .subscribe(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
                 StringUtils.join(clusters, ","), listener);
     }
     
@@ -465,9 +494,12 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        eventDispatcher
-                .removeListener(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","),
-                        listener);
+        String fullServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        String clustersString = StringUtils.join(clusters, ",");
+        eventDispatcher.removeListener(fullServiceName, clustersString, listener);
+        if (!eventDispatcher.isSubscribed(fullServiceName, clustersString)) {
+            grpcClientProxy.unsubscribe(fullServiceName, clustersString);
+        }
     }
     
     @Override
