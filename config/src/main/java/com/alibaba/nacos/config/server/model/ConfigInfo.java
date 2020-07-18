@@ -88,7 +88,6 @@ public class ConfigInfo extends ConfigInfoBase {
     public String toString() {
         return "ConfigInfo{" + "id=" + getId() + ", dataId='" + getDataId() + '\'' + ", group='" + getGroup() + '\''
                 + ", tenant='" + tenant + '\'' + ", appName='" + appName + '\'' + ", content='" + getContent() + '\''
-                + ", md5='" + getMd5() + '\'' + '}';
+                + ", md5='" + getMd5() + '\'' + ", type='" + type + '}';
     }
-    
 }

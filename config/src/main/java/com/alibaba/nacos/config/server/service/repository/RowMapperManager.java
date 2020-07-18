@@ -210,6 +210,7 @@ public final class RowMapperManager {
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
             info.setBetaIps(rs.getString("beta_ips"));
+            info.setType(rs.getString("type"));
             
             try {
                 info.setContent(rs.getString("content"));
@@ -371,6 +372,7 @@ public final class RowMapperManager {
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
             info.setBetaIps(rs.getString("beta_ips"));
+            info.setType(rs.getString("type"));
             
             try {
                 info.setContent(rs.getString("content"));

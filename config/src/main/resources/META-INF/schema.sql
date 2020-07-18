@@ -74,6 +74,7 @@ CREATE TABLE config_info_beta (
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
   src_user varchar(128),
   src_ip varchar(20) DEFAULT NULL,
+  type varchar(64) DEFAULT NULL,
   constraint configinfobeta_id_key PRIMARY KEY (id),
   constraint uk_configinfobeta_datagrouptenant UNIQUE (data_id,group_id,tenant_id));
 
