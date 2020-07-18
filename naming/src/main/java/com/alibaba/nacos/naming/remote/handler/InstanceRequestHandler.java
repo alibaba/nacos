@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -56,7 +57,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     public Response handle(Request request, RequestMeta meta) throws NacosException {
         InstanceRequest instanceRequest = (InstanceRequest) request;
         String namespace = instanceRequest.getNamespace();
-        String serviceName = instanceRequest.getServiceName();
+        String serviceName = NamingUtils.getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
         switch (instanceRequest.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
                 return registerInstance(namespace, serviceName, instanceRequest, meta);

@@ -81,6 +81,10 @@ public class RemotePushService implements ApplicationListener<ServiceChangeEvent
         serviceSubscribesMap.get(serviceKey).remove(subscriber);
     }
     
+    public Set<Subscriber> getSubscribes(String namespaceId, String serviceName) {
+        return getSubscribes(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+    }
+    
     public Set<Subscriber> getSubscribes(String serviceKey) {
         return serviceSubscribesMap.getOrDefault(serviceKey, new HashSet<>());
     }

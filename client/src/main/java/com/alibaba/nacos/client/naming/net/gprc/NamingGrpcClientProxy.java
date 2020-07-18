@@ -53,9 +53,16 @@ public class NamingGrpcClientProxy {
         this.rpcClient = RpcClientFactory.getClient("naming");
     }
     
+    /**
+     * Start Grpc client proxy.
+     *
+     * @param serverListFactory server list factory
+     * @throws NacosException nacos exception
+     */
     public void start(ServerListFactory serverListFactory) throws NacosException {
         rpcClient.init(serverListFactory);
         rpcClient.start();
+        rpcClient.registerServerPushResponseHandler(new NamingPushResponseHandler(hostReactor));
     }
     
     /**
@@ -79,14 +86,15 @@ public class NamingGrpcClientProxy {
      * deregister instance from a service.
      *
      * @param serviceName name of service
+     * @param groupName   group name
      * @param instance    instance
      * @throws NacosException nacos exception
      */
-    public void deregisterService(String serviceName, Instance instance) throws NacosException {
+    public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
-        InstanceRequest request = new InstanceRequest(namespaceId, serviceName,
+        InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
     }
@@ -115,8 +123,8 @@ public class NamingGrpcClientProxy {
      * Subscribe service.
      *
      * @param serviceName full service name with group
-     * @param clusters    clusters, current only support subscribe all clusters
-     * @return current ervice info of subscribe service
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @return current service info of subscribe service
      * @throws NacosException nacos exception
      */
     public ServiceInfo subscribe(String serviceName, String clusters) throws NacosException {
@@ -131,6 +139,18 @@ public class NamingGrpcClientProxy {
         hostReactor.getServiceInfoMap().put(result.getKey(), result);
         hostReactor.finishUpdating(serviceName);
         return result;
+    }
+    
+    /**
+     * Unsubscribe service.
+     *
+     * @param serviceName full service name with group
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @throws NacosException nacos exception
+     */
+    public void unsubscribe(String serviceName, String clusters) throws NacosException {
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, clusters, false);
+        requestToServer(request, SubscribeServiceResponse.class);
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {

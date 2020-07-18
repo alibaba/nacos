@@ -32,6 +32,8 @@ import com.alibaba.nacos.core.remote.NacosRemoteConstants;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.RemotePushService;
 import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
@@ -50,10 +52,13 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     
     private final ServiceInfoGenerator serviceInfoGenerator;
     
+    private final RemotePushService remotePushService;
+    
     public SubscribeServiceRequestHandler(AsyncListenContext asyncListenContext,
-            ServiceInfoGenerator serviceInfoGenerator) {
+            ServiceInfoGenerator serviceInfoGenerator, RemotePushService remotePushService) {
         this.asyncListenContext = asyncListenContext;
         this.serviceInfoGenerator = serviceInfoGenerator;
+        this.remotePushService = remotePushService;
     }
     
     @Override
@@ -70,10 +75,14 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String connectionId = meta.getConnectionId();
         ServiceInfo serviceInfo = serviceInfoGenerator
                 .generateServiceInfo(namespaceId, serviceName, StringUtils.EMPTY, false, meta.getClientIp());
+        Subscriber subscriber = new Subscriber(meta.getClientIp(), "", "unknown", meta.getClientIp(), namespaceId,
+                serviceName);
         if (subscribeServiceRequest.isSubscribe()) {
             asyncListenContext.addListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
+            remotePushService.registerSubscribeForService(serviceKey, subscriber);
         } else {
             asyncListenContext.removeListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
+            remotePushService.removeSubscribeForService(serviceKey, subscriber);
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }
