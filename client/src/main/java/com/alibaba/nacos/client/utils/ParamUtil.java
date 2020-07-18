@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -82,7 +81,7 @@ public class ParamUtil {
         LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
         
         try {
-            InputStream in = HttpSimpleClient.class.getClassLoader().getResourceAsStream("application.properties");
+            InputStream in = ValidatorUtils.class.getClassLoader().getResourceAsStream("application.properties");
             Properties props = new Properties();
             props.load(in);
             String val = null;

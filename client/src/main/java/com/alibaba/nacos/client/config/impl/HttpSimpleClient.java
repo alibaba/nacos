@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -39,7 +40,9 @@ import java.util.Map;
  * Http tool.
  *
  * @author Nacos
+ * @deprecated Use NacosRestTemplate{@link NacosRestTemplate} unified http client
  */
+@Deprecated
 public class HttpSimpleClient {
     
     /**

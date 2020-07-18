@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.common.constant;
 
 /**
- * this event share one event-queue.
+ * Response Handler Type.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author mai.jh
  */
-public interface SlowEvent extends Event {
-
+public final class ResponseHandlerType {
+    
+    public static final String STRING_TYPE = "java.lang.String";
+    
+    public static final String RESTRESULT_TYPE = "com.alibaba.nacos.common.model.RestResult";
+    
+    public static final String DEFAULT_BEAN_TYPE = "default_bean_handler";
+    
 }

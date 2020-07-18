@@ -165,7 +165,7 @@ public class BeatReactor implements Closeable {
             long nextTime = beatInfo.getPeriod();
             try {
                 JsonNode result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
-                long interval = result.get("clientBeatInterval").asInt();
+                long interval = result.get("clientBeatInterval").asLong();
                 boolean lightBeatEnabled = false;
                 if (result.has(CommonParams.LIGHT_BEAT_ENABLED)) {
                     lightBeatEnabled = result.get(CommonParams.LIGHT_BEAT_ENABLED).asBoolean();

@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -40,7 +40,7 @@ import java.util.List;
  * @author nkorange
  */
 @Component("distroMapper")
-public class DistroMapper implements MemberChangeListener {
+public class DistroMapper extends MemberChangeListener {
     
     /**
      * List of service nodes, you must ensure that the order of healthyList is the same for all nodes.
@@ -65,7 +65,7 @@ public class DistroMapper implements MemberChangeListener {
      */
     @PostConstruct
     public void init() {
-        NotifyCenter.registerSubscribe(this);
+        NotifyCenter.registerSubscriber(this);
         this.healthyList = MemberUtils.simpleMembers(memberManager.allMembers());
     }
     
