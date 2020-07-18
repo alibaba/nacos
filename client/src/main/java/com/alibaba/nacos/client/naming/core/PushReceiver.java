@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -39,9 +39,11 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class PushReceiver implements Runnable, Closeable {
     
-    private ScheduledExecutorService executorService;
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
     
     private static final int UDP_MSS = 64 * 1024;
+    
+    private ScheduledExecutorService executorService;
     
     private DatagramSocket udpSocket;
     
@@ -80,7 +82,7 @@ public class PushReceiver implements Runnable, Closeable {
                 
                 udpSocket.receive(packet);
                 
-                String json = new String(IoUtils.tryDecompress(packet.getData()), StandardCharsets.UTF_8).trim();
+                String json = new String(IoUtils.tryDecompress(packet.getData()), UTF_8).trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
                 
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
@@ -102,8 +104,8 @@ public class PushReceiver implements Runnable, Closeable {
                             + "\", \"data\":" + "\"\"}";
                 }
                 
-                udpSocket.send(new DatagramPacket(ack.getBytes(StandardCharsets.UTF_8),
-                        ack.getBytes(StandardCharsets.UTF_8).length, packet.getSocketAddress()));
+                udpSocket.send(new DatagramPacket(ack.getBytes(UTF_8), ack.getBytes(UTF_8).length,
+                        packet.getSocketAddress()));
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
