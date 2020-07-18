@@ -121,7 +121,10 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         Service service = event.getService();
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
-        
+        //merge some change events to reduce the push frequency:
+        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
+            return;
+        }
         Future future = GlobalExecutor.scheduleUdpSender(() -> {
             try {
                 Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
@@ -371,12 +374,6 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      * @param service service
      */
     public void serviceChanged(Service service) {
-        // merge some change events to reduce the push frequency:
-        if (futureMap
-                .containsKey(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()))) {
-            return;
-        }
-        
         this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
     }
     

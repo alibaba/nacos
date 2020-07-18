@@ -24,7 +24,9 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
-import com.alibaba.nacos.api.naming.remote.response.ServiceQueryResponse;
+import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
+import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
@@ -60,7 +62,9 @@ public class ResponseRegistry {
         //naming response registry
         REGISTRY_RESPONSES.put(NamingRemoteConstants.REGISTER_INSTANCE, InstanceResponse.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.DE_REGISTER_INSTANCE, InstanceResponse.class);
-        REGISTRY_RESPONSES.put(NamingRemoteConstants.QUERY_SERVICE, ServiceQueryResponse.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.QUERY_SERVICE, QueryServiceResponse.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.SUBSCRIBE_SERVICE, SubscribeServiceResponse.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.NOTIFY_SUBSCRIBER, NotifySubscriberResponse.class);
     }
     
     public static Class getClassByType(String type) {

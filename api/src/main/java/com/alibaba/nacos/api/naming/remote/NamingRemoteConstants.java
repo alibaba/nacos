@@ -28,8 +28,9 @@ public class NamingRemoteConstants {
     
     public static final String DE_REGISTER_INSTANCE = "deregisterInstance";
     
-    public static final String SUBSCRIBE_SERVICE = "subscribeService";
-    
     public static final String QUERY_SERVICE = "queryService";
     
+    public static final String SUBSCRIBE_SERVICE = "subscribeService";
+    
+    public static final String NOTIFY_SUBSCRIBER = "notifySubscriber";
 }
