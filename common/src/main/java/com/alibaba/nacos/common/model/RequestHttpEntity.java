@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.model;
 
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 
@@ -31,17 +32,27 @@ public class RequestHttpEntity {
     
     private final Header headers = Header.newInstance();
     
+    private final HttpClientConfig httpClientConfig;
+    
     private final Query query;
     
     private Object body;
     
     public RequestHttpEntity(Header header, Query query) {
-        handleHeader(header);
-        this.query = query;
+        this(null, header, query);
+    }
+    
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query) {
+        this(httpClientConfig, header, query, null);
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {
+        this(null, header, query, body);
+    }
+    
+    public RequestHttpEntity(HttpClientConfig httpClientConfig, Header header, Query query, Object body) {
         handleHeader(header);
+        this.httpClientConfig = httpClientConfig;
         this.query = query;
         this.body = body;
     }
@@ -63,6 +74,10 @@ public class RequestHttpEntity {
     
     public Object getBody() {
         return body;
+    }
+    
+    public HttpClientConfig getHttpClientConfig() {
+        return httpClientConfig;
     }
     
     public boolean isEmptyBody() {

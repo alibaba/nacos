@@ -18,14 +18,14 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
+import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,8 +39,6 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "resource"})
 public class DefaultHttpClientRequest implements HttpClientRequest {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultHttpClientRequest.class);
-    
     private final CloseableHttpClient client;
     
     public DefaultHttpClientRequest(CloseableHttpClient client) {
@@ -52,9 +50,6 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             throws Exception {
         HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
         CloseableHttpResponse response = client.execute(request);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Request from server: " + request.getURI().toString());
-        }
         return new DefaultClientHttpResponse(response);
     }
     
@@ -69,7 +64,24 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         } else {
             httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
-        return httpMethod.getRequestBase();
+        HttpRequestBase requestBase = httpMethod.getRequestBase();
+        replaceDefaultConfig(requestBase, requestHttpEntity.getHttpClientConfig());
+        return requestBase;
+    }
+    
+    /**
+     * Replace the HTTP config created by default with the HTTP config specified in the request.
+     *
+     * @param requestBase      requestBase
+     * @param httpClientConfig http config
+     */
+    private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
+        if (httpClientConfig == null) {
+            return;
+        }
+        requestBase.setConfig(RequestConfig.custom()
+                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     
     @Override
