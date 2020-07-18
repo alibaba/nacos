@@ -17,12 +17,12 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import io.prometheus.client.Histogram;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 /**
  * MetricsHttpAgent.
@@ -43,12 +43,12 @@ public class MetricsHttpAgent implements HttpAgent {
     }
     
     @Override
-    public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
-        HttpResult result;
+        HttpRestResult<String> result;
         try {
-            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -60,12 +60,12 @@ public class MetricsHttpAgent implements HttpAgent {
     }
     
     @Override
-    public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
-        HttpResult result;
+        HttpRestResult<String> result;
         try {
-            result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
         } catch (IOException e) {
             throw e;
         } finally {
@@ -77,12 +77,12 @@ public class MetricsHttpAgent implements HttpAgent {
     }
     
     @Override
-    public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
-        HttpResult result;
+        HttpRestResult<String> result;
         try {
-            result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
         } catch (IOException e) {
             
             throw e;
