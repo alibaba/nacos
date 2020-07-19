@@ -54,6 +54,7 @@ CREATE TABLE his_config_info (
   src_user varchar(128),
   src_ip varchar(20) DEFAULT NULL,
   op_type char(10) DEFAULT NULL,
+  type varchar(64) DEFAULT NULL,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
 CREATE INDEX hisconfiginfo_dataid_key_idx ON his_config_info(data_id);
@@ -74,6 +75,7 @@ CREATE TABLE config_info_beta (
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
   src_user varchar(128),
   src_ip varchar(20) DEFAULT NULL,
+  type varchar(64) DEFAULT NULL,
   constraint configinfobeta_id_key PRIMARY KEY (id),
   constraint uk_configinfobeta_datagrouptenant UNIQUE (data_id,group_id,tenant_id));
 
