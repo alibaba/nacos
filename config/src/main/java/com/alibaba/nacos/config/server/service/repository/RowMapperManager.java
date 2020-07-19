@@ -499,6 +499,7 @@ public final class RowMapperManager {
             configHistoryInfo.setSrcUser(rs.getString("src_user"));
             configHistoryInfo.setSrcIp(rs.getString("src_ip"));
             configHistoryInfo.setOpType(rs.getString("op_type"));
+            configHistoryInfo.setType(rs.getString("type"));
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));
             return configHistoryInfo;

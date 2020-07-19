@@ -91,6 +91,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
           self.field.setValue('envName', envName);
+          self.field.setValue('type', data.type);
           self.setState({
             envName,
           });
@@ -136,12 +137,14 @@ class ConfigRollback extends React.Component {
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
+        self.formType = self.field.getValue('type');
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
           group: self.group,
           content: self.field.getValue('content'),
           tenant: self.tenant,
+          type: self.formType,
         };
 
         let url = 'v1/cs/configs';
