@@ -109,7 +109,7 @@ public class NamingProxy implements Closeable {
     
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
-        this.securityProxy = new SecurityProxy(properties);
+        this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
@@ -608,7 +608,7 @@ public class NamingProxy implements Closeable {
             if (HttpStatus.SC_NOT_MODIFIED == restResult.getCode()) {
                 return StringUtils.EMPTY;
             }
-            throw new NacosException(restResult.getCode(), restResult.getData());
+            throw new NacosException(restResult.getCode(), restResult.getMessage());
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to request", e);
             throw new NacosException(NacosException.SERVER_ERROR, e);

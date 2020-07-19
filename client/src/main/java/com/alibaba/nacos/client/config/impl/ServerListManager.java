@@ -19,11 +19,14 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -31,9 +34,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -58,6 +59,8 @@ public class ServerListManager implements Closeable {
     private static final String HTTPS = "https://";
     
     private static final String HTTP = "http://";
+    
+    private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -342,13 +345,13 @@ public class ServerListManager implements Closeable {
     
     private List<String> getApacheServerList(String url, String name) {
         try {
-            HttpResult httpResult = HttpSimpleClient.httpGet(url, null, null, null, 3000);
-            
-            if (HttpURLConnection.HTTP_OK == httpResult.code) {
+            HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class);
+
+            if (httpResult.ok()) {
                 if (DEFAULT_NAME.equals(name)) {
-                    EnvUtil.setSelfEnv(httpResult.headers);
+                    EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
                 }
-                List<String> lines = IoUtils.readLines(new StringReader(httpResult.content));
+                List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
@@ -364,10 +367,10 @@ public class ServerListManager implements Closeable {
                 return result;
             } else {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
-                        httpResult.code);
+                    httpResult.getCode());
                 return null;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("[check-serverlist] exception. url: " + url, e);
             return null;
         }
