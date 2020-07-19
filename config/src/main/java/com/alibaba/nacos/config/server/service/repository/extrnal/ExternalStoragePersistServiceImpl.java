@@ -270,8 +270,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
             jt.update(
-                    "UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=?," +
-                        "type=? WHERE data_id=? AND group_id=? AND tenant_id=?", configInfo.getContent(), md5, srcIp,
+                    "UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=?," 
+                        + "type=? WHERE data_id=? AND group_id=? AND tenant_id=?", configInfo.getContent(), md5, srcIp,
                     srcUser, time, appNameTmp, configInfo.getType(), configInfo.getDataId(), configInfo.getGroup(),
                     tenantTmp);
         } catch (CannotGetJdbcConnectionException e) {
@@ -642,8 +642,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.queryForObject(
-                    "SELECT ID,data_id,group_id,tenant_id,app_name,content,beta_ips,type FROM config_info_beta " +
-                        "WHERE data_id=? AND group_id=? AND tenant_id=?",
+                    "SELECT ID,data_id,group_id,tenant_id,app_name,content,beta_ips,type FROM config_info_beta " 
+                        + "WHERE data_id=? AND group_id=? AND tenant_id=?",
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO4BETA_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
@@ -2242,8 +2242,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
         String sqlFetchRows =
-                "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,type,gmt_create,gmt_modified " +
-                        "from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+                "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,type,gmt_create,gmt_modified " 
+                + "from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
         
         Page<ConfigHistoryInfo> page = null;
         try {
@@ -2287,8 +2287,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type," +
-                "type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type," 
+                + "type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
         try {
             ConfigHistoryInfo historyInfo = jt
                     .queryForObject(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
