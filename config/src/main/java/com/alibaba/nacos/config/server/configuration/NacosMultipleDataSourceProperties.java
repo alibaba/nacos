@@ -37,8 +37,8 @@ public class NacosMultipleDataSourceProperties {
     @Data
     public static class RelationalDataSource {
 
-        private boolean slaveEnable = true;
         private List<DataSourceProperties> dsList;
+
     }
 
 }
