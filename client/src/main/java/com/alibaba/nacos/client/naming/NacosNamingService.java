@@ -58,13 +58,9 @@ public class NacosNamingService implements NamingService {
      */
     private String namespace;
     
-    private String cacheDir;
-    
     private String logName;
     
     private HostReactor hostReactor;
-    
-    private BeatReactor beatReactor;
     
     private EventDispatcher eventDispatcher;
     
@@ -87,47 +83,14 @@ public class NacosNamingService implements NamingService {
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
         InitUtils.initWebRootContext();
-        initCacheDir();
         initLogName(properties);
         
         ServerListManager serverListManager = new ServerListManager(properties);
         this.eventDispatcher = new EventDispatcher();
         this.serverProxy = new NamingHttpClientProxy(this.namespace, serverListManager, properties);
-        this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
-        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
-                isLoadCacheAtStart(properties), initPollingThreadCount(properties));
+        this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, this.namespace, properties);
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, hostReactor);
         grpcClientProxy.start(serverListManager);
-    }
-    
-    private int initClientBeatThreadCount(Properties properties) {
-        if (properties == null) {
-            return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
-        }
-        
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
-                UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
-    }
-    
-    private int initPollingThreadCount(Properties properties) {
-        if (properties == null) {
-            
-            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
-        }
-        
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-                UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
-    }
-    
-    private boolean isLoadCacheAtStart(Properties properties) {
-        boolean loadCacheAtStart = false;
-        if (properties != null && StringUtils
-                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
-            loadCacheAtStart = ConvertUtils
-                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
-        }
-        
-        return loadCacheAtStart;
     }
     
     private void initLogName(Properties properties) {
@@ -140,13 +103,6 @@ public class NacosNamingService implements NamingService {
             } else {
                 logName = "naming.log";
             }
-        }
-    }
-    
-    private void initCacheDir() {
-        cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
-        if (StringUtils.isEmpty(cacheDir)) {
-            cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }
     
@@ -186,10 +142,6 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         //        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        //        if (instance.isEphemeral()) {
-        //            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
-        //            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
-        //        }
         //        serverProxy.registerService(groupedServiceName, groupName, instance);
         grpcClientProxy.registerService(serviceName, groupName, instance);
     }
@@ -227,10 +179,6 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        //        if (instance.isEphemeral()) {
-        //            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
-        //                    instance.getPort());
-        //        }
         //        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
         grpcClientProxy.deregisterService(serviceName, groupName, instance);
     }
@@ -279,8 +227,7 @@ public class NacosNamingService implements NamingService {
         
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
-                    StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ","));
         } else {
             //            serviceInfo = hostReactor
             //                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
@@ -341,12 +288,10 @@ public class NacosNamingService implements NamingService {
         
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
-                    StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ","));
         } else {
             serviceInfo = hostReactor
-                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
-                            StringUtils.join(clusters, ","));
+                    .getServiceInfoDirectlyFromServer(serviceName, groupName, StringUtils.join(clusters, ","));
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -411,13 +356,11 @@ public class NacosNamingService implements NamingService {
             boolean subscribe) throws NacosException {
         
         if (subscribe) {
-            return Balancer.RandomByWeight.selectHost(hostReactor
-                    .getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
-                            StringUtils.join(clusters, ",")));
+            return Balancer.RandomByWeight
+                    .selectHost(hostReactor.getServiceInfo(serviceName, groupName, StringUtils.join(clusters, ",")));
         } else {
             return Balancer.RandomByWeight.selectHost(hostReactor
-                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
-                            StringUtils.join(clusters, ",")));
+                    .getServiceInfoDirectlyFromServer(serviceName, groupName, StringUtils.join(clusters, ",")));
         }
     }
     
@@ -505,12 +448,11 @@ public class NacosNamingService implements NamingService {
     }
     
     public BeatReactor getBeatReactor() {
-        return beatReactor;
+        return serverProxy.getBeatReactor();
     }
     
     @Override
     public void shutDown() throws NacosException {
-        beatReactor.shutdown();
         eventDispatcher.shutdown();
         hostReactor.shutdown();
         serverProxy.shutdown();
