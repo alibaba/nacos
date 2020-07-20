@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.net.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;

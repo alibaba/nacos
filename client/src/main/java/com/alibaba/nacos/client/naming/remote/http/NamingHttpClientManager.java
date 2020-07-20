@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.net.http;
+package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;

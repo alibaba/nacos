@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.alibaba.nacos.client.naming.net.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

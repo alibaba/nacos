@@ -19,7 +19,7 @@ package com.alibaba.nacos.client;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.alibaba.nacos.client.naming.net.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.client.naming.net.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
