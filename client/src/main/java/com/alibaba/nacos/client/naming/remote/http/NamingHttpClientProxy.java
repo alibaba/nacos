@@ -32,35 +32,27 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
-import com.alibaba.nacos.client.utils.ClientCommonUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.utils.UuidUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpStatus;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -90,45 +82,28 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private final String namespaceId;
     
-    private final String endpoint;
-    
-    private String nacosDomain;
-    
-    private List<String> serverList;
-    
-    private List<String> serversFromEndpoint = new ArrayList<String>();
-    
     private final SecurityProxy securityProxy;
     
-    private long lastSrvRefTime = 0L;
-    
-    private final long vipSrvRefInterMillis = TimeUnit.SECONDS.toMillis(30);
-    
     private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+    
+    private final ServerListManager serverListManager;
     
     private Properties properties;
     
     private ScheduledExecutorService executorService;
     
-    public NamingHttpClientProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
-        
+    public NamingHttpClientProxy(String namespaceId, ServerListManager serverListManager, Properties properties) {
+        this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
-        this.endpoint = endpoint;
-        if (StringUtils.isNotEmpty(serverList)) {
-            this.serverList = Arrays.asList(serverList.split(","));
-            if (this.serverList.size() == 1) {
-                this.nacosDomain = serverList;
-            }
-        }
         this.initRefreshTask();
     }
     
     private void initRefreshTask() {
         
-        this.executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
+        this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -141,76 +116,11 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         this.executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                refreshSrvIfNeed();
-            }
-        }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
-        
-        this.executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(getServerList());
+                securityProxy.login(serverListManager.getServerList());
             }
         }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         
-        refreshSrvIfNeed();
-        this.securityProxy.login(getServerList());
-    }
-    
-    public List<String> getServerListFromEndpoint() {
-        
-        try {
-            String urlString = "http://" + endpoint + "/nacos/serverlist";
-            Header header = builderHeader();
-            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, Query.EMPTY, String.class);
-            if (!restResult.ok()) {
-                throw new IOException(
-                        "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
-            }
-            
-            String content = restResult.getData();
-            List<String> list = new ArrayList<String>();
-            for (String line : IoUtils.readLines(new StringReader(content))) {
-                if (!line.trim().isEmpty()) {
-                    list.add(line.trim());
-                }
-            }
-            
-            return list;
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        return null;
-    }
-    
-    private void refreshSrvIfNeed() {
-        try {
-            
-            if (!CollectionUtils.isEmpty(serverList)) {
-                NAMING_LOGGER.debug("server list provided by user: " + serverList);
-                return;
-            }
-            
-            if (System.currentTimeMillis() - lastSrvRefTime < vipSrvRefInterMillis) {
-                return;
-            }
-            
-            List<String> list = getServerListFromEndpoint();
-            
-            if (CollectionUtils.isEmpty(list)) {
-                throw new Exception("Can not acquire Nacos list");
-            }
-            
-            if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
-                NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
-            }
-            
-            serversFromEndpoint = list;
-            lastSrvRefTime = System.currentTimeMillis();
-        } catch (Throwable e) {
-            NAMING_LOGGER.warn("failed to update server list", e);
-        }
+        this.securityProxy.login(serverListManager.getServerList());
     }
     
     @Override
@@ -472,7 +382,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     public String reqApi(String api, Map<String, String> params, Map<String, String> body, String method)
             throws NacosException {
-        return reqApi(api, params, body, getServerList(), method);
+        return reqApi(api, params, body, serverListManager.getServerList(), method);
     }
     
     /**
@@ -491,7 +401,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
-        if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
+        if (CollectionUtils.isEmpty(servers) && !serverListManager.isDomain()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
         
@@ -516,14 +426,14 @@ public class NamingHttpClientProxy implements NamingClientProxy {
             }
         }
         
-        if (StringUtils.isNotBlank(nacosDomain)) {
+        if (serverListManager.isDomain()) {
             for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
                 try {
-                    return callServer(api, params, body, nacosDomain, method);
+                    return callServer(api, params, body, serverListManager.getNacosDomain(), method);
                 } catch (NacosException e) {
                     exception = e;
                     if (NAMING_LOGGER.isDebugEnabled()) {
-                        NAMING_LOGGER.debug("request {} failed.", nacosDomain, e);
+                        NAMING_LOGGER.debug("request {} failed.", serverListManager.getNacosDomain(), e);
                     }
                 }
             }
@@ -535,14 +445,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         throw new NacosException(exception.getErrCode(),
                 "failed to req API:" + api + " after all servers(" + servers + ") tried: " + exception.getMessage());
         
-    }
-    
-    private List<String> getServerList() {
-        List<String> snapshot = serversFromEndpoint;
-        if (!CollectionUtils.isEmpty(serverList)) {
-            snapshot = serverList;
-        }
-        return snapshot;
     }
     
     public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer)
@@ -566,7 +468,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         long start = System.currentTimeMillis();
         long end = 0;
         injectSecurityInfo(params);
-        Header header = builderHeader();
+        Header header = NamingHttpUtil.builderHeader();
         
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
@@ -621,22 +523,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
                 NAMING_LOGGER.error("inject ak/sk failed.", e);
             }
         }
-    }
-    
-    /**
-     * Build header.
-     *
-     * @return header
-     */
-    public Header builderHeader() {
-        Header header = Header.newInstance();
-        header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
-        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, ClientCommonUtils.VERSION);
-        header.addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip,deflate,sdch");
-        header.addParam(HttpHeaderConsts.CONNECTION, "Keep-Alive");
-        header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
-        header.addParam(HttpHeaderConsts.REQUEST_MODULE, "Naming");
-        return header;
     }
     
     private static String getSignData(String serviceName) {
