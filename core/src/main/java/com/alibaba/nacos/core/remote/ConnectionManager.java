@@ -20,9 +20,7 @@ import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,7 +33,6 @@ import java.util.Map;
 public class ConnectionManager {
     
     Map<String, Connection> connetions = new HashMap<String, Connection>();
-    
     
     /**
      * register a new connect.

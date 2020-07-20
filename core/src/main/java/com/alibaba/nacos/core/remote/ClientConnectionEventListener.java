@@ -17,6 +17,9 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.PostConstruct;
 
 /**
  * ClientConnectionEventListener.
@@ -24,20 +27,51 @@ import com.alibaba.nacos.api.remote.connection.Connection;
  * @author liuzunfei
  * @version $Id: ClientConnectionEventListener.java, v 0.1 2020年07月16日 3:06 PM liuzunfei Exp $
  */
-public interface ClientConnectionEventListener {
+public abstract class ClientConnectionEventListener {
+    
+    /**
+     * lisnter name.
+     */
+    private String name;
+    
+    @Autowired
+    protected ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
+    
+    @PostConstruct
+    public void init() {
+        clientConnectionEventListenerRegistry.registerClientConnectionEventListener(this);
+    }
+    
+    /**
+     * Getter method for property <tt>name</tt>.
+     *
+     * @return property value of name
+     */
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * Setter method for property <tt>name</tt>.
+     *
+     * @param name value to be assigned to property name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
     
     /**
      * notified when a client connected.
      *
      * @param connect connect.
      */
-    public void clientConnected(Connection connect);
+    public abstract void clientConnected(Connection connect);
     
     /**
      * notified when a client disconnected.
      *
      * @param connect connect.
      */
-    public void clientDisConnected(Connection connect);
+    public abstract void clientDisConnected(Connection connect);
     
 }

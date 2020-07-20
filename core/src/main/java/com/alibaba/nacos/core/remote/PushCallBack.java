@@ -17,9 +17,15 @@
 package com.alibaba.nacos.core.remote;
 
 /**
- * ConnectionHeathyChecker.
+ * callback of push service.
+ *
  * @author liuzunfei
- * @version $Id: ConnectionHeathyChecker.java, v 0.1 2020年07月14日 12:01 AM liuzunfei Exp $
+ * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
-public interface ConnectionHeathyChecker {
+public interface PushCallBack {
+    
+    public void onSuccess();
+    
+    public void onException();
+    
 }

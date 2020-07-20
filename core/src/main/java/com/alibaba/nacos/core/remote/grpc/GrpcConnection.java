@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
@@ -22,25 +23,24 @@ import com.alibaba.nacos.api.remote.response.Response;
 import io.grpc.stub.StreamObserver;
 
 /**
+ * grpc connection.
  * @author liuzunfei
  * @version $Id: GrpcConnection.java, v 0.1 2020年07月13日 7:26 PM liuzunfei Exp $
  */
 public class GrpcConnection extends Connection {
-
+    
     private StreamObserver streamObserver;
-
-    public GrpcConnection(ConnectionMetaInfo metaInfo,StreamObserver streamObserver) {
+    
+    public GrpcConnection(ConnectionMetaInfo metaInfo, StreamObserver streamObserver) {
         super(metaInfo);
-        this.streamObserver=streamObserver;
+        this.streamObserver = streamObserver;
     }
-
+    
     @Override
     public void sendResponse(Response reponse) {
         streamObserver.onNext(GrpcUtils.convert(reponse));
     }
-
-
-
+    
     @Override
     public void closeGrapcefully() {
         //Empty implements

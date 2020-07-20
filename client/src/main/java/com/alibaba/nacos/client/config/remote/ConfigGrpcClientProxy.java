@@ -120,10 +120,10 @@ public class ConfigGrpcClientProxy {
     /**
      * publish config.
      *
-     * @param dataid
-     * @param group
-     * @param tenat
-     * @return
+     * @param dataid dataid
+     * @param group group
+     * @param tenat tenat
+     * @return push  result.
      * @throws NacosException throw where publish fail.
      */
     public ConfigPubishResponse publishConfig(String dataid, String group, String tenat, String content)
@@ -136,10 +136,10 @@ public class ConfigGrpcClientProxy {
     /**
      * remove config.
      *
-     * @param dataid
-     * @param group
-     * @param tenat
-     * @return
+     * @param dataid dataid
+     * @param group group
+     * @param tenat tenat
+     * @return response.
      * @throws NacosException throw where publish fail.
      */
     public ConfigRemoveResponse removeConfig(String dataid, String group, String tenat, String tag)

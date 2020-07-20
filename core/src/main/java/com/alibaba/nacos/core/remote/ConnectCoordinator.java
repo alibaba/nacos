@@ -22,9 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,14 +37,15 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ConnectCoordinator implements ConnectionHeathyChecker {
     
-    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
+    @Autowired
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     @Autowired
     ConnectionManager connectionManager;
     
     private ScheduledExecutorService executors = Executors.newScheduledThreadPool(1);
     
-    private static final long EXPIRE_MILLSECOND = 15000L;
+    private static final long EXPIRE_MILLSECOND = 10000L;
     
     /**
      * Start Task：Expel the connection which active Time expire.
@@ -69,7 +68,7 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
                             connectionManager.unregister(conn.getConnectionId());
                             Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ",
                                     conn.getConnectionId());
-                            for (ClientConnectionEventListener listener : clientConnectionEventListeners) {
+                            for (ClientConnectionEventListener listener : clientConnectionEventListenerRegistry.clientConnectionEventListeners) {
                                 listener.clientDisConnected(conn);
                             }
                             
@@ -81,10 +80,6 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
                 }
             }
         }, 500L, 5000L, TimeUnit.MILLISECONDS);
-    }
-    
-    public void registerClientConnectionEventListener(ClientConnectionEventListener listener) {
-        this.clientConnectionEventListeners.add(listener);
     }
     
 }

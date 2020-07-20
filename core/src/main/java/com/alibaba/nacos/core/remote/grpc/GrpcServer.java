@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.ClientConnectionEventListenerRegistry;
 import com.alibaba.nacos.core.remote.ConnectCoordinator;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
@@ -41,6 +41,8 @@ public class GrpcServer extends RpcServer {
     
     private Server server;
     
+    @Autowired
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     @Autowired
     private ConnectCoordinator connectCoordinator;
@@ -66,11 +68,6 @@ public class GrpcServer extends RpcServer {
         Loggers.GRPC.info("Stream request handler  inited :" + streamRequestHander);
         Loggers.GRPC.info("Common request handler  inited :" + requestHander);
         Loggers.GRPC.info("Request handler Registry inited :" + requestHandlerRegistry);
-    }
-    
-    @Override
-    public void registerClientConnectionEventListener(ClientConnectionEventListener eventListener) {
-        connectCoordinator.registerClientConnectionEventListener(eventListener);
     }
     
     @PostConstruct

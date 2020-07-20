@@ -217,7 +217,6 @@ public class NacosConfigService implements ConfigService {
         }
     }
     
-    
     private boolean removeConfigInRpc(String tenant, String dataId, String group, String tag) {
         
         try {

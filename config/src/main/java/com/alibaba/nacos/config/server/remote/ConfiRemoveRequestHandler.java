@@ -31,6 +31,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +85,7 @@ public class ConfiRemoveRequestHandler extends RequestHandler {
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {
-            e.printStackTrace();
+            Loggers.GRPC_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);
             return ConfigRemoveResponse.buildFailResponse(e.getMessage());
         }
     }
