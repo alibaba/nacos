@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,8 +96,29 @@ public class NacosRoleServiceImpl {
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             
+            Iterator<String> roleIt = roleSet.iterator();
+            while (roleIt.hasNext()) {
+                String role = roleIt.next();
+                if (!tmpRoleSet.contains(role)) {
+                    roleIt.remove();
+                }
+            }
             roleSet.addAll(tmpRoleSet);
+            
+            for (Iterator<Map.Entry<String, List<RoleInfo>>> roleInfoIt = roleInfoMap.entrySet().iterator(); roleInfoIt.hasNext();){
+                Map.Entry<String, List<RoleInfo>> item = roleInfoIt.next();
+                if (!tmpRoleInfoMap.containsKey(item.getKey())) {
+                    roleInfoIt.remove();
+                }
+            }
             roleInfoMap.putAll(tmpRoleInfoMap);
+            
+            for (Iterator<Map.Entry<String, List<PermissionInfo>>> permissionInfoIt = permissionInfoMap.entrySet().iterator(); permissionInfoIt.hasNext();){
+                Map.Entry<String, List<PermissionInfo>> item = permissionInfoIt.next();
+                if (!tmpPermissionInfoMap.containsKey(item.getKey())) {
+                    permissionInfoIt.remove();
+                }
+            }
             permissionInfoMap.putAll(tmpPermissionInfoMap);
         } catch (Exception e) {
             Loggers.AUTH.warn("[LOAD-ROLES] load failed", e);
