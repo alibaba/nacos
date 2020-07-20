@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.remote;
 
 /**
+ *  Client:ConnectionEventListener.
  * @author liuzunfei
  * @version $Id: ConnectionEventListener.java, v 0.1 2020年07月14日 10:59 AM liuzunfei Exp $
  */
 public interface ConnectionEventListener {
-
-
+    
     /**
-     *
+     * notify when server is connected .
      */
     public void onConnected();
 
     /**
-     *
+     * notify when this client is switch to a new server and  is sucessful reconnected .
      */
     public void onReconnected();
 
     /**
-     *
+     * notify when server is disconnected .
      */
     public void onDisConnect();
 }

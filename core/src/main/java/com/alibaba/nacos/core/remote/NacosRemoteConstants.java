@@ -28,5 +28,4 @@ public class NacosRemoteConstants {
     
     public static final String LISTEN_CONTEXT_NAMING = "NAMING";
     
-    
 }

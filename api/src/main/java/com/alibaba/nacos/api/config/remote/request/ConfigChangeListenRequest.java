@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-
 /**
  * ConfigChangeListenRequest.
  * @author liuzunfei
  * @version $Id: ConfigChangeListenRequest.java, v 0.1 2020年07月13日 9:01 PM liuzunfei Exp $
  */
 public class ConfigChangeListenRequest extends ConfigCommonRequest {
-    
     
     private static final String LISTEN = "listen";
     
@@ -36,7 +34,6 @@ public class ConfigChangeListenRequest extends ConfigCommonRequest {
     private String tenant;
     
     private String operation = LISTEN;
-    
     
     public boolean isCancelListen() {
         return UNLISTEN.equals(this.operation);

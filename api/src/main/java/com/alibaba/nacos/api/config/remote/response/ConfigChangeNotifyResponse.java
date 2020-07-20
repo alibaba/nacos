@@ -16,24 +16,20 @@
 
 package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 
 /**
+ * ConfigChangeNotifyResponse.
  * @author liuzunfei
  * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyResponse extends Response {
+public class ConfigChangeNotifyResponse extends ServerPushResponse {
     
     private String dataId;
     
     private String group;
     
     private String tenant;
-    
-    public ConfigChangeNotifyResponse() {
-    
-    }
     
     @Override
     public String getType() {

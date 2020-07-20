@@ -121,7 +121,7 @@ public class ConfigQueryRequestHandler extends RequestHandler {
                         }
                     }
                     String configType = cacheItem.getType();
-                    response.setContentType(configType);
+                    response.setContentType((null != configType) ? configType : "text");
                 }
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
@@ -134,7 +134,7 @@ public class ConfigQueryRequestHandler extends RequestHandler {
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
-                    response.addLabel("beta", "Y");
+                    response.addLabel("isBeta", "Y");
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {

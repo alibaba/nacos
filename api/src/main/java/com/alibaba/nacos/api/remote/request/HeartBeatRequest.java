@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.remote.request;
 
-
 /**
+ * HeartBeatRequest.
  * @author liuzunfei
  * @version $Id: HeartBeatRequest.java, v 0.1 2020年07月14日 11:38 AM liuzunfei Exp $
  */

@@ -24,13 +24,6 @@ package com.alibaba.nacos.core.remote;
 public abstract class RpcServer {
     
     /**
-     * register a ClientConnectionEventListener.
-     *
-     * @param eventListener eventListener.
-     */
-    public abstract void registerClientConnectionEventListener(ClientConnectionEventListener eventListener);
-    
-    /**
      * Start sever.
      */
     public abstract void start() throws Exception;

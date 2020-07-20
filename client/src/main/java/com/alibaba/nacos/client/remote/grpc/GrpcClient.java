@@ -48,7 +48,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -67,8 +66,6 @@ public class GrpcClient extends RpcClient {
     
     protected RequestGrpc.RequestBlockingStub grpcServiceStub;
     
-    private ReentrantLock startClientLock = new ReentrantLock();
-    
     ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -80,7 +77,7 @@ public class GrpcClient extends RpcClient {
     });
     
     /**
-     * Reconnect to current server before switch a new server
+     * Reconnect to current server before switch a new server.
      */
     private static final int MAX_RECONNECT_TIMES = 5;
     
@@ -119,14 +116,15 @@ public class GrpcClient extends RpcClient {
     
                         // loop until start client success.
                         while (!isRunning()) {
-        
+    
                             buildClientAtFirstTime();
                             boolean sucess = serverCheck();
                             if (sucess) {
                                 if (rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING) {
                                     notifyReConnected();
                                 }
-                                System.out.println("Current Server..." + getServerListFactory().getCurrentServer());
+                                LOGGER.info("Server check success, Current Server  is {}" + getServerListFactory()
+                                        .getCurrentServer());
                                 rpcClientStatus.compareAndSet(rpcClientStatus.get(), RpcClientStatus.RUNNING);
                                 reConnectTimesLeft.set(MAX_RECONNECT_TIMES);
                                 
@@ -332,6 +330,7 @@ public class GrpcClient extends RpcClient {
             GrpcResponse response = grpcServiceStub.request(grpcrequest);
             String type = response.getType();
             String bodyString = response.getBody().getValue().toStringUtf8();
+        
             // transfrom grpcResponse to response model
             Class classByType = ResponseRegistry.getClassByType(type);
             if (classByType != null) {
@@ -343,7 +342,7 @@ public class GrpcClient extends RpcClient {
                 return (PlainBodyResponse) myresponse;
             }
         } catch (Exception e) {
-            e.printStackTrace(System.out);
+            LOGGER.error("grpc client request error, error message is  ", e.getMessage(), e);
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }

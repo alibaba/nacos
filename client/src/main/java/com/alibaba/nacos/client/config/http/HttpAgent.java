@@ -31,7 +31,7 @@ import java.util.Map;
 public interface HttpAgent extends Closeable {
 
     /**
-     * get server list manager
+     * get server list manager.
      * @return
      */
     ServerListManager getServerListManager();
