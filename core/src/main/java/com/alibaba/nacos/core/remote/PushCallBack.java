@@ -17,20 +17,15 @@
 package com.alibaba.nacos.core.remote;
 
 /**
- * abstrat rpc server .
+ * callback of push service.
+ *
  * @author liuzunfei
- * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
+ * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
-public abstract class RpcServer {
+public interface PushCallBack {
     
-    /**
-     * Start sever.
-     */
-    public abstract void start() throws Exception;
+    public void onSuccess();
     
-    /**
-     * Stop Server.
-     */
-    public abstract void stop() throws Exception;
+    public void onException();
     
 }

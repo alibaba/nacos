@@ -94,6 +94,7 @@ public class ClientWorker implements Closeable {
         }
     
         try {
+        
             rpcClientProxy.listenConfigChange(dataId, group, "");
         } catch (NacosException e) {
             LOGGER.error("[{}] [sub-server-error] add listen error , dataId={}, group={}, tenant={}", "rpcClientProxy",
@@ -632,6 +633,8 @@ public class ClientWorker implements Closeable {
                     }
                 });
     
+        rpcClientProxy = new ConfigGrpcClientProxy();
+        
         if (ParamUtils.useHttpSwitch()) {
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
@@ -643,10 +646,8 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }, 1L, 10L, TimeUnit.MILLISECONDS);
-        
+    
         } else {
-            rpcClientProxy = new ConfigGrpcClientProxy();
-        
             rpcClientProxy.initAndStart(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
@@ -654,13 +655,13 @@ public class ClientWorker implements Closeable {
                     serverListManager.refreshCurrentServerAddr();
                     return serverListManager.getCurrentServerAddr();
                 }
-            
+    
                 @Override
                 public String getCurrentServer() {
                     return agent.getServerListManager().getCurrentServerAddr();
                 }
             });
-        
+    
             /*
              * Register Listen Change Handler
              */
@@ -695,7 +696,7 @@ public class ClientWorker implements Closeable {
                 }
     
             });
-        
+    
             /*
              *
              */
@@ -715,7 +716,7 @@ public class ClientWorker implements Closeable {
                             } catch (NacosException e) {
                                 LOGGER.error("[{}] [listen] {},{},{}", "grpc", cacheData.dataId, cacheData.group,
                                         cacheData.tenant, e);
-        
+    
                             }
                         }
                     }

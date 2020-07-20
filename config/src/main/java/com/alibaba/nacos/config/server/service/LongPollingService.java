@@ -22,13 +22,13 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.remote.ConfigChangeNotifier;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import com.alibaba.nacos.core.remote.DataChangeListenerNotifier;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,7 +74,7 @@ public class LongPollingService extends AbstractEventListener {
     private static final String TRUE_STR = "true";
     
     @Autowired
-    private DataChangeListenerNotifier dataChangeListenerNotifier;
+    private ConfigChangeNotifier configChangeNotifier;
     
     private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
     
@@ -371,7 +371,7 @@ public class LongPollingService extends AbstractEventListener {
                 String tenant = strings.length > 2 ? strings[2] : "";
                 ConfigChangeNotifyResponse notifyResponse = ConfigChangeNotifyResponse
                         .buildSuccessResponse(dataid, group, tenant);
-                dataChangeListenerNotifier.configDataChanged(groupKey, notifyResponse);
+                configChangeNotifier.configDataChanged(groupKey, notifyResponse);
                 
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));

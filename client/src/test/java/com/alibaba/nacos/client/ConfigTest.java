@@ -38,10 +38,11 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR,
-                "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
-    
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+        // properties.setProperty(PropertyKeyConst.SERVER_ADDR,
+        //       "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
+        //       //"11.239.114.187:8848");
+        
         configService = NacosFactory.createConfigService(properties);
     }
     
@@ -66,16 +67,30 @@ public class ConfigTest {
         ConfigListener2 listener2 = new ConfigListener2();
     
         configService.getConfigAndSignListener(dataId, group, 5000, listener1);
+        long start = System.currentTimeMillis();
     
         boolean testchange = configService.publishConfig(dataId, group, "testchange" + System.currentTimeMillis());
+        System.out.println("publicsh internal =" + (System.currentTimeMillis() - start));
+    
         System.out.println("发布配置：testchange");
         String config = configService.getConfig(dataId, group, 3000L);
         System.out.println("查询配置：content=" + config);
-    
-        configService.removeConfig(dataId, group);
-    
+        boolean removeSuccess = configService.removeConfig(dataId, group);
+        System.out.println("remove internal =" + (System.currentTimeMillis() - start));
+        System.out.println("removeSuccess:" + removeSuccess);
         String config2 = configService.getConfig(dataId, group, 3000L);
+        System.out.println("remove query 1 internal =" + (System.currentTimeMillis() - start));
+    
         System.out.println("移除后查询配置：content=" + config2);
+        config2 = configService.getConfig(dataId, group, 3000L);
+        System.out.println("remove query 2 internal =" + (System.currentTimeMillis() - start));
+    
+        System.out.println("移除后查询配置2：content=" + config2);
+    
+        config2 = configService.getConfig(dataId, group, 3000L);
+        System.out.println("remove query 3 internal =" + (System.currentTimeMillis() - start));
+    
+        System.out.println("移除后查询配置3：content=" + config2);
         
         configService.getConfigAndSignListener("lessspring2", group, 5000, listener1);
     

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * RpcClientFactory.to support muti client for diffrent client.
+ * RpcClientFactory.to support muti client for diffrent modules of usage.
  *
  * @author liuzunfei
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
@@ -34,29 +34,16 @@ public class RpcClientFactory {
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
     public static RpcClient getClient(String module) {
-        String useIndependentClient = System.getProperty("rpc.client.independent");
-        if ("Y".equalsIgnoreCase(useIndependentClient)) {
+        synchronized (clientMap) {
             if (clientMap.get(module) == null) {
                 RpcClient moduleClient = new GrpcClient();
-                return clientMap.putIfAbsent(module, moduleClient);
-            } else {
-                return clientMap.get(module);
+                clientMap.putIfAbsent(module, moduleClient);
             }
-        } else {
-            if (sharedClient != null) {
-                return sharedClient;
-            } else {
-            
-                synchronized (RpcClientFactory.class) {
-                    if (sharedClient == null) {
-                        sharedClient = new GrpcClient();
-                        return sharedClient;
-                    } else {
-                        return sharedClient;
-                    }
-                }
-            }
+        
+            return clientMap.get(module);
+        
         }
+        
     }
     
 }
