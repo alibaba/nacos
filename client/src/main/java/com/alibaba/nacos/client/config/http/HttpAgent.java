@@ -17,12 +17,11 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
-import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 /**
  * HttpAgent.
@@ -54,11 +53,11 @@ public interface HttpAgent extends Closeable {
      * @param encoding      http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
-     * @throws IOException If an input or output exception occurred
+     * @throws Exception If an input or output exception occurred
      */
     
-    HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs)
-            throws IOException;
+    HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * invoke http post method.
@@ -69,10 +68,10 @@ public interface HttpAgent extends Closeable {
      * @param encoding      http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
-     * @throws IOException If an input or output exception occurred
+     * @throws Exception If an input or output exception occurred
      */
-    HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException;
+    HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * invoke http delete method.
@@ -83,10 +82,10 @@ public interface HttpAgent extends Closeable {
      * @param encoding      http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
-     * @throws IOException If an input or output exception occurred
+     * @throws Exception If an input or output exception occurred
      */
-    HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException;
+    HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encoding, long readTimeoutMs) throws Exception;
     
     /**
      * get name.

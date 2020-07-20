@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,12 +67,12 @@ public class ConfigCacheService {
     /**
      * Save config file and update md5 value in cache.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param content content string value.
+     * @param dataId         dataId string value.
+     * @param group          group string value.
+     * @param tenant         tenant string value.
+     * @param content        content string value.
      * @param lastModifiedTs lastModifiedTs.
-     * @param type file type.
+     * @param type           file type.
      * @return dumpChange success or not.
      */
     public static boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
@@ -120,12 +120,12 @@ public class ConfigCacheService {
     /**
      * Save config file and update md5 value in cache.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param content content string value.
+     * @param dataId         dataId string value.
+     * @param group          group string value.
+     * @param tenant         tenant string value.
+     * @param content        content string value.
      * @param lastModifiedTs lastModifiedTs.
-     * @param betaIps betaIps string value.
+     * @param betaIps        betaIps string value.
      * @return dumpChange success or not.
      */
     public static boolean dumpBeta(String dataId, String group, String tenant, String content, long lastModifiedTs,
@@ -165,12 +165,12 @@ public class ConfigCacheService {
     /**
      * Save config file and update md5 value in cache.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param content content string value.
+     * @param dataId         dataId string value.
+     * @param group          group string value.
+     * @param tenant         tenant string value.
+     * @param content        content string value.
      * @param lastModifiedTs lastModifiedTs.
-     * @param tag tag string value.
+     * @param tag            tag string value.
      * @return dumpChange success or not.
      */
     public static boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
@@ -209,10 +209,10 @@ public class ConfigCacheService {
     /**
      * Save config file and update md5 value in cache.
      *
-     * @param dataId dataId string value.
-     * @param group group string value.
-     * @param tenant tenant string value.
-     * @param content content string value.
+     * @param dataId         dataId string value.
+     * @param group          group string value.
+     * @param tenant         tenant string value.
+     * @param content        content string value.
      * @param lastModifiedTs lastModifiedTs.
      * @return dumpChange success or not.
      */
@@ -313,6 +313,7 @@ public class ConfigCacheService {
     
     /**
      * Check md5.
+     *
      * @return return diff result list.
      */
     public static List<String> checkMd5() {
@@ -343,20 +344,20 @@ public class ConfigCacheService {
      * Delete config file, and delete cache.
      *
      * @param dataId dataId string value.
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      * @return remove success or not.
      */
     public static boolean remove(String dataId, String group, String tenant) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final int lockResult = tryWriteLock(groupKey);
-    
+        
         // If data is non-existent.
         if (0 == lockResult) {
             DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-    
+        
         // try to lock failed
         if (lockResult < 0) {
             DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
@@ -368,7 +369,7 @@ public class ConfigCacheService {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
             }
             CACHE.remove(groupKey);
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
             
             return true;
         } finally {
@@ -380,7 +381,7 @@ public class ConfigCacheService {
      * Delete beta config file, and delete cache.
      *
      * @param dataId dataId string value.
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
      * @return remove success or not.
      */
@@ -393,7 +394,7 @@ public class ConfigCacheService {
             DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-
+        
         // try to lock failed
         if (lockResult < 0) {
             DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
@@ -404,7 +405,7 @@ public class ConfigCacheService {
             if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.removeConfigInfo4Beta(dataId, group, tenant);
             }
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
             CACHE.get(groupKey).setBeta(false);
             CACHE.get(groupKey).setIps4Beta(null);
             CACHE.get(groupKey).setMd54Beta(Constants.NULL);
@@ -418,21 +419,21 @@ public class ConfigCacheService {
      * Delete tag config file, and delete cache.
      *
      * @param dataId dataId string value.
-     * @param group group string value.
+     * @param group  group string value.
      * @param tenant tenant string value.
-     * @param tag tag string value.
+     * @param tag    tag string value.
      * @return remove success or not.
      */
     public static boolean removeTag(String dataId, String group, String tenant, String tag) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final int lockResult = tryWriteLock(groupKey);
-
+        
         // If data is non-existent.
         if (0 == lockResult) {
             DUMP_LOG.info("[remove-ok] {} not exist.", groupKey);
             return true;
         }
-
+        
         // try to lock failed
         if (lockResult < 0) {
             DUMP_LOG.warn("[remove-error] write lock failed. {}", groupKey);
@@ -447,7 +448,7 @@ public class ConfigCacheService {
             CacheItem ci = CACHE.get(groupKey);
             ci.tagMd5.remove(tag);
             ci.tagLastModifiedTs.remove(tag);
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
             return true;
         } finally {
             releaseWriteLock(groupKey);
@@ -457,8 +458,8 @@ public class ConfigCacheService {
     /**
      * Update md5 value.
      *
-     * @param groupKey groupKey string value.
-     * @param md5 md5 string value.
+     * @param groupKey       groupKey string value.
+     * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
     public static void updateMd5(String groupKey, String md5, long lastModifiedTs) {
@@ -466,16 +467,16 @@ public class ConfigCacheService {
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
             cache.lastModifiedTs = lastModifiedTs;
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
         }
     }
     
     /**
      * Update Beta md5 value.
      *
-     * @param groupKey groupKey string value.
-     * @param md5 md5 string value.
-     * @param ips4Beta ips4Beta List.
+     * @param groupKey       groupKey string value.
+     * @param md5            md5 string value.
+     * @param ips4Beta       ips4Beta List.
      * @param lastModifiedTs lastModifiedTs long value.
      */
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
@@ -485,16 +486,16 @@ public class ConfigCacheService {
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;
             cache.ips4Beta = ips4Beta;
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
         }
     }
     
     /**
      * Update tag md5 value.
      *
-     * @param groupKey groupKey string value.
-     * @param tag tag string value.
-     * @param md5 md5 string value.
+     * @param groupKey       groupKey string value.
+     * @param tag            tag string value.
+     * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
     public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
@@ -510,13 +511,13 @@ public class ConfigCacheService {
             } else {
                 cache.tagLastModifiedTs.put(tag, lastModifiedTs);
             }
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
             return;
         }
         if (cache.tagMd5.get(tag) == null || !cache.tagMd5.get(tag).equals(md5)) {
             cache.tagMd5.put(tag, md5);
             cache.tagLastModifiedTs.put(tag, lastModifiedTs);
-            EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
+            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
         }
     }
     

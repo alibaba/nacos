@@ -19,40 +19,29 @@ package com.alibaba.nacos.api.naming.remote.response;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
- * Nacos naming query request.
+ * Nacos naming subscribe service response.
  *
  * @author xiweng.yy
  */
-public class ServiceQueryResponse extends Response {
+public class SubscribeServiceResponse extends Response {
     
     private ServiceInfo serviceInfo;
     
-    public ServiceQueryResponse() {
+    public SubscribeServiceResponse() {
+    }
+    
+    public SubscribeServiceResponse(int resultCode, String message, ServiceInfo serviceInfo) {
+        super();
+        setResultCode(resultCode);
+        setMessage(message);
+        this.serviceInfo = serviceInfo;
     }
     
     @Override
     public String getType() {
-        return NamingRemoteConstants.QUERY_SERVICE;
-    }
-    
-    public ServiceQueryResponse(ServiceInfo serviceInfo) {
-        this.serviceInfo = serviceInfo;
-    }
-    
-    public static ServiceQueryResponse buildSuccessResponse(ServiceInfo serviceInfo) {
-        ServiceQueryResponse serviceQueryResponse = new ServiceQueryResponse();
-        serviceQueryResponse.setServiceInfo(serviceInfo);
-        return serviceQueryResponse;
-    }
-    
-    public static ServiceQueryResponse buildFailResponse(String message) {
-        ServiceQueryResponse serviceQueryResponse = new ServiceQueryResponse();
-        serviceQueryResponse.setResultCode(ResponseCode.FAIL.getCode());
-        serviceQueryResponse.setMessage(message);
-        return serviceQueryResponse;
+        return NamingRemoteConstants.SUBSCRIBE_SERVICE;
     }
     
     public ServiceInfo getServiceInfo() {

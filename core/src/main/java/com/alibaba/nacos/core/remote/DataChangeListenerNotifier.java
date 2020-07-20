@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -55,17 +56,29 @@ public class DataChangeListenerNotifier {
     public void configDataChanged(String groupKey, Response notifyResponse) {
         
         Set<String> listeners = asyncListenContext.getListeners(NacosRemoteConstants.LISTEN_CONTEXT_CONFIG, groupKey);
-        if (!CollectionUtils.isEmpty(listeners)) {
-            for (String connectionId : listeners) {
-                Connection connection = connectionManager.getConnection(connectionId);
-                if (connection != null) {
-                    connection.sendResponse(notifyResponse);
-                }
-            }
-        }
+        sendNotifyResponse(listeners, notifyResponse);
     }
     
-    public void serviceIndoChanged(String serviceKey, Response notifyResponse) {
-        //TODO
+    /**
+     * Push service info to subscribe.
+     *
+     * @param serviceKey service key
+     * @param notifyResponse {@link com.alibaba.nacos.api.naming.pojo.ServiceInfo}
+     */
+    public void serviceInfoChanged(String serviceKey, Response notifyResponse) {
+        Set<String> listeners = asyncListenContext.getListeners(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey);
+        sendNotifyResponse(listeners, notifyResponse);
+    }
+    
+    private void sendNotifyResponse(Collection<String> listeners, Response notifyResponse) {
+        if (CollectionUtils.isEmpty(listeners)) {
+            return;
+        }
+        for (String each : listeners) {
+            Connection connection = connectionManager.getConnection(each);
+            if (null != connection) {
+                connection.sendResponse(notifyResponse);
+            }
+        }
     }
 }

@@ -30,13 +30,17 @@ public class InstanceResponse extends Response {
     public InstanceResponse() {
     }
     
+    public InstanceResponse(String type) {
+        this.type = type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
+    }
+    
     @Override
     public String getType() {
         return this.type;
-    }
-    
-    public InstanceResponse(String type) {
-        this.type = type;
     }
     
 }

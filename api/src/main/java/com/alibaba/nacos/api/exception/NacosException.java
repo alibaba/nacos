@@ -154,4 +154,10 @@ public class NacosException extends Exception {
     public static final int OVER_THRESHOLD = 503;
     
     public static final int RESOURCE_NOT_FOUND = -404;
+    
+    /**
+     * http client error code,
+     * ome exceptions that occurred when the use the Nacos RestTemplate and Nacos AsyncRestTemplate.
+     */
+    public static final int HTTP_CLIENT_ERROR_CODE = -500;
 }

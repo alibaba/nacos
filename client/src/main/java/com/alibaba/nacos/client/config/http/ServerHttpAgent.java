@@ -19,8 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.StsConfig;
@@ -28,29 +27,36 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpClientConfig;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Callable;
 
 /**
  * Server Agent.
@@ -61,6 +67,9 @@ public class ServerHttpAgent implements HttpAgent {
     
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
     
+    private static final NacosRestTemplate NACOS_RESTTEMPLATE = ConfigHttpClientManager.getInstance()
+            .getNacosRestTemplate();
+    
     private SecurityProxy securityProxy;
     
     private String namespaceId;
@@ -69,40 +78,28 @@ public class ServerHttpAgent implements HttpAgent {
     
     private ScheduledExecutorService executorService;
     
-    /**
-     * Invoke http get method.
-     *
-     * @param path          相对于web应用根，以/开头
-     * @param headers       headers
-     * @param paramValues   parameters
-     * @param encoding      encoding
-     * @param readTimeoutMs time out milliseconds
-     * @return http result
-     * @throws IOException io exception
-     */
     @Override
-    public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        final boolean isSsl = false;
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
-        
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(100)).build();
         do {
             try {
-                List<String> newHeaders = getSpasHeaders(paramValues);
+                Header newHeaders = getSpasHeaders(paramValues, encode);
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
-                HttpResult result = HttpSimpleClient
-                        .httpGet(getUrl(currentServerAddr, path), newHeaders, paramValues, encoding, readTimeoutMs,
-                                isSsl);
-                if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
-                        || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
-                        || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
+                
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE
+                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
-                            serverListMgr.getCurrentServerAddr(), result.code);
+                            serverListMgr.getCurrentServerAddr(), result.getCode());
                 } else {
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);
@@ -114,10 +111,10 @@ public class ServerHttpAgent implements HttpAgent {
             } catch (SocketTimeoutException socketTimeoutException) {
                 LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}， err : {}",
                         serverListMgr.getCurrentServerAddr(), socketTimeoutException.getMessage());
-            } catch (IOException ioException) {
-                LOGGER.error("[NACOS IOException httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
-                        ioException);
-                throw ioException;
+            } catch (Exception ex) {
+                LOGGER.error("[NACOS Exception httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                        ex);
+                throw ex;
             }
             
             if (serverListMgr.getIterator().hasNext()) {
@@ -138,30 +135,29 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     @Override
-    public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        boolean isSsl = false;
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
-        
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(3000)).build();
         do {
             
             try {
-                List<String> newHeaders = getSpasHeaders(paramValues);
+                Header newHeaders = getSpasHeaders(paramValues, encode);
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE
+                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
+                                new HashMap<String, String>(0), paramValues, String.class);
                 
-                HttpResult result = HttpSimpleClient
-                        .httpPost(getUrl(currentServerAddr, path), newHeaders, paramValues, encoding, readTimeoutMs,
-                                isSsl);
-                if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
-                        || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
-                        || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
+                if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
-                            result.code);
+                            result.getCode());
                 } else {
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);
@@ -173,9 +169,9 @@ public class ServerHttpAgent implements HttpAgent {
             } catch (SocketTimeoutException socketTimeoutException) {
                 LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}",
                         currentServerAddr, socketTimeoutException.getMessage());
-            } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException httpPost] currentServerAddr: " + currentServerAddr, ioe);
-                throw ioe;
+            } catch (Exception ex) {
+                LOGGER.error("[NACOS Exception httpPost] currentServerAddr: " + currentServerAddr, ex);
+                throw ex;
             }
             
             if (serverListMgr.getIterator().hasNext()) {
@@ -196,46 +192,42 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     @Override
-    public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
-            long readTimeoutMs) throws IOException {
+    public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
+            String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        boolean isSsl = false;
         injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
-        
+        HttpClientConfig httpConfig = HttpClientConfig.builder()
+                .setReadTimeOutMillis(Long.valueOf(readTimeoutMs).intValue())
+                .setConTimeOutMillis(ConfigHttpClientManager.getInstance().getConnectTimeoutOrDefault(100)).build();
         do {
             try {
-                List<String> newHeaders = getSpasHeaders(paramValues);
+                Header newHeaders = getSpasHeaders(paramValues, encode);
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
-                HttpResult result = HttpSimpleClient
-                        .httpDelete(getUrl(currentServerAddr, path), newHeaders, paramValues, encoding, readTimeoutMs,
-                                isSsl);
-                if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
-                        || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
-                        || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE
+                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
-                            serverListMgr.getCurrentServerAddr(), result.code);
+                            serverListMgr.getCurrentServerAddr(), result.getCode());
                 } else {
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException connectException) {
-                connectException.printStackTrace();
                 LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}",
-                        serverListMgr.getCurrentServerAddr(), connectException.getMessage());
+                        serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(connectException));
             } catch (SocketTimeoutException stoe) {
-                stoe.printStackTrace();
                 LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}",
-                        serverListMgr.getCurrentServerAddr(), stoe.getMessage());
-            } catch (IOException ioe) {
+                        serverListMgr.getCurrentServerAddr(), ExceptionUtil.getStackTrace(stoe));
+            } catch (Exception ex) {
                 LOGGER.error(
-                        "[NACOS IOException httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
-                        ioe);
-                throw ioe;
+                        "[NACOS Exception httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(),
+                        ex);
+                throw ex;
             }
             
             if (serverListMgr.getIterator().hasNext()) {
@@ -261,6 +253,12 @@ public class ServerHttpAgent implements HttpAgent {
         return serverAddr + contextPath + relativePath;
     }
     
+    private boolean isFail(HttpRestResult<String> result) {
+        return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
+                || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
+                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE;
+    }
+    
     public static String getAppname() {
         return ParamUtil.getAppName();
     }
@@ -276,7 +274,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     public ServerHttpAgent(Properties properties) throws NacosException {
         this.serverListMgr = new ServerListManager(properties);
-        this.securityProxy = new SecurityProxy(properties);
+        this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
         this.securityProxy.login(this.serverListMgr.getServerUrls());
@@ -301,14 +299,12 @@ public class ServerHttpAgent implements HttpAgent {
         
     }
     
-    private void injectSecurityInfo(List<String> params) {
+    private void injectSecurityInfo(Map<String, String> params) {
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            params.add(Constants.ACCESS_TOKEN);
-            params.add(securityProxy.getAccessToken());
+            params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
         }
-        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
-            params.add(SpasAdapter.TENANT_KEY);
-            params.add(namespaceId);
+        if (StringUtils.isNotBlank(namespaceId) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
+            params.put(SpasAdapter.TENANT_KEY, namespaceId);
         }
     }
     
@@ -363,29 +359,37 @@ public class ServerHttpAgent implements HttpAgent {
         serverListMgr.start();
     }
     
-    private List<String> getSpasHeaders(List<String> paramValues) throws IOException {
-        List<String> newHeaders = new ArrayList<String>();
+    private Header getSpasHeaders(Map<String, String> paramValues, String encode) throws Exception {
+        Header header = Header.newInstance();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
             StsCredential stsCredential = getStsCredential();
             accessKey = stsCredential.accessKeyId;
             secretKey = stsCredential.accessKeySecret;
-            newHeaders.add("Spas-SecurityToken");
-            newHeaders.add(stsCredential.securityToken);
+            header.addParam("Spas-SecurityToken", stsCredential.securityToken);
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
-            newHeaders.add("Spas-AccessKey");
-            newHeaders.add(accessKey);
-            List<String> signHeaders = SpasAdapter.getSignHeaders(paramValues, secretKey);
+            header.addParam("Spas-AccessKey", accessKey);
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(paramValues, secretKey);
             if (signHeaders != null) {
-                newHeaders.addAll(signHeaders);
+                header.addAll(signHeaders);
             }
         }
-        return newHeaders;
+        String ts = String.valueOf(System.currentTimeMillis());
+        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
+        
+        header.addParam(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
+        header.addParam(Constants.CLIENT_REQUEST_TS_HEADER, ts);
+        header.addParam(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
+        header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
+        header.addParam("exConfigInfo", "true");
+        header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
+        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encode);
+        return header;
     }
     
-    private StsCredential getStsCredential() throws IOException {
+    private StsCredential getStsCredential() throws Exception {
         boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
         if (cacheSecurityCredentials && stsCredential != null) {
             long currentTime = System.currentTimeMillis();
@@ -405,40 +409,29 @@ public class ServerHttpAgent implements HttpAgent {
         return stsCredential;
     }
     
-    private static String getStsResponse() throws IOException {
+    private static String getStsResponse() throws Exception {
         String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
         if (securityCredentials != null) {
             return securityCredentials;
         }
         String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
-        HttpURLConnection conn = null;
-        int respCode;
-        String response;
         try {
-            conn = (HttpURLConnection) new URL(securityCredentialsUrl).openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);
-            conn.setReadTimeout(1000);
-            conn.connect();
-            respCode = conn.getResponseCode();
-            if (HttpURLConnection.HTTP_OK == respCode) {
-                response = IoUtils.toString(conn.getInputStream(), Constants.ENCODE);
-            } else {
-                response = IoUtils.toString(conn.getErrorStream(), Constants.ENCODE);
+            HttpRestResult<String> result = NACOS_RESTTEMPLATE
+                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
+            
+            if (!result.ok()) {
+                LOGGER.error(
+                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+                        securityCredentialsUrl, result.getCode(), result.getMessage());
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
+                                .getMessage());
             }
-        } catch (IOException e) {
+            return result.getData();
+        } catch (Exception e) {
             LOGGER.error("can not get security credentials", e);
             throw e;
-        } finally {
-            IoUtils.closeQuietly(conn);
         }
-        if (HttpURLConnection.HTTP_OK == respCode) {
-            return response;
-        }
-        LOGGER.error("can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                securityCredentialsUrl, respCode, response);
-        throw new IOException(
-                "can not get security credentials, responseCode: " + respCode + ", response: " + response);
     }
     
     @Override
@@ -466,6 +459,7 @@ public class ServerHttpAgent implements HttpAgent {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, LOGGER);
+        ConfigHttpClientManager.getInstance().shutdown();
         LOGGER.info("{} do shutdown stop", className);
     }
     
