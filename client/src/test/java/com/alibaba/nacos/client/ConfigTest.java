@@ -51,7 +51,6 @@ public class ConfigTest {
         configService.shutDown();
     }
     
-    
     @Test
     public void test() throws Exception {
         
@@ -59,41 +58,19 @@ public class ConfigTest {
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
         boolean result = configService.publishConfig(dataId, group, content);
-        // Assert.assertTrue(result);
-    
+        Assert.assertTrue(result);
+        
         ThreadUtils.sleep(200L);
     
-        ConfigListener1 listener1 = new ConfigListener1();
-        ConfigListener2 listener2 = new ConfigListener2();
+        configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println("receiveConfigInfo :" + configInfo);
+            }
+        });
     
-        configService.getConfigAndSignListener(dataId, group, 5000, listener1);
-        long start = System.currentTimeMillis();
-    
-        boolean testchange = configService.publishConfig(dataId, group, "testchange" + System.currentTimeMillis());
-        System.out.println("publicsh internal =" + (System.currentTimeMillis() - start));
-    
-        System.out.println("发布配置：testchange");
-        String config = configService.getConfig(dataId, group, 3000L);
-        System.out.println("查询配置：content=" + config);
-        boolean removeSuccess = configService.removeConfig(dataId, group);
-        System.out.println("remove internal =" + (System.currentTimeMillis() - start));
-        System.out.println("removeSuccess:" + removeSuccess);
-        String config2 = configService.getConfig(dataId, group, 3000L);
-        System.out.println("remove query 1 internal =" + (System.currentTimeMillis() - start));
-    
-        System.out.println("移除后查询配置：content=" + config2);
-        config2 = configService.getConfig(dataId, group, 3000L);
-        System.out.println("remove query 2 internal =" + (System.currentTimeMillis() - start));
-    
-        System.out.println("移除后查询配置2：content=" + config2);
-    
-        config2 = configService.getConfig(dataId, group, 3000L);
-        System.out.println("remove query 3 internal =" + (System.currentTimeMillis() - start));
-    
-        System.out.println("移除后查询配置3：content=" + config2);
+        configService.removeConfig(dataId, group);
         
-        configService.getConfigAndSignListener("lessspring2", group, 5000, listener1);
-    
         configService.publishConfig("lessspring2", group, "lessspring2value");
     
         Scanner scanner = new Scanner(System.in);
@@ -108,21 +85,4 @@ public class ConfigTest {
         }
     }
     
-}
-
-
-class ConfigListener1 extends AbstractListener {
-    
-    @Override
-    public void receiveConfigInfo(String configInfo) {
-        System.err.println("Listener1 invoked." + configInfo);
-    }
-}
-
-class ConfigListener2 extends AbstractListener {
-    
-    @Override
-    public void receiveConfigInfo(String configInfo) {
-        System.err.println("Listener2 invoked." + configInfo);
-    }
 }

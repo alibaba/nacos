@@ -61,8 +61,8 @@ public class ConfigQueryResponse extends Response {
     /**
      * Buid fail response.
      *
-     * @param errorCode
-     * @param message
+     * @param errorCode errorCode.
+     * @param message message.
      * @return
      */
     public static ConfigQueryResponse buildFailResponse(int errorCode, String message) {
