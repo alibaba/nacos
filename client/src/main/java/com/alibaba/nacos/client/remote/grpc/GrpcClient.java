@@ -347,4 +347,10 @@ public class GrpcClient extends RpcClient {
         }
     }
     
+    @Override
+    public void shutdown() throws NacosException {
+        if (!this.channel.isShutdown()) {
+            this.channel.shutdownNow();
+        }
+    }
 }

@@ -30,8 +30,8 @@ import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
-import com.alibaba.nacos.client.naming.net.NamingProxy;
-import com.alibaba.nacos.client.naming.net.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -73,7 +73,7 @@ public class NacosNamingService implements NamingService {
     
     private EventDispatcher eventDispatcher;
     
-    private NamingProxy serverProxy;
+    private NamingHttpClientProxy serverProxy;
     
     private NamingGrpcClientProxy grpcClientProxy;
     
@@ -97,7 +97,7 @@ public class NacosNamingService implements NamingService {
         initLogName(properties);
         
         this.eventDispatcher = new EventDispatcher();
-        this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
+        this.serverProxy = new NamingHttpClientProxy(this.namespace, this.endpoint, this.serverList, properties);
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
         this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
                 isLoadCacheAtStart(properties), initPollingThreadCount(properties));
@@ -314,8 +314,8 @@ public class NacosNamingService implements NamingService {
             //            serviceInfo = hostReactor
             //                    .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
             //                            StringUtils.join(clusters, ","));
-            serviceInfo = grpcClientProxy.queryInstancesOfService(NamingUtils.getGroupedName(serviceName, groupName),
-                    StringUtils.join(clusters, ","), 0, false);
+            serviceInfo = grpcClientProxy
+                    .queryInstancesOfService(serviceName, groupName, StringUtils.join(clusters, ","), 0, false);
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -471,8 +471,7 @@ public class NacosNamingService implements NamingService {
         //        eventDispatcher.addListener(hostReactor
         //                        .getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
         //                StringUtils.join(clusters, ","), listener);
-        eventDispatcher.addListener(grpcClientProxy
-                        .subscribe(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")),
+        eventDispatcher.addListener(grpcClientProxy.subscribe(serviceName, groupName, StringUtils.join(clusters, ",")),
                 StringUtils.join(clusters, ","), listener);
     }
     

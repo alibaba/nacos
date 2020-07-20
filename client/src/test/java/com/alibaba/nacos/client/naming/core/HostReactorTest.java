@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +42,7 @@ public class HostReactorTest {
     private static final String CACHE_DIR = HostReactorTest.class.getResource("/").getPath() + "cache/";
     
     @Mock
-    private NamingProxy namingProxy;
+    private NamingHttpClientProxy namingHttpClientProxy;
     
     @Mock
     private EventDispatcher eventDispatcher;
@@ -53,7 +53,7 @@ public class HostReactorTest {
     
     @Before
     public void setUp() throws Exception {
-        beatReactor = new BeatReactor(namingProxy);
+        beatReactor = new BeatReactor(namingHttpClientProxy);
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName("testName");
         beatInfo.setIp("1.1.1.1");
@@ -64,7 +64,7 @@ public class HostReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
         beatReactor.addBeatInfo("testName", beatInfo);
-        hostReactor = new HostReactor(eventDispatcher, namingProxy, beatReactor, CACHE_DIR);
+        hostReactor = new HostReactor(eventDispatcher, namingHttpClientProxy, beatReactor, CACHE_DIR);
     }
     
     @Test
@@ -78,7 +78,7 @@ public class HostReactorTest {
     
     @Test
     public void testGetServiceInfoDirectlyFromServer() throws NacosException {
-        when(namingProxy.queryList("testName", "testClusters", 0, false)).thenReturn(EXAMPLE);
+        when(namingHttpClientProxy.queryList("testName", "testClusters", 0, false)).thenReturn(EXAMPLE);
         ServiceInfo actual = hostReactor.getServiceInfoDirectlyFromServer("testName", "testClusters");
         assertServiceInfo(actual);
     }
