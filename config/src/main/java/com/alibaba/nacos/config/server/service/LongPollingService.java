@@ -31,10 +31,6 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-
-import com.alibaba.nacos.core.remote.DataChangeListenerNotifier;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
