@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -35,7 +36,7 @@ import java.util.function.Consumer;
  * @author liuzunfei
  * @version $Id: RpcClient.java, v 0.1 2020年07月13日 9:15 PM liuzunfei Exp $
  */
-public abstract class RpcClient {
+public abstract class RpcClient implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(RpcClient.class);
     
@@ -181,5 +182,4 @@ public abstract class RpcClient {
     public ServerListFactory getServerListFactory() {
         return serverListFactory;
     }
-    
 }
