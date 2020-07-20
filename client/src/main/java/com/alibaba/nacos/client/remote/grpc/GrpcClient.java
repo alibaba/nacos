@@ -43,6 +43,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -286,7 +287,10 @@ public class GrpcClient extends RpcClient {
             public void onNext(GrpcResponse grpcResponse) {
     
                 LOGGER.info(" stream response receive  ,original reponse :{}", grpcResponse);
-                
+    
+                if (new Random().nextInt(10) > 6) {
+                    throw new RuntimeException("client error");
+                }
                 String message = grpcResponse.getBody().getValue().toStringUtf8();
                 String type = grpcResponse.getType();
                 String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
