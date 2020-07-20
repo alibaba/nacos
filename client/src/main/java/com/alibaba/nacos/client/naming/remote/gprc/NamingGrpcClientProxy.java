@@ -37,6 +37,8 @@ import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
 
+import java.util.Set;
+
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
@@ -76,7 +78,6 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
                 instance);
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
-        Response response = rpcClient.request(request);
         requestToServer(request, Response.class);
     }
     
@@ -153,6 +154,10 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     public void unsubscribe(String serviceName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, clusters, false);
         requestToServer(request, SubscribeServiceResponse.class);
+    }
+    
+    @Override
+    public void updateBeatInfo(Set<Instance> modifiedInstances) {
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {
