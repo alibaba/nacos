@@ -33,9 +33,13 @@ public class ClientConnectionEventListenerRegistry {
     
     final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
     
+    /**
+     * register ClientConnectionEventListener.
+     *
+     * @param listener listener.
+     */
     public void registerClientConnectionEventListener(ClientConnectionEventListener listener) {
-        Loggers.GRPC.info("[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass()
-                .getSimpleName());
+        Loggers.GRPC.info("[ClientConnectionEventListenerRegistry] registry listener - " + listener.getClass().getSimpleName());
         this.clientConnectionEventListeners.add(listener);
     }
     

@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.core.remote.NacosRemoteConstants;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

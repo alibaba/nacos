@@ -22,9 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +81,5 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
             }
         }, 500L, 5000L, TimeUnit.MILLISECONDS);
     }
-    
     
 }

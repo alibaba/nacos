@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListenerRegistry;
 import com.alibaba.nacos.core.remote.ConnectCoordinator;
 import com.alibaba.nacos.core.remote.ConnectionManager;
