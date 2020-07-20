@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,8 +39,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class HostReactorTest {
     
-    private static final String CACHE_DIR = HostReactorTest.class.getResource("/").getPath() + "cache/";
-    
     @Mock
     private NamingHttpClientProxy namingHttpClientProxy;
     
@@ -49,11 +47,8 @@ public class HostReactorTest {
     
     private HostReactor hostReactor;
     
-    private BeatReactor beatReactor;
-    
     @Before
     public void setUp() throws Exception {
-        beatReactor = new BeatReactor(namingHttpClientProxy);
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName("testName");
         beatInfo.setIp("1.1.1.1");
@@ -63,23 +58,22 @@ public class HostReactorTest {
         beatInfo.setMetadata(new HashMap<String, String>());
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
-        beatReactor.addBeatInfo("testName", beatInfo);
-        hostReactor = new HostReactor(eventDispatcher, namingHttpClientProxy, beatReactor, CACHE_DIR);
+        hostReactor = new HostReactor(eventDispatcher, namingHttpClientProxy, "public", null);
     }
     
     @Test
     public void testProcessServiceJson() {
-        ServiceInfo actual = hostReactor.processServiceJson(EXAMPLE);
+        ServiceInfo actual = hostReactor.processServiceInfo(EXAMPLE);
         assertServiceInfo(actual);
-        hostReactor.processServiceJson(CHANGE_DATA_EXAMPLE);
-        BeatInfo actualBeatInfo = beatReactor.dom2Beat.get(beatReactor.buildKey("testName", "1.1.1.1", 1234));
-        assertEquals(2.0, actualBeatInfo.getWeight(), 0.0);
+        ServiceInfo actual2 = hostReactor.processServiceInfo(CHANGE_DATA_EXAMPLE);
+        assertEquals(2.0, actual2.getHosts().get(0).getWeight(), 0.0);
     }
     
     @Test
     public void testGetServiceInfoDirectlyFromServer() throws NacosException {
-        when(namingHttpClientProxy.queryList("testName", "testClusters", 0, false)).thenReturn(EXAMPLE);
-        ServiceInfo actual = hostReactor.getServiceInfoDirectlyFromServer("testName", "testClusters");
+        when(namingHttpClientProxy.queryInstancesOfService("testName", "", "testClusters", 0, false))
+                .thenReturn(JacksonUtils.toObj(EXAMPLE, ServiceInfo.class));
+        ServiceInfo actual = hostReactor.getServiceInfoDirectlyFromServer("testName", "", "testClusters");
         assertServiceInfo(actual);
     }
     

@@ -37,6 +37,6 @@ public class NamingPushResponseHandler implements ServerPushResponseHandler<Noti
     @Override
     public void responseReply(Response response) {
         NotifySubscriberResponse notifyResponse = (NotifySubscriberResponse) response;
-        hostReactor.processServiceJson(notifyResponse.getServiceInfo());
+        hostReactor.processServiceInfo(notifyResponse.getServiceInfo());
     }
 }

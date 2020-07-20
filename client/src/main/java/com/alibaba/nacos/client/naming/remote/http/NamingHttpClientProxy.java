@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -78,8 +80,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private static final int DEFAULT_SERVER_PORT = 8848;
     
-    private int serverPort = DEFAULT_SERVER_PORT;
-    
     private final String namespaceId;
     
     private final SecurityProxy securityProxy;
@@ -88,9 +88,13 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private final ServerListManager serverListManager;
     
-    private Properties properties;
+    private final BeatReactor beatReactor;
+    
+    private int serverPort = DEFAULT_SERVER_PORT;
     
     private ScheduledExecutorService executorService;
+    
+    private Properties properties;
     
     public NamingHttpClientProxy(String namespaceId, ServerListManager serverListManager, Properties properties) {
         this.serverListManager = serverListManager;
@@ -98,6 +102,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         this.properties = properties;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
+        this.beatReactor = new BeatReactor(this, properties);
         this.initRefreshTask();
     }
     
@@ -128,7 +133,11 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}", namespaceId, serviceName,
                 instance);
-        
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        if (instance.isEphemeral()) {
+            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
+            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
+        }
         final Map<String, String> params = new HashMap<String, String>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
@@ -151,7 +160,10 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
-    
+        if (instance.isEphemeral()) {
+            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
+                    instance.getPort());
+        }
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
@@ -188,7 +200,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
             throws NacosException {
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
         params.put("clusters", clusters);
         params.put("udpPort", String.valueOf(udpPort));
         params.put("clientIP", NetUtils.localIP());
@@ -257,30 +269,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         params.put("selector", JacksonUtils.toJson(selector));
         
         reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.PUT);
-    }
-    
-    /**
-     * Query instance list.
-     *
-     * @param serviceName service name
-     * @param clusters    clusters
-     * @param udpPort     udp port
-     * @param healthyOnly healthy only
-     * @return instance list
-     * @throws NacosException nacos exception
-     */
-    public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException {
-        
-        final Map<String, String> params = new HashMap<String, String>(8);
-        params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put(CommonParams.SERVICE_NAME, serviceName);
-        params.put("clusters", clusters);
-        params.put("udpPort", String.valueOf(udpPort));
-        params.put("clientIP", NetUtils.localIP());
-        params.put("healthyOnly", String.valueOf(healthyOnly));
-        
-        return reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
     }
     
     /**
@@ -374,6 +362,17 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String clusters) throws NacosException {
     
+    }
+    
+    @Override
+    public void updateBeatInfo(Set<Instance> modifiedInstances) {
+        for (Instance instance : modifiedInstances) {
+            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
+                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
+            }
+        }
     }
     
     public String reqApi(String api, Map<String, String> params, String method) throws NacosException {
@@ -579,11 +578,16 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         }
     }
     
+    public BeatReactor getBeatReactor() {
+        return this.beatReactor;
+    }
+    
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
