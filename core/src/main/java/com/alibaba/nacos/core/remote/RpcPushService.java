@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,13 @@ public class RpcPushService {
     public void push(String connectionId, ServerPushResponse response) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
-            connection.sendResponse(response);
+    
+            try {
+                connection.sendResponse(response);
+            } catch (Exception e) {
+                Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                        response, e);
+            }
         }
     }
     

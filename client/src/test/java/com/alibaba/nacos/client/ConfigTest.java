@@ -65,14 +65,21 @@ public class ConfigTest {
         configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo :" + configInfo);
+                System.out.println("receiveConfigInfo1 :" + configInfo);
             }
         });
     
-        configService.removeConfig(dataId, group);
+        //configService.removeConfig(dataId, group);
         
         configService.publishConfig("lessspring2", group, "lessspring2value");
     
+        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println("receiveConfigInfo2 :" + configInfo);
+            }
+        });
+        
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {
