@@ -25,10 +25,10 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Map;
 import java.util.Properties;
@@ -43,10 +43,6 @@ import java.util.Properties;
 public class NacosNamingMaintainService implements NamingMaintainService {
     
     private String namespace;
-    
-    private String endpoint;
-    
-    private String serverList;
     
     private NamingHttpClientProxy serverProxy;
     
@@ -64,17 +60,9 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         ValidatorUtils.checkInitParam(properties);
         namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
-        initServerAddr(properties);
         InitUtils.initWebRootContext();
-        serverProxy = new NamingHttpClientProxy(namespace, endpoint, serverList, properties);
-    }
-    
-    private void initServerAddr(Properties properties) {
-        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        endpoint = InitUtils.initEndpoint(properties);
-        if (StringUtils.isNotEmpty(endpoint)) {
-            serverList = "";
-        }
+        ServerListManager serverListManager = new ServerListManager(properties);
+        serverProxy = new NamingHttpClientProxy(namespace, serverListManager, properties);
     }
     
     @Override

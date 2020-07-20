@@ -30,12 +30,12 @@ import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
+import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.remote.ServerListFactory;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Nacos Naming Service.
@@ -58,10 +57,6 @@ public class NacosNamingService implements NamingService {
      * Each Naming service should have different namespace.
      */
     private String namespace;
-    
-    private String endpoint;
-    
-    private String serverList;
     
     private String cacheDir;
     
@@ -91,34 +86,18 @@ public class NacosNamingService implements NamingService {
         ValidatorUtils.checkInitParam(properties);
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
-        initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
         
+        ServerListManager serverListManager = new ServerListManager(properties);
         this.eventDispatcher = new EventDispatcher();
-        this.serverProxy = new NamingHttpClientProxy(this.namespace, this.endpoint, this.serverList, properties);
+        this.serverProxy = new NamingHttpClientProxy(this.namespace, serverListManager, properties);
         this.beatReactor = new BeatReactor(this.serverProxy, initClientBeatThreadCount(properties));
         this.hostReactor = new HostReactor(this.eventDispatcher, this.serverProxy, beatReactor, this.cacheDir,
                 isLoadCacheAtStart(properties), initPollingThreadCount(properties));
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, hostReactor);
-        grpcClientProxy.start(new ServerListFactory() {
-            
-            private final AtomicInteger index = new AtomicInteger();
-            
-            private final String[] serverLists = serverList.split(",");
-            
-            @Override
-            public String genNextServer() {
-                int nextIndex = index.getAndIncrement() % serverLists.length;
-                return serverLists[nextIndex];
-            }
-            
-            @Override
-            public String getCurrentServer() {
-                return serverLists[index.get() % serverLists.length];
-            }
-        });
+        grpcClientProxy.start(serverListManager);
     }
     
     private int initClientBeatThreadCount(Properties properties) {
@@ -149,14 +128,6 @@ public class NacosNamingService implements NamingService {
         }
         
         return loadCacheAtStart;
-    }
-    
-    private void initServerAddr(Properties properties) {
-        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        endpoint = InitUtils.initEndpoint(properties);
-        if (StringUtils.isNotEmpty(endpoint)) {
-            serverList = "";
-        }
     }
     
     private void initLogName(Properties properties) {
