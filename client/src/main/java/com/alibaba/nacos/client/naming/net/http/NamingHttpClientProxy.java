@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.net;
+package com.alibaba.nacos.client.naming.net.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
@@ -78,7 +78,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author nkorange
  */
-public class NamingProxy implements Closeable {
+public class NamingHttpClientProxy implements Closeable {
     
     private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
@@ -108,7 +108,7 @@ public class NamingProxy implements Closeable {
     
     private ScheduledExecutorService executorService;
     
-    public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
+    public NamingHttpClientProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
         this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         this.properties = properties;

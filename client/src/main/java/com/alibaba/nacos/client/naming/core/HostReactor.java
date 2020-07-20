@@ -24,7 +24,7 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
-import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.net.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -69,7 +69,7 @@ public class HostReactor implements Closeable {
     
     private final BeatReactor beatReactor;
     
-    private final NamingProxy serverProxy;
+    private final NamingHttpClientProxy serverProxy;
     
     private final FailoverReactor failoverReactor;
     
@@ -77,12 +77,12 @@ public class HostReactor implements Closeable {
     
     private final ScheduledExecutorService executor;
     
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
+    public HostReactor(EventDispatcher eventDispatcher, NamingHttpClientProxy serverProxy, BeatReactor beatReactor,
             String cacheDir) {
         this(eventDispatcher, serverProxy, beatReactor, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
     
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, BeatReactor beatReactor,
+    public HostReactor(EventDispatcher eventDispatcher, NamingHttpClientProxy serverProxy, BeatReactor beatReactor,
             String cacheDir, boolean loadCacheAtStart, int pollingThreadCount) {
         // init executorService
         this.executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
