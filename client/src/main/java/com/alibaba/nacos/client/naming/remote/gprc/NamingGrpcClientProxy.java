@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.net.gprc;
+package com.alibaba.nacos.client.naming.remote.gprc;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
@@ -25,9 +27,12 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.core.HostReactor;
+import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
@@ -39,7 +44,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author xiweng.yy
  */
-public class NamingGrpcClientProxy {
+public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private final String namespaceId;
     
@@ -65,14 +70,7 @@ public class NamingGrpcClientProxy {
         rpcClient.registerServerPushResponseHandler(new NamingPushResponseHandler(hostReactor));
     }
     
-    /**
-     * register a instance to service with specified instance properties.
-     *
-     * @param serviceName name of service
-     * @param groupName   group of service
-     * @param instance    instance to register
-     * @throws NacosException nacos exception
-     */
+    @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
@@ -82,14 +80,7 @@ public class NamingGrpcClientProxy {
         requestToServer(request, Response.class);
     }
     
-    /**
-     * deregister instance from a service.
-     *
-     * @param serviceName name of service
-     * @param groupName   group name
-     * @param instance    instance
-     * @throws NacosException nacos exception
-     */
+    @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
@@ -99,19 +90,15 @@ public class NamingGrpcClientProxy {
         requestToServer(request, Response.class);
     }
     
-    /**
-     * Query instance list.
-     *
-     * @param serviceName service name
-     * @param clusters    clusters
-     * @param udpPort     udp port
-     * @param healthyOnly healthy only
-     * @return service info
-     * @throws NacosException nacos exception
-     */
-    public ServiceInfo queryInstancesOfService(String serviceName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException {
-        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, serviceName);
+    @Override
+    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+    
+    }
+    
+    @Override
+    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+            boolean healthyOnly) throws NacosException {
+        ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, NamingUtils.getGroupedName(serviceName, groupName));
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
         request.setUdpPort(udpPort);
@@ -119,35 +106,50 @@ public class NamingGrpcClientProxy {
         return response.getServiceInfo();
     }
     
-    /**
-     * Subscribe service.
-     *
-     * @param serviceName full service name with group
-     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
-     * @return current service info of subscribe service
-     * @throws NacosException nacos exception
-     */
-    public ServiceInfo subscribe(String serviceName, String clusters) throws NacosException {
-        ServiceInfo serviceInfo = new ServiceInfo(serviceName, clusters);
+    @Override
+    public Service queryService(String serviceName, String groupName) throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public void createService(Service service, AbstractSelector selector) throws NacosException {
+    
+    }
+    
+    @Override
+    public boolean deleteService(String serviceName, String groupName) throws NacosException {
+        return false;
+    }
+    
+    @Override
+    public void updateService(Service service, AbstractSelector selector) throws NacosException {
+    
+    }
+    
+    @Override
+    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+            throws NacosException {
+        return null;
+    }
+    
+    @Override
+    public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
+        ServiceInfo serviceInfo = new ServiceInfo(serviceNameWithGroup, clusters);
         if (hostReactor.getServiceInfoMap().containsKey(serviceInfo.getKey())) {
             return hostReactor.getServiceInfoMap().get(serviceInfo.getKey());
         }
-        hostReactor.updatingService(serviceName);
-        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, clusters, true);
+        hostReactor.updatingService(serviceNameWithGroup);
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceNameWithGroup, clusters,
+                true);
         SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
         ServiceInfo result = response.getServiceInfo();
         hostReactor.getServiceInfoMap().put(result.getKey(), result);
-        hostReactor.finishUpdating(serviceName);
+        hostReactor.finishUpdating(serviceNameWithGroup);
         return result;
     }
     
-    /**
-     * Unsubscribe service.
-     *
-     * @param serviceName full service name with group
-     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
-     * @throws NacosException nacos exception
-     */
+    @Override
     public void unsubscribe(String serviceName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, clusters, false);
         requestToServer(request, SubscribeServiceResponse.class);
@@ -168,5 +170,10 @@ public class NamingGrpcClientProxy {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        rpcClient.shutdown();
     }
 }
