@@ -18,15 +18,15 @@ package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 
 /**
  * Notify subscriber response.
  *
  * @author xiweng.yy
  */
-public class NotifySubscriberResponse extends Response {
+public class NotifySubscriberResponse extends ServerPushResponse {
     
     private ServiceInfo serviceInfo;
     

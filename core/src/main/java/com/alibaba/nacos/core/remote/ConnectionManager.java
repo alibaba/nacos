@@ -33,6 +33,9 @@ import java.util.Map;
 @Service
 public class ConnectionManager {
     
+    @Autowired
+    private ClientConnectionEventListenerRegistry connectionEventListenerRegistry;
+    
     Map<String, Connection> connetions = new HashMap<String, Connection>();
     
     @Autowired
@@ -54,6 +57,7 @@ public class ConnectionManager {
     
     /**
      * unregister a connection .
+     *
      * @param connectionId connectionId.
      */
     public void unregister(String connectionId) {
