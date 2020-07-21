@@ -206,12 +206,11 @@ public class GrpcClient extends RpcClient {
                 return;
             }
     
-            GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                    .build();
             HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
-            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).setType(heartBeatRequest.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
-                            .build()).build();
+            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
+                    .setType(heartBeatRequest.getType()).setBody(
+                            Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
+                                    .build()).build();
             GrpcResponse response = grpcServiceStub.request(streamRequest);
         } catch (Exception e) {
             LOGGER.error("Send heart beat error,will tring to reconnet to server ", e);
@@ -219,14 +218,20 @@ public class GrpcClient extends RpcClient {
         }
     }
     
+    private GrpcMetadata buildMeta() {
+        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
+                .setVersion(ClientCommonUtils.VERSION).build();
+        return meta;
+    }
+    
     private boolean serverCheck() {
         try {
-            GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                    .build();
+    
             HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
-            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).setType(heartBeatRequest.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
-                            .build()).build();
+            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
+                    .setType(heartBeatRequest.getType()).setBody(
+                            Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest)))
+                                    .build()).build();
             GrpcResponse response = grpcServiceStub.request(streamRequest);
             return response != null;
         } catch (Exception e) {
@@ -274,10 +279,8 @@ public class GrpcClient extends RpcClient {
         grpcStreamServiceStub = RequestStreamGrpc.newStub(channel);
         
         grpcServiceStub = RequestGrpc.newBlockingStub(channel);
-        
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                .setVersion(ClientCommonUtils.VERSION).build();
-        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(meta).build();
+    
+        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).build();
         
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         grpcStreamServiceStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
@@ -328,12 +331,9 @@ public class GrpcClient extends RpcClient {
         if (!this.isRunning()) {
             throw new IllegalStateException("Client is not connected to any server now,please retry later");
         }
-        
         try {
     
-            GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                    .build();
-            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
+            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(request.getType())
                     .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
             GrpcResponse response = grpcServiceStub.request(grpcrequest);
             String type = response.getType();
