@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -186,7 +185,6 @@ public abstract class RpcClient implements Closeable {
     /**
      * Start this client.
      */
-    @PostConstruct
     public abstract void start() throws NacosException;
     
     /**

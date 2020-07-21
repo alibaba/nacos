@@ -127,6 +127,11 @@ public class GrpcClient extends RpcClient {
                             } else {
                                 int leftRetryTimes = reConnectTimesLeft.decrementAndGet();
                                 if (leftRetryTimes <= 0) {
+                                    try {
+                                        Thread.sleep(5000L);
+                                    } catch (InterruptedException e) {
+                                        //do nothing
+                                    }
                                     getServerListFactory().genNextServer();
                                     reConnectTimesLeft.set(MAX_RECONNECT_TIMES);
                                     try {
@@ -173,7 +178,7 @@ public class GrpcClient extends RpcClient {
             public void run() {
                 sendBeat();
             }
-        }, 0, 2000, TimeUnit.MILLISECONDS);
+        }, 0, 3000, TimeUnit.MILLISECONDS);
         
         super.registerServerPushResponseHandler(new ServerPushResponseHandler() {
             @Override
@@ -263,8 +268,8 @@ public class GrpcClient extends RpcClient {
         }
         
         LOGGER.info("GrpcClient start to connect to rpc server, serverIp={},port={}", serverIp, serverPort);
-        
-        this.channel = ManagedChannelBuilder.forAddress(serverIp, serverPort).usePlaintext(true).build();
+    
+        this.channel = ManagedChannelBuilder.forAddress(serverIp, serverPort).usePlaintext().build();
         
         grpcStreamServiceStub = RequestStreamGrpc.newStub(channel);
         
