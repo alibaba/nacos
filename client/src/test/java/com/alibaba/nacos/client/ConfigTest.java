@@ -25,6 +25,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -51,6 +53,14 @@ public class ConfigTest {
     
     @Test
     public void test2() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+        List<ConfigService> list = new ArrayList<ConfigService>();
+        for (int i = 0; i <= 1000; i++) {
+            ConfigService configService2 = NacosFactory.createConfigService(properties);
+            System.out.println(configService2);
+        }
+        
         Thread.sleep(1000000L);
     }
     

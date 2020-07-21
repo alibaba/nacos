@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.core.utils.Loggers;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -34,6 +35,9 @@ public class ConnectionManager {
     
     Map<String, Connection> connetions = new HashMap<String, Connection>();
     
+    @Autowired
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
+    
     /**
      * register a new connect.
      *
@@ -43,6 +47,7 @@ public class ConnectionManager {
     public void register(String connectionId, Connection connection) {
         Connection connectionInner = connetions.putIfAbsent(connectionId, connection);
         if (connectionInner == null) {
+            clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             Loggers.GRPC.info("new connection registered successfully, connectionid = {} ", connectionId);
         }
     }
@@ -54,7 +59,9 @@ public class ConnectionManager {
     public void unregister(String connectionId) {
         Connection remove = this.connetions.remove(connectionId);
         if (remove != null) {
+            remove.closeGrapcefully();
             Loggers.GRPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+            clientConnectionEventListenerRegistry.notifyClientConnected(remove);
         }
     }
     
