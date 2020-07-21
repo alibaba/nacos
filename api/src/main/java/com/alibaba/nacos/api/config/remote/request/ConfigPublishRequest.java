@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * request to publish a config.
  *
@@ -32,8 +35,33 @@ public class ConfigPublishRequest extends ConfigCommonRequest {
     
     String content;
     
+    private Map<String, String> additonMap;
+    
     public ConfigPublishRequest() {
     
+    }
+    
+    /**
+     * get additional param.
+     *
+     * @param key key of param.
+     * @return value of param ,return null if not exist.
+     */
+    public String getAdditionParam(String key) {
+        return additonMap == null ? null : additonMap.get(key);
+    }
+    
+    /**
+     * put additional param value. will override if exist.
+     *
+     * @param key   key of param.
+     * @param value value of param.
+     */
+    public void putAdditonalParam(String key, String value) {
+        if (additonMap == null) {
+            additonMap = new HashMap<String, String>();
+        }
+        additonMap.put(key, value);
     }
     
     public ConfigPublishRequest(String dataId, String group, String tenant, String content) {

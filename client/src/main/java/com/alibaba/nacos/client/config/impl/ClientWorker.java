@@ -645,6 +645,7 @@ public class ClientWorker implements Closeable {
             }, 1L, 10L, TimeUnit.MILLISECONDS);
     
         } else {
+    
             rpcClientProxy.initAndStart(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
@@ -652,13 +653,12 @@ public class ClientWorker implements Closeable {
                     serverListManager.refreshCurrentServerAddr();
                     return serverListManager.getCurrentServerAddr();
                 }
-    
+        
                 @Override
                 public String getCurrentServer() {
                     return agent.getServerListManager().getCurrentServerAddr();
                 }
             });
-    
             /*
              * Register Listen Change Handler
              */

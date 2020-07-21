@@ -22,7 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -57,29 +60,31 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
         executors.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                
-                long currentStamp = System.currentTimeMillis();
-                Collection<Connection> connections = connectionManager.connetions.values();
-                for (Connection conn : connections) {
-                    try {
-                        long lastActiveTimestamp = conn.getLastActiveTimestamp();
+                try {
+                    long currentStamp = System.currentTimeMillis();
+                    Set<Map.Entry<String, Connection>> entries = connectionManager.connetions.entrySet();
+        
+                    List<String> toExpelCLients = new LinkedList<String>();
+                    for (Map.Entry<String, Connection> entry : entries) {
+                        Connection client = entry.getValue();
+                        long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
                         if (currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
-                            conn.closeGrapcefully();
-                            connectionManager.unregister(conn.getConnectionId());
-                            Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ",
-                                    conn.getConnectionId());
-                            for (ClientConnectionEventListener listener : clientConnectionEventListenerRegistry.clientConnectionEventListeners) {
-                                listener.clientDisConnected(conn);
-                            }
-                            
+                            toExpelCLients.add(client.getConnectionId());
                         }
-                    } catch (Exception e) {
-                        Loggers.GRPC.error("error occurs when expel expire connection ，connectionid={} ",
-                                conn.getConnectionId(), e);
                     }
+        
+                    for (String expeledClient : toExpelCLients) {
+                        connectionManager.unregister(expeledClient);
+                        Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ", expeledClient);
+            
+                    }
+        
+                } catch (Exception e) {
+                    Loggers.GRPC.error("error occurs when heathy check... ", e);
                 }
             }
-        }, 500L, 5000L, TimeUnit.MILLISECONDS);
+        }, 500L, 3000L, TimeUnit.MILLISECONDS);
     }
     
 }
+
