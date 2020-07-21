@@ -79,7 +79,7 @@ public class GrpcClient extends RpcClient {
     /**
      * Reconnect to current server before switch a new server.
      */
-    private static final int MAX_RECONNECT_TIMES = 5;
+    private static final int MAX_RECONNECT_TIMES = 3;
     
     private AtomicInteger reConnectTimesLeft = new AtomicInteger(MAX_RECONNECT_TIMES);
     
@@ -102,14 +102,24 @@ public class GrpcClient extends RpcClient {
                 getServerListFactory().getCurrentServer());
         if (isRunning() || isInitStatus()) {
             final RpcClientStatus prevStatus = rpcClientStatus.get();
-            boolean updateSucess = false;
-            if (isRunning()) {
-                updateSucess = rpcClientStatus.compareAndSet(prevStatus, RpcClientStatus.RE_CONNECTING);
-            } else {
-                updateSucess = rpcClientStatus.compareAndSet(prevStatus, RpcClientStatus.STARTING);
-            }
+            boolean updateSucess = rpcClientStatus.compareAndSet(prevStatus,
+                    isInitStatus() ? RpcClientStatus.STARTING : RpcClientStatus.RE_CONNECTING);
             
             if (updateSucess) {
+    
+                if (isStarting()) {
+        
+                    buildClientAtFirstTime();
+                    boolean sucess = serverCheck();
+                    if (sucess) {
+                        rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RUNNING);
+                        LOGGER.info("server check success, client start up success. ");
+                        return;
+                    } else {
+                        rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RE_CONNECTING);
+                    }
+                }
+                
                 executorService.schedule(new Runnable() {
                     @Override
                     public void run() {
@@ -117,16 +127,15 @@ public class GrpcClient extends RpcClient {
                         // loop until start client success.
                         while (!isRunning()) {
     
-                            buildClientAtFirstTime();
                             boolean sucess = serverCheck();
                             if (sucess) {
-                                if (rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING) {
-                                    notifyReConnected();
-                                }
-                                LOGGER.info("Server check success, Current Server  is {}" + getServerListFactory()
-                                        .getCurrentServer());
+                                notifyReConnected();
+    
+                                LOGGER.info("server check success, reconnected success, Current Server  is {}"
+                                        + getServerListFactory().getCurrentServer());
                                 rpcClientStatus.compareAndSet(rpcClientStatus.get(), RpcClientStatus.RUNNING);
                                 reConnectTimesLeft.set(MAX_RECONNECT_TIMES);
+                                return;
                                 
                             } else {
                                 int leftRetryTimes = reConnectTimesLeft.decrementAndGet();
@@ -192,7 +201,6 @@ public class GrpcClient extends RpcClient {
                 }
             }
         });
-        
     }
     
     /**
@@ -325,7 +333,12 @@ public class GrpcClient extends RpcClient {
     @Override
     public Response request(Request request) throws NacosException {
     
+        if (!this.isRunning()) {
+            throw new IllegalStateException("Client is not connected to any server now,please retry later");
+        }
+        
         try {
+    
             GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
                     .build();
             GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
@@ -333,7 +346,7 @@ public class GrpcClient extends RpcClient {
             GrpcResponse response = grpcServiceStub.request(grpcrequest);
             String type = response.getType();
             String bodyString = response.getBody().getValue().toStringUtf8();
-        
+    
             // transfrom grpcResponse to response model
             Class classByType = ResponseRegistry.getClassByType(type);
             if (classByType != null) {

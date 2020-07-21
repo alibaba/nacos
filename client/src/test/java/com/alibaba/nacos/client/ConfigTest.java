@@ -20,9 +20,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,12 +36,12 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR,
-                "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR,
+        // "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
-        
         configService = NacosFactory.createConfigService(properties);
+        //Thread.sleep(2000L);
     }
     
     @After
@@ -62,10 +60,11 @@ public class ConfigTest {
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
+        System.out.println("4-" + System.currentTimeMillis());
+    
         boolean result = configService.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
-        
-        ThreadUtils.sleep(200L);
+        //Assert.assertTrue(result);
+        System.out.println("5-" + System.currentTimeMillis());
         
         configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override
