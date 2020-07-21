@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.IOException;
