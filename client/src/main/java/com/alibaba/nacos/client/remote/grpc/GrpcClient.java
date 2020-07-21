@@ -177,9 +177,7 @@ public class GrpcClient extends RpcClient {
             public void run() {
                 sendBeat();
             }
-        }, 5000, 2000, TimeUnit.MILLISECONDS);
-        
-        rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RUNNING);
+        }, 0, 2000, TimeUnit.MILLISECONDS);
         
         super.registerServerPushResponseHandler(new ServerPushResponseHandler() {
             @Override
@@ -203,7 +201,8 @@ public class GrpcClient extends RpcClient {
     public void sendBeat() {
         try {
     
-            if (this.rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING) {
+            if (this.rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING
+                    || this.rpcClientStatus.get() == RpcClientStatus.STARTING) {
                 return;
             }
     
@@ -285,27 +284,31 @@ public class GrpcClient extends RpcClient {
             @Override
             public void onNext(GrpcResponse grpcResponse) {
     
-                LOGGER.info(" stream response receive  ,original reponse :{}", grpcResponse);
-                
-                String message = grpcResponse.getBody().getValue().toStringUtf8();
-                String type = grpcResponse.getType();
-                String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-                Class classByType = ResponseRegistry.getClassByType(type);
-                final Response response;
-                if (classByType != null) {
-                    response = (Response) JacksonUtils.toObj(bodyString, classByType);
-                } else {
-                    PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
-                    myresponse.setBodyString(bodyString);
-                    response = myresponse;
-                }
+                LOGGER.debug(" stream response receive  ,original reponse :{}", grpcResponse);
+                try {
     
-                serverPushResponseListeners.forEach(new Consumer<ServerPushResponseHandler>() {
-                    @Override
-                    public void accept(ServerPushResponseHandler serverPushResponseHandler) {
-                        serverPushResponseHandler.responseReply(response);
+                    String message = grpcResponse.getBody().getValue().toStringUtf8();
+                    String type = grpcResponse.getType();
+                    String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
+                    Class classByType = ResponseRegistry.getClassByType(type);
+                    final Response response;
+                    if (classByType != null) {
+                        response = (Response) JacksonUtils.toObj(bodyString, classByType);
+                    } else {
+                        PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
+                        myresponse.setBodyString(bodyString);
+                        response = myresponse;
                     }
-                });
+    
+                    serverPushResponseListeners.forEach(new Consumer<ServerPushResponseHandler>() {
+                        @Override
+                        public void accept(ServerPushResponseHandler serverPushResponseHandler) {
+                            serverPushResponseHandler.responseReply(response);
+                        }
+                    });
+                } catch (Exception e) {
+                    LOGGER.error("error tp process server push response  :{}", grpcResponse);
+                }
             }
     
             @Override

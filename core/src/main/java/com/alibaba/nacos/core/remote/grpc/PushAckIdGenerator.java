@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.grpc;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * callback of push service.
+ * id generator to server push ack.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
+ * @version $Id: PushAckIdGenerator.java, v 0.1 2020年07月20日 5:49 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+public class PushAckIdGenerator {
     
-    public void onCompleted();
+    private static AtomicLong id = new AtomicLong(0L);
     
-    public void onException();
+    /**
+     * get server push id.
+     */
+    public static long getNextId() {
+        if (id.longValue() > Long.MAX_VALUE - 1000) {
+            id.getAndSet(0L);
+        }
+        return id.incrementAndGet();
+    }
     
 }
