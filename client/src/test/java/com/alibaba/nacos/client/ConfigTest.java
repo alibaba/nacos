@@ -38,10 +38,10 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
-        // properties.setProperty(PropertyKeyConst.SERVER_ADDR,
-        //       "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
-        //       //"11.239.114.187:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR,
+                "11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
+        //"11.239.114.187:8848");
         
         configService = NacosFactory.createConfigService(properties);
     }
@@ -49,6 +49,11 @@ public class ConfigTest {
     @After
     public void cleanup() throws Exception {
         configService.shutDown();
+    }
+    
+    @Test
+    public void test2() throws Exception {
+        Thread.sleep(1000000L);
     }
     
     @Test
@@ -61,18 +66,18 @@ public class ConfigTest {
         Assert.assertTrue(result);
         
         ThreadUtils.sleep(200L);
-    
+        
         configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receiveConfigInfo1 :" + configInfo);
             }
         });
-    
+        
         //configService.removeConfig(dataId, group);
         
         configService.publishConfig("lessspring2", group, "lessspring2value");
-    
+        
         configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {

@@ -177,9 +177,7 @@ public class GrpcClient extends RpcClient {
             public void run() {
                 sendBeat();
             }
-        }, 5000, 2000, TimeUnit.MILLISECONDS);
-        
-        rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RUNNING);
+        }, 0, 2000, TimeUnit.MILLISECONDS);
         
         super.registerServerPushResponseHandler(new ServerPushResponseHandler() {
             @Override
@@ -203,7 +201,8 @@ public class GrpcClient extends RpcClient {
     public void sendBeat() {
         try {
     
-            if (this.rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING) {
+            if (this.rpcClientStatus.get() == RpcClientStatus.RE_CONNECTING
+                    || this.rpcClientStatus.get() == RpcClientStatus.STARTING) {
                 return;
             }
     
@@ -287,7 +286,7 @@ public class GrpcClient extends RpcClient {
     
                 LOGGER.debug(" stream response receive  ,original reponse :{}", grpcResponse);
                 try {
-        
+    
                     String message = grpcResponse.getBody().getValue().toStringUtf8();
                     String type = grpcResponse.getType();
                     String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
@@ -300,7 +299,7 @@ public class GrpcClient extends RpcClient {
                         myresponse.setBodyString(bodyString);
                         response = myresponse;
                     }
-        
+    
                     serverPushResponseListeners.forEach(new Consumer<ServerPushResponseHandler>() {
                         @Override
                         public void accept(ServerPushResponseHandler serverPushResponseHandler) {

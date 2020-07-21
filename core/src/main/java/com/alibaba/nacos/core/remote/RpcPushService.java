@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.core.remote.grpc.PushAckIdGenerator;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,11 +42,13 @@ public class RpcPushService {
      * @param response     response.
      */
     public void push(String connectionId, ServerPushResponse response) {
-        Connection connection = connectionManager.getConnection(connectionId);
-        if (connection != null) {
+    
+        response.setResponseId(PushAckIdGenerator.getNextId());
+        Connection client = connectionManager.getConnection(connectionId);
+        if (client != null) {
     
             try {
-                connection.sendResponse(response);
+                client.sendResponse(response);
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
                         response, e);
