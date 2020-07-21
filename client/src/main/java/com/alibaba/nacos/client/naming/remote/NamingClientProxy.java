@@ -142,11 +142,12 @@ public interface NamingClientProxy extends Closeable {
     /**
      * Unsubscribe service.
      *
-     * @param serviceName full service name with group
+     * @param serviceName service name
+     * @param groupName   group name
      * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
      * @throws NacosException nacos exception
      */
-    void unsubscribe(String serviceName, String clusters) throws NacosException;
+    void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException;
     
     /**
      * Update beat info.
@@ -154,4 +155,11 @@ public interface NamingClientProxy extends Closeable {
      * @param modifiedInstances modified instances
      */
     void updateBeatInfo(Set<Instance> modifiedInstances);
+    
+    /**
+     * Check Server healthy.
+     *
+     * @return true if server is healthy
+     */
+    boolean serverHealthy();
 }
