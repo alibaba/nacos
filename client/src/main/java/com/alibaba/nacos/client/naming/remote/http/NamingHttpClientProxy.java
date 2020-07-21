@@ -33,6 +33,8 @@ import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
+import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.core.PushReceiver;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -90,13 +92,18 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     private final BeatReactor beatReactor;
     
+    private final ServiceInfoHolder serviceInfoHolder;
+    
+    private final PushReceiver pushReceiver;
+    
     private int serverPort = DEFAULT_SERVER_PORT;
     
     private ScheduledExecutorService executorService;
     
     private Properties properties;
     
-    public NamingHttpClientProxy(String namespaceId, ServerListManager serverListManager, Properties properties) {
+    public NamingHttpClientProxy(String namespaceId, ServerListManager serverListManager, Properties properties,
+            ServiceInfoHolder serviceInfoHolder) {
         this.serverListManager = serverListManager;
         this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
         this.properties = properties;
@@ -104,6 +111,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         this.namespaceId = namespaceId;
         this.beatReactor = new BeatReactor(this, properties);
         this.initRefreshTask();
+        this.pushReceiver = new PushReceiver(serviceInfoHolder);
+        this.serviceInfoHolder = serviceInfoHolder;
     }
     
     private void initRefreshTask() {
@@ -140,7 +149,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         }
         final Map<String, String> params = new HashMap<String, String>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.SERVICE_NAME, groupedServiceName);
         params.put(CommonParams.GROUP_NAME, groupName);
         params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
         params.put("ip", instance.getIp());
@@ -171,7 +180,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
-    
+        
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.DELETE);
     }
     
@@ -196,8 +205,8 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     }
     
     @Override
-    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException {
+    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+            boolean healthyOnly) throws NacosException {
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
@@ -209,7 +218,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         if (StringUtils.isNotEmpty(result)) {
             return JacksonUtils.toObj(result, ServiceInfo.class);
         }
-        return null;
+        return new ServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
     }
     
     @Override
@@ -298,11 +307,7 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         return JacksonUtils.toObj(result);
     }
     
-    /**
-     * Check Server healthy.
-     *
-     * @return true if server is healthy
-     */
+    @Override
     public boolean serverHealthy() {
         
         try {
@@ -314,10 +319,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         } catch (Exception e) {
             return false;
         }
-    }
-    
-    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName) throws NacosException {
-        return getServiceList(pageNo, pageSize, groupName, null);
     }
     
     @Override
@@ -356,12 +357,11 @@ public class NamingHttpClientProxy implements NamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        return null;
+        return queryInstancesOfService(serviceName, groupName, clusters, pushReceiver.getUdpPort(), false);
     }
     
     @Override
-    public void unsubscribe(String serviceName, String clusters) throws NacosException {
-    
+    public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
     }
     
     @Override
