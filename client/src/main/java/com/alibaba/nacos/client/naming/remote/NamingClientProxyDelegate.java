@@ -106,7 +106,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
-        return null;
+        return httpClientProxy.getServiceList(pageNo, pageSize, groupName, selector);
     }
     
     @Override

@@ -321,10 +321,6 @@ public class NamingHttpClientProxy implements NamingClientProxy {
         }
     }
     
-    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName) throws NacosException {
-        return getServiceList(pageNo, pageSize, groupName, null);
-    }
-    
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
