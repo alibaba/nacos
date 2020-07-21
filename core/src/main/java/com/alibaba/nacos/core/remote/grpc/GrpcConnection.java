@@ -43,6 +43,5 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void closeGrapcefully() {
-        //Empty implements
     }
 }

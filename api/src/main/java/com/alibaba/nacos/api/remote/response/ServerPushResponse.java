@@ -27,11 +27,10 @@ public abstract class ServerPushResponse extends Response {
     /**
      * unique id for this server response id.
      */
-    private String responseId;
+    private long responseId;
     
     public ServerPushResponse() {
         super();
-        this.responseId = "todo";
     }
     
     /**
@@ -39,7 +38,7 @@ public abstract class ServerPushResponse extends Response {
      *
      * @return property value of responseId
      */
-    public String getResponseId() {
+    public long getResponseId() {
         return responseId;
     }
     
@@ -48,7 +47,7 @@ public abstract class ServerPushResponse extends Response {
      *
      * @param responseId value to be assigned to property responseId
      */
-    public void setResponseId(String responseId) {
+    public void setResponseId(long responseId) {
         this.responseId = responseId;
     }
 }
