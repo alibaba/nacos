@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.handler;
 
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 
 import java.lang.reflect.Type;
 
