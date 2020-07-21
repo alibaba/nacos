@@ -27,13 +27,12 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.remote.AsyncListenContext;
-import com.alibaba.nacos.core.remote.NacosRemoteConstants;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.RemotePushService;
+import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
 import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
@@ -48,17 +47,17 @@ import java.util.List;
 @Component
 public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServiceRequest> {
     
-    private final AsyncListenContext asyncListenContext;
-    
     private final ServiceInfoGenerator serviceInfoGenerator;
     
     private final RemotePushService remotePushService;
     
-    public SubscribeServiceRequestHandler(AsyncListenContext asyncListenContext,
-            ServiceInfoGenerator serviceInfoGenerator, RemotePushService remotePushService) {
-        this.asyncListenContext = asyncListenContext;
+    private final RemotingConnectionHolder remotingConnectionHolder;
+    
+    public SubscribeServiceRequestHandler(ServiceInfoGenerator serviceInfoGenerator,
+            RemotePushService remotePushService, RemotingConnectionHolder remotingConnectionHolder) {
         this.serviceInfoGenerator = serviceInfoGenerator;
         this.remotePushService = remotePushService;
+        this.remotingConnectionHolder = remotingConnectionHolder;
     }
     
     @Override
@@ -78,11 +77,13 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Subscriber subscriber = new Subscriber(meta.getClientIp(), "", "unknown", meta.getClientIp(), namespaceId,
                 serviceName);
         if (subscribeServiceRequest.isSubscribe()) {
-            asyncListenContext.addListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
-            remotePushService.registerSubscribeForService(serviceKey, subscriber);
+            remotePushService.registerSubscribeForService(serviceKey, subscriber, connectionId);
+            remotingConnectionHolder.getRemotingConnection(connectionId)
+                    .addNewSubscriber(namespaceId, serviceName, subscriber);
         } else {
-            asyncListenContext.removeListen(NacosRemoteConstants.LISTEN_CONTEXT_NAMING, serviceKey, connectionId);
             remotePushService.removeSubscribeForService(serviceKey, subscriber);
+            remotingConnectionHolder.getRemotingConnection(connectionId)
+                    .removeSubscriber(namespaceId, serviceName, subscriber);
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }

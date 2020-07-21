@@ -31,8 +31,8 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
 import com.google.common.collect.Lists;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -45,8 +45,14 @@ import java.util.List;
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
+    
+    private final RemotingConnectionHolder remotingConnectionHolder;
+    
+    public InstanceRequestHandler(ServiceManager serviceManager, RemotingConnectionHolder remotingConnectionHolder) {
+        this.serviceManager = serviceManager;
+        this.remotingConnectionHolder = remotingConnectionHolder;
+    }
     
     @Override
     public InstanceRequest parseBodyString(String bodyString) {
@@ -57,7 +63,8 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     public Response handle(Request request, RequestMeta meta) throws NacosException {
         InstanceRequest instanceRequest = (InstanceRequest) request;
         String namespace = instanceRequest.getNamespace();
-        String serviceName = NamingUtils.getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
+        String serviceName = NamingUtils
+                .getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
         switch (instanceRequest.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
                 return registerInstance(namespace, serviceName, instanceRequest, meta);
@@ -82,6 +89,8 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         instance.setMarked(true);
         instance.validate();
         serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
+        remotingConnectionHolder.getRemotingConnection(meta.getConnectionId())
+                .addNewInstance(namespace, serviceName, instance);
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
@@ -93,6 +102,8 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         }
         Instance instance = parseInstance(instanceRequest.getInstance());
         serviceManager.removeInstance(namespace, serviceName, instance.isEphemeral(), instance);
+        remotingConnectionHolder.getRemotingConnection(meta.getConnectionId())
+                .removeInstance(namespace, serviceName, instance);
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     
