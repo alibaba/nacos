@@ -27,6 +27,10 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -47,18 +51,53 @@ public abstract class RpcClient implements Closeable {
     protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
     
+    protected ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.config.grpc.worker");
+            t.setDaemon(true);
+            return t;
+        }
+    });
+    
     /**
-     * Notify when client connected.
+     * Notify when client re connected.
      */
     protected void notifyReConnected() {
-        if (!this.connectionEventListeners.isEmpty()) {
-            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                @Override
-                public void accept(ConnectionEventListener connectionEventListener) {
-                    connectionEventListener.onReconnected();
+        executorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                if (!connectionEventListeners.isEmpty()) {
+                    connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                        @Override
+                        public void accept(ConnectionEventListener connectionEventListener) {
+                            connectionEventListener.onReconnected();
+                        }
+                    });
                 }
-            });
-        }
+            }
+        }, 0, TimeUnit.MILLISECONDS);
+        
+    }
+    
+    /**
+     * Notify when client new connected.
+     */
+    protected void notifyConnected() {
+        executorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                if (!connectionEventListeners.isEmpty()) {
+                    connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                        @Override
+                        public void accept(ConnectionEventListener connectionEventListener) {
+                            connectionEventListener.onReconnected();
+                        }
+                    });
+                }
+            }
+        }, 0, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -108,6 +147,15 @@ public abstract class RpcClient implements Closeable {
     protected List<ServerPushResponseHandler> serverPushResponseListeners = new ArrayList<ServerPushResponseHandler>();
     
     public RpcClient() {
+    }
+    
+    /**
+     * Getter method for property <tt>connectionEventListeners</tt>.
+     *
+     * @return property value of connectionEventListeners
+     */
+    protected List<ConnectionEventListener> getConnectionEventListeners() {
+        return connectionEventListeners;
     }
     
     /**

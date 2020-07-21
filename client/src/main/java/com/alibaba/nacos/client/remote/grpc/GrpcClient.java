@@ -43,9 +43,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -65,16 +62,6 @@ public class GrpcClient extends RpcClient {
     protected RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub;
     
     protected RequestGrpc.RequestBlockingStub grpcServiceStub;
-    
-    ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.client.config.grpc.worker");
-            t.setDaemon(true);
-            return t;
-        }
-    });
     
     /**
      * Reconnect to current server before switch a new server.
@@ -114,6 +101,7 @@ public class GrpcClient extends RpcClient {
                     if (sucess) {
                         rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RUNNING);
                         LOGGER.info("server check success, client start up success. ");
+                        notifyConnected();
                         return;
                     } else {
                         rpcClientStatus.compareAndSet(RpcClientStatus.STARTING, RpcClientStatus.RE_CONNECTING);
@@ -130,7 +118,6 @@ public class GrpcClient extends RpcClient {
                             boolean sucess = serverCheck();
                             if (sucess) {
                                 notifyReConnected();
-    
                                 LOGGER.info("server check success, reconnected success, Current Server  is {}"
                                         + getServerListFactory().getCurrentServer());
                                 rpcClientStatus.compareAndSet(rpcClientStatus.get(), RpcClientStatus.RUNNING);
