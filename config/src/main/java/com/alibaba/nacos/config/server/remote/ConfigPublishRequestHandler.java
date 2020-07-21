@@ -74,22 +74,22 @@ public class ConfigPublishRequestHandler extends RequestHandler {
             final String tenant = myRequest.getTenant();
             
             final String srcIp = meta.getClientIp();
-            final String requestIpApp = meta.getLabels().get("requestIpApp");
-            final String tag = meta.getLabels().get("tag");
-            final String appName = meta.getLabels().get("appName");
-            final String type = meta.getLabels().get("type");
-            final String srcUser = meta.getLabels().get("src_user");
+            final String requestIpApp = myRequest.getAdditionParam("requestIpApp");
+            final String tag = myRequest.getAdditionParam("tag");
+            final String appName = myRequest.getAdditionParam("appName");
+            final String type = myRequest.getAdditionParam("type");
+            final String srcUser = myRequest.getAdditionParam("src_user");
             
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
             Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", meta.getLabels().get("configTags"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "desc", meta.getLabels().get("desc"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "use", meta.getLabels().get("use"));
-            MapUtils.putIfValNoNull(configAdvanceInfo, "effect", meta.getLabels().get("effect"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "config_tags", myRequest.getAdditionParam("configTags"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "desc", myRequest.getAdditionParam("desc"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "use", myRequest.getAdditionParam("use"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "effect", myRequest.getAdditionParam("effect"));
             MapUtils.putIfValNoNull(configAdvanceInfo, "type", type);
-            MapUtils.putIfValNoNull(configAdvanceInfo, "schema", meta.getLabels().get("schema"));
+            MapUtils.putIfValNoNull(configAdvanceInfo, "schema", myRequest.getAdditionParam("schema"));
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {
@@ -99,7 +99,7 @@ public class ConfigPublishRequestHandler extends RequestHandler {
             }
             
             final Timestamp time = TimeUtils.getCurrentTime();
-            String betaIps = meta.getLabels().get("betaIps");
+            String betaIps = myRequest.getAdditionParam("betaIps");
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setType(type);
             if (StringUtils.isBlank(betaIps)) {

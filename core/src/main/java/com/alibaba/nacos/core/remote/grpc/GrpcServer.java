@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.core.remote.ClientConnectionEventListenerRegistry;
-import com.alibaba.nacos.core.remote.ConnectCoordinator;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
@@ -40,12 +38,6 @@ import javax.annotation.PostConstruct;
 public class GrpcServer extends RpcServer {
     
     private Server server;
-    
-    @Autowired
-    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
-    
-    @Autowired
-    private ConnectCoordinator connectCoordinator;
     
     @Autowired
     private ConnectionManager connectionManager;
