@@ -21,22 +21,20 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
-import static com.alibaba.nacos.config.server.constant.Constants.HIS_CONFIG_INFO_TABLE_NAME;
+import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_TAG_TABLE_NAME;
 
 /**
  * @author Nacos
  */
-@Table(name = HIS_CONFIG_INFO_TABLE_NAME)
+@Table(name = CONFIG_INFO_TAG_TABLE_NAME)
 @Entity
 @Data
-public class HisConfigInfo implements Serializable {
+public class ConfigInfoTagEntity implements Serializable {
+
 
     @Id
-    @Column(name = "nid")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long nid;
-
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "data_id")
@@ -44,6 +42,12 @@ public class HisConfigInfo implements Serializable {
 
     @Column(name = "group_id")
     private String groupId;
+
+    @Column(name = "tenant_id")
+    private String tenantId;
+
+    @Column(name = "tag_id")
+    private String tagId;
 
     @Column(name = "app_name")
     private String appName;
@@ -66,10 +70,5 @@ public class HisConfigInfo implements Serializable {
     @Column(name = "src_ip")
     private String srcIp;
 
-    @Column(name = "op_type")
-    private String opType;
-
-    @Column(name = "tenant_id")
-    private String tenantId;
 
 }

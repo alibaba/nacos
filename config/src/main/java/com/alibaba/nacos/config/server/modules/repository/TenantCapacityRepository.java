@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.config.server.modules.repository;
 
-import com.alibaba.nacos.config.server.modules.entity.TenantCapacity;
+import com.alibaba.nacos.config.server.modules.entity.TenantCapacityEntity;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
  * @author Nacos
  */
-public interface TenantCapacityRepository extends PagingAndSortingRepository<TenantCapacity, Long>,
-    QuerydslPredicateExecutor<TenantCapacity> {
+public interface TenantCapacityRepository extends PagingAndSortingRepository<TenantCapacityEntity, Long>,
+    QuerydslPredicateExecutor<TenantCapacityEntity> {
 
 }

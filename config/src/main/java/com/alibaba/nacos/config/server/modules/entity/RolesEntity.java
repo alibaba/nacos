@@ -15,21 +15,34 @@
  */
 package com.alibaba.nacos.config.server.modules.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.io.Serializable;
 
-import static com.alibaba.nacos.config.server.constant.Constants.TENANT_CAPACITY_TABLE_NAME;
+import static com.alibaba.nacos.config.server.constant.Constants.ROLES_TABLE_NAME;
 
 /**
  * @author Nacos
  */
-@Table(name = TENANT_CAPACITY_TABLE_NAME)
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = ROLES_TABLE_NAME)
 @Entity
 @Data
-public class TenantCapacity extends Capacity {
+public class RolesEntity implements Serializable {
 
-    @Column(name = "tenant_id")
-    private String tenantId;
+
+    @Id
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "role")
+    private String role;
 
 }

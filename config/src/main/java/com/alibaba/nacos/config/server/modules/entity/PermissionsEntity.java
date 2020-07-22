@@ -36,7 +36,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.PERMISSIONS_TAB
 @Table(name = PERMISSIONS_TABLE_NAME)
 @Entity
 @Data
-public class Permissions implements Serializable {
+public class PermissionsEntity implements Serializable {
 
 
     @Id

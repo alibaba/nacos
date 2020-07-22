@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.modules.entity.QUsers;
-import com.alibaba.nacos.config.server.modules.entity.Users;
+import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
 import com.alibaba.nacos.config.server.modules.repository.UsersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class UserPersistServiceTmp {
     private UsersRepository usersRepository;
 
     public void createUser(String username, String password) {
-        usersRepository.save(new Users(username, password, 1));
+        usersRepository.save(new UsersEntity(username, password, 1));
     }
 
     public void deleteUser(String username) {
@@ -51,12 +51,12 @@ public class UserPersistServiceTmp {
             });
     }
 
-    public Users findUserByUsername(String username) {
+    public UsersEntity findUserByUsername(String username) {
         return usersRepository.findOne(QUsers.users.username.eq(username))
             .orElseThrow(() -> new RuntimeException(username + " not exist"));
     }
 
-    public Page<Users> getUsers(int pageNo, int pageSize) {
+    public Page<UsersEntity> getUsers(int pageNo, int pageSize) {
         return usersRepository.findAll(null, PageRequest.of(pageNo, pageSize));
     }
 

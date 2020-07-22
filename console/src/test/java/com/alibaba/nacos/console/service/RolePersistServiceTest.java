@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RolePersistServiceTmp;
-import com.alibaba.nacos.config.server.modules.entity.Roles;
+import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,11 +37,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = Nacos.class)
 public class RolePersistServiceTest extends BaseTest {
 
-    private Roles roles;
+    private RolesEntity roles;
 
     @Before
     public void before() {
-        roles = JacksonUtils.toObj(TestData.ROLES_JSON, Roles.class);
+        roles = JacksonUtils.toObj(TestData.ROLES_JSON, RolesEntity.class);
     }
 
 
@@ -51,14 +51,14 @@ public class RolePersistServiceTest extends BaseTest {
     @Test
     public void getRolesTest() {
         rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
-        Page<Roles> page = rolePersistServiceTmp.getRoles(0, 10);
+        Page<RolesEntity> page = rolePersistServiceTmp.getRoles(0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void getRolesByUserNameTest() {
-        Page<Roles> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
+        Page<RolesEntity> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);
     }

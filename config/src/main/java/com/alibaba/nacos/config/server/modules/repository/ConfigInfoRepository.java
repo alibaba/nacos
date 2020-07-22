@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.modules.repository;
 
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
@@ -26,11 +26,11 @@ import java.util.List;
 /**
  * @author Nacos
  */
-public interface ConfigInfoRepository extends PagingAndSortingRepository<ConfigInfo, Long>,
-    JpaSpecificationExecutor<ConfigInfo>,
-    QuerydslPredicateExecutor<ConfigInfo> {
+public interface ConfigInfoRepository extends PagingAndSortingRepository<ConfigInfoEntity, Long>,
+    JpaSpecificationExecutor<ConfigInfoEntity>,
+    QuerydslPredicateExecutor<ConfigInfoEntity> {
 
-    List<ConfigInfo> findByDataIdAndGroupIdAndTenantId(String dataId, String groupId, String tenantId);
+    List<ConfigInfoEntity> findByDataIdAndGroupIdAndTenantId(String dataId, String groupId, String tenantId);
 
     @Query(value = "SELECT max(id) FROM config_info", nativeQuery = true)
     Long findConfigMaxId();

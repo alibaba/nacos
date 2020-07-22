@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.modules.entity.QRoles;
-import com.alibaba.nacos.config.server.modules.entity.Roles;
+import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.config.server.modules.repository.RolesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,21 +32,21 @@ public class RolePersistServiceTmp {
     @Autowired
     private RolesRepository rolesRepository;
 
-    public Page<Roles> getRoles(int pageNo, int pageSize) {
+    public Page<RolesEntity> getRoles(int pageNo, int pageSize) {
         return rolesRepository.findAll(null, PageRequest.of(pageNo, pageSize));
     }
 
-    public Page<Roles> getRolesByUserName(String username, int pageNo, int pageSize) {
+    public Page<RolesEntity> getRolesByUserName(String username, int pageNo, int pageSize) {
         return rolesRepository.findAll(QRoles.roles.username.eq(username), PageRequest.of(pageNo, pageSize));
     }
 
     public void addRole(String role, String userName) {
-        rolesRepository.save(new Roles(userName, role));
+        rolesRepository.save(new RolesEntity(userName, role));
     }
 
 
     public void deleteRole(String role) {
-        Iterable<Roles> iterable = rolesRepository.findAll(QRoles.roles.role.eq(role));
+        Iterable<RolesEntity> iterable = rolesRepository.findAll(QRoles.roles.role.eq(role));
         rolesRepository.deleteAll(iterable);
     }
 

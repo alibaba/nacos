@@ -71,19 +71,19 @@ public class PersistServiceTest extends BaseTest {
     @Autowired
     private HisConfigInfoRepository hisConfigInfoRepository;
 
-    private ConfigInfo configInfo;
+    private ConfigInfoEntity configInfo;
 
-    private ConfigInfoTag configInfoTag;
+    private ConfigInfoTagEntity configInfoTag;
 
-    private ConfigInfoBeta configInfoBeta;
+    private ConfigInfoBetaEntity configInfoBeta;
 
-    private ConfigTagsRelation configTagsRelation;
+    private ConfigTagsRelationEntity configTagsRelation;
 
-    private HisConfigInfo hisConfigInfo;
+    private HisConfigInfoEntity hisConfigInfo;
 
-    private TenantInfo tenantInfo;
+    private TenantInfoEntity tenantInfo;
 
-    private ConfigInfoAggr configInfoAggr;
+    private ConfigInfoAggrEntity configInfoAggr;
 
     @Before
     public void before() {
@@ -92,20 +92,20 @@ public class PersistServiceTest extends BaseTest {
     }
 
     private void initData() {
-        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfo.class);
-        configInfoTag = JacksonUtils.toObj(TestData.CONFIG_INFO_TAG_JSON, ConfigInfoTag.class);
-        configInfoBeta = JacksonUtils.toObj(TestData.CONFIG_INFO_BETA_JSON, ConfigInfoBeta.class);
-        configTagsRelation = JacksonUtils.toObj(TestData.CONFIG_TAGS_RELATION_JSON, ConfigTagsRelation.class);
-        hisConfigInfo = JacksonUtils.toObj(TestData.HIS_CONFIG_INFO_JSON, HisConfigInfo.class);
-        tenantInfo = JacksonUtils.toObj(TestData.TENANT_INFO_JSON, TenantInfo.class);
-        configInfoAggr = JacksonUtils.toObj(TestData.CONFIG_INFO_AGGR_JSON, ConfigInfoAggr.class);
+        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfoEntity.class);
+        configInfoTag = JacksonUtils.toObj(TestData.CONFIG_INFO_TAG_JSON, ConfigInfoTagEntity.class);
+        configInfoBeta = JacksonUtils.toObj(TestData.CONFIG_INFO_BETA_JSON, ConfigInfoBetaEntity.class);
+        configTagsRelation = JacksonUtils.toObj(TestData.CONFIG_TAGS_RELATION_JSON, ConfigTagsRelationEntity.class);
+        hisConfigInfo = JacksonUtils.toObj(TestData.HIS_CONFIG_INFO_JSON, HisConfigInfoEntity.class);
+        tenantInfo = JacksonUtils.toObj(TestData.TENANT_INFO_JSON, TenantInfoEntity.class);
+        configInfoAggr = JacksonUtils.toObj(TestData.CONFIG_INFO_AGGR_JSON, ConfigInfoAggrEntity.class);
     }
 
 
     @Test
     public void findConfigInfoBaseTest() {
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
-        ConfigInfoBeta exist = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
+        ConfigInfoBetaEntity exist = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
             .and(qConfigInfoBeta.groupId.eq(configInfoBeta.getGroupId())))
             .orElse(null);
         if (exist == null) {
@@ -121,14 +121,14 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void removeConfigInfoByIdsTest() {
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        List<Long> idList = ((List<ConfigInfo>) configInfoRepository.findAll(qConfigInfo.srcIp.eq(configInfo.getSrcIp())
+        List<Long> idList = ((List<ConfigInfoEntity>) configInfoRepository.findAll(qConfigInfo.srcIp.eq(configInfo.getSrcIp())
             .and(qConfigInfo.srcUser.eq(configInfo.getSrcUser())))).stream().map(s -> s.getId()).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(idList)) {
             configInfoRepository.save(configInfo);
             idList.add(configInfo.getId());
         }
 
-        List<ConfigInfo> list = persistService.removeConfigInfoByIds(idList, configInfo.getSrcIp(), configInfo.getSrcUser());
+        List<ConfigInfoEntity> list = persistService.removeConfigInfoByIds(idList, configInfo.getSrcIp(), configInfo.getSrcUser());
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -172,12 +172,12 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void updateConfigInfo4Beta() {
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
-        ConfigInfoBeta result = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
+        ConfigInfoBetaEntity result = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
             .and(qConfigInfoBeta.groupId.eq(configInfoBeta.getGroupId()))
             .and(qConfigInfoBeta.tenantId.eq(configInfoBeta.getTenantId())))
             .orElse(null);
         if (result == null) {
-            result = new ConfigInfoBeta();
+            result = new ConfigInfoBetaEntity();
             configInfoBetaRepository.save(configInfoBeta);
             BeanUtils.copyProperties(result, configInfoBeta);
         }
@@ -189,7 +189,7 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void addConfigInfo4TagTest() {
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
-        ConfigInfoTag result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
+        ConfigInfoTagEntity result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
             .and(qConfigInfoTag.groupId.eq(configInfoTag.getGroupId()))
             .and(qConfigInfoTag.tenantId.eq(configInfoTag.getTenantId()))
             .and(qConfigInfoTag.tagId.eq(configInfoTag.getTagId())))
@@ -205,7 +205,7 @@ public class PersistServiceTest extends BaseTest {
     public void addConfigInfo4BetaTest() {
 
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
-        ConfigInfoBeta result = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
+        ConfigInfoBetaEntity result = configInfoBetaRepository.findOne(qConfigInfoBeta.dataId.eq(configInfoBeta.getDataId())
             .and(qConfigInfoBeta.groupId.eq(configInfoBeta.getGroupId()))
             .and(qConfigInfoBeta.tenantId.eq(configInfoBeta.getTenantId())))
             .orElse(null);
@@ -219,13 +219,13 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void updateConfigInfo4Tag() {
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
-        ConfigInfoTag result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
+        ConfigInfoTagEntity result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
             .and(qConfigInfoTag.groupId.eq(configInfoTag.getGroupId()))
             .and(qConfigInfoTag.tenantId.eq(configInfoTag.getTenantId()))
             .and(qConfigInfoTag.tagId.eq(configInfoTag.getTagId())))
             .orElse(null);
         if (result == null) {
-            result = new ConfigInfoTag();
+            result = new ConfigInfoTagEntity();
             configInfoTagRepository.save(configInfoTag);
             BeanUtils.copyProperties(result, configInfoTag);
         }
@@ -237,21 +237,21 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findConfigInfo4PageTest() {
-        Page<ConfigInfo> page = persistService.findConfigInfo4Page(0, 10,
+        Page<ConfigInfoEntity> page = persistService.findConfigInfo4Page(0, 10,
             configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId(), configInfo.getAppName());
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void findConfigInfoLike4PageTest() {
-        Page<ConfigInfo> page = persistService.findConfigInfoLike4Page(0, 10,
+        Page<ConfigInfoEntity> page = persistService.findConfigInfoLike4Page(0, 10,
             configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId(), configInfo.getAppName());
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void findConfigInfo4BetaTest() {
-        ConfigInfoBeta result = persistService.findConfigInfo4Beta(configInfoBeta.getDataId(),
+        ConfigInfoBetaEntity result = persistService.findConfigInfo4Beta(configInfoBeta.getDataId(),
             configInfoBeta.getGroupId(), configInfoBeta.getTenantId());
         Assert.assertNotNull(result);
     }
@@ -260,7 +260,7 @@ public class PersistServiceTest extends BaseTest {
     @Test
     public void findConfigInfo4TagTest() {
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
-        ConfigInfoTag result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
+        ConfigInfoTagEntity result = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfoTag.getDataId())
             .and(qConfigInfoTag.groupId.eq(configInfoTag.getGroupId()))
             .and(qConfigInfoTag.tenantId.eq(configInfoTag.getTenantId()))
             .and(qConfigInfoTag.tagId.eq(configInfoTag.getTagId())))
@@ -269,14 +269,14 @@ public class PersistServiceTest extends BaseTest {
             configInfoTagRepository.save(configInfoTag);
         }
 
-        ConfigInfoTag getConfigInfoTag = persistService.findConfigInfo4Tag(configInfoTag.getDataId(), configInfoTag.getGroupId(),
+        ConfigInfoTagEntity getConfigInfoTag = persistService.findConfigInfo4Tag(configInfoTag.getDataId(), configInfoTag.getGroupId(),
             configInfoTag.getTenantId(), configInfoTag.getTagId());
         Assert.assertNotNull(getConfigInfoTag);
     }
 
     @Test
     public void findConfigInfoTest() {
-        ConfigInfo findConfigInfo = persistService.
+        ConfigInfoEntity findConfigInfo = persistService.
             findConfigInfo(configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId());
         Assert.assertNotNull(findConfigInfo);
     }
@@ -299,7 +299,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void remoteTagByIdAtomicTest() {
-        Iterable<ConfigTagsRelation> list = configTagsRelationRepository.findAll();
+        Iterable<ConfigTagsRelationEntity> list = configTagsRelationRepository.findAll();
         persistService.removeTagByIdAtomic(list.iterator().next().getNid());
     }
 
@@ -320,7 +320,7 @@ public class PersistServiceTest extends BaseTest {
     public void findConfigInfosByIdsTest() {
         List<Long> idList = new ArrayList<>();
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        List<ConfigInfo> result = (List<ConfigInfo>) configInfoRepository.findAll(qConfigInfo.dataId.eq(configInfo.getDataId())
+        List<ConfigInfoEntity> result = (List<ConfigInfoEntity>) configInfoRepository.findAll(qConfigInfo.dataId.eq(configInfo.getDataId())
             .and(qConfigInfo.groupId.eq(configInfo.getGroupId()))
             .and(qConfigInfo.tenantId.eq(configInfo.getTenantId())));
         if (CollectionUtils.isEmpty(result)) {
@@ -329,7 +329,7 @@ public class PersistServiceTest extends BaseTest {
         } else {
             idList.add(result.get(0).getId());
         }
-        Iterable<ConfigInfo> iterable = persistService.findConfigInfosByIds(idList);
+        Iterable<ConfigInfoEntity> iterable = persistService.findConfigInfosByIds(idList);
         Assert.assertTrue(((ArrayList) iterable).size() > 0);
     }
 
@@ -355,7 +355,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void tenantInfoCountByTenantIdTest() {
-        List<TenantInfo> getTenantInfo = (List<TenantInfo>) tenantInfoRepository.findAll(QTenantInfo.tenantInfo.tenantId.eq(tenantInfo.getTenantId()));
+        List<TenantInfoEntity> getTenantInfo = (List<TenantInfoEntity>) tenantInfoRepository.findAll(QTenantInfo.tenantInfo.tenantId.eq(tenantInfo.getTenantId()));
         if (CollectionUtils.isEmpty(getTenantInfo)) {
             tenantInfoRepository.save(tenantInfo);
         }
@@ -381,7 +381,7 @@ public class PersistServiceTest extends BaseTest {
         List<ConfigAllInfo> list = new ArrayList<>();
         list.add(buildConfigAllInfo());
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        ConfigInfo result = configInfoRepository.findOne(qConfigInfo.dataId.eq(configInfo.getDataId())
+        ConfigInfoEntity result = configInfoRepository.findOne(qConfigInfo.dataId.eq(configInfo.getDataId())
             .and(qConfigInfo.groupId.eq(configInfo.getGroupId()))
             .and(qConfigInfo.tenantId.eq(configInfo.getTenantId())))
             .orElse(null);
@@ -395,7 +395,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findConfigHistoryTest() {
-        Page<HisConfigInfo> page = persistService.findConfigHistory(hisConfigInfo.getDataId(), hisConfigInfo.getGroupId(),
+        Page<HisConfigInfoEntity> page = persistService.findConfigHistory(hisConfigInfo.getDataId(), hisConfigInfo.getGroupId(),
             hisConfigInfo.getTenantId(), 0, 10);
         Assert.assertTrue(page.getContent().size() > 0);
     }
@@ -404,14 +404,14 @@ public class PersistServiceTest extends BaseTest {
     public void detailConfigHistoryTest() {
 
         Long id;
-        List<HisConfigInfo> list = (List<HisConfigInfo>) hisConfigInfoRepository.findAll();
+        List<HisConfigInfoEntity> list = (List<HisConfigInfoEntity>) hisConfigInfoRepository.findAll();
         if (CollectionUtils.isEmpty(list)) {
             hisConfigInfoRepository.save(hisConfigInfo);
             id = hisConfigInfo.getNid();
         } else {
             id = list.get(0).getNid();
         }
-        HisConfigInfo hisConfigInfo = persistService
+        HisConfigInfoEntity hisConfigInfo = persistService
             .detailConfigHistory(id);
         Assert.assertNotNull(hisConfigInfo);
     }
@@ -463,7 +463,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findTenantByKp1Test() {
-        List<TenantInfo> list = persistService.findTenantByKp(tenantInfo.getKp());
+        List<TenantInfoEntity> list = persistService.findTenantByKp(tenantInfo.getKp());
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -471,7 +471,7 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findTenantByKp2Test() {
-        TenantInfo result = persistService.findTenantByKp(tenantInfo.getKp(), tenantInfo.getTenantId());
+        TenantInfoEntity result = persistService.findTenantByKp(tenantInfo.getKp(), tenantInfo.getTenantId());
         Assert.assertNotNull(result);
     }
 
@@ -483,13 +483,13 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void listAllGroupKeyMd5Test() {
-        List<ConfigInfo> list = persistService.listAllGroupKeyMd5();
+        List<ConfigInfoEntity> list = persistService.listAllGroupKeyMd5();
         Assert.assertTrue(list.size() > 0);
     }
 
     @Test
     public void queryConfigInfoTest() {
-        ConfigInfo result = persistService.queryConfigInfo(configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId());
+        ConfigInfoEntity result = persistService.queryConfigInfo(configInfo.getDataId(), configInfo.getGroupId(), configInfo.getTenantId());
         Assert.assertNotNull(result);
     }
 
@@ -566,30 +566,30 @@ public class PersistServiceTest extends BaseTest {
 
     @Test
     public void findAllConfigInfoFragmentTest() {
-        Page<ConfigInfo> page = persistService.findAllConfigInfoFragment(0, 100);
+        Page<ConfigInfoEntity> page = persistService.findAllConfigInfoFragment(0, 100);
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void findAllConfigInfoBetaForDumpAllTest() {
-        Page<ConfigInfoBeta> page = persistService.findAllConfigInfoBetaForDumpAll(0, 10);
+        Page<ConfigInfoBetaEntity> page = persistService.findAllConfigInfoBetaForDumpAll(0, 10);
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void findAllConfigInfoTagForDumpAllTest() {
-        Page<ConfigInfoTag> page = persistService.findAllConfigInfoTagForDumpAll(0, 10);
+        Page<ConfigInfoTagEntity> page = persistService.findAllConfigInfoTagForDumpAll(0, 10);
         Assert.assertTrue(page.getContent().size() > 0);
     }
 
     @Test
     public void findAllAggrGroupTest() {
-        List<ConfigInfoAggr> result = ((List<ConfigInfoAggr>) configInfoAggrRepository.findAll());
+        List<ConfigInfoAggrEntity> result = ((List<ConfigInfoAggrEntity>) configInfoAggrRepository.findAll());
         if (result.isEmpty()) {
             configInfoAggrRepository.save(configInfoAggr);
         }
 
-        List<ConfigInfoAggr> list = persistService.findAllAggrGroup();
+        List<ConfigInfoAggrEntity> list = persistService.findAllAggrGroup();
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -597,7 +597,7 @@ public class PersistServiceTest extends BaseTest {
     //
     @Test
     public void findChangeConfigTest() {
-        List<ConfigInfo> result = (List<ConfigInfo>) configInfoRepository.findAll();
+        List<ConfigInfoEntity> result = (List<ConfigInfoEntity>) configInfoRepository.findAll();
         if (CollectionUtils.isEmpty(result)) {
             configInfoRepository.save(configInfo);
             try {
@@ -605,7 +605,7 @@ public class PersistServiceTest extends BaseTest {
             } catch (InterruptedException e) {
             }
         }
-        List<ConfigInfo> list = persistService.findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
+        List<ConfigInfoEntity> list = persistService.findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -615,7 +615,7 @@ public class PersistServiceTest extends BaseTest {
     public void findDeletedConfigTest() {
         hisConfigInfo.setGmtModified(new Date());
         hisConfigInfoRepository.save(hisConfigInfo);
-        List<HisConfigInfo> list = persistService.findDeletedConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
+        List<HisConfigInfoEntity> list = persistService.findDeletedConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }

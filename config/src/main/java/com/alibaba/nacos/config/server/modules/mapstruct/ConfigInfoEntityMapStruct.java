@@ -15,21 +15,32 @@
  */
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBeta;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
+
+import java.util.List;
 
 /**
  * @author Nacos
  */
 @Mapper
-public interface ConfigInfoBetaMapStruct {
+public interface ConfigInfoEntityMapStruct {
 
-    ConfigInfoBetaMapStruct MAPPER = Mappers.getMapper(ConfigInfoBetaMapStruct.class);
+    ConfigInfoEntityMapStruct INSTANCE = Mappers.getMapper(ConfigInfoEntityMapStruct.class);
 
-    ConfigInfoBase convertConfigInfoBase(ConfigInfoBeta configInfoBeta);
 
-    ConfigInfo4Beta convertConfigInfo4Beta(ConfigInfoBeta configInfoBeta);
+    List<ConfigAllInfo> convertConfigAllInfoList(List<ConfigInfoEntity> list);
+
+    @Mappings({
+        @Mapping(source="groupId", target="group")
+    })
+    ConfigInfoBase convertConfigInfoBase(ConfigInfoEntity configInfo);
+
+    ConfigInfoEntity convertConfigInfoEntity(ConfigInfo configInfo);
 }

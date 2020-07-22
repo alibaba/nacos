@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.config.server.modules.repository;
 
-import com.alibaba.nacos.config.server.modules.entity.HisConfigInfo;
+import com.alibaba.nacos.config.server.modules.entity.HisConfigInfoEntity;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
  * @author Nacos
  */
-public interface HisConfigInfoRepository extends PagingAndSortingRepository<HisConfigInfo, Long>,
-    QuerydslPredicateExecutor<HisConfigInfo> {
+public interface HisConfigInfoRepository extends PagingAndSortingRepository<HisConfigInfoEntity, Long>,
+    QuerydslPredicateExecutor<HisConfigInfoEntity> {
 
 }

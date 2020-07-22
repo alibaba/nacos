@@ -15,42 +15,33 @@
  */
 package com.alibaba.nacos.config.server.modules.entity;
 
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
-import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_TAG_TABLE_NAME;
+import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_TABLE_NAME;
 
 /**
  * @author Nacos
  */
-@Table(name = CONFIG_INFO_TAG_TABLE_NAME)
-@Entity
 @Data
-public class ConfigInfoTag implements Serializable {
+@Entity
+@Table(name = CONFIG_INFO_TABLE_NAME)
+public class ConfigInfoEntity implements Serializable {
 
-
+    //jpa
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
     @Column(name = "data_id")
     private String dataId;
 
     @Column(name = "group_id")
     private String groupId;
-
-    @Column(name = "tenant_id")
-    private String tenantId;
-
-    @Column(name = "tag_id")
-    private String tagId;
-
-    @Column(name = "app_name")
-    private String appName;
 
     @Column(name = "content")
     private String content;
@@ -70,5 +61,35 @@ public class ConfigInfoTag implements Serializable {
     @Column(name = "src_ip")
     private String srcIp;
 
+    @Column(name = "app_name")
+    private String appName;
 
+    @Column(name = "tenant_id")
+    private String tenantId;
+
+    @Column(name = "c_desc")
+    private String cDesc;
+
+    @Column(name = "c_use")
+    private String cUse;
+
+    @Column(name = "effect")
+    private String effect;
+
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "c_schema")
+    private String cSchema;
+
+    public ConfigInfoEntity() {
+    }
+
+    public ConfigInfoEntity(String dataId, String groupId, String content, String appName, String tenantId) {
+        this.dataId = dataId;
+        this.groupId = groupId;
+        this.content = content;
+        this.appName = appName;
+        this.tenantId = tenantId;
+    }
 }

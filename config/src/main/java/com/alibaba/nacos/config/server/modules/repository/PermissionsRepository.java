@@ -15,15 +15,14 @@
  */
 package com.alibaba.nacos.config.server.modules.repository;
 
-import com.alibaba.nacos.config.server.modules.entity.Permissions;
+import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
  * @author Nacos
  */
-public interface PermissionsRepository extends CrudRepository<Permissions, String>,
-    QuerydslPredicateExecutor<Permissions> {
+public interface PermissionsRepository extends CrudRepository<PermissionsEntity, String>,
+    QuerydslPredicateExecutor<PermissionsEntity> {
 
 }

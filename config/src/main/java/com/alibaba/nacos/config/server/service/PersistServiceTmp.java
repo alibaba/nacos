@@ -23,11 +23,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.*;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.modules.entity.*;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfo;
-import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.modules.entity.TenantInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggrEntity;
+import com.alibaba.nacos.config.server.modules.entity.TenantInfoEntity;
 import com.alibaba.nacos.config.server.modules.repository.*;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.querydsl.core.BooleanBuilder;
@@ -120,21 +119,21 @@ public class PersistServiceTmp {
      * @Date 2019/7/5 16:45
      * @Param [ids, srcIp, srcUser]
      */
-    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+    public List<ConfigInfoEntity> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
         ids.removeAll(Collections.singleton(null));
-        return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+        return tjt.execute(new TransactionCallback<List<ConfigInfoEntity>>() {
             final Timestamp time = new Timestamp(System.currentTimeMillis());
 
             @Override
-            public List<ConfigInfo> doInTransaction(TransactionStatus status) {
+            public List<ConfigInfoEntity> doInTransaction(TransactionStatus status) {
                 try {
-                    List<ConfigInfo> configInfoList = findConfigInfosByIds(ids);
+                    List<ConfigInfoEntity> configInfoList = findConfigInfosByIds(ids);
                     if (!CollectionUtils.isEmpty(configInfoList)) {
                         removeConfigInfoByIdsAtomic(configInfoList);
-                        for (ConfigInfo configInfo : configInfoList) {
+                        for (ConfigInfoEntity configInfo : configInfoList) {
                             removeTagByIdAtomic(configInfo.getId());
                             insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
                         }
@@ -148,7 +147,7 @@ public class PersistServiceTmp {
         });
     }
 
-    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfoEntity configInfo, Timestamp time,
                                Map<String, Object> configAdvanceInfo) {
         insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, true);
     }
@@ -157,9 +156,9 @@ public class PersistServiceTmp {
     /**
      * 写入主表，插入或更新
      */
-    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+    public void insertOrUpdate(String srcIp, String srcUser, ConfigInfoEntity configInfo, Timestamp time,
                                Map<String, Object> configAdvanceInfo, boolean notify) {
-        ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroupId(),
+        ConfigInfoEntity oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroupId(),
             configInfo.getTenantId());
         if (oldConfigInfo == null) {
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
@@ -168,12 +167,12 @@ public class PersistServiceTmp {
         }
     }
 
-    public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+    public void insertOrUpdateTag(final ConfigInfoEntity configInfo, final String tag, final String srcIp,
                                   final String srcUser, final Timestamp time, final boolean notify) {
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
-        ConfigInfoTag configInfoTag = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfo.getDataId())
+        ConfigInfoTagEntity configInfoTag = configInfoTagRepository.findOne(qConfigInfoTag.dataId.eq(configInfo.getDataId())
             .and(qConfigInfoTag.groupId.eq(configInfo.getGroupId()))
             .and(qConfigInfoTag.tenantId.eq(tenantTmp))
             .and(qConfigInfoTag.tagId.eq(tagTmp)))
@@ -185,7 +184,7 @@ public class PersistServiceTmp {
         }
     }
 
-    public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+    public void insertOrUpdateBeta(final ConfigInfoEntity configInfo, final String betaIps, final String srcIp,
                                    final String srcUser, final Timestamp time, final boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
@@ -200,7 +199,7 @@ public class PersistServiceTmp {
         if (StringUtils.isNotBlank(tenantTmp)) {
             booleanBuilder.and(qConfigInfoBeta.tenantId.eq(tenantTmp));
         }
-        ConfigInfoBeta configInfoBeta = configInfoBetaRepository.findOne(booleanBuilder)
+        ConfigInfoBetaEntity configInfoBeta = configInfoBetaRepository.findOne(booleanBuilder)
             .orElse(null);
         if (configInfoBeta == null) {
             addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
@@ -213,7 +212,7 @@ public class PersistServiceTmp {
     /**
      * 更新配置信息
      */
-    public void updateConfigInfo4Beta(ConfigInfo configInfo, ConfigInfoBeta configInfoBeta, String srcIp, String srcUser, Timestamp time,
+    public void updateConfigInfo4Beta(ConfigInfoEntity configInfo, ConfigInfoBetaEntity configInfoBeta, String srcIp, String srcUser, Timestamp time,
                                       boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
@@ -239,13 +238,13 @@ public class PersistServiceTmp {
     /**
      * 添加普通配置信息，发布数据变更事件
      */
-    public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps,
+    public void addConfigInfo4Beta(ConfigInfoEntity configInfo, String betaIps,
                                    String srcIp, String srcUser, Timestamp time, boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoBeta configInfoBeta = new ConfigInfoBeta();
+            ConfigInfoBetaEntity configInfoBeta = new ConfigInfoBetaEntity();
             configInfoBeta.setDataId(configInfo.getDataId());
             configInfoBeta.setGroupId(configInfo.getGroupId());
             configInfoBeta.setAppName(appNameTmp);
@@ -271,14 +270,14 @@ public class PersistServiceTmp {
     /**
      * 添加普通配置信息，发布数据变更事件
      */
-    public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    public void addConfigInfo4Tag(ConfigInfoEntity configInfo, String tag, String srcIp, String srcUser, Timestamp time,
                                   boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenantId()) ? StringUtils.EMPTY : configInfo.getTenantId();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoTag configInfoTag = new ConfigInfoTag();
+            ConfigInfoTagEntity configInfoTag = new ConfigInfoTagEntity();
             configInfoTag.setDataId(configInfo.getDataId());
             configInfoTag.setGroupId(configInfo.getGroupId());
             configInfoTag.setTenantId(tenantTmp);
@@ -304,7 +303,7 @@ public class PersistServiceTmp {
     /**
      * 更新配置信息
      */
-    public void updateConfigInfo4Tag(ConfigInfo configInfo, ConfigInfoTag configInfoTag, String tag,
+    public void updateConfigInfo4Tag(ConfigInfoEntity configInfo, ConfigInfoTagEntity configInfoTag, String tag,
                                      String srcIp, String srcUser, Timestamp time,
                                      boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
@@ -335,9 +334,9 @@ public class PersistServiceTmp {
         }
     }
 
-    public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
-                                                final String group,
-                                                final String tenant, final String appName) {
+    public Page<ConfigInfoEntity> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
+                                                      final String group,
+                                                      final String tenant, final String appName) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
         buildConfigInfoCommonCondition(booleanBuilder, qConfigInfo, dataId, group, appName);
@@ -347,9 +346,9 @@ public class PersistServiceTmp {
         return configInfoRepository.findAll(booleanBuilder, PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
     }
 
-    public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
-                                                    final String group, final String tenant,
-                                                    final String appName) {
+    public Page<ConfigInfoEntity> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+                                                          final String group, final String tenant,
+                                                          final String appName) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
         buildConfigInfoCommonCondition(booleanBuilder, qConfigInfo, dataId, group, appName);
@@ -378,7 +377,7 @@ public class PersistServiceTmp {
         }
     }
 
-    public ConfigInfoBeta findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
+    public ConfigInfoBetaEntity findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoBeta qConfigInfoBeta = QConfigInfoBeta.configInfoBeta;
         if (StringUtils.isNotBlank(dataId)) {
@@ -398,8 +397,8 @@ public class PersistServiceTmp {
     /**
      * 根据dataId和group查询配置信息
      */
-    public ConfigInfoTag findConfigInfo4Tag(final String dataId, final String group, final String tenant,
-                                            final String tag) {
+    public ConfigInfoTagEntity findConfigInfo4Tag(final String dataId, final String group, final String tenant,
+                                                  final String tag) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfoTag qConfigInfoTag = QConfigInfoTag.configInfoTag;
         if (StringUtils.isNotBlank(dataId)) {
@@ -427,7 +426,7 @@ public class PersistServiceTmp {
      * @param tenant tenant
      * @return config info
      */
-    public ConfigInfo findConfigInfo(final String dataId, final String group, final String tenant) {
+    public ConfigInfoEntity findConfigInfo(final String dataId, final String group, final String tenant) {
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
         if (StringUtils.isNotBlank(dataId)) {
@@ -464,7 +463,7 @@ public class PersistServiceTmp {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
         }
-        ConfigInfo configInfo = configInfoRepository.findOne(booleanBuilder)
+        ConfigInfoEntity configInfo = configInfoRepository.findOne(booleanBuilder)
             .orElseThrow(() -> new RuntimeException("find configInfo data null"));
         ConfigAllInfo configAdvance = new ConfigAllInfo();
         BeanUtils.copyProperties(configInfo, configAdvance);
@@ -496,7 +495,7 @@ public class PersistServiceTmp {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigTagsRelation.tenantId.eq(tenant));
         }
-        Iterable<ConfigTagsRelation> iterable = configTagsRelationRepository.findAll(booleanBuilder);
+        Iterable<ConfigTagsRelationEntity> iterable = configTagsRelationRepository.findAll(booleanBuilder);
         List<String> result = new ArrayList<>();
         iterable.forEach(s -> result.add(s.getTagName()));
         return result;
@@ -518,7 +517,7 @@ public class PersistServiceTmp {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
         }
-        Iterable<ConfigInfo> configInfos = configInfoRepository.findAll(booleanBuilder);
+        Iterable<ConfigInfoEntity> configInfos = configInfoRepository.findAll(booleanBuilder);
         configInfos.forEach(s -> configInfoRepository.delete(s));
     }
 
@@ -532,11 +531,11 @@ public class PersistServiceTmp {
      * @param time       time
      * @param ops        ops type
      */
-    private void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
+    private void insertConfigHistoryAtomic(long id, ConfigInfoEntity configInfo, String srcIp, String srcUser,
                                            final Timestamp time, String ops) {
 
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        HisConfigInfo hisConfigInfo = new HisConfigInfo();
+        HisConfigInfoEntity hisConfigInfo = new HisConfigInfoEntity();
         hisConfigInfo.setId(id);
         hisConfigInfo.setDataId(configInfo.getDataId());
         hisConfigInfo.setGroupId(configInfo.getGroupId());
@@ -564,7 +563,7 @@ public class PersistServiceTmp {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
-                    ConfigInfo configInfo = findConfigInfo(dataId, group, tenant);
+                    ConfigInfoEntity configInfo = findConfigInfo(dataId, group, tenant);
                     if (configInfo != null) {
                         removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                         removeTagByIdAtomic(configInfo.getId());
@@ -611,7 +610,7 @@ public class PersistServiceTmp {
             @Override
             public Boolean doInTransaction(TransactionStatus transactionStatus) {
                 try {
-                    Iterable<ConfigInfoTag> configInfoTags = configInfoTagRepository.findAll(booleanBuilder);
+                    Iterable<ConfigInfoTagEntity> configInfoTags = configInfoTagRepository.findAll(booleanBuilder);
                     configInfoTags.forEach(s -> configInfoTagRepository.delete(s));
                 } catch (Exception e) {
                     throw e;
@@ -630,15 +629,15 @@ public class PersistServiceTmp {
      * @Date 2019/7/5 16:37
      * @Param [ids]
      */
-    public List<ConfigInfo> findConfigInfosByIds(final List<Long> ids) {
+    public List<ConfigInfoEntity> findConfigInfosByIds(final List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return null;
         }
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        return (List<ConfigInfo>) configInfoRepository.findAll(qConfigInfo.id.in(ids));
+        return (List<ConfigInfoEntity>) configInfoRepository.findAll(qConfigInfo.id.in(ids));
     }
 
-    private void removeConfigInfoByIdsAtomic(final List<ConfigInfo> list) {
+    private void removeConfigInfoByIdsAtomic(final List<ConfigInfoEntity> list) {
         configInfoRepository.deleteAll(list);
     }
 
@@ -664,7 +663,7 @@ public class PersistServiceTmp {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigInfo.groupId.eq(group));
         }
-        ConfigInfo configInfo = configInfoRepository.findOne(booleanBuilder)
+        ConfigInfoEntity configInfo = configInfoRepository.findOne(booleanBuilder)
             .orElseThrow(() -> new RuntimeException("find configInfo data null"));
         ConfigAdvanceInfo configAdvance = new ConfigAdvanceInfo();
         BeanUtils.copyProperties(configInfo, configAdvance);
@@ -690,7 +689,7 @@ public class PersistServiceTmp {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
-                    ConfigInfoBeta configInfoBeta = findConfigInfo4Beta(dataId, group, tenant);
+                    ConfigInfoBetaEntity configInfoBeta = findConfigInfo4Beta(dataId, group, tenant);
                     if (configInfoBeta != null) {
                         configInfoBetaRepository.deleteById(configInfoBeta.getId());
                     }
@@ -729,7 +728,7 @@ public class PersistServiceTmp {
                 booleanBuilder.and(qConfigInfo.appName.eq(appName));
             }
         }
-        Iterable<ConfigInfo> configInfos = configInfoRepository.findAll(booleanBuilder);
+        Iterable<ConfigInfoEntity> configInfos = configInfoRepository.findAll(booleanBuilder);
         List<ConfigAllInfo> resultList = new ArrayList<>();
         configInfos.forEach(s -> {
             ConfigAllInfo configAllInfo = new ConfigAllInfo();
@@ -757,7 +756,7 @@ public class PersistServiceTmp {
     /**
      * 添加普通配置信息，发布数据变更事件
      */
-    public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfoEntity configInfo,
                               final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
         tjt.execute(new TransactionCallback<Boolean>() {
             @Override
@@ -792,7 +791,7 @@ public class PersistServiceTmp {
      * @param configAdvanceInfo advance info
      * @return excute sql result
      */
-    private long addConfigInfoAtomic(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    private long addConfigInfoAtomic(final String srcIp, final String srcUser, final ConfigInfoEntity configInfo,
                                      final Timestamp time,
                                      Map<String, Object> configAdvanceInfo) {
 
@@ -849,7 +848,7 @@ public class PersistServiceTmp {
      * @param tenant   tenant
      */
     public void addConfiTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
-        ConfigTagsRelation configTagsRelation = new ConfigTagsRelation();
+        ConfigTagsRelationEntity configTagsRelation = new ConfigTagsRelationEntity();
         configTagsRelation.setId(configId);
         configTagsRelation.setTagName(tagName);
         configTagsRelation.setDataId(dataId);
@@ -861,7 +860,7 @@ public class PersistServiceTmp {
     /**
      * 更新配置信息
      */
-    public void updateConfigInfo(final ConfigInfo configInfo, final ConfigInfo oldConfigInfo,
+    public void updateConfigInfo(final ConfigInfoEntity configInfo, final ConfigInfoEntity oldConfigInfo,
                                  final String srcIp, final String srcUser,
                                  final Timestamp time, final Map<String, Object> configAdvanceInfo,
                                  final boolean notify) {
@@ -908,7 +907,7 @@ public class PersistServiceTmp {
      * @param time              time
      * @param configAdvanceInfo advance info
      */
-    private void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+    private void updateConfigInfoAtomic(final ConfigInfoEntity configInfo, final String srcIp, final String srcUser,
                                         final Timestamp time, Map<String, Object> configAdvanceInfo) {
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
@@ -951,7 +950,7 @@ public class PersistServiceTmp {
                 log.error("data verification failed", e);
                 throw e;
             }
-            ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+            ConfigInfoEntity configInfo2Save = new ConfigInfoEntity(configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getContent(), configInfo.getAppName(), configInfo.getTenant());
 
             String type = configInfo.getType();
@@ -983,7 +982,7 @@ public class PersistServiceTmp {
                     faileditem.put("group", configInfo2Save.getGroupId());
                     failData.add(faileditem);
                     for (int j = (i + 1); j < configInfoList.size(); j++) {
-                        ConfigInfo skipConfigInfo = new ConfigInfo();
+                        ConfigInfoEntity skipConfigInfo = new ConfigInfoEntity();
                         BeanUtils.copyProperties(skipConfigInfo, configInfoList.get(j));
                         Map<String, String> skipitem = new HashMap<>(2);
                         skipitem.put("dataId", skipConfigInfo.getDataId());
@@ -1002,7 +1001,7 @@ public class PersistServiceTmp {
                     skipData.add(skipitem);
                 } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
                     succCount++;
-                    ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo2Save.getGroupId(),
+                    ConfigInfoEntity oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo2Save.getGroupId(),
                         configInfo2Save.getTenantId());
                     updateConfigInfo(configInfo2Save, oldConfigInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
                 }
@@ -1030,8 +1029,8 @@ public class PersistServiceTmp {
      * @param pageSize size
      * @return history info
      */
-    public Page<HisConfigInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
-                                                 int pageSize) {
+    public Page<HisConfigInfoEntity> findConfigHistory(String dataId, String group, String tenant, int pageNo,
+                                                       int pageSize) {
         QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
         return hisConfigInfoRepository.findAll(qHisConfigInfo.dataId.eq(dataId)
             .and(qHisConfigInfo.groupId.eq(group))
@@ -1039,7 +1038,7 @@ public class PersistServiceTmp {
     }
 
 
-    public HisConfigInfo detailConfigHistory(Long nid) {
+    public HisConfigInfoEntity detailConfigHistory(Long nid) {
         return hisConfigInfoRepository.findById(nid)
             .orElseThrow(() -> new RuntimeException("findById hisConfigInfo data null nid=" + nid));
     }
@@ -1055,7 +1054,7 @@ public class PersistServiceTmp {
      */
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
                                        String createResoure, final long time) {
-        TenantInfo tenantInfo = new TenantInfo();
+        TenantInfoEntity tenantInfo = new TenantInfoEntity();
         tenantInfo.setKp(kp);
         tenantInfo.setTenantId(tenantId);
         tenantInfo.setTenantName(tenantName);
@@ -1086,16 +1085,16 @@ public class PersistServiceTmp {
     }
 
 
-    public List<TenantInfo> findTenantByKp(String kp) {
+    public List<TenantInfoEntity> findTenantByKp(String kp) {
         return tenantInfoRepository.findByKp(kp);
     }
 
-    public TenantInfo findTenantByKp(String kp, String tenantId) {
+    public TenantInfoEntity findTenantByKp(String kp, String tenantId) {
         return tenantInfoRepository.findByKpAndTenantId(kp, tenantId);
     }
 
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
-        TenantInfo tenantInfo = findTenantByKp(kp, tenantId);
+        TenantInfoEntity tenantInfo = findTenantByKp(kp, tenantId);
         tenantInfoRepository.delete(tenantInfo);
     }
 
@@ -1105,13 +1104,13 @@ public class PersistServiceTmp {
      *
      * @return
      */
-    public List<ConfigInfo> listAllGroupKeyMd5() {
+    public List<ConfigInfoEntity> listAllGroupKeyMd5() {
         final int pageSize = 10000;
         int totalCount = configInfoCount();
         int pageCount = (int) Math.ceil(totalCount * 1.0 / pageSize);
-        List<ConfigInfo> allConfigInfo = new ArrayList<ConfigInfo>();
+        List<ConfigInfoEntity> allConfigInfo = new ArrayList<ConfigInfoEntity>();
         for (int pageNo = 0; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfo> page = configInfoRepository.findAll(new BooleanBuilder(), PageRequest.of(pageNo, pageSize));
+            Page<ConfigInfoEntity> page = configInfoRepository.findAll(new BooleanBuilder(), PageRequest.of(pageNo, pageSize));
             if (!page.getContent().isEmpty()) {
                 allConfigInfo.addAll(page.getContent());
             }
@@ -1174,7 +1173,7 @@ public class PersistServiceTmp {
         }
     }
 
-    public ConfigInfo queryConfigInfo(final String dataId, final String group, final String tenant) {
+    public ConfigInfoEntity queryConfigInfo(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
         return configInfoRepository.findOne(qConfigInfo.dataId.eq(dataId)
@@ -1200,7 +1199,7 @@ public class PersistServiceTmp {
      */
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
-        Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.gmtModified.lt(startTime),
+        Iterable<HisConfigInfoEntity> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.gmtModified.lt(startTime),
             PageRequest.of(0, limitSize));
         hisConfigInfoRepository.deleteAll(iterable);
     }
@@ -1230,18 +1229,18 @@ public class PersistServiceTmp {
         }
     }
 
-    public Page<ConfigInfo> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
+    public Page<ConfigInfoEntity> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
         return configInfoRepository.findAll(qConfigInfo.id.gt(lastMaxId),
             PageRequest.of(0, pageSize, Sort.by(Sort.Order.asc("id"))));
     }
 
-    public Page<ConfigInfoBeta> findAllConfigInfoBetaForDumpAll(
+    public Page<ConfigInfoBetaEntity> findAllConfigInfoBetaForDumpAll(
         final int pageNo, final int pageSize) {
         return configInfoBetaRepository.findAll(null, PageRequest.of(pageNo, pageSize));
     }
 
-    public Page<ConfigInfoTag> findAllConfigInfoTagForDumpAll(
+    public Page<ConfigInfoTagEntity> findAllConfigInfoTagForDumpAll(
         final int pageNo, final int pageSize) {
         return configInfoTagRepository.findAll(null, PageRequest.of(pageNo, pageSize));
     }
@@ -1249,32 +1248,32 @@ public class PersistServiceTmp {
     /**
      * 找到所有聚合数据组。
      */
-    public List<ConfigInfoAggr> findAllAggrGroup() {
+    public List<ConfigInfoAggrEntity> findAllAggrGroup() {
         //TODO 关系型特性查询
         return configInfoAggrRepository.findAllAggrGroup();
     }
 
 
-    public List<ConfigInfo> findChangeConfig(final Timestamp startTime,
-                                             final Timestamp endTime) {
+    public List<ConfigInfoEntity> findChangeConfig(final Timestamp startTime,
+                                                   final Timestamp endTime) {
         QConfigInfo qConfigInfo = QConfigInfo.configInfo;
-        Iterable<ConfigInfo> iterable = configInfoRepository.findAll(qConfigInfo.gmtModified.goe(startTime)
+        Iterable<ConfigInfoEntity> iterable = configInfoRepository.findAll(qConfigInfo.gmtModified.goe(startTime)
             .and(qConfigInfo.gmtModified.loe(endTime)));
-        return ((List<ConfigInfo>) iterable);
+        return ((List<ConfigInfoEntity>) iterable);
     }
 
-    public List<HisConfigInfo> findDeletedConfig(final Timestamp startTime,
-                                                 final Timestamp endTime) {
+    public List<HisConfigInfoEntity> findDeletedConfig(final Timestamp startTime,
+                                                       final Timestamp endTime) {
         QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
-        Iterable<HisConfigInfo> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.opType.eq("D")
+        Iterable<HisConfigInfoEntity> iterable = hisConfigInfoRepository.findAll(qHisConfigInfo.opType.eq("D")
             .and(qHisConfigInfo.gmtModified.goe(startTime))
             .and(qHisConfigInfo.gmtModified.loe(endTime)));
-        return ((List<HisConfigInfo>) iterable);
+        return ((List<HisConfigInfoEntity>) iterable);
     }
 
 
-    public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
-                                                         final int pageSize) {
+    public Page<ConfigInfoAggrEntity> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
+                                                               final int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         QConfigInfoAggr qConfigInfoAggr = QConfigInfoAggr.configInfoAggr;
         return configInfoAggrRepository.findAll(qConfigInfoAggr.dataId.eq(dataId)
@@ -1284,26 +1283,26 @@ public class PersistServiceTmp {
 
     public List<String> getTenantIdList(int pageNo, int pageSize) {
         //TODO JPA特性查询
-        Specification<ConfigInfo> specification = new Specification<ConfigInfo>() {
+        Specification<ConfigInfoEntity> specification = new Specification<ConfigInfoEntity>() {
             @Override
-            public Predicate toPredicate(Root<ConfigInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+            public Predicate toPredicate(Root<ConfigInfoEntity> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
                 return query.groupBy(root.get("tenantId")).getRestriction();
             }
         };
-        Page<ConfigInfo> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
+        Page<ConfigInfoEntity> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
         return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
     }
 
 
     public List<String> getGroupIdList(int pageNo, int pageSize) {
         //TODO JPA特性查询
-        Specification<ConfigInfo> specification = new Specification<ConfigInfo>() {
+        Specification<ConfigInfoEntity> specification = new Specification<ConfigInfoEntity>() {
             @Override
-            public Predicate toPredicate(Root<ConfigInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+            public Predicate toPredicate(Root<ConfigInfoEntity> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
                 return query.groupBy(root.get("groupId")).getRestriction();
             }
         };
-        Page<ConfigInfo> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
+        Page<ConfigInfoEntity> page = configInfoRepository.findAll(specification, PageRequest.of(pageNo, pageSize));
         return page.getContent().stream().map(config -> config.getGroupId()).collect(Collectors.toList());
     }
 

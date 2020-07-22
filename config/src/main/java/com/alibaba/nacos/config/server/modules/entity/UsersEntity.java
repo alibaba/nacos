@@ -35,7 +35,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.USERS_TABLE_NAM
 @Table(name = USERS_TABLE_NAME)
 @Entity
 @Data
-public class Users implements Serializable {
+public class UsersEntity implements Serializable {
 
     @Id
     @Column(name = "username")

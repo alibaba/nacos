@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.repository;
+package com.alibaba.nacos.config.server.modules.entity;
 
-import com.alibaba.nacos.config.server.modules.entity.ConfigTagsRelationEntity;
-import org.springframework.data.querydsl.QuerydslPredicateExecutor;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import lombok.Data;
+
+import javax.persistence.*;
+
+import static com.alibaba.nacos.config.server.constant.Constants.GROUP_CAPACITY_TABLE_NAME;
 
 /**
  * @author Nacos
  */
-public interface ConfigTagsRelationRepository extends PagingAndSortingRepository<ConfigTagsRelationEntity, Long>,
-    QuerydslPredicateExecutor<ConfigTagsRelationEntity> {
+@Table(name = GROUP_CAPACITY_TABLE_NAME)
+@Entity
+@Data
+public class GroupCapacityEntity extends CapacityEntity {
+
+    @Column(name = "group_id")
+    private String groupId;
 
 }

@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.UserPersistServiceTmp;
-import com.alibaba.nacos.config.server.modules.entity.Users;
+import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,11 +41,11 @@ import java.util.Random;
 public class UserPersistServiceTest extends BaseTest {
 
 
-    private Users users;
+    private UsersEntity users;
 
     @Before
     public void before() {
-        users = JacksonUtils.toObj(TestData.USERS_JSON, Users.class);
+        users = JacksonUtils.toObj(TestData.USERS_JSON, UsersEntity.class);
     }
 
 
@@ -73,14 +73,14 @@ public class UserPersistServiceTest extends BaseTest {
 
     @Test
     public void findUserByUsernameTest() {
-        Users result = userPersistServiceTmp.findUserByUsername(users.getUsername());
+        UsersEntity result = userPersistServiceTmp.findUserByUsername(users.getUsername());
         Assert.assertNotNull(result);
     }
 
     @Test
     public void getUsersTest() {
         userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
-        Page<Users> page = userPersistServiceTmp.getUsers(0, 10);
+        Page<UsersEntity> page = userPersistServiceTmp.getUsers(0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);
     }

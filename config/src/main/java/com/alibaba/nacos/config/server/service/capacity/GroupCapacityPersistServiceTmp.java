@@ -43,18 +43,18 @@ public class GroupCapacityPersistServiceTmp {
     @Autowired
     private ConfigInfoRepository configInfoRepository;
 
-    public GroupCapacity getGroupCapacity(String groupId) {
+    public GroupCapacityEntity getGroupCapacity(String groupId) {
         return groupCapacityRepository.findOne(QGroupCapacity.groupCapacity.groupId.eq(groupId))
             .orElse(null);
     }
 
 
-    public Capacity getClusterCapacity() {
+    public CapacityEntity getClusterCapacity() {
         return getGroupCapacity(CLUSTER);
     }
 
 
-    public boolean insertGroupCapacity(final GroupCapacity capacity) {
+    public boolean insertGroupCapacity(final GroupCapacityEntity capacity) {
         Long configInfoSize;
         if (CLUSTER.equals(capacity.getGroupId())) {
             configInfoSize = configInfoRepository.count();
@@ -69,9 +69,9 @@ public class GroupCapacityPersistServiceTmp {
     }
 
 
-    public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity) {
+    public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacityEntity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+        GroupCapacityEntity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
             .and(qGroupCapacity.usage.lt(groupCapacity.getQuota()))
             .and(qGroupCapacity.quota.eq(0)))
             .orElse(null);
@@ -88,15 +88,15 @@ public class GroupCapacityPersistServiceTmp {
         return true;
     }
 
-    private boolean insertGroupCapacity(final Long configInfoSize, final GroupCapacity capacity) {
+    private boolean insertGroupCapacity(final Long configInfoSize, final GroupCapacityEntity capacity) {
         capacity.setUsage(configInfoSize.intValue());
         groupCapacityRepository.save(capacity);
         return true;
     }
 
-    public boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity) {
+    public boolean incrementUsageWithQuotaLimit(GroupCapacityEntity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+        GroupCapacityEntity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
             .and(qGroupCapacity.quota.ne(0)))
             .orElse(null);
         if (result == null) {
@@ -112,8 +112,8 @@ public class GroupCapacityPersistServiceTmp {
         return true;
     }
 
-    public boolean incrementUsage(GroupCapacity groupCapacity) {
-        GroupCapacity result = groupCapacityRepository
+    public boolean incrementUsage(GroupCapacityEntity groupCapacity) {
+        GroupCapacityEntity result = groupCapacityRepository
             .findOne(QGroupCapacity.groupCapacity.groupId.eq(groupCapacity.getGroupId()))
             .orElse(null);
         if (result == null) {
@@ -129,9 +129,9 @@ public class GroupCapacityPersistServiceTmp {
         return true;
     }
 
-    public boolean decrementUsage(GroupCapacity groupCapacity) {
+    public boolean decrementUsage(GroupCapacityEntity groupCapacity) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        GroupCapacity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
+        GroupCapacityEntity result = groupCapacityRepository.findOne(qGroupCapacity.groupId.eq(groupCapacity.getGroupId())
             .and(qGroupCapacity.usage.gt(0)))
             .orElse(null);
         if (result == null) {
@@ -174,7 +174,7 @@ public class GroupCapacityPersistServiceTmp {
             size = configInfoRepository.count(qConfigInfo.groupId.eq(group)
                 .and(qConfigInfo.tenantId.eq("")));
         }
-        GroupCapacity groupCapacity = groupCapacityRepository.findOne(QGroupCapacity.groupCapacity.groupId.eq(group))
+        GroupCapacityEntity groupCapacity = groupCapacityRepository.findOne(QGroupCapacity.groupCapacity.groupId.eq(group))
             .orElse(null);
         if (groupCapacity == null) {
             return false;
@@ -192,9 +192,9 @@ public class GroupCapacityPersistServiceTmp {
      * @param pageSize 页数
      * @return GroupCapacity列表
      */
-    public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
+    public List<GroupCapacityEntity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        Page<GroupCapacity> page = groupCapacityRepository.findAll(qGroupCapacity.id.gt(lastId),
+        Page<GroupCapacityEntity> page = groupCapacityRepository.findAll(qGroupCapacity.id.gt(lastId),
             PageRequest.of(0, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         return page.getContent();
     }

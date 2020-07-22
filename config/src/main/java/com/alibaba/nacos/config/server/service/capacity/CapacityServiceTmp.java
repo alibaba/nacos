@@ -16,11 +16,10 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.config.server.constant.CounterMode;
-import com.alibaba.nacos.config.server.modules.entity.Capacity;
-import com.alibaba.nacos.config.server.modules.entity.GroupCapacity;
-import com.alibaba.nacos.config.server.modules.entity.TenantCapacity;
+import com.alibaba.nacos.config.server.modules.entity.CapacityEntity;
+import com.alibaba.nacos.config.server.modules.entity.GroupCapacityEntity;
+import com.alibaba.nacos.config.server.modules.entity.TenantCapacityEntity;
 import com.alibaba.nacos.config.server.service.PersistServiceTmp;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -109,13 +108,13 @@ public class CapacityServiceTmp {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<GroupCapacity> groupCapacityList = groupCapacityPersistServiceTmp.getCapacityList4CorrectUsage(lastId,
+            List<GroupCapacityEntity> groupCapacityList = groupCapacityPersistServiceTmp.getCapacityList4CorrectUsage(lastId,
                 pageSize);
             if (groupCapacityList.isEmpty()) {
                 break;
             }
             lastId = groupCapacityList.get(groupCapacityList.size() - 1).getId();
-            for (GroupCapacity groupCapacity : groupCapacityList) {
+            for (GroupCapacityEntity groupCapacity : groupCapacityList) {
                 String group = groupCapacity.getGroupId();
                 groupCapacityPersistServiceTmp.correctUsage(group, TimeUtils.getCurrentTime());
             }
@@ -136,7 +135,7 @@ public class CapacityServiceTmp {
         long lastId = 0;
         int pageSize = 100;
         while (true) {
-            List<TenantCapacity> tenantCapacityList = tenantCapacityPersistService.getCapacityList4CorrectUsage(lastId,
+            List<TenantCapacityEntity> tenantCapacityList = tenantCapacityPersistService.getCapacityList4CorrectUsage(lastId,
                 pageSize);
             if (tenantCapacityList.isEmpty()) {
                 break;
@@ -147,7 +146,7 @@ public class CapacityServiceTmp {
             } catch (InterruptedException e) {
                 // ignore
             }
-            for (TenantCapacity tenantCapacity : tenantCapacityList) {
+            for (TenantCapacityEntity tenantCapacity : tenantCapacityList) {
                 String tenant = tenantCapacity.getTenantId();
                 tenantCapacityPersistService.correctUsage(tenant, TimeUtils.getCurrentTime());
             }
@@ -162,7 +161,7 @@ public class CapacityServiceTmp {
      * @return 是否操作成功
      */
     public boolean insertAndUpdateClusterUsage(CounterMode counterMode, boolean ignoreQuotaLimit) {
-        Capacity capacity = groupCapacityPersistServiceTmp.getClusterCapacity();
+        CapacityEntity capacity = groupCapacityPersistServiceTmp.getClusterCapacity();
         if (capacity == null) {
             insertGroupCapacity(GroupCapacityPersistService.CLUSTER);
         }
@@ -185,7 +184,7 @@ public class CapacityServiceTmp {
      * @return 是否操作成功
      */
     public boolean insertAndUpdateGroupUsage(CounterMode counterMode, String group, boolean ignoreQuotaLimit) {
-        GroupCapacity groupCapacity = getGroupCapacity(group);
+        GroupCapacityEntity groupCapacity = getGroupCapacity(group);
         if (groupCapacity == null) {
             initGroupCapacity(group, null, null, null, null);
         }
@@ -193,7 +192,7 @@ public class CapacityServiceTmp {
     }
 
 
-    public GroupCapacity getGroupCapacity(String group) {
+    public GroupCapacityEntity getGroupCapacity(String group) {
         return groupCapacityPersistServiceTmp.getGroupCapacity(group);
     }
 
@@ -221,7 +220,7 @@ public class CapacityServiceTmp {
      * 自动扩容
      */
     private void autoExpansion(String group, String tenant) {
-        Capacity capacity = getCapacity(group, tenant);
+        CapacityEntity capacity = getCapacity(group, tenant);
         int defaultQuota = getDefaultQuota(tenant != null);
         Integer usage = capacity.getUsage();
         if (usage < defaultQuota) {
@@ -253,8 +252,8 @@ public class CapacityServiceTmp {
     }
 
 
-    public Capacity getCapacityWithDefault(String group, String tenant) {
-        Capacity capacity;
+    public CapacityEntity getCapacityWithDefault(String group, String tenant) {
+        CapacityEntity capacity;
         boolean isTenant = StringUtils.isNotBlank(tenant);
         if (isTenant) {
             capacity = getTenantCapacity(tenant);
@@ -314,7 +313,7 @@ public class CapacityServiceTmp {
     private boolean insertGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
                                         Integer maxAggrSize) {
         final Timestamp now = TimeUtils.getCurrentTime();
-        GroupCapacity groupCapacity = new GroupCapacity();
+        GroupCapacityEntity groupCapacity = new GroupCapacityEntity();
         groupCapacity.setGroupId(group);
         // 新增时，quota=0表示限额为默认值，为了在更新默认限额时只需修改nacos配置，而不需要更新表中大部分数据
         groupCapacity.setQuota(quota == null ? ZERO : quota);
@@ -329,7 +328,7 @@ public class CapacityServiceTmp {
     }
 
 
-    public Capacity getCapacity(String group, String tenant) {
+    public CapacityEntity getCapacity(String group, String tenant) {
         if (tenant != null) {
             return getTenantCapacity(tenant);
         }
@@ -340,7 +339,7 @@ public class CapacityServiceTmp {
     private boolean updateGroupUsage(CounterMode counterMode, String group, int defaultQuota,
                                      boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
-        GroupCapacity groupCapacity = new GroupCapacity();
+        GroupCapacityEntity groupCapacity = new GroupCapacityEntity();
         groupCapacity.setGroupId(group);
         groupCapacity.setQuota(defaultQuota);
         groupCapacity.setGmtModified(now);
@@ -365,7 +364,7 @@ public class CapacityServiceTmp {
      * @return 是否操作成功
      */
     public boolean insertAndUpdateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
-        TenantCapacity tenantCapacity = getTenantCapacity(tenant);
+        TenantCapacityEntity tenantCapacity = getTenantCapacity(tenant);
         if (tenantCapacity == null) {
             // 初始化容量信息
             initTenantCapacity(tenant);
@@ -375,7 +374,7 @@ public class CapacityServiceTmp {
 
     private boolean updateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
-        TenantCapacity tenantCapacity = new TenantCapacity();
+        TenantCapacityEntity tenantCapacity = new TenantCapacityEntity();
         tenantCapacity.setTenantId(tenant);
         tenantCapacity.setQuota(PropertyUtil.getDefaultTenantQuota());
         tenantCapacity.setGmtModified(now);
@@ -426,7 +425,7 @@ public class CapacityServiceTmp {
                                          Integer maxAggrSize) {
         try {
             final Timestamp now = TimeUtils.getCurrentTime();
-            TenantCapacity tenantCapacity = new TenantCapacity();
+            TenantCapacityEntity tenantCapacity = new TenantCapacityEntity();
             tenantCapacity.setTenantId(tenant);
             // 新增时，quota=0表示限额为默认值，为了在更新默认限额时只需修改nacos配置，而不需要更新表中大部分数据
             tenantCapacity.setQuota(quota == null ? ZERO : quota);
@@ -447,7 +446,7 @@ public class CapacityServiceTmp {
         return false;
     }
 
-    public TenantCapacity getTenantCapacity(String tenant) {
+    public TenantCapacityEntity getTenantCapacity(String tenant) {
         return tenantCapacityPersistService.getTenantCapacity(tenant);
     }
 
@@ -468,14 +467,14 @@ public class CapacityServiceTmp {
     public boolean insertOrUpdateCapacity(String group, String tenant, Integer quota, Integer maxSize, Integer
         maxAggrCount, Integer maxAggrSize) {
         if (StringUtils.isNotBlank(tenant)) {
-            Capacity capacity = tenantCapacityPersistService.getTenantCapacity(tenant);
+            CapacityEntity capacity = tenantCapacityPersistService.getTenantCapacity(tenant);
             if (capacity == null) {
                 return initTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             }
             return tenantCapacityPersistService.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount,
                 maxAggrSize);
         }
-        Capacity capacity = groupCapacityPersistServiceTmp.getGroupCapacity(group);
+        CapacityEntity capacity = groupCapacityPersistServiceTmp.getGroupCapacity(group);
         if (capacity == null) {
             return initGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
         }

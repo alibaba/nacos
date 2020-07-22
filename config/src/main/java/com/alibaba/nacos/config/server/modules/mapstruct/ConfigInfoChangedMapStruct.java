@@ -13,36 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.entity;
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggrEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import java.io.Serializable;
-
-import static com.alibaba.nacos.config.server.constant.Constants.ROLES_TABLE_NAME;
+import java.util.List;
 
 /**
  * @author Nacos
  */
-@AllArgsConstructor
-@NoArgsConstructor
-@Table(name = ROLES_TABLE_NAME)
-@Entity
-@Data
-public class Roles implements Serializable {
+@Mapper
+public interface ConfigInfoChangedMapStruct {
 
+    ConfigInfoChangedMapStruct INSTANCE = Mappers.getMapper(ConfigInfoChangedMapStruct.class);
 
-    @Id
-    @Column(name = "username")
-    private String username;
+    List<ConfigInfoChanged> convertConfigInfoChangedList(List<ConfigInfoAggrEntity> list);
 
-    @Column(name = "role")
-    private String role;
 
 }

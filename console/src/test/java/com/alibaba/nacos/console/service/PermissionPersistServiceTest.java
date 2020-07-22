@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.PermissionPersistServiceTmp;
-import com.alibaba.nacos.config.server.modules.entity.Permissions;
+import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import com.alibaba.nacos.config.server.modules.entity.QPermissions;
 import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import com.alibaba.nacos.console.BaseTest;
@@ -39,11 +39,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = Nacos.class)
 public class PermissionPersistServiceTest extends BaseTest {
 
-    private Permissions permissions;
+    private PermissionsEntity permissions;
 
     @Before
     public void before() {
-        permissions = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, Permissions.class);
+        permissions = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, PermissionsEntity.class);
     }
 
     @Autowired
@@ -55,13 +55,13 @@ public class PermissionPersistServiceTest extends BaseTest {
     @Test
     public void getPermissionsTest() {
         QPermissions qPermissions = QPermissions.permissions;
-        Permissions result = permissionsRepository.findOne(qPermissions.role.eq(permissions.getRole()))
+        PermissionsEntity result = permissionsRepository.findOne(qPermissions.role.eq(permissions.getRole()))
             .orElse(null);
         if (result == null){
             addPermissionTest();
         }
 
-        Page<Permissions> page = permissionPersistServiceTmp.getPermissions(permissions.getRole(), 0, 10);
+        Page<PermissionsEntity> page = permissionPersistServiceTmp.getPermissions(permissions.getRole(), 0, 10);
         Assert.assertNotNull(page.getContent());
         Assert.assertTrue(page.getContent().size() > 0);
     }

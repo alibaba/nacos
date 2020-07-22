@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.entity;
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import lombok.Data;
 
-import javax.persistence.*;
+import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.config.server.modules.entity.TenantInfoEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-import static com.alibaba.nacos.config.server.constant.Constants.GROUP_CAPACITY_TABLE_NAME;
+import java.util.List;
 
 /**
  * @author Nacos
  */
-@Table(name = GROUP_CAPACITY_TABLE_NAME)
-@Entity
-@Data
-public class GroupCapacity extends Capacity {
+@Mapper
+public interface TenantInfoMapStruct {
 
-    @Column(name = "group_id")
-    private String groupId;
+    TenantInfoMapStruct INSTANCE = Mappers.getMapper(TenantInfoMapStruct.class);
+
+    List<TenantInfo> convertTenantInfoList(List<TenantInfoEntity> list);
+
+    TenantInfo convertTenantInfo(TenantInfoEntity tenantInfoEntity);
 
 }

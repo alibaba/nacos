@@ -41,21 +41,21 @@ public class TenantCapacityPersistServiceTmp {
     @Autowired
     private ConfigInfoRepository configInfoRepository;
 
-    public TenantCapacity getTenantCapacity(String tenantId) {
+    public TenantCapacityEntity getTenantCapacity(String tenantId) {
         return tenantCapacityRepository.findOne(QTenantCapacity
             .tenantCapacity.tenantId.eq(tenantId)).orElse(null);
     }
 
-    public boolean insertTenantCapacity(final TenantCapacity tenantCapacity) {
+    public boolean insertTenantCapacity(final TenantCapacityEntity tenantCapacity) {
         Long configInfoSize = configInfoRepository.count(QConfigInfo.configInfo.tenantId.eq(tenantCapacity.getTenantId()));
         tenantCapacity.setMaxSize(configInfoSize.intValue());
         tenantCapacityRepository.save(tenantCapacity);
         return true;
     }
 
-    public boolean incrementUsageWithDefaultQuotaLimit(TenantCapacity tenantCapacity) {
+    public boolean incrementUsageWithDefaultQuotaLimit(TenantCapacityEntity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+        TenantCapacityEntity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
             .and(qTenantCapacity.usage.lt(tenantCapacity.getQuota()))
             .and(qTenantCapacity.quota.eq(0)))
             .orElse(null);
@@ -67,9 +67,9 @@ public class TenantCapacityPersistServiceTmp {
         return true;
     }
 
-    public boolean incrementUsageWithQuotaLimit(TenantCapacity tenantCapacity) {
+    public boolean incrementUsageWithQuotaLimit(TenantCapacityEntity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+        TenantCapacityEntity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
             .and(qTenantCapacity.usage.lt(tenantCapacity.getQuota()))
             .and(qTenantCapacity.quota.ne(0)))
             .orElse(null);
@@ -82,8 +82,8 @@ public class TenantCapacityPersistServiceTmp {
         return true;
     }
 
-    public boolean incrementUsage(TenantCapacity tenantCapacity) {
-        TenantCapacity result = tenantCapacityRepository
+    public boolean incrementUsage(TenantCapacityEntity tenantCapacity) {
+        TenantCapacityEntity result = tenantCapacityRepository
             .findOne(QTenantCapacity.tenantCapacity.tenantId.eq(tenantCapacity.getTenantId()))
             .orElse(null);
         if (result == null) {
@@ -95,9 +95,9 @@ public class TenantCapacityPersistServiceTmp {
         return true;
     }
 
-    public boolean decrementUsage(TenantCapacity tenantCapacity) {
+    public boolean decrementUsage(TenantCapacityEntity tenantCapacity) {
         QTenantCapacity qTenantCapacity = QTenantCapacity.tenantCapacity;
-        TenantCapacity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
+        TenantCapacityEntity result = tenantCapacityRepository.findOne(qTenantCapacity.tenantId.eq(tenantCapacity.getTenantId())
             .and(qTenantCapacity.usage.gt(0)))
             .orElse(null);
         if (result == null) {
@@ -130,7 +130,7 @@ public class TenantCapacityPersistServiceTmp {
 
     public boolean correctUsage(String tenant, Timestamp gmtModified) {
         Long size = configInfoRepository.count(QConfigInfo.configInfo.tenantId.eq(tenant));
-        TenantCapacity tenantCapacity = tenantCapacityRepository.findOne(QTenantCapacity.tenantCapacity.tenantId.eq(tenant))
+        TenantCapacityEntity tenantCapacity = tenantCapacityRepository.findOne(QTenantCapacity.tenantCapacity.tenantId.eq(tenant))
             .orElse(null);
         if (tenantCapacity == null) {
             return false;
@@ -148,9 +148,9 @@ public class TenantCapacityPersistServiceTmp {
      * @param pageSize 页数
      * @return TenantCapacity列表
      */
-    public List<TenantCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
+    public List<TenantCapacityEntity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         QGroupCapacity qGroupCapacity = QGroupCapacity.groupCapacity;
-        Page<TenantCapacity> page = tenantCapacityRepository.findAll(qGroupCapacity.id.gt(lastId),
+        Page<TenantCapacityEntity> page = tenantCapacityRepository.findAll(qGroupCapacity.id.gt(lastId),
             PageRequest.of(0, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
         return page.getContent();
     }

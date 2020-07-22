@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.modules.repository;
+package com.alibaba.nacos.config.server.modules.mapstruct;
 
-import com.alibaba.nacos.config.server.modules.entity.ConfigTagsRelationEntity;
-import org.springframework.data.querydsl.QuerydslPredicateExecutor;
-import org.springframework.data.repository.PagingAndSortingRepository;
+
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+import java.util.List;
 
 /**
  * @author Nacos
  */
-public interface ConfigTagsRelationRepository extends PagingAndSortingRepository<ConfigTagsRelationEntity, Long>,
-    QuerydslPredicateExecutor<ConfigTagsRelationEntity> {
+@Mapper
+public interface ConfigInfoWrapperMapStruct {
+
+    ConfigInfoWrapperMapStruct INSTANCE = Mappers.getMapper(ConfigInfoWrapperMapStruct.class);
+
+
+    List<ConfigInfoWrapper> convertConfigInfoWrapperList(List<ConfigInfoEntity> list);
+
+    ConfigInfoWrapper convertConfigInfoWrapper(ConfigInfoEntity configInfoEntity);
 
 }

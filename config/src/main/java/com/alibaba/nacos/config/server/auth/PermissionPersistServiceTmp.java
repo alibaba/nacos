@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.config.server.modules.entity.Permissions;
+import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import com.alibaba.nacos.config.server.modules.entity.QPermissions;
 import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +32,13 @@ public class PermissionPersistServiceTmp {
     @Autowired
     private PermissionsRepository permissionsRepository;
 
-    public Page<Permissions> getPermissions(String role, int pageNo, int pageSize) {
+    public Page<PermissionsEntity> getPermissions(String role, int pageNo, int pageSize) {
         return permissionsRepository.findAll(QPermissions.permissions.role.eq(role),
             PageRequest.of(pageNo, pageSize));
     }
 
     public void addPermission(String role, String resource, String action) {
-        permissionsRepository.save(new Permissions(role, resource, action));
+        permissionsRepository.save(new PermissionsEntity(role, resource, action));
     }
 
 

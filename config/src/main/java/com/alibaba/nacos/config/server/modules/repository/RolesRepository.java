@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.config.server.modules.repository;
 
-import com.alibaba.nacos.config.server.modules.entity.Roles;
+import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
  * @author Nacos
  */
-public interface RolesRepository extends PagingAndSortingRepository<Roles, String>,
-    QuerydslPredicateExecutor<Roles> {
+public interface RolesRepository extends PagingAndSortingRepository<RolesEntity, String>,
+    QuerydslPredicateExecutor<RolesEntity> {
 
 }

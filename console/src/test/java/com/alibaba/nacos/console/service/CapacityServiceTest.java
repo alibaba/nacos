@@ -49,19 +49,19 @@ public class CapacityServiceTest extends BaseTest {
     @Autowired
     private GroupCapacityRepository groupCapacityRepository;
 
-    private ConfigInfo configInfo;
+    private ConfigInfoEntity configInfo;
 
-    private TenantCapacity tenantCapacity;
+    private TenantCapacityEntity tenantCapacity;
 
-    private GroupCapacity groupCapacity;
+    private GroupCapacityEntity groupCapacity;
 
     @Before
     public void before() {
-        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfo.class);
-        tenantCapacity = JacksonUtils.toObj(TestData.TENANT_CAPACITY_JSON, TenantCapacity.class);
-        groupCapacity = JacksonUtils.toObj(TestData.GROUP_CAPACITY_JSON, GroupCapacity.class);
+        configInfo = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfoEntity.class);
+        tenantCapacity = JacksonUtils.toObj(TestData.TENANT_CAPACITY_JSON, TenantCapacityEntity.class);
+        groupCapacity = JacksonUtils.toObj(TestData.GROUP_CAPACITY_JSON, GroupCapacityEntity.class);
 
-        TenantCapacity result = tenantCapacityRepository.findOne(QTenantCapacity
+        TenantCapacityEntity result = tenantCapacityRepository.findOne(QTenantCapacity
             .tenantCapacity.tenantId.eq(tenantCapacity.getTenantId())).orElse(null);
         if (result == null) {
             tenantCapacityRepository.save(tenantCapacity);
@@ -108,14 +108,14 @@ public class CapacityServiceTest extends BaseTest {
 
     @Test
     public void getCapacityWithDefaultTest() {
-        Capacity capacity = capacityServiceTmp.getCapacityWithDefault("", tenantCapacity.getTenantId());
+        CapacityEntity capacity = capacityServiceTmp.getCapacityWithDefault("", tenantCapacity.getTenantId());
         Assert.assertNotNull(capacity);
     }
 
 
     @Test
     public void initCapacityTest() {
-        GroupCapacity result = groupCapacityRepository.findOne(QGroupCapacity
+        GroupCapacityEntity result = groupCapacityRepository.findOne(QGroupCapacity
             .groupCapacity.groupId.eq(groupCapacity.getGroupId())).orElse(null);
         if (result != null) {
             groupCapacityRepository.delete(result);
@@ -142,7 +142,7 @@ public class CapacityServiceTest extends BaseTest {
 
     @Test
     public void initTenantCapacityTest() {
-        TenantCapacity result = tenantCapacityRepository.findOne(QTenantCapacity
+        TenantCapacityEntity result = tenantCapacityRepository.findOne(QTenantCapacity
             .tenantCapacity.tenantId.eq(tenantCapacity.getTenantId())).orElse(null);
         if (result != null) {
             tenantCapacityRepository.delete(result);
@@ -153,7 +153,7 @@ public class CapacityServiceTest extends BaseTest {
 
     @Test
     public void getTenantCapacityTest() {
-        TenantCapacity tenantCapacity = capacityServiceTmp.getTenantCapacity("");
+        TenantCapacityEntity tenantCapacity = capacityServiceTmp.getTenantCapacity("");
         Assert.assertNotNull(tenantCapacity);
     }
 

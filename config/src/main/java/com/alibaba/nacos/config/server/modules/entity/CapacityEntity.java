@@ -25,7 +25,7 @@ import java.util.Date;
  */
 @Data
 @MappedSuperclass
-public abstract class Capacity {
+public abstract class CapacityEntity {
 
     @Id
     @Column(name = "id")
