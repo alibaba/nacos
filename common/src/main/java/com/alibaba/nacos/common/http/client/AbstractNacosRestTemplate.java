@@ -17,6 +17,10 @@
 package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.constant.ResponseHandlerType;
+import com.alibaba.nacos.common.http.client.handler.BeanResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JavaType;
 import org.slf4j.Logger;

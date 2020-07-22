@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
 import org.apache.http.HttpResponse;

@@ -1078,8 +1078,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount(String tenant) {
-        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like '" + tenant + "'";
-        Integer result = databaseOperate.queryOne(sql, Integer.class);
+        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like ?";
+        Integer result = databaseOperate.queryOne(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }

@@ -18,6 +18,9 @@ package com.alibaba.nacos.common.http.client;
 
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.request.AsyncHttpClientRequest;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;

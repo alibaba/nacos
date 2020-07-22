@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.request;
 
 import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
 import java.io.Closeable;

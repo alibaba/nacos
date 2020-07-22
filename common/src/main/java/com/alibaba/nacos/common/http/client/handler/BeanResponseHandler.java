@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.handler;
 
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 
+import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
- * string response handler, Mainly converter response type as string type.
+ * bean response handler,
+ * Mainly converter response type as bean type.
  *
  * @author mai.jh
  */
-public class StringResponseHandler extends AbstractResponseHandler<String> {
+public class BeanResponseHandler<T> extends AbstractResponseHandler<T> {
     
     @Override
-    public HttpRestResult<String> convertResult(HttpClientResponse response, Type responseType) throws Exception {
+    public HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception {
         final Header headers = response.getHeaders();
-        String extractBody = IoUtils.toString(response.getBody(), headers.getCharset());
-        return new HttpRestResult<String>(headers, response.getStatusCode(), extractBody, null);
+        InputStream body = response.getBody();
+        T extractBody = JacksonUtils.toObj(body, responseType);
+        return new HttpRestResult<T>(headers, response.getStatusCode(), extractBody, null);
     }
 }

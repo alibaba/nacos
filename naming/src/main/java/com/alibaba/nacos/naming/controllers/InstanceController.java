@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
@@ -322,7 +323,7 @@ public class InstanceController {
     public ObjectNode beat(HttpServletRequest request) throws Exception {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
+        result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, switchDomain.getClientBeatInterval());
         
         String beat = WebUtils.optional(request, "beat", StringUtils.EMPTY);
         RsInfo clientBeat = null;
@@ -385,7 +386,9 @@ public class InstanceController {
         service.processClientBeat(clientBeat);
         
         result.put(CommonParams.CODE, NamingResponseCode.OK);
-        result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
+        if (instance.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            result.put(SwitchEntry.CLIENT_BEAT_INTERVAL, instance.getInstanceHeartBeatInterval());
+        }
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }
