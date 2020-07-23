@@ -163,8 +163,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
-        // TODO check server healthy by grpc
-        return false;
+        return rpcClient.isRunning();
     }
     
     private <T extends Response> T requestToServer(Request request, Class<T> responseClass) throws NacosException {

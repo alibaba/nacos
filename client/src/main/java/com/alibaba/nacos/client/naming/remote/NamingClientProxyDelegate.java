@@ -135,7 +135,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
-        return httpClientProxy.serverHealthy();
+        return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
     }
     
     private NamingClientProxy getExecuteClientProxy() {
