@@ -21,6 +21,8 @@ import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggrEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
+import java.util.List;
+
 
 /**
  * @author Nacos
@@ -31,6 +33,8 @@ public interface ConfigInfoAggrMapStruct {
     ConfigInfoAggrMapStruct INSTANCE = Mappers.getMapper(ConfigInfoAggrMapStruct.class);
 
     ConfigInfoAggr convertConfigInfoAggr(ConfigInfoAggrEntity aggrEntity);
+
+    List<ConfigInfoAggr> convertConfigInfoAggrList(List<ConfigInfoAggrEntity> list);
 
 
 }

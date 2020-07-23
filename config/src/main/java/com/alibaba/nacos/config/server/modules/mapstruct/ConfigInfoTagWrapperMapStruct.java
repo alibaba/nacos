@@ -16,8 +16,8 @@
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.modules.entity.HisConfigInfoEntity;
+import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTagEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -27,12 +27,11 @@ import java.util.List;
  * @author Nacos
  */
 @Mapper
-public interface ConfigHistoryInfoMapStruct {
+public interface ConfigInfoTagWrapperMapStruct {
 
-    ConfigHistoryInfoMapStruct INSTANCE = Mappers.getMapper(ConfigHistoryInfoMapStruct.class);
+    ConfigInfoTagWrapperMapStruct INSTANCE = Mappers.getMapper(ConfigInfoTagWrapperMapStruct.class);
 
-    ConfigHistoryInfo convertConfigHistoryInfo(HisConfigInfoEntity hisConfigInfoEntity);
 
-    List<ConfigHistoryInfo> convertConfigHistoryInfoList(List<HisConfigInfoEntity> list);
+    List<ConfigInfoTagWrapper> convertConfigInfoTagWrapperList(List<ConfigInfoTagEntity> list);
 
 }

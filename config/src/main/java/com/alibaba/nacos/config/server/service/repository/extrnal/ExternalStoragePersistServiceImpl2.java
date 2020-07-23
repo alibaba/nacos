@@ -1202,8 +1202,14 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
         if (StringUtils.isNotBlank(tenant)) {
             booleanBuilder.and(qConfigInfo.tenantId.eq(tenant));
         }
-        configInfoRepository.findAll(booleanBuilder, PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
-        return null;
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository
+            .findAll(booleanBuilder, PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+        Page<ConfigInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     private void buildConfigInfoCommonCondition(BooleanBuilder booleanBuilder,
@@ -1224,190 +1230,196 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
 
     @Override
     public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId) {
-        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage("select count(*) from config_info where data_id=? and tenant_id=?",
-                "select ID,data_id,group_id,content from config_info where data_id=? and tenant_id=?",
-                new Object[]{dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage("select count(*) from config_info where data_id=? and tenant_id=?",
+//                "select ID,data_id,group_id,content from config_info where data_id=? and tenant_id=?",
+//                new Object[]{dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
                                                   final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=?",
-                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=?",
-                new Object[]{group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=?",
+//                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=?",
+//                new Object[]{group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
                                                         final String tenant, final String appName) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=? and app_name =?",
-                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=? and app_name =?",
-                new Object[]{group, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=? and app_name =?",
+//                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=? and app_name =?",
+//                new Object[]{group, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
                                                             final String tenant, final Map<String, Object> configAdvanceInfo) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
-        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-        StringBuilder sqlCount = new StringBuilder(
-            "select count(*) from config_info where group_id=? and tenant_id=? ");
-        StringBuilder sql = new StringBuilder(
-            "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=? ");
-        List<String> paramList = new ArrayList<String>();
-        paramList.add(group);
-        paramList.add(tenantTmp);
-        if (StringUtils.isNotBlank(configTags)) {
-            sqlCount = new StringBuilder(
-                "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.group_id=? and a.tenant_id=? ");
-            sql = new StringBuilder(
-                "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
-                    + "config_tags_relation b on a.id=b.id where a.group_id=? and a.tenant_id=? ");
-
-            sqlCount.append(" and b.tag_name in (");
-            sql.append(" and b.tag_name in (");
-            String[] tagArr = configTags.split(",");
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    sqlCount.append(", ");
-                    sql.append(", ");
-                }
-                sqlCount.append("?");
-                sql.append("?");
-                paramList.add(tagArr[i]);
-            }
-            sqlCount.append(") ");
-            sql.append(") ");
-
-            if (StringUtils.isNotBlank(appName)) {
-                sqlCount.append(" and a.app_name=? ");
-                sql.append(" and a.app_name=? ");
-                paramList.add(appName);
-            }
-        } else {
-            if (StringUtils.isNotBlank(appName)) {
-                sqlCount.append(" and app_name=? ");
-                sql.append(" and app_name=? ");
-                paramList.add(appName);
-            }
-        }
-
-        try {
-            return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//
+//        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+//        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+//        StringBuilder sqlCount = new StringBuilder(
+//            "select count(*) from config_info where group_id=? and tenant_id=? ");
+//        StringBuilder sql = new StringBuilder(
+//            "select ID,data_id,group_id,tenant_id,app_name,content from config_info where group_id=? and tenant_id=? ");
+//        List<String> paramList = new ArrayList<String>();
+//        paramList.add(group);
+//        paramList.add(tenantTmp);
+//        if (StringUtils.isNotBlank(configTags)) {
+//            sqlCount = new StringBuilder(
+//                "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id where a.group_id=? and a.tenant_id=? ");
+//            sql = new StringBuilder(
+//                "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
+//                    + "config_tags_relation b on a.id=b.id where a.group_id=? and a.tenant_id=? ");
+//
+//            sqlCount.append(" and b.tag_name in (");
+//            sql.append(" and b.tag_name in (");
+//            String[] tagArr = configTags.split(",");
+//            for (int i = 0; i < tagArr.length; i++) {
+//                if (i != 0) {
+//                    sqlCount.append(", ");
+//                    sql.append(", ");
+//                }
+//                sqlCount.append("?");
+//                sql.append("?");
+//                paramList.add(tagArr[i]);
+//            }
+//            sqlCount.append(") ");
+//            sql.append(") ");
+//
+//            if (StringUtils.isNotBlank(appName)) {
+//                sqlCount.append(" and a.app_name=? ");
+//                sql.append(" and a.app_name=? ");
+//                paramList.add(appName);
+//            }
+//        } else {
+//            if (StringUtils.isNotBlank(appName)) {
+//                sqlCount.append(" and app_name=? ");
+//                sql.append(" and app_name=? ");
+//                paramList.add(appName);
+//            }
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
                                                 final String appName) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage("select count(*) from config_info where tenant_id like ? and app_name=?",
-                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where tenant_id like ? and app_name=?",
-                new Object[]{generateLikeArgument(tenantTmp), appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage("select count(*) from config_info where tenant_id like ? and app_name=?",
+//                "select ID,data_id,group_id,tenant_id,app_name,content from config_info where tenant_id like ? and app_name=?",
+//                new Object[]{generateLikeArgument(tenantTmp), appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
                                                     final Map<String, Object> configAdvanceInfo) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
-        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-        StringBuilder sqlCount = new StringBuilder("select count(*) from config_info where tenant_id like ? ");
-        StringBuilder sql = new StringBuilder(
-            "select ID,data_id,group_id,tenant_id,app_name,content from config_info where tenant_id like ? ");
-        List<String> paramList = new ArrayList<String>();
-        paramList.add(tenantTmp);
-        if (StringUtils.isNotBlank(configTags)) {
-            sqlCount = new StringBuilder(
-                "select count(*) from config_info a left join config_tags_relation b on a.id=b.id where a.tenant_id=? ");
-
-            sql = new StringBuilder(
-                "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
-                    + "config_tags_relation b on a.id=b.id where a.tenant_id=? ");
-
-            sqlCount.append(" and b.tag_name in (");
-            sql.append(" and b.tag_name in (");
-            String[] tagArr = configTags.split(",");
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    sqlCount.append(", ");
-                    sql.append(", ");
-                }
-                sqlCount.append("?");
-                sql.append("?");
-                paramList.add(tagArr[i]);
-            }
-            sqlCount.append(") ");
-            sql.append(") ");
-
-            if (StringUtils.isNotBlank(appName)) {
-                sqlCount.append(" and a.app_name=? ");
-                sql.append(" and a.app_name=? ");
-                paramList.add(appName);
-            }
-        } else {
-            if (StringUtils.isNotBlank(appName)) {
-                sqlCount.append(" and app_name=? ");
-                sql.append(" and app_name=? ");
-                paramList.add(appName);
-            }
-        }
-
-        try {
-            return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+//        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+//        StringBuilder sqlCount = new StringBuilder("select count(*) from config_info where tenant_id like ? ");
+//        StringBuilder sql = new StringBuilder(
+//            "select ID,data_id,group_id,tenant_id,app_name,content from config_info where tenant_id like ? ");
+//        List<String> paramList = new ArrayList<String>();
+//        paramList.add(tenantTmp);
+//        if (StringUtils.isNotBlank(configTags)) {
+//            sqlCount = new StringBuilder(
+//                "select count(*) from config_info a left join config_tags_relation b on a.id=b.id where a.tenant_id=? ");
+//
+//            sql = new StringBuilder(
+//                "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info  a left join "
+//                    + "config_tags_relation b on a.id=b.id where a.tenant_id=? ");
+//
+//            sqlCount.append(" and b.tag_name in (");
+//            sql.append(" and b.tag_name in (");
+//            String[] tagArr = configTags.split(",");
+//            for (int i = 0; i < tagArr.length; i++) {
+//                if (i != 0) {
+//                    sqlCount.append(", ");
+//                    sql.append(", ");
+//                }
+//                sqlCount.append("?");
+//                sql.append("?");
+//                paramList.add(tagArr[i]);
+//            }
+//            sqlCount.append(") ");
+//            sql.append(") ");
+//
+//            if (StringUtils.isNotBlank(appName)) {
+//                sqlCount.append(" and a.app_name=? ");
+//                sql.append(" and a.app_name=? ");
+//                paramList.add(appName);
+//            }
+//        } else {
+//            if (StringUtils.isNotBlank(appName)) {
+//                sqlCount.append(" and app_name=? ");
+//                sql.append(" and app_name=? ");
+//                paramList.add(appName);
+//            }
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCount.toString(), sql.toString(), paramList.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
-
     public Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group) {
-        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=?",
-                "select ID,data_id,group_id,content from config_info where group_id=? and tenant_id=?",
-                new Object[]{group, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage("select count(*) from config_info where group_id=? and tenant_id=?",
+//                "select ID,data_id,group_id,content from config_info where group_id=? and tenant_id=?",
+//                new Object[]{group, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
@@ -1564,145 +1576,175 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
 
     @Override
     public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sqlCountRows = "SELECT COUNT(*) FROM config_info";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-            + " FROM (  SELECT id FROM config_info WHERE tenant_id like ? ORDER BY id LIMIT ?,? )"
-            + " g, config_info t  WHERE g.id = t.id ";
-
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
-                new Object[]{generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        String sqlCountRows = "SELECT COUNT(*) FROM config_info";
+//        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
+//            + " FROM (  SELECT id FROM config_info WHERE tenant_id like ? ORDER BY id LIMIT ?,? )"
+//            + " g, config_info t  WHERE g.id = t.id ";
+//
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
+//                new Object[]{generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
+//                CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String select = " SELECT data_id,group_id,app_name  FROM ( "
-            + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ?  )"
-            + " g, config_info t WHERE g.id = t.id  ";
-
-        final int totalCount = configInfoCount(tenant);
-        int pageCount = totalCount / pageSize;
-        if (totalCount > pageSize * pageCount) {
-            pageCount++;
-        }
-
-        if (pageNo > pageCount) {
-            return null;
-        }
-
-        final Page<ConfigKey> page = new Page<ConfigKey>();
-        page.setPageNumber(pageNo);
-        page.setPagesAvailable(pageCount);
-        page.setTotalCount(totalCount);
-
-        try {
-            List<ConfigKey> result = jt
-                .query(select, new Object[]{generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
-                    // new Object[0],
-                    CONFIG_KEY_ROW_MAPPER);
-
-            for (ConfigKey item : result) {
-                page.getPageItems().add(item);
-            }
-            return page;
-        } catch (EmptyResultDataAccessException e) {
-            return page;
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        String select = " SELECT data_id,group_id,app_name  FROM ( "
+//            + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ?  )"
+//            + " g, config_info t WHERE g.id = t.id  ";
+//
+//        final int totalCount = configInfoCount(tenant);
+//        int pageCount = totalCount / pageSize;
+//        if (totalCount > pageSize * pageCount) {
+//            pageCount++;
+//        }
+//
+//        if (pageNo > pageCount) {
+//            return null;
+//        }
+//
+//        final Page<ConfigKey> page = new Page<ConfigKey>();
+//        page.setPageNumber(pageNo);
+//        page.setPagesAvailable(pageCount);
+//        page.setTotalCount(totalCount);
+//
+//        try {
+//            List<ConfigKey> result = jt
+//                .query(select, new Object[]{generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
+//                    // new Object[0],
+//                    CONFIG_KEY_ROW_MAPPER);
+//
+//            for (ConfigKey item : result) {
+//                page.getPageItems().add(item);
+//            }
+//            return page;
+//        } catch (EmptyResultDataAccessException e) {
+//            return page;
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     @Deprecated
     public Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize) {
-        String sqlCountRows = "SELECT COUNT(*) FROM config_info";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,content,md5"
-            + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
-            + " g, config_info t  WHERE g.id = t.id ";
-
-        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "SELECT COUNT(*) FROM config_info";
+//        String sqlFetchRows = " SELECT t.id,data_id,group_id,content,md5"
+//            + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
+//            + " g, config_info t  WHERE g.id = t.id ";
+//
+//        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
+//                pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize) {
-        String sqlCountRows = "select count(*) from config_info";
-        String sqlFetchRows = " SELECT t.id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
-            + " FROM ( SELECT id FROM config_info   ORDER BY id LIMIT ?,?  )"
-            + " g, config_info t WHERE g.id = t.id ";
-        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-
-        List<String> params = new ArrayList<String>();
-
-        try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_WRAPPER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "select count(*) from config_info";
+//        String sqlFetchRows = " SELECT t.id,type,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified "
+//            + " FROM ( SELECT id FROM config_info   ORDER BY id LIMIT ?,?  )"
+//            + " g, config_info t WHERE g.id = t.id ";
+//        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
+//
+//        List<String> params = new ArrayList<String>();
+//
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_WRAPPER_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
-        String select = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? order by id asc limit ?,?";
-        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(select, new Object[]{lastMaxId, 0, pageSize}, 1, pageSize,
-                CONFIG_INFO_WRAPPER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String select = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type from config_info where id > ? order by id asc limit ?,?";
+//        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(select, new Object[]{lastMaxId, 0, pageSize}, 1, pageSize,
+//                CONFIG_INFO_WRAPPER_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(qConfigInfo.id.gt(lastMaxId),
+            PageRequest.of(0, pageSize, Sort.by(Sort.Order.asc("id"))));
+
+        Page<ConfigInfoWrapper> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoWrapperMapStruct.INSTANCE.convertConfigInfoWrapperList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
-        String sqlCountRows = "SELECT COUNT(*) FROM config_info_beta";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
-            + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT ?,?  )"
-            + "  g, config_info_beta t WHERE g.id = t.id ";
-        PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
-
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "SELECT COUNT(*) FROM config_info_beta";
+//        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
+//            + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT ?,?  )"
+//            + "  g, config_info_beta t WHERE g.id = t.id ";
+//        PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
+//                pageNo, pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        org.springframework.data.domain.Page<ConfigInfoBetaEntity> sPage = configInfoBetaRepository
+            .findAll(null, PageRequest.of(pageNo, pageSize));
+        Page<ConfigInfoBetaWrapper> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoBetaWrapperMapStruct.INSTANCE.convertConfigInfoBetaWrapperList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     @Override
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
-        String sqlCountRows = "SELECT COUNT(*) FROM config_info_tag";
-        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-            + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) "
-            + "g, config_info_tag t  WHERE g.id = t.id  ";
-        PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
-
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "SELECT COUNT(*) FROM config_info_tag";
+//        String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
+//            + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) "
+//            + "g, config_info_tag t  WHERE g.id = t.id  ";
+//        PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[]{(pageNo - 1) * pageSize, pageSize},
+//                pageNo, pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        org.springframework.data.domain.Page<ConfigInfoTagEntity> sPage = configInfoTagRepository
+            .findAll(null, PageRequest.of(pageNo, pageSize));
+        Page<ConfigInfoTagWrapper> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoTagWrapperMapStruct.INSTANCE.convertConfigInfoTagWrapperList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     @Override
@@ -1757,259 +1799,282 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
     @Override
     public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId,
                                                final String group, final String tenant, final String appName, final String content) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
-            if (StringUtils.isBlank(appName)) {
-                return this.findAllConfigInfo(pageNo, pageSize, tenantTmp);
-            } else {
-                return this.findConfigInfoByApp(pageNo, pageSize, tenantTmp, appName);
-            }
-        }
-
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
-        String where = " 1=1 ";
-        List<String> params = new ArrayList<String>();
-
-        if (!StringUtils.isBlank(dataId)) {
-            where += " and data_id like ? ";
-            params.add(generateLikeArgument(dataId));
-        }
-        if (!StringUtils.isBlank(group)) {
-            where += " and group_id like ? ";
-            params.add(generateLikeArgument(group));
-        }
-
-        where += " and tenant_id like ? ";
-        params.add(generateLikeArgument(tenantTmp));
-
-        if (!StringUtils.isBlank(appName)) {
-            where += " and app_name = ? ";
-            params.add(appName);
-        }
-        if (!StringUtils.isBlank(content)) {
-            where += " and content like ? ";
-            params.add(generateLikeArgument(content));
-        }
-
-        try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
+//            if (StringUtils.isBlank(appName)) {
+//                return this.findAllConfigInfo(pageNo, pageSize, tenantTmp);
+//            } else {
+//                return this.findConfigInfoByApp(pageNo, pageSize, tenantTmp, appName);
+//            }
+//        }
+//
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//
+//        String sqlCountRows = "select count(*) from config_info where ";
+//        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
+//        String where = " 1=1 ";
+//        List<String> params = new ArrayList<String>();
+//
+//        if (!StringUtils.isBlank(dataId)) {
+//            where += " and data_id like ? ";
+//            params.add(generateLikeArgument(dataId));
+//        }
+//        if (!StringUtils.isBlank(group)) {
+//            where += " and group_id like ? ";
+//            params.add(generateLikeArgument(group));
+//        }
+//
+//        where += " and tenant_id like ? ";
+//        params.add(generateLikeArgument(tenantTmp));
+//
+//        if (!StringUtils.isBlank(appName)) {
+//            where += " and app_name = ? ";
+//            params.add(appName);
+//        }
+//        if (!StringUtils.isBlank(content)) {
+//            where += " and content like ? ";
+//            params.add(generateLikeArgument(content));
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
                                                final boolean blacklist) {
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
-        StringBuilder where = new StringBuilder(" 1=1 ");
-        // Whitelist, please leave the synchronization condition empty, there is no configuration that meets the conditions
-        if (configKeys.length == 0 && blacklist == false) {
-            Page<ConfigInfo> page = new Page<ConfigInfo>();
-            page.setTotalCount(0);
-            return page;
-        }
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        List<String> params = new ArrayList<String>();
-        boolean isFirst = true;
-        for (ConfigKey configInfo : configKeys) {
-            String dataId = configInfo.getDataId();
-            String group = configInfo.getGroup();
-            String appName = configInfo.getAppName();
-
-            if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group) && StringUtils.isBlank(appName)) {
-                break;
-            }
-
-            if (blacklist) {
-                if (isFirst) {
-                    isFirst = false;
-                    where.append(" and ");
-                } else {
-                    where.append(" and ");
-                }
-
-                where.append("(");
-                boolean isFirstSub = true;
-                if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id not like ? ");
-                    params.add(generateLikeArgument(dataId));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(group)) {
-                    if (!isFirstSub) {
-                        where.append(" or ");
-                    }
-                    where.append(" group_id not like ? ");
-                    params.add(generateLikeArgument(group));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(appName)) {
-                    if (!isFirstSub) {
-                        where.append(" or ");
-                    }
-                    where.append(" app_name != ? ");
-                    params.add(appName);
-                    isFirstSub = false;
-                }
-                where.append(") ");
-            } else {
-                if (isFirst) {
-                    isFirst = false;
-                    where.append(" and ");
-                } else {
-                    where.append(" or ");
-                }
-                where.append("(");
-                boolean isFirstSub = true;
-                if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id like ? ");
-                    params.add(generateLikeArgument(dataId));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(group)) {
-                    if (!isFirstSub) {
-                        where.append(" and ");
-                    }
-                    where.append(" group_id like ? ");
-                    params.add(generateLikeArgument(group));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(appName)) {
-                    if (!isFirstSub) {
-                        where.append(" and ");
-                    }
-                    where.append(" app_name = ? ");
-                    params.add(appName);
-                    isFirstSub = false;
-                }
-                where.append(") ");
-            }
-        }
-
-        try {
-            return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
-                pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "select count(*) from config_info where ";
+//        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info where ";
+//        StringBuilder where = new StringBuilder(" 1=1 ");
+//        // Whitelist, please leave the synchronization condition empty, there is no configuration that meets the conditions
+//        if (configKeys.length == 0 && blacklist == false) {
+//            Page<ConfigInfo> page = new Page<ConfigInfo>();
+//            page.setTotalCount(0);
+//            return page;
+//        }
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        List<String> params = new ArrayList<String>();
+//        boolean isFirst = true;
+//        for (ConfigKey configInfo : configKeys) {
+//            String dataId = configInfo.getDataId();
+//            String group = configInfo.getGroup();
+//            String appName = configInfo.getAppName();
+//
+//            if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group) && StringUtils.isBlank(appName)) {
+//                break;
+//            }
+//
+//            if (blacklist) {
+//                if (isFirst) {
+//                    isFirst = false;
+//                    where.append(" and ");
+//                } else {
+//                    where.append(" and ");
+//                }
+//
+//                where.append("(");
+//                boolean isFirstSub = true;
+//                if (!StringUtils.isBlank(dataId)) {
+//                    where.append(" data_id not like ? ");
+//                    params.add(generateLikeArgument(dataId));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(group)) {
+//                    if (!isFirstSub) {
+//                        where.append(" or ");
+//                    }
+//                    where.append(" group_id not like ? ");
+//                    params.add(generateLikeArgument(group));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(appName)) {
+//                    if (!isFirstSub) {
+//                        where.append(" or ");
+//                    }
+//                    where.append(" app_name != ? ");
+//                    params.add(appName);
+//                    isFirstSub = false;
+//                }
+//                where.append(") ");
+//            } else {
+//                if (isFirst) {
+//                    isFirst = false;
+//                    where.append(" and ");
+//                } else {
+//                    where.append(" or ");
+//                }
+//                where.append("(");
+//                boolean isFirstSub = true;
+//                if (!StringUtils.isBlank(dataId)) {
+//                    where.append(" data_id like ? ");
+//                    params.add(generateLikeArgument(dataId));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(group)) {
+//                    if (!isFirstSub) {
+//                        where.append(" and ");
+//                    }
+//                    where.append(" group_id like ? ");
+//                    params.add(generateLikeArgument(group));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(appName)) {
+//                    if (!isFirstSub) {
+//                        where.append(" and ");
+//                    }
+//                    where.append(" app_name = ? ");
+//                    params.add(appName);
+//                    isFirstSub = false;
+//                }
+//                where.append(") ");
+//            }
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
+//                pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
     public Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
                                                     final String group, final String tenant, final Map<String, Object> configAdvanceInfo) {
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+//        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
+//        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+//        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+//        String sqlCountRows = "select count(*) from config_info";
+//        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
+//        StringBuilder where = new StringBuilder(" where ");
+//        List<String> params = new ArrayList<String>();
+//        params.add(generateLikeArgument(tenantTmp));
+//        if (StringUtils.isNotBlank(configTags)) {
+//            sqlCountRows = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id ";
+//            sqlFetchRows = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info a left join config_tags_relation b on a.id=b.id ";
+//
+//            where.append(" a.tenant_id like ? ");
+//            if (!StringUtils.isBlank(dataId)) {
+//                where.append(" and a.data_id like ? ");
+//                params.add(generateLikeArgument(dataId));
+//            }
+//            if (!StringUtils.isBlank(group)) {
+//                where.append(" and a.group_id like ? ");
+//                params.add(generateLikeArgument(group));
+//            }
+//            if (!StringUtils.isBlank(appName)) {
+//                where.append(" and a.app_name = ? ");
+//                params.add(appName);
+//            }
+//            if (!StringUtils.isBlank(content)) {
+//                where.append(" and a.content like ? ");
+//                params.add(generateLikeArgument(content));
+//            }
+//
+//            where.append(" and b.tag_name in (");
+//            String[] tagArr = configTags.split(",");
+//            for (int i = 0; i < tagArr.length; i++) {
+//                if (i != 0) {
+//                    where.append(", ");
+//                }
+//                where.append("?");
+//                params.add(tagArr[i]);
+//            }
+//            where.append(") ");
+//        } else {
+//            where.append(" tenant_id like ? ");
+//            if (!StringUtils.isBlank(dataId)) {
+//                where.append(" and data_id like ? ");
+//                params.add(generateLikeArgument(dataId));
+//            }
+//            if (!StringUtils.isBlank(group)) {
+//                where.append(" and group_id like ? ");
+//                params.add(generateLikeArgument(group));
+//            }
+//            if (!StringUtils.isBlank(appName)) {
+//                where.append(" and app_name = ? ");
+//                params.add(appName);
+//            }
+//            if (!StringUtils.isBlank(content)) {
+//                where.append(" and content like ? ");
+//                params.add(generateLikeArgument(content));
+//            }
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        String sqlCountRows = "select count(*) from config_info";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,app_name,content from config_info";
-        StringBuilder where = new StringBuilder(" where ");
-        List<String> params = new ArrayList<String>();
-        params.add(generateLikeArgument(tenantTmp));
-        if (StringUtils.isNotBlank(configTags)) {
-            sqlCountRows = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id ";
-            sqlFetchRows = "select a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content from config_info a left join config_tags_relation b on a.id=b.id ";
-
-            where.append(" a.tenant_id like ? ");
-            if (!StringUtils.isBlank(dataId)) {
-                where.append(" and a.data_id like ? ");
-                params.add(generateLikeArgument(dataId));
-            }
-            if (!StringUtils.isBlank(group)) {
-                where.append(" and a.group_id like ? ");
-                params.add(generateLikeArgument(group));
-            }
-            if (!StringUtils.isBlank(appName)) {
-                where.append(" and a.app_name = ? ");
-                params.add(appName);
-            }
-            if (!StringUtils.isBlank(content)) {
-                where.append(" and a.content like ? ");
-                params.add(generateLikeArgument(content));
-            }
-
-            where.append(" and b.tag_name in (");
-            String[] tagArr = configTags.split(",");
-            for (int i = 0; i < tagArr.length; i++) {
-                if (i != 0) {
-                    where.append(", ");
-                }
-                where.append("?");
-                params.add(tagArr[i]);
-            }
-            where.append(") ");
-        } else {
-            where.append(" tenant_id like ? ");
-            if (!StringUtils.isBlank(dataId)) {
-                where.append(" and data_id like ? ");
-                params.add(generateLikeArgument(dataId));
-            }
-            if (!StringUtils.isBlank(group)) {
-                where.append(" and group_id like ? ");
-                params.add(generateLikeArgument(group));
-            }
-            if (!StringUtils.isBlank(appName)) {
-                where.append(" and app_name = ? ");
-                params.add(appName);
-            }
-            if (!StringUtils.isBlank(content)) {
-                where.append(" and content like ? ");
-                params.add(generateLikeArgument(content));
-            }
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+        QConfigInfo qConfigInfo = QConfigInfo.configInfo;
+        buildConfigInfoCommonCondition(booleanBuilder, qConfigInfo, dataId, group, appName);
+        if (StringUtils.isNotBlank(tenant)) {
+            booleanBuilder.and(qConfigInfo.tenantId.like(tenant));
         }
-
-        try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        if (StringUtils.isNotBlank(content)) {
+//            booleanBuilder.and(qConfigInfo.content.like(content));
+//        }
+        org.springframework.data.domain.Page<ConfigInfoEntity> sPage = configInfoRepository.findAll(booleanBuilder, PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("gmtCreate"))));
+        Page<ConfigInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoMapStruct.INSTANCE.convertConfigInfoList2(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     @Override
     public Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
                                                        final String group, final String content) throws IOException {
-        if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
-            throw new IOException("invalid param");
-        }
-
-        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,content from config_info where ";
-        String where = " 1=1 and tenant_id='' ";
-        List<String> params = new ArrayList<String>();
-
-        if (!StringUtils.isBlank(dataId)) {
-            where += " and data_id like ? ";
-            params.add(generateLikeArgument(dataId));
-        }
-        if (!StringUtils.isBlank(group)) {
-            where += " and group_id like ? ";
-            params.add(generateLikeArgument(group));
-        }
-        if (!StringUtils.isBlank(content)) {
-            where += " and content like ? ";
-            params.add(generateLikeArgument(content));
-        }
-
-        try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_BASE_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
+//            throw new IOException("invalid param");
+//        }
+//
+//        PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
+//
+//        String sqlCountRows = "select count(*) from config_info where ";
+//        String sqlFetchRows = "select ID,data_id,group_id,tenant_id,content from config_info where ";
+//        String where = " 1=1 and tenant_id='' ";
+//        List<String> params = new ArrayList<String>();
+//
+//        if (!StringUtils.isBlank(dataId)) {
+//            where += " and data_id like ? ";
+//            params.add(generateLikeArgument(dataId));
+//        }
+//        if (!StringUtils.isBlank(group)) {
+//            where += " and group_id like ? ";
+//            params.add(generateLikeArgument(group));
+//        }
+//        if (!StringUtils.isBlank(content)) {
+//            where += " and content like ? ";
+//            params.add(generateLikeArgument(content));
+//        }
+//
+//        try {
+//            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+//                CONFIG_INFO_BASE_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
@@ -2074,122 +2139,134 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
     @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
                                                          final int pageSize) {
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        String sqlCountRows = "SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ?";
+//        String sqlFetchRows =
+//            "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where data_id=? and "
+//                + "group_id=? and tenant_id=? order by datum_id limit ?,?";
+//        PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPageLimit(sqlCountRows, new Object[]{dataId, group, tenantTmp}, sqlFetchRows,
+//                new Object[]{dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
+//                CONFIG_INFO_AGGR_ROW_MAPPER);
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sqlCountRows = "SELECT COUNT(*) FROM config_info_aggr WHERE data_id = ? and group_id = ? and tenant_id = ?";
-        String sqlFetchRows =
-            "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where data_id=? and "
-                + "group_id=? and tenant_id=? order by datum_id limit ?,?";
-        PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        try {
-            return helper.fetchPageLimit(sqlCountRows, new Object[]{dataId, group, tenantTmp}, sqlFetchRows,
-                new Object[]{dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
-                CONFIG_INFO_AGGR_ROW_MAPPER);
-
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        QConfigInfoAggr qConfigInfoAggr = QConfigInfoAggr.configInfoAggr;
+        org.springframework.data.domain.Page<ConfigInfoAggrEntity> sPage = configInfoAggrRepository.findAll(qConfigInfoAggr.dataId.eq(dataId)
+            .and(qConfigInfoAggr.groupId.eq(group))
+            .and(qConfigInfoAggr.tenantId.eq(tenantTmp)), PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.by("datumId"))));
+        Page<ConfigInfoAggr> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigInfoAggrMapStruct.INSTANCE.convertConfigInfoAggrList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     @Override
     public Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
                                                        boolean blacklist) {
 
-        String sqlCountRows = "select count(*) from config_info_aggr where ";
-        String sqlFetchRows = "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where ";
-        StringBuilder where = new StringBuilder(" 1=1 ");
-        // Whitelist, please leave the synchronization condition empty, there is no configuration that meets the conditions
-        if (configKeys.length == 0 && blacklist == false) {
-            Page<ConfigInfoAggr> page = new Page<ConfigInfoAggr>();
-            page.setTotalCount(0);
-            return page;
-        }
-        PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        List<String> params = new ArrayList<String>();
-        boolean isFirst = true;
-
-        for (ConfigKey configInfoAggr : configKeys) {
-            String dataId = configInfoAggr.getDataId();
-            String group = configInfoAggr.getGroup();
-            String appName = configInfoAggr.getAppName();
-            if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group) && StringUtils.isBlank(appName)) {
-                break;
-            }
-            if (blacklist) {
-                if (isFirst) {
-                    isFirst = false;
-                    where.append(" and ");
-                } else {
-                    where.append(" and ");
-                }
-
-                where.append("(");
-                boolean isFirstSub = true;
-                if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id not like ? ");
-                    params.add(generateLikeArgument(dataId));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(group)) {
-                    if (!isFirstSub) {
-                        where.append(" or ");
-                    }
-                    where.append(" group_id not like ? ");
-                    params.add(generateLikeArgument(group));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(appName)) {
-                    if (!isFirstSub) {
-                        where.append(" or ");
-                    }
-                    where.append(" app_name != ? ");
-                    params.add(appName);
-                    isFirstSub = false;
-                }
-                where.append(") ");
-            } else {
-                if (isFirst) {
-                    isFirst = false;
-                    where.append(" and ");
-                } else {
-                    where.append(" or ");
-                }
-                where.append("(");
-                boolean isFirstSub = true;
-                if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id like ? ");
-                    params.add(generateLikeArgument(dataId));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(group)) {
-                    if (!isFirstSub) {
-                        where.append(" and ");
-                    }
-                    where.append(" group_id like ? ");
-                    params.add(generateLikeArgument(group));
-                    isFirstSub = false;
-                }
-                if (!StringUtils.isBlank(appName)) {
-                    if (!isFirstSub) {
-                        where.append(" and ");
-                    }
-                    where.append(" app_name = ? ");
-                    params.add(appName);
-                    isFirstSub = false;
-                }
-                where.append(") ");
-            }
-        }
-
-        try {
-            Page<ConfigInfoAggr> result = helper
-                .fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
-                    pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
-            return result;
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String sqlCountRows = "select count(*) from config_info_aggr where ";
+//        String sqlFetchRows = "select data_id,group_id,tenant_id,datum_id,app_name,content from config_info_aggr where ";
+//        StringBuilder where = new StringBuilder(" 1=1 ");
+//        // Whitelist, please leave the synchronization condition empty, there is no configuration that meets the conditions
+//        if (configKeys.length == 0 && blacklist == false) {
+//            Page<ConfigInfoAggr> page = new Page<ConfigInfoAggr>();
+//            page.setTotalCount(0);
+//            return page;
+//        }
+//        PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
+//        List<String> params = new ArrayList<String>();
+//        boolean isFirst = true;
+//
+//        for (ConfigKey configInfoAggr : configKeys) {
+//            String dataId = configInfoAggr.getDataId();
+//            String group = configInfoAggr.getGroup();
+//            String appName = configInfoAggr.getAppName();
+//            if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group) && StringUtils.isBlank(appName)) {
+//                break;
+//            }
+//            if (blacklist) {
+//                if (isFirst) {
+//                    isFirst = false;
+//                    where.append(" and ");
+//                } else {
+//                    where.append(" and ");
+//                }
+//
+//                where.append("(");
+//                boolean isFirstSub = true;
+//                if (!StringUtils.isBlank(dataId)) {
+//                    where.append(" data_id not like ? ");
+//                    params.add(generateLikeArgument(dataId));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(group)) {
+//                    if (!isFirstSub) {
+//                        where.append(" or ");
+//                    }
+//                    where.append(" group_id not like ? ");
+//                    params.add(generateLikeArgument(group));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(appName)) {
+//                    if (!isFirstSub) {
+//                        where.append(" or ");
+//                    }
+//                    where.append(" app_name != ? ");
+//                    params.add(appName);
+//                    isFirstSub = false;
+//                }
+//                where.append(") ");
+//            } else {
+//                if (isFirst) {
+//                    isFirst = false;
+//                    where.append(" and ");
+//                } else {
+//                    where.append(" or ");
+//                }
+//                where.append("(");
+//                boolean isFirstSub = true;
+//                if (!StringUtils.isBlank(dataId)) {
+//                    where.append(" data_id like ? ");
+//                    params.add(generateLikeArgument(dataId));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(group)) {
+//                    if (!isFirstSub) {
+//                        where.append(" and ");
+//                    }
+//                    where.append(" group_id like ? ");
+//                    params.add(generateLikeArgument(group));
+//                    isFirstSub = false;
+//                }
+//                if (!StringUtils.isBlank(appName)) {
+//                    if (!isFirstSub) {
+//                        where.append(" and ");
+//                    }
+//                    where.append(" app_name = ? ");
+//                    params.add(appName);
+//                    isFirstSub = false;
+//                }
+//                where.append(") ");
+//            }
+//        }
+//
+//        try {
+//            Page<ConfigInfoAggr> result = helper
+//                .fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
+//                    pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
+//            return result;
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
@@ -2249,47 +2326,48 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
     public Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
                                                     final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
                                                     final int pageSize, final long lastMaxId) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sqlCountRows = "select count(*) from config_info where ";
-        String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
-        String where = " 1=1 ";
-        List<Object> params = new ArrayList<Object>();
-
-        if (!StringUtils.isBlank(dataId)) {
-            where += " and data_id like ? ";
-            params.add(generateLikeArgument(dataId));
-        }
-        if (!StringUtils.isBlank(group)) {
-            where += " and group_id like ? ";
-            params.add(generateLikeArgument(group));
-        }
-
-        if (!StringUtils.isBlank(tenantTmp)) {
-            where += " and tenant_id = ? ";
-            params.add(tenantTmp);
-        }
-
-        if (!StringUtils.isBlank(appName)) {
-            where += " and app_name = ? ";
-            params.add(appName);
-        }
-        if (startTime != null) {
-            where += " and gmt_modified >=? ";
-            params.add(startTime);
-        }
-        if (endTime != null) {
-            where += " and gmt_modified <=? ";
-            params.add(endTime);
-        }
-
-        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                lastMaxId, CONFIG_INFO_WRAPPER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        String sqlCountRows = "select count(*) from config_info where ";
+//        String sqlFetchRows = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified from config_info where ";
+//        String where = " 1=1 ";
+//        List<Object> params = new ArrayList<Object>();
+//
+//        if (!StringUtils.isBlank(dataId)) {
+//            where += " and data_id like ? ";
+//            params.add(generateLikeArgument(dataId));
+//        }
+//        if (!StringUtils.isBlank(group)) {
+//            where += " and group_id like ? ";
+//            params.add(generateLikeArgument(group));
+//        }
+//
+//        if (!StringUtils.isBlank(tenantTmp)) {
+//            where += " and tenant_id = ? ";
+//            params.add(tenantTmp);
+//        }
+//
+//        if (!StringUtils.isBlank(appName)) {
+//            where += " and app_name = ? ";
+//            params.add(appName);
+//        }
+//        if (startTime != null) {
+//            where += " and gmt_modified >=? ";
+//            params.add(startTime);
+//        }
+//        if (endTime != null) {
+//            where += " and gmt_modified <=? ";
+//            params.add(endTime);
+//        }
+//
+//        PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
+//        try {
+//            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+//                lastMaxId, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+//        } catch (CannotGetJdbcConnectionException e) {
+//            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+//            throw e;
+//        }
+        return null;
     }
 
     @Override
@@ -2815,22 +2893,33 @@ public class ExternalStoragePersistServiceImpl2 implements PersistService {
     @Override
     public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo,
                                                      int pageSize) {
-        PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
-        String sqlFetchRows =
-            "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info "
-                + "where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+//        PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
+//        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+//        String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
+//        String sqlFetchRows =
+//            "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info "
+//                + "where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+//
+//        Page<ConfigHistoryInfo> page = null;
+//        try {
+//            page = helper
+//                .fetchPage(sqlCountRows, sqlFetchRows, new Object[]{dataId, group, tenantTmp}, pageNo, pageSize,
+//                    HISTORY_LIST_ROW_MAPPER);
+//        } catch (DataAccessException e) {
+//            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[]{dataId, group}, e);
+//            throw e;
+//        }
+//        return page;
+        QHisConfigInfo qHisConfigInfo = QHisConfigInfo.hisConfigInfo;
+        org.springframework.data.domain.Page<HisConfigInfoEntity> sPage = hisConfigInfoRepository.findAll(qHisConfigInfo.dataId.eq(dataId)
+            .and(qHisConfigInfo.groupId.eq(group))
+            .and(qHisConfigInfo.tenantId.eq(tenant)), PageRequest.of(pageNo, pageSize, Sort.by(Sort.Order.desc("nid"))));
 
-        Page<ConfigHistoryInfo> page = null;
-        try {
-            page = helper
-                .fetchPage(sqlCountRows, sqlFetchRows, new Object[]{dataId, group, tenantTmp}, pageNo, pageSize,
-                    HISTORY_LIST_ROW_MAPPER);
-        } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[]{dataId, group}, e);
-            throw e;
-        }
+        Page<ConfigHistoryInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(ConfigHistoryInfoMapStruct.INSTANCE.convertConfigHistoryInfoList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
         return page;
     }
 
