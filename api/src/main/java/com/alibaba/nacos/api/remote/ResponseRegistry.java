@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
@@ -67,6 +68,7 @@ public class ResponseRegistry {
         REGISTRY_RESPONSES.put(NamingRemoteConstants.QUERY_SERVICE, QueryServiceResponse.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.SUBSCRIBE_SERVICE, SubscribeServiceResponse.class);
         REGISTRY_RESPONSES.put(NamingRemoteConstants.NOTIFY_SUBSCRIBER, NotifySubscriberResponse.class);
+        REGISTRY_RESPONSES.put(NamingRemoteConstants.LIST_SERVICE, ServiceListResponse.class);
     }
     
     public static Class getClassByType(String type) {

@@ -23,19 +23,23 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.Set;
 
@@ -124,7 +128,17 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
-        return null;
+        ServiceListRequest request = new ServiceListRequest(namespaceId, groupName, pageNo, pageSize);
+        if (selector != null) {
+            if (SelectorType.valueOf(selector.getType()) == SelectorType.label) {
+                request.setSelector(JacksonUtils.toJson(selector));
+            }
+        }
+        ServiceListResponse response = requestToServer(request, ServiceListResponse.class);
+        ListView<String> result = new ListView<String>();
+        result.setCount(response.getCount());
+        result.setData(response.getServiceNames());
+        return result;
     }
     
     @Override
