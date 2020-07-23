@@ -33,4 +33,6 @@ public class NamingRemoteConstants {
     public static final String SUBSCRIBE_SERVICE = "subscribeService";
     
     public static final String NOTIFY_SUBSCRIBER = "notifySubscriber";
+    
+    public static final String LIST_SERVICE = "listService";
 }

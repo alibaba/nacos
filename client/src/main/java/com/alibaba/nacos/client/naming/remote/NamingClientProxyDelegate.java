@@ -106,7 +106,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
-        return httpClientProxy.getServiceList(pageNo, pageSize, groupName, selector);
+        return getExecuteClientProxy().getServiceList(pageNo, pageSize, groupName, selector);
     }
     
     @Override
@@ -135,7 +135,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
-        return httpClientProxy.serverHealthy();
+        return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
     }
     
     private NamingClientProxy getExecuteClientProxy() {
