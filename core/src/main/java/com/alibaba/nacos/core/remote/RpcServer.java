@@ -16,12 +16,18 @@
 
 package com.alibaba.nacos.core.remote;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 /**
  * abstrat rpc server .
+ *
  * @author liuzunfei
  * @version $Id: RpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
 public abstract class RpcServer {
+    
+    @Autowired
+    private ConnectCoordinator connectCoordinator;
     
     /**
      * Start sever.
@@ -33,4 +39,7 @@ public abstract class RpcServer {
      */
     public abstract void stop() throws Exception;
     
+    public void setMaxClientCount(int maxClient) {
+        this.connectCoordinator.coordinateMaxClientsSmoth(maxClient);
+    }
 }

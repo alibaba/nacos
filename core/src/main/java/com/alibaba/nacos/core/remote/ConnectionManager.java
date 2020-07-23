@@ -42,13 +42,23 @@ public class ConnectionManager {
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     /**
+     * check connnectionid is valid.
+     *
+     * @param connectionId connectionId to be check.
+     * @return
+     */
+    public boolean checkValid(String connectionId) {
+        return connetions.containsKey(connectionId);
+    }
+    
+    /**
      * register a new connect.
      *
      * @param connectionId connectionId
      * @param connection   connection
      */
     public void register(String connectionId, Connection connection) {
-        Connection connectionInner = connetions.putIfAbsent(connectionId, connection);
+        Connection connectionInner = connetions.put(connectionId, connection);
         if (connectionInner == null) {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             Loggers.GRPC.info("new connection registered successfully, connectionid = {} ", connectionId);
@@ -71,6 +81,22 @@ public class ConnectionManager {
     
     public Connection getConnection(String connectionId) {
         return connetions.get(connectionId);
+    }
+    
+    /**
+     * get curret connetions count.
+     *
+     * @return
+     */
+    public int getCurretConnectionCount() {
+        return this.connetions.size();
+    }
+    
+    public void setSwitching(String connectionId) {
+        Connection connection = connetions.get(connectionId);
+        if (connection != null) {
+            connection.setStatus(Connection.SWITCHING);
+        }
     }
     
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.api.remote.exception;
 
 /**
- * RequestTypeConstants.
+ * connection already closed exception.
  *
  * @author liuzunfei
- * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
+ * @version $Id: ConnectionAlreadyClosedException.java, v 0.1 2020年07月22日 7:28 PM liuzunfei Exp $
  */
-public class RequestTypeConstants {
+public class ConnectionAlreadyClosedException extends RemoteException {
     
-    public static final String HEART_BEAT = "HEART_BEAT";
+    private static final int CONNECTION_ALREADY_CLOSED = 600;
     
-    public static final String SERVER_CHECK = "SERVER_CHECK";
+    public ConnectionAlreadyClosedException() {
+        super(CONNECTION_ALREADY_CLOSED);
+    }
     
+    public ConnectionAlreadyClosedException(Throwable throwable) {
+        super(CONNECTION_ALREADY_CLOSED, throwable);
+    }
 }

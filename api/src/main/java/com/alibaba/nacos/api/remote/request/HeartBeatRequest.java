@@ -18,18 +18,15 @@ package com.alibaba.nacos.api.remote.request;
 
 /**
  * HeartBeatRequest.
+ *
  * @author liuzunfei
  * @version $Id: HeartBeatRequest.java, v 0.1 2020年07月14日 11:38 AM liuzunfei Exp $
  */
-public class HeartBeatRequest extends Request {
-
+public class HeartBeatRequest extends InternalRequest {
+    
     @Override
     public String getType() {
         return RequestTypeConstants.HEART_BEAT;
     }
-
-    @Override
-    public String getModule() {
-        return "internal";
-    }
+    
 }

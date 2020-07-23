@@ -27,7 +27,8 @@ public enum RpcClientStatus {
     INITED(1, "server list factory is ready,wait to start"),
     STARTING(2, "server list factory is ready,wait to start"),
     RUNNING(3, "client is running..."),
-    RE_CONNECTING(4, "reconnecting...");
+    SWITCHING_SERVER(5, "reconnecting...");
+    
     
     int status;
     
