@@ -26,6 +26,40 @@ import com.alibaba.nacos.api.remote.response.Response;
  */
 public abstract class Connection {
     
+    public static final String HEALTHY = "healthy";
+    
+    public static final String UNHEALTHY = "unhealthy";
+    
+    public static final String SWITCHING = "swtiching";
+    
+    private String status;
+    
+    public boolean isHealthy() {
+        return HEALTHY.equals(this.status);
+    }
+    
+    public boolean isSwitching() {
+        return HEALTHY.equals(this.status);
+    }
+    
+    /**
+     * Getter method for property <tt>status</tt>.
+     *
+     * @return property value of status
+     */
+    public String getStatus() {
+        return status;
+    }
+    
+    /**
+     * Setter method for property <tt>status</tt>.
+     *
+     * @param status value to be assigned to property status
+     */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
     private final ConnectionMetaInfo metaInfo;
     
     public Connection(ConnectionMetaInfo metaInfo) {
@@ -53,6 +87,7 @@ public abstract class Connection {
     
     /**
      * return last active time, include request occurs and.
+     *
      * @return
      */
     public long getLastActiveTimestamp() {

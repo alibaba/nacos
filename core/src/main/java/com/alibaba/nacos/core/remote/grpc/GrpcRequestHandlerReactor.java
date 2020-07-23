@@ -22,11 +22,14 @@ import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
+import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
-
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,18 +46,34 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
     @Autowired
     RequestHandlerRegistry requestHandlerRegistry;
     
+    @Autowired
+    private ConnectionManager connectionManager;
+    
     @Override
     public void request(GrpcRequest grpcRequest, StreamObserver<GrpcResponse> responseObserver) {
     
         Loggers.GRPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
         String type = grpcRequest.getType();
+        if (RequestTypeConstants.SERVER_CHECK.equals(type)) {
+            responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
+            responseObserver.onCompleted();
+            return;
+        }
+        
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
         if (requestHandler != null) {
             String bodyString = grpcRequest.getBody().getValue().toStringUtf8();
             Request request = requestHandler.parseBodyString(bodyString);
-            try {
-                Response response = requestHandler.handle(request, convertMeta(grpcRequest.getMetadata()));
     
+            try {
+                RequestMeta requestMeta = convertMeta(grpcRequest.getMetadata());
+                boolean requestValid = connectionManager.checkValid(requestMeta.getConnectionId());
+                if (!requestValid) {
+                    responseObserver.onNext(GrpcUtils.convert(new ConnectionUnregisterResponse()));
+                    responseObserver.onCompleted();
+                    return;
+                }
+                Response response = requestHandler.handle(request, requestMeta);
                 responseObserver.onNext(GrpcUtils.convert(response));
                 responseObserver.onCompleted();
             } catch (Exception e) {

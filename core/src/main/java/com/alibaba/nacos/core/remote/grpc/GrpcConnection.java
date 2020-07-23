@@ -18,12 +18,14 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.connection.ConnectionMetaInfo;
+import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.api.remote.response.Response;
-
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 /**
  * grpc connection.
+ *
  * @author liuzunfei
  * @version $Id: GrpcConnection.java, v 0.1 2020年07月13日 7:26 PM liuzunfei Exp $
  */
@@ -38,7 +40,14 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void sendResponse(Response reponse) {
-        streamObserver.onNext(GrpcUtils.convert(reponse));
+        try {
+            streamObserver.onNext(GrpcUtils.convert(reponse));
+        } catch (Exception e) {
+            if (e instanceof StatusRuntimeException) {
+                throw new ConnectionAlreadyClosedException(e);
+            }
+            throw e;
+        }
     }
     
     @Override

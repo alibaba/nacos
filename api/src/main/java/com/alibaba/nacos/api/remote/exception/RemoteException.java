@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.api.remote.exception;
+
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
 /**
- * RequestTypeConstants.
+ * super exception in remote module.
  *
  * @author liuzunfei
- * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
+ * @version $Id: RemoteException.java, v 0.1 2020年07月22日 7:24 PM liuzunfei Exp $
  */
-public class RequestTypeConstants {
+public class RemoteException extends NacosRuntimeException {
     
-    public static final String HEART_BEAT = "HEART_BEAT";
+    public RemoteException(int errorCode) {
+        super(errorCode);
+    }
     
-    public static final String SERVER_CHECK = "SERVER_CHECK";
-    
+    public RemoteException(int errorCode, Throwable throwable) {
+        super(errorCode, throwable);
+    }
 }

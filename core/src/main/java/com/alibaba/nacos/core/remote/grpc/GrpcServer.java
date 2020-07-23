@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -40,9 +39,6 @@ public class GrpcServer extends RpcServer {
     private Server server;
     
     @Autowired
-    private ConnectionManager connectionManager;
-    
-    @Autowired
     private GrpcStreamRequestHanderImpl streamRequestHander;
     
     @Autowired
@@ -56,7 +52,6 @@ public class GrpcServer extends RpcServer {
     private void init() {
         Loggers.GRPC.info("Nacos gRPC server initiazing Component ...");
         Loggers.GRPC.info("Nacos gRPC  server  port :" + grpcServerPort);
-        Loggers.GRPC.info("Connection Manager inited :" + connectionManager);
         Loggers.GRPC.info("Stream request handler  inited :" + streamRequestHander);
         Loggers.GRPC.info("Common request handler  inited :" + requestHander);
         Loggers.GRPC.info("Request handler Registry inited :" + requestHandlerRegistry);
