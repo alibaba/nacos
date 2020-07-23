@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.utils;
 
+import com.alibaba.nacos.common.utils.BiFunction;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.Objects;
 import org.apache.commons.io.FileUtils;
@@ -304,6 +305,17 @@ public final class DiskUtils {
     
     public static void forceMkdir(String path) throws IOException {
         FileUtils.forceMkdir(new File(path));
+    }
+    
+    public static Throwable forceMkdir(String path, BiFunction<Void, IOException, Throwable> job) {
+        Throwable ex;
+        try {
+            FileUtils.forceMkdir(new File(path));
+            ex = job.apply(null, null);
+        } catch (IOException e) {
+            ex = job.apply(null, e);
+        }
+        return ex;
     }
     
     public static void forceMkdir(File file) throws IOException {
