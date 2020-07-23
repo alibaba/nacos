@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.remote.grpc;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
@@ -34,31 +32,16 @@ import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
-import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.naming.utils.NetUtils;
-import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientStatus;
 import com.alibaba.nacos.client.remote.ServerListFactory;
 import com.alibaba.nacos.client.remote.ServerPushResponseHandler;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.ClientCommonUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TemplateUtils;
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -68,15 +51,8 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * gRPC Client.
@@ -90,8 +66,6 @@ public class GrpcClient extends RpcClient {
     
     private SecurityProxy securityProxy;
     
-    private StsCredential stsCredential;
-    
     protected ManagedChannel channel;
     
     protected RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub;
@@ -101,25 +75,12 @@ public class GrpcClient extends RpcClient {
     private static final NacosRestTemplate NACOS_RESTTEMPLATE = ConfigHttpClientManager.getInstance()
             .getNacosRestTemplate();
     
-    /**
-     * Reconnect to current server before switch a new server.
-     */
-    private static final int MAX_RECONNECT_TIMES = 3;
-    
-    private AtomicInteger reConnectTimesLeft = new AtomicInteger(MAX_RECONNECT_TIMES);
-    
     public GrpcClient() {
         super();
-        init(new Properties());
     }
     
     public GrpcClient(ServerListFactory serverListFactory) {
         super(serverListFactory);
-        init(new Properties());
-    }
-    
-    public GrpcClient(Properties properties) {
-        init(properties);
     }
     
     /**
@@ -428,206 +389,6 @@ public class GrpcClient extends RpcClient {
     public void shutdown() throws NacosException {
         if (this.channel != null && !this.channel.isShutdown()) {
             this.channel.shutdownNow();
-        }
-    }
-    
-    private static class StsCredential {
-        
-        @JsonProperty(value = "AccessKeyId")
-        private String accessKeyId;
-        
-        @JsonProperty(value = "AccessKeySecret")
-        private String accessKeySecret;
-        
-        @JsonProperty(value = "Expiration")
-        private Date expiration;
-        
-        @JsonProperty(value = "SecurityToken")
-        private String securityToken;
-        
-        @JsonProperty(value = "LastUpdated")
-        private Date lastUpdated;
-        
-        @JsonProperty(value = "Code")
-        private String code;
-        
-        public String getAccessKeyId() {
-            return accessKeyId;
-        }
-        
-        public Date getExpiration() {
-            return expiration;
-        }
-        
-        public Date getLastUpdated() {
-            return lastUpdated;
-        }
-        
-        public String getCode() {
-            return code;
-        }
-        
-        @Override
-        public String toString() {
-            return "STSCredential{" + "accessKeyId='" + accessKeyId + '\'' + ", accessKeySecret='" + accessKeySecret
-                    + '\'' + ", expiration=" + expiration + ", securityToken='" + securityToken + '\''
-                    + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
-        }
-    }
-    
-    private void setSecurityParam(Request request) throws Exception {
-        
-        //Config+Naming
-        request.putHeader(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
-        
-        //Config //TODO
-        //        if (StringUtils.isNotBlank(namespaceId) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
-        //            params.put(SpasAdapter.TENANT_KEY, namespaceId);
-        //        }
-        
-        if (StsConfig.getInstance().isStsOn()) {
-            StsCredential stsCredential = getStsCredential();
-            accessKey = stsCredential.accessKeyId;
-            secretKey = stsCredential.accessKeySecret;
-            request.putHeader("Spas-SecurityToken", stsCredential.securityToken);
-        }
-        
-        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
-            request.putHeader("Spas-AccessKey", accessKey);
-            //针对 group 和 tenant做特殊处理 ，//TODO
-            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(request.getHeaders(), secretKey);
-            if (signHeaders != null) {
-                request.putAllHeader(signHeaders);
-            }
-        }
-        String ts = String.valueOf(System.currentTimeMillis());
-        String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
-        
-        request.putHeader(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
-        request.putHeader(Constants.CLIENT_REQUEST_TS_HEADER, ts);
-        request.putHeader(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
-        request.putHeader("exConfigInfo", "true");
-        request.putHeader(HttpHeaderConsts.ACCEPT_CHARSET, encode);
-        
-        //NamingRef
-        String ak = getAccessKey();
-        String sk = getSecretKey();
-        request.putHeader("app", AppNameUtils.getAppName());
-        if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
-            try {
-                //TODO
-                String serviceName = "";
-                String signData = StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
-                        : String.valueOf(System.currentTimeMillis());
-                String signature = SignUtil.sign(signData, sk);
-                request.putHeader("signature", signature);
-                request.putHeader("data", signData);
-                request.putHeader("ak", ak);
-            } catch (Exception e) {
-                NAMING_LOGGER.error("inject ak/sk failed.", e);
-            }
-        }
-    }
-    
-    private StsCredential getStsCredential() throws Exception {
-        boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
-        if (cacheSecurityCredentials && stsCredential != null) {
-            long currentTime = System.currentTimeMillis();
-            long expirationTime = stsCredential.expiration.getTime();
-            int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
-            if (expirationTime - currentTime > timeToRefreshInMillisecond) {
-                return stsCredential;
-            }
-        }
-        String stsResponse = getStsResponse();
-        StsCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
-        });
-        stsCredential = stsCredentialTmp;
-        LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
-                stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
-                stsCredential.getExpiration());
-        return stsCredential;
-    }
-    
-    private static String getStsResponse() throws Exception {
-        String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
-        if (securityCredentials != null) {
-            return securityCredentials;
-        }
-        String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
-        try {
-            HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
-            
-            if (!result.ok()) {
-                LOGGER.error(
-                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
-                                .getMessage());
-            }
-            return result.getData();
-        } catch (Exception e) {
-            LOGGER.error("can not get security credentials", e);
-            throw e;
-        }
-    }
-    
-    public String getAccessKey() {
-        return SpasAdapter.getAk();
-    }
-    
-    public String getSecretKey() {
-        return SpasAdapter.getSk();
-    }
-    
-    private String accessKey;
-    
-    private String secretKey;
-    
-    private String encode;
-    
-    private int maxRetry = 3;
-    
-    private void init(Properties properties) {
-        initEncode(properties);
-        initAkSk(properties);
-        initMaxRetry(properties);
-    }
-    
-    private void initEncode(Properties properties) {
-        encode = TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENCODE), new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        return Constants.ENCODE;
-                    }
-                });
-    }
-    
-    private void initMaxRetry(Properties properties) {
-        maxRetry = ConvertUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
-    }
-    
-    private void initAkSk(Properties properties) {
-        String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
-        if (!StringUtils.isBlank(ramRoleName)) {
-            StsConfig.getInstance().setRamRoleName(ramRoleName);
-        }
-        
-        String ak = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
-        if (StringUtils.isBlank(ak)) {
-            accessKey = SpasAdapter.getAk();
-        } else {
-            accessKey = ak;
-        }
-        
-        String sk = properties.getProperty(PropertyKeyConst.SECRET_KEY);
-        if (StringUtils.isBlank(sk)) {
-            secretKey = SpasAdapter.getSk();
-        } else {
-            secretKey = sk;
         }
     }
     

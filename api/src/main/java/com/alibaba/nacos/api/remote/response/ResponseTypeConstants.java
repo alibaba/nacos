@@ -31,5 +31,9 @@ public class ResponseTypeConstants {
     
     public static final String UNKNOW = "UNKNOW";
     
+    public static final String SERVER_CHECK = "SERVER_CHECK";
+    
+    public static final String CONNECION_UNREGISTER = "CONNECION_UNREGISTER";
+    
     
 }

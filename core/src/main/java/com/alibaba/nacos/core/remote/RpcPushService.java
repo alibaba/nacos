@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
+import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.core.remote.grpc.PushAckIdGenerator;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -49,6 +50,8 @@ public class RpcPushService {
     
             try {
                 client.sendResponse(response);
+            } catch (ConnectionAlreadyClosedException e) {
+                connectionManager.unregister(connectionId);
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
                         response, e);

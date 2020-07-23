@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
 package com.alibaba.nacos.api.remote.request;
 
 /**
- * RequestTypeConstants.
+ * request to check server if unimpeded.
  *
  * @author liuzunfei
- * @version $Id: RequestTypeConstants.java, v 0.1 2020年07月13日 9:18 PM liuzunfei Exp $
+ * @version $Id: ServerCheckRequest.java, v 0.1 2020年07月22日 8:32 PM liuzunfei Exp $
  */
-public class RequestTypeConstants {
+public class ServerCheckRequest extends InternalRequest {
     
-    public static final String HEART_BEAT = "HEART_BEAT";
-    
-    public static final String SERVER_CHECK = "SERVER_CHECK";
+    @Override
+    public String getType() {
+        return RequestTypeConstants.SERVER_CHECK;
+    }
     
 }
