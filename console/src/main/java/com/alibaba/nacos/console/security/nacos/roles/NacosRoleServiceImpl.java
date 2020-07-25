@@ -64,11 +64,11 @@ public class NacosRoleServiceImpl {
     @Autowired
     private PermissionPersistService permissionPersistService;
     
-    private final Set<String> roleSet = new ConcurrentHashSet<>();
+    private Set<String> roleSet = new ConcurrentHashSet<>();
     
-    private final Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
+    private Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
-    private final Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    private Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
@@ -95,9 +95,9 @@ public class NacosRoleServiceImpl {
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             
-            roleSet.addAll(tmpRoleSet);
-            roleInfoMap.putAll(tmpRoleInfoMap);
-            permissionInfoMap.putAll(tmpPermissionInfoMap);
+            roleSet = tmpRoleSet;
+            roleInfoMap = tmpRoleInfoMap;
+            permissionInfoMap = tmpPermissionInfoMap;
         } catch (Exception e) {
             Loggers.AUTH.warn("[LOAD-ROLES] load failed", e);
         }
