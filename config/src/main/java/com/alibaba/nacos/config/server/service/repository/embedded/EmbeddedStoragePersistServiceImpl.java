@@ -2194,7 +2194,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public boolean isExistTable(String tableName) {
-        String sql = String.format("select 1 from %s limit 1", tableName);
+        String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
         try {
             databaseOperate.queryOne(sql, Integer.class);
             return true;
