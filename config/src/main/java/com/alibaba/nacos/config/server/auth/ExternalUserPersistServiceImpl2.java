@@ -15,12 +15,16 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.modules.entity.QUsers;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigHistoryInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.UserMapStruct;
 import com.alibaba.nacos.config.server.modules.repository.UsersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +33,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class UserPersistServiceTmp {
+public class ExternalUserPersistServiceImpl2 {
 
     @Autowired
     private UsersRepository usersRepository;
@@ -51,13 +55,21 @@ public class UserPersistServiceTmp {
             });
     }
 
-    public UsersEntity findUserByUsername(String username) {
-        return usersRepository.findOne(QUsers.users.username.eq(username))
+    public User findUserByUsername(String username) {
+        UsersEntity usersEntity = usersRepository.findOne(QUsers.users.username.eq(username))
             .orElseThrow(() -> new RuntimeException(username + " not exist"));
+        return UserMapStruct.INSTANCE.convertUser(usersEntity);
     }
 
-    public Page<UsersEntity> getUsers(int pageNo, int pageSize) {
-        return usersRepository.findAll(null, PageRequest.of(pageNo, pageSize));
+    public Page<User> getUsers(int pageNo, int pageSize) {
+        org.springframework.data.domain.Page<UsersEntity> sPage =
+            usersRepository.findAll(null, PageRequest.of(pageNo, pageSize));
+        Page<User> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(UserMapStruct.INSTANCE.convertUserList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
 }

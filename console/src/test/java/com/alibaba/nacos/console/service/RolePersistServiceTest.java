@@ -17,7 +17,7 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.RolePersistServiceTmp;
+import com.alibaba.nacos.config.server.auth.ExternalRolePersistServiceImpl2;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
@@ -46,7 +46,7 @@ public class RolePersistServiceTest extends BaseTest {
 
 
     @Autowired
-    private RolePersistServiceTmp rolePersistServiceTmp;
+    private ExternalRolePersistServiceImpl2 rolePersistServiceTmp;
 
     @Test
     public void getRolesTest() {

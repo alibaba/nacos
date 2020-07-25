@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import com.alibaba.nacos.config.server.modules.entity.QPermissions;
+import com.alibaba.nacos.config.server.modules.mapstruct.PermissionsMapStruct;
 import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -27,14 +28,20 @@ import org.springframework.stereotype.Service;
  * @author Nacos
  */
 @Service
-public class PermissionPersistServiceTmp {
+public class ExternalPermissionPersistServiceImpl2 {
 
     @Autowired
     private PermissionsRepository permissionsRepository;
 
-    public Page<PermissionsEntity> getPermissions(String role, int pageNo, int pageSize) {
-        return permissionsRepository.findAll(QPermissions.permissions.role.eq(role),
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository.findAll(QPermissions.permissions.role.eq(role),
             PageRequest.of(pageNo, pageSize));
+        Page<PermissionInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(PermissionsMapStruct.INSTANCE.convertPermissionInfoList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
 
     public void addPermission(String role, String resource, String action) {

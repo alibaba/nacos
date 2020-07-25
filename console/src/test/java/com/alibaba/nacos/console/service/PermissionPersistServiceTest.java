@@ -17,7 +17,7 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.PermissionPersistServiceTmp;
+import com.alibaba.nacos.config.server.auth.ExternalPermissionPersistServiceImpl2;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import com.alibaba.nacos.config.server.modules.entity.QPermissions;
 import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
@@ -47,7 +47,7 @@ public class PermissionPersistServiceTest extends BaseTest {
     }
 
     @Autowired
-    private PermissionPersistServiceTmp permissionPersistServiceTmp;
+    private ExternalPermissionPersistServiceImpl2 permissionPersistServiceTmp;
 
     @Autowired
     private PermissionsRepository permissionsRepository;
