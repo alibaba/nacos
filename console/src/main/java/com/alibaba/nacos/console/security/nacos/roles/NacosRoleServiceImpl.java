@@ -64,11 +64,11 @@ public class NacosRoleServiceImpl {
     @Autowired
     private PermissionPersistService permissionPersistService;
     
-    private Set<String> roleSet = new ConcurrentHashSet<>();
+    private volatile Set<String> roleSet = new ConcurrentHashSet<>();
     
-    private Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
+    private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
-    private Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
