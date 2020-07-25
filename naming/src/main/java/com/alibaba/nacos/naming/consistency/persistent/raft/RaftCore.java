@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.JudgeClusterVersionJob;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -113,24 +115,33 @@ public class RaftCore {
     
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
     
-    @Autowired
     private RaftPeerSet peers;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private GlobalConfig globalConfig;
+    private final GlobalConfig globalConfig;
     
-    @Autowired
-    private RaftProxy raftProxy;
+    private final RaftProxy raftProxy;
     
-    @Autowired
-    private RaftStore raftStore;
+    private final RaftStore raftStore;
+    
+    private final JudgeClusterVersionJob clusterVersionJob;
     
     public volatile Notifier notifier = new Notifier();
     
     private boolean initialized = false;
+    
+    private volatile boolean stopWork = false;
+    
+    public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
+            RaftStore raftStore, JudgeClusterVersionJob clusterVersionJob) {
+        this.peers = peers;
+        this.switchDomain = switchDomain;
+        this.globalConfig = globalConfig;
+        this.raftProxy = raftProxy;
+        this.raftStore = raftStore;
+        this.clusterVersionJob = clusterVersionJob;
+    }
     
     /**
      * Init raft core.
@@ -156,10 +167,12 @@ public class RaftCore {
             if (notifier.tasks.size() <= 0) {
                 break;
             }
-            Thread.sleep(1000L);
+            ThreadUtils.sleep(1000L);
         }
         
         initialized = true;
+    
+        clusterVersionJob.registerObserver(isAllNewVersion -> stopWork = isAllNewVersion);
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
         
@@ -182,7 +195,9 @@ public class RaftCore {
      * @throws Exception any exception during publish
      */
     public void signalPublish(String key, Record value) throws Exception {
-        
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         if (!isLeader()) {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
@@ -265,7 +280,9 @@ public class RaftCore {
      * @throws Exception any exception during delete
      */
     public void signalDelete(final String key) throws Exception {
-        
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         OPERATE_LOCK.lock();
         try {
             
@@ -318,6 +335,9 @@ public class RaftCore {
      * @throws Exception any exception during publish
      */
     public void onPublish(Datum datum, RaftPeer source) throws Exception {
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         RaftPeer local = peers.local();
         if (datum.value == null) {
             Loggers.RAFT.warn("received empty datum");
@@ -373,7 +393,9 @@ public class RaftCore {
      * @throws Exception any exception during delete
      */
     public void onDelete(String datumKey, RaftPeer source) throws Exception {
-        
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         RaftPeer local = peers.local();
         
         if (!peers.isLeader(source.ip)) {
@@ -418,7 +440,9 @@ public class RaftCore {
         @Override
         public void run() {
             try {
-                
+                if (stopWork) {
+                    return;
+                }
                 if (!peers.isReady()) {
                     return;
                 }
@@ -490,6 +514,9 @@ public class RaftCore {
      * @return self-peer information
      */
     public synchronized RaftPeer receivedVote(RaftPeer remote) {
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
@@ -522,7 +549,9 @@ public class RaftCore {
         @Override
         public void run() {
             try {
-                
+                if (stopWork) {
+                    return;
+                }
                 if (!peers.isReady()) {
                     return;
                 }
@@ -645,6 +674,9 @@ public class RaftCore {
      * @throws Exception any exception during handle
      */
     public RaftPeer receivedBeat(JsonNode beat) throws Exception {
+        if (stopWork) {
+            throw new IllegalStateException("old raft protocol already stop work");
+        }
         final RaftPeer local = peers.local();
         final RaftPeer remote = new RaftPeer();
         JsonNode peer = beat.get("peer");

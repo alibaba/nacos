@@ -172,6 +172,14 @@ public class GlobalExecutor {
         NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
     
+    public static void submitClusterVersionJudge(Runnable runnable, long delay) {
+        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+    
+    public static void submitLoadOldData(Runnable runnable, long delay) {
+        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+    
     public static void submitDistroNotifyTask(Runnable runnable) {
         DISTRO_NOTIFY_EXECUTOR.submit(runnable);
     }

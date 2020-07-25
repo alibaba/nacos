@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
@@ -68,7 +69,7 @@ public class RaftStore {
      * @param datums   cached datum map
      * @throws Exception any exception during load
      */
-    public synchronized void loadDatums(RaftCore.Notifier notifier, ConcurrentMap<String, Datum> datums)
+    public synchronized void loadDatums(RaftCore.Notifier notifier, Map<String, Datum> datums)
             throws Exception {
         
         Datum datum;
@@ -79,7 +80,9 @@ public class RaftStore {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
-                        notifier.addTask(datum.key, ApplyAction.CHANGE);
+                        if (notifier != null) {
+                            notifier.addTask(datum.key, ApplyAction.CHANGE);
+                        }
                     }
                 }
                 continue;

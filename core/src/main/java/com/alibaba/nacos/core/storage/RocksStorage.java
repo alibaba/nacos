@@ -53,52 +53,68 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RocksStorage {
-    
+
     private String group;
-    
+
     private DBOptions options;
-    
+
     private RocksDB db;
-    
+
     private WriteOptions writeOptions;
-    
+
     private ReadOptions readOptions;
-    
+
     private ColumnFamilyHandle defaultHandle;
-    
+
     private String dbPath;
-    
+
     private final List<ColumnFamilyOptions> cfOptions = new ArrayList<>();
-    
+
     static {
         RocksDB.loadLibrary();
     }
-    
+
     private RocksStorage() {
     }
-    
+
     public static RocksStorage createDefault(final String group, String baseDir) {
         return createCustomer(group, baseDir, new WriteOptions().setSync(true),
                 new ReadOptions().setTotalOrderSeek(true));
     }
-    
+
     public static RocksStorage createCustomer(final String group, String baseDir, WriteOptions writeOptions,
             ReadOptions readOptions) {
-        
+
         RocksStorage storage = new RocksStorage();
-        
+
         try {
             DiskUtils.forceMkdir(baseDir);
         } catch (IOException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
-        
+        createRocksDB(baseDir, group, writeOptions, readOptions, storage);
+        return storage;
+    }
+
+    public void destroyAndOpenNew() throws RocksStorageException {
+        try (final Options options = new Options()) {
+            RocksDB.destroyDB(dbPath, options);
+            createRocksDB(dbPath, group, writeOptions, readOptions, this);
+        } catch (RocksDBException ex) {
+            Status status = ex.getStatus();
+            throw createRocksStorageException(status);
+        }
+    }
+
+    private static void createRocksDB(final String baseDir, final String group, WriteOptions writeOptions,
+                                      ReadOptions readOptions, final RocksStorage storage) {
+        storage.cfOptions.clear();
+
         final DBOptions options = RocksDBUtils.getDefaultRocksDBOptions();
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         final List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
         final ColumnFamilyOptions cfOption = RocksDBUtils.createColumnFamilyOptions();
         storage.cfOptions.add(cfOption);
-        // Default column family to store user data log entry.
         columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, cfOption));
         try {
             RocksDB db = RocksDB.open(options, baseDir, columnFamilyDescriptors, columnFamilyHandles);
@@ -112,27 +128,8 @@ public final class RocksStorage {
         } catch (RocksDBException e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
-        return storage;
     }
-    
-    public void destroyAndOpenNew() throws RocksStorageException {
-        try (final Options options = new Options()) {
-            RocksDB.destroyDB(dbPath, options);
-            this.cfOptions.clear();
-            final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-            final List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
-            final ColumnFamilyOptions cfOption = RocksDBUtils.createColumnFamilyOptions();
-            this.cfOptions.add(cfOption);
-            // Default column family to store user data log entry.
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, cfOption));
-            this.db = RocksDB.open(this.options, this.dbPath, columnFamilyDescriptors, columnFamilyHandles);
-            this.defaultHandle = columnFamilyHandles.get(0);
-        } catch (RocksDBException ex) {
-            Status status = ex.getStatus();
-            throw createRocksStorageException(status);
-        }
-    }
-    
+
     public void write(byte[] key, byte[] value) throws RocksStorageException {
         try {
             this.db.put(defaultHandle, writeOptions, key, value);
@@ -141,7 +138,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public void batchWrite(List<byte[]> key, List<byte[]> values) throws RocksStorageException {
         if (key.size() != values.size()) {
             throw new IllegalArgumentException("key size and values size must be equals!");
@@ -156,7 +153,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public byte[] get(byte[] key) throws RocksStorageException {
         try {
             return db.get(defaultHandle, readOptions, key);
@@ -165,7 +162,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public Map<byte[], byte[]> batchGet(List<byte[]> key) throws RocksStorageException {
         try {
             return db.multiGet(readOptions, key);
@@ -174,7 +171,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public void delete(byte[] key) throws RocksStorageException {
         try {
             db.delete(defaultHandle, writeOptions, key);
@@ -183,7 +180,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public void batchDelete(List<byte[]> key) throws RocksStorageException {
         try {
             for (byte[] k : key) {
@@ -194,7 +191,7 @@ public final class RocksStorage {
             throw createRocksStorageException(status);
         }
     }
-    
+
     public void snapshotSave(final String backupPath) throws RocksStorageException {
         final String path = Paths.get(backupPath, group).toString();
         Throwable ex = DiskUtils.forceMkdir(path, (aVoid, ioe) -> {
@@ -219,7 +216,7 @@ public final class RocksStorage {
             throw new RocksStorageException(NacosException.SERVER_ERROR, ex);
         }
     }
-    
+
     public void snapshotLoad(final String backupPath) throws RocksStorageException {
         try {
             final String path = Paths.get(backupPath, group).toString();
@@ -243,7 +240,7 @@ public final class RocksStorage {
             throw new RocksStorageException(NacosException.SERVER_ERROR, ex);
         }
     }
-    
+
     public void shutdown() {
         this.defaultHandle.close();
         this.db.close();
@@ -254,7 +251,7 @@ public final class RocksStorage {
         this.writeOptions.close();
         this.readOptions.close();
     }
-    
+
     private static RocksStorageException createRocksStorageException(Status status) {
         RocksStorageException exception = new RocksStorageException();
         exception.setErrCode(status.getCode().getValue());
@@ -262,5 +259,5 @@ public final class RocksStorage {
                 status.getSubCode(), status.getState()));
         return exception;
     }
-    
+
 }
