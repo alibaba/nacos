@@ -40,6 +40,24 @@ public class HessianSerializer implements Serializer {
     }
     
     @Override
+    public <T> T deserialize(byte[] data) {
+        if (ByteUtils.isEmpty(data)) {
+            return null;
+        }
+    
+        Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
+        input.setSerializerFactory(serializerFactory);
+        Object resultObject;
+        try {
+            resultObject = input.readObject();
+            input.close();
+        } catch (IOException e) {
+            throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
+        }
+        return (T) resultObject;
+    }
+    
+    @Override
     public <T> T deserialize(byte[] data, Class cls) {
         
         if (ByteUtils.isEmpty(data)) {

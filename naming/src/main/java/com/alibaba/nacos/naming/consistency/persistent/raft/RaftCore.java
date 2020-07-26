@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.notify.EventPublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.JudgeClusterVersionJob;
+import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
+import com.alibaba.nacos.naming.consistency.persistent.ValueChangeEvent;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -47,8 +47,6 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.javatuples.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -66,13 +64,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -103,10 +98,6 @@ public class RaftCore {
     
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
     
-    private final ScheduledExecutorService executor = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.raft.notifier"));
-    
     public static final Lock OPERATE_LOCK = new ReentrantLock();
     
     public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
@@ -127,7 +118,9 @@ public class RaftCore {
     
     private final JudgeClusterVersionJob clusterVersionJob;
     
-    public volatile Notifier notifier = new Notifier();
+    public volatile PersistentNotifier notifier;
+    
+    private EventPublisher publisher;
     
     private boolean initialized = false;
     
@@ -141,6 +134,9 @@ public class RaftCore {
         this.raftProxy = raftProxy;
         this.raftStore = raftStore;
         this.clusterVersionJob = clusterVersionJob;
+        this.notifier = new PersistentNotifier(key -> getDatum(key).value);
+        this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
+        NotifyCenter.registerSubscriber(notifier);
     }
     
     /**
@@ -150,11 +146,7 @@ public class RaftCore {
      */
     @PostConstruct
     public void init() throws Exception {
-        
         Loggers.RAFT.info("initializing Raft sub-system");
-        
-        executor.submit(notifier);
-        
         final long start = System.currentTimeMillis();
         
         raftStore.loadDatums(notifier, datums);
@@ -164,7 +156,7 @@ public class RaftCore {
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
         
         while (true) {
-            if (notifier.tasks.size() <= 0) {
+            if (notifier.tasksSize() <= 0) {
                 break;
             }
             ThreadUtils.sleep(1000L);
@@ -1041,114 +1033,6 @@ public class RaftCore {
     }
     
     public int getNotifyTaskCount() {
-        return notifier.getTaskSize();
-    }
-    
-    public class Notifier implements Runnable {
-        
-        private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
-        
-        private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<>(1024 * 1024);
-        
-        /**
-         * Add notify task.
-         *
-         * @param datumKey datum key
-         * @param action   action of datum
-         */
-        public void addTask(String datumKey, ApplyAction action) {
-            
-            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
-                return;
-            }
-            if (action == ApplyAction.CHANGE) {
-                services.put(datumKey, StringUtils.EMPTY);
-            }
-            
-            Loggers.RAFT.info("add task {}", datumKey);
-            
-            tasks.add(Pair.with(datumKey, action));
-        }
-        
-        public int getTaskSize() {
-            return tasks.size();
-        }
-        
-        @Override
-        public void run() {
-            Loggers.RAFT.info("raft notifier started");
-            
-            while (true) {
-                try {
-                    
-                    Pair pair = tasks.take();
-                    
-                    if (pair == null) {
-                        continue;
-                    }
-                    
-                    String datumKey = (String) pair.getValue0();
-                    ApplyAction action = (ApplyAction) pair.getValue1();
-                    
-                    services.remove(datumKey);
-                    
-                    Loggers.RAFT.info("remove task {}", datumKey);
-                    
-                    int count = 0;
-                    
-                    if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-                        
-                        if (KeyBuilder.matchServiceMetaKey(datumKey) && !KeyBuilder.matchSwitchKey(datumKey)) {
-                            
-                            for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-                                try {
-                                    if (action == ApplyAction.CHANGE) {
-                                        listener.onChange(datumKey, getDatum(datumKey).value);
-                                    }
-                                    
-                                    if (action == ApplyAction.DELETE) {
-                                        listener.onDelete(datumKey);
-                                    }
-                                } catch (Throwable e) {
-                                    Loggers.RAFT
-                                            .error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey,
-                                                    e);
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (!listeners.containsKey(datumKey)) {
-                        continue;
-                    }
-                    
-                    for (RecordListener listener : listeners.get(datumKey)) {
-                        
-                        count++;
-                        
-                        try {
-                            if (action == ApplyAction.CHANGE) {
-                                listener.onChange(datumKey, getDatum(datumKey).value);
-                                continue;
-                            }
-                            
-                            if (action == ApplyAction.DELETE) {
-                                listener.onDelete(datumKey);
-                                continue;
-                            }
-                        } catch (Throwable e) {
-                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey, e);
-                        }
-                    }
-                    
-                    if (Loggers.RAFT.isDebugEnabled()) {
-                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}", datumKey,
-                                count);
-                    }
-                } catch (Throwable e) {
-                    Loggers.RAFT.error("[NACOS-RAFT] Error while handling notifying task", e);
-                }
-            }
-        }
+        return notifier.tasksSize();
     }
 }

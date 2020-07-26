@@ -32,6 +32,15 @@ public interface Serializer {
      * Deserialize the data.
      *
      * @param data byte[]
+     * @param <T>  class type
+     * @return target object instance
+     */
+    <T> T deserialize(byte[] data);
+    
+    /**
+     * Deserialize the data.
+     *
+     * @param data byte[]
      * @param cls  class
      * @param <T>  class type
      * @return target object instance
