@@ -7,7 +7,7 @@ import com.alibaba.nacos.common.model.RestResult;
  *
  * @author mai.jh
  */
-public abstract class AbstractCallBack<T> implements Callback<T> {
+public abstract class AbstractCallback<T> implements Callback<T> {
     
     /**
      * receive method must be implemented concretely.
