@@ -15,12 +15,10 @@
  */
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.modules.entity.QUsers;
+import com.alibaba.nacos.config.server.modules.entity.QUsersEntity;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
-import com.alibaba.nacos.config.server.modules.mapstruct.ConfigHistoryInfoMapStruct;
 import com.alibaba.nacos.config.server.modules.mapstruct.UserMapStruct;
 import com.alibaba.nacos.config.server.modules.repository.UsersRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -43,12 +41,12 @@ public class ExternalUserPersistServiceImpl2 {
     }
 
     public void deleteUser(String username) {
-        usersRepository.findOne(QUsers.users.password.eq(username))
+        usersRepository.findOne(QUsersEntity.usersEntity.password.eq(username))
             .ifPresent(u -> usersRepository.delete(u));
     }
 
     public void updateUserPassword(String username, String password) {
-        usersRepository.findOne(QUsers.users.username.eq(username))
+        usersRepository.findOne(QUsersEntity.usersEntity.username.eq(username))
             .ifPresent(u -> {
                 u.setPassword(password);
                 usersRepository.save(u);
@@ -56,7 +54,7 @@ public class ExternalUserPersistServiceImpl2 {
     }
 
     public User findUserByUsername(String username) {
-        UsersEntity usersEntity = usersRepository.findOne(QUsers.users.username.eq(username))
+        UsersEntity usersEntity = usersRepository.findOne(QUsersEntity.usersEntity.username.eq(username))
             .orElseThrow(() -> new RuntimeException(username + " not exist"));
         return UserMapStruct.INSTANCE.convertUser(usersEntity);
     }

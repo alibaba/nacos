@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.ExternalUserPersistServiceImpl2;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
@@ -26,7 +28,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -37,7 +38,7 @@ import java.util.Random;
  * @version $Id: UserPersistServiceTest.java,v 0.1 2020年06月06日 15:21 $Exp
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class)
+@SpringBootTest
 public class UserPersistServiceTest extends BaseTest {
 
 
@@ -73,16 +74,16 @@ public class UserPersistServiceTest extends BaseTest {
 
     @Test
     public void findUserByUsernameTest() {
-        UsersEntity result = userPersistServiceTmp.findUserByUsername(users.getUsername());
+        User result = userPersistServiceTmp.findUserByUsername(users.getUsername());
         Assert.assertNotNull(result);
     }
 
     @Test
     public void getUsersTest() {
         userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
-        Page<UsersEntity> page = userPersistServiceTmp.getUsers(0, 10);
-        Assert.assertNotNull(page.getContent());
-        Assert.assertTrue(page.getContent().size() > 0);
+        Page<User> page = userPersistServiceTmp.getUsers(0, 10);
+        Assert.assertNotNull(page.getPageItems());
+        Assert.assertTrue(page.getPageItems().size() > 0);
     }
 
 }

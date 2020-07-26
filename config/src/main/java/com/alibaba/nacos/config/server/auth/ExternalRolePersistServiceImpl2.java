@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.modules.entity.QRoles;
+import com.alibaba.nacos.config.server.modules.entity.QRolesEntity;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.config.server.modules.mapstruct.RoleInfoMapStruct;
 import com.alibaba.nacos.config.server.modules.repository.RolesRepository;
@@ -46,7 +46,7 @@ public class ExternalRolePersistServiceImpl2 {
 
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
-            .findAll(QRoles.roles.username.eq(username), PageRequest.of(pageNo, pageSize));
+            .findAll(QRolesEntity.rolesEntity.username.eq(username), PageRequest.of(pageNo, pageSize));
         Page<RoleInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());
@@ -61,12 +61,12 @@ public class ExternalRolePersistServiceImpl2 {
 
 
     public void deleteRole(String role) {
-        Iterable<RolesEntity> iterable = rolesRepository.findAll(QRoles.roles.role.eq(role));
+        Iterable<RolesEntity> iterable = rolesRepository.findAll(QRolesEntity.rolesEntity.role.eq(role));
         rolesRepository.deleteAll(iterable);
     }
 
     public void deleteRole(String role, String username) {
-        QRoles qRoles = QRoles.roles;
+        QRolesEntity qRoles = QRolesEntity.rolesEntity;
         rolesRepository.findOne(qRoles.role.eq(role)
             .and(qRoles.username.eq(username)))
             .ifPresent(s -> rolesRepository.delete(s));

@@ -17,7 +17,7 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
-import com.alibaba.nacos.config.server.modules.entity.QPermissions;
+import com.alibaba.nacos.config.server.modules.entity.QPermissionsEntity;
 import com.alibaba.nacos.config.server.modules.mapstruct.PermissionsMapStruct;
 import com.alibaba.nacos.config.server.modules.repository.PermissionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ public class ExternalPermissionPersistServiceImpl2 {
     private PermissionsRepository permissionsRepository;
 
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository.findAll(QPermissions.permissions.role.eq(role),
+        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository.findAll(QPermissionsEntity.permissionsEntity.role.eq(role),
             PageRequest.of(pageNo, pageSize));
         Page<PermissionInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
@@ -50,7 +50,7 @@ public class ExternalPermissionPersistServiceImpl2 {
 
 
     public void deletePermission(String role, String resource, String action) {
-        QPermissions qPermissions = QPermissions.permissions;
+        QPermissionsEntity qPermissions = QPermissionsEntity.permissionsEntity;
         permissionsRepository.findOne(qPermissions.role.eq(role)
             .and(qPermissions.resource.eq(resource))
             .and(qPermissions.action.eq(action)))

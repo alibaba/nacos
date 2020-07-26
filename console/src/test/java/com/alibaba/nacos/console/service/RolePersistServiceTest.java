@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.ExternalRolePersistServiceImpl2;
+import com.alibaba.nacos.config.server.auth.RoleInfo;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
@@ -26,7 +28,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
@@ -34,7 +35,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @version $Id: RolePersistServiceTest.java,v 0.1 2020年06月06日 14:59 $Exp
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class)
+@SpringBootTest
 public class RolePersistServiceTest extends BaseTest {
 
     private RolesEntity roles;
@@ -51,16 +52,16 @@ public class RolePersistServiceTest extends BaseTest {
     @Test
     public void getRolesTest() {
         rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
-        Page<RolesEntity> page = rolePersistServiceTmp.getRoles(0, 10);
-        Assert.assertNotNull(page.getContent());
-        Assert.assertTrue(page.getContent().size() > 0);
+        Page<RoleInfo> page = rolePersistServiceTmp.getRoles(0, 10);
+        Assert.assertNotNull(page.getPageItems());
+        Assert.assertTrue(page.getPageItems().size() > 0);
     }
 
     @Test
     public void getRolesByUserNameTest() {
-        Page<RolesEntity> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
-        Assert.assertNotNull(page.getContent());
-        Assert.assertTrue(page.getContent().size() > 0);
+        Page<RoleInfo> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
+        Assert.assertNotNull(page.getPageItems());
+        Assert.assertTrue(page.getPageItems().size() > 0);
     }
 
     @Test

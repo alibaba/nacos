@@ -27,7 +27,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *
  * @author Nacos
  */
-@EnableJpaRepositories(basePackages = "com.alibaba.nacos.config.server.modules.repository")
+//@EnableJpaRepositories(basePackages = "com.alibaba.nacos.config.server.modules.repository")
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = {
         "com.alibaba.nacos.config.server",
