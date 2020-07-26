@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.controller;
 
-import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.AbstractCallBack;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
@@ -162,7 +162,7 @@ public class NacosClusterController {
             final String url = HttpUtils
                     .buildUrl(false, member.getAddress(), ApplicationUtils.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/server/leave");
-            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
+            asyncHttpClient.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new AbstractCallBack<String>() {
                 @Override
                 public void onReceive(RestResult<String> result) {
                     try {

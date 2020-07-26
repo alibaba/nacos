@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.AbstractCallBack;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -66,7 +67,7 @@ public class NacosAsyncRestTemplate_ITCase {
         IP = String.format("http://localhost:%d", port);
     }
     
-    private class CallbackMap<T> implements Callback<T> {
+    private class CallbackMap<T> extends AbstractCallBack<T> {
         
         private HttpRestResult<T> restResult;
         
@@ -79,9 +80,10 @@ public class NacosAsyncRestTemplate_ITCase {
         
         @Override
         public void onError(Throwable throwable) {
-            throwable = throwable;
+            this.throwable = throwable;
         }
         
+    
         public HttpRestResult<T> getRestResult() {
             return restResult;
         }
@@ -135,7 +137,7 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
     }
     
     @Test
@@ -150,7 +152,7 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
     }
     
     @Test

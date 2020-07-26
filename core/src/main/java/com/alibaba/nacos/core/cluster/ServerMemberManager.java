@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.AbstractCallBack;
 import com.alibaba.nacos.common.http.HttpClientManager;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.NAsyncHttpClient;
@@ -454,7 +454,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             try {
                 asyncHttpClient
                         .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
-                                Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
+                                Query.EMPTY, getSelf(), reference.getType(), new AbstractCallBack<String>() {
                                     @Override
                                     public void onReceive(RestResult<String> result) {
                                         if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
