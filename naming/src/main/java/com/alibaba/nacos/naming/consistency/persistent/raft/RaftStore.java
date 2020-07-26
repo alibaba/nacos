@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -42,7 +43,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DATA_BASE_DIR;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_PREFIX;
@@ -69,7 +69,7 @@ public class RaftStore {
      * @param datums   cached datum map
      * @throws Exception any exception during load
      */
-    public synchronized void loadDatums(RaftCore.Notifier notifier, Map<String, Datum> datums)
+    public synchronized void loadDatums(PersistentNotifier notifier, Map<String, Datum> datums)
             throws Exception {
         
         Datum datum;

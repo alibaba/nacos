@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,8 +24,8 @@ import java.util.List;
  */
 public class BatchWriteRequest {
     
-    private List< byte[]> keys;
-    private List<byte[]> values;
+    private List< byte[]> keys = new ArrayList<>();
+    private List<byte[]> values = new ArrayList<>();
     
     public List<byte[]> getKeys() {
         return keys;
@@ -40,5 +41,10 @@ public class BatchWriteRequest {
     
     public void setValues(List<byte[]> values) {
         this.values = values;
+    }
+    
+    public void append(byte[] key, byte[] value) {
+        keys.add(key);
+        values.add(value);
     }
 }
