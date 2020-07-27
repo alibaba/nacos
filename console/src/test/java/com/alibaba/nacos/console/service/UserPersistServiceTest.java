@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.service;
 
-import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.ExternalUserPersistServiceImpl2;
 import com.alibaba.nacos.config.server.model.Page;
@@ -34,50 +34,50 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Random;
 
 /**
+ * UserPersistServiceTest.
+ *
  * @author zhangshun
  * @version $Id: UserPersistServiceTest.java,v 0.1 2020年06月06日 15:21 $Exp
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class UserPersistServiceTest extends BaseTest {
-
-
+    
     private UsersEntity users;
-
+    
     @Before
     public void before() {
         users = JacksonUtils.toObj(TestData.USERS_JSON, UsersEntity.class);
     }
-
-
+    
     @Autowired
     private ExternalUserPersistServiceImpl2 userPersistServiceTmp;
-
+    
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    
     @Test
     public void createUser() {
         userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
     }
-
+    
     @Test
     public void deleteUserTest() {
         userPersistServiceTmp.deleteUser(users.getUsername());
     }
-
+    
     @Test
     public void updateUserPassword() {
         userPersistServiceTmp.updateUserPassword(users.getUsername(),
-            passwordEncoder.encode(users.getPassword() + new Random().nextInt()));
+                passwordEncoder.encode(users.getPassword() + new Random().nextInt()));
     }
-
+    
     @Test
     public void findUserByUsernameTest() {
         User result = userPersistServiceTmp.findUserByUsername(users.getUsername());
         Assert.assertNotNull(result);
     }
-
+    
     @Test
     public void getUsersTest() {
         userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
@@ -85,5 +85,5 @@ public class UserPersistServiceTest extends BaseTest {
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
-
+    
 }

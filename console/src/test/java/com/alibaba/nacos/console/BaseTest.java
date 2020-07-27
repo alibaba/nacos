@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console;
 
 import org.apache.commons.io.IOUtils;
@@ -21,12 +22,18 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.IOException;
 
 /**
- * @author zhangshun
- * @version $Id: BaseTest.java,v 0.1 2020年06月04日 11:22 $Exp
+ * Synthesize the form of dataId+groupId. Escapes reserved characters in dataId and groupId.
+ *
+ * @author Nacos
  */
-public  class BaseTest {
-
-
+public class BaseTest {
+    
+    /**
+     * readClassPath.
+     *
+     * @param path not null
+     * @return filePath
+     */
     public static String readClassPath(String path) {
         ClassPathResource resource = new ClassPathResource(path);
         try {
@@ -36,6 +43,5 @@ public  class BaseTest {
             return null;
         }
     }
-
-
+    
 }

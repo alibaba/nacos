@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.service;
 
-import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.ExternalRolePersistServiceImpl2;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -31,24 +31,25 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
+ * RolePersistServiceTest.
+ *
  * @author zhangshun
  * @version $Id: RolePersistServiceTest.java,v 0.1 2020年06月06日 14:59 $Exp
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class RolePersistServiceTest extends BaseTest {
-
+    
     private RolesEntity roles;
-
+    
     @Before
     public void before() {
         roles = JacksonUtils.toObj(TestData.ROLES_JSON, RolesEntity.class);
     }
-
-
+    
     @Autowired
     private ExternalRolePersistServiceImpl2 rolePersistServiceTmp;
-
+    
     @Test
     public void getRolesTest() {
         rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
@@ -56,28 +57,27 @@ public class RolePersistServiceTest extends BaseTest {
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
-
+    
     @Test
     public void getRolesByUserNameTest() {
         Page<RoleInfo> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
-
+    
     @Test
     public void addRoleTest() {
         rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
     }
-
-
+    
     @Test
     public void deleteRole1Test() {
         rolePersistServiceTmp.deleteRole(roles.getRole());
     }
-
+    
     @Test
     public void deleteRole2Test() {
         rolePersistServiceTmp.deleteRole(roles.getRole(), roles.getUsername());
     }
-
+    
 }

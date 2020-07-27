@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.config;
 
 import org.springframework.context.annotation.Bean;
@@ -28,36 +29,35 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
-@EnableJpaRepositories(entityManagerFactoryRef = "customerEntityManagerFactory",
-    transactionManagerRef = "customerTransactionManager",basePackages = "com.alibaba.nacos.config.server.modules.repository")
+@EnableJpaRepositories(entityManagerFactoryRef = "customerEntityManagerFactory", transactionManagerRef = "customerTransactionManager", basePackages = "com.alibaba.nacos.config.server.modules.repository")
 public class H2Config {
-
+    
     @Bean
     public PlatformTransactionManager customerTransactionManager() {
         return new JpaTransactionManager(customerEntityManagerFactory().getObject());
     }
-
+    
     @Bean
     public LocalContainerEntityManagerFactoryBean customerEntityManagerFactory() {
-
+        
         HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
         jpaVendorAdapter.setGenerateDdl(true);
-
+        
         LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
-
+        
         factoryBean.setDataSource(customerDataSource());
         factoryBean.setJpaVendorAdapter(jpaVendorAdapter);
         factoryBean.setPackagesToScan("com.alibaba.nacos.config.server.modules.entity");
-
+        
         return factoryBean;
     }
-
+    
     @Bean
     public DataSource customerDataSource() {
-
+        
         return new EmbeddedDatabaseBuilder().//
-            setType(EmbeddedDatabaseType.H2).//
-            setName("customers").//
-            build();
+                setType(EmbeddedDatabaseType.H2).//
+                setName("customers").//
+                build();
     }
 }
