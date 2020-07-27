@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -29,12 +32,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Http utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class HttpUtils {
-
+    
     private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
-
+    
+    /**
+     * Build URL.
+     *
+     * @param isHttps    whether is https
+     * @param serverAddr server ip/address
+     * @param subPaths   api path
+     * @return URL string
+     */
     public static String buildUrl(boolean isHttps, String serverAddr, String... subPaths) {
         StringBuilder sb = new StringBuilder();
         if (isHttps) {
@@ -55,15 +68,13 @@ public final class HttpUtils {
             if (pre == null || !pre.endsWith("/")) {
                 if (subPath.startsWith("/")) {
                     sb.append(subPath);
-                }
-                else {
+                } else {
                     sb.append("/").append(subPath);
                 }
             } else {
                 if (subPath.startsWith("/")) {
                     sb.append(subPath.replaceFirst("\\/", ""));
-                }
-                else {
+                } else {
                     sb.append(subPath);
                 }
             }
@@ -71,7 +82,14 @@ public final class HttpUtils {
         }
         return sb.toString();
     }
-
+    
+    /**
+     * Translate parameter map.
+     *
+     * @param parameterMap parameter map
+     * @return parameter map
+     * @throws Exception exception
+     */
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) throws Exception {
         Map<String, String> map = new HashMap<String, String>(16);
         for (String key : parameterMap.keySet()) {
@@ -79,7 +97,15 @@ public final class HttpUtils {
         }
         return map;
     }
-
+    
+    /**
+     * Encoding parameters to url string.
+     *
+     * @param params   parameters
+     * @param encoding encoding charset
+     * @return url string
+     * @throws UnsupportedEncodingException if encoding string is illegal
+     */
     public static String encodingParams(Map<String, String> params, String encoding)
             throws UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder();
@@ -90,22 +116,29 @@ public final class HttpUtils {
             if (StringUtils.isEmpty(entry.getValue())) {
                 continue;
             }
-
+            
             sb.append(entry.getKey()).append("=");
             sb.append(URLEncoder.encode(entry.getValue(), encoding));
             sb.append("&");
         }
-
+        
         return sb.toString();
     }
-
-    public static String encodingParams(List<String> paramValues, String encoding)
-            throws UnsupportedEncodingException {
+    
+    /**
+     * Encoding KV list to url string.
+     *
+     * @param paramValues parameters
+     * @param encoding    encoding charset
+     * @return url string
+     * @throws UnsupportedEncodingException if encoding string is illegal
+     */
+    public static String encodingParams(List<String> paramValues, String encoding) throws UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder();
         if (null == paramValues) {
             return null;
         }
-
+        
         for (Iterator<String> iter = paramValues.iterator(); iter.hasNext(); ) {
             sb.append(iter.next()).append("=");
             sb.append(URLEncoder.encode(iter.next(), encoding));
@@ -115,11 +148,25 @@ public final class HttpUtils {
         }
         return sb.toString();
     }
-
+    
     public static String decode(String str, String encode) throws UnsupportedEncodingException {
         return innerDecode(null, str, encode);
     }
-
+    
+    /**
+     * build URI By url and query.
+     *
+     * @param url   url
+     * @param query query param {@link Query}
+     * @return {@link URI}
+     */
+    public static URI buildUri(String url, Query query) throws URISyntaxException {
+        if (!query.isEmpty()) {
+            url = url + "?" + query.toQueryUrl();
+        }
+        return new URI(url);
+    }
+    
     private static String innerDecode(String pre, String now, String encode) throws UnsupportedEncodingException {
         // Because the data may be encoded by the URL more than once,
         // it needs to be decoded recursively until it is fully successful
@@ -130,6 +177,4 @@ public final class HttpUtils {
         now = URLDecoder.decode(now, encode);
         return innerDecode(pre, now, encode);
     }
-
-
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -26,52 +27,51 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * encode filter
+ * Web encode filter.
  *
  * @author Nacos
  */
 public class NacosWebFilter implements Filter {
-
-    static private String webRootPath;
-
-    static public String rootPath() {
+    
+    private static String webRootPath;
+    
+    public static String rootPath() {
         return webRootPath;
     }
-
+    
     /**
-     * 方便测试
+     * Easy for testing.
      *
-     * @param path web path
+     * @param path web path.
      */
-    static public void setWebRootPath(String path) {
+    public static void setWebRootPath(String path) {
         webRootPath = path;
     }
-
+    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         ServletContext ctx = filterConfig.getServletContext();
         setWebRootPath(ctx.getRealPath("/"));
     }
-
+    
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
         request.setCharacterEncoding(Constants.ENCODE);
         response.setContentType("application/json;charset=" + Constants.ENCODE);
-
+        
         try {
             chain.doFilter(request, response);
         } catch (IOException | ServletException ioe) {
-            defaultLog.debug("Filter catch exception, " + ioe.toString(), ioe);
+            DEFAULT_LOG.debug("Filter catch exception, " + ioe.toString(), ioe);
             throw ioe;
         }
     }
-
+    
     @Override
     public void destroy() {
     }
-
 }

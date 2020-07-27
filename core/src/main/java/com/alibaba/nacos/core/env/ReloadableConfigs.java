@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.core.env;
 
+package com.alibaba.nacos.core.env;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,24 +28,29 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Reload application.properties
+ * Reload application.properties.
  *
  * @author nkorange
  * @since 1.2.0
  */
 @Component
 public class ReloadableConfigs {
-
+    
+    private static final String FILE_PREFIX = "file:";
+    
     private Properties properties;
-
+    
     @Value("${spring.config.location:}")
     private String path;
-
-    private static final String FILE_PREFIX = "file:";
-
+    
+    /**
+     * Periodically load configuration file information.
+     *
+     * @throws IOException IOException
+     */
     @Scheduled(fixedRate = 5000)
     public void reload() throws IOException {
-        Properties properties = new Properties();
+        final Properties properties = new Properties();
         InputStream inputStream = null;
         if (StringUtils.isNotBlank(path) && path.contains(FILE_PREFIX)) {
             String[] paths = path.split(",");
@@ -62,7 +67,7 @@ public class ReloadableConfigs {
         inputStream.close();
         this.properties = properties;
     }
-
+    
     public final Properties getProperties() {
         return properties;
     }

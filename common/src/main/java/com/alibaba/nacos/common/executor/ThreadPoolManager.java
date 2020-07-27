@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.executor;
 
-
-import com.alibaba.nacos.common.utils.ShutdownUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,62 +26,62 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * // TODO Access Metric
+ * // TODO Access Metric.
  *
- * For unified management of thread pool resources, the consumer can simply call
- * the register method to {@link ThreadPoolManager#register(String, String, ExecutorService)}
- * the thread pool that needs to be included in the life cycle management of the resource
+ * <p>For unified management of thread pool resources, the consumer can simply call the register method to {@link
+ * ThreadPoolManager#register(String, String, ExecutorService)} the thread pool that needs to be included in the life
+ * cycle management of the resource
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadPoolManager {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolManager.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolManager.class);
+    
     private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
-
+    
     private Map<String, Object> lockers = new ConcurrentHashMap<String, Object>(8);
-
+    
     private static final ThreadPoolManager INSTANCE = new ThreadPoolManager();
-
+    
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
-
+    
     static {
         INSTANCE.init();
-		ShutdownUtils.addShutdownHook(new Thread(new Runnable() {
+        ThreadUtils.addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-				LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
+                LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
                 shutdown();
-				LOGGER.warn("[ThreadPoolManager] Destruction of the end");
+                LOGGER.warn("[ThreadPoolManager] Destruction of the end");
             }
         }));
     }
-
+    
     public static ThreadPoolManager getInstance() {
         return INSTANCE;
     }
-
-    private ThreadPoolManager() {}
-
+    
+    private ThreadPoolManager() {
+    }
+    
     private void init() {
         resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
     }
-
+    
     /**
-	 * Register the thread pool resources with the resource manager
-	 *
+     * Register the thread pool resources with the resource manager.
+     *
      * @param namespace namespace name
-	 * @param group group name
-	 * @param executor {@link ExecutorService}
-	 */
-	public void register(String namespace, String group, ExecutorService executor) {
-		if (!resourcesManager.containsKey(namespace)) {
-        	synchronized(this) {
+     * @param group     group name
+     * @param executor  {@link ExecutorService}
+     */
+    public void register(String namespace, String group, ExecutorService executor) {
+        if (!resourcesManager.containsKey(namespace)) {
+            synchronized (this) {
                 lockers.put(namespace, new Object());
             }
         }
@@ -90,26 +89,26 @@ public final class ThreadPoolManager {
         synchronized (monitor) {
             Map<String, Set<ExecutorService>> map = resourcesManager.get(namespace);
             if (map == null) {
-            	map = new HashMap<String, Set<ExecutorService>>(8);
-            	map.put(group, new HashSet<ExecutorService>());
-				map.get(group).add(executor);
-				resourcesManager.put(namespace, map);
-				return;
-			}
+                map = new HashMap<String, Set<ExecutorService>>(8);
+                map.put(group, new HashSet<ExecutorService>());
+                map.get(group).add(executor);
+                resourcesManager.put(namespace, map);
+                return;
+            }
             if (!map.containsKey(group)) {
                 map.put(group, new HashSet<ExecutorService>());
             }
             map.get(group).add(executor);
         }
     }
-
-	/**
-	 * Cancel the uniform lifecycle management for all threads under this resource
-	 *
+    
+    /**
+     * Cancel the uniform lifecycle management for all threads under this resource.
+     *
      * @param namespace namespace name
-	 * @param group group name
-	 */
-	public void deregister(String namespace, String group) {
+     * @param group     group name
+     */
+    public void deregister(String namespace, String group) {
         if (resourcesManager.containsKey(namespace)) {
             final Object monitor = lockers.get(namespace);
             synchronized (monitor) {
@@ -117,83 +116,86 @@ public final class ThreadPoolManager {
             }
         }
     }
-
-	/**
-	 * Undoing the uniform lifecycle management of {@link ExecutorService} under this resource
-	 *
-	 * @param namespace namespace name
-	 * @param group group name
-	 * @param executor {@link ExecutorService}
-	 */
-	public void deregister(String namespace, String group, ExecutorService executor) {
+    
+    /**
+     * Undoing the uniform lifecycle management of {@link ExecutorService} under this resource.
+     *
+     * @param namespace namespace name
+     * @param group     group name
+     * @param executor  {@link ExecutorService}
+     */
+    public void deregister(String namespace, String group, ExecutorService executor) {
         if (resourcesManager.containsKey(namespace)) {
             final Object monitor = lockers.get(namespace);
             synchronized (monitor) {
-				final Map<String, Set<ExecutorService>> subResourceMap = resourcesManager.get(namespace);
-				if (subResourceMap.containsKey(group)) {
-					subResourceMap.get(group).remove(executor);
-				}
-			}
+                final Map<String, Set<ExecutorService>> subResourceMap = resourcesManager.get(namespace);
+                if (subResourceMap.containsKey(group)) {
+                    subResourceMap.get(group).remove(executor);
+                }
+            }
         }
     }
-
-	/**
-	 * Destroys all thread pool resources under this namespace
-	 *
-	 * @param namespace namespace
-	 */
-	public void destroy(final String namespace) {
-	    final Object monitor = lockers.get(namespace);
-	    if (monitor == null) {
-	        return;
+    
+    /**
+     * Destroys all thread pool resources under this namespace.
+     *
+     * @param namespace namespace
+     */
+    public void destroy(final String namespace) {
+        final Object monitor = lockers.get(namespace);
+        if (monitor == null) {
+            return;
         }
-	    synchronized (monitor) {
-	        Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
-			if (subResource == null) {
-				return;
-			}
-	        for (Map.Entry<String, Set<ExecutorService>> entry : subResource.entrySet()) {
-	            for (ExecutorService executor : entry.getValue()) {
-					ThreadUtils.shutdownThreadPool(executor);
-				}
+        synchronized (monitor) {
+            Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
+            if (subResource == null) {
+                return;
+            }
+            for (Map.Entry<String, Set<ExecutorService>> entry : subResource.entrySet()) {
+                for (ExecutorService executor : entry.getValue()) {
+                    ThreadUtils.shutdownThreadPool(executor);
+                }
             }
             resourcesManager.get(namespace).clear();
-	        resourcesManager.remove(namespace);
+            resourcesManager.remove(namespace);
         }
     }
-
-	/**
-	 * This namespace destroys all thread pool resources under the grouping
-	 *
-	 * @param namespace namespace
-	 * @param group group
-	 */
-	public void destroy(final String namespace, final String group) {
-		final Object monitor = lockers.get(namespace);
-		if (monitor == null) {
-			return;
-		}
-		synchronized (monitor) {
-			Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
-			if (subResource == null) {
-				return;
-			}
-			Set<ExecutorService> waitDestroy = subResource.get(group);
-			for (ExecutorService executor : waitDestroy) {
-				ThreadUtils.shutdownThreadPool(executor);
-			}
-			resourcesManager.get(namespace).remove(group);
-		}
-	}
-
+    
+    /**
+     * This namespace destroys all thread pool resources under the grouping.
+     *
+     * @param namespace namespace
+     * @param group     group
+     */
+    public void destroy(final String namespace, final String group) {
+        final Object monitor = lockers.get(namespace);
+        if (monitor == null) {
+            return;
+        }
+        synchronized (monitor) {
+            Map<String, Set<ExecutorService>> subResource = resourcesManager.get(namespace);
+            if (subResource == null) {
+                return;
+            }
+            Set<ExecutorService> waitDestroy = subResource.get(group);
+            for (ExecutorService executor : waitDestroy) {
+                ThreadUtils.shutdownThreadPool(executor);
+            }
+            resourcesManager.get(namespace).remove(group);
+        }
+    }
+    
+    /**
+     * Shutdown thread pool manager.
+     */
     public static void shutdown() {
-		if (!CLOSED.compareAndSet(false, true)) {
-			return;
-		}
-	    Set<String> namespaces = INSTANCE.resourcesManager.keySet();
-	    for (String namespace : namespaces) {
-	        INSTANCE.destroy(namespace);
+        if (!CLOSED.compareAndSet(false, true)) {
+            return;
+        }
+        Set<String> namespaces = INSTANCE.resourcesManager.keySet();
+        for (String namespace : namespaces) {
+            INSTANCE.destroy(namespace);
         }
     }
-
+    
 }

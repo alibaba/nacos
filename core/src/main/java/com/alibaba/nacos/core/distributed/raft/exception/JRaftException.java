@@ -17,30 +17,31 @@
 package com.alibaba.nacos.core.distributed.raft.exception;
 
 /**
+ * Abnormal JRaft.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftException extends RuntimeException {
-
-	private static final long serialVersionUID = 8802314713344513544L;
-
-	public JRaftException() {
-	}
-
-	public JRaftException(String message) {
-		super(message);
-	}
-
-	public JRaftException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public JRaftException(Throwable cause) {
-		super(cause);
-	}
-
-	public JRaftException(String message, Throwable cause, boolean enableSuppression,
-			boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
+    
+    private static final long serialVersionUID = 8802314713344513544L;
+    
+    public JRaftException() {
+    }
+    
+    public JRaftException(String message) {
+        super(message);
+    }
+    
+    public JRaftException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
+    public JRaftException(Throwable cause) {
+        super(cause);
+    }
+    
+    public JRaftException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

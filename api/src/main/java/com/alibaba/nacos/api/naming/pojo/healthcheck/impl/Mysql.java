@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.google.common.base.Objects;
 
 /**
@@ -27,72 +26,73 @@ import com.google.common.base.Objects;
  * @author yangyi
  */
 public class Mysql extends AbstractHealthChecker {
+    
     public static final String TYPE = "MYSQL";
-
+    
     private String user;
-
+    
     private String pwd;
-
+    
     private String cmd;
-
+    
     public Mysql() {
-        super(TYPE);
+        super(Mysql.TYPE);
     }
-
+    
     public String getCmd() {
-        return cmd;
+        return this.cmd;
     }
-
+    
     public String getPwd() {
-        return pwd;
+        return this.pwd;
     }
-
+    
     public String getUser() {
-        return user;
+        return this.user;
     }
-
-    public void setUser(String user) {
+    
+    public void setUser(final String user) {
         this.user = user;
     }
-
-    public void setCmd(String cmd) {
+    
+    public void setCmd(final String cmd) {
         this.cmd = cmd;
     }
-
-    public void setPwd(String pwd) {
+    
+    public void setPwd(final String pwd) {
         this.pwd = pwd;
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hashCode(user, pwd, cmd);
     }
-
+    
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof Mysql)) {
             return false;
         }
-
-        Mysql other = (Mysql) obj;
-
+        
+        final Mysql other = (Mysql) obj;
+        
         if (!StringUtils.equals(user, other.getUser())) {
             return false;
         }
-
+        
         if (!StringUtils.equals(pwd, other.getPwd())) {
             return false;
         }
-
+        
         return StringUtils.equals(cmd, other.getCmd());
     }
-
+    
     @Override
     public Mysql clone() throws CloneNotSupportedException {
-        Mysql config = new Mysql();
-        config.setUser(this.getUser());
-        config.setPwd(this.getPwd());
-        config.setCmd(this.getCmd());
+        final Mysql config = new Mysql();
+        config.setUser(getUser());
+        config.setPwd(getPwd());
+        config.setCmd(getCmd());
         return config;
     }
 }

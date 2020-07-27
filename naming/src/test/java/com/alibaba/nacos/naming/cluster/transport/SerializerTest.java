@@ -25,21 +25,22 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SerializerTest {
-
+    
     private Serializer serializer;
-
+    
     private Instances instances;
-
+    
     @Before
     public void setUp() throws Exception {
         serializer = new JacksonSerializer();
         instances = new Instances();
         instances.getInstanceList().add(new Instance("1.1.1.1", 1234, "cluster"));
     }
-
+    
     @Test
     public void testSerialize() {
         String actual = new String(serializer.serialize(instances));
@@ -48,8 +49,9 @@ public class SerializerTest {
         assertTrue(actual.contains("\"ip\":\"1.1.1.1\""));
         assertTrue(actual.contains("\"port\":1234"));
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() {
         String example = "{\"instanceList\":[{\"ip\":\"1.1.1.1\",\"port\":1234,\"weight\":1.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true,\"clusterName\":\"cluster\",\"metadata\":{},\"lastBeat\":1590563397264,\"marked\":false,\"instanceIdGenerator\":\"simple\",\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}]}";
         Instances actual = serializer.deserialize(ByteUtils.toBytes(example), Instances.class);
@@ -59,8 +61,9 @@ public class SerializerTest {
         assertEquals("cluster", actualInstance.getClusterName());
         assertEquals(1234, actualInstance.getPort());
     }
-
+    
     @Test
+    @SuppressWarnings("checkstyle:linelength")
     public void testDeserializeMap() {
         String example = "{\"datum\":{\"key\":\"instances\",\"value\":{\"instanceList\":[{\"ip\":\"1.1.1.1\",\"port\":1234,\"weight\":1.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true,\"clusterName\":\"cluster\",\"metadata\":{},\"lastBeat\":1590563397533,\"marked\":false,\"instanceIdGenerator\":\"simple\",\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}]},\"timestamp\":100000}}";
         Map<String, Datum<Instances>> actual = serializer.deserializeMap(ByteUtils.toBytes(example), Instances.class);

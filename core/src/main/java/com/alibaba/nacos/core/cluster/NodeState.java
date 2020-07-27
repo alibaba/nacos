@@ -17,38 +17,38 @@
 package com.alibaba.nacos.core.cluster;
 
 /**
- * The life cycle state of a node plays an important role
+ * The life cycle state of a node plays an important role.
  *
- * <p>1.3.0-BETA The unified sinking operation should be done first, and the node state
+ * <p>1.3.0 The unified sinking operation should be done first, and the node state
  * should be radiated out later, mainly for whether the request can be processed and so on</p>
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public enum NodeState {
-
+    
     /**
-     * Node is starting
+     * Node is starting.
      */
     STARTING,
-
+    
     /**
-     * Node is up and ready for request
+     * Node is up and ready for request.
      */
     UP,
-
+    
     /**
-     * Node may Crash
+     * Node may Crash.
      */
     SUSPICIOUS,
-
+    
     /**
-     * Node is out of service, something abnormal happened
+     * Node is out of service, something abnormal happened.
      */
     DOWN,
-
+    
     /**
-     * The Node is isolated
+     * The Node is isolated.
      */
     ISOLATION,
-
+    
 }

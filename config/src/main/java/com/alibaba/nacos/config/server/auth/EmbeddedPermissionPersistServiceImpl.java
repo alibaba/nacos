@@ -18,9 +18,9 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,55 +32,68 @@ import java.util.ArrayList;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
- * There is no self-augmented primary key
+ * There is no self-augmented primary key.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistService {
-
-	@Autowired
-	private DatabaseOperate databaseOperate;
-
-	@Autowired
-	private EmbeddedStoragePersistServiceImpl persistService;
-
-	public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-		PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
-
-		String sqlCountRows = "select count(*) from permissions where ";
-		String sqlFetchRows
-				= "select role,resource,action from permissions where ";
-
-		String where = " role='" + role + "' ";
-
-		if (StringUtils.isBlank(role)) {
-			where = " 1=1 ";
-		}
-
-		Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows
-						+ where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-				pageSize, PERMISSION_ROW_MAPPER);
-
-		if (pageInfo == null) {
-			pageInfo = new Page<>();
-			pageInfo.setTotalCount(0);
-			pageInfo.setPageItems(new ArrayList<>());
-		}
-		return pageInfo;
-	}
-
-	public void addPermission(String role, String resource, String action) {
-		String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
-		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.blockUpdate();
-	}
-
-	public void deletePermission(String role, String resource, String action) {
-		String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
-		EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
-		databaseOperate.blockUpdate();
-	}
-
+    
+    @Autowired
+    private DatabaseOperate databaseOperate;
+    
+    @Autowired
+    private EmbeddedStoragePersistServiceImpl persistService;
+    
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
+        
+        String sqlCountRows = "select count(*) from permissions where ";
+        String sqlFetchRows = "select role,resource,action from permissions where ";
+        
+        String where = " role='" + role + "' ";
+        
+        if (StringUtils.isBlank(role)) {
+            where = " 1=1 ";
+        }
+        
+        Page<PermissionInfo> pageInfo = helper
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                        pageSize, PERMISSION_ROW_MAPPER);
+        
+        if (pageInfo == null) {
+            pageInfo = new Page<>();
+            pageInfo.setTotalCount(0);
+            pageInfo.setPageItems(new ArrayList<>());
+        }
+        return pageInfo;
+    }
+    
+    /**
+     * Execute ddd user permission operation.
+     *
+     * @param role role info string value.
+     * @param resource resource info string value.
+     * @param action action info string value.
+     */
+    public void addPermission(String role, String resource, String action) {
+        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
+        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        databaseOperate.blockUpdate();
+    }
+    
+    /**
+     * Execute delete user permission operation.
+     *
+     * @param role role info string value.
+     * @param resource resource info string value.
+     * @param action action info string value.
+     */
+    public void deletePermission(String role, String resource, String action) {
+        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
+        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        databaseOperate.blockUpdate();
+    }
+    
 }

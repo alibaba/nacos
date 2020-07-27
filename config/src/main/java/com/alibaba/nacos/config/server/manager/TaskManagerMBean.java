@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.manager;
 
 /**
- * tasks
+ * TaskManagerMBean.
  *
  * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface TaskManagerMBean {
-
+    
     /**
-     * get task info
+     * Get task info.
      *
      * @return info
      */
     String getTaskInfos();
-
+    
 }

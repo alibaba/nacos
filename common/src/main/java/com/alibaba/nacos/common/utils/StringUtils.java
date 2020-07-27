@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
@@ -25,24 +26,30 @@ import java.util.Collection;
 import java.util.Locale;
 
 /**
- * string util
+ * string util.
  *
  * @author Nacos
  */
 public class StringUtils {
-
+    
     public static final String DOT = ".";
-
+    
     private static final int INDEX_NOT_FOUND = -1;
-
+    
     public static final String COMMA = ",";
-
+    
     public static final String EMPTY = "";
-
-    public static String newString4UTF8(byte[] bytes) {
+    
+    public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
-
+    
+    /**
+     * Judge whether string is blank.
+     *
+     * @param str string
+     * @return true if str is null, empty string or only blanks, otherwise false
+     */
     public static boolean isBlank(String str) {
         int strLen;
         if (str == null || (strLen = str.length()) == 0) {
@@ -55,31 +62,54 @@ public class StringUtils {
         }
         return true;
     }
-
+    
+    /**
+     * Judge whether all strings are blank.
+     *
+     * @param strs strings
+     * @return true if all strings are blank, otherwise false
+     */
+    public static boolean isAllBlank(String... strs) {
+        for (String str : strs) {
+            if (isNotBlank(str)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
     }
-
+    
     public static boolean isNotEmpty(String str) {
         return !StringUtils.isEmpty(str);
     }
-
+    
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
-
+    
     public static String defaultIfEmpty(String str, String defaultStr) {
         return StringUtils.isEmpty(str) ? defaultStr : str;
     }
-
+    
     public static boolean equals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
-
+    
     public static String trim(final String str) {
         return str == null ? null : str.trim();
     }
-
+    
+    /**
+     * Substring between two index.
+     *
+     * @param str   string
+     * @param open  start index to sub
+     * @param close end index to sub
+     * @return substring
+     */
     public static String substringBetween(String str, String open, String close) {
         if (str == null || open == null || close == null) {
             return null;
@@ -93,31 +123,37 @@ public class StringUtils {
         }
         return null;
     }
-
+    
+    /**
+     * Join object with input separator.
+     *
+     * @param collection collection of objects need to join
+     * @param separator  separator
+     * @return joined string
+     */
     public static String join(Collection collection, String separator) {
         if (collection == null) {
             return null;
         }
-
+        
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
-
+        
         for (int i = 0; i < collection.size() - 1; i++) {
             stringBuilder.append(objects[i].toString()).append(separator);
         }
-
+        
         if (collection.size() > 0) {
             stringBuilder.append(objects[collection.size() - 1]);
         }
-
+        
         return stringBuilder.toString();
     }
-
-
+    
     public static String escapeJavaScript(String str) {
         return escapeJavaStyleString(str, true, true);
     }
-
+    
     private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {
         if (str == null) {
             return null;
@@ -131,13 +167,9 @@ public class StringUtils {
             return null;
         }
     }
-
-    private static String hex(char ch) {
-        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
-    }
-
+    
     private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
-                                              boolean escapeForwardSlash) throws IOException {
+            boolean escapeForwardSlash) throws IOException {
         if (out == null) {
             throw new IllegalArgumentException("The Writer must not be null");
         }
@@ -148,7 +180,7 @@ public class StringUtils {
         sz = str.length();
         for (int i = 0; i < sz; i++) {
             char ch = str.charAt(i);
-
+            
             // handle unicode
             if (ch > 0xfff) {
                 out.write("\\u" + hex(ch));
@@ -215,14 +247,17 @@ public class StringUtils {
             }
         }
     }
-
-    //    The following utility functions are extracted from <link>org.apache.commons.lang3</link>
-    //    start
-
+    
+    private static String hex(char ch) {
+        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
+    }
+    
+    //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
+    //   start
+    
     /**
-     * <p>Checks if CharSequence contains a search CharSequence irrespective of case,
-     * handling {@code null}. Case-insensitivity is defined as by
-     * {@link String#equalsIgnoreCase(String)}.
+     * Checks if CharSequence contains a search CharSequence irrespective of case, handling {@code null}.
+     * Case-insensitivity is defined as by {@link String#equalsIgnoreCase(String)}.
      *
      * <p>A {@code null} CharSequence will return {@code false}.</p>
      *
@@ -237,11 +272,12 @@ public class StringUtils {
      * StringUtils.contains("abc", "Z") = false
      * </pre>
      *
-     * @param str  the CharSequence to check, may be null
-     * @param searchStr  the CharSequence to find, may be null
-     * @return true if the CharSequence contains the search CharSequence irrespective of
-     * case or false if not or {@code null} string input
-     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence, CharSequence)
+     * @param str       the CharSequence to check, may be null
+     * @param searchStr the CharSequence to find, may be null
+     * @return true if the CharSequence contains the search CharSequence irrespective of case or false if not or {@code
+     * null} string input
+     * @since 3.0 Changed signature from containsIgnoreCase(String, String) to containsIgnoreCase(CharSequence,
+     * CharSequence)
      */
     public static boolean containsIgnoreCase(final CharSequence str, final CharSequence searchStr) {
         if (str == null || searchStr == null) {
@@ -256,48 +292,127 @@ public class StringUtils {
         }
         return false;
     }
-
+    
     /**
      * Green implementation of regionMatches.
      *
-     * @param cs the {@code CharSequence} to be processed
+     * @param cs         the {@code CharSequence} to be processed
      * @param ignoreCase whether or not to be case insensitive
-     * @param thisStart the index to start on the {@code cs} CharSequence
-     * @param substring the {@code CharSequence} to be looked for
-     * @param start the index to start on the {@code substring} CharSequence
-     * @param length character length of the region
+     * @param thisStart  the index to start on the {@code cs} CharSequence
+     * @param substring  the {@code CharSequence} to be looked for
+     * @param start      the index to start on the {@code substring} CharSequence
+     * @param length     character length of the region
      * @return whether the region matched
      */
     static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
-            final CharSequence substring, final int start, final int length)    {
+            final CharSequence substring, final int start, final int length) {
         if (cs instanceof String && substring instanceof String) {
             return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
         }
         int index1 = thisStart;
         int index2 = start;
         int tmpLen = length;
-
+        
         while (tmpLen-- > 0) {
             final char c1 = cs.charAt(index1++);
             final char c2 = substring.charAt(index2++);
-
+            
             if (c1 == c2) {
                 continue;
             }
-
+            
             if (!ignoreCase) {
                 return false;
             }
-
+            
             // The same check as in String.regionMatches():
-            if (Character.toUpperCase(c1) != Character.toUpperCase(c2)
-                    && Character.toLowerCase(c1) != Character.toLowerCase(c2)) {
+            if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
+                    .toLowerCase(c2)) {
                 return false;
             }
         }
-
+        
         return true;
     }
-
-    //    end
+    
+    /**
+     * <p>Compares two CharSequences, returning {@code true} if they represent
+     * equal sequences of characters, ignoring case.</p>
+     *
+     * <p>{@code null}s are handled without exceptions. Two {@code null}
+     * references are considered equal. Comparison is case insensitive.</p>
+     *
+     * <pre>
+     * StringUtils.equalsIgnoreCase(null, null)   = true
+     * StringUtils.equalsIgnoreCase(null, "abc")  = false
+     * StringUtils.equalsIgnoreCase("abc", null)  = false
+     * StringUtils.equalsIgnoreCase("abc", "abc") = true
+     * StringUtils.equalsIgnoreCase("abc", "ABC") = true
+     * </pre>
+     *
+     * @param str1 the first CharSequence, may be null
+     * @param str2 the second CharSequence, may be null
+     * @return {@code true} if the CharSequence are equal, case insensitive, or both {@code null}
+     * @since 3.0 Changed signature from equalsIgnoreCase(String, String) to equalsIgnoreCase(CharSequence,
+     * CharSequence)
+     */
+    public static boolean equalsIgnoreCase(final CharSequence str1, final CharSequence str2) {
+        if (str1 == null || str2 == null) {
+            return str1 == str2;
+        } else if (str1 == str2) {
+            return true;
+        } else if (str1.length() != str2.length()) {
+            return false;
+        } else {
+            return CharSequenceUtils.regionMatches(str1, true, 0, str2, 0, str1.length());
+        }
+    }
+    
+    static class CharSequenceUtils {
+        
+        /**
+         * Green implementation of regionMatches.
+         *
+         * @param cs         the {@code CharSequence} to be processed
+         * @param ignoreCase whether or not to be case insensitive
+         * @param thisStart  the index to start on the {@code cs} CharSequence
+         * @param substring  the {@code CharSequence} to be looked for
+         * @param start      the index to start on the {@code substring} CharSequence
+         * @param length     character length of the region
+         * @return whether the region matched
+         */
+        static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart,
+                final CharSequence substring, final int start, final int length) {
+            if (cs instanceof String && substring instanceof String) {
+                return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
+            }
+            int index1 = thisStart;
+            int index2 = start;
+            int tmpLen = length;
+            
+            while (tmpLen-- > 0) {
+                final char c1 = cs.charAt(index1++);
+                final char c2 = substring.charAt(index2++);
+                
+                if (c1 == c2) {
+                    continue;
+                }
+                
+                if (!ignoreCase) {
+                    return false;
+                }
+                
+                // The same check as in String.regionMatches():
+                if (Character.toUpperCase(c1) != Character.toUpperCase(c2) && Character.toLowerCase(c1) != Character
+                        .toLowerCase(c2)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+    }
+    
+    //   end
 }

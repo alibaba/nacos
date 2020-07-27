@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.core.auth;
 
+package com.alibaba.nacos.core.auth;
 
 /**
  * Access control entry. Can be extended by 3rd party implementations.
@@ -23,7 +23,7 @@ package com.alibaba.nacos.core.auth;
  * @since 1.2.0
  */
 public interface AuthManager {
-
+    
     /**
      * Authentication of request, identify the user who request the resource.
      *
@@ -32,12 +32,12 @@ public interface AuthManager {
      * @throws AccessException if authentication is failed
      */
     User login(Object request) throws AccessException;
-
+    
     /**
      * Authorization of request, constituted with resource and user.
      *
      * @param permission permission to auth
-     * @param user     user who wants to access the resource.
+     * @param user       user who wants to access the resource.
      * @throws AccessException if authorization is failed
      */
     void auth(Permission permission, User user) throws AccessException;
