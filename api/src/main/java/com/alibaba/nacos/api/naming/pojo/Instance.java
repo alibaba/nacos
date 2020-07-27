@@ -231,6 +231,19 @@ public class Instance {
                 Constants.DEFAULT_INSTANCE_ID_GENERATOR);
     }
     
+    /**
+     * Returns {@code true} if this metadata contains the specified key.
+     *
+     * @param key metadata key
+     * @return {@code true} if this metadata contains the specified key
+     */
+    public boolean containsMetadata(final String key) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return false;
+        }
+        return getMetadata().containsKey(key);
+    }
+    
     private long getMetaDataByKeyWithDefault(final String key, final long defaultValue) {
         if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;

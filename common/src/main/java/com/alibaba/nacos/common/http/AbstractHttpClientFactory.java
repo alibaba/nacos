@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.client.DefaultAsyncHttpClientRequest;
-import com.alibaba.nacos.common.http.client.JdkHttpClientRequest;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.client.request.DefaultAsyncHttpClientRequest;
+import com.alibaba.nacos.common.http.client.request.JdkHttpClientRequest;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
