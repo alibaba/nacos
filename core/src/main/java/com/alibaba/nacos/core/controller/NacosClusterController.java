@@ -190,6 +190,11 @@ public class NacosClusterController {
                         latch.countDown();
                     }
                 }
+    
+                @Override
+                public void onCancel() {
+        
+                }
             });
         }
         

@@ -79,7 +79,7 @@ public abstract class BaseHttpClient {
             
             @Override
             public void cancelled() {
-            
+                callback.onCancel();
             }
         });
     }
