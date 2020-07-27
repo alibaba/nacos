@@ -34,7 +34,9 @@ public class AddressServerAuthManager implements AuthManager {
     
     @Override
     public User login(Object request) throws AccessException {
-        return null;
+        User result = new User();
+        result.setUserName("nacos");
+        return result;
     }
     
     @Override
