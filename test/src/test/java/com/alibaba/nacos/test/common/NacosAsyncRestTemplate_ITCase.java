@@ -18,7 +18,7 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.AbstractCallback;
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
@@ -66,7 +66,7 @@ public class NacosAsyncRestTemplate_ITCase {
         IP = String.format("http://localhost:%d", port);
     }
     
-    private class CallbackMap<T> extends AbstractCallback<T> {
+    private class CallbackMap<T> implements Callback<T> {
         
         private HttpRestResult<T> restResult;
         
@@ -81,8 +81,12 @@ public class NacosAsyncRestTemplate_ITCase {
         public void onError(Throwable throwable) {
             this.throwable = throwable;
         }
-        
     
+        @Override
+        public void onCancel() {
+        
+        }
+        
         public HttpRestResult<T> getRestResult() {
             return restResult;
         }
