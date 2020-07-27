@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.address.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Provides a unified tool class for address server parameter verification
+ * Provides a unified tool class for address server parameter verification.
  *
  * @author pbting
  * @date 2019-06-19 11:19 AM
  * @since 1.1.0
  */
 public class AddressServerParamCheckUtil {
-
+    
     public static final String CHECK_OK = "ok";
-
+    
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
-
+    
     private static final String IP_REGEX = "(2(5[0-5]{1}|[0-4]\\d{1})|[0-1]?\\d{1,2})(\\.(2(5[0-5]{1}|[0-4]\\d{1})|[0-1]?\\d{1,2})){3}";
-
+    
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
-
+    
+    /**
+     * Check ips.
+     *
+     * @param ips ips
+     * @return 'ok' if check passed, otherwise illegal ip
+     */
     public static String checkIps(String... ips) {
-
+        
         if (ips == null || ips.length == 0) {
-
+            
             return CHECK_OK;
         }
         // illegal response
@@ -50,11 +57,11 @@ public class AddressServerParamCheckUtil {
             }
             illegalResponse.append(ip + ",");
         }
-
+        
         if (illegalResponse.length() == 0) {
             return CHECK_OK;
         }
-
+        
         return ILLEGAL_IP_PREFIX + illegalResponse.substring(0, illegalResponse.length() - 1);
     }
 }

@@ -13,27 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.utils;
 
 /**
+ * Http method constants.
+ *
  * @author nkorange
  * @since 0.8.0
  */
 public class HttpMethod {
-
+    
     public static final String GET = "GET";
-
+    
+    // this is only use in nacos, Custom request type, essentially a get request
+    
+    public static final String GET_LARGE = "GET-LARGE";
+    
     public static final String HEAD = "HEAD";
-
+    
     public static final String POST = "POST";
-
+    
     public static final String PUT = "PUT";
-
+    
     public static final String PATCH = "PATCH";
-
+    
     public static final String DELETE = "DELETE";
-
+    
     public static final String OPTIONS = "OPTIONS";
-
+    
     public static final String TRACE = "TRACE";
 }

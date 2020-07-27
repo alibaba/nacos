@@ -13,192 +13,232 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.misc;
 
-import java.util.concurrent.*;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.core.utils.ClassUtils;
+import com.alibaba.nacos.naming.NamingApp;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
+ * Global executor for naming.
+ *
  * @author nacos
  */
+@SuppressWarnings({"checkstyle:indentation", "PMD.ThreadPoolCreationRule"})
 public class GlobalExecutor {
-
+    
     public static final long HEARTBEAT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
-
+    
     public static final long LEADER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(15L);
-
+    
     public static final long RANDOM_MS = TimeUnit.SECONDS.toMillis(5L);
-
+    
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
-
-    private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
-
+    
     private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
-
+    
     private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
-
-    private static ScheduledExecutorService executorService =
-        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.timer");
-
-                return t;
-            }
-        });
-
-    private static ScheduledExecutorService taskDispatchExecutor =
-        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.distro.task.dispatcher");
-
-                return t;
-            }
-        });
-
-    private static ScheduledExecutorService dataSyncExecutor =
-        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.distro.data.syncer");
-
-                return t;
-            }
-        });
-
-    private static ScheduledExecutorService notifyServerListExecutor =
-        new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.server.list.notifier");
-
-                return t;
-            }
-        });
-
-    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR
-        = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.status.worker");
-            t.setDaemon(true);
-            return t;
-        }
-    });
-
+    
+    public static final int DEFAULT_THREAD_COUNT =
+            Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    
+    private static final ScheduledExecutorService NAMING_TIMER_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    Runtime.getRuntime().availableProcessors() * 2,
+                    new NameThreadFactory("com.alibaba.nacos.naming.timer"));
+    
+    private static final ScheduledExecutorService TASK_DISPATCHER_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    Runtime.getRuntime().availableProcessors(),
+                    new NameThreadFactory("com.alibaba.nacos.naming.distro.task.dispatcher"));
+    
+    private static final ScheduledExecutorService DATA_SYNC_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    Runtime.getRuntime().availableProcessors(),
+                    new NameThreadFactory("com.alibaba.nacos.naming.distro.data.syncer"));
+    
+    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.status.worker"));
+    
+    private static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.worker"));
+    
+    public static final ScheduledExecutorService SERVICE_UPDATE_MANAGER_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.update.processor"));
+    
     /**
-     * thread pool that processes getting service detail from other server asynchronously
+     * thread pool that processes getting service detail from other server asynchronously.
      */
-    private static ExecutorService serviceUpdateExecutor
-        = Executors.newFixedThreadPool(2, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.naming.service.update.http.handler");
-            t.setDaemon(true);
-            return t;
-        }
-    });
-
-    private static ScheduledExecutorService emptyServiceAutoCleanExecutor = Executors.newSingleThreadScheduledExecutor(
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.naming.service.empty.auto-clean");
-                    t.setDaemon(true);
-                    return t;
-                }
-            }
-    );
-
-    private static ScheduledExecutorService distroNotifyExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.distro.notifier");
-
-            return t;
-        }
-    });
-
+    private static final ExecutorService SERVICE_UPDATE_EXECUTOR = ExecutorFactory.Managed
+            .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), 2,
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.update.http.handler"));
+    
+    private static final ScheduledExecutorService EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.service.empty.auto-clean"));
+    
+    private static final ScheduledExecutorService DISTRO_NOTIFY_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.distro.notifier"));
+    
+    private static final ScheduledExecutorService NAMING_HEALTH_CHECK_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.health-check.notifier"));
+    
+    private static final ExecutorService MYSQL_CHECK_EXECUTOR = ExecutorFactory.Managed
+            .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
+                    new NameThreadFactory("com.alibaba.nacos.naming.mysql.checker"));
+    
+    private static final ScheduledExecutorService TCP_SUPER_SENSE_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
+                    new NameThreadFactory("com.alibaba.nacos.naming.supersense.checker"));
+    
+    private static final ScheduledExecutorService TCP_CHECK_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.tcp.check.worker"));
+    
+    private static final ScheduledExecutorService NAMING_HEALTH_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
+                    new NameThreadFactory("com.alibaba.nacos.naming.health"));
+    
+    private static final ScheduledExecutorService RETRANSMITTER_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.push.retransmitter"));
+    
+    private static final ScheduledExecutorService UDP_SENDER_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.push.udpSender"));
+    
+    private static final ScheduledExecutorService SERVER_PERFORMANCE_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.nacos-server-performance"));
+    
     public static void submitDataSync(Runnable runnable, long delay) {
-        dataSyncExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+        DATA_SYNC_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
-
+    
     public static void schedulePartitionDataTimedSync(Runnable runnable) {
-        dataSyncExecutor.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
-            PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
+        DATA_SYNC_EXECUTOR.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
+                PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
     }
-
+    
     public static void registerMasterElection(Runnable runnable) {
-        executorService.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
+        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
-
-    public static void registerServerListUpdater(Runnable runnable) {
-        executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
+    
+    public static void registerServerInfoUpdater(Runnable runnable) {
+        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, 2, TimeUnit.SECONDS);
     }
-
+    
     public static void registerServerStatusReporter(Runnable runnable, long delay) {
         SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
-
+    
     public static void registerServerStatusUpdater(Runnable runnable) {
-        executorService.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
+        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
-
+    
     public static void registerHeartbeat(Runnable runnable) {
-        executorService.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
+        NAMING_TIMER_EXECUTOR.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
-
-    public static void schedule(Runnable runnable, long period) {
-        executorService.scheduleAtFixedRate(runnable, 0, period, TimeUnit.MILLISECONDS);
+    
+    public static void scheduleMcpPushTask(Runnable runnable, long initialDelay, long period) {
+        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
-
-    public static void schedule(Runnable runnable, long initialDelay, long period) {
-        executorService.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
-    }
-
-    public static void notifyServerListChange(Runnable runnable) {
-        notifyServerListExecutor.submit(runnable);
-    }
-
+    
     public static void submitTaskDispatch(Runnable runnable) {
-        taskDispatchExecutor.submit(runnable);
+        TASK_DISPATCHER_EXECUTOR.submit(runnable);
     }
-
-    public static void submit(Runnable runnable) {
-        executorService.submit(runnable);
+    
+    public static void submitLoadDataTask(Runnable runnable) {
+        NAMING_TIMER_EXECUTOR.submit(runnable);
     }
-
-    public static void submit(Runnable runnable, long delay) {
-        executorService.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    
+    public static void submitLoadDataTask(Runnable runnable, long delay) {
+        NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
-
+    
     public static void submitDistroNotifyTask(Runnable runnable) {
-        distroNotifyExecutor.submit(runnable);
+        DISTRO_NOTIFY_EXECUTOR.submit(runnable);
     }
-
+    
     public static void submitServiceUpdate(Runnable runnable) {
-        serviceUpdateExecutor.execute(runnable);
+        SERVICE_UPDATE_EXECUTOR.execute(runnable);
     }
-
+    
     public static void scheduleServiceAutoClean(Runnable runnable, long initialDelay, long period) {
-        emptyServiceAutoCleanExecutor.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
+        EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
+    }
+    
+    public static void submitServiceUpdateManager(Runnable runnable) {
+        SERVICE_UPDATE_MANAGER_EXECUTOR.submit(runnable);
+    }
+    
+    public static void scheduleServiceReporter(Runnable command, long delay, TimeUnit unit) {
+        SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(command, delay, unit);
+    }
+    
+    public static void scheduleNamingHealthCheck(Runnable command, long delay, TimeUnit unit) {
+        NAMING_HEALTH_CHECK_EXECUTOR.schedule(command, delay, unit);
+    }
+    
+    public static void executeMysqlCheckTask(Runnable runnable) {
+        MYSQL_CHECK_EXECUTOR.execute(runnable);
+    }
+    
+    public static void submitTcpCheck(Runnable runnable) {
+        TCP_CHECK_EXECUTOR.submit(runnable);
+    }
+    
+    public static <T> List<Future<T>> invokeAllTcpSuperSenseTask(Collection<? extends Callable<T>> tasks)
+            throws InterruptedException {
+        return TCP_SUPER_SENSE_EXECUTOR.invokeAll(tasks);
+    }
+    
+    public static void executeTcpSuperSense(Runnable runnable) {
+        TCP_SUPER_SENSE_EXECUTOR.execute(runnable);
+    }
+    
+    public static void scheduleTcpSuperSenseTask(Runnable runnable, long delay, TimeUnit unit) {
+        TCP_SUPER_SENSE_EXECUTOR.schedule(runnable, delay, unit);
+    }
+    
+    public static ScheduledFuture<?> scheduleNamingHealth(Runnable command, long delay, TimeUnit unit) {
+        return NAMING_HEALTH_EXECUTOR.schedule(command, delay, unit);
+    }
+    
+    public static ScheduledFuture<?> scheduleNamingHealth(Runnable command, long initialDelay, long delay,
+            TimeUnit unit) {
+        return NAMING_HEALTH_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+    
+    public static void scheduleRetransmitter(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        RETRANSMITTER_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static void scheduleRetransmitter(Runnable runnable, long delay, TimeUnit unit) {
+        RETRANSMITTER_EXECUTOR.schedule(runnable, delay, unit);
+    }
+    
+    public static ScheduledFuture<?> scheduleUdpSender(Runnable runnable, long delay, TimeUnit unit) {
+        return UDP_SENDER_EXECUTOR.schedule(runnable, delay, unit);
+    }
+    
+    public static void schedulePerformanceLogger(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        SERVER_PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
 }

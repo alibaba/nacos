@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
-import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
@@ -27,7 +28,12 @@ import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
-import com.alibaba.nacos.core.auth.*;
+import com.alibaba.nacos.core.auth.AccessException;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.AuthConfigs;
+import com.alibaba.nacos.core.auth.AuthSystemTypes;
+import com.alibaba.nacos.core.auth.Secured;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,14 +41,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
- * User related methods entry
+ * User related methods entry.
  *
  * @author wfnuser
  * @author nkorange
@@ -50,27 +62,27 @@ import java.util.List;
 @RestController("user")
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
-
+    
     @Autowired
     private JwtTokenUtils jwtTokenUtils;
-
+    
     @Autowired
     private AuthenticationManager authenticationManager;
-
+    
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
-
+    
     @Autowired
     private NacosRoleServiceImpl roleService;
-
+    
     @Autowired
     private AuthConfigs authConfigs;
-
+    
     @Autowired
     private NacosAuthManager authManager;
-
+    
     /**
-     * Create a new user
+     * Create a new user.
      *
      * @param username username
      * @param password password
@@ -81,7 +93,7 @@ public class UserController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
-
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
@@ -89,9 +101,9 @@ public class UserController {
         userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
         return new RestResult<>(200, "create user ok!");
     }
-
+    
     /**
-     * Delete an existed user
+     * Delete an existed user.
      *
      * @param username username of user
      * @return ok if deleted succeed, keep silent if user not exist
@@ -111,9 +123,9 @@ public class UserController {
         userDetailsService.deleteUser(username);
         return new RestResult<>(200, "delete user ok!");
     }
-
+    
     /**
-     * Update an user
+     * Update an user.
      *
      * @param username    username of user
      * @param newPassword new password of user
@@ -124,19 +136,19 @@ public class UserController {
     @PutMapping
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword) {
-
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
-
+        
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-
+        
         return new RestResult<>(200, "update user ok!");
     }
-
+    
     /**
-     * Get paged users
+     * Get paged users.
      *
      * @param pageNo   number index of page
      * @param pageSize size of page
@@ -148,11 +160,11 @@ public class UserController {
     public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
         return userDetailsService.getUsersFromDatabase(pageNo, pageSize);
     }
-
+    
     /**
      * Login to Nacos
-     * <p>
-     * This methods uses username and password to require a new token.
+     *
+     * <p>This methods uses username and password to require a new token.
      *
      * @param username username of user
      * @param password password
@@ -162,26 +174,26 @@ public class UserController {
      * @throws AccessException if user info is incorrect
      */
     @PostMapping("/login")
-    public Object login(@RequestParam String username, @RequestParam String password,
-                        HttpServletResponse response, HttpServletRequest request) throws AccessException {
-
-
+    public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
+            HttpServletRequest request) throws AccessException {
+        
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             NacosUser user = (NacosUser) authManager.login(request);
-
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER,
-                NacosAuthConfig.TOKEN_PREFIX + user.getToken());
-
-            JSONObject result = new JSONObject();
+            
+            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+            
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+            //            JSONObject result = new JSONObject();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
             return result;
         }
-
+        
         // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
-
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
+                password);
+        
         RestResult<String> rr = new RestResult<String>();
         try {
             //通过 AuthenticationManager（默认实现为ProviderManager）的authenticate方法验证 Authentication 对象
@@ -201,18 +213,25 @@ public class UserController {
             return rr;
         }
     }
-
+    
+    /**
+     * Update password.
+     *
+     * @param oldPassword old password
+     * @param newPassword new password
+     * @return Code 200 if update successfully, Code 401 if old password invalid, otherwise 500
+     */
     @PutMapping("/password")
     @Deprecated
     public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
-                                             @RequestParam(value = "newPassword") String newPassword) {
-
+            @RequestParam(value = "newPassword") String newPassword) {
+        
         RestResult<String> rr = new RestResult<String>();
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = ((UserDetails) principal).getUsername();
         User user = userDetailsService.getUserFromDatabase(username);
         String password = user.getPassword();
-
+        
         // TODO: throw out more fine grained exceptions
         try {
             if (PasswordEncoderUtil.matches(oldPassword, password)) {

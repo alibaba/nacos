@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -32,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 用于其他节点通知的控制器
+ * Controller for other node notification.
  *
  * @author boyan
  * @date 2010-5-7
@@ -40,28 +41,28 @@ import javax.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
-
+    
     private final DumpService dumpService;
-
+    
     private final LongPollingService longPollingService;
-
+    
     private String trueStr = "true";
-
+    
     @Autowired
     public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
         this.dumpService = dumpService;
         this.longPollingService = longPollingService;
     }
-
+    
     /**
-     * 通知配置信息改变
+     * Notify the change of config information.
+     *
      */
     @GetMapping("/dataChange")
-    public Boolean notifyConfigInfo(HttpServletRequest request,
-                                    @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-                                    @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
-                                        String tenant,
-                                    @RequestParam(value = "tag", required = false) String tag) {
+    public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "tag", required = false) String tag) {
         dataId = dataId.trim();
         group = group.trim();
         String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
@@ -75,26 +76,25 @@ public class CommunicationController {
         }
         return true;
     }
-
+    
     /**
-     * 在本台机器上获得订阅改配置的客户端信息
+     * Get client config information of subscriber in local machine.
+     *
      */
     @GetMapping("/configWatchers")
-    public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId,
-                                           @RequestParam("group") String group,
-                                           @RequestParam(value = "tenant", required = false) String tenant,
-                                           ModelMap modelMap) {
+    public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+            @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
     }
-
+    
     /**
-     * 在本台机器上获得客户端监听的配置列表
+     * Get client config listener lists of subscriber in local machine.
+     *
      */
     @GetMapping("/watcherConfigs")
-    public SampleResult getSubClientConfigByIp(HttpServletRequest request,
-                                               HttpServletResponse response, @RequestParam("ip") String ip,
-                                               ModelMap modelMap) {
+    public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam("ip") String ip, ModelMap modelMap) {
         return longPollingService.getCollectSubscribleInfoByIp(ip);
     }
 }

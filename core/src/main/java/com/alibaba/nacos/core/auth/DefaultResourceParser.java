@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Default resource parser
+ * Default resource parser.
  *
  * @author nkorange
  * @since 1.2.0
  */
 public class DefaultResourceParser implements ResourceParser {
-
+    
     @Override
     public String parseName(Object request) {
         return StringUtils.EMPTY;

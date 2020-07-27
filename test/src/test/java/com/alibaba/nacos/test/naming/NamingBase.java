@@ -16,10 +16,13 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.net.HttpClient;
+import com.alibaba.nacos.client.naming.net.NamingHttpClientManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.test.base.HttpClient4Test;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 
@@ -30,6 +33,7 @@ import java.util.*;
  */
 public class NamingBase extends HttpClient4Test {
 
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
 
     public static final String TEST_DOM_1 = "nacos.test.1";
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
@@ -166,39 +170,32 @@ public class NamingBase extends HttpClient4Test {
         return true;
     }
 
-    public static void prepareServer(int localPort) {
+    public static void prepareServer(int localPort) throws Exception{
         prepareServer(localPort, "UP");
     }
 
-    public static void prepareServer(int localPort, String status) {
+    public static void prepareServer(int localPort, String status) throws Exception {
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
-        List<String> headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
-
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
-
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
 
         url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
-        headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
 
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+        result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
 
-    public static void destoryServer(int localPort) {
+    public static void destoryServer(int localPort) throws Exception{
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
-        List<String> headers = new ArrayList<String>();
-        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
-        headers.add("Nacos-Server");
-        HttpClient.HttpResult result =
-            HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
 
-        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+        HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, Query.EMPTY, new HashMap<>(), String.class);
+        System.out.println(result);
+        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
     }
 }

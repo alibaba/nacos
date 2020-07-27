@@ -22,7 +22,7 @@ Nacos provides four major functions.
 
 * **Dynamic Configuration Management**
   
-  Dynamic Configuration Service allows you to manage configurations of all services in a centralized and dynamic manner across all environments. Nacos eliminates the need to redeploy applications and services when configurations are updated，which makes configuration changes more efficient and agile.
+  Dynamic Configuration Service allows you to manage configurations of all services in a centralized and dynamic manner across all environments. Nacos eliminates the need to redeploy applications and services when configurations are updated, which makes configuration changes more efficient and agile.
 
 * **Dynamic DNS Service**
 

@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.utils;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,43 +41,46 @@ import java.util.List;
 
 
 /**
- * Jwt token tool
+ * Jwt token tool.
  *
  * @author wfnuser
  */
 @Component
 public class JwtTokenUtils {
-
+    
     private final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
-
+    
     private static final String AUTHORITIES_KEY = "auth";
-
+    
     /**
-     * minimum SHA_256 secretKey string length
+     * minimum SHA_256 secretKey string length.
      */
     private static final int SHA_256_SECRET_CHAR_SIZE = 256 / 8;
-
+    
     /**
-     * default SHA_256 secretKey flag
+     * default SHA_256 secretKey flag.
      */
     private static final String DEFAULT_SECRET_FLAG = "default";
-
+    
     /**
-     * custom SHA_256 secretKey from config property
+     * custom SHA_256 secretKey from config property.
      */
     @Value("${nacos.security.token.secret-key:default}")
     private String customSecretKeyStr;
-
+    
     /**
-     * secret key
+     * secret key.
      */
     private SecretKey secretKey;
-
+    
     /**
-     * Token validity time(ms)
+     * Token validity time(ms).
      */
     private long tokenValidityInMilliseconds;
-
+    
+    /**
+     * Init.
+     */
     @PostConstruct
     public void init() {
         //use default secretKey for SHA-256
@@ -83,69 +93,52 @@ public class JwtTokenUtils {
             if (left > 0) {
                 //character for padding
                 StringBuilder stringBuilder = new StringBuilder(customSecretKeyStr);
-                for (int i = 0 ;i < left ; i ++){
-                    stringBuilder.append(i%10);
+                for (int i = 0; i < left; i++) {
+                    stringBuilder.append(i % 10);
                 }
                 this.secretKey = Keys.hmacShaKeyFor(stringBuilder.toString().getBytes());
-            }else {
+            } else {
                 this.secretKey = Keys.hmacShaKeyFor(customSecretKeyStr.getBytes());
             }
         }
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
-
+    
     /**
-     * Create token
+     * Create token.
      *
      * @param authentication auth info
      * @return token
      */
     public String createToken(Authentication authentication) {
-        /**
-         * Current time
-         */
-        long now = (new Date()).getTime();
-        /**
-         * Validity date
-         */
-        Date validity;
-        validity = new Date(now + this.tokenValidityInMilliseconds);
 
-        /**
-         * create token
-         */
-        return Jwts.builder()
-            .setSubject(authentication.getName())
-            .claim(AUTHORITIES_KEY, "")
-            .setExpiration(validity)
-            .signWith(secretKey, SignatureAlgorithm.HS256)
-            .compact();
+        long now = System.currentTimeMillis();
+
+        Date validity = new Date(now + this.tokenValidityInMilliseconds);
+        
+        return Jwts.builder().setSubject(authentication.getName()).claim(AUTHORITIES_KEY, "").setExpiration(validity)
+                .signWith(secretKey, SignatureAlgorithm.HS256).compact();
     }
-
+    
     /**
-     * Get auth Info
+     * Get auth Info.
      *
      * @param token token
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        /**
-         *  parse the payload of token
-         */
-        Claims claims = Jwts.parser()
-            .setSigningKey(secretKey)
-            .parseClaimsJws(token)
-            .getBody();
 
-        List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
-
-
+        Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+        
+        List<GrantedAuthority> authorities = AuthorityUtils
+                .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
+        
         User principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
-
+    
     /**
-     * validate token
+     * validate token.
      *
      * @param token token
      * @return whether valid

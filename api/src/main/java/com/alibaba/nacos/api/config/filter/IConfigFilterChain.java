@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Config Filter Chain Interface
+ * Config Filter Chain Interface.
  *
  * @author Nacos
  */
 public interface IConfigFilterChain {
+    
     /**
-     * Filter aciton
+     * Filter action.
      *
      * @param request  request
      * @param response response
      * @throws NacosException NacosException
      */
     void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
-
+    
 }

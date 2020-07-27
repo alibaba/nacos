@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency;
 
 /**
+ * Apply action.
+ *
  * @author nkorange
  */
 public enum ApplyAction {
     /**
-     * Data changed
+     * Data changed.
      */
     CHANGE,
     /**
-     * Data deleted
+     * Data deleted.
      */
     DELETE
 }

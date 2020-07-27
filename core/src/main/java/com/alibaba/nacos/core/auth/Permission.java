@@ -13,55 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.fastjson.JSON;
+import java.io.Serializable;
 
 /**
- * Permission to auth
+ * Permission to auth.
  *
  * @author nkorange
  * @since 1.2.0
  */
-public class Permission {
-
+public class Permission implements Serializable {
+    
+    private static final long serialVersionUID = -3583076254743606551L;
+    
+    /**
+     * An unique key of resource.
+     */
+    private String resource;
+    
+    /**
+     * Action on resource, refer to class ActionTypes.
+     */
+    private String action;
+    
     public Permission() {
-
+    
     }
-
+    
     public Permission(String resource, String action) {
         this.resource = resource;
         this.action = action;
     }
-
-    /**
-     * An unique key of resource
-     */
-    private String resource;
-
-    /**
-     * Action on resource, refer to class ActionTypes
-     */
-    private String action;
-
+    
     public String getResource() {
         return resource;
     }
-
+    
     public void setResource(String resource) {
         this.resource = resource;
     }
-
+    
     public String getAction() {
         return action;
     }
-
+    
     public void setAction(String action) {
         this.action = action;
     }
-
+    
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + '}';
     }
 }

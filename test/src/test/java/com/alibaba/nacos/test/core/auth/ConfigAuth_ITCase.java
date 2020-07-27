@@ -44,8 +44,8 @@ import static org.junit.Assert.fail;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigAuth_ITCase extends AuthBase {
 
     @LocalServerPort
@@ -64,8 +64,12 @@ public class ConfigAuth_ITCase extends AuthBase {
     }
 
     @After
-    public void destroy() {
-        super.destroy();
+    public void destroy(){
+        try {
+            iconfig.shutDown();
+        }catch (NacosException ex) {
+
+        }
     }
 
 
@@ -156,6 +160,7 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         CountDownLatch latch = new CountDownLatch(1);
 
+        properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         iconfig = NacosFactory.createConfigService(properties);
