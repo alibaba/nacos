@@ -39,4 +39,9 @@ public interface Callback<T> {
      */
     void onError(Throwable throwable);
     
+    /**
+     * Callback when the request is cancelled.
+     */
+    void onCancel();
+    
 }
