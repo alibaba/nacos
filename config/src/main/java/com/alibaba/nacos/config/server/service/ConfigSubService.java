@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -178,19 +179,16 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
+                RestResult<String> result = NotifyService
                         .invokeURL(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
-                if (result.code == HttpURLConnection.HTTP_OK) {
-                    String json = result.content;
-                    SampleResult resultObj = JSONUtils.deserializeObject(json, new TypeReference<SampleResult>() {
+                if (result.ok()) {
+                    return JSONUtils.deserializeObject(result.getData(), new TypeReference<SampleResult>() {
                     });
-                    return resultObj;
-                    
                 } else {
                     
-                    LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.code);
+                    LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.getData());
                     return null;
                 }
             } catch (Exception e) {
