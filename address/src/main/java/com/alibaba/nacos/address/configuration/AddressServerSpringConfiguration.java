@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.address.auth;
+package com.alibaba.nacos.address.configuration;
 
-import com.alibaba.nacos.core.auth.AccessException;
+import com.alibaba.nacos.address.auth.AddressServerAuthManager;
 import com.alibaba.nacos.core.auth.AuthManager;
-import com.alibaba.nacos.core.auth.Permission;
-import com.alibaba.nacos.core.auth.User;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * Address server auth manager.
- *
- * <p>For #3091, Only implement an empty auth manager so that address server can startup.</p>
+ * Address server spring configuration.
  *
  * @author xiweng.yy
  */
-public class AddressServerAuthManager implements AuthManager {
+@Configuration
+public class AddressServerSpringConfiguration {
     
-    @Override
-    public User login(Object request) throws AccessException {
-        User result = new User();
-        result.setUserName("nacos");
-        return result;
-    }
-    
-    @Override
-    public void auth(Permission permission, User user) throws AccessException {
+    @Bean
+    @ConditionalOnMissingBean(value = AuthManager.class)
+    public AuthManager getAuthManager() {
+        return new AddressServerAuthManager();
     }
 }
