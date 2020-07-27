@@ -55,7 +55,7 @@
         <file>
             <!--打好的jar包名称和放置目录-->
             <source>../console/target/nacos-server.jar</source>
-            <outputDirectory>/target/</outputDirectory>
+            <outputDirectory>target/</outputDirectory>
         </file>
     </files>
 
