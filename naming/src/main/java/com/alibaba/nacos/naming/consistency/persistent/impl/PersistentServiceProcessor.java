@@ -32,6 +32,7 @@ import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.RocksStorageException;
 import com.alibaba.nacos.core.storage.RocksStorage;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -109,7 +110,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                 byte[] data = rocksStorage.get(ByteUtils.toBytes(key));
                 return serializer.deserialize(data);
             } catch (RocksStorageException ex) {
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR, ex.getErrMsg());
+                throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
             }
         });
         init();
@@ -229,7 +230,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             protocol.submit(log);
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
     }
     
@@ -242,7 +243,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             protocol.submit(log);
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
     }
     
@@ -257,9 +258,9 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             if (resp.getSuccess()) {
                 return serializer.deserialize(resp.getData().toByteArray(), Datum.class);
             }
-            throw new NacosException(NacosException.SERVER_ERROR, resp.getErrMsg());
+            throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(ErrorCode.ProtoReadError.getCode(), e.getMessage());
         }
     }
     

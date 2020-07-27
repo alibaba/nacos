@@ -18,6 +18,8 @@
 package com.alibaba.nacos.naming.utils;
 
 /**
+ * Naming module code starts with 20001.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class Constants {
