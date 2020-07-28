@@ -108,6 +108,10 @@ public class Member implements Comparable<Member>, Cloneable {
         extendInfo.put(key, value);
     }
     
+    public void delExtendVal(String key) {
+        extendInfo.remove(key);
+    }
+    
     public boolean check() {
         return StringUtils.isNoneBlank(ip, address) && port != -1;
     }

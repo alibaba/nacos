@@ -25,9 +25,9 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.JudgeClusterVersionJob;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
-import com.alibaba.nacos.naming.consistency.persistent.ValueChangeEvent;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -68,6 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -76,8 +77,10 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Raft core code.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @DependsOn("ProtocolManager")
 @Component
 public class RaftCore {
@@ -116,27 +119,30 @@ public class RaftCore {
     
     private final RaftStore raftStore;
     
-    private final JudgeClusterVersionJob clusterVersionJob;
+    private final ClusterVersionJudgement versionJudgement;
     
-    public volatile PersistentNotifier notifier;
+    public final PersistentNotifier notifier;
     
-    private EventPublisher publisher;
+    private final EventPublisher publisher;
     
     private boolean initialized = false;
     
     private volatile boolean stopWork = false;
     
+    private ScheduledFuture masterTask = null;
+    
+    private ScheduledFuture heartbeatTask = null;
+    
     public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, JudgeClusterVersionJob clusterVersionJob) {
+            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
         this.peers = peers;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
         this.raftProxy = raftProxy;
         this.raftStore = raftStore;
-        this.clusterVersionJob = clusterVersionJob;
+        this.versionJudgement = versionJudgement;
         this.notifier = new PersistentNotifier(key -> getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
-        NotifyCenter.registerSubscriber(notifier);
     }
     
     /**
@@ -156,21 +162,30 @@ public class RaftCore {
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
         
         while (true) {
-            if (notifier.tasksSize() <= 0) {
+            if (publisher.currentEventSize() <= 0) {
                 break;
             }
             ThreadUtils.sleep(1000L);
         }
         
         initialized = true;
-    
-        clusterVersionJob.registerObserver(isAllNewVersion -> stopWork = isAllNewVersion);
         
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
         
-        GlobalExecutor.registerMasterElection(new MasterElection());
-        GlobalExecutor.registerHeartbeat(new HeartBeat());
-        
+        masterTask = GlobalExecutor.registerMasterElection(new MasterElection());
+        heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());
+    
+        versionJudgement.registerObserver(isAllNewVersion -> {
+            stopWork = isAllNewVersion;
+            if (stopWork) {
+                NotifyCenter.deregisterSubscriber(notifier);
+                masterTask.cancel(true);
+                heartbeatTask.cancel(true);
+            }
+        });
+    
+        NotifyCenter.registerSubscriber(notifier);
+    
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
                 GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
@@ -202,9 +217,9 @@ public class RaftCore {
             raftProxy.proxyPostLarge(leader.ip, API_PUB, params.toString(), parameters);
             return;
         }
-        
+    
+        OPERATE_LOCK.lock();
         try {
-            OPERATE_LOCK.lock();
             final long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
@@ -371,8 +386,8 @@ public class RaftCore {
             }
         }
         raftStore.updateTerm(local.term.get());
-        
-        notifier.addTask(datum.key, ApplyAction.CHANGE);
+    
+        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
         
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
@@ -438,18 +453,18 @@ public class RaftCore {
                 if (!peers.isReady()) {
                     return;
                 }
-                
+    
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
-                
+    
                 if (local.leaderDueMs > 0) {
                     return;
                 }
-                
+    
                 // reset timeout
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
-                
+    
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -581,7 +596,7 @@ public class RaftCore {
             ArrayNode array = JacksonUtils.createEmptyArrayNode();
             
             if (switchDomain.isSendBeatOnly()) {
-                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
+                Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", switchDomain.isSendBeatOnly());
             }
             
             if (!switchDomain.isSendBeatOnly()) {
@@ -823,7 +838,7 @@ public class RaftCore {
                                     raftStore.write(newDatum);
                                     
                                     datums.put(newDatum.key, newDatum);
-                                    notifier.addTask(newDatum.key, ApplyAction.CHANGE);
+                                    NotifyCenter.publishEvent(ValueChangeEvent.builder().key(newDatum.key).action(ApplyAction.CHANGE).build());
                                     
                                     local.resetLeaderDue();
                                     
@@ -993,7 +1008,7 @@ public class RaftCore {
     
     public void addDatum(Datum datum) {
         datums.put(datum.key, datum);
-        notifier.addTask(datum.key, ApplyAction.CHANGE);
+        NotifyCenter.publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
     }
     
     /**
@@ -1022,7 +1037,7 @@ public class RaftCore {
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
-            notifier.addTask(URLDecoder.decode(key, "UTF-8"), ApplyAction.DELETE);
+            NotifyCenter.publishEvent(ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(ApplyAction.DELETE).build());
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
@@ -1032,7 +1047,8 @@ public class RaftCore {
         return initialized || !globalConfig.isDataWarmup();
     }
     
+    @Deprecated
     public int getNotifyTaskCount() {
-        return notifier.tasksSize();
+        return (int) publisher.currentEventSize();
     }
 }

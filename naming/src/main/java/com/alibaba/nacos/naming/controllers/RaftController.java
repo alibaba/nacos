@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
@@ -38,7 +39,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,22 +57,31 @@ import java.util.Map;
 /**
  * Methods for Raft consistency protocol. These methods should only be invoked by Nacos server itself.
  *
+ * @deprecated will remove in 1.4.x
  * @author nkorange
  * @since 1.0.0
  */
+@Deprecated
 @RestController
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft",
         UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft"})
 public class RaftController {
     
-    @Autowired
-    private RaftConsistencyServiceImpl raftConsistencyService;
+    private final RaftConsistencyServiceImpl raftConsistencyService;
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private RaftCore raftCore;
+    private final RaftCore raftCore;
+
+    private final ClusterVersionJudgement versionJudgement;
+    
+    public RaftController(RaftConsistencyServiceImpl raftConsistencyService, ServiceManager serviceManager,
+            RaftCore raftCore, ClusterVersionJudgement versionJudgement) {
+        this.raftConsistencyService = raftConsistencyService;
+        this.serviceManager = serviceManager;
+        this.raftCore = raftCore;
+        this.versionJudgement = versionJudgement;
+    }
     
     /**
      * Raft vote api.
@@ -84,7 +93,9 @@ public class RaftController {
      */
     @PostMapping("/vote")
     public JsonNode vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         RaftPeer peer = raftCore.receivedVote(JacksonUtils.toObj(WebUtils.required(request, "vote"), RaftPeer.class));
         
         return JacksonUtils.transferToJsonNode(peer);
@@ -100,7 +111,9 @@ public class RaftController {
      */
     @PostMapping("/beat")
     public JsonNode beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
@@ -121,6 +134,9 @@ public class RaftController {
      */
     @GetMapping("/peer")
     public JsonNode getPeer(HttpServletRequest request, HttpServletResponse response) {
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
         
@@ -148,6 +164,9 @@ public class RaftController {
      */
     @PutMapping("/datum/reload")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         String key = WebUtils.required(request, "key");
         raftCore.loadDatum(key);
         return "ok";
@@ -163,7 +182,9 @@ public class RaftController {
      */
     @PostMapping("/datum")
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -201,7 +222,9 @@ public class RaftController {
      */
     @DeleteMapping("/datum")
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -219,7 +242,9 @@ public class RaftController {
      */
     @GetMapping("/datum")
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -246,7 +271,9 @@ public class RaftController {
      */
     @GetMapping("/state")
     public JsonNode state(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -268,7 +295,9 @@ public class RaftController {
      */
     @PostMapping("/datum/commit")
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -308,7 +337,9 @@ public class RaftController {
      */
     @DeleteMapping("/datum/commit")
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
@@ -335,7 +366,9 @@ public class RaftController {
      */
     @GetMapping("/leader")
     public JsonNode getLeader(HttpServletRequest request, HttpServletResponse response) {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("leader", JacksonUtils.toJson(raftCore.getLeader()));
         return result;
@@ -350,7 +383,9 @@ public class RaftController {
      */
     @GetMapping("/listeners")
     public JsonNode getAllListeners(HttpServletRequest request, HttpServletResponse response) {
-        
+        if (versionJudgement.isAllMemberIsNewVersion()) {
+            throw new IllegalStateException("old raft protocol already stop");
+        }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Map<String, List<RecordListener>> listeners = raftCore.getListeners();
         

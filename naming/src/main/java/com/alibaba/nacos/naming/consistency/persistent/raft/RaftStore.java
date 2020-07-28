@@ -17,11 +17,13 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -51,8 +53,10 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.RAFT_CACHE_FILE_SUFF
 /**
  * Raft store.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @Component
 public class RaftStore {
     
@@ -81,7 +85,8 @@ public class RaftStore {
                     if (datum != null) {
                         datums.put(datum.key, datum);
                         if (notifier != null) {
-                            notifier.addTask(datum.key, ApplyAction.CHANGE);
+                            NotifyCenter
+                                    .publishEvent(ValueChangeEvent.builder().key(datum.key).action(ApplyAction.CHANGE).build());
                         }
                     }
                 }

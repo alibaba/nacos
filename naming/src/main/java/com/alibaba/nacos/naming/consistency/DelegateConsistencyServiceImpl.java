@@ -18,7 +18,10 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServiceProcessor;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
@@ -33,14 +36,29 @@ import org.springframework.stereotype.Service;
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
-    private final PersistentConsistencyService persistentConsistencyService;
+    private final ClusterVersionJudgement versionJudgement;
+    
+    private final RaftConsistencyServiceImpl oldPersistentConsistencyService;
+    
+    private final PersistentServiceProcessor newPersistentConsistencyService;
     
     private final EphemeralConsistencyService ephemeralConsistencyService;
     
-    public DelegateConsistencyServiceImpl(PersistentConsistencyService persistentConsistencyService,
+    private volatile boolean switchNewPersistentService = false;
+    
+    public DelegateConsistencyServiceImpl(ClusterVersionJudgement versionJudgement,
+            RaftConsistencyServiceImpl oldPersistentConsistencyService,
+            PersistentServiceProcessor newPersistentConsistencyService,
             EphemeralConsistencyService ephemeralConsistencyService) {
-        this.persistentConsistencyService = persistentConsistencyService;
+        this.versionJudgement = versionJudgement;
+        this.oldPersistentConsistencyService = oldPersistentConsistencyService;
+        this.newPersistentConsistencyService = newPersistentConsistencyService;
         this.ephemeralConsistencyService = ephemeralConsistencyService;
+        this.init();
+    }
+    
+    private void init() {
+        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion);
     }
     
     @Override
@@ -63,7 +81,8 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         
         // this special key is listened by both:
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
-            persistentConsistencyService.listen(key, listener);
+            oldPersistentConsistencyService.listen(key, listener);
+            newPersistentConsistencyService.listen(key, listener);
             ephemeralConsistencyService.listen(key, listener);
             return;
         }
@@ -73,15 +92,23 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
-        mapConsistencyService(key).unListen(key, listener);
+        ConsistencyService service = mapConsistencyService(key);
+        service.unListen(key, listener);
+        if (service instanceof PersistentConsistencyService && !switchNewPersistentService) {
+            newPersistentConsistencyService.unListen(key, listener);
+        }
     }
     
     @Override
     public boolean isAvailable() {
-        return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
+        return ephemeralConsistencyService.isAvailable() && switchOne().isAvailable();
     }
     
     private ConsistencyService mapConsistencyService(String key) {
-        return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
+        return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : switchOne();
+    }
+    
+    private PersistentConsistencyService switchOne() {
+        return switchNewPersistentService ? newPersistentConsistencyService : oldPersistentConsistencyService;
     }
 }

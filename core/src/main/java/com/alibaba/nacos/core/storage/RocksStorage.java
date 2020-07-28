@@ -48,8 +48,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 /**
+ * Encapsulate rocksDB operations.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RocksStorage {
@@ -77,11 +78,27 @@ public final class RocksStorage {
     private RocksStorage() {
     }
     
+    /**
+     * create rocksdb storage with default operation.
+     *
+     * @param group group
+     * @param baseDir base dir
+     * @return {@link RocksStorage}
+     */
     public static RocksStorage createDefault(final String group, String baseDir) {
         return createCustomer(group, baseDir, new WriteOptions().setSync(true),
                 new ReadOptions().setTotalOrderSeek(true));
     }
     
+    /**
+     * create rocksdb storage and set customer operation.
+     *
+     * @param group group
+     * @param baseDir base dir
+     * @param writeOptions {@link WriteOptions}
+     * @param readOptions {@link ReadOptions}
+     * @return {@link RocksStorage}
+     */
     public static RocksStorage createCustomer(final String group, String baseDir, WriteOptions writeOptions,
             ReadOptions readOptions) {
         
@@ -96,6 +113,11 @@ public final class RocksStorage {
         return storage;
     }
     
+    /**
+     * destroy old rocksdb and open new one.
+     *
+     * @throws RocksStorageException RocksStorageException
+     */
     public void destroyAndOpenNew() throws RocksStorageException {
         try (final Options options = new Options()) {
             RocksDB.destroyDB(dbPath, options);
@@ -106,6 +128,15 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * create rocksdb.
+     *
+     * @param baseDir base dir
+     * @param group group
+     * @param writeOptions {@link WriteOptions}
+     * @param readOptions {@link ReadOptions}
+     * @param storage {@link RocksStorage}
+     */
     private static void createRocksDB(final String baseDir, final String group, WriteOptions writeOptions,
             ReadOptions readOptions, final RocksStorage storage) {
         storage.cfOptions.clear();
@@ -117,19 +148,25 @@ public final class RocksStorage {
         storage.cfOptions.add(cfOption);
         columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, cfOption));
         try {
-            RocksDB db = RocksDB.open(options, baseDir, columnFamilyDescriptors, columnFamilyHandles);
             storage.dbPath = baseDir;
             storage.group = group;
             storage.writeOptions = writeOptions;
             storage.readOptions = readOptions;
             storage.options = options;
-            storage.db = db;
+            storage.db = RocksDB.open(options, baseDir, columnFamilyDescriptors, columnFamilyHandles);
             storage.defaultHandle = columnFamilyHandles.get(0);
         } catch (RocksDBException e) {
             throw new NacosRuntimeException(ErrorCode.RocksDBCreateError.getCode(), e);
         }
     }
     
+    /**
+     * write data.
+     *
+     * @param key byte[]
+     * @param value byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public void write(byte[] key, byte[] value) throws RocksStorageException {
         try {
             this.db.put(defaultHandle, writeOptions, key, value);
@@ -139,6 +176,13 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * batch write.
+     *
+     * @param key List byte[]
+     * @param values List byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public void batchWrite(List<byte[]> key, List<byte[]> values) throws RocksStorageException {
         if (key.size() != values.size()) {
             throw new IllegalArgumentException("key size and values size must be equals!");
@@ -154,6 +198,13 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * get data by byte[].
+     *
+     * @param key byte[]
+     * @return result byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public byte[] get(byte[] key) throws RocksStorageException {
         try {
             return db.get(defaultHandle, readOptions, key);
@@ -163,6 +214,13 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * batch get by List byte[].
+     *
+     * @param key List byte[]
+     * @return Map byte[], byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public Map<byte[], byte[]> batchGet(List<byte[]> key) throws RocksStorageException {
         try {
             return db.multiGet(readOptions, key);
@@ -172,6 +230,12 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * delete with key.
+     *
+     * @param key byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public void delete(byte[] key) throws RocksStorageException {
         try {
             db.delete(defaultHandle, writeOptions, key);
@@ -181,6 +245,12 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * batch delete with keys.
+     *
+     * @param key List byte[]
+     * @throws RocksStorageException RocksStorageException
+     */
     public void batchDelete(List<byte[]> key) throws RocksStorageException {
         try {
             for (byte[] k : key) {
@@ -192,6 +262,12 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * do snapshot save operation.
+     *
+     * @param backupPath backup path
+     * @throws RocksStorageException RocksStorageException
+     */
     public void snapshotSave(final String backupPath) throws RocksStorageException {
         final String path = Paths.get(backupPath, group).toString();
         Throwable ex = DiskUtils.forceMkdir(path, (aVoid, ioe) -> {
@@ -218,6 +294,12 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * do snapshot load operation.
+     *
+     * @param backupPath backup path
+     * @throws RocksStorageException RocksStorageException
+     */
     public void snapshotLoad(final String backupPath) throws RocksStorageException {
         try {
             final String path = Paths.get(backupPath, group).toString();
@@ -240,6 +322,9 @@ public final class RocksStorage {
         }
     }
     
+    /**
+     * shutdown.
+     */
     public void shutdown() {
         this.defaultHandle.close();
         this.db.close();

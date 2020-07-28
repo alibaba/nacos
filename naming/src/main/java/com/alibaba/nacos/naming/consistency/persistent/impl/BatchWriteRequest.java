@@ -20,11 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * batch write request.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class BatchWriteRequest {
     
-    private List< byte[]> keys = new ArrayList<>();
+    private List<byte[]> keys = new ArrayList<>();
+    
     private List<byte[]> values = new ArrayList<>();
     
     public List<byte[]> getKeys() {

@@ -18,14 +18,20 @@
 package com.alibaba.nacos.core.storage;
 
 /**
+ * RocksDB backup info.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RocksBackupInfo {
     
     private int backupId;
+    
     private long timestamp;
+    
     private long size;
+    
     private int numberFiles;
+    
     private String appMetadata;
     
     public int getBackupId() {

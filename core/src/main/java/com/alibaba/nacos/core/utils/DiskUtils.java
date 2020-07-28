@@ -307,6 +307,13 @@ public final class DiskUtils {
         FileUtils.forceMkdir(new File(path));
     }
     
+    /**
+     * force mkdir with path and {@link BiFunction}.
+     *
+     * @param path path
+     * @param job {@link BiFunction}
+     * @return {@link Throwable}
+     */
     public static Throwable forceMkdir(String path, BiFunction<Void, IOException, Throwable> job) {
         Throwable ex;
         try {

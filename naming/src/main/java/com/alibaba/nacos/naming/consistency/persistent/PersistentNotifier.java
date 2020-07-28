@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
@@ -30,11 +31,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
+ * persistent notifier, It is responsible for notifying interested listeners of all write changes to the data.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     
-    private final Map<String, ConcurrentHashSet<RecordListener>> listenerMap = new ConcurrentHashMap<>();
+    private final Map<String, ConcurrentHashSet<RecordListener>> listenerMap = new ConcurrentHashMap<>(32);
     
     private final Function<String, Record> find;
     
@@ -42,11 +45,23 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
         this.find = find;
     }
     
+    /**
+     * register listener with key.
+     *
+     * @param key key
+     * @param listener {@link RecordListener}
+     */
     public void registerListener(final String key, final RecordListener listener) {
         listenerMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
         listenerMap.get(key).add(listener);
     }
     
+    /**
+     * deregister listener by key.
+     *
+     * @param key key
+     * @param listener {@link RecordListener}
+     */
     public void deregisterListener(final String key, final RecordListener listener) {
         if (!listenerMap.containsKey(key)) {
             return;
@@ -54,25 +69,22 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
         listenerMap.get(key).remove(listener);
     }
     
-    public void addTask(final String key, final ApplyAction action) {
-    
-    }
-    
-    public int tasksSize() {
-        return 0;
-    }
-    
+    /**
+     * notify value to listener with {@link ApplyAction} and key.
+     *
+     * @param key key
+     * @param action {@link ApplyAction}
+     * @param value value
+     * @param <T> type
+     */
     public <T extends Record> void notify(final String key, final ApplyAction action, final T value) {
         if (listenerMap.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-        
             if (KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key)) {
-            
                 for (RecordListener listener : listenerMap.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                     try {
                         if (action == ApplyAction.CHANGE) {
                             listener.onChange(key, value);
                         }
-                    
                         if (action == ApplyAction.DELETE) {
                             listener.onDelete(key);
                         }
@@ -95,7 +107,6 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
                     listener.onChange(key, value);
                     continue;
                 }
-            
                 if (action == ApplyAction.DELETE) {
                     listener.onDelete(key);
                 }
