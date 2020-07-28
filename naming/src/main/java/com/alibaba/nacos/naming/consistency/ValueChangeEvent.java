@@ -14,13 +14,14 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.persistent;
+package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.pojo.Record;
 
 /**
+ * The value changes events.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ValueChangeEvent extends Event {
@@ -49,6 +50,10 @@ public class ValueChangeEvent extends Event {
         return action;
     }
     
+    public static ValueChangeEventBuilder builder() {
+        return new ValueChangeEventBuilder();
+    }
+    
     public static final class ValueChangeEventBuilder {
         
         private String key;
@@ -58,10 +63,6 @@ public class ValueChangeEvent extends Event {
         private ApplyAction action;
         
         private ValueChangeEventBuilder() {
-        }
-        
-        public static ValueChangeEventBuilder aValueChangeEvent() {
-            return new ValueChangeEventBuilder();
         }
         
         public ValueChangeEventBuilder key(String key) {

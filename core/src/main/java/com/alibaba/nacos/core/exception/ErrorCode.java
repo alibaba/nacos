@@ -23,32 +23,66 @@ package com.alibaba.nacos.core.exception;
  */
 public enum ErrorCode {
     
+    /**
+     * unknow error.
+     */
     UnKnowError(40001),
     
+    // rocksdb error
+    
+    /**
+     * rocksdb write error.
+     */
     RocksDBWriteError(40100),
     
+    /**
+     * rocksdb read error.
+     */
     RocksDBReadError(40101),
     
+    /**
+     * rocksdb delete error.
+     */
     RocksDBDeleteError(40102),
     
+    /**
+     * rocksdb snapshot save error.
+     */
     RocksDBSnapshotSaveError(40103),
     
+    /**
+     * rocksdb snapshot load error.
+     */
     RocksDBSnapshotLoadError(40104),
     
+    /**
+     * rocksdb reset error.
+     */
     RocksDBResetError(40105),
     
+    /**
+     * rocksdb create error.
+     */
     RocksDBCreateError(40106),
     
     // disk error
     
+    /**
+     * mkdir error.
+     */
     IOMakeDirError(40201),
     
-    // consistency protocol
+    // consistency protocol error
     
+    /**
+     * protocol write error.
+     */
     ProtoSubmitError(40301),
     
-    ProtoReadError(40302),
-    ;
+    /**
+     * protocol read error.
+     */
+    ProtoReadError(40302);
     
     private final int code;
     

@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.Observable;
+import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -37,10 +39,10 @@ import com.alibaba.nacos.core.exception.RocksStorageException;
 import com.alibaba.nacos.core.storage.RocksStorage;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.JudgeClusterVersionJob;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
-import com.alibaba.nacos.naming.consistency.persistent.ValueChangeEvent;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -61,19 +63,31 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
+ * New service data persistence handler.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Service
 public class PersistentServiceProcessor extends LogProcessor4CP implements PersistentConsistencyService {
     
     enum Op {
+        /**
+         * write ops.
+         */
         Write("Write"),
-        
+    
+        /**
+         * read ops.
+         */
         Read("Read"),
-        
+    
+        /**
+         * delete ops.
+         */
         Delete("Delete");
         
-        private String desc;
+        private final String desc;
         
         Op(String desc) {
             this.desc = desc;
@@ -86,23 +100,34 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private final RaftStore oldStore;
     
-    private final JudgeClusterVersionJob clusterVersionJob;
+    private final ClusterVersionJudgement versionJudgement;
     
     private final Serializer serializer = SerializeFactory.getDefault();
     
+    /**
+     * During snapshot processing, the processing of other requests needs to be paused.
+     */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
     private final PersistentNotifier notifier;
     
+    /**
+     * Is there a leader node currently.
+     */
     private volatile boolean hasLeader = false;
     
+    /**
+     * Whether an unrecoverable error occurred.
+     */
+    private volatile boolean hasError = false;
+    
     public PersistentServiceProcessor(final CPProtocol<RaftConfig, LogProcessor4CP> protocol,
-            final JudgeClusterVersionJob clusterVersionJob, final RaftStore oldStore) {
+            final ClusterVersionJudgement versionJudgement, final RaftStore oldStore) {
         this.protocol = protocol;
         this.oldStore = oldStore;
-        this.clusterVersionJob = clusterVersionJob;
+        this.versionJudgement = versionJudgement;
         this.rocksStorage = RocksStorage
                 .createDefault("naming-persistent", Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
         this.notifier = new PersistentNotifier(key -> {
@@ -118,12 +143,21 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private void init() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
-        NotifyCenter.registerSubscriber(notifier);
         this.protocol.addLogProcessors(Collections.singletonList(this));
         this.startLoadOldData();
         this.protocol.protocolMetaData()
-                .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA,
-                        (o, arg) -> hasLeader = StringUtils.isNotBlank((String) arg));
+                .subscribe(Constants.NAMING_PERSISTENT_SERVICE_GROUP, MetadataKey.LEADER_META_DATA, new Observer() {
+                    @Override
+                    public void update(Observable o, Object arg) {
+                        hasLeader = StringUtils.isNotBlank(String.valueOf(arg));
+                    }
+                });
+        
+        this.versionJudgement.registerObserver(isNewVersion -> {
+            if (isNewVersion) {
+                NotifyCenter.registerSubscriber(notifier);
+            }
+        });
     }
     
     @Override
@@ -153,8 +187,12 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             switch (op) {
                 case Write:
                     rocksStorage.batchWrite(request.getKeys(), request.getValues());
+                    break;
                 case Delete:
                     rocksStorage.batchDelete(request.getKeys());
+                    break;
+                default:
+                    return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (RocksStorageException e) {
@@ -183,7 +221,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
      */
     public void loadFromOldData() {
         try {
-            if (clusterVersionJob.isAllMemberIsNewVersion()) {
+            if (versionJudgement.isAllMemberIsNewVersion()) {
                 return;
             }
             if (protocol.isLeader(Constants.NAMING_PERSISTENT_SERVICE_GROUP)) {
@@ -275,7 +313,13 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     }
     
     @Override
+    public void onError(Throwable error) {
+        super.onError(error);
+        hasError = true;
+    }
+    
+    @Override
     public boolean isAvailable() {
-        return hasLeader;
+        return hasLeader && !hasError;
     }
 }

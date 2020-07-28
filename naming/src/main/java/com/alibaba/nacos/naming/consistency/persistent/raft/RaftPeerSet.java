@@ -49,8 +49,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Sets of raft peers.
  *
+ * @deprecated will remove in 1.4.x
  * @author nacos
  */
+@Deprecated
 @Component
 @DependsOn("ProtocolManager")
 public class RaftPeerSet extends MemberChangeListener {

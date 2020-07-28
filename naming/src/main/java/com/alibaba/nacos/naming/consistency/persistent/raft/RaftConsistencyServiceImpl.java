@@ -25,28 +25,32 @@ import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServ
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 /**
  * Use simplified Raft protocol to maintain the consistency status of Nacos cluster.
  *
+ * @deprecated will remove in 1.4.x
  * @author nkorange
  * @since 1.0.0
  */
+@Deprecated
 @DependsOn("ProtocolManager")
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
     
-    @Autowired
-    private RaftCore raftCore;
+    private final RaftCore raftCore;
     
-    @Autowired
-    private RaftPeerSet peers;
+    private final RaftPeerSet peers;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
+    
+    public RaftConsistencyServiceImpl(RaftCore raftCore, RaftPeerSet peers, SwitchDomain switchDomain) {
+        this.raftCore = raftCore;
+        this.peers = peers;
+        this.switchDomain = switchDomain;
+    }
     
     @Override
     public void put(String key, Record value) throws NacosException {

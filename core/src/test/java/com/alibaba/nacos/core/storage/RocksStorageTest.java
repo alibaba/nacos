@@ -35,25 +35,25 @@ public class RocksStorageTest {
         RocksDB.loadLibrary();
     }
     
-    static final String dir = Paths.get(ApplicationUtils.getNacosTmpDir(), "rocksdb").toString();
+    static final String DIR = Paths.get(ApplicationUtils.getNacosTmpDir(), "rocksdb").toString();
     
     @Before
     public void before() throws Throwable {
-        DiskUtils.deleteDirectory(dir);
+        DiskUtils.deleteDirectory(DIR);
     }
     
     @Test
     public void testCreateRocksStorage() throws Throwable {
-        RocksStorage storage = RocksStorage.createDefault("test", dir);
+        RocksStorage storage = RocksStorage.createDefault("test", DIR);
         storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
     }
     
     @Test
     public void testRocksStorageSnapshotSave() throws Throwable {
         try {
-            RocksStorage storage = RocksStorage.createDefault("test", dir);
+            RocksStorage storage = RocksStorage.createDefault("test", DIR);
             storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
-            storage.snapshotSave(Paths.get(dir, "snapshot").toString());
+            storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
         } catch (Throwable ex) {
             Assert.fail(ex.getMessage());
         }
@@ -61,13 +61,13 @@ public class RocksStorageTest {
     
     @Test
     public void testRocksStorageSnapshotLoad() throws Throwable {
-        RocksStorage storage = RocksStorage.createDefault("test", dir);
+        RocksStorage storage = RocksStorage.createDefault("test", DIR);
         storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
-        storage.snapshotSave(Paths.get(dir, "snapshot").toString());
+        storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
         storage.shutdown();
         ThreadUtils.sleep(5_000L);
         storage = RocksStorage.createDefault("test", Paths.get(ApplicationUtils.getNacosTmpDir(), "snapshot_load").toString());
-        storage.snapshotLoad(Paths.get(dir, "snapshot").toString());
+        storage.snapshotLoad(Paths.get(DIR, "snapshot").toString());
         byte[] b = storage.get("liaochuntao".getBytes());
         Assert.assertArrayEquals(b, "liaochuntao".getBytes());
     }

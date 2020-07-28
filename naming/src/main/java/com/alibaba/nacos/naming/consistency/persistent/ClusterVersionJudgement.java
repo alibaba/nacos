@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.consistency.persistent;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -29,17 +30,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
+ * An automated task that determines whether all nodes in the current cluster meet the requirements of a particular
+ * version.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-public class JudgeClusterVersionJob {
+public class ClusterVersionJudgement {
+    
     private volatile boolean allMemberIsNewVersion = false;
     
     private final ServerMemberManager memberManager;
     
     private final Collection<Consumer<Boolean>> observers = new CopyOnWriteArrayList<>();
     
-    public JudgeClusterVersionJob(ServerMemberManager memberManager) {
+    public ClusterVersionJudgement(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         GlobalExecutor.submitClusterVersionJudge(this::judge, TimeUnit.SECONDS.toMillis(5));
     }
@@ -50,12 +55,11 @@ public class JudgeClusterVersionJob {
     
     private void judge() {
         Collection<Member> members = memberManager.allMembers();
-        final String oldVersion1 = "1.3.0";
-        final String oldVersion2 = "1.3.1";
+        final String oldVersion = "1.3.1";
         for (Member member : members) {
             final String curV = (String) member.getExtendVal(MemberMetaDataConstants.VERSION);
-            if (StringUtils.isBlank(curV) || StringUtils.equals(curV, oldVersion1) || StringUtils.equals(curV, oldVersion2)) {
-                allMemberIsNewVersion = false;
+            if (StringUtils.isNotBlank(curV) && VersionUtils.compareVersion(oldVersion, curV) < 0) {
+                allMemberIsNewVersion = true;
             }
         }
         if (allMemberIsNewVersion) {

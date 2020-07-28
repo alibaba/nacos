@@ -33,8 +33,11 @@ import org.rocksdb.StringAppendOperator;
 import org.rocksdb.util.SizeUnit;
 
 /**
+ * RocksDB utils.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public final class RocksDBUtils {
     
     public static RocksBackupInfo convertToRocksBackupInfo(BackupInfo info) {
@@ -46,7 +49,6 @@ public final class RocksDBUtils {
         backupInfo.setTimestamp(info.timestamp());
         return backupInfo;
     }
-    
     
     public static DBOptions getDefaultRocksDBOptions() {
         // Turn based on https://github.com/facebook/rocksdb/wiki/RocksDB-Tuning-Guide

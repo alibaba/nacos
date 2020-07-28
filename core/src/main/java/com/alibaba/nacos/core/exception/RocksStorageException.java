@@ -20,6 +20,8 @@ package com.alibaba.nacos.core.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
+ * RocksDB Exception.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RocksStorageException extends NacosException {
