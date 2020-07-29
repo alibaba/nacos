@@ -166,7 +166,7 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        remakeCacheDataTaskId();
+        reMakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
@@ -179,7 +179,7 @@ public class ClientWorker implements Closeable {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        remakeCacheDataTaskId();
+        reMakeCacheDataTaskId();
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
@@ -188,7 +188,7 @@ public class ClientWorker implements Closeable {
     /**
      * Remake cacheData taskId.
      */
-    private void remakeCacheDataTaskId() {
+    private void reMakeCacheDataTaskId() {
         int listenerSize = cacheMap.get().size();
         int remakeTaskId = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (remakeTaskId < (int) currentLongingTaskCount) {
@@ -315,10 +315,10 @@ public class ClientWorker implements Closeable {
      * @param schedulerId threads run taskId.
      * @param run         whether to run.
      */
-    private void updateSchedulerMap(Integer schedulerId, Boolean run) {
+    private void updateSchedulerMap(Integer schedulerId, Boolean isRun) {
         synchronized (schedulerMap) {
             Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(schedulerMap.get());
-            copy.put(schedulerId, run);
+            copy.put(schedulerId, isRun);
             schedulerMap.set(copy);
         }
     }
