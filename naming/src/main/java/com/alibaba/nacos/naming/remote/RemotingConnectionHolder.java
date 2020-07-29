@@ -22,18 +22,13 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.RemotePushService;
 import com.alibaba.nacos.naming.remote.task.RenewInstanceBeatTask;
-import com.alibaba.nacos.naming.remote.worker.RemotingWorker;
 import com.alibaba.nacos.naming.remote.worker.RemotingWorkersManager;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.request.Request;
  *
  * @author liuzunfei
  */
-public abstract class NamingCommonRequest extends Request {
+public abstract class AbstractNamingRequest extends Request {
     
     private String namespace;
     
@@ -31,10 +31,10 @@ public abstract class NamingCommonRequest extends Request {
     
     private String groupName;
     
-    public NamingCommonRequest() {
+    public AbstractNamingRequest() {
     }
     
-    public NamingCommonRequest(String namespace, String serviceName, String groupName) {
+    public AbstractNamingRequest(String namespace, String serviceName, String groupName) {
         this.namespace = namespace;
         this.serviceName = serviceName;
         this.groupName = groupName;

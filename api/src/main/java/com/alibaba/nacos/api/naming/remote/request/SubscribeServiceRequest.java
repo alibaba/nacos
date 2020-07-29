@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
  *
  * @author xiweng.yy
  */
-public class SubscribeServiceRequest extends NamingCommonRequest {
+public class SubscribeServiceRequest extends AbstractNamingRequest {
     
     private boolean subscribe;
     
