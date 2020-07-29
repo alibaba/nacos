@@ -313,7 +313,7 @@ public class ClientWorker implements Closeable {
      * Update the thread state corresponding to taskId.
      *
      * @param schedulerId threads run taskId.
-     * @param run         whether to run.
+     * @param isRun       whether to run.
      */
     private void updateSchedulerMap(Integer schedulerId, Boolean isRun) {
         synchronized (schedulerMap) {
