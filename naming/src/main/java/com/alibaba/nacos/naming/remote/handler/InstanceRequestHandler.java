@@ -86,8 +86,6 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
         instance.setInstanceId(instance.generateInstanceId());
         instance.setLastBeat(System.currentTimeMillis());
         // Register instance by connection, do not need keep alive by beat.
-        instance.setMarked(true);
-        instance.validate();
         serviceManager.addInstance(namespace, serviceName, instance.isEphemeral(), instance);
         remotingConnectionHolder.getRemotingConnection(meta.getConnectionId())
                 .addNewInstance(namespace, serviceName, instance);

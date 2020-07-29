@@ -23,7 +23,9 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -51,6 +53,7 @@ public class HeartBeatRequestHandler extends RequestHandler {
     public Response handle(Request request, RequestMeta meta) throws NacosException {
         String connectionId = meta.getConnectionId();
         connectionManager.refreshActiveTime(connectionId);
+        NotifyCenter.publishEvent(new RemotingHeartBeatEvent(connectionId, meta.getClientIp(), meta.getClientVersion()));
         return new HeartBeatResponse();
     }
     

@@ -16,14 +16,21 @@
 
 package com.alibaba.nacos.naming.remote;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.connection.Connection;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.RemotePushService;
+import com.alibaba.nacos.naming.remote.task.RenewInstanceBeatTask;
+import com.alibaba.nacos.naming.remote.worker.RemotingWorker;
+import com.alibaba.nacos.naming.remote.worker.RemotingWorkersManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -47,6 +54,7 @@ public class RemotingConnectionHolder extends ClientConnectionEventListener {
     public RemotingConnectionHolder(RemotePushService remotePushService, ServiceManager serviceManager) {
         this.remotePushService = remotePushService;
         this.serviceManager = serviceManager;
+        NotifyCenter.registerSubscriber(new RemotingHeartBeatSubscriber(this));
     }
     
     @Override
@@ -57,24 +65,47 @@ public class RemotingConnectionHolder extends ClientConnectionEventListener {
     
     @Override
     public void clientDisConnected(Connection connect) {
-        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", connect.getConnectionId());
+        Loggers.SRV_LOG
+                .info("Client connection {} disconnect, remove instances and subscribers", connect.getConnectionId());
         RemotingConnection remotingConnection = connectionCache.remove(connect.getConnectionId());
-        try {
-            for (String each : remotingConnection.getInstanceIndex().keySet()) {
-                Set<Instance> instances = remotingConnection.getInstanceIndex().get(each);
-                serviceManager.removeInstance(KeyBuilder.getNamespace(each), KeyBuilder.getServiceName(each), true,
-                        instances.toArray(new Instance[instances.size()]));
-            }
-            for (String each : remotingConnection.getSubscriberIndex().keySet()) {
-                remotePushService.removeAllSubscribeForService(each);
-            }
-        } catch (NacosException e) {
-            Loggers.SRV_LOG
-                    .error(String.format("Remove context of connection %s failed", connect.getConnectionId()), e);
+        for (String each : remotingConnection.getSubscriberIndex().keySet()) {
+            remotePushService.removeAllSubscribeForService(each);
         }
     }
     
     public RemotingConnection getRemotingConnection(String connectionId) {
         return connectionCache.get(connectionId);
+    }
+    
+    /**
+     * Renew remoting connection.
+     *
+     * @param connectionId connection id
+     */
+    public void renewRemotingConnection(String connectionId) {
+        if (!connectionCache.containsKey(connectionId)) {
+            return;
+        }
+        RemotingConnection remotingConnection = connectionCache.get(connectionId);
+        RemotingWorkersManager.dispatch(connectionId, new RenewInstanceBeatTask(remotingConnection, serviceManager));
+    }
+    
+    private static class RemotingHeartBeatSubscriber extends Subscriber<RemotingHeartBeatEvent> {
+        
+        private final RemotingConnectionHolder remotingConnectionHolder;
+    
+        public RemotingHeartBeatSubscriber(RemotingConnectionHolder remotingConnectionHolder) {
+            this.remotingConnectionHolder = remotingConnectionHolder;
+        }
+    
+        @Override
+        public void onEvent(RemotingHeartBeatEvent event) {
+            remotingConnectionHolder.renewRemotingConnection(event.getConnectionId());
+        }
+    
+        @Override
+        public Class<? extends Event> subscribeType() {
+            return RemotingHeartBeatEvent.class;
+        }
     }
 }
