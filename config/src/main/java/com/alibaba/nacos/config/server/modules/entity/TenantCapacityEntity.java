@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 import static com.alibaba.nacos.config.server.constant.Constants.TENANT_CAPACITY_TABLE_NAME;
 
 /**
+ * TenantCapacityEntity.
+ *
  * @author Nacos
  */
 @Table(name = TENANT_CAPACITY_TABLE_NAME)
 @Entity
 @Data
 public class TenantCapacityEntity extends CapacityEntity {
-
+    
     @Column(name = "tenant_id")
     private String tenantId;
-
+    
 }

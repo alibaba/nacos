@@ -13,47 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import java.util.Date;
 
 /**
+ * CapacityEntity.
+ *
  * @author Nacos
  */
 @Data
 @MappedSuperclass
 public abstract class CapacityEntity {
-
+    
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
     @Column(name = "quota")
     private Integer quota;
-
+    
     //usage 是mysql中关键字所以需要转义
     @Column(name = "`usage`")
     private Integer usage;
-
+    
     @Column(name = "max_size")
     private Integer maxSize;
-
+    
     @Column(name = "max_aggr_count")
     private Integer maxAggrCount;
-
+    
     @Column(name = "max_aggr_size")
     private Integer maxAggrSize;
-
+    
     @Column(name = "max_history_count")
     private Integer maxHistoryCount;
-
+    
     @Column(name = "gmt_create")
     private Date gmtCreate;
-
+    
     @Column(name = "gmt_modified")
     private Date gmtModified;
 }

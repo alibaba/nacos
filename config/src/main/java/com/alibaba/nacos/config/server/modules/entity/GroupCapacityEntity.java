@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 import static com.alibaba.nacos.config.server.constant.Constants.GROUP_CAPACITY_TABLE_NAME;
 
+
 /**
+ * GroupCapacityEntity.
+ *
  * @author Nacos
  */
 @Table(name = GROUP_CAPACITY_TABLE_NAME)
 @Entity
 @Data
 public class GroupCapacityEntity extends CapacityEntity {
-
+    
     @Column(name = "group_id")
     private String groupId;
-
+    
 }

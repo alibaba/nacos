@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.AllArgsConstructor;
@@ -28,6 +29,8 @@ import java.io.Serializable;
 import static com.alibaba.nacos.config.server.constant.Constants.USERS_TABLE_NAME;
 
 /**
+ * UsersEntity.
+ *
  * @author Nacos
  */
 @NoArgsConstructor
@@ -36,15 +39,15 @@ import static com.alibaba.nacos.config.server.constant.Constants.USERS_TABLE_NAM
 @Entity
 @Data
 public class UsersEntity implements Serializable {
-
+    
     @Id
     @Column(name = "username")
     private String username;
-
+    
     @Column(name = "password")
     private String password;
-
+    
     @Column(name = "enabled")
     private Integer enabled;
-
+    
 }

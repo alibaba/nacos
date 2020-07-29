@@ -13,47 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.io.Serializable;
 
 import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_TAGS_RELATION_TABLE_NAME;
 
 /**
+ * ConfigTagsRelationEntity.
+ *
  * @author Nacos
  */
 @Table(name = CONFIG_TAGS_RELATION_TABLE_NAME)
 @Entity
 @Data
 public class ConfigTagsRelationEntity implements Serializable {
-
-
+    
+    
     @Id
     @Column(name = "nid")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long nid;
-
+    
     @Column(name = "id")
     private Long id;
-
+    
     @Column(name = "tag_name")
     private String tagName;
-
+    
     @Column(name = "tag_type")
     private String tagType;
-
+    
     @Column(name = "data_id")
     private String dataId;
-
+    
     @Column(name = "group_id")
     private String groupId;
-
+    
     @Column(name = "tenant_id")
     private String tenantId;
-
-
-
+    
+    
 }

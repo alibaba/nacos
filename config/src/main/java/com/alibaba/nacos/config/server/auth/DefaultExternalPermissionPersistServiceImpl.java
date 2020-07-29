@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.model.Page;
@@ -25,17 +26,27 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 /**
+ * DefaultExternalPermissionPersistServiceImpl.
+ *
  * @author Nacos
  */
 @Service
-public class ExternalPermissionPersistServiceImpl2 {
-
+public class DefaultExternalPermissionPersistServiceImpl {
+    
     @Autowired
     private PermissionsRepository permissionsRepository;
-
+    
+    /**
+     * getPermissions.
+     *
+     * @param role     .
+     * @param pageNo   .
+     * @param pageSize .
+     * @return
+     */
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository.findAll(QPermissionsEntity.permissionsEntity.role.eq(role),
-            PageRequest.of(pageNo, pageSize));
+        org.springframework.data.domain.Page<PermissionsEntity> sPage = permissionsRepository
+                .findAll(QPermissionsEntity.permissionsEntity.role.eq(role), PageRequest.of(pageNo, pageSize));
         Page<PermissionInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());
@@ -43,17 +54,22 @@ public class ExternalPermissionPersistServiceImpl2 {
         page.setTotalCount((int) sPage.getTotalElements());
         return page;
     }
-
+    
     public void addPermission(String role, String resource, String action) {
         permissionsRepository.save(new PermissionsEntity(role, resource, action));
     }
-
-
+    
+    /**
+     * deletePermission.
+     *
+     * @param role     role.
+     * @param resource resource.
+     * @param action   action.
+     */
     public void deletePermission(String role, String resource, String action) {
         QPermissionsEntity qPermissions = QPermissionsEntity.permissionsEntity;
-        permissionsRepository.findOne(qPermissions.role.eq(role)
-            .and(qPermissions.resource.eq(resource))
-            .and(qPermissions.action.eq(action)))
-            .ifPresent(p -> permissionsRepository.delete(p));
+        permissionsRepository.findOne(
+                qPermissions.role.eq(role).and(qPermissions.resource.eq(resource)).and(qPermissions.action.eq(action)))
+                .ifPresent(p -> permissionsRepository.delete(p));
     }
 }

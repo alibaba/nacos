@@ -28,14 +28,14 @@ import org.springframework.stereotype.Service;
  * @author Nacos
  */
 @Service
-public class ExternalRolePersistServiceImpl2 {
-
+public class DefaultExternalRolePersistServiceImpl {
+    
     @Autowired
     private RolesRepository rolesRepository;
-
+    
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
-            .findAll(null, PageRequest.of(pageNo, pageSize));
+                .findAll(null, PageRequest.of(pageNo, pageSize));
         Page<RoleInfo> page = new Page<>();
         page.setPageNumber(sPage.getNumber());
         page.setPagesAvailable(sPage.getTotalPages());

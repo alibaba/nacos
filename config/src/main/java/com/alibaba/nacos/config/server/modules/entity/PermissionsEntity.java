@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,6 +29,8 @@ import java.io.Serializable;
 import static com.alibaba.nacos.config.server.constant.Constants.PERMISSIONS_TABLE_NAME;
 
 /**
+ * PermissionsEntity.
+ *
  * @author Nacos
  */
 @NoArgsConstructor
@@ -37,16 +39,25 @@ import static com.alibaba.nacos.config.server.constant.Constants.PERMISSIONS_TAB
 @Entity
 @Data
 public class PermissionsEntity implements Serializable {
-
-
+    
+    
+    /**
+     * role.
+     */
     @Id
     @Column(name = "role")
     private String role;
-
+    
+    /**
+     * resource.
+     */
     @Column(name = "resource")
     private String resource;
-
+    
+    /**
+     * action.
+     */
     @Column(name = "action")
     private String action;
-
+    
 }

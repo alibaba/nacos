@@ -13,49 +13,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
 
 import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_INFO_AGGR_TABLE_NAME;
 
 /**
+ * ConfigInfoAggrEntity.
+ *
  * @author Nacos
  */
 @Table(name = CONFIG_INFO_AGGR_TABLE_NAME)
 @Entity
 @Data
 public class ConfigInfoAggrEntity implements Serializable {
-
-
+    
+    
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
     @Column(name = "data_id")
     private String dataId;
-
+    
     @Column(name = "group_id")
     private String groupId;
-
+    
     @Column(name = "datum_id")
     private String datumId;
-
+    
     @Column(name = "content")
     private String content;
-
+    
     @Column(name = "gmt_modified")
     private Date gmtModified;
-
+    
     @Column(name = "app_name")
     private String appName;
-
+    
     @Column(name = "tenant_id")
     private String tenantId;
-
+    
 }

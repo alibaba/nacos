@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.entity;
 
 import lombok.AllArgsConstructor;
@@ -28,6 +29,8 @@ import java.io.Serializable;
 import static com.alibaba.nacos.config.server.constant.Constants.ROLES_TABLE_NAME;
 
 /**
+ * RolesEntity.
+ *
  * @author Nacos
  */
 @AllArgsConstructor
@@ -36,13 +39,12 @@ import static com.alibaba.nacos.config.server.constant.Constants.ROLES_TABLE_NAM
 @Entity
 @Data
 public class RolesEntity implements Serializable {
-
-
+    
     @Id
     @Column(name = "username")
     private String username;
-
+    
     @Column(name = "role")
     private String role;
-
+    
 }

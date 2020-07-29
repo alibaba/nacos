@@ -31,15 +31,15 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class ExternalUserPersistServiceImpl2 {
-
+public class DefaultExternalUserPersistServiceImpl {
+    
     @Autowired
     private UsersRepository usersRepository;
-
+    
     public void createUser(String username, String password) {
         usersRepository.save(new UsersEntity(username, password, 1));
     }
-
+    
     public void deleteUser(String username) {
         usersRepository.findOne(QUsersEntity.usersEntity.password.eq(username))
             .ifPresent(u -> usersRepository.delete(u));

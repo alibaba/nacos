@@ -16,25 +16,65 @@
 
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
-import java.util.Date;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
-import com.alibaba.nacos.config.server.model.*;
-import com.alibaba.nacos.config.server.modules.entity.*;
-import com.alibaba.nacos.config.server.modules.mapstruct.*;
-import com.alibaba.nacos.config.server.modules.repository.*;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
+import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigKey;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.SameConfigPolicy;
+import com.alibaba.nacos.config.server.model.SubInfo;
+import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoAggrEntity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoBetaEntity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTagEntity;
+import com.alibaba.nacos.config.server.modules.entity.ConfigTagsRelationEntity;
+import com.alibaba.nacos.config.server.modules.entity.HisConfigInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.QConfigInfoAggrEntity;
+import com.alibaba.nacos.config.server.modules.entity.QConfigInfoBetaEntity;
+import com.alibaba.nacos.config.server.modules.entity.QConfigInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.QConfigInfoTagEntity;
+import com.alibaba.nacos.config.server.modules.entity.QConfigTagsRelationEntity;
+import com.alibaba.nacos.config.server.modules.entity.QHisConfigInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.QTenantInfoEntity;
+import com.alibaba.nacos.config.server.modules.entity.TenantInfoEntity;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigHistoryInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfo4BetaMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfo4TagMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoAggrMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoBetaWrapperMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoChangedMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoEntityMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoTagWrapperMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.ConfigInfoWrapperMapStruct;
+import com.alibaba.nacos.config.server.modules.mapstruct.TenantInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.repository.ConfigInfoAggrRepository;
+import com.alibaba.nacos.config.server.modules.repository.ConfigInfoBetaRepository;
+import com.alibaba.nacos.config.server.modules.repository.ConfigInfoRepository;
+import com.alibaba.nacos.config.server.modules.repository.ConfigInfoTagRepository;
+import com.alibaba.nacos.config.server.modules.repository.ConfigTagsRelationRepository;
+import com.alibaba.nacos.config.server.modules.repository.HisConfigInfoRepository;
+import com.alibaba.nacos.config.server.modules.repository.TenantInfoRepository;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -45,16 +85,10 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
@@ -63,17 +97,20 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
-import javax.annotation.PostConstruct;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.io.IOException;
-import java.sql.*;
-import java.util.*;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.*;
+import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_WRAPPER_ROW_MAPPER;
 
 /**
  * External Storage Persist Service.
@@ -83,7 +120,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @Slf4j
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
-//@Conditional(value = ConditionOnExternalStorage.class)
+@Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalStoragePersistServiceImpl2 implements PersistService {
 

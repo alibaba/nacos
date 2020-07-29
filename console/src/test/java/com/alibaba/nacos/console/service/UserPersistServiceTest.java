@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.ExternalUserPersistServiceImpl2;
+import com.alibaba.nacos.config.server.auth.DefaultExternalUserPersistServiceImpl;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
@@ -51,7 +51,7 @@ public class UserPersistServiceTest extends BaseTest {
     }
     
     @Autowired
-    private ExternalUserPersistServiceImpl2 userPersistServiceTmp;
+    private DefaultExternalUserPersistServiceImpl userPersistServiceTmp;
     
     @Autowired
     private PasswordEncoder passwordEncoder;

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.ExternalRolePersistServiceImpl2;
+import com.alibaba.nacos.config.server.auth.DefaultExternalRolePersistServiceImpl;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
@@ -40,6 +40,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest
 public class RolePersistServiceTest extends BaseTest {
     
+    /**
+     * roles.
+     */
     private RolesEntity roles;
     
     @Before
@@ -48,7 +51,7 @@ public class RolePersistServiceTest extends BaseTest {
     }
     
     @Autowired
-    private ExternalRolePersistServiceImpl2 rolePersistServiceTmp;
+    private DefaultExternalRolePersistServiceImpl rolePersistServiceTmp;
     
     @Test
     public void getRolesTest() {

@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.ExternalPermissionPersistServiceImpl2;
+import com.alibaba.nacos.config.server.auth.DefaultExternalPermissionPersistServiceImpl;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
@@ -45,18 +45,18 @@ public class PermissionPersistServiceTest extends BaseTest {
     /**
      * permissions.
      */
-    private PermissionsEntity permissions;
+    private PermissionsEntity permissionsEntity;
     
     /**
      * before.
      */
     @Before
     public void before() {
-        permissions = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, PermissionsEntity.class);
+        permissionsEntity = JacksonUtils.toObj(TestData.PERMISSIONS_JSON, PermissionsEntity.class);
     }
     
     @Autowired
-    private ExternalPermissionPersistServiceImpl2 permissionPersistServiceTmp;
+    private DefaultExternalPermissionPersistServiceImpl externalPermissionPersistServiceImpl2;
     
     @Autowired
     private PermissionsRepository permissionsRepository;
@@ -67,13 +67,14 @@ public class PermissionPersistServiceTest extends BaseTest {
     @Test
     public void getPermissionsTest() {
         QPermissionsEntity qPermissions = QPermissionsEntity.permissionsEntity;
-        PermissionsEntity result = permissionsRepository.findOne(qPermissions.role.eq(permissions.getRole()))
+        PermissionsEntity result = permissionsRepository.findOne(qPermissions.role.eq(permissionsEntity.getRole()))
                 .orElse(null);
         if (result == null) {
             addPermissionTest();
         }
-        
-        Page<PermissionInfo> page = permissionPersistServiceTmp.getPermissions(permissions.getRole(), 0, 10);
+    
+        Page<PermissionInfo> page = externalPermissionPersistServiceImpl2
+                .getPermissions(permissionsEntity.getRole(), 0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
@@ -83,8 +84,9 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void addPermissionTest() {
-        permissionPersistServiceTmp
-                .addPermission(permissions.getRole(), permissions.getResource(), permissions.getAction());
+        externalPermissionPersistServiceImpl2
+                .addPermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
+                        permissionsEntity.getAction());
     }
     
     /**
@@ -92,7 +94,8 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void deletePermissionTest() {
-        permissionPersistServiceTmp
-                .deletePermission(permissions.getRole(), permissions.getResource(), permissions.getAction());
+        externalPermissionPersistServiceImpl2
+                .deletePermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
+                        permissionsEntity.getAction());
     }
 }
