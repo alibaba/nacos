@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.remote.worker;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,18 +26,25 @@ import org.slf4j.LoggerFactory;
  *
  * @author xiweng.yy
  */
-public final class RemotingWorkersManager {
+public final class RemotingWorkersManager implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RemotingWorkersManager.class);
-
+    
     private static final int TIMES_FOR_CORE = 2;
     
     /**
      * power of 2.
      */
     private static final RemotingWorker[] REMOTING_WORKERS;
-
+    
     private RemotingWorkersManager() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                shutdown();
+            } catch (NacosException nacosException) {
+                LOGGER.warn("shutdown RemotingWorkersManager failed", nacosException);
+            }
+        }));
     }
     
     static {
@@ -49,7 +59,7 @@ public final class RemotingWorkersManager {
             REMOTING_WORKERS[mod] = new RemotingWorker(mod, workerCount);
         }
     }
-
+    
     /**
      * Dispatch task by connectionId.
      */
@@ -57,7 +67,7 @@ public final class RemotingWorkersManager {
         RemotingWorker worker = getWorker(connectionId);
         worker.execute(task);
     }
-
+    
     /**
      * Get worker of connection id.
      *
@@ -68,9 +78,15 @@ public final class RemotingWorkersManager {
         int idx = connectionId.hashCode() & (REMOTING_WORKERS.length - 1);
         return REMOTING_WORKERS[idx];
     }
-
+    
     public static int workersCount() {
         return REMOTING_WORKERS.length;
     }
-
+    
+    @Override
+    public void shutdown() throws NacosException {
+        for (RemotingWorker each : REMOTING_WORKERS) {
+            each.shutdown();
+        }
+    }
 }

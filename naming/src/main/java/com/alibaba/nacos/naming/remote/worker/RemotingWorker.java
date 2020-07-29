@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.remote.worker;
 
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.BlockingQueue;
  *
  * @author xiweng.yy
  */
-public final class RemotingWorker {
+public final class RemotingWorker implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RemotingWorker.class);
     
@@ -39,10 +40,13 @@ public final class RemotingWorker {
     
     private final String name;
     
+    private final InnerWorker worker;
+    
     public RemotingWorker(final int mod, final int total) {
         name = getClass().getName() + "_" + mod + "%" + total;
         queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
-        new InnerWorker(name).start();
+        worker = new InnerWorker(name);
+        worker.start();
     }
     
     public String getName() {
@@ -68,10 +72,18 @@ public final class RemotingWorker {
         return queue.size();
     }
     
+    @Override
+    public void shutdown() {
+        worker.shutdown();
+        queue.clear();
+    }
+    
     /**
      * Real worker thread.
      */
-    private class InnerWorker extends Thread {
+    private class InnerWorker extends Thread implements Closeable {
+        
+        private volatile boolean start = true;
         
         InnerWorker(String name) {
             setDaemon(false);
@@ -80,7 +92,7 @@ public final class RemotingWorker {
         
         @Override
         public void run() {
-            for (; ; ) {
+            while (start) {
                 try {
                     Runnable task = queue.take();
                     long begin = System.currentTimeMillis();
@@ -90,9 +102,14 @@ public final class RemotingWorker {
                         LOGGER.warn("it takes {}ms to run task {}", duration, task);
                     }
                 } catch (Throwable e) {
-                    LOGGER.error("[client-worker-error] " + e.toString(), e);
+                    LOGGER.error("[remoting-worker-error] " + e.toString(), e);
                 }
             }
+        }
+        
+        @Override
+        public void shutdown() {
+            start = false;
         }
     }
 }
