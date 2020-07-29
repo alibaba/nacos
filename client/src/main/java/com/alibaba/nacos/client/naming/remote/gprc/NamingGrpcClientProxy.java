@@ -67,6 +67,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         rpcClient.init(serverListFactory);
         rpcClient.start();
         rpcClient.registerServerPushResponseHandler(new NamingPushResponseHandler(serviceInfoHolder));
+        rpcClient.registerConnectionListener(new NamingGrpcConnectionEventListener(serviceInfoHolder, this));
     }
     
     @Override

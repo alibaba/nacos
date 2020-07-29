@@ -51,11 +51,13 @@ public class RemotingConnectionHolder extends ClientConnectionEventListener {
     
     @Override
     public void clientConnected(Connection connect) {
+        Loggers.SRV_LOG.info("Client connection {} connect", connect.getConnectionId());
         connectionCache.put(connect.getConnectionId(), new RemotingConnection(connect));
     }
     
     @Override
     public void clientDisConnected(Connection connect) {
+        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", connect.getConnectionId());
         RemotingConnection remotingConnection = connectionCache.remove(connect.getConnectionId());
         try {
             for (String each : remotingConnection.getInstanceIndex().keySet()) {

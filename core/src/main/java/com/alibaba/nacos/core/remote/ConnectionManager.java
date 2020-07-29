@@ -75,7 +75,7 @@ public class ConnectionManager {
         if (remove != null) {
             remove.closeGrapcefully();
             Loggers.GRPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
-            clientConnectionEventListenerRegistry.notifyClientConnected(remove);
+            clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
     
