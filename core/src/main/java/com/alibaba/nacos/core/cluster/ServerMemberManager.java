@@ -482,6 +482,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                                         ExceptionUtil.getAllExceptionMsg(throwable));
                                         MemberUtils.onFail(target, throwable);
                                     }
+            
+                                    @Override
+                                    public void onCancel() {
+                
+                                    }
                                 });
             } catch (Throwable ex) {
                 Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}", target.getAddress(),

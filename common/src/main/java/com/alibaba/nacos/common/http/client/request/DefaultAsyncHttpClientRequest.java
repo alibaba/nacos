@@ -68,7 +68,7 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
             
             @Override
             public void cancelled() {
-            
+                callback.onCancel();
             }
         });
         
