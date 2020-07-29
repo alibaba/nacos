@@ -16,21 +16,9 @@
 
 package com.alibaba.nacos.common.http;
 
-import com.alibaba.nacos.common.http.handler.RequestHandler;
-import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.HttpMethod;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -39,9 +27,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpTrace;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
 
 /**
  * Base http method.
@@ -139,76 +124,16 @@ public enum BaseHttpMethod {
     
     private String name;
     
-    private HttpRequest requestBase;
-    
     BaseHttpMethod(String name) {
         this.name = name;
     }
     
-    public void init(String url) {
-        requestBase = createRequest(url);
+    public HttpRequestBase init(String url) {
+        return createRequest(url);
     }
     
     protected HttpRequestBase createRequest(String url) {
         throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Init http header.
-     *
-     * @param header header
-     */
-    public void initHeader(Header header) {
-        Iterator<Map.Entry<String, String>> iterator = header.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> entry = iterator.next();
-            requestBase.setHeader(entry.getKey(), entry.getValue());
-        }
-    }
-    
-    /**
-     * Init http entity.
-     *
-     * @param body      body
-     * @param mediaType mediaType {@link ContentType}
-     * @throws Exception exception
-     */
-    public void initEntity(Object body, String mediaType) throws Exception {
-        if (body == null) {
-            return;
-        }
-        if (requestBase instanceof HttpEntityEnclosingRequest) {
-            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            ContentType contentType = ContentType.create(mediaType);
-            StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
-            request.setEntity(entity);
-        }
-    }
-    
-    /**
-     * Init request from entity map.
-     *
-     * @param body    body map
-     * @param charset charset of entity
-     * @throws Exception exception
-     */
-    public void initFromEntity(Map<String, String> body, String charset) throws Exception {
-        if (body == null || body.isEmpty()) {
-            return;
-        }
-        List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());
-        for (Map.Entry<String, String> entry : body.entrySet()) {
-            params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-        }
-        if (requestBase instanceof HttpEntityEnclosingRequest) {
-            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            HttpEntity entity = new UrlEncodedFormEntity(params, charset);
-            request.setEntity(entity);
-        }
-    }
-    
-    public HttpRequestBase getRequestBase() {
-        return (HttpRequestBase) requestBase;
     }
     
     /**

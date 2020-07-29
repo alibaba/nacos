@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
@@ -97,19 +98,11 @@ public abstract class BaseHttpClient {
     
     protected HttpRequestBase build(String url, Header header, Object body, String method) throws Exception {
         
-        BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
-        httpMethod.init(url);
-        httpMethod.initHeader(header);
-        httpMethod.initEntity(body, header.getValue("Content-Type"));
-        return httpMethod.getRequestBase();
-    }
-    
-    private Header convertHeader(org.apache.http.Header[] headers) {
-        final Header nHeader = Header.newInstance();
-        for (org.apache.http.Header header : headers) {
-            nHeader.addParam(header.getName(), header.getValue());
-        }
-        return nHeader;
+        final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
+        final HttpRequestBase httpRequestBase = httpMethod.init(url);
+        HttpUtils.initRequestHeader(httpRequestBase, header);
+        HttpUtils.initRequestEntity(httpRequestBase, body, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
+        return httpRequestBase;
     }
     
     public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
