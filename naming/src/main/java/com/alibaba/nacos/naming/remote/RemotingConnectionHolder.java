@@ -55,7 +55,9 @@ public class RemotingConnectionHolder extends ClientConnectionEventListener {
     @Override
     public void clientConnected(Connection connect) {
         Loggers.SRV_LOG.info("Client connection {} connect", connect.getConnectionId());
-        connectionCache.put(connect.getConnectionId(), new RemotingConnection(connect));
+        if (!connectionCache.containsKey(connect.getConnectionId())) {
+            connectionCache.put(connect.getConnectionId(), new RemotingConnection(connect));
+        }
     }
     
     @Override

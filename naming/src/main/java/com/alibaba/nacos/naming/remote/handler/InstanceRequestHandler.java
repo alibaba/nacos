@@ -27,6 +27,9 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.naming.cluster.remote.ClusterClientManager;
+import com.alibaba.nacos.naming.cluster.remote.request.ForwardInstanceRequest;
+import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -49,9 +52,16 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     
     private final RemotingConnectionHolder remotingConnectionHolder;
     
-    public InstanceRequestHandler(ServiceManager serviceManager, RemotingConnectionHolder remotingConnectionHolder) {
+    private final ClusterClientManager clusterClientManager;
+    
+    private final DistroMapper distroMapper;
+    
+    public InstanceRequestHandler(ServiceManager serviceManager, RemotingConnectionHolder remotingConnectionHolder,
+            ClusterClientManager clusterClientManager, DistroMapper distroMapper) {
         this.serviceManager = serviceManager;
         this.remotingConnectionHolder = remotingConnectionHolder;
+        this.clusterClientManager = clusterClientManager;
+        this.distroMapper = distroMapper;
     }
     
     @Override
@@ -62,18 +72,38 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest> {
     @Override
     public Response handle(Request request, RequestMeta meta) throws NacosException {
         InstanceRequest instanceRequest = (InstanceRequest) request;
-        String namespace = instanceRequest.getNamespace();
         String serviceName = NamingUtils
                 .getGroupedName(instanceRequest.getServiceName(), instanceRequest.getGroupName());
-        switch (instanceRequest.getType()) {
+        if (distroMapper.responsible(serviceName)) {
+            return handleResponsibleRequest(serviceName, instanceRequest, meta);
+        } else {
+            return forwardRequestToResponsibleServer(serviceName, instanceRequest, meta);
+        }
+    }
+    
+    private Response handleResponsibleRequest(String serviceName, InstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        String namespace = request.getNamespace();
+        switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
-                return registerInstance(namespace, serviceName, instanceRequest, meta);
+                return registerInstance(namespace, serviceName, request, meta);
             case NamingRemoteConstants.DE_REGISTER_INSTANCE:
-                return deregisterInstance(namespace, serviceName, instanceRequest, meta);
+                return deregisterInstance(namespace, serviceName, request, meta);
             default:
                 throw new NacosException(NacosException.INVALID_PARAM,
-                        String.format("Unsupported request type %s", instanceRequest.getType()));
+                        String.format("Unsupported request type %s", request.getType()));
         }
+    }
+    
+    private Response forwardRequestToResponsibleServer(String serviceName, InstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        String targetAddress = distroMapper.mapSrv(serviceName);
+        if (clusterClientManager.hasClientForMember(targetAddress)) {
+            return clusterClientManager.getClusterClient(targetAddress)
+                    .request(new ForwardInstanceRequest(request, meta));
+        }
+        throw new NacosException(NacosException.BAD_GATEWAY,
+                String.format("Can't find responsible server for service %s", serviceName));
     }
     
     private Response registerInstance(String namespace, String serviceName, InstanceRequest instanceRequest,
