@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.naming.cluster.remote;
 
 /**
- * internal request .
- *
+ * RpcClientStatus.
  * @author liuzunfei
- * @version $Id: InternalRequest.java, v 0.1 2020年07月22日 8:33 PM liuzunfei Exp $
+ * @version $Id: RpcClientStatus.java, v 0.1 2020年07月14日 3:49 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class InternalRequest extends Request {
+public enum RpcClientStatus {
     
-    @Override
-    public String getModule() {
-        return "internal";
+    WAIT_INIT(0, "wait to  init serverlist factory... "),
+    INITED(1, "server list factory is ready,wait to start"),
+    STARTING(2, "server list factory is ready,wait to start"),
+    RUNNING(3, "client is running..."),
+    SWITCHING_SERVER(5, "reconnecting...");
+    
+    
+    int status;
+    
+    String desc;
+    
+    RpcClientStatus(int status, String desc) {
+        this.status = status;
+        this.desc = desc;
     }
 }

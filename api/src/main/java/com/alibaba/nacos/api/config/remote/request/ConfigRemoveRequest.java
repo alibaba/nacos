@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.config.remote.request;
  * @author liuzunfei
  * @version $Id: ConfigRemoveRequest.java, v 0.1 2020年07月16日 4:31 PM liuzunfei Exp $
  */
-public class ConfigRemoveRequest extends ConfigCommonRequest {
+public class ConfigRemoveRequest extends AbstractConfigRequest {
     
     String dataId;
     

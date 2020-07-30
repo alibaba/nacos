@@ -56,10 +56,13 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     
     private final RpcClient rpcClient;
     
+    private final NamingGrpcConnectionEventListener namingGrpcConnectionEventListener;
+    
     public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory,
             ServiceInfoHolder serviceInfoHolder) throws NacosException {
         this.namespaceId = namespaceId;
         this.rpcClient = RpcClientFactory.getClient("naming");
+        this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
         start(serverListFactory, serviceInfoHolder);
     }
     
@@ -67,6 +70,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         rpcClient.init(serverListFactory);
         rpcClient.start();
         rpcClient.registerServerPushResponseHandler(new NamingPushResponseHandler(serviceInfoHolder));
+        rpcClient.registerConnectionListener(namingGrpcConnectionEventListener);
     }
     
     @Override
@@ -76,6 +80,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
+        namingGrpcConnectionEventListener.cacheInstanceForRedo(serviceName, groupName, instance);
     }
     
     @Override
@@ -86,6 +91,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
+        namingGrpcConnectionEventListener.removeInstanceForRedo(serviceName, groupName, instance);
     }
     
     @Override
@@ -147,14 +153,17 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceNameWithGroup, clusters,
                 true);
         SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
+        namingGrpcConnectionEventListener.cacheSubscriberForRedo(serviceNameWithGroup, clusters);
         return response.getServiceInfo();
     }
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId,
-                NamingUtils.getGroupedName(serviceName, groupName), clusters, false);
+        String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceNameWithGroup, clusters,
+                false);
         requestToServer(request, SubscribeServiceResponse.class);
+        namingGrpcConnectionEventListener.removeSubscriberForRedo(serviceNameWithGroup, clusters);
     }
     
     @Override

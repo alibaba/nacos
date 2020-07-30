@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.config.remote.request;
  * @author liuzunfei
  * @version $Id: ConfigBatchListenRequest.java, v 0.1 2020年07月27日 7:46 PM liuzunfei Exp $
  */
-public class ConfigBatchListenRequest extends ConfigCommonRequest {
+public class ConfigBatchListenRequest extends AbstractConfigRequest {
     
     private static final String Y = "Y";
     

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,51 +14,50 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
+import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
+import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.naming.cluster.remote.request.ForwardHeartBeatRequest;
+import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
 import com.google.common.collect.Lists;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
- * HeartBeatRequestHandler.
+ * Forward heart beat request handler.
  *
- * @author liuzunfei
- * @version $Id: HeartBeatRequestHandler.java, v 0.1 2020年07月14日 1:58 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
 @Component
-public class HeartBeatRequestHandler extends RequestHandler {
+public class ForwardHeartBeatRequestHandler extends RequestHandler<ForwardHeartBeatRequest> {
     
-    @Autowired
-    ConnectionManager connectionManager;
+    private final RemotingConnectionHolder remotingConnectionHolder;
+    
+    public ForwardHeartBeatRequestHandler(RemotingConnectionHolder remotingConnectionHolder) {
+        this.remotingConnectionHolder = remotingConnectionHolder;
+    }
     
     @Override
-    public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, HeartBeatRequest.class);
+    public ForwardHeartBeatRequest parseBodyString(String bodyString) {
+        return JacksonUtils.toObj(bodyString, ForwardHeartBeatRequest.class);
     }
     
     @Override
     public Response handle(Request request, RequestMeta meta) throws NacosException {
-        String connectionId = meta.getConnectionId();
-        connectionManager.refreshActiveTime(connectionId);
-        NotifyCenter.publishEvent(new RemotingHeartBeatEvent(connectionId, meta.getClientIp(), meta.getClientVersion()));
+        remotingConnectionHolder.renewRemotingConnection(((ForwardHeartBeatRequest) request).getConnectionId());
         return new HeartBeatResponse();
     }
     
     @Override
     public List<String> getRequestTypes() {
-        return Lists.newArrayList(RequestTypeConstants.HEART_BEAT);
+        return Lists.newArrayList(NamingRemoteConstants.FORWARD_HEART_BEAT);
     }
 }

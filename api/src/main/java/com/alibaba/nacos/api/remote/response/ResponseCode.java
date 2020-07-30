@@ -23,8 +23,14 @@ package com.alibaba.nacos.api.remote.response;
  */
 public enum ResponseCode {
     
+    /**
+     * Request success.
+     */
     SUCCESS(200, "response ok"),
     
+    /**
+     * Request failed.
+     */
     FAIL(500, "response fail");
     
     int code;

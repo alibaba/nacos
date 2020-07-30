@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
  *
  * @author xiweng.yy
  */
-public class ServiceQueryRequest extends NamingCommonRequest {
+public class ServiceQueryRequest extends AbstractNamingRequest {
     
     private String cluster;
     

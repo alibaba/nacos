@@ -23,6 +23,9 @@ package com.alibaba.nacos.api.remote.connection;
  */
 public enum ConnectionType {
     
+    /**
+     * gRPC connection.
+     */
     GRPC("GRPC", "Grpc Connection");
     
     String type;

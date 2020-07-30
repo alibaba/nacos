@@ -277,6 +277,7 @@
                         <exclude>**/istio/model/mcp/*.java</exclude>
                         <exclude>**/istio/model/naming/*.java</exclude>
                         <exclude>**/istio/model/*.java</exclude>
+                        <exclude>**/api/grpc/*.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -304,7 +305,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <excludes>**/istio/model/**,**/nacos/test/**</excludes>
+                    <excludes>**/istio/model/**,**/nacos/test/**,**/api/grpc/**</excludes>
                 </configuration>
                 <executions>
                     <execution>

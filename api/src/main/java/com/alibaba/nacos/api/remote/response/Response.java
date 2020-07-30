@@ -24,6 +24,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author liuzunfei
  * @version $Id: Response.java, v 0.1 2020年07月13日 6:03 PM liuzunfei Exp $
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Response {
     
     int resultCode = ResponseCode.SUCCESS.getCode();

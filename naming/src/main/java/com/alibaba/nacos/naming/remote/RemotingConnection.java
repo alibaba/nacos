@@ -40,8 +40,11 @@ public class RemotingConnection {
     
     private final Connection connection;
     
+    private long lastHeartBeatTime;
+    
     public RemotingConnection(Connection connection) {
         this.connection = connection;
+        this.lastHeartBeatTime = System.currentTimeMillis();
     }
     
     public String getConnectionId() {
@@ -114,5 +117,13 @@ public class RemotingConnection {
     
     public ConcurrentMap<String, Set<Instance>> getInstanceIndex() {
         return instanceIndex;
+    }
+    
+    public long getLastHeartBeatTime() {
+        return lastHeartBeatTime;
+    }
+    
+    public void setLastHeartBeatTime(long lastHeartBeatTime) {
+        this.lastHeartBeatTime = lastHeartBeatTime;
     }
 }

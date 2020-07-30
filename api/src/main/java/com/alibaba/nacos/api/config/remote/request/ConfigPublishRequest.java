@@ -25,7 +25,7 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: ConfigPublishRequest.java, v 0.1 2020年07月16日 4:30 PM liuzunfei Exp $
  */
-public class ConfigPublishRequest extends ConfigCommonRequest {
+public class ConfigPublishRequest extends AbstractConfigRequest {
     
     String dataId;
     
@@ -59,7 +59,7 @@ public class ConfigPublishRequest extends ConfigCommonRequest {
      */
     public void putAdditonalParam(String key, String value) {
         if (additonMap == null) {
-            additonMap = new HashMap<String, String>();
+            additonMap = new HashMap<String, String>(2);
         }
         additonMap.put(key, value);
     }
