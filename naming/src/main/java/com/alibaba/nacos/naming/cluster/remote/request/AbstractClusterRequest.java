@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.request;
+package com.alibaba.nacos.naming.cluster.remote.request;
 
 import com.alibaba.nacos.api.remote.request.Request;
 
 /**
- * abstract request of config module request,all config module request should extends this class.
- * @author liuzunfei
- * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
+ * Cluster request.
+ *
+ * @author xiweng.yy
  */
-public abstract class ConfigCommonRequest extends Request {
-
+public abstract class AbstractClusterRequest extends Request {
+    
     @Override
     public String getModule() {
-        return "config";
+        return "cluster";
     }
 }

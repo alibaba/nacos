@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.naming.cluster.remote.grpc;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * internal request .
+ * ServerPushResponseHandler.
  *
  * @author liuzunfei
- * @version $Id: InternalRequest.java, v 0.1 2020年07月22日 8:33 PM liuzunfei Exp $
+ * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class InternalRequest extends Request {
-    
-    @Override
-    public String getModule() {
-        return "internal";
-    }
+public interface ServerPushResponseHandler<T> {
+
+    /**
+     * Handle logic when response received.
+     * @param response response
+     */
+    void responseReply(Response response);
+
 }

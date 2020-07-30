@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.request;
+package com.alibaba.nacos.api.config.remote.request;
+
+import com.alibaba.nacos.api.remote.request.Request;
 
 /**
- * internal request .
- *
+ * abstract request of config module request,all config module request should extends this class.
  * @author liuzunfei
- * @version $Id: InternalRequest.java, v 0.1 2020年07月22日 8:33 PM liuzunfei Exp $
+ * @version $Id: ConfigCommonRequest.java, v 0.1 2020年07月13日 9:05 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class InternalRequest extends Request {
-    
+public abstract class AbstractConfigRequest extends Request {
+
     @Override
     public String getModule() {
-        return "internal";
+        return "config";
     }
 }

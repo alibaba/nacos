@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
  *
  * @author xiweng.yy
  */
-public class InstanceRequest extends NamingCommonRequest {
+public class InstanceRequest extends AbstractNamingRequest {
     
     private String type;
     

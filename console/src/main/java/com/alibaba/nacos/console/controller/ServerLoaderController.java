@@ -52,5 +52,4 @@ public class ServerLoaderController {
         return ResponseEntity.ok().body("success");
     }
     
-    
 }

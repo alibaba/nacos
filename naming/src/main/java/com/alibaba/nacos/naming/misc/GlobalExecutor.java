@@ -127,6 +127,10 @@ public class GlobalExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     new NameThreadFactory("com.alibaba.nacos.naming.nacos-server-performance"));
     
+    private static final ScheduledExecutorService REMOTE_CONNECTION_EXECUTOR = ExecutorFactory.Managed
+            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                    new NameThreadFactory("com.alibaba.nacos.naming.remote-connection-manager"));
+    
     public static void submitDataSync(Runnable runnable, long delay) {
         DATA_SYNC_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
@@ -240,5 +244,10 @@ public class GlobalExecutor {
     
     public static void schedulePerformanceLogger(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         SERVER_PERFORMANCE_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static void scheduleRemoteConnectionManager(Runnable runnable, long initialDelay, long delay,
+            TimeUnit unit) {
+        REMOTE_CONNECTION_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
 }

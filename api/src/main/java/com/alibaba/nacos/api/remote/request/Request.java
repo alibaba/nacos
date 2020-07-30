@@ -24,6 +24,7 @@ import java.util.Map;
  *
  * @author liuzunfei
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Request {
     
     private final Map<String, String> headers = new HashMap<String, String>();

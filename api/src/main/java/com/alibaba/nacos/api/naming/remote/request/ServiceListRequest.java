@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
  *
  * @author xiweng.yy
  */
-public class ServiceListRequest extends NamingCommonRequest {
+public class ServiceListRequest extends AbstractNamingRequest {
     
     private int pageNo;
     
