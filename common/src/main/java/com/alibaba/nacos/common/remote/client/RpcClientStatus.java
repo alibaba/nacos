@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.common.remote.client;
 
 /**
  * RpcClientStatus.

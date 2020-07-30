@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
-import com.alibaba.nacos.api.remote.connection.ConnectionMetaInfo;
-import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 

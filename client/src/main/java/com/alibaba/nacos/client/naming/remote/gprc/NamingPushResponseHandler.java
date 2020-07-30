@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.naming.remote.gprc;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.remote.ServerPushResponseHandler;
+import com.alibaba.nacos.common.remote.client.ServerPushResponseHandler;
 
 /**
  * Naming push response handler.

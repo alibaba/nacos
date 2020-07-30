@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
-import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

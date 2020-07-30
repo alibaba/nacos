@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.exception;
+package com.alibaba.nacos.common.remote.client;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * connection already closed exception.
+ * ServerPushResponseHandler.
  *
  * @author liuzunfei
- * @version $Id: ConnectionAlreadyClosedException.java, v 0.1 2020年07月22日 7:28 PM liuzunfei Exp $
+ * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-public class ConnectionAlreadyClosedException extends RemoteException {
-    
-    private static final int CONNECTION_ALREADY_CLOSED = 600;
-    
-    public ConnectionAlreadyClosedException() {
-        super(CONNECTION_ALREADY_CLOSED);
-    }
-    
-    public ConnectionAlreadyClosedException(Throwable throwable) {
-        super(CONNECTION_ALREADY_CLOSED, throwable);
-    }
+public interface ServerPushResponseHandler<T> {
+
+    /**
+     * Handle logic when response received.
+     * @param response response
+     */
+    void responseReply(Response response);
+
 }

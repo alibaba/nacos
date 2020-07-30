@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import com.alibaba.nacos.client.utils.ClientCommonUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -37,7 +36,7 @@ public class NamingHttpUtil {
     public static Header builderHeader() {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
-        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, ClientCommonUtils.VERSION);
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, VersionUtils.getFullClientVersion());
         header.addParam(HttpHeaderConsts.ACCEPT_ENCODING, "gzip,deflate,sdch");
         header.addParam(HttpHeaderConsts.CONNECTION, "Keep-Alive");
         header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());

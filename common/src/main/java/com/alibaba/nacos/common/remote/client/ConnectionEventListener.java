@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.exception;
-
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+package com.alibaba.nacos.common.remote.client;
 
 /**
- * super exception in remote module.
- *
+ *  Client:ConnectionEventListener.
  * @author liuzunfei
- * @version $Id: RemoteException.java, v 0.1 2020年07月22日 7:24 PM liuzunfei Exp $
+ * @version $Id: ConnectionEventListener.java, v 0.1 2020年07月14日 10:59 AM liuzunfei Exp $
  */
-public class RemoteException extends NacosRuntimeException {
+public interface ConnectionEventListener {
     
-    public RemoteException(int errorCode) {
-        super(errorCode);
-    }
-    
-    public RemoteException(int errorCode, Throwable throwable) {
-        super(errorCode, throwable);
-    }
+    /**
+     * notify when server is connected .
+     */
+    public void onConnected();
+
+    /**
+     * notify when this client is switch to a new server and  is sucessful reconnected .
+     */
+    @Deprecated
+    public void onReconnected();
+
+    /**
+     * notify when server is disconnected.
+     */
+    public void onDisConnect();
 }

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

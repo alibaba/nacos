@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ import java.util.function.Consumer;
  */
 public abstract class RpcClient implements Closeable {
     
-    private static final Logger LOGGER = LogUtils.logger(RpcClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
     
     private ServerListFactory serverListFactory;
     
@@ -66,14 +67,10 @@ public abstract class RpcClient implements Closeable {
     protected void notifyReConnected() {
     
         if (!connectionEventListeners.isEmpty()) {
-        
-            LOGGER.info("Notify connection event listeners.");
-            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                @Override
-                public void accept(ConnectionEventListener connectionEventListener) {
-                    connectionEventListener.onReconnected();
-                }
-            });
+            LoggerUtils.printIfInfoEnabled(LOGGER, "notify connection event listeners.");
+            for (ConnectionEventListener listener : connectionEventListeners) {
+                listener.onReconnected();
+            }
         }
     
     }
@@ -82,12 +79,12 @@ public abstract class RpcClient implements Closeable {
      * Notify when client re connected.
      */
     protected void notifyDisConnected() {
-        
-        LOGGER.info("Client reconnected to a server .");
+    
+        LoggerUtils.printIfInfoEnabled(LOGGER, "Client reconnected to a server ..");
         
         if (!connectionEventListeners.isEmpty()) {
-            
-            LOGGER.info("Notify connection event listeners.");
+    
+            LoggerUtils.printIfInfoEnabled(LOGGER, "Notify connection event listeners.");
             connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
                 @Override
                 public void accept(ConnectionEventListener connectionEventListener) {
@@ -182,17 +179,18 @@ public abstract class RpcClient implements Closeable {
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
-        
-        LOGGER.info("RpcClient init ,connectionId={}, ServerListFactory ={}", this.connectionId,
-                serverListFactory.getClass().getName());
+    
+        LoggerUtils
+                .printIfInfoEnabled(LOGGER, "RpcClient init ,connectionId={}, ServerListFactory ={}", this.connectionId,
+                        serverListFactory.getClass().getName());
     }
     
     public RpcClient(ServerListFactory serverListFactory) {
         this.serverListFactory = serverListFactory;
         this.connectionId = UUID.randomUUID().toString();
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
-        LOGGER.info("RpcClient init in constructor ,connectionId={}, ServerListFactory ={}", this.connectionId,
-                serverListFactory.getClass().getName());
+        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor ,connectionId={}, ServerListFactory ={}",
+                this.connectionId, serverListFactory.getClass().getName());
     }
     
     /**
@@ -223,7 +221,8 @@ public abstract class RpcClient implements Closeable {
      */
     public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
     
-        LOGGER.info(" Registry connection listener to current client,connectionId={}, connectionEventListener={}",
+        LoggerUtils.printIfInfoEnabled(LOGGER,
+                "Registry connection listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, connectionEventListener.getClass().getName());
         this.connectionEventListeners.add(connectionEventListener);
     }
@@ -234,7 +233,7 @@ public abstract class RpcClient implements Closeable {
      * @param serverPushResponseHandler serverPushResponseHandler
      */
     public void registerServerPushResponseHandler(ServerPushResponseHandler serverPushResponseHandler) {
-        LOGGER.info(
+        LoggerUtils.printIfInfoEnabled(LOGGER,
                 " Registry server push response  listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, serverPushResponseHandler.getClass().getName());
     
