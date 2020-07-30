@@ -18,7 +18,10 @@ package com.alibaba.nacos.naming.cluster.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.connection.ConnectionMetaInfo;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+
+import java.util.concurrent.Future;
 
 /**
  * Cluster connection.
@@ -32,7 +35,23 @@ public class ClusterConnection extends Connection {
     }
     
     @Override
-    public void sendResponse(Response reponse) {
+    public boolean sendPush(ServerPushResponse request, long timeoutMills) throws Exception {
+        return false;
+    }
+    
+    @Override
+    public boolean sendPushNoAck(ServerPushResponse request) throws Exception {
+        return false;
+    }
+    
+    @Override
+    public Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception {
+        return null;
+    }
+    
+    @Override
+    public void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack) throws Exception {
+    
     }
     
     @Override

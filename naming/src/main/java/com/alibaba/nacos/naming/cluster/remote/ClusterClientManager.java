@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -71,4 +72,7 @@ public class ClusterClientManager {
         return clientMap.getOrDefault(memberAddress, null);
     }
     
+    public Collection<ClusterClient> getAllClusterClient() {
+        return clientMap.values();
+    }
 }
