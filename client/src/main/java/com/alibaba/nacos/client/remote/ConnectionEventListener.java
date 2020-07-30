@@ -31,10 +31,11 @@ public interface ConnectionEventListener {
     /**
      * notify when this client is switch to a new server and  is sucessful reconnected .
      */
+    @Deprecated
     public void onReconnected();
 
     /**
-     * notify when server is disconnected .
+     * notify when server is disconnected.
      */
     public void onDisConnect();
 }

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.google.common.util.concurrent.FutureCallback;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -64,19 +64,37 @@ public abstract class RpcClient implements Closeable {
      * Notify when client re connected.
      */
     protected void notifyReConnected() {
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                if (!connectionEventListeners.isEmpty()) {
-                    connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                        @Override
-                        public void accept(ConnectionEventListener connectionEventListener) {
-                            connectionEventListener.onReconnected();
-                        }
-                    });
+    
+        if (!connectionEventListeners.isEmpty()) {
+        
+            LOGGER.info("Notify connection event listeners.");
+            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                @Override
+                public void accept(ConnectionEventListener connectionEventListener) {
+                    connectionEventListener.onReconnected();
                 }
-            }
-        }, 0, TimeUnit.MILLISECONDS);
+            });
+        }
+    
+    }
+    
+    /**
+     * Notify when client re connected.
+     */
+    protected void notifyDisConnected() {
+        
+        LOGGER.info("Client reconnected to a server .");
+        
+        if (!connectionEventListeners.isEmpty()) {
+            
+            LOGGER.info("Notify connection event listeners.");
+            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                @Override
+                public void accept(ConnectionEventListener connectionEventListener) {
+                    connectionEventListener.onDisConnect();
+                }
+            });
+        }
         
     }
     
@@ -84,19 +102,14 @@ public abstract class RpcClient implements Closeable {
      * Notify when client new connected.
      */
     protected void notifyConnected() {
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                if (!connectionEventListeners.isEmpty()) {
-                    connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                        @Override
-                        public void accept(ConnectionEventListener connectionEventListener) {
-                            connectionEventListener.onReconnected();
-                        }
-                    });
+        if (!connectionEventListeners.isEmpty()) {
+            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
+                @Override
+                public void accept(ConnectionEventListener connectionEventListener) {
+                    connectionEventListener.onConnected();
                 }
-            }
-        }, 0, TimeUnit.MILLISECONDS);
+            });
+        }
     }
     
     /**
@@ -194,6 +207,14 @@ public abstract class RpcClient implements Closeable {
      * @return
      */
     public abstract Response request(Request request) throws NacosException;
+    
+    /**
+     * send aync request.
+     *
+     * @param request request.
+     * @return
+     */
+    public abstract void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException;
     
     /**
      * register connection handler.will be notified wher inner connect chanfed.

@@ -115,7 +115,8 @@ public class RemotePushService implements ApplicationListener<ServiceChangeEvent
         ServiceInfo serviceInfo = serviceInfoGenerator
                 .generateServiceInfo(service, StringUtils.EMPTY, false, StringUtils.EMPTY);
         for (Subscriber each : serviceSubscribesMap.getOrDefault(serviceKey, new HashSet<>())) {
-            notifier.push(subscribeConnectionMap.get(each), NotifySubscriberResponse.buildSuccessResponse(serviceInfo));
+            notifier.pushWithoutAck(subscribeConnectionMap.get(each),
+                    NotifySubscriberResponse.buildSuccessResponse(serviceInfo));
         }
     }
 }

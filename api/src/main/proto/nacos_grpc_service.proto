@@ -52,7 +52,7 @@ message GrpcResponse {
     int32 code = 1;
     // reponse body
     google.protobuf.Any body = 2;
-
+    string ack = 4;
     string type = 3;
 
 }

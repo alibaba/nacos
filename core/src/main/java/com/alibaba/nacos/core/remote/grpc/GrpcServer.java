@@ -75,6 +75,7 @@ public class GrpcServer extends RpcServer {
                 Loggers.GRPC.info("Nacos gRPC server stopped...");
             }
         });
+    
     }
     
     @Override

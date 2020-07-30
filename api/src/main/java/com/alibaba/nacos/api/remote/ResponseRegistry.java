@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
@@ -56,7 +56,7 @@ public class ResponseRegistry {
         REGISTRY_RESPONSES.put(ResponseTypeConstants.CONNECION_UNREGISTER, ConnectionUnregisterResponse.class);
         
         //config response registry
-        REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_CHANGE, ConfigChangeListenResponse.class);
+        REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_CHANGE_BATCH, ConfigChangeBatchListenResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY, ConfigChangeNotifyResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_QUERY, ConfigQueryResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_PUBLISH, ConfigPubishResponse.class);

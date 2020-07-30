@@ -27,27 +27,27 @@ public abstract class ServerPushResponse extends Response {
     /**
      * unique id for this server response id.
      */
-    private long responseId;
+    private String requestId;
     
     public ServerPushResponse() {
         super();
     }
     
     /**
-     * Getter method for property <tt>responseId</tt>.
+     * Getter method for property <tt>requestId</tt>.
      *
-     * @return property value of responseId
+     * @return property value of requestId
      */
-    public long getResponseId() {
-        return responseId;
+    public String getRequestId() {
+        return requestId;
     }
     
     /**
-     * Setter method for property <tt>responseId</tt>.
+     * Setter method for property <tt>requestId</tt>.
      *
-     * @param responseId value to be assigned to property responseId
+     * @param requestId value to be assigned to property requestId
      */
-    public void setResponseId(long responseId) {
-        this.responseId = responseId;
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 }

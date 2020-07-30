@@ -20,12 +20,14 @@ import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
+import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
@@ -35,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * grpc request handler reactor,to connect to thw request handler module.
+ * grpc request handler reactor, to receive grpc request and transfer to request handler.
  *
  * @author liuzunfei
  * @version $Id: GrpcRequestHandlerReactor.java, v 0.1 2020年07月13日 4:25 PM liuzunfei Exp $
@@ -55,9 +57,15 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
         Loggers.GRPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
         String type = grpcRequest.getType();
         if (RequestTypeConstants.SERVER_CHECK.equals(type)) {
-            responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
+            responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse(), ""));
             responseObserver.onCompleted();
             return;
+        } else if (RequestTypeConstants.PUSH_ACK.equals(type)) {
+        
+            PushAckRequest request = JacksonUtils
+                    .toObj(grpcRequest.getBody().getValue().toStringUtf8(), PushAckRequest.class);
+            GrpcAckSynchronizer.ackNotify(request.getAckId(), request.isSuccess());
+            responseObserver.onCompleted();
         }
         
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
@@ -69,12 +77,12 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
                 RequestMeta requestMeta = convertMeta(grpcRequest.getMetadata());
                 boolean requestValid = connectionManager.checkValid(requestMeta.getConnectionId());
                 if (!requestValid) {
-                    responseObserver.onNext(GrpcUtils.convert(new ConnectionUnregisterResponse()));
+                    responseObserver.onNext(GrpcUtils.convert(new ConnectionUnregisterResponse(), ""));
                     responseObserver.onCompleted();
                     return;
                 }
                 Response response = requestHandler.handle(request, requestMeta);
-                responseObserver.onNext(GrpcUtils.convert(response));
+                responseObserver.onNext(GrpcUtils.convert(response, ""));
                 responseObserver.onCompleted();
             } catch (Exception e) {
                 Loggers.GRPC_DIGEST.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);

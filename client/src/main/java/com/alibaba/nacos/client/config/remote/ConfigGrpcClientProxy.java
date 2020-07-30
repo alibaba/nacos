@@ -16,18 +16,17 @@
 
 package com.alibaba.nacos.client.config.remote;
 
-import com.alibaba.nacos.api.config.remote.request.ConfigChangeListenRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.remote.RpcClient;
 import com.alibaba.nacos.client.remote.RpcClientFactory;
 import com.alibaba.nacos.client.remote.ServerListFactory;
@@ -63,42 +62,27 @@ public class ConfigGrpcClientProxy {
     /**
      * send congif change listen request.
      *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenat  tenat
+     * @param configListenString configListenString.
      * @throws NacosException throws when listen fail.
      */
-    public void listenConfigChange(String dataId, String group, String tenat) throws NacosException {
+    public ConfigChangeBatchListenResponse listenConfigChange(String configListenString) throws NacosException {
     
-        if (ParamUtils.useHttpSwitch()) {
-            return;
-        }
-        ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
-                .buildListenRequest(dataId, group, tenat);
-        ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
-        if (!response.isSuccess()) {
-            throw new NacosException(NacosException.SERVER_ERROR, "Fail to Listen Config Change");
-        }
+        ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
+                .buildListenRequest(configListenString);
+        return (ConfigChangeBatchListenResponse) rpcClient.request(configChangeListenRequest);
     }
     
     /**
-     * sned cancel listen congif change request .
+     * sned cancel listen config change request .
      *
-     * @param dataId dataId
-     * @param group  group
-     * @param tenat  tenat
+     * @param configListenString string of remove listen config string.
      */
-    public void unListenConfigChange(String dataId, String group, String tenat) throws NacosException {
-    
-        if (ParamUtils.useHttpSwitch()) {
-            return;
-        }
-        ConfigChangeListenRequest configChangeListenRequest = ConfigChangeListenRequest
-                .buildUnListenRequest(dataId, group, tenat);
-        ConfigChangeListenResponse response = (ConfigChangeListenResponse) rpcClient.request(configChangeListenRequest);
-        if (!response.isSuccess()) {
-            throw new NacosException(NacosException.SERVER_ERROR, "Fail to UnListen Config Change");
-        }
+    public boolean unListenConfigChange(String configListenString) throws NacosException {
+        ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
+                .buildRemoveListenRequest(configListenString);
+        ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) rpcClient
+                .request(configChangeListenRequest);
+        return response.isSuccess();
     }
     
     /**
@@ -121,8 +105,8 @@ public class ConfigGrpcClientProxy {
      * publish config.
      *
      * @param dataid dataid
-     * @param group group
-     * @param tenat tenat
+     * @param group  group
+     * @param tenat  tenat
      * @return push  result.
      * @throws NacosException throw where publish fail.
      */
@@ -137,8 +121,8 @@ public class ConfigGrpcClientProxy {
      * remove config.
      *
      * @param dataid dataid
-     * @param group group
-     * @param tenat tenat
+     * @param group  group
+     * @param tenat  tenat
      * @return response.
      * @throws NacosException throw where publish fail.
      */

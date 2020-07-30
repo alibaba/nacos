@@ -20,12 +20,15 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
+import com.alibaba.nacos.api.config.listener.Listener;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Properties;
+import java.util.Random;
 import java.util.Scanner;
 
 @Ignore
@@ -37,6 +40,8 @@ public class ConfigTest {
     public void before() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+    
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -60,30 +65,40 @@ public class ConfigTest {
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
-        System.out.println("4-" + System.currentTimeMillis());
     
+        Random random = new Random();
+        int times = 10000;
+        while (times > 0) {
+        
+            boolean result = configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
+            times--;
+            Thread.sleep(2000L);
+        
+        }
+        
         boolean result = configService.publishConfig(dataId, group, content);
-        //Assert.assertTrue(result);
-        System.out.println("5-" + System.currentTimeMillis());
+        Assert.assertTrue(result);
     
-        configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
+        Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receiveConfigInfo1 :" + configInfo);
             }
-        });
+        };
+        configService.getConfigAndSignListener(dataId, group, 5000, listener);
     
+        //configService.removeListener(dataId, group, listener);
         //configService.removeConfig(dataId, group);
     
-        configService.publishConfig("lessspring2", group, "lessspring2value");
-    
-        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo2 :" + configInfo);
-            }
-        });
-    
+        //        configService.publishConfig("lessspring2", group, "lessspring2value");
+        //
+        //        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
+        //            @Override
+        //            public void receiveConfigInfo(String configInfo) {
+        //                System.out.println("receiveConfigInfo2 :" + configInfo);
+        //            }
+        //        });
+        //
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {
@@ -102,30 +117,28 @@ public class ConfigTest {
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
-        System.out.println("4-" + System.currentTimeMillis());
         
         boolean result = configService.publishConfig(dataId, group, content);
         //Assert.assertTrue(result);
-        System.out.println("5-" + System.currentTimeMillis());
-        
-        configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
+    
+        Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receiveConfigInfo1 :" + configInfo);
             }
-        });
-        
-        //configService.removeConfig(dataId, group);
-        
-        configService.publishConfig("lessspring2", group, "lessspring2value");
-        
-        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo2 :" + configInfo);
-            }
-        });
-        
+        };
+    
+        configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        System.out.println("");
+        Thread.sleep(10000L);
+        System.out.println("Remove config..");
+        configService.removeListener(dataId, group, listener);
+    
+        Thread.sleep(10000L);
+        System.out.println("Add Listen config..");
+    
+        configService.getConfigAndSignListener(dataId, group, 5000, listener);
+    
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {
