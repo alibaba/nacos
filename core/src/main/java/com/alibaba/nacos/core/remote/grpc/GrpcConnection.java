@@ -19,9 +19,16 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.connection.ConnectionMetaInfo;
 import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * grpc connection.
@@ -31,6 +38,11 @@ import io.grpc.stub.StreamObserver;
  */
 public class GrpcConnection extends Connection {
     
+    static ThreadPoolExecutor pushWorkers = new ThreadPoolExecutor(10, 50, 0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(5000));
+    
+    private static final long MAX_TIMEOUTS = 500L;
+    
     private StreamObserver streamObserver;
     
     public GrpcConnection(ConnectionMetaInfo metaInfo, StreamObserver streamObserver) {
@@ -39,18 +51,84 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public void sendResponse(Response reponse) {
+    public boolean sendPush(ServerPushResponse request, long timeout) throws Exception {
         try {
-            streamObserver.onNext(GrpcUtils.convert(reponse));
+            String requestId = String.valueOf(PushAckIdGenerator.getNextId());
+            request.setRequestId(requestId);
+            streamObserver.onNext(GrpcUtils.convert(request, requestId));
+            try {
+                GrpcAckSynchronizer.waitAck(requestId, timeout);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                GrpcAckSynchronizer.release(requestId);
+            }
+        } catch (Exception e) {
+            if (e instanceof StatusRuntimeException) {
+                //return true where client is not active yet.
+                return true;
+            }
+            throw e;
+        }
+        return false;
+    }
+    
+    private void sendPushWithCallback(ServerPushResponse request, PushCallBack callBack) {
+        try {
+            String requestId = String.valueOf(PushAckIdGenerator.getNextId());
+            request.setRequestId(requestId);
+            streamObserver.onNext(GrpcUtils.convert(request, requestId));
+            GrpcAckSynchronizer.syncCallbackOnAck(requestId, callBack);
+        } catch (Exception e) {
+            if (e instanceof StatusRuntimeException) {
+                //return true where client is not active yet.
+                callBack.onSuccess();
+            }
+            callBack.onFail();
+        }
+    }
+    
+    @Override
+    public boolean sendPushNoAck(ServerPushResponse request) throws Exception {
+        try {
+            streamObserver.onNext(GrpcUtils.convert(request, ""));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
             }
             throw e;
         }
+        return false;
+    }
+    
+    @Override
+    public Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception {
+        return pushWorkers.submit(new PushCallable(request, MAX_TIMEOUTS));
+    }
+    
+    @Override
+    public void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack) throws Exception {
+        sendPushWithCallback(request, callBack);
     }
     
     @Override
     public void closeGrapcefully() {
+    }
+    
+    class PushCallable implements Callable<Boolean> {
+        
+        private ServerPushResponse request;
+        
+        private long timeoutMills;
+        
+        public PushCallable(ServerPushResponse request, long timeoutMills) {
+            this.request = request;
+            this.timeoutMills = timeoutMills;
+        }
+        
+        @Override
+        public Boolean call() throws Exception {
+            return sendPush(request, timeoutMills);
+        }
     }
 }

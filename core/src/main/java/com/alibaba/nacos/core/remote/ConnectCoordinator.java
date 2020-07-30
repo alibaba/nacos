@@ -97,7 +97,8 @@ public class ConnectCoordinator implements ConnectionHeathyChecker {
                                 if (connection.isSwitching()) {
                                     continue;
                                 }
-                                connectionManager.getConnection(expeledClient).sendResponse(new ConnectResetResponse());
+                                connectionManager.getConnection(expeledClient)
+                                        .sendPushNoAck(new ConnectResetResponse());
                                 Loggers.GRPC.info("expel connection ,send switch server response connectionid = {} ",
                                         expeledClient);
                             }

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.response;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * abstract response model via rpc channel.
  *
@@ -100,4 +102,8 @@ public abstract class Response {
         this.errorCode = errorCode;
     }
     
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 }

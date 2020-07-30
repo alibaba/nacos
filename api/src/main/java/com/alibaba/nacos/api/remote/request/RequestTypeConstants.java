@@ -28,4 +28,6 @@ public class RequestTypeConstants {
     
     public static final String SERVER_CHECK = "SERVER_CHECK";
     
+    public static final String PUSH_ACK = "PUSH_ACK";
+    
 }
