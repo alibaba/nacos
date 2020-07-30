@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
-
-import com.alibaba.nacos.api.remote.response.Response;
+package com.alibaba.nacos.common.remote.client;
 
 /**
- * ServerPushResponseHandler.
- *
+ * server list factory . use to inner client to connecte and switch servers.
  * @author liuzunfei
- * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @version $Id: ServerListFactory.java, v 0.1 2020年07月14日 1:11 PM liuzunfei Exp $
  */
-public interface ServerPushResponseHandler<T> {
-
+public interface ServerListFactory {
+    
     /**
-     * Handle logic when response received.
-     * @param response response
+     * switch to a new server and get it.
+     *
+     * @return
      */
-    void responseReply(Response response);
+    String genNextServer();
+    
+    /**
+     * get current server.
+     * @return
+     */
+    String getCurrentServer();
 
 }

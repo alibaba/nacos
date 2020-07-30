@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.remote;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;

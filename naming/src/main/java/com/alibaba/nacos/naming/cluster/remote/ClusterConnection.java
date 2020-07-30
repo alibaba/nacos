@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.cluster.remote;
 
-import com.alibaba.nacos.api.remote.connection.Connection;
-import com.alibaba.nacos.api.remote.connection.ConnectionMetaInfo;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 
 import java.util.concurrent.Future;
 

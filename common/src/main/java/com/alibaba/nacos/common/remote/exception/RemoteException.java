@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.common.remote.exception;
+
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
 /**
- * server list factory . use to inner client to connecte and switch servers.
+ * super exception in remote module.
+ *
  * @author liuzunfei
- * @version $Id: ServerListFactory.java, v 0.1 2020年07月14日 1:11 PM liuzunfei Exp $
+ * @version $Id: RemoteException.java, v 0.1 2020年07月22日 7:24 PM liuzunfei Exp $
  */
-public interface ServerListFactory {
+public class RemoteException extends NacosRuntimeException {
     
-    /**
-     * switch to a new server and get it.
-     *
-     * @return
-     */
-    String genNextServer();
+    public RemoteException(int errorCode) {
+        super(errorCode);
+    }
     
-    /**
-     * get current server.
-     * @return
-     */
-    String getCurrentServer();
-
+    public RemoteException(int errorCode, Throwable throwable) {
+        super(errorCode, throwable);
+    }
 }

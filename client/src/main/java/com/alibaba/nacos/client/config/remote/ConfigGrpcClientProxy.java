@@ -27,9 +27,9 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.remote.RpcClient;
-import com.alibaba.nacos.client.remote.RpcClientFactory;
-import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 
 /**
  * config grpc client proxy.

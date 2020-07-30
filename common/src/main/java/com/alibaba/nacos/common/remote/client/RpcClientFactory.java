@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.client.remote.grpc.GrpcClient;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,18 +29,15 @@ import java.util.Map;
  */
 public class RpcClientFactory {
     
-    private static RpcClient sharedClient;
-    
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
-    public static RpcClient getClient(String module) {
+    public static RpcClient getClient(String clientName) {
         synchronized (clientMap) {
-            if (clientMap.get(module) == null) {
+            if (clientMap.get(clientName) == null) {
                 RpcClient moduleClient = new GrpcClient();
-                clientMap.putIfAbsent(module, moduleClient);
+                clientMap.putIfAbsent(clientName, moduleClient);
             }
-        
-            return clientMap.get(module);
+            return clientMap.get(clientName);
         
         }
         

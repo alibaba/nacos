@@ -18,11 +18,11 @@ package com.alibaba.nacos.naming.remote;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
 import com.alibaba.nacos.naming.cluster.remote.ClusterClient;
 import com.alibaba.nacos.naming.cluster.remote.ClusterClientManager;
