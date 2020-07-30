@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.remote;
+package com.alibaba.nacos.common.remote.exception;
 
 /**
- *  Client:ConnectionEventListener.
+ * connection already closed exception.
+ *
  * @author liuzunfei
- * @version $Id: ConnectionEventListener.java, v 0.1 2020年07月14日 10:59 AM liuzunfei Exp $
+ * @version $Id: ConnectionAlreadyClosedException.java, v 0.1 2020年07月22日 7:28 PM liuzunfei Exp $
  */
-public interface ConnectionEventListener {
+public class ConnectionAlreadyClosedException extends RemoteException {
     
-    /**
-     * notify when server is connected .
-     */
-    public void onConnected();
-
-    /**
-     * notify when this client is switch to a new server and  is sucessful reconnected .
-     */
-    @Deprecated
-    public void onReconnected();
-
-    /**
-     * notify when server is disconnected.
-     */
-    public void onDisConnect();
+    private static final int CONNECTION_ALREADY_CLOSED = 600;
+    
+    public ConnectionAlreadyClosedException() {
+        super(CONNECTION_ALREADY_CLOSED);
+    }
+    
+    public ConnectionAlreadyClosedException(Throwable throwable) {
+        super(CONNECTION_ALREADY_CLOSED, throwable);
+    }
 }

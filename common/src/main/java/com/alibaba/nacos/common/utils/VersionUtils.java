@@ -28,6 +28,8 @@ public class VersionUtils {
     
     public static String version;
     
+    private static String clientVersion;
+    
     /**
      * 获取当前version.
      */
@@ -42,6 +44,7 @@ public class VersionUtils {
             String val = props.getProperty("version");
             if (val != null && !VERSION_PLACEHOLDER.equals(val)) {
                 version = val;
+                clientVersion = "Nacos-Java-Client:v" + VersionUtils.version;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -54,5 +57,9 @@ public class VersionUtils {
                 e.printStackTrace();
             }
         }
+    }
+    
+    public static String getFullClientVersion() {
+        return clientVersion;
     }
 }

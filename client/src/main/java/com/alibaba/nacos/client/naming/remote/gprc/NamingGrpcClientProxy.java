@@ -36,9 +36,9 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
-import com.alibaba.nacos.client.remote.RpcClient;
-import com.alibaba.nacos.client.remote.RpcClientFactory;
-import com.alibaba.nacos.client.remote.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.Set;
