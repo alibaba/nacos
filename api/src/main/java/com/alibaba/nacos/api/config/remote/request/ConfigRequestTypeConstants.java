@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
  */
 public class ConfigRequestTypeConstants extends RequestTypeConstants {
     
-    public static final String CHANGE_LISTEN_CONFIG_OPERATION = "CHANGE_LISTEN_CONFIG_OPERATION";
+    public static final String BATCH_CHANGE_LISTEN_CONFIG = "BATCH_CHANGE_LISTEN_CONFIG";
     
     public static final String QUERY_CONFIG = "QUERY_CONFIG";
     

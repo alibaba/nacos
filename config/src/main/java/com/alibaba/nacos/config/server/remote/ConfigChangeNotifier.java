@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ConfigChangeNotifier.
@@ -45,13 +47,89 @@ public class ConfigChangeNotifier {
      * @param groupKey       groupKey
      * @param notifyResponse notifyResponse
      */
-    public void configDataChanged(String groupKey, ServerPushResponse notifyResponse) {
-        
-        Set<String> listeners = configChangeListenContext.getListeners(groupKey);
-        if (!CollectionUtils.isEmpty(listeners)) {
-            for (String connectionId : listeners) {
-                rpcPushService.push(connectionId, notifyResponse);
+    public void configDataChanged(String groupKey, final ServerPushResponse notifyResponse) {
+    
+        long start = System.currentTimeMillis();
+        Set<String> clients = configChangeListenContext.getListeners(groupKey);
+    
+        if (!CollectionUtils.isEmpty(clients)) {
+            for (final String client : clients) {
+                rpcPushService.pushWithCallback(client, notifyResponse, new PushCallBack() {
+                    @Override
+                    public void onSuccess() {
+                        //System.out.println("推送变更成功：" + connectionId);
+                    }
+                
+                    @Override
+                    public void onFail() {
+                        //System.out.println("推送变更失败：" + client);
+                        retryPush(client, notifyResponse, 3);
+                    }
+                
+                    @Override
+                    public void onTimeout() {
+                        //System.out.println("推送变更超时：" + client);
+                        retryPush(client, notifyResponse, 3);
+                    }
+                });
+            
             }
         }
+        long end = System.currentTimeMillis();
+    
+    }
+    
+    void retryPush(String clientId, ServerPushResponse notifyResponse, int maxRetyTimes) {
+        
+        int maxTimes = maxRetyTimes;
+        final AtomicBoolean success = new AtomicBoolean(false);
+        Object lock = new Object();
+        while (maxRetyTimes > 0) {
+            if (success.get()) {
+                return;
+            }
+            maxRetyTimes--;
+            rpcPushService.pushWithCallback(clientId, notifyResponse, new PushCallBack() {
+                @Override
+                public void onSuccess() {
+                    //System.out.println("推送变更成功：" + connectionId);
+                    success.set(true);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                }
+                
+                @Override
+                public void onFail() {
+                    //System.out.println("推送变更失败：" + client);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                }
+                
+                @Override
+                public void onTimeout() {
+                    //System.out.println("推送变更超时：" + client);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                }
+            });
+            
+            synchronized (lock) {
+                try {
+                    lock.wait(500L);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        if (success.get()) {
+            //Success
+        } else {
+            //reTry fails.
+        }
+        
     }
 }
+

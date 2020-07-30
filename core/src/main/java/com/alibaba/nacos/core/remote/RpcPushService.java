@@ -18,11 +18,13 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.connection.Connection;
 import com.alibaba.nacos.api.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
-import com.alibaba.nacos.core.remote.grpc.PushAckIdGenerator;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.Future;
 
 /**
  * push response  to clients.
@@ -37,19 +39,62 @@ public class RpcPushService {
     private ConnectionManager connectionManager;
     
     /**
-     * push response without callback.
+     * push response without callback. if the client of the specific connectionId is already close,will return true.
      *
      * @param connectionId connectionId.
      * @param response     response.
      */
-    public void push(String connectionId, ServerPushResponse response) {
+    public boolean push(String connectionId, ServerPushResponse response, long timeoutMills) {
     
-        response.setResponseId(PushAckIdGenerator.getNextId());
-        Connection client = connectionManager.getConnection(connectionId);
-        if (client != null) {
-    
+        Connection connection = connectionManager.getConnection(connectionId);
+        if (connection != null) {
             try {
-                client.sendResponse(response);
+                return connection.sendPush(response, timeoutMills);
+            } catch (ConnectionAlreadyClosedException e) {
+                connectionManager.unregister(connectionId);
+                return true;
+            } catch (Exception e) {
+                Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                        response, e);
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * push response without callback. if the client of the specific connectionId is already close,will return true.
+     *
+     * @param connectionId connectionId.
+     * @param response     response.
+     */
+    public Future<Boolean> pushWithFuture(String connectionId, ServerPushResponse response, long timeoutMills) {
+        
+        Connection connection = connectionManager.getConnection(connectionId);
+        if (connection != null) {
+            try {
+                return connection.sendPushWithFuture(response);
+            } catch (ConnectionAlreadyClosedException e) {
+                connectionManager.unregister(connectionId);
+            } catch (Exception e) {
+                Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                        response, e);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * push response with no ack.
+     *
+     * @param connectionId connectionId.
+     * @param response     response.
+     * @param pushCallBack pushCallBack.
+     */
+    public void pushWithCallback(String connectionId, ServerPushResponse response, PushCallBack pushCallBack) {
+        Connection connection = connectionManager.getConnection(connectionId);
+        if (connection != null) {
+            try {
+                connection.sendPushCallBackWithCallBack(response, pushCallBack);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
@@ -60,14 +105,23 @@ public class RpcPushService {
     }
     
     /**
-     * push response with callback. [not support yet]
+     * push response with no ack.
      *
      * @param connectionId connectionId.
      * @param response     response.
-     * @param pushCallBack pushCallBack.
      */
-    public void push(String connectionId, ServerPushResponse response, PushCallBack pushCallBack) {
-        push(connectionId, response);
+    public void pushWithoutAck(String connectionId, ServerPushResponse response) {
+        Connection connection = connectionManager.getConnection(connectionId);
+        if (connection != null) {
+            try {
+                connection.sendPushNoAck(response);
+            } catch (ConnectionAlreadyClosedException e) {
+                connectionManager.unregister(connectionId);
+            } catch (Exception e) {
+                Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                        response, e);
+            }
+        }
     }
     
 }

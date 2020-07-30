@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.api.remote.response;
 
 /**
  * callback of push service.
@@ -24,8 +24,10 @@ package com.alibaba.nacos.core.remote;
  */
 public interface PushCallBack {
     
-    public void onCompleted();
+    public void onSuccess();
     
-    public void onException();
+    public void onFail();
+    
+    public void onTimeout();
     
 }

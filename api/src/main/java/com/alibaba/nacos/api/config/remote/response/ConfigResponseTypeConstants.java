@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
  */
 public class ConfigResponseTypeConstants extends ResponseTypeConstants {
     
-    public static final String CONFIG_CHANGE = "CONFIG_CHANGE";
+    public static final String CONFIG_CHANGE_BATCH = "CONFIG_CHANGE_BATCH";
     
     public static final String CONFIG_CHANGE_NOTIFY = "CONFIG_CHANGE_NOTIFY";
     

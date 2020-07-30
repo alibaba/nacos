@@ -38,12 +38,12 @@ public class GrpcUtils {
     /**
      * convert Response to GrpcResponse.
      *
-     * @param response response.
+     * @param request request.
      * @return
      */
-    public static GrpcResponse convert(Response response) {
-        
-        String jsonString = JacksonUtils.toJson(response);
+    public static GrpcResponse convert(Response request, String ackId) {
+    
+        String jsonString = JacksonUtils.toJson(request);
         byte[] bytes = null;
         try {
             bytes = jsonString.getBytes("UTF-8");
@@ -52,7 +52,7 @@ public class GrpcUtils {
             return null;
         }
         GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
-        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setType(response.getType())
+        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setAck(ackId).setType(request.getType())
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return grpcResponse;
     }
