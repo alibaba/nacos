@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.client.remote.ConnectionEventListener;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
 import java.util.Map;
@@ -52,12 +52,13 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
     
     @Override
     public void onConnected() {
+        redoSubscribe();
+        redoRegisterEachService();
     }
     
     @Override
     public void onReconnected() {
-        redoSubscribe();
-        redoRegisterEachService();
+    
     }
     
     private void redoSubscribe() {

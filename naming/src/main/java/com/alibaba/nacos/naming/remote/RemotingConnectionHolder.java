@@ -23,10 +23,16 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.event.RemotingHeartBeatEvent;
+import com.alibaba.nacos.naming.cluster.remote.ClusterClient;
+import com.alibaba.nacos.naming.cluster.remote.ClusterClientManager;
+import com.alibaba.nacos.naming.cluster.remote.request.ForwardHeartBeatRequest;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.push.RemotePushService;
+import com.alibaba.nacos.naming.remote.task.RenewInstanceBeatTask;
+import com.alibaba.nacos.naming.remote.worker.RemotingWorkersManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
