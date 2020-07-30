@@ -231,8 +231,8 @@ export default {
     }
 
     // 校验最后一行
-    if (property && !isCommentLine && validateProperty(property)) {
-      hasProperty = true;
+    if (property.length > 0 && !isCommentLine) {
+      return validateProperty(property);
     }
 
     return hasProperty;
