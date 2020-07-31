@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.auth.condition;
 
+import static com.alibaba.nacos.core.utils.Constants.REQUEST_PATH_SEPARATOR;
+
 /**
  * request path info. method:{@link org.springframework.web.bind.annotation.RequestMapping#method()}
  * path: {@link org.springframework.web.bind.annotation.RequestMapping#value()} or {@link
@@ -33,7 +35,7 @@ public class PathRequestCondition {
     }
 
     private PathExpression parseExpressions(String pathExpression) {
-        String[] split = pathExpression.split("-->");
+        String[] split = pathExpression.split(REQUEST_PATH_SEPARATOR);
         String method = split[0];
         String path = split[1];
         return new PathExpression(method, path);

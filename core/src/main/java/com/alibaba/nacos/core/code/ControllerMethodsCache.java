@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.code;
 
+import static com.alibaba.nacos.core.utils.Constants.REQUEST_PATH_SEPARATOR;
+
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.auth.RequestMappingInfo;
 import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
@@ -64,7 +66,7 @@ public class ControllerMethodsCache {
             return null;
         }
         String httpMethod = request.getMethod();
-        String urlKey = httpMethod + "-->" + path.replace(contextPath, "");
+        String urlKey = httpMethod + REQUEST_PATH_SEPARATOR + path.replace(contextPath, "");
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (CollectionUtils.isEmpty(requestMappingInfos)) {
             return null;
@@ -142,7 +144,7 @@ public class ControllerMethodsCache {
      *
      * @param clazz {@link Class}
      */
-    public void initClassMethod(Class<?> clazz) {
+    private void initClassMethod(Class<?> clazz) {
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
         for (String classPath : requestMapping.value()) {
             for (Method method : clazz.getMethods()) {
@@ -199,12 +201,12 @@ public class ControllerMethodsCache {
     private void put(RequestMethod requestMethod, String classPath, String[] requestPaths,
             String[] requestParams, Method method) {
         if (ArrayUtils.isEmpty(requestPaths)) {
-            String urlKey = requestMethod.name() + "-->" + classPath;
+            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath;
             addUrlAndMethodRelation(urlKey, requestParams, method);
             return;
         }
         for (String requestPath : requestPaths) {
-            String urlKey = requestMethod.name() + "-->" + classPath + requestPath;
+            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath + requestPath;
             addUrlAndMethodRelation(urlKey, requestParams, method);
         }
     }
