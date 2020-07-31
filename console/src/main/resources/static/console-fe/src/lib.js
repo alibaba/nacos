@@ -58,7 +58,6 @@ request.middleWare((_config = {}) => {
     if (res.code === 403 && !hasAlert) {
       hasAlert = true;
       window.Dialog.alert({
-        language: aliwareIntl.currentLanguageCode || 'zh-cn',
         style: { width: 400 },
         content: res.message,
         onOk: () => {
@@ -81,7 +80,6 @@ request.middleWare((_config = {}) => {
       hasAlert = true;
 
       window.Dialog.alert({
-        language: aliwareIntl.currentLanguageCode || 'zh-cn',
         style: { width: 400 },
         content: aliwareIntl.get('com.alibaba.nacos.pubshow'), // '子账号没有权限，请联系主账号负责人RAM上授权',
         onOk: () => {
