@@ -16,6 +16,20 @@
 
 package com.alibaba.nacos.core.code;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.core.auth.RequestMappingInfo;
+import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
+import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
+import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,11 +42,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * Method cache.
  *
@@ -44,18 +53,66 @@ public class ControllerMethodsCache {
     
     @Value("${server.servlet.contextPath:/nacos}")
     private String contextPath;
-    
-    private ConcurrentMap<String, Method> methods = new ConcurrentHashMap<>();
-    
-    public ConcurrentMap<String, Method> getMethods() {
-        return methods;
+
+    private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
+
+    private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
+
+    public Method getMethod(HttpServletRequest request) {
+        String path = getPath(request);
+        if (path == null) {
+            return null;
+        }
+        String httpMethod = request.getMethod();
+        String urlKey = httpMethod + "-->" + path.replace(contextPath, "");
+        List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
+        if (CollectionUtils.isEmpty(requestMappingInfos)) {
+            return null;
+        }
+        List<RequestMappingInfo> matchedInfo = findMatchedInfo(requestMappingInfos, request);
+        if (CollectionUtils.isEmpty(matchedInfo)) {
+            return null;
+        }
+        RequestMappingInfo bestMatch = matchedInfo.get(0);
+        if (matchedInfo.size() > 1) {
+            RequestMappingInfoComparator comparator = new RequestMappingInfoComparator();
+            matchedInfo.sort(comparator);
+            bestMatch = matchedInfo.get(0);
+            RequestMappingInfo secondBestMatch = matchedInfo.get(1);
+            if (comparator.compare(bestMatch, secondBestMatch) == 0) {
+                throw new IllegalStateException(
+                        "Ambiguous methods mapped for '" + request.getRequestURI() + "': {"
+                                + bestMatch + ", " + secondBestMatch
+                                + "}");
+            }
+        }
+        return methods.get(bestMatch);
     }
-    
-    public Method getMethod(String httpMethod, String path) {
-        String key = httpMethod + "-->" + path.replace(contextPath, "");
-        return methods.get(key);
+
+    private String getPath(HttpServletRequest request) {
+        String path = null;
+        try {
+            path = new URI(request.getRequestURI()).getPath();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return path;
     }
-    
+
+    private List<RequestMappingInfo> findMatchedInfo(List<RequestMappingInfo> requestMappingInfos,
+            HttpServletRequest request) {
+        List<RequestMappingInfo> matchedInfo = new ArrayList<>();
+        for (RequestMappingInfo requestMappingInfo : requestMappingInfos) {
+            ParamRequestCondition matchingCondition = requestMappingInfo.getParamRequestCondition()
+                    .getMatchingCondition(request);
+            if (matchingCondition != null) {
+                matchedInfo.add(requestMappingInfo);
+            }
+        }
+        return matchedInfo;
+    }
+
+
     /**
      * find target method from this package.
      *
@@ -101,7 +158,8 @@ public class ControllerMethodsCache {
                     requestMethods[0] = RequestMethod.GET;
                 }
                 for (String methodPath : requestMapping.value()) {
-                    methods.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
+                    String urlKey = requestMethods[0].name() + "-->" + classPath + methodPath;
+                    addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
                 }
             }
         }
@@ -116,34 +174,52 @@ public class ControllerMethodsCache {
         final PatchMapping patchMapping = method.getAnnotation(PatchMapping.class);
         
         if (getMapping != null) {
-            put(RequestMethod.GET, classPath, getMapping.value(), method);
+            put(RequestMethod.GET, classPath, getMapping.value(), getMapping.params(), method);
         }
         
         if (postMapping != null) {
-            put(RequestMethod.POST, classPath, postMapping.value(), method);
+            put(RequestMethod.POST, classPath, postMapping.value(), postMapping.params(), method);
         }
         
         if (putMapping != null) {
-            put(RequestMethod.PUT, classPath, putMapping.value(), method);
+            put(RequestMethod.PUT, classPath, putMapping.value(), putMapping.params(), method);
         }
         
         if (deleteMapping != null) {
-            put(RequestMethod.DELETE, classPath, deleteMapping.value(), method);
+            put(RequestMethod.DELETE, classPath, deleteMapping.value(), deleteMapping.params(),
+                    method);
         }
         
         if (patchMapping != null) {
-            put(RequestMethod.PATCH, classPath, patchMapping.value(), method);
+            put(RequestMethod.PATCH, classPath, patchMapping.value(), patchMapping.params(),
+                    method);
         }
         
     }
-    
-    private void put(RequestMethod requestMethod, String classPath, String[] requestPaths, Method method) {
+
+    private void put(RequestMethod requestMethod, String classPath, String[] requestPaths,
+            String[] requestParams, Method method) {
         if (ArrayUtils.isEmpty(requestPaths)) {
-            methods.put(requestMethod.name() + "-->" + classPath, method);
+            String urlKey = requestMethod.name() + "-->" + classPath;
+            addUrlAndMethodRelation(urlKey, requestParams, method);
             return;
         }
         for (String requestPath : requestPaths) {
-            methods.put(requestMethod.name() + "-->" + classPath + requestPath, method);
+            String urlKey = requestMethod.name() + "-->" + classPath + requestPath;
+            addUrlAndMethodRelation(urlKey, requestParams, method);
         }
+    }
+
+    private void addUrlAndMethodRelation(String urlKey, String[] requestParam, Method method) {
+        RequestMappingInfo requestMappingInfo = new RequestMappingInfo();
+        requestMappingInfo.setPathRequestCondition(new PathRequestCondition(urlKey));
+        requestMappingInfo.setParamRequestCondition(new ParamRequestCondition(requestParam));
+        List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
+        if (requestMappingInfos == null) {
+            urlLookup.putIfAbsent(urlKey, new ArrayList<>());
+            requestMappingInfos = urlLookup.get(urlKey);
+        }
+        requestMappingInfos.add(requestMappingInfo);
+        methods.put(requestMappingInfo, method);
     }
 }

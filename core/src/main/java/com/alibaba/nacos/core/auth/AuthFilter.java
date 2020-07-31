@@ -73,8 +73,7 @@ public class AuthFilter implements Filter {
         
         try {
             
-            String path = new URI(req.getRequestURI()).getPath();
-            Method method = methodsCache.getMethod(req.getMethod(), path);
+            Method method = methodsCache.getMethod(req);
             
             if (method == null) {
                 chain.doFilter(request, response);
