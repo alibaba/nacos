@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,28 @@
 
 package com.alibaba.nacos.naming.cluster.remote.grpc;
 
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 
 /**
- * ServerPushResponseHandler.
+ * Single server list factory.
  *
- * @author liuzunfei
- * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public interface ServerPushResponseHandler<T> {
-
-    /**
-     * Handle logic when response received.
-     * @param response response
-     */
-    void responseReply(Response response);
-
+public class SingleServerListFactory implements ServerListFactory {
+    
+    private final String address;
+    
+    public SingleServerListFactory(String address) {
+        this.address = address;
+    }
+    
+    @Override
+    public String genNextServer() {
+        return address;
+    }
+    
+    @Override
+    public String getCurrentServer() {
+        return address;
+    }
 }

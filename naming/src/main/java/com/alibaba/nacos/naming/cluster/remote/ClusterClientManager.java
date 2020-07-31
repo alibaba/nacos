@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.cluster.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.cluster.remote.grpc.GrpcClient;
+import com.alibaba.nacos.naming.cluster.remote.grpc.GrpcClusterClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -53,11 +53,11 @@ public class ClusterClientManager {
     @PostConstruct
     public void init() {
         for (Member each : memberManager.allMembersWithoutSelf()) {
-            clientMap.put(each.getAddress(), new GrpcClient(each.getAddress()));
+            clientMap.put(each.getAddress(), new GrpcClusterClient(each.getAddress()));
         }
         for (ClusterClient each : clientMap.values()) {
             try {
-                ((GrpcClient) each).start();
+                each.start();
             } catch (NacosException nacosException) {
                 LOGGER.error("Create cluster connection failed", nacosException);
             }
