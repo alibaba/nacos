@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.cluster.remote;
+package com.alibaba.nacos.naming.cluster.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
+import com.alibaba.nacos.naming.cluster.remote.ClusterClient;
 
 /**
- * Cluster client.
+ * Grpc cluster client.
  *
  * @author xiweng.yy
  */
-public interface ClusterClient {
+public class GrpcClusterClient implements ClusterClient {
     
-    /**
-     * Start.
-     *
-     * @throws NacosException nacos exception
-     */
-    void start() throws NacosException;
+    private final GrpcClient grpcClient;
     
-    /**
-     * Send request to target server.
-     *
-     * @param request request
-     * @return response
-     * @throws NacosException nacos exception
-     */
-    Response request(Request request) throws NacosException;
+    public GrpcClusterClient(String targetAddress) {
+        this.grpcClient = new GrpcClient(new SingleServerListFactory(targetAddress));
+    }
+    
+    @Override
+    public void start() throws NacosException {
+        grpcClient.start();
+    }
+    
+    @Override
+    public Response request(Request request) throws NacosException {
+        return this.grpcClient.request(request);
+    }
 }
