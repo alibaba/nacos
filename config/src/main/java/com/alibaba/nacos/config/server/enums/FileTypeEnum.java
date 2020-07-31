@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.enums;
 
-import com.alibaba.nacos.common.http.param.MediaType;
-
 /**
  * Config file type enum.
  *
@@ -29,73 +27,58 @@ public enum FileTypeEnum {
     /**
      * Yaml file.
      */
-    YML("yaml", MediaType.TEXT_PLAIN),
+    YML("yaml"),
     
     /**
      * Yaml file.
      */
-    YAML("yaml", MediaType.TEXT_PLAIN),
+    YAML("yaml"),
     
     /**
      * Text file.
      */
-    TXT("text", MediaType.TEXT_PLAIN),
+    TXT("text"),
     
     /**
      * Text file.
      */
-    TEXT("text", MediaType.TEXT_PLAIN),
+    TEXT("text"),
     
     /**
      * Json file.
      */
-    JSON("json", MediaType.APPLICATION_JSON),
+    JSON("json"),
     
     /**
      * Xml file.
      */
-    XML("xml", MediaType.APPLICATION_XML),
+    XML("xml"),
     
     /**
      * Html file.
      */
-    HTM("html", MediaType.TEXT_HTML),
+    HTM("html"),
     
     /**
      * Html file.
      */
-    HTML("html", MediaType.TEXT_HTML),
+    HTML("html"),
     
     /**
      * Properties file.
      */
-    PROPERTIES("properties", MediaType.TEXT_PLAIN);
+    PROPERTIES("properties");
     
     /**
      * File type corresponding to file extension.
      */
     private String fileType;
     
-    /**
-     * Http Content type corresponding to file extension.
-     */
-    private String contentType;
-    
     FileTypeEnum(String fileType) {
         this.fileType = fileType;
-        this.contentType = MediaType.TEXT_PLAIN;
-    }
-    
-    FileTypeEnum(String fileType, String contentType) {
-        this.fileType = fileType;
-        this.contentType = contentType;
     }
     
     public String getFileType() {
         return this.fileType;
-    }
-    
-    public String getContentType() {
-        return contentType;
     }
 }
