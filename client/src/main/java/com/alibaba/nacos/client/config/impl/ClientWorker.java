@@ -207,7 +207,6 @@ public class ClientWorker implements Closeable {
                     }
                     count++;
                 }
-                
             }
         }
     }
@@ -312,14 +311,27 @@ public class ClientWorker implements Closeable {
     /**
      * Update the thread state corresponding to taskId.
      *
-     * @param schedulerId threads run taskId.
-     * @param isRun       whether to run.
+     * @param taskId threads run taskId.
+     * @param isRun  whether to run.
      */
-    private void updateSchedulerMap(Integer schedulerId, Boolean isRun) {
-        synchronized (schedulerMap) {
-            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(schedulerMap.get());
-            copy.put(schedulerId, isRun);
-            schedulerMap.set(copy);
+    private void updateTaskFlagMap(Integer taskId, Boolean isRun) {
+        synchronized (taskFlagMap) {
+            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(taskFlagMap.get());
+            copy.put(taskId, isRun);
+            taskFlagMap.set(copy);
+        }
+    }
+    
+    /**
+     * Remove the thread state corresponding to taskId.
+     *
+     * @param taskId threads run taskId.
+     */
+    private void removeTaskFlagMap(Integer taskId) {
+        synchronized (taskFlagMap) {
+            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(taskFlagMap.get());
+            copy.remove(taskId);
+            taskFlagMap.set(copy);
         }
     }
     
@@ -438,13 +450,13 @@ public class ClientWorker implements Closeable {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // Update the thread state corresponding to taskId.
-                updateSchedulerMap(i, true);
+                updateTaskFlagMap(i, true);
                 // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
         } else if (longingTaskCount < currentLongingTaskCount) {
             for (int i = longingTaskCount; i < (int) currentLongingTaskCount; i++) {
-                updateSchedulerMap(i, false);
+                removeTaskFlagMap(i);
             }
         }
         currentLongingTaskCount = longingTaskCount;
@@ -708,7 +720,8 @@ public class ClientWorker implements Closeable {
                     }
                 }
                 inInitializingCacheList.clear();
-                if (schedulerMap.get().get(taskId)) {
+                
+                if (taskFlagMap.get().get(taskId) != null && taskFlagMap.get().get(taskId)) {
                     executorService.execute(this);
                 }
                 
@@ -739,7 +752,10 @@ public class ClientWorker implements Closeable {
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
             new HashMap<String, CacheData>());
     
-    private final AtomicReference<Map<Integer, Boolean>> schedulerMap = new AtomicReference<Map<Integer, Boolean>>(
+    /**
+     * Mark whether the thread corresponding to TasKid is running. key -> taskId
+     */
+    private final AtomicReference<Map<Integer, Boolean>> taskFlagMap = new AtomicReference<Map<Integer, Boolean>>(
             new HashMap<Integer, Boolean>());
     
     private final HttpAgent agent;
