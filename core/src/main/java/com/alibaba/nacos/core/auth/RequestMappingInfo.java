@@ -4,6 +4,12 @@ import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
 import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
 import java.util.Comparator;
 
+/**
+ * Request mapping information. to find the matched method by request
+ *
+ * @author horizonzy
+ * @since 1.3.1
+ */
 public class RequestMappingInfo {
 
     private PathRequestCondition pathRequestCondition;
@@ -25,10 +31,12 @@ public class RequestMappingInfo {
 
     @Override
     public String toString() {
-        return "RequestMappingInfo{" +
-                "pathRequestCondition=" + pathRequestCondition +
-                ", paramRequestCondition=" + paramRequestCondition +
-                '}';
+        return "RequestMappingInfo{"
+                + "pathRequestCondition="
+                + pathRequestCondition
+                + ", paramRequestCondition="
+                + paramRequestCondition
+                + '}';
     }
 
     public static class RequestMappingInfoComparator implements Comparator<RequestMappingInfo> {

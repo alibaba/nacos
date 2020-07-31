@@ -6,6 +6,12 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.util.ObjectUtils;
 
+/**
+ * request param info. {@link org.springframework.web.bind.annotation.RequestMapping#params()}
+ *
+ * @author horizonzy
+ * @since 1.3.1
+ */
 public class ParamRequestCondition {
 
     private final Set<ParamExpression> expressions;
@@ -40,9 +46,10 @@ public class ParamRequestCondition {
 
     @Override
     public String toString() {
-        return "ParamRequestCondition{" +
-                "expressions=" + expressions +
-                '}';
+        return "ParamRequestCondition{"
+                + "expressions="
+                + expressions
+                + '}';
     }
 
     static class ParamExpression {
@@ -87,11 +94,16 @@ public class ParamRequestCondition {
 
         @Override
         public String toString() {
-            return "ParamExpression{" +
-                    "name='" + name + '\'' +
-                    ", value='" + value + '\'' +
-                    ", isNegated=" + isNegated +
-                    '}';
+            return "ParamExpression{"
+                    + "name='"
+                    + name
+                    + '\''
+                    + ", value='"
+                    + value
+                    + '\''
+                    + ", isNegated="
+                    + isNegated
+                    + '}';
         }
     }
 }

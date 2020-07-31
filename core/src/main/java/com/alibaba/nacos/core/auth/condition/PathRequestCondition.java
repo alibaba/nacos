@@ -1,5 +1,13 @@
 package com.alibaba.nacos.core.auth.condition;
 
+/**
+ * request path info. method:{@link org.springframework.web.bind.annotation.RequestMapping#method()}
+ * path: {@link org.springframework.web.bind.annotation.RequestMapping#value()} or {@link
+ * org.springframework.web.bind.annotation.RequestMapping#value()}
+ *
+ * @author horizonzy
+ * @since 1.3.1
+ */
 public class PathRequestCondition {
 
     private final PathExpression pathExpression;
@@ -17,9 +25,10 @@ public class PathRequestCondition {
 
     @Override
     public String toString() {
-        return "PathRequestCondition{" +
-                "pathExpression=" + pathExpression +
-                '}';
+        return "PathRequestCondition{"
+                + "pathExpression="
+                + pathExpression
+                + '}';
     }
 
     static class PathExpression {
@@ -35,10 +44,11 @@ public class PathRequestCondition {
 
         @Override
         public String toString() {
-            return "PathExpression{" +
-                    "method='" + method + '\'' +
-                    ", path='" + path + '\'' +
-                    '}';
+            return "PathExpression{"
+                    + "method='" + method
+                    + '\''
+                    + ", path='" + path + '\''
+                    + '}';
         }
     }
 }
