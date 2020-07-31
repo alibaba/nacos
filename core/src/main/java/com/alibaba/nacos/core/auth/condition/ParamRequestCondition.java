@@ -26,7 +26,7 @@ import org.springframework.util.ObjectUtils;
  * request param info. {@link org.springframework.web.bind.annotation.RequestMapping#params()}
  *
  * @author horizonzy
- * @since 1.3.1
+ * @since 1.3.2
  */
 public class ParamRequestCondition {
 

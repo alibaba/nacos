@@ -24,7 +24,7 @@ import java.util.Comparator;
  * Request mapping information. to find the matched method by request
  *
  * @author horizonzy
- * @since 1.3.1
+ * @since 1.3.2
  */
 public class RequestMappingInfo {
 
