@@ -159,7 +159,7 @@ public class ControllerMethodsCache {
                     requestMethods[0] = RequestMethod.GET;
                 }
                 for (String methodPath : requestMapping.value()) {
-                    String urlKey = requestMethods[0].name() + "-->" + classPath + methodPath;
+                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
                     addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
                 }
             }
