@@ -88,7 +88,7 @@ public class SnowFlowerIdGenerator implements IdGenerator {
             try {
                 address = InetAddress.getLocalHost();
             } catch (final UnknownHostException e) {
-                throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!");
+                throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!", e);
             }
             byte[] ipAddressByteArray = address.getAddress();
             this.workerId = (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (
