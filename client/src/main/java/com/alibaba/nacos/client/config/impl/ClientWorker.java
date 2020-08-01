@@ -46,10 +46,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -312,13 +314,12 @@ public class ClientWorker implements Closeable {
      * Update the thread state corresponding to taskId.
      *
      * @param taskId threads run taskId.
-     * @param isRun  whether to run.
      */
-    private void updateTaskFlagMap(Integer taskId, Boolean isRun) {
-        synchronized (taskFlagMap) {
-            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(taskFlagMap.get());
-            copy.put(taskId, isRun);
-            taskFlagMap.set(copy);
+    private void updateTaskFlag(Integer taskId) {
+        synchronized (taskFlagSets) {
+            Set<Integer> copy = new HashSet<Integer>(taskFlagSets.get());
+            copy.add(taskId);
+            taskFlagSets.set(copy);
         }
     }
     
@@ -327,11 +328,11 @@ public class ClientWorker implements Closeable {
      *
      * @param taskId threads run taskId.
      */
-    private void removeTaskFlagMap(Integer taskId) {
-        synchronized (taskFlagMap) {
-            Map<Integer, Boolean> copy = new HashMap<Integer, Boolean>(taskFlagMap.get());
+    private void removeTaskFlag(Integer taskId) {
+        synchronized (taskFlagSets) {
+            Set<Integer> copy = new HashSet<Integer>(taskFlagSets.get());
             copy.remove(taskId);
-            taskFlagMap.set(copy);
+            taskFlagSets.set(copy);
         }
     }
     
@@ -450,13 +451,13 @@ public class ClientWorker implements Closeable {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // Update the thread state corresponding to taskId.
-                updateTaskFlagMap(i, true);
+                updateTaskFlag(i);
                 // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
         } else if (longingTaskCount < currentLongingTaskCount) {
             for (int i = longingTaskCount; i < (int) currentLongingTaskCount; i++) {
-                removeTaskFlagMap(i);
+                removeTaskFlag(i);
             }
         }
         currentLongingTaskCount = longingTaskCount;
@@ -721,7 +722,7 @@ public class ClientWorker implements Closeable {
                 }
                 inInitializingCacheList.clear();
                 
-                if (taskFlagMap.get().get(taskId) != null && taskFlagMap.get().get(taskId)) {
+                if (taskFlagSets.get().contains(taskId)) {
                     executorService.execute(this);
                 }
                 
@@ -753,10 +754,9 @@ public class ClientWorker implements Closeable {
             new HashMap<String, CacheData>());
     
     /**
-     * Mark whether the thread corresponding to TasKid is running. key -> taskId
+     * Mark whether the thread corresponding to TasKid is running.
      */
-    private final AtomicReference<Map<Integer, Boolean>> taskFlagMap = new AtomicReference<Map<Integer, Boolean>>(
-            new HashMap<Integer, Boolean>());
+    private final AtomicReference<Set<Integer>> taskFlagSets = new AtomicReference<Set<Integer>>(new HashSet<Integer>());
     
     private final HttpAgent agent;
     
