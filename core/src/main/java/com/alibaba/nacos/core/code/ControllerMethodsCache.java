@@ -228,4 +228,12 @@ public class ControllerMethodsCache {
         requestMappingInfos.add(requestMappingInfo);
         methods.put(requestMappingInfo, method);
     }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
 }
