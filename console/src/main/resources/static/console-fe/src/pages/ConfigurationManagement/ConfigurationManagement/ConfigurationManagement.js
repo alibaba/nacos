@@ -1384,7 +1384,7 @@ class ConfigurationManagement extends React.Component {
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
-                  pageSizeList={GLOBAL_PAGE_SIZE_LIST}
+                  pageSizeList={ GLOBAL_PAGE_SIZE_LIST }
                   pageSizePosition="start"
                   pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}
