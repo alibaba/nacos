@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentMap;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,7 +54,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
  */
 @Component
 public class ControllerMethodsCache {
-    
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerMethodsCache.class);
+
     @Value("${server.servlet.contextPath:/nacos}")
     private String contextPath;
 
@@ -96,7 +100,7 @@ public class ControllerMethodsCache {
         try {
             path = new URI(request.getRequestURI()).getPath();
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            LOGGER.error("parse request to path error", e);
         }
         return path;
     }
@@ -122,12 +126,12 @@ public class ControllerMethodsCache {
     public void initClassMethod(String packageName) {
         Reflections reflections = new Reflections(packageName);
         Set<Class<?>> classesList = reflections.getTypesAnnotatedWith(RequestMapping.class);
-        
+
         for (Class clazz : classesList) {
             initClassMethod(clazz);
         }
     }
-    
+
     /**
      * find target method from class list.
      *
@@ -138,7 +142,7 @@ public class ControllerMethodsCache {
             initClassMethod(clazz);
         }
     }
-    
+
     /**
      * find target method from target class.
      *
@@ -159,43 +163,44 @@ public class ControllerMethodsCache {
                     requestMethods[0] = RequestMethod.GET;
                 }
                 for (String methodPath : requestMapping.value()) {
-                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
+                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath
+                            + methodPath;
                     addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
                 }
             }
         }
     }
-    
+
     private void parseSubAnnotations(Method method, String classPath) {
-        
+
         final GetMapping getMapping = method.getAnnotation(GetMapping.class);
         final PostMapping postMapping = method.getAnnotation(PostMapping.class);
         final PutMapping putMapping = method.getAnnotation(PutMapping.class);
         final DeleteMapping deleteMapping = method.getAnnotation(DeleteMapping.class);
         final PatchMapping patchMapping = method.getAnnotation(PatchMapping.class);
-        
+
         if (getMapping != null) {
             put(RequestMethod.GET, classPath, getMapping.value(), getMapping.params(), method);
         }
-        
+
         if (postMapping != null) {
             put(RequestMethod.POST, classPath, postMapping.value(), postMapping.params(), method);
         }
-        
+
         if (putMapping != null) {
             put(RequestMethod.PUT, classPath, putMapping.value(), putMapping.params(), method);
         }
-        
+
         if (deleteMapping != null) {
             put(RequestMethod.DELETE, classPath, deleteMapping.value(), deleteMapping.params(),
                     method);
         }
-        
+
         if (patchMapping != null) {
             put(RequestMethod.PATCH, classPath, patchMapping.value(), patchMapping.params(),
                     method);
         }
-        
+
     }
 
     private void put(RequestMethod requestMethod, String classPath, String[] requestPaths,
