@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpClientManager;
-import com.alibaba.nacos.common.http.NSyncHttpClient;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -63,7 +63,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     
     private int maxFailCount = 12;
     
-    private NSyncHttpClient syncHttpClient = HttpClientManager.getSyncHttpClient();
+    private final NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.CORE);
     
     private volatile boolean shutdown = false;
     
@@ -137,7 +137,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     }
     
     private void syncFromAddressUrl() throws Exception {
-        RestResult<String> result = syncHttpClient
+        RestResult<String> result = restTemplate
                 .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
         if (HttpStatus.OK.value() == result.getCode()) {
             isAddressServerHealth = true;
