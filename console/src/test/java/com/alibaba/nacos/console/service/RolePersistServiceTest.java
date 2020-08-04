@@ -17,8 +17,8 @@
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.DefaultExternalRolePersistServiceImpl;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
+import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
 import com.alibaba.nacos.console.BaseTest;
@@ -51,36 +51,36 @@ public class RolePersistServiceTest extends BaseTest {
     }
     
     @Autowired
-    private DefaultExternalRolePersistServiceImpl rolePersistServiceTmp;
+    private RolePersistService rolePersistService;
     
     @Test
     public void getRolesTest() {
-        rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
-        Page<RoleInfo> page = rolePersistServiceTmp.getRoles(0, 10);
+        rolePersistService.addRole(roles.getRole(), roles.getUsername());
+        Page<RoleInfo> page = rolePersistService.getRoles(0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
     
     @Test
     public void getRolesByUserNameTest() {
-        Page<RoleInfo> page = rolePersistServiceTmp.getRolesByUserName(roles.getUsername(), 0, 10);
+        Page<RoleInfo> page = rolePersistService.getRolesByUserName(roles.getUsername(), 0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
     
     @Test
     public void addRoleTest() {
-        rolePersistServiceTmp.addRole(roles.getRole(), roles.getUsername());
+        rolePersistService.addRole(roles.getRole(), roles.getUsername());
     }
     
     @Test
     public void deleteRole1Test() {
-        rolePersistServiceTmp.deleteRole(roles.getRole());
+        rolePersistService.deleteRole(roles.getRole());
     }
     
     @Test
     public void deleteRole2Test() {
-        rolePersistServiceTmp.deleteRole(roles.getRole(), roles.getUsername());
+        rolePersistService.deleteRole(roles.getRole(), roles.getUsername());
     }
     
 }

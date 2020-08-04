@@ -18,23 +18,14 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.config.server.modules.entity.QRolesEntity;
+import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
+import com.alibaba.nacos.config.server.modules.mapstruct.RoleInfoMapStruct;
+import com.alibaba.nacos.config.server.modules.repository.RolesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
  * Implemetation of ExternalRolePersistServiceImpl.
@@ -46,61 +37,30 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
-    
-    private JdbcTemplate jt;
-    
-    @PostConstruct
-    protected void init() {
-        jt = persistService.getJdbcTemplate();
-    }
+    private RolesRepository rolesRepository;
     
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
-        
-        String where = " 1=1 ";
-        
-        try {
-            Page<RoleInfo> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                            pageSize, ROLE_INFO_ROW_MAPPER);
-            if (pageInfo == null) {
-                pageInfo = new Page<>();
-                pageInfo.setTotalCount(0);
-                pageInfo.setPageItems(new ArrayList<>());
-            }
-            return pageInfo;
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+    
+        org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
+                .findAll(null, PageRequest.of(pageNo, pageSize));
+        Page<RoleInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(RoleInfoMapStruct.INSTANCE.convertRoleInfoList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
     
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-        
-        String sqlCountRows = "select count(*) from roles where ";
-        String sqlFetchRows = "select role,username from roles where ";
-        
-        String where = " username='" + username + "' ";
-        
-        if (StringUtils.isBlank(username)) {
-            where = " 1=1 ";
-        }
-        
-        try {
-            return helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                            pageSize, ROLE_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+    
+        org.springframework.data.domain.Page<RolesEntity> sPage = rolesRepository
+                .findAll(QRolesEntity.rolesEntity.username.eq(username), PageRequest.of(pageNo, pageSize));
+        Page<RoleInfo> page = new Page<>();
+        page.setPageNumber(sPage.getNumber());
+        page.setPagesAvailable(sPage.getTotalPages());
+        page.setPageItems(RoleInfoMapStruct.INSTANCE.convertRoleInfoList(sPage.getContent()));
+        page.setTotalCount((int) sPage.getTotalElements());
+        return page;
     }
     
     /**
@@ -110,15 +70,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param userName username string value.
      */
     public void addRole(String role, String userName) {
-        
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
-        
-        try {
-            jt.update(sql, role, userName);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+    
+        rolesRepository.save(new RolesEntity(userName, role));
     }
     
     /**
@@ -127,13 +80,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param role role string value.
      */
     public void deleteRole(String role) {
-        String sql = "DELETE from roles WHERE role=?";
-        try {
-            jt.update(sql, role);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        Iterable<RolesEntity> iterable = rolesRepository.findAll(QRolesEntity.rolesEntity.role.eq(role));
+        rolesRepository.deleteAll(iterable);
     }
     
     /**
@@ -143,23 +91,10 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
      * @param username username string value.
      */
     public void deleteRole(String role, String username) {
-        String sql = "DELETE from roles WHERE role=? and username=?";
-        try {
-            jt.update(sql, role, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        QRolesEntity qRoles = QRolesEntity.rolesEntity;
+        rolesRepository.findOne(qRoles.role.eq(role).and(qRoles.username.eq(username)))
+                .ifPresent(s -> rolesRepository.delete(s));
     }
     
-    private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
-        
-        @Override
-        public RoleInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
-            RoleInfo roleInfo = new RoleInfo();
-            roleInfo.setRole(rs.getString("role"));
-            roleInfo.setUsername(rs.getString("username"));
-            return roleInfo;
-        }
-    }
+ 
 }

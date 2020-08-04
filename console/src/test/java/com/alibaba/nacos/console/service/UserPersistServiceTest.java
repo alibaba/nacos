@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.DefaultExternalUserPersistServiceImpl;
+import com.alibaba.nacos.config.server.auth.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.modules.entity.UsersEntity;
@@ -51,37 +51,37 @@ public class UserPersistServiceTest extends BaseTest {
     }
     
     @Autowired
-    private DefaultExternalUserPersistServiceImpl userPersistServiceTmp;
+    private UserPersistService userPersistService;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Test
     public void createUser() {
-        userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
+        userPersistService.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
     }
     
     @Test
     public void deleteUserTest() {
-        userPersistServiceTmp.deleteUser(users.getUsername());
+        userPersistService.deleteUser(users.getUsername());
     }
     
     @Test
     public void updateUserPassword() {
-        userPersistServiceTmp.updateUserPassword(users.getUsername(),
+        userPersistService.updateUserPassword(users.getUsername(),
                 passwordEncoder.encode(users.getPassword() + new Random().nextInt()));
     }
     
     @Test
     public void findUserByUsernameTest() {
-        User result = userPersistServiceTmp.findUserByUsername(users.getUsername());
+        User result = userPersistService.findUserByUsername(users.getUsername());
         Assert.assertNotNull(result);
     }
     
     @Test
     public void getUsersTest() {
-        userPersistServiceTmp.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
-        Page<User> page = userPersistServiceTmp.getUsers(0, 10);
+        userPersistService.createUser(users.getUsername(), passwordEncoder.encode(users.getPassword()));
+        Page<User> page = userPersistService.getUsers(0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }

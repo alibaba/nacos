@@ -51,7 +51,7 @@ import com.alibaba.nacos.config.server.modules.repository.ConfigInfoTagRepositor
 import com.alibaba.nacos.config.server.modules.repository.ConfigTagsRelationRepository;
 import com.alibaba.nacos.config.server.modules.repository.HisConfigInfoRepository;
 import com.alibaba.nacos.config.server.modules.repository.TenantInfoRepository;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl2;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.BaseTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
 public class PersistServiceTest extends BaseTest {
     
     @Autowired
-    private ExternalStoragePersistServiceImpl2 externalStoragePersistServiceImpl2;
+    private PersistService persistService;
     
     @Autowired
     private ConfigInfoBetaRepository configInfoBetaRepository;
@@ -88,41 +88,41 @@ public class PersistServiceTest extends BaseTest {
     
     @Autowired
     private ConfigTagsRelationRepository configTagsRelationRepository;
-
+    
     @Autowired
     private TenantInfoRepository tenantInfoRepository;
-
+    
     @Autowired
     private ConfigInfoRepository configInfoRepository;
-
+    
     @Autowired
     private ConfigInfoAggrRepository configInfoAggrRepository;
-
+    
     @Autowired
     private HisConfigInfoRepository hisConfigInfoRepository;
-
+    
     private ConfigInfoEntity configInfoEntity;
-
+    
     private ConfigInfoTagEntity configInfoTagEntity;
-
+    
     private ConfigInfoBetaEntity configInfoBetaEntity;
-
+    
     private ConfigTagsRelationEntity configTagsRelationEntity;
-
+    
     private HisConfigInfoEntity hisConfigInfoEntity;
-
+    
     private TenantInfoEntity tenantInfoEntity;
-
+    
     private ConfigInfoAggrEntity configInfoAggrEntity;
-
+    
     private ConfigInfo configInfo;
-
+    
     @Before
     public void before() {
         initData();
         insertOrUpdateTest();
     }
-
+    
     private void initData() {
         configInfoEntity = JacksonUtils.toObj(TestData.CONFIG_INFO_JSON, ConfigInfoEntity.class);
         configInfoTagEntity = JacksonUtils.toObj(TestData.CONFIG_INFO_TAG_JSON, ConfigInfoTagEntity.class);
@@ -132,11 +132,11 @@ public class PersistServiceTest extends BaseTest {
         hisConfigInfoEntity = JacksonUtils.toObj(TestData.HIS_CONFIG_INFO_JSON, HisConfigInfoEntity.class);
         tenantInfoEntity = JacksonUtils.toObj(TestData.TENANT_INFO_JSON, TenantInfoEntity.class);
         configInfoAggrEntity = JacksonUtils.toObj(TestData.CONFIG_INFO_AGGR_JSON, ConfigInfoAggrEntity.class);
-
+        
         configInfo = ConfigInfoMapStruct.INSTANCE.convertConfigInfo(configInfoEntity);
-
+        
     }
-
+    
     @Test
     public void findConfigInfoBaseTest() {
         QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
@@ -146,13 +146,13 @@ public class PersistServiceTest extends BaseTest {
         if (exist == null) {
             configInfoBetaRepository.save(configInfoBetaEntity);
         }
-        ConfigInfoBase configInfoBase = externalStoragePersistServiceImpl2
+        ConfigInfoBase configInfoBase = persistService
                 .findConfigInfoBase(configInfoBetaEntity.getDataId(), configInfoBetaEntity.getGroupId());
         Assert.assertNotNull(configInfoBase);
         Assert.assertEquals(configInfoBase.getDataId(), configInfoBetaEntity.getDataId());
         Assert.assertEquals(configInfoBase.getGroup(), configInfoBetaEntity.getGroupId());
     }
-
+    
     @Test
     public void removeConfigInfoByIdsTest() {
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
@@ -164,27 +164,26 @@ public class PersistServiceTest extends BaseTest {
             configInfoRepository.save(configInfoEntity);
             idList.add(configInfoEntity.getId());
         }
-    
-        List<ConfigInfo> list = externalStoragePersistServiceImpl2
+        
+        List<ConfigInfo> list = persistService
                 .removeConfigInfoByIds(idList, configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser());
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
-
+    
     @Test
     public void insertOrUpdateTest() {
-    
+        
         QConfigInfoEntity qConfigInfo = QConfigInfoEntity.configInfoEntity;
         configInfoRepository.findOne(qConfigInfo.dataId.eq(configInfoEntity.getDataId())
                 .and(qConfigInfo.groupId.eq(configInfoEntity.getGroupId()))
                 .and(qConfigInfo.tenantId.eq(configInfoEntity.getTenantId())))
                 .ifPresent(s -> configInfoRepository.delete(s));
-    
-        externalStoragePersistServiceImpl2
-                .insertOrUpdate(configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(), configInfo,
-                        Timestamp.from(Instant.now()), buildInsertOrUpdateMap(), true);
+        
+        persistService.insertOrUpdate(configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(), configInfo,
+                Timestamp.from(Instant.now()), buildInsertOrUpdateMap(), true);
     }
-
+    
     private Map<String, Object> buildInsertOrUpdateMap() {
         Map<String, Object> params = new HashMap<>();
         params.put("desc", configInfoEntity.getCDesc());
@@ -195,21 +194,20 @@ public class PersistServiceTest extends BaseTest {
         params.put("config_tags", "tagA");
         return params;
     }
-
+    
     @Test
     public void insertOrUpdateTagTest() {
-        externalStoragePersistServiceImpl2
-                .insertOrUpdateTag(configInfo, "tagB", configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(),
-                        Timestamp.from(Instant.now()), true);
+        persistService.insertOrUpdateTag(configInfo, "tagB", configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(),
+                Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void insertOrUpdateBetaTest() {
-        externalStoragePersistServiceImpl2
+        persistService
                 .insertOrUpdateBeta(configInfo, "127.0.0.1", configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(),
                         Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void updateConfigInfo4Beta() {
         QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
@@ -223,11 +221,11 @@ public class PersistServiceTest extends BaseTest {
             BeanUtils.copyProperties(result, configInfoBetaEntity);
         }
         result.setGmtModified(new Date());
-        externalStoragePersistServiceImpl2
+        persistService
                 .updateConfigInfo4Beta(configInfo, null, configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(),
                         Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void addConfigInfo4TagTest() {
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
@@ -239,14 +237,13 @@ public class PersistServiceTest extends BaseTest {
         if (result != null) {
             configInfoTagRepository.delete(result);
         }
-        externalStoragePersistServiceImpl2
-                .addConfigInfo4Tag(configInfo, configInfoTagEntity.getTagId(), configInfoTagEntity.getSrcIp(),
-                        configInfoTagEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
+        persistService.addConfigInfo4Tag(configInfo, configInfoTagEntity.getTagId(), configInfoTagEntity.getSrcIp(),
+                configInfoTagEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void addConfigInfo4BetaTest() {
-
+        
         QConfigInfoBetaEntity qConfigInfoBeta = QConfigInfoBetaEntity.configInfoBetaEntity;
         ConfigInfoBetaEntity result = configInfoBetaRepository.findOne(
                 qConfigInfoBeta.dataId.eq(configInfoBetaEntity.getDataId())
@@ -255,11 +252,11 @@ public class PersistServiceTest extends BaseTest {
         if (result != null) {
             configInfoBetaRepository.delete(result);
         }
-        externalStoragePersistServiceImpl2
+        persistService
                 .addConfigInfo4Beta(configInfo, configInfoBetaEntity.getBetaIps(), configInfoBetaEntity.getSrcIp(),
                         configInfoBetaEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void updateConfigInfo4Tag() {
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
@@ -274,41 +271,40 @@ public class PersistServiceTest extends BaseTest {
             BeanUtils.copyProperties(result, configInfoTagEntity);
         }
         result.setGmtModified(new Date());
-        externalStoragePersistServiceImpl2
-                .updateConfigInfo4Tag(configInfo, configInfoTagEntity.getTagId(), configInfoTagEntity.getSrcIp(),
-                        configInfoTagEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
+        persistService.updateConfigInfo4Tag(configInfo, configInfoTagEntity.getTagId(), configInfoTagEntity.getSrcIp(),
+                configInfoTagEntity.getSrcUser(), Timestamp.from(Instant.now()), true);
     }
-
+    
     @Test
     public void findConfigInfo4PageTest() {
         Map<String, Object> map = new HashMap<>();
         map.put("appName", "appName");
         map.put("config_tags", "config_tags");
-        Page<ConfigInfo> page = externalStoragePersistServiceImpl2
+        Page<ConfigInfo> page = persistService
                 .findConfigInfo4Page(0, 10, configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId(), map);
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
-
+    
     @Test
     public void findConfigInfoLike4PageTest() {
         Map<String, Object> map = new HashMap<>();
         map.put("appName", "appName");
         map.put("config_tags", "config_tags");
-        Page<ConfigInfo> page = externalStoragePersistServiceImpl2
+        Page<ConfigInfo> page = persistService
                 .findConfigInfoLike4Page(0, 10, configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId(), map);
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
-
+    
     @Test
     public void findConfigInfo4BetaTest() {
-        ConfigInfo4Beta result = externalStoragePersistServiceImpl2
+        ConfigInfo4Beta result = persistService
                 .findConfigInfo4Beta(configInfoBetaEntity.getDataId(), configInfoBetaEntity.getGroupId(),
                         configInfoBetaEntity.getTenantId());
         Assert.assertNotNull(result);
     }
-
+    
     @Test
     public void findConfigInfo4TagTest() {
         QConfigInfoTagEntity qConfigInfoTag = QConfigInfoTagEntity.configInfoTagEntity;
@@ -320,56 +316,55 @@ public class PersistServiceTest extends BaseTest {
         if (result == null) {
             configInfoTagRepository.save(configInfoTagEntity);
         }
-    
-        ConfigInfo4Tag getConfigInfoTag = externalStoragePersistServiceImpl2
+        
+        ConfigInfo4Tag getConfigInfoTag = persistService
                 .findConfigInfo4Tag(configInfoTagEntity.getDataId(), configInfoTagEntity.getGroupId(),
                         configInfoTagEntity.getTenantId(), configInfoTagEntity.getTagId());
         Assert.assertNotNull(getConfigInfoTag);
     }
-
+    
     @Test
     public void findConfigInfoTest() {
-        ConfigInfo findConfigInfo = externalStoragePersistServiceImpl2
+        ConfigInfo findConfigInfo = persistService
                 .findConfigInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId());
         Assert.assertNotNull(findConfigInfo);
     }
-
+    
     @Test
     public void findConfigAllInfoTest() {
-        ConfigAllInfo configAllInfo = externalStoragePersistServiceImpl2
+        ConfigAllInfo configAllInfo = persistService
                 .findConfigAllInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId());
         Assert.assertNotNull(configAllInfo);
     }
-
+    
     @Test
     public void selectTagByConfigTest() {
-        List<String> list = externalStoragePersistServiceImpl2
+        List<String> list = persistService
                 .selectTagByConfig(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId());
-
+        
         Assert.assertTrue(list.size() > 0);
     }
-
+    
     @Test
     public void remoteTagByIdAtomicTest() {
         Iterable<ConfigTagsRelationEntity> list = configTagsRelationRepository.findAll();
-        externalStoragePersistServiceImpl2.removeTagByIdAtomic(list.iterator().next().getNid());
+        persistService.removeTagByIdAtomic(list.iterator().next().getNid());
     }
-
+    
     @Test
     public void removeConfigInfoTest() {
-        externalStoragePersistServiceImpl2.removeConfigInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
+        persistService.removeConfigInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                 configInfoEntity.getTenantId(), configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser());
     }
-
+    
     @Test
     public void removeConfigInfoTagTest() {
-        externalStoragePersistServiceImpl2
-                .removeConfigInfoTag(configInfoTagEntity.getDataId(), configInfoTagEntity.getGroupId(),
-                        configInfoTagEntity.getTenantId(), configInfoTagEntity.getTagId(),
-                        configInfoTagEntity.getSrcIp(), configInfoTagEntity.getSrcUser());
+        persistService.removeConfigInfoTag(configInfoTagEntity.getDataId(), configInfoTagEntity.getGroupId(),
+                configInfoTagEntity.getTenantId(), configInfoTagEntity.getTagId(), configInfoTagEntity.getSrcIp(),
+                configInfoTagEntity.getSrcUser());
     }
     
     @Test
@@ -386,13 +381,13 @@ public class PersistServiceTest extends BaseTest {
         } else {
             id = String.valueOf(result.get(0).getId());
         }
-        List<ConfigInfo> list = externalStoragePersistServiceImpl2.findConfigInfosByIds(id);
+        List<ConfigInfo> list = persistService.findConfigInfosByIds(id);
         Assert.assertTrue(list.size() > 0);
     }
     
     @Test
     public void findConfigAdvanceInfoTest() {
-        ConfigAdvanceInfo configAdvanceInfo = externalStoragePersistServiceImpl2
+        ConfigAdvanceInfo configAdvanceInfo = persistService
                 .findConfigAdvanceInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId());
         Assert.assertNotNull(configAdvanceInfo);
@@ -400,14 +395,13 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void removeConfigInfo4BetaTest() {
-        externalStoragePersistServiceImpl2
-                .removeConfigInfo4Beta(configInfoBetaEntity.getDataId(), configInfoBetaEntity.getGroupId(),
-                        configInfoBetaEntity.getTenantId());
+        persistService.removeConfigInfo4Beta(configInfoBetaEntity.getDataId(), configInfoBetaEntity.getGroupId(),
+                configInfoBetaEntity.getTenantId());
     }
     
     @Test
     public void findAllConfigInfo4ExportTest() {
-        List<ConfigAllInfo> list = externalStoragePersistServiceImpl2
+        List<ConfigAllInfo> list = persistService
                 .findAllConfigInfo4Export(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId(), configInfoEntity.getAppName(), null);
         Assert.assertTrue(list.size() > 0);
@@ -420,23 +414,21 @@ public class PersistServiceTest extends BaseTest {
         if (CollectionUtils.isEmpty(getTenantInfo)) {
             tenantInfoRepository.save(tenantInfoEntity);
         }
-        int countResult = externalStoragePersistServiceImpl2.tenantInfoCountByTenantId(tenantInfoEntity.getTenantId());
+        int countResult = persistService.tenantInfoCountByTenantId(tenantInfoEntity.getTenantId());
         Assert.assertTrue(countResult > 0);
     }
     
     @Test
     public void addConfigInfoTest() {
-        externalStoragePersistServiceImpl2
-                .addConfigInfo(configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(), configInfo,
-                        Timestamp.from(Instant.now()), buildMap(), false);
+        persistService.addConfigInfo(configInfoEntity.getSrcIp(), configInfoEntity.getSrcUser(), configInfo,
+                Timestamp.from(Instant.now()), buildMap(), false);
     }
     
     @Test
     public void addConfiTagsRelationAtomicTest() {
-        externalStoragePersistServiceImpl2
-                .addConfigTagsRelation(configTagsRelationEntity.getId(), configTagsRelationEntity.getTagName(),
-                        configTagsRelationEntity.getDataId(), configTagsRelationEntity.getGroupId(),
-                        configTagsRelationEntity.getTenantId());
+        persistService.addConfigTagsRelation(configTagsRelationEntity.getId(), configTagsRelationEntity.getTagName(),
+                configTagsRelationEntity.getDataId(), configTagsRelationEntity.getGroupId(),
+                configTagsRelationEntity.getTenantId());
     }
     
     @Test
@@ -450,15 +442,15 @@ public class PersistServiceTest extends BaseTest {
         if (result != null) {
             configInfoRepository.delete(result);
         }
-        
-        externalStoragePersistServiceImpl2
+    
+        persistService
                 .batchInsertOrUpdate(list, "zhangsan", "127.0.0.1", buildMap(), Timestamp.from(Instant.now()), false,
                         SameConfigPolicy.ABORT);
     }
     
     @Test
     public void findConfigHistoryTest() {
-        Page<ConfigHistoryInfo> page = externalStoragePersistServiceImpl2
+        Page<ConfigHistoryInfo> page = persistService
                 .findConfigHistory(hisConfigInfoEntity.getDataId(), hisConfigInfoEntity.getGroupId(),
                         hisConfigInfoEntity.getTenantId(), 0, 10);
         Assert.assertTrue(page.getPageItems().size() > 0);
@@ -475,7 +467,7 @@ public class PersistServiceTest extends BaseTest {
         } else {
             id = list.get(0).getNid();
         }
-        ConfigHistoryInfo hisConfigInfo = externalStoragePersistServiceImpl2.detailConfigHistory(id);
+        ConfigHistoryInfo hisConfigInfo = persistService.detailConfigHistory(id);
         Assert.assertNotNull(hisConfigInfo);
     }
     
@@ -514,49 +506,45 @@ public class PersistServiceTest extends BaseTest {
     //
     @Test
     public void insertTenantInfoAtomicTest() {
-        externalStoragePersistServiceImpl2
-                .insertTenantInfoAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId(),
-                        tenantInfoEntity.getTenantName(), tenantInfoEntity.getTenantDesc(),
-                        tenantInfoEntity.getCreateSource(), tenantInfoEntity.getGmtCreate());
+        persistService.insertTenantInfoAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId(),
+                tenantInfoEntity.getTenantName(), tenantInfoEntity.getTenantDesc(), tenantInfoEntity.getCreateSource(),
+                tenantInfoEntity.getGmtCreate());
     }
     
     @Test
     public void updateTenantNameAtomicTest() {
-        externalStoragePersistServiceImpl2
-                .updateTenantNameAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId(),
-                        tenantInfoEntity.getTenantName() + LocalDateTime.now().toString(),
-                        tenantInfoEntity.getTenantDesc() + LocalDateTime.now().toString());
+        persistService.updateTenantNameAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId(),
+                tenantInfoEntity.getTenantName() + LocalDateTime.now().toString(),
+                tenantInfoEntity.getTenantDesc() + LocalDateTime.now().toString());
     }
     
     @Test
     public void findTenantByKp1Test() {
-        List<TenantInfo> list = externalStoragePersistServiceImpl2.findTenantByKp(tenantInfoEntity.getKp());
+        List<TenantInfo> list = persistService.findTenantByKp(tenantInfoEntity.getKp());
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
     
     @Test
     public void findTenantByKp2Test() {
-        TenantInfo result = externalStoragePersistServiceImpl2
-                .findTenantByKp(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId());
+        TenantInfo result = persistService.findTenantByKp(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId());
         Assert.assertNotNull(result);
     }
     
     @Test
     public void removeTenantInfoAtomicTest() {
-        externalStoragePersistServiceImpl2
-                .removeTenantInfoAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId());
+        persistService.removeTenantInfoAtomic(tenantInfoEntity.getKp(), tenantInfoEntity.getTenantId());
     }
     
     @Test
     public void listAllGroupKeyMd5Test() {
-        List<ConfigInfoWrapper> list = externalStoragePersistServiceImpl2.listAllGroupKeyMd5();
+        List<ConfigInfoWrapper> list = persistService.listAllGroupKeyMd5();
         Assert.assertTrue(list.size() > 0);
     }
     
     @Test
     public void queryConfigInfoTest() {
-        ConfigInfoWrapper result = externalStoragePersistServiceImpl2
+        ConfigInfoWrapper result = persistService
                 .queryConfigInfo(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
                         configInfoEntity.getTenantId());
         Assert.assertNotNull(result);
@@ -574,82 +562,81 @@ public class PersistServiceTest extends BaseTest {
     
     @Test
     public void configInfoCount1Test() {
-        int result = externalStoragePersistServiceImpl2.configInfoCount();
+        int result = persistService.configInfoCount();
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void configInfoCount2Test() {
-        int result = externalStoragePersistServiceImpl2.configInfoCount(configInfoEntity.getTenantId());
+        int result = persistService.configInfoCount(configInfoEntity.getTenantId());
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void configInfoBetaCountTest() {
-        int result = externalStoragePersistServiceImpl2.configInfoBetaCount();
+        int result = persistService.configInfoBetaCount();
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void configInfoTagCountTest() {
-        int result = externalStoragePersistServiceImpl2.configInfoTagCount();
+        int result = persistService.configInfoTagCount();
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void getGroupIdListTest() {
-        List<String> list = externalStoragePersistServiceImpl2.getGroupIdList(0, 10);
+        List<String> list = persistService.getGroupIdList(0, 10);
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
     
     @Test
     public void getTenantIdListTest() {
-        List<String> list = externalStoragePersistServiceImpl2.getTenantIdList(0, 10);
+        List<String> list = persistService.getTenantIdList(0, 10);
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
     
     @Test
     public void aggrConfigInfoCountTest() {
-        int result = externalStoragePersistServiceImpl2
-                .aggrConfigInfoCount(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
-                        configInfoEntity.getTenantId());
+        int result = persistService.aggrConfigInfoCount(configInfoEntity.getDataId(), configInfoEntity.getGroupId(),
+                configInfoEntity.getTenantId());
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void removeConfigHistoryTest() {
-        externalStoragePersistServiceImpl2.removeConfigHistory(Timestamp.from(Instant.now()), 100);
+        persistService.removeConfigHistory(Timestamp.from(Instant.now()), 100);
     }
     
     @Test
     public void findConfigHistoryCountByTimeTest() {
-        int result = externalStoragePersistServiceImpl2.findConfigHistoryCountByTime(Timestamp.from(Instant.now()));
+        int result = persistService.findConfigHistoryCountByTime(Timestamp.from(Instant.now()));
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void findConfigMaxIdTest() {
-        long result = externalStoragePersistServiceImpl2.findConfigMaxId();
+        long result = persistService.findConfigMaxId();
         Assert.assertTrue(result > 0);
     }
     
     @Test
     public void findAllConfigInfoFragmentTest() {
-        Page<ConfigInfoWrapper> page = externalStoragePersistServiceImpl2.findAllConfigInfoFragment(0, 100);
+        Page<ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(0, 100);
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
     
     @Test
     public void findAllConfigInfoBetaForDumpAllTest() {
-        Page<ConfigInfoBetaWrapper> page = externalStoragePersistServiceImpl2.findAllConfigInfoBetaForDumpAll(0, 10);
+        Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(0, 10);
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
     
     @Test
     public void findAllConfigInfoTagForDumpAllTest() {
-        Page<ConfigInfoTagWrapper> page = externalStoragePersistServiceImpl2.findAllConfigInfoTagForDumpAll(0, 10);
+        Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(0, 10);
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
     
@@ -659,8 +646,8 @@ public class PersistServiceTest extends BaseTest {
         if (result.isEmpty()) {
             configInfoAggrRepository.save(configInfoAggrEntity);
         }
-        
-        List<ConfigInfoChanged> list = externalStoragePersistServiceImpl2.findAllAggrGroup();
+    
+        List<ConfigInfoChanged> list = persistService.findAllAggrGroup();
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
     }
@@ -672,7 +659,7 @@ public class PersistServiceTest extends BaseTest {
         if (CollectionUtils.isEmpty(result)) {
             configInfoRepository.save(configInfoEntity);
         }
-        List<ConfigInfoWrapper> list = externalStoragePersistServiceImpl2
+        List<ConfigInfoWrapper> list = persistService
                 .findChangeConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);
@@ -683,7 +670,7 @@ public class PersistServiceTest extends BaseTest {
     public void findDeletedConfigTest() {
         hisConfigInfoEntity.setGmtModified(new Date());
         hisConfigInfoRepository.save(hisConfigInfoEntity);
-        List<ConfigInfo> list = externalStoragePersistServiceImpl2
+        List<ConfigInfo> list = persistService
                 .findDeletedConfig(Timestamp.valueOf(LocalDateTime.now().minusDays(30)), Timestamp.from(Instant.now()));
         Assert.assertNotNull(list);
         Assert.assertTrue(list.size() > 0);

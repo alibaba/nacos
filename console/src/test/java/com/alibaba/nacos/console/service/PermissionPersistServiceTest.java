@@ -18,8 +18,8 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.DefaultExternalPermissionPersistServiceImpl;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
+import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.modules.entity.PermissionsEntity;
 import com.alibaba.nacos.config.server.modules.entity.QPermissionsEntity;
@@ -56,7 +56,7 @@ public class PermissionPersistServiceTest extends BaseTest {
     }
     
     @Autowired
-    private DefaultExternalPermissionPersistServiceImpl externalPermissionPersistServiceImpl2;
+    private PermissionPersistService permissionPersistService;
     
     @Autowired
     private PermissionsRepository permissionsRepository;
@@ -73,8 +73,7 @@ public class PermissionPersistServiceTest extends BaseTest {
             addPermissionTest();
         }
     
-        Page<PermissionInfo> page = externalPermissionPersistServiceImpl2
-                .getPermissions(permissionsEntity.getRole(), 0, 10);
+        Page<PermissionInfo> page = permissionPersistService.getPermissions(permissionsEntity.getRole(), 0, 10);
         Assert.assertNotNull(page.getPageItems());
         Assert.assertTrue(page.getPageItems().size() > 0);
     }
@@ -84,7 +83,7 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void addPermissionTest() {
-        externalPermissionPersistServiceImpl2
+        permissionPersistService
                 .addPermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
                         permissionsEntity.getAction());
     }
@@ -94,7 +93,7 @@ public class PermissionPersistServiceTest extends BaseTest {
      */
     @Test
     public void deletePermissionTest() {
-        externalPermissionPersistServiceImpl2
+        permissionPersistService
                 .deletePermission(permissionsEntity.getRole(), permissionsEntity.getResource(),
                         permissionsEntity.getAction());
     }
