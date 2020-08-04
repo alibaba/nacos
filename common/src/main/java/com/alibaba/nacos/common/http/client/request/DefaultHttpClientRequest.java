@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.request;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.BaseHttpMethod;
+import com.alibaba.nacos.common.http.HttpClientConfig;
+import com.alibaba.nacos.common.http.HttpUtils;
+import com.alibaba.nacos.common.http.client.response.DefaultClientHttpResponse;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,8 +42,6 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "resource"})
 public class DefaultHttpClientRequest implements HttpClientRequest {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultHttpClientRequest.class);
-    
     private final CloseableHttpClient client;
     
     public DefaultHttpClientRequest(CloseableHttpClient client) {
@@ -52,24 +53,37 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             throws Exception {
         HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
         CloseableHttpResponse response = client.execute(request);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Request from server: " + request.getURI().toString());
-        }
         return new DefaultClientHttpResponse(response);
     }
     
     static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
-        Header headers = requestHttpEntity.getHeaders();
-        BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
-        httpMethod.init(uri.toString());
-        httpMethod.initHeader(headers);
+        final Header headers = requestHttpEntity.getHeaders();
+        final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
+        final HttpRequestBase httpRequestBase = httpMethod.init(uri.toString());
+        HttpUtils.initRequestHeader(httpRequestBase, headers);
         if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
                 && requestHttpEntity.getBody() instanceof Map) {
-            httpMethod.initFromEntity((Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
         } else {
-            httpMethod.initEntity(requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
+            HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers.getValue(HttpHeaderConsts.CONTENT_TYPE));
         }
-        return httpMethod.getRequestBase();
+        replaceDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig());
+        return httpRequestBase;
+    }
+    
+    /**
+     * Replace the HTTP config created by default with the HTTP config specified in the request.
+     *
+     * @param requestBase      requestBase
+     * @param httpClientConfig http config
+     */
+    private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
+        if (httpClientConfig == null) {
+            return;
+        }
+        requestBase.setConfig(RequestConfig.custom()
+                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     
     @Override

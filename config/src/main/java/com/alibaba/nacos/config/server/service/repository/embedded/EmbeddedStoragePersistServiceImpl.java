@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -48,7 +49,6 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.alibaba.nacos.core.notify.NotifyCenter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
@@ -1078,8 +1078,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount(String tenant) {
-        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like '" + tenant + "'";
-        Integer result = databaseOperate.queryOne(sql, Integer.class);
+        String sql = " SELECT COUNT(ID) FROM config_info where tenant_id like ?";
+        Integer result = databaseOperate.queryOne(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
@@ -2194,7 +2194,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public boolean isExistTable(String tableName) {
-        String sql = String.format("select 1 from %s limit 1", tableName);
+        String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
         try {
             databaseOperate.queryOne(sql, Integer.class);
             return true;

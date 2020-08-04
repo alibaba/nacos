@@ -16,26 +16,34 @@
 
 package com.alibaba.nacos.common.http.client;
 
+import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
+import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 
-import java.io.Closeable;
 import java.net.URI;
 
 /**
- * Represents a client-side HTTP request. Created via an implementation execute.
+ * Intercepts client-side HTTP requests. Implementations of this interface can be.
  *
  * @author mai.jh
  */
-public interface HttpClientRequest extends Closeable {
+public interface HttpClientRequestInterceptor {
     
     /**
-     * execute http request.
+     * is intercept.
      *
-     * @param uri               http url
-     * @param httpMethod        http request method
-     * @param requestHttpEntity http request entity
-     * @return HttpClientResponse
-     * @throws Exception ex
+     * @param uri uri
+     * @param httpMethod http method
+     * @param requestHttpEntity request entity
+     * @return boolean
      */
-    HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception;
+    boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity);
+    
+    /**
+     * if isIntercept method is true Intercept the given request, and return a response Otherwise,
+     * the {@link HttpClientRequest} will be used for execution.
+     *
+     * @return HttpClientResponse
+     */
+    HttpClientResponse intercept();
 }

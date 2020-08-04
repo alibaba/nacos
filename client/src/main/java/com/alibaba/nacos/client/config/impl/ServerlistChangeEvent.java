@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.client.config.impl;
+
+import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * this event share one event-queue.
+ * Server List Change Event.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author zongtanghu
  */
-public interface SlowEvent extends Event {
-
+public class ServerlistChangeEvent extends SlowEvent {
 }

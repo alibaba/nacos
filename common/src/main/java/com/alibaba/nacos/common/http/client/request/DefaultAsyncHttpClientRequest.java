@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.request;
 
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.response.DefaultClientHttpResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -26,7 +27,6 @@ import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URI;
 
 /**
@@ -46,7 +46,7 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     }
     
     @Override
-    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final Type responseType,
+    public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity, final ResponseHandler<T> responseHandler,
             final Callback<T> callback) throws Exception {
         HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
         asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
@@ -54,7 +54,7 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
             public void completed(HttpResponse result) {
                 DefaultClientHttpResponse response = new DefaultClientHttpResponse(result);
                 try {
-                    HttpRestResult<T> httpRestResult = ResponseHandler.responseEntityExtractor(response, responseType);
+                    HttpRestResult<T> httpRestResult = responseHandler.handle(response);
                     callback.onReceive(httpRestResult);
                 } catch (Exception e) {
                     callback.onError(e);
@@ -68,7 +68,7 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
             
             @Override
             public void cancelled() {
-            
+                callback.onCancel();
             }
         });
         

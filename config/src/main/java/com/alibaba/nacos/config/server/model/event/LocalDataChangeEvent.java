@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import com.alibaba.nacos.common.notify.Event;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author Nacos
  */
-public class LocalDataChangeEvent implements Event {
+public class LocalDataChangeEvent extends Event {
     
     public final String groupKey;
     

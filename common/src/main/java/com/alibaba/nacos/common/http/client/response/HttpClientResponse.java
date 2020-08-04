@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.client;
+package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
 
@@ -48,15 +48,17 @@ public interface HttpClientResponse extends Closeable {
      * Return the HTTP status code.
      *
      * @return the HTTP status as an integer
+     * @throws IOException IOException
      */
-    int getStatusCode();
+    int getStatusCode() throws IOException;
     
     /**
      * Return the HTTP status text of the response.
      *
      * @return the HTTP status text
+     * @throws IOException IOException
      */
-    String getStatusText();
+    String getStatusText() throws IOException;
     
     /**
      * close response InputStream.

@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.address.configuration;
 
-import java.io.Serializable;
+import com.alibaba.nacos.address.auth.AddressServerAuthManager;
+import com.alibaba.nacos.core.auth.AuthManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * event.
+ * Address server spring configuration.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author xiweng.yy
  */
-public interface Event extends Serializable {
+@Configuration
+public class AddressServerSpringConfiguration {
     
-    /**
-     * Event sequence number, which can be used to handle the sequence of events.
-     *
-     * @return sequence num, It's best to make sure it's monotone
-     */
-    default long sequence() {
-        return System.currentTimeMillis();
+    @Bean
+    @ConditionalOnMissingBean(value = AuthManager.class)
+    public AuthManager getAuthManager() {
+        return new AddressServerAuthManager();
     }
-    
 }
