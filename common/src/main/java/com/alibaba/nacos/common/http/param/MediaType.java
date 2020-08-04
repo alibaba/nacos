@@ -44,6 +44,6 @@ public final class MediaType {
     
     public static final String TEXT_HTML = "text/html";
     
-    public static final String TEXT_PLAIN = "text/xml";
+    public static final String TEXT_PLAIN = "text/plain";
     
 }
