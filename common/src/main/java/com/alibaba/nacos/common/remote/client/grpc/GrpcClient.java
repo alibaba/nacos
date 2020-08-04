@@ -235,8 +235,11 @@ public class GrpcClient extends RpcClient {
                     if (!innerLock) {
                         return;
                     }
+        
+                    if (rpcClientStatus.get() == RpcClientStatus.RUNNING) {
+                        eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
+                    }
                     rpcClientStatus.set(RpcClientStatus.SWITCHING_SERVER);
-                    eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
                     // loop until start client success.
                     while (!isRunning()) {
     
