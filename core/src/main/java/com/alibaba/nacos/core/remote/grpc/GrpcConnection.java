@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
@@ -39,9 +40,9 @@ import java.util.concurrent.TimeUnit;
 public class GrpcConnection extends Connection {
     
     static ThreadPoolExecutor pushWorkers = new ThreadPoolExecutor(10, 50, 0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(5000));
+            new LinkedBlockingQueue<>(50000));
     
-    private static final long MAX_TIMEOUTS = 500L;
+    private static final long MAX_TIMEOUTS = 5000L;
     
     private StreamObserver streamObserver;
     
@@ -55,11 +56,13 @@ public class GrpcConnection extends Connection {
         try {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
+    
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
             try {
-                GrpcAckSynchronizer.waitAck(requestId, timeout);
+                return GrpcAckSynchronizer.waitAck(requestId, timeout);
             } catch (Exception e) {
-                e.printStackTrace();
+                //Do nothing，return fail.
+                return false;
             } finally {
                 GrpcAckSynchronizer.release(requestId);
             }
@@ -70,7 +73,6 @@ public class GrpcConnection extends Connection {
             }
             throw e;
         }
-        return false;
     }
     
     private void sendPushWithCallback(ServerPushResponse request, PushCallBack callBack) {
@@ -78,13 +80,15 @@ public class GrpcConnection extends Connection {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
+            Loggers.CORE.warn("sync callback with ackid:" + requestId);
             GrpcAckSynchronizer.syncCallbackOnAck(requestId, callBack);
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 //return true where client is not active yet.
                 callBack.onSuccess();
+                return;
             }
-            callBack.onFail();
+            callBack.onFail(e);
         }
     }
     

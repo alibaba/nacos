@@ -45,11 +45,36 @@ public class ServerLoaderController {
      *
      * @return state json.
      */
-    @GetMapping("/uplimitclients")
-    public ResponseEntity updateMaxClients(@RequestParam Integer maxclients) {
+    @GetMapping("/max")
+    public ResponseEntity updateMaxClients(@RequestParam Integer count) {
         Map<String, String> responseMap = new HashMap<>(3);
-        grpcServer.setMaxClientCount(maxclients);
+        grpcServer.setMaxClientCount(count);
         return ResponseEntity.ok().body("success");
     }
+    
+    /**
+     * Get server state of current server.
+     *
+     * @return state json.
+     */
+    @GetMapping("/reload")
+    public ResponseEntity reloadClients(@RequestParam Integer count) {
+        Map<String, String> responseMap = new HashMap<>(3);
+        grpcServer.reloadClient(count);
+        return ResponseEntity.ok().body("success");
+    }
+    
+    /**
+     * Get current clients.
+     *
+     * @return state json.
+     */
+    @GetMapping("/current")
+    public ResponseEntity currentCount() {
+        Map<String, String> responseMap = new HashMap<>(3);
+        int count = grpcServer.currentClients();
+        return ResponseEntity.ok().body(count);
+    }
+    
     
 }

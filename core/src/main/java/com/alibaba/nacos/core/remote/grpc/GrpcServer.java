@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -46,6 +47,9 @@ public class GrpcServer extends RpcServer {
     
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
+    
+    @Autowired
+    private ConnectionManager connectionManager;
     
     int grpcServerPort = ApplicationUtils.getPort() + 1000;
     
@@ -81,6 +85,14 @@ public class GrpcServer extends RpcServer {
     @Override
     public void stop() {
         if (server != null) {
+            Loggers.GRPC.info("Expel all clients...");
+            connectionManager.expelAll();
+            try {
+                //wait clients to switch  server.
+                Thread.sleep(2000L);
+            } catch (InterruptedException e) {
+                //Do nothing.
+            }
             server.shutdown();
         }
     }

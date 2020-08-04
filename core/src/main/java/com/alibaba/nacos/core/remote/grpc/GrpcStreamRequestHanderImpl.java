@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -49,6 +50,16 @@ public class GrpcStreamRequestHanderImpl extends RequestStreamGrpc.RequestStream
         ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, ConnectionType.GRPC.getType(),
                 version);
         Connection connection = new GrpcConnection(metaInfo, responseObserver);
-        connectionManager.register(connectionId, connection);
+        if (connectionManager.isOverLimit()) {
+            //Not register to the connection manager if current server is over limit.
+            try {
+                connection.sendPushNoAck(new ConnectResetResponse());
+            } catch (Exception e) {
+                //Do nothing.
+            }
+        } else {
+            connectionManager.register(connectionId, connection);
+        
+        }
     }
 }

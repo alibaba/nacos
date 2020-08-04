@@ -26,7 +26,7 @@ public interface PushCallBack {
     
     public void onSuccess();
     
-    public void onFail();
+    public void onFail(Exception e);
     
     public void onTimeout();
     

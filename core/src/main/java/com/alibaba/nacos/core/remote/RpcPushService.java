@@ -55,9 +55,11 @@ public class RpcPushService {
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
                         response, e);
+                return false;
             }
+        } else {
+            return true;
         }
-        return false;
     }
     
     /**
@@ -66,7 +68,7 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param response     response.
      */
-    public Future<Boolean> pushWithFuture(String connectionId, ServerPushResponse response, long timeoutMills) {
+    public Future<Boolean> pushWithFuture(String connectionId, ServerPushResponse response) {
         
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
