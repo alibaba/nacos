@@ -43,30 +43,30 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class AddressServerMemberLookup extends AbstractMemberLookup {
-    
+
     private final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
     };
-    
+
     public String domainName;
-    
+
     public String addressPort;
-    
+
     public String addressUrl;
-    
+
     public String envIdUrl;
-    
+
     public String addressServerUrl;
-    
+
     private volatile boolean isAddressServerHealth = true;
-    
+
     private int addressServerFailCount = 0;
-    
+
     private int maxFailCount = 12;
-    
+
     private NSyncHttpClient syncHttpClient = HttpClientManager.getSyncHttpClient();
-    
+
     private volatile boolean shutdown = false;
-    
+
     @Override
     public void start() throws NacosException {
         if (start.compareAndSet(false, true)) {
@@ -75,28 +75,33 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
             run();
         }
     }
-    
+
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
-            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
+            domainName = ApplicationUtils.getProperty("address.server.domain", "jmenv.tbsite.net");
         } else {
             domainName = envDomainName;
         }
         String envAddressPort = System.getenv("address_server_port");
         if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = System.getProperty("address.server.port", "8080");
+            addressPort = ApplicationUtils.getProperty("address.server.port", "8080");
         } else {
             addressPort = envAddressPort;
         }
-        addressUrl = System.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        String envAddressUrl = System.getenv("address_server_url");
+        if (StringUtils.isBlank(envAddressUrl)) {
+            addressUrl = ApplicationUtils.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        } else {
+            addressUrl = envAddressUrl;
+        }
         addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
         envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
-        
+
         Loggers.CORE.info("ServerListService address-server port:" + addressPort);
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
     }
-    
+
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private void run() throws NacosException {
         // With the address server, you need to perform a synchronous member node pull at startup
@@ -117,15 +122,15 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         if (!success) {
             throw new NacosException(NacosException.SERVER_ERROR, ex);
         }
-        
+
         GlobalExecutor.scheduleByCommon(new AddressServerSyncTask(), 5_000L);
     }
-    
+
     @Override
     public void destroy() throws NacosException {
         shutdown = true;
     }
-    
+
     @Override
     public Map<String, Object> info() {
         Map<String, Object> info = new HashMap<>(4);
@@ -135,7 +140,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         info.put("addressServerFailCount", addressServerFailCount);
         return info;
     }
-    
+
     private void syncFromAddressUrl() throws Exception {
         RestResult<String> result = syncHttpClient
                 .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
@@ -158,9 +163,9 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
             Loggers.CLUSTER.error("[serverlist] failed to get serverlist, error code {}", result.getCode());
         }
     }
-    
+
     class AddressServerSyncTask implements Runnable {
-        
+
         @Override
         public void run() {
             if (shutdown) {
