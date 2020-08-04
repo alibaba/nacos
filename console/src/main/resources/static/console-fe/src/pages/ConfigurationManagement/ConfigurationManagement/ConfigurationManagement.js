@@ -46,7 +46,7 @@ import { connect } from 'react-redux';
 import { getConfigs } from '../../../reducers/configuration';
 
 import './index.scss';
-import { LANGUAGE_KEY } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
@@ -1384,7 +1384,7 @@ class ConfigurationManagement extends React.Component {
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
-                  pageSizeList={[10, 20, 30]}
+                  pageSizeList={ GLOBAL_PAGE_SIZE_LIST }
                   pageSizePosition="start"
                   pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}
