@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
@@ -39,13 +40,13 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedUserPersistServiceImpl implements UserPersistService {
-    
+
     @Autowired
     private DatabaseOperate databaseOperate;
-    
+
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
-    
+
     /**
      * Execute create user operation.
      *
@@ -54,7 +55,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
      */
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
-        
+
         try {
             EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
             databaseOperate.blockUpdate();
@@ -62,7 +63,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-    
+
     /**
      * Execute delete user operation.
      *
@@ -77,7 +78,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-    
+
     /**
      * Execute update user password operation.
      *
@@ -93,19 +94,19 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
-    
+
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
         return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
     }
-    
+
     public Page<User> getUsers(int pageNo, int pageSize) {
-        
+
         PaginationHelper<User> helper = persistService.createPaginationHelper();
-        
+
         String sqlCountRows = "select count(*) from users where ";
         String sqlFetchRows = "select username,password from users where ";
-        
+
         String where = " 1=1 ";
         Page<User> pageInfo = helper
                 .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
@@ -116,5 +117,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             pageInfo.setPageItems(new ArrayList<>());
         }
         return pageInfo;
+    }
+
+    @Override
+    public List<User> findUserLikeUsername(String username) {
+        String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
+        List<User> users = databaseOperate.queryMany(sql, new Object[]{username}, User.class);
+        return users;
     }
 }

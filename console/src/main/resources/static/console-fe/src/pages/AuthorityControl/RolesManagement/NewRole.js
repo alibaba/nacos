@@ -16,7 +16,9 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
+import { connect } from 'react-redux';
+import { Field, Form, Input, Dialog, ConfigProvider, Select } from '@alifd/next';
+import { searchUsers } from '../../../reducers/authority';
 
 const FormItem = Form.Item;
 
@@ -24,7 +26,7 @@ const formItemLayout = {
   labelCol: { fixedSpan: 4 },
   wrapperCol: { span: 19 },
 };
-
+@connect(state => ({ users: state.authority.users }), { searchUsers })
 @ConfigProvider.config
 class NewRole extends React.Component {
   static displayName = 'NewRole';
@@ -35,8 +37,13 @@ class NewRole extends React.Component {
     locale: PropTypes.object,
     visible: PropTypes.bool,
     onOk: PropTypes.func,
+    getUsers: PropTypes.func,
     onCancel: PropTypes.func,
   };
+
+  state = {
+    dataSource: [],
+  }
 
   check() {
     const { locale } = this.props;
@@ -55,6 +62,14 @@ class NewRole extends React.Component {
       return vals;
     }
     return null;
+  }
+
+  handleChange = value => {
+    if (value.length > 0) {
+      searchUsers(value).then((val) => {
+        this.setState({ dataSource: val.map(v => v.username) });
+      });
+    }
   }
 
   render() {
@@ -81,7 +96,14 @@ class NewRole extends React.Component {
               <Input name="role" trim placeholder={locale.rolePlaceholder} />
             </FormItem>
             <FormItem label={locale.username} required help={getError('username')}>
-              <Input name="username" placeholder={locale.usernamePlaceholder} />
+              <Select.AutoComplete
+                name="username"
+                style={{ width: 316 }}
+                filterLocal={false}
+                placeholder={locale.usernamePlaceholder}
+                onChange={this.handleChange}
+                dataSource={this.state.dataSource}
+              />
             </FormItem>
           </Form>
         </Dialog>

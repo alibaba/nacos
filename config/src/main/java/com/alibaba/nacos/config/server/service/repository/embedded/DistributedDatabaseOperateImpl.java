@@ -143,89 +143,89 @@ import java.util.stream.Collectors;
 @Component
 @SuppressWarnings({"unchecked"})
 public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements BaseDatabaseOperate {
-    
+
     /**
      * The data import operation is dedicated key, which ACTS as an identifier.
      */
     private static final String DATA_IMPORT_KEY = "00--0-data_import-0--00";
-    
+
     private ServerMemberManager memberManager;
-    
+
     private CPProtocol protocol;
-    
+
     private LocalDataSourceServiceImpl dataSourceService;
-    
+
     private JdbcTemplate jdbcTemplate;
-    
+
     private TransactionTemplate transactionTemplate;
-    
+
     private Serializer serializer = SerializeFactory.getDefault();
-    
+
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     private ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    
+
     private ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    
+
     public DistributedDatabaseOperateImpl(ServerMemberManager memberManager, ProtocolManager protocolManager)
             throws Exception {
         this.memberManager = memberManager;
         this.protocol = protocolManager.getCpProtocol();
         init();
     }
-    
+
     protected void init() throws Exception {
-        
+
         this.dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance().getDataSource();
-        
+
         // Because in Raft + Derby mode, ensuring data consistency depends on the Raft's
         // log playback and snapshot recovery capabilities, and the last data must be cleared
         this.dataSourceService.cleanAndReopenDerby();
-        
+
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
         this.transactionTemplate = dataSourceService.getTransactionTemplate();
-        
+
         // Registers a Derby Raft state machine failure event for node degradation processing
         NotifyCenter.registerToSharePublisher(RaftDbErrorEvent.class);
         // Register the snapshot load event
         NotifyCenter.registerToSharePublisher(DerbyLoadEvent.class);
-        
+
         NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {
             @Override
             public void onEvent(RaftDbErrorEvent event) {
                 dataSourceService.setHealthStatus("DOWN");
             }
-            
+
             @Override
             public Class<? extends Event> subscribeType() {
                 return RaftDbErrorEvent.class;
             }
         });
-        
+
         NotifyCenter.registerToPublisher(ConfigDumpEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(new DumpConfigHandler());
-        
+
         this.protocol.addLogProcessors(Collections.singletonList(this));
         LogUtil.DEFAULT_LOG.info("use DistributedTransactionServicesImpl");
     }
-    
+
     @JustForTest
     public void mockConsistencyProtocol(CPProtocol protocol) {
         this.protocol = protocol;
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Class<R> cls) {
         try {
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryOne info : sql : {}", sql);
-            
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
                             .className(cls.getCanonicalName()).build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -237,19 +237,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Object[] args, Class<R> cls) {
         try {
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryOne info : sql : {}, args : {}", sql, args);
-            
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(cls.getCanonicalName()).build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -261,19 +261,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Object[] args, RowMapper<R> mapper) {
         try {
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryOne info : sql : {}, args : {}", sql, args);
-            
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -286,19 +286,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> List<R> queryMany(String sql, Object[] args, RowMapper<R> mapper) {
         try {
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryMany info : sql : {}, args : {}", sql, args);
-            
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -310,19 +310,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> List<R> queryMany(String sql, Object[] args, Class<R> rClass) {
         try {
-            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryMany info : sql : {}, args : {}", sql, args);
-            
+            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queoryMany info : sql : {}, args : {}", sql, args);
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(rClass.getCanonicalName()).build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -334,19 +334,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public List<Map<String, Object>> queryMany(String sql, Object[] args) {
         try {
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "queryMany info : sql : {}, args : {}", sql, args);
-            
+
             byte[] data = serializer.serialize(
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql).args(args)
                             .build());
-            
+
             final boolean blockRead = EmbeddedStorageContextUtils
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
+
             Response response = innerRead(
                     GetRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
             if (response.getSuccess()) {
@@ -358,7 +358,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     /**
      * In some business situations, you need to avoid the timeout issue, so blockRead is used to determine this.
      *
@@ -373,7 +373,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
         }
         return protocol.getData(request);
     }
-    
+
     @Override
     public CompletableFuture<RestResult<String>> dataImport(File file) {
         return CompletableFuture.supplyAsync(() -> {
@@ -411,19 +411,19 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             }
         });
     }
-    
+
     @Override
     public Boolean update(List<ModifyRequest> sqlContext, BiConsumer<Boolean, Throwable> consumer) {
         try {
-            
+
             // Since the SQL parameter is Object[], in order to ensure that the types of
             // array elements are not lost, the serialization here is done using the java-specific
             // serialization framework, rather than continuing with the protobuff
-            
+
             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "modifyRequests info : {}", sqlContext);
-            
+
             // {timestamp}-{group}-{ip:port}-{signature}
-            
+
             final String key =
                     System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
                             + MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
@@ -454,20 +454,20 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.singletonList(new DerbySnapshotOperation(writeLock));
     }
-    
+
     @SuppressWarnings("all")
     @Override
     public Response onRequest(final GetRequest request) {
         final SelectRequest selectRequest = serializer
                 .deserialize(request.getData().toByteArray(), SelectRequest.class);
-        
+
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "getData info : selectRequest : {}", selectRequest);
-        
+
         final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
         final byte type = selectRequest.getQueryType();
         readLock.lock();
@@ -509,7 +509,7 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             readLock.unlock();
         }
     }
-    
+
     @Override
     public Response onApply(Log log) {
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "onApply info : log : {}", log);
@@ -530,9 +530,9 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
                 // normal execution of the state machine
                 ConfigExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
             }
-            
+
             return Response.newBuilder().setSuccess(isOk).build();
-            
+
             // We do not believe that an error caused by a problem with an SQL error
             // should trigger the stop operation of the raft state machine
         } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
@@ -545,18 +545,18 @@ public class DistributedDatabaseOperateImpl extends LogProcessor4CP implements B
             lock.unlock();
         }
     }
-    
+
     @Override
     public void onError(Throwable throwable) {
         // Trigger reversion strategy
         NotifyCenter.publishEvent(new RaftDbErrorEvent(throwable));
     }
-    
+
     @Override
     public String group() {
         return Constants.CONFIG_MODEL_RAFT_GROUP;
     }
-    
+
     private void handleExtendInfo(Map<String, String> extendInfo) {
         if (extendInfo.containsKey(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT)) {
             String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);

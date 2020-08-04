@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
@@ -42,17 +43,17 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalUserPersistServiceImpl implements UserPersistService {
-    
+
     @Autowired
     private ExternalStoragePersistServiceImpl persistService;
-    
+
     private JdbcTemplate jt;
-    
+
     @PostConstruct
     protected void init() {
         jt = persistService.getJdbcTemplate();
     }
-    
+
     /**
      * Execute create user operation.
      *
@@ -61,7 +62,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     public void createUser(String username, String password) {
         String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
-        
+
         try {
             jt.update(sql, username, password, true);
         } catch (CannotGetJdbcConnectionException e) {
@@ -69,7 +70,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute delete user operation.
      *
@@ -84,7 +85,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute update user password operation.
      *
@@ -99,7 +100,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute find user by username operation.
      *
@@ -120,16 +121,16 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw new RuntimeException(e);
         }
     }
-    
+
     public Page<User> getUsers(int pageNo, int pageSize) {
-        
+
         PaginationHelper<User> helper = persistService.createPaginationHelper();
-        
+
         String sqlCountRows = "select count(*) from users where ";
         String sqlFetchRows = "select username,password from users where ";
-        
+
         String where = " 1=1 ";
-        
+
         try {
             Page<User> pageInfo = helper
                     .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
@@ -144,5 +145,12 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
+    }
+
+    @Override
+    public List<User> findUserLikeUsername(String username) {
+        String sql = "SELECT username,password FROM users WHERE username like '%' ? '%'";
+        List<User> users = this.jt.query(sql, new Object[]{username}, USER_ROW_MAPPER);
+        return users;
     }
 }
