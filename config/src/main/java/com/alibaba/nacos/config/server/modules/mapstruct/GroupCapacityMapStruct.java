@@ -16,22 +16,19 @@
 
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
-
-import com.alibaba.nacos.config.server.auth.RoleInfo;
-import com.alibaba.nacos.config.server.modules.entity.RolesEntity;
+import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
+import com.alibaba.nacos.config.server.modules.entity.GroupCapacityEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-
-import java.util.List;
 
 /**
  * @author Nacos
  */
 @Mapper
-public interface RoleInfoMapStruct {
+public interface GroupCapacityMapStruct {
     
-    RoleInfoMapStruct INSTANCE = Mappers.getMapper(RoleInfoMapStruct.class);
+    GroupCapacityMapStruct INSTANCE = Mappers.getMapper(GroupCapacityMapStruct.class);
     
-    List<RoleInfo> convertRoleInfoList(List<RolesEntity> list);
+    GroupCapacity convertGroupCapacity(GroupCapacityEntity groupCapacityEntity);
     
 }

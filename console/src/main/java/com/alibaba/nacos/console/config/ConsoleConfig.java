@@ -36,7 +36,6 @@ import javax.annotation.PostConstruct;
  */
 @Component
 @EnableScheduling
-//@PropertySource("/application.properties")
 public class ConsoleConfig {
     
     @Autowired
