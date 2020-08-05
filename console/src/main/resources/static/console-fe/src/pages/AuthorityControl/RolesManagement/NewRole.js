@@ -43,7 +43,7 @@ class NewRole extends React.Component {
 
   state = {
     dataSource: [],
-  }
+  };
 
   check() {
     const { locale } = this.props;
@@ -66,11 +66,11 @@ class NewRole extends React.Component {
 
   handleChange = value => {
     if (value.length > 0) {
-      searchUsers(value).then((val) => {
-        this.setState({ dataSource: val.map(v => v.username) });
+      searchUsers(value).then(val => {
+        this.setState({ dataSource: val });
       });
     }
-  }
+  };
 
   render() {
     const { locale } = this.props;
