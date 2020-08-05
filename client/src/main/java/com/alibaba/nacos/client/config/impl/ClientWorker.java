@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -46,12 +47,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -310,32 +309,6 @@ public class ClientWorker implements Closeable {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    /**
-     * Update the thread state corresponding to taskId.
-     *
-     * @param taskId threads run taskId.
-     */
-    private void updateTaskFlag(Integer taskId) {
-        synchronized (taskFlagSets) {
-            Set<Integer> copy = new HashSet<Integer>(taskFlagSets.get());
-            copy.add(taskId);
-            taskFlagSets.set(copy);
-        }
-    }
-    
-    /**
-     * Remove the thread state corresponding to taskId.
-     *
-     * @param taskId threads run taskId.
-     */
-    private void removeTaskFlag(Integer taskId) {
-        synchronized (taskFlagSets) {
-            Set<Integer> copy = new HashSet<Integer>(taskFlagSets.get());
-            copy.remove(taskId);
-            taskFlagSets.set(copy);
-        }
-    }
-    
     public String[] getServerConfig(String dataId, String group, String tenant, long readTimeout)
             throws NacosException {
         String[] ct = new String[2];
@@ -450,14 +423,13 @@ public class ClientWorker implements Closeable {
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
-                // Update the thread state corresponding to taskId.
-                updateTaskFlag(i);
+                taskIdSet.add(i);
                 // The task list is no order.So it maybe has issues when changing.
                 executorService.execute(new LongPollingRunnable(i));
             }
         } else if (longingTaskCount < currentLongingTaskCount) {
             for (int i = longingTaskCount; i < (int) currentLongingTaskCount; i++) {
-                removeTaskFlag(i);
+                taskIdSet.remove(i);
             }
         }
         currentLongingTaskCount = longingTaskCount;
@@ -722,7 +694,7 @@ public class ClientWorker implements Closeable {
                 }
                 inInitializingCacheList.clear();
                 
-                if (taskFlagSets.get().contains(taskId)) {
+                if (taskIdSet.contains(taskId)) {
                     executorService.execute(this);
                 }
                 
@@ -754,9 +726,9 @@ public class ClientWorker implements Closeable {
             new HashMap<String, CacheData>());
     
     /**
-     * Mark whether the thread corresponding to TasKid is running.
+     * Store the running taskId.
      */
-    private final AtomicReference<Set<Integer>> taskFlagSets = new AtomicReference<Set<Integer>>(new HashSet<Integer>());
+    private final ConcurrentHashSet<Integer> taskIdSet = new ConcurrentHashSet<Integer>();
     
     private final HttpAgent agent;
     
