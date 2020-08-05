@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -36,6 +37,8 @@ import javax.annotation.PostConstruct;
 @Service
 public class GrpcServer extends RpcServer {
     
+    private static final int PORT_OFFSET = 1000;
+    
     private Server server;
     
     @Autowired
@@ -47,7 +50,10 @@ public class GrpcServer extends RpcServer {
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
-    int grpcServerPort = ApplicationUtils.getPort() + 1000;
+    @Autowired
+    private ConnectionManager connectionManager;
+    
+    int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
     
     private void init() {
         Loggers.GRPC.info("Nacos gRPC server initiazing Component ...");
@@ -79,8 +85,21 @@ public class GrpcServer extends RpcServer {
     }
     
     @Override
+    public int rpcPortOffset() {
+        return PORT_OFFSET;
+    }
+    
+    @Override
     public void stop() {
         if (server != null) {
+            Loggers.GRPC.info("Expel all clients...");
+            connectionManager.expelAll();
+            try {
+                //wait clients to switch  server.
+                Thread.sleep(2000L);
+            } catch (InterruptedException e) {
+                //Do nothing.
+            }
             server.shutdown();
         }
     }

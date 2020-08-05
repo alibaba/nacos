@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ConfigChangeNotifier.
@@ -34,6 +38,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Component
 public class ConfigChangeNotifier {
+    
+    private ThreadPoolExecutor retryPushexecutors = new ThreadPoolExecutor(15, 30, 5, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<Runnable>(100000), new ThreadPoolExecutor.AbortPolicy());
     
     @Autowired
     ConfigChangeListenContext configChangeListenContext;
@@ -47,9 +54,8 @@ public class ConfigChangeNotifier {
      * @param groupKey       groupKey
      * @param notifyResponse notifyResponse
      */
-    public void configDataChanged(String groupKey, final ServerPushResponse notifyResponse) {
-    
-        long start = System.currentTimeMillis();
+    public void configDataChanged(String groupKey, final ConfigChangeNotifyResponse notifyResponse) {
+        
         Set<String> clients = configChangeListenContext.getListeners(groupKey);
     
         if (!CollectionUtils.isEmpty(clients)) {
@@ -57,77 +63,58 @@ public class ConfigChangeNotifier {
                 rpcPushService.pushWithCallback(client, notifyResponse, new PushCallBack() {
                     @Override
                     public void onSuccess() {
-                        //System.out.println("推送变更成功：" + connectionId);
+                        Loggers.CORE.debug("push callback success.,groupKey={},clientId={}", groupKey, client);
                     }
-                
+    
                     @Override
-                    public void onFail() {
-                        //System.out.println("推送变更失败：" + client);
+                    public void onFail(Exception e) {
+                        Loggers.CORE
+                                .warn("push callback fail.will retry push ,groupKey={},clientId={}", groupKey, client);
                         retryPush(client, notifyResponse, 3);
                     }
-                
+    
                     @Override
                     public void onTimeout() {
-                        //System.out.println("推送变更超时：" + client);
+                        Loggers.CORE.warn("push callback timeout.will retry push ,groupKey={},clientId={}", groupKey,
+                                client);
                         retryPush(client, notifyResponse, 3);
                     }
                 });
-            
+    
             }
         }
-        long end = System.currentTimeMillis();
-    
     }
     
-    void retryPush(String clientId, ServerPushResponse notifyResponse, int maxRetyTimes) {
+    void retryPush(final String clientId, final ConfigChangeNotifyResponse notifyResponse, final int maxRetyTimes) {
         
-        int maxTimes = maxRetyTimes;
-        final AtomicBoolean success = new AtomicBoolean(false);
-        Object lock = new Object();
-        while (maxRetyTimes > 0) {
-            if (success.get()) {
-                return;
-            }
-            maxRetyTimes--;
-            rpcPushService.pushWithCallback(clientId, notifyResponse, new PushCallBack() {
+        try {
+            retryPushexecutors.submit(new Runnable() {
                 @Override
-                public void onSuccess() {
-                    //System.out.println("推送变更成功：" + connectionId);
-                    success.set(true);
-                    synchronized (lock) {
-                        lock.notify();
+                public void run() {
+                    int maxTimes = maxRetyTimes;
+                    boolean rePushFlag = false;
+                    while (maxTimes > 0 && !rePushFlag) {
+                        maxTimes--;
+                        boolean push = rpcPushService.push(clientId, notifyResponse, 1000L);
+                        if (push) {
+                            rePushFlag = true;
+                        }
                     }
-                }
-                
-                @Override
-                public void onFail() {
-                    //System.out.println("推送变更失败：" + client);
-                    synchronized (lock) {
-                        lock.notify();
-                    }
-                }
-                
-                @Override
-                public void onTimeout() {
-                    //System.out.println("推送变更超时：" + client);
-                    synchronized (lock) {
-                        lock.notify();
+                    if (rePushFlag) {
+                        Loggers.CORE.warn("push callback retry success.dataId={},group={},tenant={},clientId={}",
+                                notifyResponse.getDataId(), notifyResponse.getGroup(), notifyResponse.getTenant(),
+                                clientId);
+                    } else {
+                        Loggers.CORE.error(String
+                                .format("push callback retry fail.dataId={},group={},tenant={},clientId={}",
+                                        notifyResponse.getDataId(), notifyResponse.getGroup(),
+                                        notifyResponse.getTenant(), clientId));
                     }
                 }
             });
-            
-            synchronized (lock) {
-                try {
-                    lock.wait(500L);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        if (success.get()) {
-            //Success
-        } else {
-            //reTry fails.
+        } catch (RejectedExecutionException e) {
+            Loggers.CORE.warn("retry push callback task overlimit.dataId={},group={},tenant={},clientId={}",
+                    notifyResponse.getDataId(), notifyResponse.getGroup(), notifyResponse.getTenant(), clientId);
         }
         
     }

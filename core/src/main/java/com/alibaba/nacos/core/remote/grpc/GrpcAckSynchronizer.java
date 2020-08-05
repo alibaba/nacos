@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
@@ -40,19 +41,20 @@ public class GrpcAckSynchronizer {
     
     private static final Map<String, AckWaitor> ACK_WAITORS = new HashMap<String, AckWaitor>();
     
-    private static final long TIMEOUT = 3000L;
+    private static final long TIMEOUT = 60000L;
     
     static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     
-    static Map<String, PushCallBackWraper> callPool = new ConcurrentLinkedHashMap.Builder<String, PushCallBackWraper>()
-            .maximumWeightedCapacity(20000).listener(new EvictionListener<String, PushCallBackWraper>() {
+    private static final Map<String, PushCallBackWraper> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, PushCallBackWraper>()
+            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, PushCallBackWraper>() {
                 @Override
                 public void onEviction(String s, PushCallBackWraper pushCallBack) {
                     if (System.currentTimeMillis() - pushCallBack.getTimeStamp() > TIMEOUT && pushCallBack
                             .tryDeActive()) {
+                        Loggers.CORE.warn("time out on eviction:" + pushCallBack.ackId);
                         pushCallBack.getPushCallBack().onTimeout();
                     } else {
-                        pushCallBack.getPushCallBack().onFail();
+                        pushCallBack.getPushCallBack().onFail(new RuntimeException("callback pool overlimit"));
                     }
                 }
             }).build();
@@ -63,14 +65,15 @@ public class GrpcAckSynchronizer {
             public void run() {
                 Set<String> timeOutCalls = new HashSet<>();
                 long now = System.currentTimeMillis();
-                for (Map.Entry<String, PushCallBackWraper> enrty : callPool.entrySet()) {
+                for (Map.Entry<String, PushCallBackWraper> enrty : CALLBACK_CONTEXT.entrySet()) {
                     if (now - enrty.getValue().getTimeStamp() > TIMEOUT) {
                         timeOutCalls.add(enrty.getKey());
                     }
                 }
                 for (String ackId : timeOutCalls) {
-                    PushCallBackWraper remove = callPool.remove(ackId);
+                    PushCallBackWraper remove = CALLBACK_CONTEXT.remove(ackId);
                     if (remove != null && remove.tryDeActive()) {
+                        Loggers.CORE.warn("time out on scheduler:" + ackId);
                         remove.pushCallBack.onTimeout();
                     }
                 }
@@ -84,13 +87,13 @@ public class GrpcAckSynchronizer {
      * @param ackId ackId.
      */
     public static void ackNotify(String ackId, boolean success) {
-        
-        PushCallBackWraper currentCallback = callPool.remove(ackId);
+    
+        PushCallBackWraper currentCallback = CALLBACK_CONTEXT.remove(ackId);
         if (currentCallback != null && currentCallback.tryDeActive()) {
             if (success) {
                 currentCallback.pushCallBack.onSuccess();
             } else {
-                currentCallback.pushCallBack.onFail();
+                currentCallback.pushCallBack.onFail(new RuntimeException("client return fail"));
             }
         }
         
@@ -142,7 +145,8 @@ public class GrpcAckSynchronizer {
      * @param ackId ackId.
      */
     public static void syncCallbackOnAck(String ackId, PushCallBack pushCallBack) throws Exception {
-        PushCallBackWraper pushCallBackPrev = callPool.putIfAbsent(ackId, new PushCallBackWraper(pushCallBack, ackId));
+        PushCallBackWraper pushCallBackPrev = CALLBACK_CONTEXT
+                .putIfAbsent(ackId, new PushCallBackWraper(pushCallBack, ackId));
         if (pushCallBackPrev != null) {
             throw new RuntimeException("callback conflict.");
         }

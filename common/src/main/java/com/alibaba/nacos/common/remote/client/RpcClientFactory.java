@@ -35,12 +35,10 @@ public class RpcClientFactory {
         synchronized (clientMap) {
             if (clientMap.get(clientName) == null) {
                 RpcClient moduleClient = new GrpcClient();
-                clientMap.putIfAbsent(clientName, moduleClient);
+                clientMap.put(clientName, moduleClient);
+                return moduleClient;
             }
             return clientMap.get(clientName);
-        
         }
-        
     }
-    
 }

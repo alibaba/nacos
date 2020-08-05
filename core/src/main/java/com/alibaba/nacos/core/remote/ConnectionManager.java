@@ -16,12 +16,21 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
+import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import javax.annotation.PostConstruct;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * connect manager.
@@ -32,13 +41,24 @@ import java.util.Map;
 @Service
 public class ConnectionManager {
     
-    @Autowired
-    private ClientConnectionEventListenerRegistry connectionEventListenerRegistry;
+    /**
+     * maxLimitClient
+     */
+    private int maxClient = -1;
     
-    Map<String, Connection> connetions = new HashMap<String, Connection>();
+    /**
+     * current loader adjust count,only effective once,use to rebalance.
+     */
+    private int loadClient = -1;
+    
+    private static final long EXPIRE_MILLSECOND = 10000L;
+    
+    private ScheduledExecutorService executors = Executors.newScheduledThreadPool(2);
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
+    
+    Map<String, Connection> connetions = new ConcurrentHashMap<String, Connection>();
     
     /**
      * check connnectionid is valid.
@@ -108,6 +128,114 @@ public class ConnectionManager {
         if (connection != null) {
             connection.freshActiveTime();
         }
+    }
+    
+    /**
+     * Start Task：Expel the connection which active Time expire.
+     */
+    @PostConstruct
+    public void start() {
+        
+        // Start UnHeathy Conection Expel Task.
+        executors.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    long currentStamp = System.currentTimeMillis();
+                    Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+                    boolean isLoaderClient = loadClient > 0;
+                    int currentMaxClient = isLoaderClient ? loadClient : maxClient;
+                    int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
+                    List<String> expelClient = new LinkedList<String>();
+                    
+                    List<String> expireCLients = new LinkedList<String>();
+                    for (Map.Entry<String, Connection> entry : entries) {
+                        Connection client = entry.getValue();
+                        long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
+                        if (currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
+                            expireCLients.add(client.getConnectionId());
+                            expelCount--;
+                        } else if (expelCount > 0) {
+                            expelClient.add(client.getConnectionId());
+                            expelCount--;
+                        }
+                    }
+                    
+                    for (String expireClient : expireCLients) {
+                        unregister(expireClient);
+                        Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
+                    }
+                    
+                    for (String expeledClient : expelClient) {
+                        try {
+                            Connection connection = getConnection(expeledClient);
+                            if (connection != null) {
+                                if (connection.isSwitching()) {
+                                    continue;
+                                }
+                                connection.sendPushNoAck(new ConnectResetResponse());
+                                connection.setStatus(Connection.SWITCHING);
+                                Loggers.GRPC.info("expel connection ,send switch server response connectionid = {} ",
+                                        expeledClient);
+                            }
+                            
+                        } catch (ConnectionAlreadyClosedException e) {
+                            unregister(expeledClient);
+                        } catch (Exception e) {
+                            Loggers.GRPC.error("error occurs when expel connetion :", expeledClient, e);
+                        }
+                        
+                    }
+                    
+                    //reset loader client
+                    if (isLoaderClient) {
+                        loadClient = -1;
+                    }
+                    
+                } catch (Exception e) {
+                    Loggers.GRPC.error("error occurs when heathy check... ", e);
+                }
+            }
+        }, 500L, 3000L, TimeUnit.MILLISECONDS);
+        
+    }
+    
+    public void coordinateMaxClientsSmoth(int maxClient) {
+        this.maxClient = maxClient;
+    }
+    
+    public void loadClientsSmoth(int loadClient) {
+        this.loadClient = loadClient;
+    }
+    
+    public int currentClients() {
+        return connetions.size();
+    }
+    
+    /**
+     * expel all connections.
+     */
+    public void expelAll() {
+        //reject all new connections.
+        this.maxClient = 0;
+        //send connect reset response to  all clients.
+        for (Map.Entry<String, Connection> entry : connetions.entrySet()) {
+            Connection client = entry.getValue();
+            try {
+                client.sendPushNoAck(new ConnectResetResponse());
+            } catch (Exception e) {
+                //Do Nothing.
+            }
+        }
+    }
+    
+    /**
+     * check if over limit.
+     *
+     * @return
+     */
+    public boolean isOverLimit() {
+        return maxClient > 0 && this.connetions.size() >= maxClient;
     }
     
 }
