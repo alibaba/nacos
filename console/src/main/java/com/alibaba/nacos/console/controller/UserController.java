@@ -251,13 +251,9 @@ public class UserController {
 
 
     /**
-     * @return users
-     * @exception
-     * @author zzq
-     * @date 2020/8/4 6:45
-     * <p>
      *   Fuzzy matching username
-     * </p>
+     * @param username username
+     * @return Matched username
      */
     @GetMapping("/search")
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)

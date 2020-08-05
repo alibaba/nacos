@@ -40,15 +40,6 @@ public interface UserPersistService {
 
     Page<User> getUsers(int pageNo, int pageSize);
 
-    /**
-     * @return users
-     * @exception
-     * @author zzq
-     * @date 2020/8/4 6:45
-     * <p>
-     *   Fuzzy matching username
-     * </p>
-     */
     List<User> findUserLikeUsername(String username);
 
 }
