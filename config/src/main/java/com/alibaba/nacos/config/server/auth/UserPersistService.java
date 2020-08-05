@@ -40,6 +40,6 @@ public interface UserPersistService {
     
     Page<User> getUsers(int pageNo, int pageSize);
 
-    List<User> findUserLikeUsername(String username);
+    List<String> findUserLikeUsername(String username);
 
 }

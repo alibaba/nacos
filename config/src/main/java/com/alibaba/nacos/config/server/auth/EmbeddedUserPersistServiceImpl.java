@@ -120,9 +120,9 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     }
 
     @Override
-    public List<User> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
-        List<User> users = databaseOperate.queryMany(sql, new Object[]{username}, User.class);
+    public List<String> findUserLikeUsername(String username) {
+        String sql = "SELECT username FROM users WHERE username like ? ";
+        List<String> users = databaseOperate.queryMany(sql, new String[]{"%"+username+"%"}, String.class);
         return users;
     }
 }

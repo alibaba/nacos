@@ -148,9 +148,9 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     }
 
     @Override
-    public List<User> findUserLikeUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username like '%' ? '%'";
-        List<User> users = this.jt.query(sql, new Object[]{username}, USER_ROW_MAPPER);
+    public List<String> findUserLikeUsername(String username) {
+        String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
+        List<String> users = this.jt.queryForList(sql,new String[]{username},String.class);
         return users;
     }
 }
