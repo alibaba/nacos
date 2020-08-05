@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -48,32 +49,12 @@ public abstract class RpcClient implements Closeable {
     
     protected String connectionId;
     
+    protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<ConnectionEvent>();
+    
     protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
     
-    protected ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.client.config.grpc.worker");
-            t.setDaemon(true);
-            return t;
-        }
-    });
-    
-    /**
-     * Notify when client re connected.
-     */
-    protected void notifyReConnected() {
-    
-        if (!connectionEventListeners.isEmpty()) {
-            LoggerUtils.printIfInfoEnabled(LOGGER, "notify connection event listeners.");
-            for (ConnectionEventListener listener : connectionEventListeners) {
-                listener.onReconnected();
-            }
-        }
-    
-    }
+    protected ScheduledExecutorService executorService;
     
     /**
      * Notify when client re connected.
@@ -196,7 +177,53 @@ public abstract class RpcClient implements Closeable {
     /**
      * Start this client.
      */
-    public abstract void start() throws NacosException;
+    public void start() throws NacosException {
+    
+        executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.grpc.worker");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+    
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    ConnectionEvent take = null;
+                    try {
+                        take = eventLinkedBlockingQueue.take();
+                        if (take.isConnected()) {
+                            notifyConnected();
+                        } else if (take.isDisConnected()) {
+                            notifyDisConnected();
+                        }
+                    } catch (InterruptedException e) {
+                        //Do nothing
+                    }
+    
+                }
+            }
+        });
+        innerStart();
+    }
+    
+    /**
+     * start implements for sub rpc client.
+     *
+     * @throws NacosException exception to throw.
+     */
+    public abstract void innerStart() throws NacosException;
+    
+    /**
+     * increase offset of the nacos server port for the rpc server port.
+     *
+     * @return rpc port offset
+     */
+    public abstract int rpcPortOffset();
     
     /**
      * send request.
@@ -220,7 +247,7 @@ public abstract class RpcClient implements Closeable {
      * @param connectionEventListener connectionEventListener
      */
     public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
-    
+        
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 "Registry connection listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, connectionEventListener.getClass().getName());
@@ -236,7 +263,7 @@ public abstract class RpcClient implements Closeable {
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 " Registry server push response  listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, serverPushResponseHandler.getClass().getName());
-    
+        
         this.serverPushResponseListeners.add(serverPushResponseHandler);
     }
     
@@ -247,5 +274,75 @@ public abstract class RpcClient implements Closeable {
      */
     public ServerListFactory getServerListFactory() {
         return serverListFactory;
+    }
+    
+    protected GrpcServerInfo nextServer() {
+        getServerListFactory().genNextServer();
+        String serverAddress = getServerListFactory().getCurrentServer();
+        return resolveServerInfo(serverAddress);
+    }
+    
+    protected GrpcServerInfo currentServer() {
+        String serverAddress = getServerListFactory().getCurrentServer();
+        return resolveServerInfo(serverAddress);
+    }
+    
+    private GrpcServerInfo resolveServerInfo(String serverAddress) {
+        GrpcServerInfo serverInfo = new GrpcServerInfo();
+        serverInfo.serverPort = rpcPortOffset();
+        if (serverAddress.contains("http")) {
+            serverInfo.serverIp = serverAddress.split(":")[1].replaceAll("//", "");
+            serverInfo.serverPort += Integer.valueOf(serverAddress.split(":")[2].replaceAll("//", ""));
+        } else {
+            serverInfo.serverIp = serverAddress.split(":")[0];
+            serverInfo.serverPort += Integer.valueOf(serverAddress.split(":")[1]);
+        }
+        return serverInfo;
+    }
+    
+    public class GrpcServerInfo {
+        
+        protected String serverIp;
+        
+        protected int serverPort;
+        
+        /**
+         * Getter method for property <tt>serverIp</tt>.
+         *
+         * @return property value of serverIp
+         */
+        public String getServerIp() {
+            return serverIp;
+        }
+        
+        /**
+         * Getter method for property <tt>serverPort</tt>.
+         *
+         * @return property value of serverPort
+         */
+        public int getServerPort() {
+            return serverPort;
+        }
+    }
+    
+    public class ConnectionEvent {
+        
+        public static final int CONNECTED = 1;
+        
+        public static final int DISCONNECTED = 0;
+        
+        int eventType;
+        
+        public ConnectionEvent(int eventType) {
+            this.eventType = eventType;
+        }
+        
+        public boolean isConnected() {
+            return eventType == CONNECTED;
+        }
+        
+        public boolean isDisConnected() {
+            return eventType == DISCONNECTED;
+        }
     }
 }

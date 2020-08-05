@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class RpcServer {
     
     @Autowired
-    private ConnectCoordinator connectCoordinator;
+    private ConnectionManager connectionManager;
     
     /**
      * Start sever.
@@ -35,11 +35,26 @@ public abstract class RpcServer {
     public abstract void start() throws Exception;
     
     /**
+     * the increase offset of nacos server port for rpc server port.
+     *
+     * @return
+     */
+    public abstract int rpcPortOffset();
+    
+    /**
      * Stop Server.
      */
     public abstract void stop() throws Exception;
     
     public void setMaxClientCount(int maxClient) {
-        this.connectCoordinator.coordinateMaxClientsSmoth(maxClient);
+        this.connectionManager.coordinateMaxClientsSmoth(maxClient);
+    }
+    
+    public void reloadClient(int loadCount) {
+        this.connectionManager.loadClientsSmoth(loadCount);
+    }
+    
+    public int currentClients() {
+        return this.connectionManager.currentClients();
     }
 }

@@ -27,6 +27,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
@@ -42,7 +45,7 @@ public class ConfigTest {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
     
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
-        //"11.239.114.187:8848,11.239.113.204:8848,11.239.112.161:8848");
+        //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
         //Thread.sleep(2000L);
@@ -55,6 +58,44 @@ public class ConfigTest {
     
     @Test
     public void test2() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //"
+        List<ConfigService> configServiceList = new ArrayList<ConfigService>();
+        for (int i = 0; i < 200; i++) {
+        
+            ConfigService configService = NacosFactory.createConfigService(properties);
+            configService.addListener("test", "test", new AbstractListener() {
+            
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                }
+            });
+            configServiceList.add(configService);
+        }
+    
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+            
+                Random random = new Random();
+                int times = 10000;
+                while (times > 0) {
+                    try {
+                        boolean result = configService
+                                .publishConfig("test", "test", "value" + System.currentTimeMillis());
+                    
+                        times--;
+                        Thread.sleep(10000L);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    
+                    }
+                }
+            }
+        
+        });
+        th.start();
         
         Thread.sleep(1000000L);
     }
@@ -62,31 +103,58 @@ public class ConfigTest {
     @Test
     public void test() throws Exception {
     
-        final String dataId = "lessspring";
-        final String group = "lessspring";
+        Random random = new Random();
+        final String dataId = "xiaochun.xxc";
+        final String group = "xiaochun.xxc";
         final String content = "lessspring-" + System.currentTimeMillis();
     
-        Random random = new Random();
-        int times = 10000;
-        while (times > 0) {
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                Random random = new Random();
+                int times = 1000;
+                while (times > 0) {
+                    try {
+    
+                        for (int i = 0; i < 20; i++) {
+                            configService.publishConfig(dataId + random.nextInt(20), group,
+                                    "value" + System.currentTimeMillis());
+                        }
+                        times--;
+                        Thread.sleep(500L);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+    
+                    }
+                }
+    
+                System.out.println(times);
+                System.out.println("Write Done");
+            }
         
-            boolean result = configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
-            times--;
-            Thread.sleep(2000L);
-        
-        }
-        
-        boolean result = configService.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
+        });
+    
+        th.start();
     
         Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo1 :" + configInfo);
+                System.out.println(new Date() + "receiveConfigInfo1 :" + configInfo);
             }
         };
-        configService.getConfigAndSignListener(dataId, group, 5000, listener);
     
+        for (int i = 0; i < 20; i++) {
+            configService.addListener(dataId + i, group, listener);
+        }
+    
+        //configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        
+        boolean result = configService.publishConfig(dataId, group, content);
+        Assert.assertTrue(result);
+    
+        // configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        
         //configService.removeListener(dataId, group, listener);
         //configService.removeConfig(dataId, group);
     
@@ -129,16 +197,34 @@ public class ConfigTest {
         };
     
         configService.getConfigAndSignListener(dataId, group, 5000, listener);
-        System.out.println("");
-        Thread.sleep(10000L);
-        System.out.println("Remove config..");
-        configService.removeListener(dataId, group, listener);
     
-        Thread.sleep(10000L);
         System.out.println("Add Listen config..");
     
-        configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                Random random = new Random();
+                int times = 100;
+                while (times > 0) {
+                    try {
+                        configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
+                    
+                        times--;
+                        Thread.sleep(5000L);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    
+                    }
+                }
+            
+                System.out.println(times);
+                System.out.println("Write Done");
+            }
+        
+        });
     
+        th.start();
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {

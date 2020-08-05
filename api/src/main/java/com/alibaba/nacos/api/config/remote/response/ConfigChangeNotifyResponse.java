@@ -105,4 +105,10 @@ public class ConfigChangeNotifyResponse extends ServerPushResponse {
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }
+    
+    @Override
+    public String toString() {
+        return "ConfigChangeNotifyResponse{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", tenant='"
+                + tenant + '\'' + '}';
+    }
 }
