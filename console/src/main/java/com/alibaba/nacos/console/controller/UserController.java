@@ -251,7 +251,8 @@ public class UserController {
 
 
     /**
-     *   Fuzzy matching username
+     * Fuzzy matching username.
+     *
      * @param username username
      * @return Matched username
      */
