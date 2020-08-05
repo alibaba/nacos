@@ -35,6 +35,13 @@ public abstract class RpcServer {
     public abstract void start() throws Exception;
     
     /**
+     * the increase offset of nacos server port for rpc server port.
+     *
+     * @return
+     */
+    public abstract int rpcPortOffset();
+    
+    /**
      * Stop Server.
      */
     public abstract void stop() throws Exception;

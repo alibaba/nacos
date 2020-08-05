@@ -37,6 +37,8 @@ import javax.annotation.PostConstruct;
 @Service
 public class GrpcServer extends RpcServer {
     
+    private static final int PORT_OFFSET = 1000;
+    
     private Server server;
     
     @Autowired
@@ -51,7 +53,7 @@ public class GrpcServer extends RpcServer {
     @Autowired
     private ConnectionManager connectionManager;
     
-    int grpcServerPort = ApplicationUtils.getPort() + 1000;
+    int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
     
     private void init() {
         Loggers.GRPC.info("Nacos gRPC server initiazing Component ...");
@@ -80,6 +82,11 @@ public class GrpcServer extends RpcServer {
             }
         });
     
+    }
+    
+    @Override
+    public int rpcPortOffset() {
+        return PORT_OFFSET;
     }
     
     @Override

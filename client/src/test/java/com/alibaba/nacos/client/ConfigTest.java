@@ -42,9 +42,9 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:28848");
     
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -140,12 +140,12 @@ public class ConfigTest {
         Listener listener = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                //System.out.println(new Date() + "receiveConfigInfo1 :" + configInfo);
+                System.out.println(new Date() + "receiveConfigInfo1 :" + configInfo);
             }
         };
     
         for (int i = 0; i < 20; i++) {
-            // configService.addListener(dataId + i, group, listener);
+            configService.addListener(dataId + i, group, listener);
         }
     
         //configService.getConfigAndSignListener(dataId, group, 5000, listener);

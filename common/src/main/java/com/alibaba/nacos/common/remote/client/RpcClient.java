@@ -178,6 +178,7 @@ public abstract class RpcClient implements Closeable {
      * Start this client.
      */
     public void start() throws NacosException {
+    
         executorService = new ScheduledThreadPoolExecutor(5, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -203,16 +204,26 @@ public abstract class RpcClient implements Closeable {
                     } catch (InterruptedException e) {
                         //Do nothing
                     }
-                
+    
                 }
             }
         });
-    
+        innerStart();
     }
     
-    ;
-    
+    /**
+     * start implements for sub rpc client.
+     *
+     * @throws NacosException exception to throw.
+     */
     public abstract void innerStart() throws NacosException;
+    
+    /**
+     * increase offset of the nacos server port for the rpc server port.
+     *
+     * @return rpc port offset
+     */
+    public abstract int rpcPortOffset();
     
     /**
      * send request.
@@ -236,7 +247,7 @@ public abstract class RpcClient implements Closeable {
      * @param connectionEventListener connectionEventListener
      */
     public void registerConnectionListener(ConnectionEventListener connectionEventListener) {
-    
+        
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 "Registry connection listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, connectionEventListener.getClass().getName());
@@ -252,7 +263,7 @@ public abstract class RpcClient implements Closeable {
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 " Registry server push response  listener to current client,connectionId={}, connectionEventListener={}",
                 this.connectionId, serverPushResponseHandler.getClass().getName());
-    
+        
         this.serverPushResponseListeners.add(serverPushResponseHandler);
     }
     
@@ -278,7 +289,7 @@ public abstract class RpcClient implements Closeable {
     
     private GrpcServerInfo resolveServerInfo(String serverAddress) {
         GrpcServerInfo serverInfo = new GrpcServerInfo();
-        serverInfo.serverPort = 1000;
+        serverInfo.serverPort = rpcPortOffset();
         if (serverAddress.contains("http")) {
             serverInfo.serverIp = serverAddress.split(":")[1].replaceAll("//", "");
             serverInfo.serverPort += Integer.valueOf(serverAddress.split(":")[2].replaceAll("//", ""));

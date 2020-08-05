@@ -218,6 +218,11 @@ public class GrpcClient extends RpcClient {
     
     }
     
+    @Override
+    public int rpcPortOffset() {
+        return 1000;
+    }
+    
     private final ReentrantLock switchingLock = new ReentrantLock();
     
     /**
@@ -358,7 +363,6 @@ public class GrpcClient extends RpcClient {
     
                 LOGGER.debug(" stream response receive  ,original reponse :{}", grpcResponse);
                 try {
-                    sendAckResponse(grpcResponse.getAck(), true);
                     String message = grpcResponse.getBody().getValue().toStringUtf8();
                     String type = grpcResponse.getType();
                     String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
@@ -378,9 +382,10 @@ public class GrpcClient extends RpcClient {
                             serverPushResponseHandler.responseReply(response);
                         }
                     });
-    
+                    sendAckResponse(grpcResponse.getAck(), true);
                 } catch (Exception e) {
-                    e.printStackTrace(System.out);
+                    sendAckResponse(grpcResponse.getAck(), false);
+    
                     LOGGER.error("error tp process server push response  :{}", grpcResponse);
                 }
             }
