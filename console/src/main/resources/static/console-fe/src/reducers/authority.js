@@ -90,6 +90,13 @@ const getRoles = params => dispatch =>
   request.get('v1/auth/roles', { params }).then(data => dispatch({ type: ROLE_LIST, data }));
 
 /**
+ * 通过username 模糊匹配
+ * @param {*} param0
+ */
+const searchRoles = role =>
+  request.get('/v1/auth/roles/search', { params: { role } }).then(res => successMsg(res));
+
+/**
  * 创建角色
  * @param {*} param0
  */
@@ -145,6 +152,7 @@ export {
   createUser,
   deleteUser,
   passwordReset,
+  searchRoles,
   getRoles,
   createRole,
   deleteRole,
