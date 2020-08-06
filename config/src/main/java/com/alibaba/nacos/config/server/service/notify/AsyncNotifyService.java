@@ -138,12 +138,7 @@ public class AsyncNotifyService {
                         if (task.isBeta) {
                             header.addParam("isBeta", "true");
                         }
-                        AsyncNotifyCallBack asyncNotifyCallBack = new AsyncNotifyCallBack(task);
-                        try {
-                            restTemplate.get(task.url, header, Query.EMPTY, String.class, asyncNotifyCallBack);
-                        } catch (Exception e) {
-                            asyncNotifyCallBack.onError(e);
-                        }
+                        restTemplate.get(task.url, header, Query.EMPTY, String.class, new AsyncNotifyCallBack(task));
                     }
                 }
             }

@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * NacosAsyncRestTemplate_ITCase
+ * NacosAsyncRestTemplate_ITCase.
  *
  * @author mai.jh
  */
