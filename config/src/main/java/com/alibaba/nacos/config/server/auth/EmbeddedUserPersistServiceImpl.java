@@ -118,11 +118,11 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         }
         return pageInfo;
     }
-
+    
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username like ? ";
-        List<String> users = databaseOperate.queryMany(sql, new String[]{"%"+username+"%"}, String.class);
+        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
         return users;
     }
 }
