@@ -39,7 +39,9 @@ import java.net.URI;
  * Base http client.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.HttpClientRequest}
  */
+@Deprecated
 public abstract class BaseHttpClient {
     
     protected <T> RestResult<T> execute(CloseableHttpClient httpClient, final Type type, HttpUriRequest request)
