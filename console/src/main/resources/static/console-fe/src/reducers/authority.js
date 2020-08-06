@@ -94,7 +94,7 @@ const getRoles = params => dispatch =>
  * @param {*} param0
  */
 const searchRoles = role =>
-  request.get('/v1/auth/roles/search', { params: { role } }).then(res => successMsg(res));
+  request.get('v1/auth/roles/search', { params: { role } }).then(res => successMsg(res));
 
 /**
  * 创建角色
