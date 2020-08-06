@@ -79,17 +79,22 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
-            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
+            domainName = ApplicationUtils.getProperty("address.server.domain", "jmenv.tbsite.net");
         } else {
             domainName = envDomainName;
         }
         String envAddressPort = System.getenv("address_server_port");
         if (StringUtils.isBlank(envAddressPort)) {
-            addressPort = System.getProperty("address.server.port", "8080");
+            addressPort = ApplicationUtils.getProperty("address.server.port", "8080");
         } else {
             addressPort = envAddressPort;
         }
-        addressUrl = System.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        String envAddressUrl = System.getenv("address_server_url");
+        if (StringUtils.isBlank(envAddressUrl)) {
+            addressUrl = ApplicationUtils.getProperty("address.server.url", ApplicationUtils.getContextPath() + "/" + "serverlist");
+        } else {
+            addressUrl = envAddressUrl;
+        }
         addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
         envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
         
