@@ -26,7 +26,9 @@ import java.lang.reflect.Type;
  * Nacos sync http client.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.NacosRestTemplate}
  */
+@Deprecated
 @SuppressWarnings("all")
 public interface NSyncHttpClient extends NHttpClient {
     

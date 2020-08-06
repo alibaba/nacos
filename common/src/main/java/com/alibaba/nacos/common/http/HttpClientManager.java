@@ -30,7 +30,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Use the same HttpClient object in the same space.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link HttpClientBeanHolder}
  */
+@Deprecated
 public class HttpClientManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientManager.class);
