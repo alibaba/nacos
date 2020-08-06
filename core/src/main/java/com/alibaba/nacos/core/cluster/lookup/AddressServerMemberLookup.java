@@ -30,7 +30,6 @@ import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -144,7 +143,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     private void syncFromAddressUrl() throws Exception {
         RestResult<String> result = restTemplate
                 .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
-        if (HttpStatus.OK.value() == result.getCode()) {
+        if (result.ok()) {
             isAddressServerHealth = true;
             Reader reader = new StringReader(result.getData());
             try {
