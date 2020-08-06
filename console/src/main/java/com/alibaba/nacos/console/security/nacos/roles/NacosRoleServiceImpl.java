@@ -235,4 +235,8 @@ public class NacosRoleServiceImpl {
     public void deletePermission(String role, String resource, String action) {
         permissionPersistService.deletePermission(role, resource, action);
     }
+    
+    public List<String> findRolesLikeRoleName(String role) {
+        return rolePersistService.findRolesLikeRoleName(role);
+    }
 }

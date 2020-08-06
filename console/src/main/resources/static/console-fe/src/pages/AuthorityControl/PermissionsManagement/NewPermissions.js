@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
 import { Field, Form, Input, Select, Dialog, ConfigProvider } from '@alifd/next';
 import { connect } from 'react-redux';
 import { getNamespaces } from '../../../reducers/namespace';
+import { searchRoles } from '../../../reducers/authority';
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -28,7 +29,7 @@ const formItemLayout = {
   wrapperCol: { span: 19 },
 };
 
-@connect(state => ({ namespaces: state.namespace.namespaces }), { getNamespaces })
+@connect(state => ({ namespaces: state.namespace.namespaces }), { getNamespaces, searchRoles })
 @ConfigProvider.config
 class NewPermissions extends React.Component {
   static displayName = 'NewPermissions';
@@ -39,11 +40,15 @@ class NewPermissions extends React.Component {
     locale: PropTypes.object,
     visible: PropTypes.bool,
     getNamespaces: PropTypes.func,
+    getRoles: PropTypes.func,
     onOk: PropTypes.func,
     onCancel: PropTypes.func,
     namespaces: PropTypes.array,
   };
 
+  state = {
+    dataSource: [],
+  };
   componentDidMount() {
     this.props.getNamespaces();
   }
@@ -68,6 +73,14 @@ class NewPermissions extends React.Component {
     return null;
   }
 
+  handleChange = value => {
+    if (value.length > 0) {
+      searchRoles(value).then(val => {
+        this.setState({ dataSource: val });
+      });
+    }
+  };
+
   render() {
     const { getError } = this.field;
     const { visible, onOk, onCancel, locale, namespaces } = this.props;
@@ -88,7 +101,14 @@ class NewPermissions extends React.Component {
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
             <FormItem label={locale.role} required help={getError('role')}>
-              <Input name="role" trim placeholder={locale.rolePlaceholder} />
+              <Select.AutoComplete
+                name="role"
+                style={{ width: 316 }}
+                filterLocal={false}
+                placeholder={locale.rolePlaceholder}
+                onChange={this.handleChange}
+                dataSource={this.state.dataSource}
+              />
             </FormItem>
             <FormItem label={locale.resource} required help={getError('resource')}>
               <Select

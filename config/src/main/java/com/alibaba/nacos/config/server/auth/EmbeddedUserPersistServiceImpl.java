@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
 
@@ -116,5 +117,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             pageInfo.setPageItems(new ArrayList<>());
         }
         return pageInfo;
+    }
+    
+    @Override
+    public List<String> findUserLikeUsername(String username) {
+        String sql = "SELECT username FROM users WHERE username like ? ";
+        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+        return users;
     }
 }
