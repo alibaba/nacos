@@ -16,21 +16,20 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -178,19 +177,15 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
+                RestResult<String> result = NotifyService
                         .invokeURL(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
-                if (result.code == HttpURLConnection.HTTP_OK) {
-                    String json = result.content;
-                    SampleResult resultObj = JSONUtils.deserializeObject(json, new TypeReference<SampleResult>() {
-                    });
-                    return resultObj;
-                    
+                if (result.ok()) {
+                    return JacksonUtils.toObj(result.getData(), SampleResult.class);
                 } else {
                     
-                    LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.code);
+                    LogUtil.DEFAULT_LOG.info("Can not get clientInfo from {} with {}", ip, result.getData());
                     return null;
                 }
             } catch (Exception e) {

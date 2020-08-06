@@ -18,20 +18,14 @@ package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.utils.JSONUtils;
-import com.alibaba.nacos.core.utils.GenericType;
-import com.alibaba.nacos.test.smoke.nacosSmoke_ITCase;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -47,7 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * NacosRestTemplate_ITCase
+ * NacosRestTemplate_ITCase.
  *
  * @author mai.jh
  */
