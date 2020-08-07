@@ -30,7 +30,9 @@ import java.lang.reflect.Type;
  * Nacos sync http client.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.request.JdkHttpClientRequest}
  */
+@Deprecated
 class NacosSyncHttpClient extends BaseHttpClient implements NSyncHttpClient {
     
     private CloseableHttpClient client;
