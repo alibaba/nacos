@@ -122,7 +122,7 @@ public class ConfigTest {
                                     "value" + System.currentTimeMillis());
                         }
                         times--;
-                        Thread.sleep(500L);
+                        Thread.sleep(5000L);
                     } catch (Exception e) {
                         e.printStackTrace();
     

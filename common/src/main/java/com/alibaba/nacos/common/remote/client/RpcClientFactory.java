@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
 
@@ -32,10 +33,19 @@ public class RpcClientFactory {
     
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
-    public static RpcClient getClient(String clientName) {
+    public static RpcClient getClient(String clientName, ConnectionType connectionType) {
         synchronized (clientMap) {
             if (clientMap.get(clientName) == null) {
-                RpcClient moduleClient = new RsocketRpcClient();
+                RpcClient moduleClient = null;
+                if (ConnectionType.GRPC.equals(connectionType)) {
+                    moduleClient = new GrpcClient();
+        
+                } else if (ConnectionType.RSOCKET.equals(connectionType)) {
+                    moduleClient = new RsocketRpcClient();
+                }
+                if (moduleClient == null) {
+                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+                }
                 clientMap.put(clientName, moduleClient);
                 return moduleClient;
             }

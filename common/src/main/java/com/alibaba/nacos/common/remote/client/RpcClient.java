@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import org.slf4j.Logger;
@@ -55,6 +56,13 @@ public abstract class RpcClient implements Closeable {
             RpcClientStatus.WAIT_INIT);
     
     protected ScheduledExecutorService executorService;
+    
+    /**
+     * get connection type of this client.
+     *
+     * @return ConnectionType.
+     */
+    public abstract ConnectionType getConnectionType();
     
     /**
      * Notify when client re connected.

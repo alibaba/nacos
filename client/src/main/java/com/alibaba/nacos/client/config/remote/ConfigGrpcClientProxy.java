@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
@@ -43,7 +44,7 @@ public class ConfigGrpcClientProxy {
     private RpcClient rpcClient;
     
     public ConfigGrpcClientProxy() {
-        rpcClient = RpcClientFactory.getClient("config");
+        rpcClient = RpcClientFactory.getClient("config", ConnectionType.GRPC);
     }
     
     public Response request(Request request) throws NacosException {

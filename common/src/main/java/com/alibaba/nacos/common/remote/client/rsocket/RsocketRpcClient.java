@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
@@ -63,6 +64,11 @@ public class RsocketRpcClient extends RpcClient {
     @Override
     public void shutdown() throws NacosException {
         shutDownRsocketClient(rSocketClient);
+    }
+    
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.RSOCKET;
     }
     
     @Override
@@ -197,12 +203,18 @@ public class RsocketRpcClient extends RpcClient {
         }
     }
     
+    /**
+     * connectToServer ,set public for junit temp.
+     *
+     * @param connId
+     * @param serverInfo
+     * @return
+     */
     public RSocket connectToServer(String connId, ServerInfo serverInfo) {
         
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
-                VersionUtils.getFullClientVersion());
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(), VersionUtils.getFullClientVersion());
         Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest);
-    
+        
         RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
             @Override
             public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
@@ -240,7 +252,7 @@ public class RsocketRpcClient extends RpcClient {
                 return Mono.just((RSocket) rsocket);
             }
         }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
-    
+        
         return rSocket;
         
     }

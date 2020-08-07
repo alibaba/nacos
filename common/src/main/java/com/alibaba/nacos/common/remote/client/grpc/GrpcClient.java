@@ -34,6 +34,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.ResponseRegistry;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
@@ -89,6 +90,11 @@ public class GrpcClient extends RpcClient {
      * executor to execute future request.
      */
     private ExecutorService aynsRequestExecutor;
+    
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.GRPC;
+    }
     
     /**
      * Empty constructor.
