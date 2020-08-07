@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
+import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,11 +35,12 @@ public class RpcClientFactory {
     public static RpcClient getClient(String clientName) {
         synchronized (clientMap) {
             if (clientMap.get(clientName) == null) {
-                RpcClient moduleClient = new GrpcClient();
+                RpcClient moduleClient = new RsocketRpcClient();
                 clientMap.put(clientName, moduleClient);
                 return moduleClient;
             }
             return clientMap.get(clientName);
         }
     }
+    
 }

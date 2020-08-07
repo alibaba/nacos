@@ -741,7 +741,8 @@
                 <artifactId>commons-cli</artifactId>
                 <version>${commons-cli.version}</version>
             </dependency>
-
+    
+    
             <!-- Logging libs -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -973,7 +974,20 @@
             </dependency>
 
             <!-- gRPC dependency end -->
-
+    
+            <!-- Rsocket -->
+            <dependency>
+                <groupId>io.rsocket</groupId>
+                <artifactId>rsocket-core</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rsocket</groupId>
+                <artifactId>rsocket-transport-netty</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <!-- Rsocket -->
+    
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>

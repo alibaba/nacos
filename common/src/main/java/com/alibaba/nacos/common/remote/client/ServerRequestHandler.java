@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 
 /**
@@ -24,12 +25,13 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @author liuzunfei
  * @version $Id: ServerPushResponseHandler.java, v 0.1 2020年07月14日 11:41 AM liuzunfei Exp $
  */
-public interface ServerPushResponseHandler<T> {
-
+public interface ServerRequestHandler {
+    
     /**
      * Handle logic when response received.
-     * @param response response
+     *
+     * @param request request
      */
-    void responseReply(Response response);
-
+    Response requestReply(Request request);
+    
 }

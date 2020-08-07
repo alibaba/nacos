@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -52,15 +52,15 @@ public class ConfigChangeNotifier {
      * adaptor to config module ,when server side congif change ,invoke this method.
      *
      * @param groupKey       groupKey
-     * @param notifyResponse notifyResponse
+     * @param notifyRequet notifyRequet
      */
-    public void configDataChanged(String groupKey, final ConfigChangeNotifyResponse notifyResponse) {
+    public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
         
         Set<String> clients = configChangeListenContext.getListeners(groupKey);
     
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
-                rpcPushService.pushWithCallback(client, notifyResponse, new PushCallBack() {
+                rpcPushService.pushWithCallback(client, notifyRequet, new PushCallBack() {
                     @Override
                     public void onSuccess() {
                         Loggers.CORE.debug("push callback success.,groupKey={},clientId={}", groupKey, client);
@@ -70,14 +70,14 @@ public class ConfigChangeNotifier {
                     public void onFail(Exception e) {
                         Loggers.CORE
                                 .warn("push callback fail.will retry push ,groupKey={},clientId={}", groupKey, client);
-                        retryPush(client, notifyResponse, 3);
+                        retryPush(client, notifyRequet, 3);
                     }
     
                     @Override
                     public void onTimeout() {
                         Loggers.CORE.warn("push callback timeout.will retry push ,groupKey={},clientId={}", groupKey,
                                 client);
-                        retryPush(client, notifyResponse, 3);
+                        retryPush(client, notifyRequet, 3);
                     }
                 });
     
@@ -85,7 +85,7 @@ public class ConfigChangeNotifier {
         }
     }
     
-    void retryPush(final String clientId, final ConfigChangeNotifyResponse notifyResponse, final int maxRetyTimes) {
+    void retryPush(final String clientId, final ConfigChangeNotifyRequest notifyRequet, final int maxRetyTimes) {
         
         try {
             retryPushexecutors.submit(new Runnable() {
@@ -95,26 +95,26 @@ public class ConfigChangeNotifier {
                     boolean rePushFlag = false;
                     while (maxTimes > 0 && !rePushFlag) {
                         maxTimes--;
-                        boolean push = rpcPushService.push(clientId, notifyResponse, 1000L);
+                        boolean push = rpcPushService.push(clientId, notifyRequet, 1000L);
                         if (push) {
                             rePushFlag = true;
                         }
                     }
                     if (rePushFlag) {
                         Loggers.CORE.warn("push callback retry success.dataId={},group={},tenant={},clientId={}",
-                                notifyResponse.getDataId(), notifyResponse.getGroup(), notifyResponse.getTenant(),
+                                notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
                                 clientId);
                     } else {
                         Loggers.CORE.error(String
                                 .format("push callback retry fail.dataId={},group={},tenant={},clientId={}",
-                                        notifyResponse.getDataId(), notifyResponse.getGroup(),
-                                        notifyResponse.getTenant(), clientId));
+                                        notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
+                                        clientId));
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
             Loggers.CORE.warn("retry push callback task overlimit.dataId={},group={},tenant={},clientId={}",
-                    notifyResponse.getDataId(), notifyResponse.getGroup(), notifyResponse.getTenant(), clientId);
+                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId);
         }
         
     }

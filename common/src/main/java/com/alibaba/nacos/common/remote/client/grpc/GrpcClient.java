@@ -22,11 +22,12 @@ import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
 import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
-import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
+import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -37,7 +38,8 @@ import com.alibaba.nacos.common.remote.client.ResponseRegistry;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.ServerPushResponseHandler;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
+import com.alibaba.nacos.common.remote.client.ServerRequestRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.FutureCallback;
@@ -148,7 +150,7 @@ public class GrpcClient extends RpcClient {
         
         rpcClientStatus.compareAndSet(RpcClientStatus.INITED, RpcClientStatus.STARTING);
         try {
-            GrpcServerInfo serverInfo = nextServer();
+            ServerInfo serverInfo = nextRpcServer();
             LOGGER.info("trying  to connect to server, " + serverInfo);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
                     serverInfo.getServerPort());
@@ -199,21 +201,23 @@ public class GrpcClient extends RpcClient {
             }
         }, 0, 3000, TimeUnit.MILLISECONDS);
     
-        super.registerServerPushResponseHandler(new ServerPushResponseHandler() {
+        super.registerServerPushResponseHandler(new ServerRequestHandler() {
             @Override
-            public void responseReply(Response response) {
-                if (response instanceof ConnectResetResponse) {
+            public Response requestReply(Request request) {
+                if (request instanceof ConnectResetRequest) {
                     try {
     
-                        if (!isRunning()) {
-                            return;
+                        if (isRunning()) {
+                            switchServer();
                         }
-                        switchServer();
+                        return new ConnectionResetResponse();
                     } catch (Exception e) {
                         LOGGER.error("switch server  error ", e);
                     }
                 }
+                return null;
             }
+        
         });
     
     }
@@ -249,7 +253,7 @@ public class GrpcClient extends RpcClient {
                     while (!isRunning()) {
     
                         //1.get a new server
-                        GrpcServerInfo serverInfo = nextServer();
+                        ServerInfo serverInfo = nextRpcServer();
                         //2.create a new channel to new server
                         RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(
                                 serverInfo.getServerIp(), serverInfo.getServerPort());
@@ -366,26 +370,26 @@ public class GrpcClient extends RpcClient {
                     String message = grpcResponse.getBody().getValue().toStringUtf8();
                     String type = grpcResponse.getType();
                     String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-                    Class classByType = ResponseRegistry.getClassByType(type);
-                    final Response response;
+                    Class classByType = ServerRequestRegistry.getClassByType(type);
+                    final Request request;
                     if (classByType != null) {
-                        response = (Response) JacksonUtils.toObj(bodyString, classByType);
-                    } else {
-                        PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
-                        myresponse.setBodyString(bodyString);
-                        response = myresponse;
+                        request = (Request) JacksonUtils.toObj(bodyString, classByType);
+    
+                        serverRequestHandlers.forEach(new Consumer<ServerRequestHandler>() {
+                            @Override
+                            public void accept(ServerRequestHandler serverRequestHandler) {
+                                Response response = serverRequestHandler.requestReply(request);
+                                if (response != null) {
+                                    sendResponse(response);
+                                    return;
+                                }
+                            }
+                        });
                     }
     
-                    serverPushResponseListeners.forEach(new Consumer<ServerPushResponseHandler>() {
-                        @Override
-                        public void accept(ServerPushResponseHandler serverPushResponseHandler) {
-                            serverPushResponseHandler.responseReply(response);
-                        }
-                    });
-                    sendAckResponse(grpcResponse.getAck(), true);
+                    sendErrorResponse();
                 } catch (Exception e) {
-                    sendAckResponse(grpcResponse.getAck(), false);
-    
+                    sendErrorResponse();
                     LOGGER.error("error tp process server push response  :{}", grpcResponse);
                 }
             }
@@ -398,6 +402,28 @@ public class GrpcClient extends RpcClient {
             public void onCompleted() {
             }
         });
+    }
+    
+    private void sendErrorResponse() {
+        try {
+            Response response = new PlainBodyResponse();
+            response.setResultCode(ResponseCode.FAIL.getCode());
+            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(response.getType())
+                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(response)))).build();
+            ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
+        } catch (Exception e) {
+            LOGGER.error("error to send ack  response,ackId->:{}");
+        }
+    }
+    
+    private void sendResponse(Response response) {
+        try {
+            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(response.getType())
+                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(response)))).build();
+            ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
+        } catch (Exception e) {
+            LOGGER.error("error to send ack  response,ackId->:{}");
+        }
     }
     
     private void sendAckResponse(String ackId, boolean success) {

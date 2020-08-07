@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 
 import java.util.concurrent.Future;
 
@@ -75,28 +75,28 @@ public abstract class Connection {
      *
      * @param request request
      */
-    public abstract boolean sendPush(ServerPushResponse request, long timeoutMills) throws Exception;
+    public abstract boolean sendRequest(Request request, long timeoutMills) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request
      */
-    public abstract boolean sendPushNoAck(ServerPushResponse request) throws Exception;
+    public abstract boolean sendRequestNoAck(Request request) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception;
+    public abstract Future<Boolean> sendRequestWithFuture(Request request) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack)
+    public abstract void sendRequestWithCallBack(Request request, PushCallBack callBack)
             throws Exception;
     
     /**

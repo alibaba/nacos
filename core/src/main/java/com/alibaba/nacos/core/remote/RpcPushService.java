@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,18 +43,18 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param response     response.
      */
-    public boolean push(String connectionId, ServerPushResponse response, long timeoutMills) {
+    public boolean push(String connectionId, Request request, long timeoutMills) {
     
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                return connection.sendPush(response, timeoutMills);
+                return connection.sendRequest(request, timeoutMills);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
                 return true;
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
-                        response, e);
+                        request, e);
                 return false;
             }
         } else {
@@ -68,17 +68,17 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param response     response.
      */
-    public Future<Boolean> pushWithFuture(String connectionId, ServerPushResponse response) {
+    public Future<Boolean> pushWithFuture(String connectionId, Request request) {
         
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                return connection.sendPushWithFuture(response);
+                return connection.sendRequestWithFuture(request);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
-                        response, e);
+                        request, e);
             }
         }
         return null;
@@ -91,16 +91,16 @@ public class RpcPushService {
      * @param response     response.
      * @param pushCallBack pushCallBack.
      */
-    public void pushWithCallback(String connectionId, ServerPushResponse response, PushCallBack pushCallBack) {
+    public void pushWithCallback(String connectionId, Request request, PushCallBack pushCallBack) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.sendPushCallBackWithCallBack(response, pushCallBack);
+                connection.sendRequestWithCallBack(request, pushCallBack);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
-                        response, e);
+                        request, e);
             }
         }
     }
@@ -111,16 +111,16 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param response     response.
      */
-    public void pushWithoutAck(String connectionId, ServerPushResponse response) {
+    public void pushWithoutAck(String connectionId, Request request) {
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
             try {
-                connection.sendPushNoAck(response);
+                connection.sendRequestNoAck(request);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
                 Loggers.GRPC.error("error to send push response to connectionId ={},push response={}", connectionId,
-                        response, e);
+                        request, e);
             }
         }
     }

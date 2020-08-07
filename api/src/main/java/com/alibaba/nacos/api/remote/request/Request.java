@@ -29,6 +29,8 @@ public abstract class Request {
     
     private final Map<String, String> headers = new HashMap<String, String>();
     
+    private String requestId;
+    
     /**
      * put header.
      *
@@ -68,6 +70,24 @@ public abstract class Request {
     public String getHeader(String key, String defaultValue) {
         String value = headers.get(key);
         return (value == null) ? defaultValue : value;
+    }
+    
+    /**
+     * Getter method for property <tt>requestId</tt>.
+     *
+     * @return property value of requestId
+     */
+    public String getRequestId() {
+        return requestId;
+    }
+    
+    /**
+     * Setter method for property <tt>requestId</tt>.
+     *
+     * @param requestId value to be assigned to property requestId
+     */
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
     
     /**

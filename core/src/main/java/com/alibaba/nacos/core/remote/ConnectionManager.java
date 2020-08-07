@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -173,7 +173,7 @@ public class ConnectionManager {
                                 if (connection.isSwitching()) {
                                     continue;
                                 }
-                                connection.sendPushNoAck(new ConnectResetResponse());
+                                connection.sendRequestNoAck(new ConnectResetRequest());
                                 connection.setStatus(Connection.SWITCHING);
                                 Loggers.GRPC.info("expel connection ,send switch server response connectionid = {} ",
                                         expeledClient);
@@ -222,7 +222,7 @@ public class ConnectionManager {
         for (Map.Entry<String, Connection> entry : connetions.entrySet()) {
             Connection client = entry.getValue();
             try {
-                client.sendPushNoAck(new ConnectResetResponse());
+                client.sendRequestNoAck(new ConnectResetRequest());
             } catch (Exception e) {
                 //Do Nothing.
             }

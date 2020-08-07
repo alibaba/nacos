@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -52,7 +52,7 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendPush(ServerPushResponse request, long timeout) throws Exception {
+    public boolean sendRequest(Request request, long timeout) throws Exception {
         try {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
@@ -75,7 +75,7 @@ public class GrpcConnection extends Connection {
         }
     }
     
-    private void sendPushWithCallback(ServerPushResponse request, PushCallBack callBack) {
+    private void sendRequestWithCallback(Request request, PushCallBack callBack) {
         try {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
@@ -93,7 +93,7 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendPushNoAck(ServerPushResponse request) throws Exception {
+    public boolean sendRequestNoAck(Request request) throws Exception {
         try {
             streamObserver.onNext(GrpcUtils.convert(request, ""));
         } catch (Exception e) {
@@ -106,13 +106,13 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception {
+    public Future<Boolean> sendRequestWithFuture(Request request) throws Exception {
         return pushWorkers.submit(new PushCallable(request, MAX_TIMEOUTS));
     }
     
     @Override
-    public void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack) throws Exception {
-        sendPushWithCallback(request, callBack);
+    public void sendRequestWithCallBack(Request request, PushCallBack callBack) throws Exception {
+        sendRequestWithCallback(request, callBack);
     }
     
     @Override
@@ -120,19 +120,19 @@ public class GrpcConnection extends Connection {
     }
     
     class PushCallable implements Callable<Boolean> {
-        
-        private ServerPushResponse request;
+    
+        private Request request;
         
         private long timeoutMills;
-        
-        public PushCallable(ServerPushResponse request, long timeoutMills) {
+    
+        public PushCallable(Request request, long timeoutMills) {
             this.request = request;
             this.timeoutMills = timeoutMills;
         }
         
         @Override
         public Boolean call() throws Exception {
-            return sendPush(request, timeoutMills);
+            return sendRequest(request, timeoutMills);
         }
     }
 }

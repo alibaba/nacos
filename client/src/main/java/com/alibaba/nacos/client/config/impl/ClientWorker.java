@@ -20,10 +20,11 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -40,7 +41,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.ServerPushResponseHandler;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -684,12 +685,11 @@ public class ClientWorker implements Closeable {
             /*
              * Register Listen Change Handler
              */
-            rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerPushResponseHandler() {
+            rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public void responseReply(Response myresponse) {
-    
-                    if (myresponse instanceof ConfigChangeNotifyResponse) {
-                        ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
+                public Response requestReply(Request request) {
+                    if (request instanceof ConfigChangeNotifyRequest) {
+                        ConfigChangeNotifyRequest configChangeNotifyResponse = (ConfigChangeNotifyRequest) request;
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyResponse.getDataId(),
                                 configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant());
                         CacheData cacheData = cacheMap.get().get(groupKey);
@@ -703,9 +703,9 @@ public class ClientWorker implements Closeable {
                             }
                         }
                     }
-    
+                    return null;
                 }
-    
+        
             });
     
             rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {

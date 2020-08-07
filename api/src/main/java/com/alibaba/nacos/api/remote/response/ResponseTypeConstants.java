@@ -27,7 +27,7 @@ public class ResponseTypeConstants {
     
     public static final String HEART_BEAT = "HEART_BEAT";
     
-    public static final String CONNECT_SWITCH = "CONNECT_SWITCH";
+    public static final String CONNECTION_RESET = "CONNECTION_RESET";
     
     public static final String UNKNOW = "UNKNOW";
     

@@ -134,7 +134,7 @@ public abstract class RpcClient implements Closeable {
     /**
      * change listeners handler registry.
      */
-    protected List<ServerPushResponseHandler> serverPushResponseListeners = new ArrayList<ServerPushResponseHandler>();
+    protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<ServerRequestHandler>();
     
     public RpcClient() {
     }
@@ -204,7 +204,6 @@ public abstract class RpcClient implements Closeable {
                     } catch (InterruptedException e) {
                         //Do nothing
                     }
-    
                 }
             }
         });
@@ -257,14 +256,14 @@ public abstract class RpcClient implements Closeable {
     /**
      * register change listeners ,will be called when server send change notify response th current client.
      *
-     * @param serverPushResponseHandler serverPushResponseHandler
+     * @param serverRequestHandler serverRequestHandler
      */
-    public void registerServerPushResponseHandler(ServerPushResponseHandler serverPushResponseHandler) {
+    public void registerServerPushResponseHandler(ServerRequestHandler serverRequestHandler) {
         LoggerUtils.printIfInfoEnabled(LOGGER,
                 " Registry server push response  listener to current client,connectionId={}, connectionEventListener={}",
-                this.connectionId, serverPushResponseHandler.getClass().getName());
-        
-        this.serverPushResponseListeners.add(serverPushResponseHandler);
+                this.connectionId, serverRequestHandler.getClass().getName());
+    
+        this.serverRequestHandlers.add(serverRequestHandler);
     }
     
     /**
@@ -276,19 +275,19 @@ public abstract class RpcClient implements Closeable {
         return serverListFactory;
     }
     
-    protected GrpcServerInfo nextServer() {
+    protected ServerInfo nextRpcServer() {
         getServerListFactory().genNextServer();
         String serverAddress = getServerListFactory().getCurrentServer();
         return resolveServerInfo(serverAddress);
     }
     
-    protected GrpcServerInfo currentServer() {
+    protected ServerInfo currentRpcServer() {
         String serverAddress = getServerListFactory().getCurrentServer();
         return resolveServerInfo(serverAddress);
     }
     
-    private GrpcServerInfo resolveServerInfo(String serverAddress) {
-        GrpcServerInfo serverInfo = new GrpcServerInfo();
+    private ServerInfo resolveServerInfo(String serverAddress) {
+        ServerInfo serverInfo = new ServerInfo();
         serverInfo.serverPort = rpcPortOffset();
         if (serverAddress.contains("http")) {
             serverInfo.serverIp = serverAddress.split(":")[1].replaceAll("//", "");
@@ -300,7 +299,7 @@ public abstract class RpcClient implements Closeable {
         return serverInfo;
     }
     
-    public class GrpcServerInfo {
+    public class ServerInfo {
         
         protected String serverIp;
         

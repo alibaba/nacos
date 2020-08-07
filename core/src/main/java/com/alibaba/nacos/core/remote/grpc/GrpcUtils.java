@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.UnKnowResponse;
@@ -41,7 +42,7 @@ public class GrpcUtils {
      * @param request request.
      * @return
      */
-    public static GrpcResponse convert(Response request, String ackId) {
+    public static GrpcResponse convert(Request request, String ackId) {
     
         String jsonString = JacksonUtils.toJson(request);
         byte[] bytes = null;
@@ -57,6 +58,27 @@ public class GrpcUtils {
         return grpcResponse;
     }
     
+    /**
+     * convert Response to GrpcResponse.
+     *
+     * @param response response.
+     * @return
+     */
+    public static GrpcResponse convert(Response response) {
+        
+        String jsonString = JacksonUtils.toJson(response);
+        byte[] bytes = null;
+        try {
+            bytes = jsonString.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+        GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
+        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setType(response.getType())
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        return grpcResponse;
+    }
     /**
      * build fail response.
      *

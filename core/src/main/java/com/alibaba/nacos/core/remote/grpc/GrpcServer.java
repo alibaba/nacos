@@ -57,7 +57,6 @@ public class GrpcServer extends RpcServer {
     
     private void init() {
         Loggers.GRPC.info("Nacos gRPC server initiazing Component ...");
-        Loggers.GRPC.info("Nacos gRPC  server  port :" + grpcServerPort);
         Loggers.GRPC.info("Stream request handler  inited :" + streamRequestHander);
         Loggers.GRPC.info("Common request handler  inited :" + requestHander);
         Loggers.GRPC.info("Request handler Registry inited :" + requestHandlerRegistry);
@@ -71,7 +70,7 @@ public class GrpcServer extends RpcServer {
         server = ServerBuilder.forPort(grpcServerPort).addService(streamRequestHander).addService(requestHander)
                 .build();
         server.start();
-        
+        Loggers.GRPC.info("Nacos gRPC  server  start successfully at port :" + grpcServerPort);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

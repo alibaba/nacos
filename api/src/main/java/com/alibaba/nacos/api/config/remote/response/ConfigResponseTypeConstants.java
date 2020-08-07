@@ -27,8 +27,6 @@ public class ConfigResponseTypeConstants extends ResponseTypeConstants {
     
     public static final String CONFIG_CHANGE_BATCH = "CONFIG_CHANGE_BATCH";
     
-    public static final String CONFIG_CHANGE_NOTIFY = "CONFIG_CHANGE_NOTIFY";
-    
     public static final String CONFIG_QUERY = "CONFIG_QUERY";
     
     public static final String CONFIG_PUBLISH = "CONFIG_PUBLISH";

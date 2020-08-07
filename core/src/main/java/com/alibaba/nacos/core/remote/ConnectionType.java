@@ -24,6 +24,16 @@ package com.alibaba.nacos.core.remote;
 public enum ConnectionType {
     
     /**
+     * Rsocket connection.
+     */
+    RSOCKET("RSOCKET", "Rsocket Connection"),
+    
+    /**
+     * Rsocket connection.
+     */
+    TB_REMOTEING("TB_REMOTEING", "TB_REMOTEING Connection"),
+    
+    /**
      * gRPC connection.
      */
     GRPC("GRPC", "Grpc Connection");

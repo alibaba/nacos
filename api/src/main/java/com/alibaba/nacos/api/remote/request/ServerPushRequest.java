@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.remote.request;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * ServerPushResponse.
@@ -22,15 +24,14 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: ServerPushResponse.java, v 0.1 2020年07月20日 1:21 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class ServerPushResponse extends Response {
+public abstract class ServerPushRequest extends Request {
     
     /**
      * unique id for this server response id.
      */
     private String requestId;
     
-    public ServerPushResponse() {
+    public ServerPushRequest() {
         super();
     }
     
