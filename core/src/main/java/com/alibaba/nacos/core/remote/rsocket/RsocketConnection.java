@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
@@ -56,20 +57,23 @@ public class RsocketConnection extends Connection {
     
     @Override
     public boolean sendRequest(Request request, long timeoutMills) throws Exception {
-        Mono<Payload> payloadMono = clientSocket.requestResponse(RsocketUtils.convertRequestToPayload(request));
+        Mono<Payload> payloadMono = clientSocket
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
         return block == null;
     }
     
     @Override
     public boolean sendRequestNoAck(Request request) throws Exception {
-        Mono<Payload> payloadMono = clientSocket.requestResponse(RsocketUtils.convertRequestToPayload(request));
+        Mono<Payload> payloadMono = clientSocket
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         return true;
     }
     
     @Override
     public Future<Boolean> sendRequestWithFuture(Request request) throws Exception {
-        final Mono<Payload> payloadMono = clientSocket.requestResponse(RsocketUtils.convertRequestToPayload(request));
+        final Mono<Payload> payloadMono = clientSocket
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         Future<Boolean> future = new Future<Boolean>() {
             
             private volatile boolean cancel = false;
@@ -107,7 +111,8 @@ public class RsocketConnection extends Connection {
     
     @Override
     public void sendRequestWithCallBack(Request request, PushCallBack callBack) throws Exception {
-        Mono<Payload> payloadMono = clientSocket.requestResponse(RsocketUtils.convertRequestToPayload(request));
+        Mono<Payload> payloadMono = clientSocket
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         payloadMono.subscribe(new Consumer<Payload>() {
             @Override
             public void accept(Payload payload) {

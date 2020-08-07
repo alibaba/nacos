@@ -826,6 +826,7 @@ public class ClientWorker implements Closeable {
                     }
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 // TODO
             }
         }

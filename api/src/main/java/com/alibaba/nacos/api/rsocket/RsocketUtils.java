@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.rsocket;
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerRequestRegistry;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -96,11 +97,11 @@ public class RsocketUtils {
         }
     }
     
-    public static Payload convertRequestToPayload(Request request) {
+    public static Payload convertRequestToPayload(Request request, RequestMeta meta) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", request.getType());
         jsonObject.addProperty("body", toJson(request));
-        System.out.println(jsonObject.toString());
+        jsonObject.addProperty("meta", toJson(meta));
         return DefaultPayload.create(jsonObject.toString());
     }
     
@@ -157,9 +158,11 @@ public class RsocketUtils {
         JsonNode jsonNode = toObj(message);
         String type = jsonNode.has("type") ? jsonNode.get("type").textValue() : "";
         String bodyString = jsonNode.has("body") ? jsonNode.get("body").textValue() : "";
+        String meta = jsonNode.has("meta") ? jsonNode.get("meta").textValue() : "";
         PlainRequest plainRequest = new PlainRequest();
         plainRequest.setType(type);
         plainRequest.setBody(bodyString);
+        plainRequest.setMeta(meta);
         return plainRequest;
     }
     
@@ -168,7 +171,27 @@ public class RsocketUtils {
         String type;
         
         String body;
-        
+    
+        String meta;
+    
+        /**
+         * Getter method for property <tt>meta</tt>.
+         *
+         * @return property value of meta
+         */
+        public String getMeta() {
+            return meta;
+        }
+    
+        /**
+         * Setter method for property <tt>meta</tt>.
+         *
+         * @param meta value to be assigned to property meta
+         */
+        public void setMeta(String meta) {
+            this.meta = meta;
+        }
+    
         /**
          * Getter method for property <tt>type</tt>.
          *

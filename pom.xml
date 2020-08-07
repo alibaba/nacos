@@ -976,6 +976,17 @@
             <!-- gRPC dependency end -->
     
             <!-- Rsocket -->
+    
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.3.7.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor.netty</groupId>
+                <artifactId>reactor-netty</artifactId>
+                <version>0.9.7.RELEASE</version>
+            </dependency>
             <dependency>
                 <groupId>io.rsocket</groupId>
                 <artifactId>rsocket-core</artifactId>
@@ -986,6 +997,7 @@
                 <artifactId>rsocket-transport-netty</artifactId>
                 <version>1.0.1</version>
             </dependency>
+    
             <!-- Rsocket -->
     
             <dependency>

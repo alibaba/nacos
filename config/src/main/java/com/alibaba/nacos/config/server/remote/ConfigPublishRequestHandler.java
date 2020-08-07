@@ -123,7 +123,7 @@ public class ConfigPublishRequestHandler extends RequestHandler {
                             ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
             return ConfigPubishResponse.buildSuccessResponse();
         } catch (Exception e) {
-            Loggers.GRPC_DIGEST.warn("[ConfigPublishRequestHandler] publish config error ,request ={}", myRequest);
+            Loggers.GRPC_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", myRequest);
             return ConfigPubishResponse.buildFailResponse(e.getMessage());
         }
     }

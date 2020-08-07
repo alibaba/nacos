@@ -19,11 +19,13 @@ package com.alibaba.nacos.core.remote.rsocket;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -109,7 +111,6 @@ public class RsocketRpcServer extends RpcServer {
                     @Override
                     public void onError(Throwable throwable) {
                         connectionManager.unregister(connectionId);
-                        ;
                     }
                     
                     @Override
@@ -130,7 +131,8 @@ public class RsocketRpcServer extends RpcServer {
                             Request request = requestHandler.parseBodyString(requestType.getBody());
                             
                             try {
-                                Response response = requestHandler.handle(request, null);
+                                Response response = requestHandler
+                                        .handle(request, JacksonUtils.toObj(requestType.getMeta(), RequestMeta.class));
                                 return Mono.just(RsocketUtils.convertResponseToPayload(response));
                                 
                             } catch (NacosException e) {

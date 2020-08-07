@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
@@ -118,19 +119,27 @@ public class RsocketRpcClient extends RpcClient {
         return RSOCKET_PORT_OFFSET;
     }
     
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        meta.setConnectionId(connectionId);
+        return meta;
+    }
+    
     @Override
     public Response request(Request request) throws NacosException {
-        System.out.println("Rsocket Client send rpc response:" + request);
-        
-        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request)).block();
-        System.out.println("Client get rpc response:" + response.getDataUtf8());
+    
+        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()))
+                .block();
         return RsocketUtils.parseResponseFromPayload(response);
     }
     
     @Override
     public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
         try {
-            Mono<Payload> response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request));
+            Mono<Payload> response = rSocketClient
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
             
             response.subscribe(new Consumer<Payload>() {
                 @Override
@@ -211,9 +220,10 @@ public class RsocketRpcClient extends RpcClient {
      * @return
      */
     public RSocket connectToServer(String connId, ServerInfo serverInfo) {
-        
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(), VersionUtils.getFullClientVersion());
-        Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest);
+    
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
+                VersionUtils.getFullClientVersion());
+        Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
         
         RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
             @Override

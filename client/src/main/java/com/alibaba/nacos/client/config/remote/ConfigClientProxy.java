@@ -44,7 +44,7 @@ public class ConfigClientProxy {
     private RpcClient rpcClient;
     
     public ConfigClientProxy() {
-        rpcClient = RpcClientFactory.getClient("config", ConnectionType.GRPC);
+        rpcClient = RpcClientFactory.getClient("config", ConnectionType.RSOCKET);
     }
     
     public Response request(Request request) throws NacosException {
