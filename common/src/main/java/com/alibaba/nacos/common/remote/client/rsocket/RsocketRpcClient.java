@@ -240,6 +240,6 @@ public class RsocketRpcClient extends RpcClient {
                 
                 return Mono.just((RSocket) rsocket);
             }
-        }).connect(TcpClientTransport.create(serverInfo.getServerIp(), 7001)).block();
+        }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
     }
 }
