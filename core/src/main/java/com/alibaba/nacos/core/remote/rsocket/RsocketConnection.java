@@ -25,8 +25,6 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -49,6 +47,11 @@ public class RsocketConnection extends Connection {
     public RsocketConnection(ConnectionMetaInfo metaInfo, RSocket clientSocket) {
         super(metaInfo);
         this.clientSocket = clientSocket;
+    }
+    
+    @Override
+    public boolean heartBeatExpire() {
+        return false;
     }
     
     @Override

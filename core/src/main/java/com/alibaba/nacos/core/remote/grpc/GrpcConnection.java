@@ -52,6 +52,11 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
+    public boolean heartBeatExpire() {
+        return true;
+    }
+    
+    @Override
     public boolean sendRequest(Request request, long timeout) throws Exception {
         try {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());

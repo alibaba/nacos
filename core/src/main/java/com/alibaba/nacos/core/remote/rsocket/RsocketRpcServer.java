@@ -35,7 +35,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
-import io.rsocket.transport.netty.server.CloseableChannel;
 import io.rsocket.transport.netty.server.TcpServerTransport;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -88,7 +87,7 @@ public class RsocketRpcServer extends RpcServer {
                 return Mono.just(sendingSocket);
             } else {
                 ConnectionSetupRequest connectionSetupRequest = RsocketUtils
-                        .toObj(palinrequest.getType(), ConnectionSetupRequest.class);
+                        .toObj(palinrequest.getBody(), ConnectionSetupRequest.class);
                 ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionSetupRequest.getConnectionId(),
                         connectionSetupRequest.getClientIp(), ConnectionType.RSOCKET.getType(),
                         connectionSetupRequest.getClientVersion());

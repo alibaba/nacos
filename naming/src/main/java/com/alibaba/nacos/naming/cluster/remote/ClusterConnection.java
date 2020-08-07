@@ -30,6 +30,11 @@ import java.util.concurrent.Future;
  */
 public class ClusterConnection extends Connection {
     
+    @Override
+    public boolean heartBeatExpire() {
+        return true;
+    }
+    
     public ClusterConnection(ConnectionMetaInfo metaInfo) {
         super(metaInfo);
     }

@@ -30,6 +30,9 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private String clientVersion;
     
+    public ConnectionSetupRequest() {
+    }
+    
     public ConnectionSetupRequest(String connectionId, String clientIp, String clientVersion) {
         this.clientIp = clientIp;
         this.connectionId = connectionId;

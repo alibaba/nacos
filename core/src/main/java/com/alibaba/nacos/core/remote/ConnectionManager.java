@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 public class ConnectionManager {
     
     /**
-     * maxLimitClient
+     * maxLimitClient.
      */
     private int maxClient = -1;
     
@@ -152,7 +152,7 @@ public class ConnectionManager {
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
                         long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
-                        if (currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
+                        if (client.heartBeatExpire() && currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
                             expireCLients.add(client.getConnectionId());
                             expelCount--;
                         } else if (expelCount > 0) {

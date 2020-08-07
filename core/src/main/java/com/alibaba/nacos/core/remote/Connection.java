@@ -47,6 +47,13 @@ public abstract class Connection {
     }
     
     /**
+     * if check expire for  heart beat .
+     *
+     * @return
+     */
+    public abstract boolean heartBeatExpire();
+    
+    /**
      * Getter method for property <tt>status</tt>.
      *
      * @return property value of status

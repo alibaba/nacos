@@ -202,9 +202,8 @@ public class RsocketRpcClient extends RpcClient {
         ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
                 VersionUtils.getFullClientVersion());
         Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest);
-        System.out.println("setUpPayload：" + setUpPayload.getDataUtf8());
-        
-        return RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
+    
+        RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
             @Override
             public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
                 
@@ -241,5 +240,8 @@ public class RsocketRpcClient extends RpcClient {
                 return Mono.just((RSocket) rsocket);
             }
         }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
+    
+        return rSocket;
+        
     }
 }
