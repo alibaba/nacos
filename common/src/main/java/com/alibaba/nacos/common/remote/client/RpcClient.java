@@ -299,12 +299,34 @@ public abstract class RpcClient implements Closeable {
         return serverInfo;
     }
     
-    public class ServerInfo {
+    public static class ServerInfo {
         
         protected String serverIp;
         
         protected int serverPort;
         
+        public ServerInfo() {
+        
+        }
+        
+        /**
+         * Setter method for property <tt>serverIp</tt>.
+         *
+         * @param serverIp value to be assigned to property serverIp
+         */
+        public void setServerIp(String serverIp) {
+            this.serverIp = serverIp;
+        }
+        
+        /**
+         * Setter method for property <tt>serverPort</tt>.
+         *
+         * @param serverPort value to be assigned to property serverPort
+         */
+        public void setServerPort(int serverPort) {
+            this.serverPort = serverPort;
+        }
+    
         /**
          * Getter method for property <tt>serverIp</tt>.
          *

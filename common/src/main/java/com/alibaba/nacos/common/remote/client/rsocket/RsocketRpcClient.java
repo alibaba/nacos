@@ -197,7 +197,7 @@ public class RsocketRpcClient extends RpcClient {
         }
     }
     
-    private RSocket connectToServer(String connId, ServerInfo serverInfo) {
+    public RSocket connectToServer(String connId, ServerInfo serverInfo) {
         
         ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
                 VersionUtils.getFullClientVersion());

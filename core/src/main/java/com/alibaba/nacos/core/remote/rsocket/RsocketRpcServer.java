@@ -82,7 +82,7 @@ public class RsocketRpcServer extends RpcServer {
             }
             
             if (palinrequest == null || !RequestTypeConstants.CONNECTION_SETUP.equals(palinrequest.getType())) {
-                Loggers.GRPC.info("illegal  set up payload:" + setup.getDataUtf8());
+                Loggers.GRPC.info("Illegal  set up payload:" + setup.getDataUtf8());
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
@@ -152,5 +152,6 @@ public class RsocketRpcServer extends RpcServer {
     
     @Override
     public void stop() throws Exception {
+    
     }
 }
