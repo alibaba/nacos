@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
-import com.alibaba.nacos.client.config.remote.ConfigGrpcClientProxy;
+import com.alibaba.nacos.client.config.remote.ConfigClientProxy;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -632,7 +632,7 @@ public class ClientWorker implements Closeable {
                     }
                 });
     
-        rpcClientProxy = new ConfigGrpcClientProxy();
+        rpcClientProxy = new ConfigClientProxy();
         
         if (ParamUtils.useHttpSwitch()) {
             this.executor.scheduleWithFixedDelay(new Runnable() {
@@ -958,7 +958,7 @@ public class ClientWorker implements Closeable {
     
     private long timeout;
     
-    private ConfigGrpcClientProxy rpcClientProxy;
+    private ConfigClientProxy rpcClientProxy;
     
     private double currentLongingTaskCount = 0;
     
@@ -975,7 +975,7 @@ public class ClientWorker implements Closeable {
      *
      * @return property value of rpcClientProxy
      */
-    public ConfigGrpcClientProxy getRpcClientProxy() {
+    public ConfigClientProxy getRpcClientProxy() {
         return rpcClientProxy;
     }
 }

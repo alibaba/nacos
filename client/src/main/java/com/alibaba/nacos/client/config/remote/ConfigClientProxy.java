@@ -36,14 +36,14 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
  * config grpc client proxy.
  *
  * @author liuzunfei
- * @version $Id: ConfigGrpcClientProxy.java, v 0.1 2020年07月14日 3:37 PM liuzunfei Exp $
+ * @version $Id: ConfigClientProxy.java, v 0.1 2020年07月14日 3:37 PM liuzunfei Exp $
  */
 
-public class ConfigGrpcClientProxy {
+public class ConfigClientProxy {
     
     private RpcClient rpcClient;
     
-    public ConfigGrpcClientProxy() {
+    public ConfigClientProxy() {
         rpcClient = RpcClientFactory.getClient("config", ConnectionType.GRPC);
     }
     
