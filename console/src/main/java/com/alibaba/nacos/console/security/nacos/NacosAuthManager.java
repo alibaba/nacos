@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.core.auth.AccessException;
@@ -90,7 +91,7 @@ public class NacosAuthManager implements AuthManager {
                 }
             }
         }
-        
+        req.setAttribute(RequestUtil.NACOS_USER_KEY, user);
         return user;
     }
     
