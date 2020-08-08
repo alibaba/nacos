@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: '命名空间名称',
     namespaceNumber: '命名空间ID',
     namespaceOperation: '操作',
+    refresh: '刷新',
   },
   ServiceList: {
     serviceList: '服务列表',
@@ -516,6 +517,7 @@ const I18N_CONF = {
     username: '用户名',
     password: '密码',
     operation: '操作',
+    refresh: '刷新',
   },
   NewUser: {
     createUser: '创建用户',
@@ -549,6 +551,7 @@ const I18N_CONF = {
     operation: '操作',
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
+    refresh: '刷新',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -571,6 +574,7 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+    refresh: '刷新',
   },
   NewPermissions: {
     addPermission: '添加权限',
