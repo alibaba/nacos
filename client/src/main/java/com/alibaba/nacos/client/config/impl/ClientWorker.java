@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -697,15 +698,16 @@ public class ClientWorker implements Closeable {
                             cacheData.setListenSuccess(false);
                             lock.lock();
                             try {
-                                condition.signal();
+                                condition.signalAll();
                             } finally {
                                 lock.unlock();
                             }
                         }
+                        return new ConfigChangeNotifyResponse();
                     }
                     return null;
                 }
-        
+    
             });
     
             rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
@@ -719,16 +721,16 @@ public class ClientWorker implements Closeable {
                         lock.unlock();
                     }
                 }
-    
+        
                 @Override
                 public void onDisConnect() {
                     Collection<CacheData> values = cacheMap.get().values();
-    
+            
                     for (CacheData cacheData : values) {
                         cacheData.setListenSuccess(false);
                     }
                 }
-    
+        
                 @Override
                 public void onReconnected() {
                 
@@ -771,7 +773,9 @@ public class ClientWorker implements Closeable {
     }
     
     private void executeRpcListen() {
-        
+        if (!rpcClientProxy.getRpcClient().isRunning()) {
+            return;
+        }
         List<CacheData> listenCaches = new LinkedList<CacheData>();
         List<CacheData> removeListenCaches = new LinkedList<CacheData>();
         

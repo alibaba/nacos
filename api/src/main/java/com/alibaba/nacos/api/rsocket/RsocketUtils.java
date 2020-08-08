@@ -113,7 +113,6 @@ public class RsocketUtils {
     }
     
     public static Response parseResponseFromPayload(Payload payload) {
-        // {"type":"type","body":"bodyString"}
         String message = payload.getDataUtf8();
         JsonNode jsonNode = toObj(message);
         String type = jsonNode.get("type").textValue();

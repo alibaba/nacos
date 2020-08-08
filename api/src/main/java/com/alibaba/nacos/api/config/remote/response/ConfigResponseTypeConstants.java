@@ -33,4 +33,6 @@ public class ConfigResponseTypeConstants extends ResponseTypeConstants {
     
     public static final String CONFIG_REMOVE = "CONFIG_REMOVE";
     
+    public static final String CONFIG_NOTIFY = "CONFIG_NOTIFY";
+    
 }

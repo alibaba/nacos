@@ -143,7 +143,7 @@ public class ConnectionManager {
                 try {
                     long currentStamp = System.currentTimeMillis();
                     Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
-                    boolean isLoaderClient = loadClient > 0;
+                    boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
                     List<String> expelClient = new LinkedList<String>();

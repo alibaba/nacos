@@ -89,7 +89,7 @@ public abstract class Connection {
      *
      * @param request request
      */
-    public abstract boolean sendRequestNoAck(Request request) throws Exception;
+    public abstract void sendRequestNoAck(Request request) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.

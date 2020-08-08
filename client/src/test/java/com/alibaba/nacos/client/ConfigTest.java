@@ -117,9 +117,9 @@ public class ConfigTest {
                 while (times > 0) {
                     try {
     
-                            configService.publishConfig(dataId + random.nextInt(20), group,
-                                    "value" + System.currentTimeMillis());
-                        System.out.println(" 发布配置。。");
+                        //                            configService.publishConfig(dataId + random.nextInt(20), group,
+                        //                                    "value" + System.currentTimeMillis());
+                        //                        System.out.println(" 发布配置。。");
                         times--;
                         Thread.sleep(5000L);
                     } catch (Exception e) {

@@ -45,8 +45,7 @@ public class ClusterConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequestNoAck(Request request) throws Exception {
-        return false;
+    public void sendRequestNoAck(Request request) throws Exception {
     }
     
     @Override

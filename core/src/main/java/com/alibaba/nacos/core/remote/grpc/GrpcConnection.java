@@ -98,7 +98,7 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequestNoAck(Request request) throws Exception {
+    public void sendRequestNoAck(Request request) throws Exception {
         try {
             streamObserver.onNext(GrpcUtils.convert(request, ""));
         } catch (Exception e) {
@@ -107,7 +107,6 @@ public class GrpcConnection extends Connection {
             }
             throw e;
         }
-        return false;
     }
     
     @Override

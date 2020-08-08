@@ -23,6 +23,8 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.api.remote.response.UnKnowResponse;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -39,6 +41,8 @@ import io.rsocket.core.RSocketConnector;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.util.DefaultPayload;
 import io.rsocket.util.RSocketProxy;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -60,11 +64,11 @@ public class RsocketRpcClient extends RpcClient {
     
     private static final int RSOCKET_PORT_OFFSET = 1100;
     
-    private RSocket rSocketClient;
+    private AtomicReference<RSocket> rSocketClient = new AtomicReference<RSocket>();
     
     @Override
     public void shutdown() throws NacosException {
-        shutDownRsocketClient(rSocketClient);
+        shutDownRsocketClient(rSocketClient.get());
     }
     
     @Override
@@ -91,27 +95,20 @@ public class RsocketRpcClient extends RpcClient {
                 return null;
             }
         });
-        
-        rSocketClient = connectToServer(connectionId, nextRpcServer());
-        
-        super.registerServerPushResponseHandler(new ServerRequestHandler() {
-            @Override
-            public Response requestReply(Request request) {
-                if (request instanceof ConnectResetRequest) {
-                    try {
-                        
-                        if (isRunning()) {
-                            switchServer();
-                        }
-                        return new ConnectionResetResponse();
-                    } catch (Exception e) {
-                        LOGGER.error("switch server  error ", e);
-                    }
-                }
-                return null;
+    
+        try {
+            RSocket rSocket = connectToServer(connectionId, nextRpcServer());
+            if (rSocket != null) {
+                rSocketClient.set(rSocket);
+                fireOnClose(rSocketClient.get());
+            } else {
+                System.out.println("启东时连接server失败...");
+                switchServer();
             }
-            
-        });
+        } catch (Exception e) {
+            System.out.println("启东时连接server异常...");
+        
+        }
     }
     
     @Override
@@ -130,15 +127,15 @@ public class RsocketRpcClient extends RpcClient {
     @Override
     public Response request(Request request) throws NacosException {
     
-        Payload response = rSocketClient.requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()))
-                .block();
+        Payload response = rSocketClient.get()
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta())).block();
         return RsocketUtils.parseResponseFromPayload(response);
     }
     
     @Override
     public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
         try {
-            Mono<Payload> response = rSocketClient
+            Mono<Payload> response = rSocketClient.get()
                     .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
             
             response.subscribe(new Consumer<Payload>() {
@@ -164,11 +161,13 @@ public class RsocketRpcClient extends RpcClient {
             public void run() {
                 
                 try {
+    
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
                     if (!innerLock) {
                         return;
                     }
+                    System.out.println(" 尝试重连服务端...");
                     
                     if (rpcClientStatus.get() == RpcClientStatus.RUNNING) {
                         eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
@@ -182,12 +181,14 @@ public class RsocketRpcClient extends RpcClient {
                         //2.create a new channel to new server
                         RSocket rSocket = connectToServer(connectionId, serverInfo);
                         if (rSocket != null) {
-                            
-                            final RSocket depratedClient = rSocketClient;
+    
+                            final RSocket depratedClient = rSocketClient.get();
                             //switch current channel and stub
                             rpcClientStatus.getAndSet(RpcClientStatus.RUNNING);
                             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
                             shutDownRsocketClient(depratedClient);
+                            rSocketClient.set(rSocket);
+                            fireOnClose(rSocketClient.get());
                             continue;
                         }
                         //
@@ -215,55 +216,110 @@ public class RsocketRpcClient extends RpcClient {
     /**
      * connectToServer ,set public for junit temp.
      *
-     * @param connId
-     * @param serverInfo
+     * @param connId.
+     * @param serverInfo.
      * @return
      */
     public RSocket connectToServer(String connId, ServerInfo serverInfo) {
     
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
-                VersionUtils.getFullClientVersion());
-        Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
+        try {
         
-        RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
-            @Override
-            public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
+            ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connId, NetUtils.localIP(),
+                    VersionUtils.getFullClientVersion());
+            Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
+        
+            RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
+                @Override
+                public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
                 
-                RSocket rsocket = new RSocketProxy(sendingSocket) {
-                    @Override
-                    public Mono<Payload> requestResponse(Payload payload) {
-                        System.out.println("收到服务端推送：" + payload.getDataUtf8());
-                        final AtomicReference<Response> response = new AtomicReference<Response>();
-                        try {
+                    RSocket rsocket = new RSocketProxy(sendingSocket) {
+                        @Override
+                        public Mono<Payload> requestResponse(Payload payload) {
+                            System.out.println("收到服务端RPC：" + payload.getDataUtf8());
+                            final AtomicReference<Response> response = new AtomicReference<Response>();
+                            try {
+                                final Request request = RsocketUtils.parseServerRequestFromPayload(payload);
+                                serverRequestHandlers.forEach(new Consumer<ServerRequestHandler>() {
+                                    @Override
+                                    public void accept(ServerRequestHandler serverRequestHandler) {
+                                        Response responseInner = serverRequestHandler.requestReply(request);
+                                        if (responseInner != null) {
+                                            response.set(responseInner);
+                                            return;
+                                        }
+                                    }
+                                });
+                            
+                                if (response.get() != null) {
+                                    return Mono.just(RsocketUtils.convertResponseToPayload(response.get()));
+                                } else {
+                                    UnKnowResponse unKnowResponse = new UnKnowResponse();
+                                    unKnowResponse.setResultCode(ResponseCode.FAIL.getCode());
+                                    unKnowResponse.setMessage("No handlers.");
+                                    return Mono.just(RsocketUtils.convertResponseToPayload(unKnowResponse));
+                                }
+                            } catch (Exception e) {
+                                UnKnowResponse unKnowResponse = new UnKnowResponse();
+                                unKnowResponse.setResultCode(ResponseCode.FAIL.getCode());
+                                unKnowResponse.setMessage(e.getMessage());
+                                return Mono.just(DefaultPayload
+                                        .create(RsocketUtils.convertResponseToPayload(unKnowResponse)));
+                            }
+                        }
+                    
+                        @Override
+                        public Mono<Void> fireAndForget(Payload payload) {
+                            System.out.println("收到服务端fireAndForget：" + payload.getDataUtf8());
+                        
                             final Request request = RsocketUtils.parseServerRequestFromPayload(payload);
                             serverRequestHandlers.forEach(new Consumer<ServerRequestHandler>() {
                                 @Override
                                 public void accept(ServerRequestHandler serverRequestHandler) {
-                                    Response responseInner = serverRequestHandler.requestReply(request);
-                                    if (responseInner != null) {
-                                        response.set(responseInner);
-                                        return;
-                                    }
+                                    serverRequestHandler.requestReply(request);
                                 }
                             });
-                            
-                            if (response.get() != null) {
-                                return Mono.just(RsocketUtils.convertResponseToPayload(response.get()));
-                                
-                            } else {
-                                return Mono.just(DefaultPayload.create("Push Error,No Handler."));
-                            }
-                        } catch (Exception e) {
-                            return Mono.just(DefaultPayload.create("Push Error."));
+                            return Mono.just(null);
                         }
-                    }
-                };
+                    };
                 
-                return Mono.just((RSocket) rsocket);
-            }
-        }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
-        
-        return rSocket;
-        
+                    return Mono.just((RSocket) rsocket);
+                }
+            }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
+            System.out.println("连接服务端成功，client ：" + rSocket);
+            return rSocket;
+        } catch (Exception e) {
+            System.out.println("连接服务端失败，" + serverInfo);
+        }
+        return null;
     }
+    
+    void fireOnClose(RSocket rSocket) {
+        System.out.println("fireOnClose...");
+        rSocket.onClose().subscribe(new Subscriber<Void>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+            
+            }
+            
+            @Override
+            public void onNext(Void aVoid) {
+            
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                System.out.println("On error ,switch server ...");
+                switchServer();
+            }
+            
+            @Override
+            public void onComplete() {
+                System.out.println("On complete ,switch server ...");
+                
+                switchServer();
+            }
+        });
+    }
+    
+    
 }

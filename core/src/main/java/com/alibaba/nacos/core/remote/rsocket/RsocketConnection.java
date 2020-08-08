@@ -64,10 +64,8 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequestNoAck(Request request) throws Exception {
-        Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
-        return true;
+    public void sendRequestNoAck(Request request) throws Exception {
+        clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, new RequestMeta())).block();
     }
     
     @Override
