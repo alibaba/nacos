@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
-import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.HeartBeatResponse;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
@@ -50,7 +49,6 @@ public class ResponseRegistry {
         
         //internal response regitry
         REGISTRY_RESPONSES.put(ResponseTypeConstants.HEART_BEAT, HeartBeatResponse.class);
-        REGISTRY_RESPONSES.put(ResponseTypeConstants.CONNECTION_RESET, ConnectionResetResponse.class);
         REGISTRY_RESPONSES.put(ResponseTypeConstants.UNKNOW, UnKnowResponse.class);
         REGISTRY_RESPONSES.put(ResponseTypeConstants.CONNECION_UNREGISTER, ConnectionUnregisterResponse.class);
         

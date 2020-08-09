@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.request.ServerRequestRegistry;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -97,6 +98,13 @@ public class RsocketUtils {
         }
     }
     
+    /**
+     * convert request to palyload.
+     *
+     * @param request request.
+     * @param meta    request meta.
+     * @return payload of rsocket
+     */
     public static Payload convertRequestToPayload(Request request, RequestMeta meta) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", request.getType());
@@ -105,6 +113,12 @@ public class RsocketUtils {
         return DefaultPayload.create(jsonObject.toString());
     }
     
+    /**
+     * convert response to palyload.
+     *
+     * @param response response.
+     * @return payload.
+     */
     public static Payload convertResponseToPayload(Response response) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("type", response.getType());
@@ -112,6 +126,12 @@ public class RsocketUtils {
         return DefaultPayload.create(jsonObject.toString());
     }
     
+    /**
+     * parse response from payload.
+     *
+     * @param payload payload.
+     * @return response.
+     */
     public static Response parseResponseFromPayload(Payload payload) {
         String message = payload.getDataUtf8();
         JsonNode jsonNode = toObj(message);
@@ -129,16 +149,22 @@ public class RsocketUtils {
         return response;
     }
     
-    public static Request parseServerRequestFromPayload(Payload payload) {
+    /**
+     * parse server request from payload.
+     *
+     * @param payload payload of socket.
+     * @return request.
+     */
+    public static ServerPushRequest parseServerRequestFromPayload(Payload payload) {
         // {"type":"type","body":"bodyString"}
         String message = payload.getDataUtf8();
         JsonNode jsonNode = toObj(message);
         String type = jsonNode.get("type").textValue();
         String bodyString = jsonNode.get("body").textValue();
         Class classByType = ServerRequestRegistry.getClassByType(type);
-        final Request request;
+        final ServerPushRequest request;
         if (classByType != null) {
-            request = (Request) toObj(bodyString, classByType);
+            request = (ServerPushRequest) toObj(bodyString, classByType);
             return request;
         } else {
             return null;
@@ -146,10 +172,10 @@ public class RsocketUtils {
     }
     
     /**
-     * parse request type from payload.
+     * parse plain request type from payload.
      *
-     * @param payload
-     * @return
+     * @param payload payload.
+     * @return plain request.
      */
     public static PlainRequest parsePlainRequestFromPayload(Payload payload) {
         // {"type":"type","body":"bodyString"}

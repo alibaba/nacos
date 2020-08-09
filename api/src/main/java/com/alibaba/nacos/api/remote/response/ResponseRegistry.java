@@ -45,7 +45,6 @@ public class ResponseRegistry {
         
         //internal response regitry
         REGISTRY_RESPONSES.put(ResponseTypeConstants.HEART_BEAT, HeartBeatResponse.class);
-        REGISTRY_RESPONSES.put(ResponseTypeConstants.CONNECTION_RESET, ConnectionResetResponse.class);
         REGISTRY_RESPONSES.put(ResponseTypeConstants.UNKNOW, UnKnowResponse.class);
         REGISTRY_RESPONSES.put(ResponseTypeConstants.CONNECION_UNREGISTER, ConnectionUnregisterResponse.class);
         

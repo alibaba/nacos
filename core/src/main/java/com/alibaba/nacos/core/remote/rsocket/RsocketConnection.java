@@ -17,13 +17,14 @@
 package com.alibaba.nacos.core.remote.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import reactor.core.publisher.Mono;
@@ -56,7 +57,8 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequest(Request request, long timeoutMills) throws Exception {
+    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception {
+        Loggers.RPC_DIGEST.info("Rsocket sendRequest :" + request);
         Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
@@ -64,12 +66,14 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestNoAck(Request request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
+        Loggers.RPC_DIGEST.info("Rsocket sendRequestNoAck :" + request);
         clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, new RequestMeta())).block();
     }
     
     @Override
-    public Future<Boolean> sendRequestWithFuture(Request request) throws Exception {
+    public Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception {
+        Loggers.RPC_DIGEST.info("Rsocket sendRequestWithFuture :" + request);
         final Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         Future<Boolean> future = new Future<Boolean>() {
@@ -108,7 +112,9 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestWithCallBack(Request request, PushCallBack callBack) throws Exception {
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+    
+        Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
         Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         payloadMono.subscribe(new Consumer<Payload>() {

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
@@ -57,11 +57,13 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendRequest(Request request, long timeout) throws Exception {
+    public boolean sendRequest(ServerPushRequest request, long timeout) throws Exception {
         try {
+    
+            Loggers.RPC_DIGEST.info("Grpc sendRequest :" + request);
+    
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
-    
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
             try {
                 return GrpcAckSynchronizer.waitAck(requestId, timeout);
@@ -80,12 +82,13 @@ public class GrpcConnection extends Connection {
         }
     }
     
-    private void sendRequestWithCallback(Request request, PushCallBack callBack) {
+    private void sendRequestWithCallback(ServerPushRequest request, PushCallBack callBack) {
         try {
+            Loggers.RPC_DIGEST.info("Grpc sendRequestWithCallback :" + request);
+    
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
-            Loggers.CORE.warn("sync callback with ackid:" + requestId);
             GrpcAckSynchronizer.syncCallbackOnAck(requestId, callBack);
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -98,8 +101,10 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public void sendRequestNoAck(Request request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
         try {
+    
+            Loggers.RPC_DIGEST.info("Grpc sendRequestNoAck :" + request);
             streamObserver.onNext(GrpcUtils.convert(request, ""));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -110,12 +115,14 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public Future<Boolean> sendRequestWithFuture(Request request) throws Exception {
+    public Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception {
+        Loggers.RPC_DIGEST.info("Grpc sendRequestWithFuture :" + request);
         return pushWorkers.submit(new PushCallable(request, MAX_TIMEOUTS));
     }
     
     @Override
-    public void sendRequestWithCallBack(Request request, PushCallBack callBack) throws Exception {
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+        Loggers.RPC_DIGEST.info("Grpc sendRequestWithCallBack :" + request);
         sendRequestWithCallback(request, callBack);
     }
     
@@ -125,11 +132,11 @@ public class GrpcConnection extends Connection {
     
     class PushCallable implements Callable<Boolean> {
     
-        private Request request;
+        private ServerPushRequest request;
         
         private long timeoutMills;
     
-        public PushCallable(Request request, long timeoutMills) {
+        public PushCallable(ServerPushRequest request, long timeoutMills) {
             this.request = request;
             this.timeoutMills = timeoutMills;
         }

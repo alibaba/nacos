@@ -22,11 +22,9 @@ import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
@@ -106,7 +104,7 @@ public class ClientWorker implements Closeable {
     private void notifyRpcListenConfig() {
         try {
             if (!ParamUtils.useHttpSwitch()) {
-                lock.lock();
+                lock.tryLock();
                 try {
                     condition.signal();
                 } finally {
@@ -655,10 +653,12 @@ public class ClientWorker implements Closeable {
                     try {
                         while (true) {
                             try {
-                                lock.lock();
-                                condition.await(10L, TimeUnit.SECONDS);
+                                lock.tryLock();
+                                //System.out.println("wait execute listen..");
+                                condition.await();
                                 executeRpcListen();
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 //re try next time
                             } finally {
                                 lock.unlock();
@@ -688,24 +688,22 @@ public class ClientWorker implements Closeable {
              */
             rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public Response requestReply(Request request) {
+                public void requestReply(ServerPushRequest request) {
                     if (request instanceof ConfigChangeNotifyRequest) {
-                        ConfigChangeNotifyRequest configChangeNotifyResponse = (ConfigChangeNotifyRequest) request;
-                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyResponse.getDataId(),
-                                configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant());
+                        ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
                             cacheData.setListenSuccess(false);
-                            lock.lock();
                             try {
-                                condition.signalAll();
+                                lock.tryLock();
+                                condition.signal();
                             } finally {
                                 lock.unlock();
                             }
                         }
-                        return new ConfigChangeNotifyResponse();
                     }
-                    return null;
                 }
     
             });
@@ -714,7 +712,7 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onConnected() {
     
-                    lock.lock();
+                    lock.tryLock();
                     try {
                         condition.signal();
                     } finally {

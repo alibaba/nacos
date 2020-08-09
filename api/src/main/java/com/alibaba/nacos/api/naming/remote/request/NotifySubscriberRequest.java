@@ -18,17 +18,29 @@ package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 
 /**
  * Notify subscriber response.
  *
  * @author xiweng.yy
  */
-public class NotifySubscriberRequest extends AbstractNamingRequest {
+public class NotifySubscriberRequest extends ServerPushRequest {
+    
+    private String namespace;
+    
+    private String serviceName;
+    
+    private String groupName;
     
     private ServiceInfo serviceInfo;
     
     public NotifySubscriberRequest() {
+    }
+    
+    @Override
+    public String getModule() {
+        return "naming";
     }
     
     private NotifySubscriberRequest(ServiceInfo serviceInfo, String message) {
@@ -62,4 +74,29 @@ public class NotifySubscriberRequest extends AbstractNamingRequest {
     public void setServiceInfo(ServiceInfo serviceInfo) {
         this.serviceInfo = serviceInfo;
     }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+    
+    public String getServiceName() {
+        return serviceName;
+    }
+    
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+    
+    public String getGroupName() {
+        return groupName;
+    }
+    
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+    
 }

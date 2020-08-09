@@ -75,7 +75,7 @@ public class RsocketRpcServer extends RpcServer {
     public void start() throws Exception {
         RSocketServer rSocketServerInner = RSocketServer.create();
         rSocketServerInner.acceptor(((setup, sendingSocket) -> {
-            Loggers.GRPC.info("Receive connection rsocket:" + setup.getDataUtf8());
+            Loggers.RPC.info("Receive connection rsocket:" + setup.getDataUtf8());
             RsocketUtils.PlainRequest palinrequest = null;
             try {
                 palinrequest = RsocketUtils.parsePlainRequestFromPayload(setup);
@@ -84,7 +84,7 @@ public class RsocketRpcServer extends RpcServer {
             }
             
             if (palinrequest == null || !RequestTypeConstants.CONNECTION_SETUP.equals(palinrequest.getType())) {
-                Loggers.GRPC.info("Illegal  set up payload:" + setup.getDataUtf8());
+                Loggers.RPC.info("Illegal  set up payload:" + setup.getDataUtf8());
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
@@ -122,7 +122,7 @@ public class RsocketRpcServer extends RpcServer {
                 return Mono.just(new RSocket() {
                     @Override
                     public Mono<Payload> requestResponse(Payload payload) {
-                        Loggers.GRPC_DIGEST.info("Receive request :" + payload.getDataUtf8());
+                        Loggers.RPC_DIGEST.info("Receive request :" + payload.getDataUtf8());
                         
                         RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
                         
@@ -148,7 +148,7 @@ public class RsocketRpcServer extends RpcServer {
         })).bind(TcpServerTransport.create("0.0.0.0", (ApplicationUtils.getPort() + PORT_OFFSET))).block();
         
         rSocketServer = rSocketServerInner;
-        Loggers.GRPC.info("Nacos Rsocket server start on port :" + (ApplicationUtils.getPort() + PORT_OFFSET));
+        Loggers.RPC.info("Nacos Rsocket server start on port :" + (ApplicationUtils.getPort() + PORT_OFFSET));
         
     }
     

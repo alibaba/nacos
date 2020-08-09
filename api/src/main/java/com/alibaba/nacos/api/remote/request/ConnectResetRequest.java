@@ -22,11 +22,16 @@ package com.alibaba.nacos.api.remote.request;
  * @author liuzunfei
  * @version $Id: ConnectResetResponse.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
  */
-public class ConnectResetRequest extends InternalRequest {
+public class ConnectResetRequest extends ServerPushRequest {
     
     @Override
     public String getType() {
         return RequestTypeConstants.CONNECTION_RESET;
+    }
+    
+    @Override
+    public String getModule() {
+        return "internal";
     }
     
 }

@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.remote;
 
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
-import io.rsocket.RSocket;
 import org.junit.Test;
 
 import javax.tools.JavaCompiler;
@@ -40,7 +40,7 @@ public class RSocketRpcClientTest {
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(9948);
-        RSocket rSocket = rsocketRpcClient.connectToServer("123456", serverInfo);
+        Connection rSocket = rsocketRpcClient.connectToServer(serverInfo);
         System.out.println("Client :" + rSocket);
     }
     

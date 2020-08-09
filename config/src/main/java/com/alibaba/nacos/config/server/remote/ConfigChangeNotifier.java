@@ -63,7 +63,7 @@ public class ConfigChangeNotifier {
                 rpcPushService.pushWithCallback(client, notifyRequet, new PushCallBack() {
                     @Override
                     public void onSuccess() {
-                        Loggers.CORE.debug("push callback success.,groupKey={},clientId={}", groupKey, client);
+                        Loggers.CORE.info("push callback success.,groupKey={},clientId={}", groupKey, client);
                     }
     
                     @Override

@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import com.alibaba.nacos.api.remote.response.Response;
-
 /**
  * ServerPushResponse.
  *
@@ -25,31 +23,5 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: ServerPushResponse.java, v 0.1 2020年07月20日 1:21 PM liuzunfei Exp $
  */
 public abstract class ServerPushRequest extends Request {
-    
-    /**
-     * unique id for this server response id.
-     */
-    private String requestId;
-    
-    public ServerPushRequest() {
-        super();
-    }
-    
-    /**
-     * Getter method for property <tt>requestId</tt>.
-     *
-     * @return property value of requestId
-     */
-    public String getRequestId() {
-        return requestId;
-    }
-    
-    /**
-     * Setter method for property <tt>requestId</tt>.
-     *
-     * @param requestId value to be assigned to property requestId
-     */
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
+
 }

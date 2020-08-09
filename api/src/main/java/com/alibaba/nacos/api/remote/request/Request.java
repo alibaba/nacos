@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -111,5 +113,10 @@ public abstract class Request {
      */
     public Map<String, String> getHeaders() {
         return headers;
+    }
+    
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

@@ -80,7 +80,7 @@ public class ConnectionManager {
         Connection connectionInner = connetions.put(connectionId, connection);
         if (connectionInner == null) {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.GRPC.info("new connection registered successfully, connectionid = {} ", connectionId);
+            Loggers.RPC.info("new connection registered successfully, connectionid = {} ", connectionId);
         }
     }
     
@@ -93,7 +93,7 @@ public class ConnectionManager {
         Connection remove = this.connetions.remove(connectionId);
         if (remove != null) {
             remove.closeGrapcefully();
-            Loggers.GRPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+            Loggers.RPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -163,7 +163,7 @@ public class ConnectionManager {
                     
                     for (String expireClient : expireCLients) {
                         unregister(expireClient);
-                        Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
+                        Loggers.RPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
                     }
                     
                     for (String expeledClient : expelClient) {
@@ -175,14 +175,14 @@ public class ConnectionManager {
                                 }
                                 connection.sendRequestNoAck(new ConnectResetRequest());
                                 connection.setStatus(Connection.SWITCHING);
-                                Loggers.GRPC.info("expel connection ,send switch server response connectionid = {} ",
+                                Loggers.RPC.info("expel connection ,send switch server response connectionid = {} ",
                                         expeledClient);
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
                             unregister(expeledClient);
                         } catch (Exception e) {
-                            Loggers.GRPC.error("error occurs when expel connetion :", expeledClient, e);
+                            Loggers.RPC.error("error occurs when expel connetion :", expeledClient, e);
                         }
                         
                     }
@@ -193,7 +193,7 @@ public class ConnectionManager {
                     }
                     
                 } catch (Exception e) {
-                    Loggers.GRPC.error("error occurs when heathy check... ", e);
+                    Loggers.RPC.error("error occurs when heathy check... ", e);
                 }
             }
         }, 500L, 3000L, TimeUnit.MILLISECONDS);

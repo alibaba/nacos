@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 
 /**
- * ConfigChangeNotifyResponse.
+ * ConfigChangeNotifyRequest.
  * @author liuzunfei
- * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
+ * @version $Id: ConfigChangeNotifyRequest.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyRequest extends AbstractConfigRequest {
+public class ConfigChangeNotifyRequest extends ServerPushRequest {
     
     private String dataId;
     
@@ -34,6 +34,11 @@ public class ConfigChangeNotifyRequest extends AbstractConfigRequest {
     @Override
     public String getType() {
         return ConfigRequestTypeConstants.CONFIG_CHANGE_NOTIFY;
+    }
+    
+    @Override
+    public String getModule() {
+        return "config";
     }
     
     /**

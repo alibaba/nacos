@@ -22,13 +22,11 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
@@ -63,10 +61,10 @@ public class ConfigTest {
         //"
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
         for (int i = 0; i < 200; i++) {
-        
+    
             ConfigService configService = NacosFactory.createConfigService(properties);
             configService.addListener("test", "test", new AbstractListener() {
-            
+    
                 @Override
                 public void receiveConfigInfo(String configInfo) {
                 }
@@ -77,19 +75,19 @@ public class ConfigTest {
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
-            
+    
                 Random random = new Random();
                 int times = 10000;
                 while (times > 0) {
                     try {
                         boolean result = configService
                                 .publishConfig("test", "test", "value" + System.currentTimeMillis());
-                    
+    
                         times--;
                         Thread.sleep(10000L);
                     } catch (Exception e) {
                         e.printStackTrace();
-                    
+    
                     }
                 }
             }
@@ -116,12 +114,16 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-    
-                        //                            configService.publishConfig(dataId + random.nextInt(20), group,
-                        //                                    "value" + System.currentTimeMillis());
-                        //                        System.out.println(" 发布配置。。");
+                        //System.out.println("发布配置");
+                        boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
+                                "value" + System.currentTimeMillis());
+                        if (success) {
+                            // System.out.println("发布配置成功");
+                        } else {
+                            //System.out.println("发布配置失败");
+                        }
                         times--;
-                        Thread.sleep(5000L);
+                        Thread.sleep(500L);
                     } catch (Exception e) {
                         e.printStackTrace();
     
@@ -144,12 +146,11 @@ public class ConfigTest {
         };
     
         for (int i = 0; i < 20; i++) {
-            configService.addListener(dataId + i, group, listener);
+            configService.getConfigAndSignListener(dataId + i, group, 3000L, listener);
         }
     
         //configService.getConfigAndSignListener(dataId, group, 5000, listener);
         
-        boolean result = configService.publishConfig(dataId, group, content);
         //Assert.assertTrue(result);
     
         // configService.getConfigAndSignListener(dataId, group, 5000, listener);
@@ -208,15 +209,15 @@ public class ConfigTest {
                 while (times > 0) {
                     try {
                         configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
-                    
+    
                         times--;
                         Thread.sleep(5000L);
                     } catch (Exception e) {
                         e.printStackTrace();
-                    
+    
                     }
                 }
-            
+    
                 System.out.println(times);
                 System.out.println("Write Done");
             }

@@ -54,17 +54,17 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
     @Override
     public void request(GrpcRequest grpcRequest, StreamObserver<GrpcResponse> responseObserver) {
     
-        Loggers.GRPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
+        Loggers.RPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
         String type = grpcRequest.getType();
         if (RequestTypeConstants.SERVER_CHECK.equals(type)) {
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
         } else if (RequestTypeConstants.PUSH_ACK.equals(type)) {
-        
+            // server push ack response.
             PushAckRequest request = JacksonUtils
                     .toObj(grpcRequest.getBody().getValue().toStringUtf8(), PushAckRequest.class);
-            GrpcAckSynchronizer.ackNotify(request.getAckId(), request.isSuccess());
+            GrpcAckSynchronizer.ackNotify(request.getRequestId(), request.isSuccess());
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
@@ -87,12 +87,12 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
                 responseObserver.onNext(GrpcUtils.convert(response));
                 responseObserver.onCompleted();
             } catch (Exception e) {
-                Loggers.GRPC_DIGEST.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
+                Loggers.RPC_DIGEST.error(" gRpc Server handle  request  exception :" + e.getMessage(), e);
                 responseObserver.onNext(GrpcUtils.buildFailResponse("Error"));
                 responseObserver.onCompleted();
             }
         } else {
-            Loggers.GRPC_DIGEST.error(" gRpc Server requestHandler Not found ！ ");
+            Loggers.RPC_DIGEST.error(" gRpc Server requestHandler Not found ！ ");
             responseObserver.onNext(GrpcUtils.buildFailResponse("RequestHandler Not Found"));
             responseObserver.onCompleted();
         }

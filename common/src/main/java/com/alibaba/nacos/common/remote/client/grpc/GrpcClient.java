@@ -20,46 +20,28 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
+import com.alibaba.nacos.api.grpc.GrpcUtils;
 import com.alibaba.nacos.api.grpc.RequestGrpc;
 import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
-import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.PushAckRequest;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
-import com.alibaba.nacos.api.remote.response.ConnectionResetResponse;
-import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
-import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ResponseTypeConstants;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.ResponseRegistry;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
-import com.alibaba.nacos.common.remote.client.ServerRequestRegistry;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 /**
  * gRPC Client.
@@ -71,26 +53,6 @@ public class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
     
-    /**
-     * grpc channel.
-     */
-    protected ManagedChannel channel;
-    
-    /**
-     * stub to send stream request.
-     */
-    protected RequestStreamGrpc.RequestStreamStub grpcStreamServiceStub;
-    
-    /**
-     * stub to send request.
-     */
-    protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
-    
-    /**
-     * executor to execute future request.
-     */
-    private ExecutorService aynsRequestExecutor;
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -101,15 +63,6 @@ public class GrpcClient extends RpcClient {
      */
     public GrpcClient() {
         super();
-    }
-    
-    /**
-     * constructor with a server liset factory.
-     *
-     * @param serverListFactory serverListFactory.
-     */
-    public GrpcClient(ServerListFactory serverListFactory) {
-        super(serverListFactory);
     }
     
     /**
@@ -134,7 +87,6 @@ public class GrpcClient extends RpcClient {
             shuntDownChannel(managedChannelTemp);
             return null;
         }
-    
     }
     
     /**
@@ -148,150 +100,9 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    /**
-     * try to connect to server ,if fail at first time ,it will retry asynchrous.
-     */
-    private void connectToServer() {
-        LOGGER.info("starting to connect to server .  ");
-        
-        rpcClientStatus.compareAndSet(RpcClientStatus.INITED, RpcClientStatus.STARTING);
-        try {
-            ServerInfo serverInfo = nextRpcServer();
-            LOGGER.info("trying  to connect to server, " + serverInfo);
-            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
-                    serverInfo.getServerPort());
-            if (newChannelStubTemp != null) {
-                
-                LOGGER.info("connect to server success !");
-                
-                RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
-                        .newStub(newChannelStubTemp.getChannel());
-                
-                bindRequestStream(requestStreamStubTemp);
-                //switch current channel and stub
-                channel = (ManagedChannel) newChannelStubTemp.getChannel();
-                grpcStreamServiceStub = requestStreamStubTemp;
-                RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
-                        .newFutureStub(newChannelStubTemp.getChannel());
-                grpcFutureServiceStub = grpcFutureServiceStubTemp;
-                rpcClientStatus.set(RpcClientStatus.RUNNING);
-                eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
-                return;
-            }
-        } catch (Exception e) {
-            LOGGER.error("fail to connect to server  ! ", e);
-        }
-        switchServer();
-        
-    }
-    
-    @Override
-    public void innerStart() throws NacosException {
-        
-        if (rpcClientStatus.get() == RpcClientStatus.WAIT_INIT) {
-            LOGGER.error("RpcClient has not init yet, please check init ServerListFactory...");
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "rpc client not init yet");
-        }
-        if (rpcClientStatus.get() != RpcClientStatus.INITED) {
-            return;
-        }
-    
-        aynsRequestExecutor = Executors.newFixedThreadPool(10);
-        
-        connectToServer();
-    
-        executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                sendBeat();
-            }
-        }, 0, 3000, TimeUnit.MILLISECONDS);
-    
-        super.registerServerPushResponseHandler(new ServerRequestHandler() {
-            @Override
-            public Response requestReply(Request request) {
-                if (request instanceof ConnectResetRequest) {
-                    try {
-    
-                        if (isRunning()) {
-                            switchServer();
-                        }
-                        return new ConnectionResetResponse();
-                    } catch (Exception e) {
-                        LOGGER.error("switch server  error ", e);
-                    }
-                }
-                return null;
-            }
-        
-        });
-    
-    }
-    
     @Override
     public int rpcPortOffset() {
         return 1000;
-    }
-    
-    private final ReentrantLock switchingLock = new ReentrantLock();
-    
-    /**
-     * switch a new server.
-     */
-    private void switchServer() {
-        
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-    
-                try {
-                    //only one thread can execute switching meantime.
-                    boolean innerLock = switchingLock.tryLock();
-                    if (!innerLock) {
-                        return;
-                    }
-        
-                    if (rpcClientStatus.get() == RpcClientStatus.RUNNING) {
-                        eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
-                    }
-                    rpcClientStatus.set(RpcClientStatus.SWITCHING_SERVER);
-                    // loop until start client success.
-                    while (!isRunning()) {
-    
-                        //1.get a new server
-                        ServerInfo serverInfo = nextRpcServer();
-                        //2.create a new channel to new server
-                        RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(
-                                serverInfo.getServerIp(), serverInfo.getServerPort());
-                        if (newChannelStubTemp != null) {
-                            RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
-                                    .newStub(newChannelStubTemp.getChannel());
-    
-                            bindRequestStream(requestStreamStubTemp);
-                            final ManagedChannel depratedChannel = channel;
-                            //switch current channel and stub
-                            channel = (ManagedChannel) newChannelStubTemp.getChannel();
-                            grpcStreamServiceStub = requestStreamStubTemp;
-                            grpcFutureServiceStub = newChannelStubTemp;
-                            rpcClientStatus.getAndSet(RpcClientStatus.RUNNING);
-                            eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
-                            shuntDownChannel(depratedChannel);
-                            continue;
-                        }
-                        //
-                        try {
-                            //sleep 3 second to switch next server.
-                            Thread.sleep(3000L);
-                        } catch (InterruptedException e) {
-                            // Do  nothing.
-                        }
-                    }
-                } finally {
-                    switchingLock.unlock();
-                }
-            }
-        }, 0L, TimeUnit.MILLISECONDS);
-        
     }
     
     /**
@@ -307,15 +118,10 @@ public class GrpcClient extends RpcClient {
                     return;
                 }
                 HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
-                GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
-                        .setType(heartBeatRequest.getType()).setBody(Any.newBuilder()
-                                .setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(heartBeatRequest))).build())
-                        .build();
-                ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(streamRequest);
-                GrpcResponse response = requestFuture.get();
-                if (ResponseTypeConstants.CONNECION_UNREGISTER.equals(response.getType())) {
+                Response heartBeatResponse = this.currentConnetion.request(heartBeatRequest);
+                if (ResponseTypeConstants.CONNECION_UNREGISTER.equals(heartBeatResponse.getType())) {
                     LOGGER.warn(" connection is not register to current server ,trying to switch server ");
-                    switchServer();
+                    switchServerAsync();
                 }
                 return;
             } catch (Exception e) {
@@ -323,10 +129,15 @@ public class GrpcClient extends RpcClient {
                 maxRetryTimes--;
                 LOGGER.error("Send heart beat error, ", e);
             }
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                //No nothing.
+            }
         }
     
         LOGGER.warn("max retry times for send heart beat fail reached,trying to switch server... ");
-        switchServer();
+        switchServerAsync();
     }
     
     private GrpcMetadata buildMeta() {
@@ -347,11 +158,8 @@ public class GrpcClient extends RpcClient {
                 return false;
             }
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-            GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta())
-                    .setType(serverCheckRequest.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(serverCheckRequest)))
-                                    .build()).build();
-            ListenableFuture<GrpcResponse> responseFuture = requestBlockingStub.request(streamRequest);
+            GrpcRequest grpcRequest = GrpcUtils.convertToGrpcRequest(serverCheckRequest, buildMeta());
+            ListenableFuture<GrpcResponse> responseFuture = requestBlockingStub.request(grpcRequest);
             GrpcResponse response = responseFuture.get();
             return response != null;
         } catch (Exception e) {
@@ -373,29 +181,18 @@ public class GrpcClient extends RpcClient {
     
                 LOGGER.debug(" stream response receive  ,original reponse :{}", grpcResponse);
                 try {
-                    String message = grpcResponse.getBody().getValue().toStringUtf8();
-                    String type = grpcResponse.getType();
-                    String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-                    Class classByType = ServerRequestRegistry.getClassByType(type);
-                    final Request request;
-                    if (classByType != null) {
-                        request = (Request) JacksonUtils.toObj(bodyString, classByType);
+                    final ServerPushRequest request = GrpcUtils.parseRequestFromGrpcResponse(grpcResponse);
     
-                        serverRequestHandlers.forEach(new Consumer<ServerRequestHandler>() {
-                            @Override
-                            public void accept(ServerRequestHandler serverRequestHandler) {
-                                Response response = serverRequestHandler.requestReply(request);
-                                if (response != null) {
-                                    sendResponse(response);
-                                    return;
-                                }
-                            }
-                        });
+                    if (request != null) {
+                        try {
+                            handleServerRequest(request);
+                            sendAckResponse(request.getRequestId(), true);
+                        } catch (Exception e) {
+                            sendAckResponse(request.getRequestId(), false);
+                        }
                     }
     
-                    sendErrorResponse();
                 } catch (Exception e) {
-                    sendErrorResponse();
                     LOGGER.error("error tp process server push response  :{}", grpcResponse);
                 }
             }
@@ -409,119 +206,60 @@ public class GrpcClient extends RpcClient {
             }
         });
     }
-    
-    private void sendErrorResponse() {
-        try {
-            Response response = new PlainBodyResponse();
-            response.setResultCode(ResponseCode.FAIL.getCode());
-            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(response.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(response)))).build();
-            ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
-        } catch (Exception e) {
-            LOGGER.error("error to send ack  response,ackId->:{}");
-        }
-    }
-    
-    private void sendResponse(Response response) {
-        try {
-            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(response.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(response)))).build();
-            ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
-        } catch (Exception e) {
-            LOGGER.error("error to send ack  response,ackId->:{}");
-        }
-    }
-    
     private void sendAckResponse(String ackId, boolean success) {
         try {
             PushAckRequest request = PushAckRequest.build(ackId, success);
-            GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(request.getType())
-                    .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
-            ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
+            this.currentConnetion.request(request);
         } catch (Exception e) {
             LOGGER.error("error to send ack  response,ackId->:{}", ackId);
         }
     }
     
     @Override
-    public Response request(Request request) throws NacosException {
-    
-        int maxRetryTimes = 3;
-        while (maxRetryTimes > 0) {
-            try {
-    
-                GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(request.getType())
-                        .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request))))
-                        .build();
-                ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
-                GrpcResponse grpcResponse = requestFuture.get();
-                Response response = convertResponse(grpcResponse);
-                if (response != null) {
-                    return response;
-                }
-            } catch (Exception e) {
-                maxRetryTimes--;
-                LOGGER.error("grpc client request error, retry...", e.getMessage(), e);
+    public void start() throws NacosException {
+        super.start();
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                sendBeat();
             }
-        }
-    
-        LOGGER.warn("Max retry times for request fail reached !");
-        throw new NacosException(NacosException.SERVER_ERROR, "Fail to request.");
-    
-    }
-    
-    private Response convertResponse(GrpcResponse grpcResponse) {
-        String type = grpcResponse.getType();
-        String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-        
-        // transfrom grpcResponse to response model
-        Class classByType = ResponseRegistry.getClassByType(type);
-        if (classByType != null) {
-            Object object = JacksonUtils.toObj(bodyString, classByType);
-            if (object instanceof ConnectionUnregisterResponse) {
-                LOGGER.warn("grpc client request error, connection is unregister ");
-                return null;
-            }
-            return (Response) object;
-        } else {
-            PlainBodyResponse myresponse = JacksonUtils.toObj(bodyString, PlainBodyResponse.class);
-            myresponse.setBodyString(bodyString);
-            return (PlainBodyResponse) myresponse;
-        }
+        }, 0, 3000, TimeUnit.MILLISECONDS);
     }
     
     @Override
-    public void asyncRequest(Request request, final FutureCallback<Response> callback) throws NacosException {
-        GrpcRequest grpcrequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).setType(request.getType())
-                .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(JacksonUtils.toJson(request)))).build();
-        ListenableFuture<GrpcResponse> requestFuture = grpcFutureServiceStub.request(grpcrequest);
-        Futures.addCallback(requestFuture, new FutureCallback<GrpcResponse>() {
-            @Override
-            public void onSuccess(@NullableDecl GrpcResponse grpcResponse) {
-                Response response = convertResponse(grpcResponse);
-                if (response != null && response.isSuccess()) {
-                    callback.onSuccess(response);
-                } else {
-                    callback.onFailure(new NacosException(
-                            (response == null) ? ResponseCode.FAIL.getCode() : response.getErrorCode(),
-                            (response == null) ? "null" : response.getMessage()));
-                }
-            }
+    public Connection connectToServer(ServerInfo serverInfo) {
+        try {
+            LOGGER.info("trying  to connect to server, " + serverInfo);
             
-            @Override
-            public void onFailure(Throwable throwable) {
-                callback.onFailure(throwable);
+            RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(),
+                    serverInfo.getServerPort());
+            if (newChannelStubTemp != null) {
+                
+                GrpcConnection grpcConn = new GrpcConnection(connectionId, serverInfo);
+                LOGGER.info("success to create a connection to a server.");
+                RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
+                        .newStub(newChannelStubTemp.getChannel());
+                bindRequestStream(requestStreamStubTemp);
+                //switch current channel and stub
+                RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
+                        .newFutureStub(newChannelStubTemp.getChannel());
+                grpcConn.setChannel((ManagedChannel) newChannelStubTemp.getChannel());
+                
+                grpcConn.setGrpcFutureServiceStub(grpcFutureServiceStubTemp);
+                grpcConn.setGrpcStreamServiceStub(requestStreamStubTemp);
+                return grpcConn;
             }
-        }, aynsRequestExecutor);
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("fail to connect to server  ! ", e);
+        }
+        return null;
     }
     
     @Override
     public void shutdown() throws NacosException {
-        if (this.channel != null && !this.channel.isShutdown()) {
-            this.channel.shutdownNow();
-        }
-    }
     
+    }
 }
 
 

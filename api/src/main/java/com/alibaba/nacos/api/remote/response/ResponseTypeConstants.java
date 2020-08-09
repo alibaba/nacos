@@ -35,5 +35,7 @@ public class ResponseTypeConstants {
     
     public static final String CONNECION_UNREGISTER = "CONNECION_UNREGISTER";
     
+    public static final String PUSH_ACK = "PUSH_ACK";
+    
     
 }

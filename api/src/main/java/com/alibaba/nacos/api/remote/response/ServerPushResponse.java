@@ -17,15 +17,35 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * response for connection reset.
+ * response for server push.
  *
  * @author liuzunfei
- * @version $Id: ConnectionResetResponse.java, v 0.1 2020年08月06日 1:40 PM liuzunfei Exp $
+ * @version $Id: ServerPushResponse.java, v 0.1 2020年08月09日 11:34 PM liuzunfei Exp $
  */
-public class ConnectionResetResponse extends Response {
+public class ServerPushResponse extends Response {
+    
+    private String requestId;
+    
+    /**
+     * Getter method for property <tt>requestId</tt>.
+     *
+     * @return property value of requestId
+     */
+    public String getRequestId() {
+        return requestId;
+    }
+    
+    /**
+     * Setter method for property <tt>requestId</tt>.
+     *
+     * @param requestId value to be assigned to property requestId
+     */
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
     
     @Override
     public String getType() {
-        return ResponseTypeConstants.CONNECTION_RESET;
+        return ResponseTypeConstants.SERVER_CHECK;
     }
 }
