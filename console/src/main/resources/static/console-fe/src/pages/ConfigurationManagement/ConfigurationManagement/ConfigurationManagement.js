@@ -46,7 +46,7 @@ import { connect } from 'react-redux';
 import { getConfigs } from '../../../reducers/configuration';
 
 import './index.scss';
-import { LANGUAGE_KEY } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
@@ -250,6 +250,7 @@ class ConfigurationManagement extends React.Component {
     if (this.state.loading) {
       return;
     }
+    const { locale = {}, configurations = {} } = this.props;
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
     const prePageNo = getParams('pageNo');
@@ -273,14 +274,29 @@ class ConfigurationManagement extends React.Component {
       params.search = 'accurate';
     }
     this.setState({ loading: true });
-    this.props.getConfigs(params).then(() =>
-      this.setState({
-        loading: false,
-        selectedRecord: [],
-        selectedKeys: [],
-        tenant: this.tenant,
-      })
-    );
+    this.props
+      .getConfigs(params)
+      .then(() =>
+        this.setState({
+          loading: false,
+          selectedRecord: [],
+          selectedKeys: [],
+          tenant: this.tenant,
+        })
+      )
+      .catch(res => {
+        configurations.pageItems = [];
+        configurations.totalCount = 0;
+        this.setState({
+          loading: false,
+        });
+        if (res && [401, 403].includes(res.status)) {
+          Dialog.alert({
+            title: locale.importFail,
+            content: locale.importFail403,
+          });
+        }
+      });
   }
 
   showMore() {}
@@ -1384,7 +1400,7 @@ class ConfigurationManagement extends React.Component {
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
-                  pageSizeList={[10, 20, 30]}
+                  pageSizeList={GLOBAL_PAGE_SIZE_LIST}
                   pageSizePosition="start"
                   pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}

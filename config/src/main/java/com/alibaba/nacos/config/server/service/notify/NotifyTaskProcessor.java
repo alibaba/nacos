@@ -16,17 +16,16 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,8 +77,8 @@ public class NotifyTaskProcessor implements TaskProcessor {
             String urlString = MessageFormat
                     .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
             
-            HttpResult result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
-            if (result.code == HttpStatus.SC_OK) {
+            RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
+            if (result.ok()) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                         ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
                 
@@ -89,7 +88,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
                 LOGGER.error("[notify-error] {}, {}, to {}, result {}",
-                        new Object[] {dataId, group, serverIp, result.code});
+                        new Object[] {dataId, group, serverIp, result.getCode()});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIp(),
                         ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
