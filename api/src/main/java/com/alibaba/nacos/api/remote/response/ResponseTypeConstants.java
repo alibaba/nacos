@@ -27,13 +27,15 @@ public class ResponseTypeConstants {
     
     public static final String HEART_BEAT = "HEART_BEAT";
     
-    public static final String CONNECT_SWITCH = "CONNECT_SWITCH";
+    public static final String CONNECTION_RESET = "CONNECTION_RESET";
     
     public static final String UNKNOW = "UNKNOW";
     
     public static final String SERVER_CHECK = "SERVER_CHECK";
     
     public static final String CONNECION_UNREGISTER = "CONNECION_UNREGISTER";
+    
+    public static final String PUSH_ACK = "PUSH_ACK";
     
     
 }

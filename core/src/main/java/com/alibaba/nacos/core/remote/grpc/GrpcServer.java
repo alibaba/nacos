@@ -56,11 +56,6 @@ public class GrpcServer extends RpcServer {
     int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
     
     private void init() {
-        Loggers.GRPC.info("Nacos gRPC server initiazing Component ...");
-        Loggers.GRPC.info("Nacos gRPC  server  port :" + grpcServerPort);
-        Loggers.GRPC.info("Stream request handler  inited :" + streamRequestHander);
-        Loggers.GRPC.info("Common request handler  inited :" + requestHander);
-        Loggers.GRPC.info("Request handler Registry inited :" + requestHandlerRegistry);
     }
     
     @PostConstruct
@@ -71,14 +66,13 @@ public class GrpcServer extends RpcServer {
         server = ServerBuilder.forPort(grpcServerPort).addService(streamRequestHander).addService(requestHander)
                 .build();
         server.start();
-        
+        Loggers.RPC.info("Nacos gRPC  server  start successfully at port :" + grpcServerPort);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-    
-                Loggers.GRPC.info("Stopping Nacos gRPC server...");
+                Loggers.RPC.info("Nacos gRPC server stopping...");
                 GrpcServer.this.stop();
-                Loggers.GRPC.info("Nacos gRPC server stopped...");
+                Loggers.RPC.info("Nacos gRPC server stopped successfully...");
             }
         });
     
@@ -92,7 +86,7 @@ public class GrpcServer extends RpcServer {
     @Override
     public void stop() {
         if (server != null) {
-            Loggers.GRPC.info("Expel all clients...");
+            Loggers.RPC.info("Nacos clear all rpc clients...");
             connectionManager.expelAll();
             try {
                 //wait clients to switch  server.

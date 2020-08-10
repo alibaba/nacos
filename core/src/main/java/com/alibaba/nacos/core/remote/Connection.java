@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 
 import java.util.concurrent.Future;
 
@@ -45,6 +45,13 @@ public abstract class Connection {
     public boolean isSwitching() {
         return HEALTHY.equals(this.status);
     }
+    
+    /**
+     * if check expire for  heart beat .
+     *
+     * @return
+     */
+    public abstract boolean heartBeatExpire();
     
     /**
      * Getter method for property <tt>status</tt>.
@@ -75,28 +82,28 @@ public abstract class Connection {
      *
      * @param request request
      */
-    public abstract boolean sendPush(ServerPushResponse request, long timeoutMills) throws Exception;
+    public abstract boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request
      */
-    public abstract boolean sendPushNoAck(ServerPushResponse request) throws Exception;
+    public abstract void sendRequestNoAck(ServerPushRequest request) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception;
+    public abstract Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack)
+    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack)
             throws Exception;
     
     /**

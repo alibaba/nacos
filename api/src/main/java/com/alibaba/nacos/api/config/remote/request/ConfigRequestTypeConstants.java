@@ -33,4 +33,6 @@ public class ConfigRequestTypeConstants extends RequestTypeConstants {
     
     public static final String REMOVE_CONFIG = "REMOVE_CONFIG";
     
+    public static final String CONFIG_CHANGE_NOTIFY = "CONFIG_CHANGE_NOTIFY";
+    
 }

@@ -20,15 +20,15 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
-import com.alibaba.nacos.client.config.remote.ConfigGrpcClientProxy;
+import com.alibaba.nacos.client.config.remote.ConfigClientProxy;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -40,7 +40,7 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.ServerPushResponseHandler;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -104,7 +104,7 @@ public class ClientWorker implements Closeable {
     private void notifyRpcListenConfig() {
         try {
             if (!ParamUtils.useHttpSwitch()) {
-                lock.lock();
+                lock.tryLock();
                 try {
                     condition.signal();
                 } finally {
@@ -631,7 +631,7 @@ public class ClientWorker implements Closeable {
                     }
                 });
     
-        rpcClientProxy = new ConfigGrpcClientProxy();
+        rpcClientProxy = new ConfigClientProxy();
         
         if (ParamUtils.useHttpSwitch()) {
             this.executor.scheduleWithFixedDelay(new Runnable() {
@@ -653,10 +653,12 @@ public class ClientWorker implements Closeable {
                     try {
                         while (true) {
                             try {
-                                lock.lock();
-                                condition.await(10L, TimeUnit.SECONDS);
+                                lock.tryLock();
+                                //System.out.println("wait execute listen..");
+                                condition.await();
                                 executeRpcListen();
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 //re try next time
                             } finally {
                                 lock.unlock();
@@ -684,26 +686,24 @@ public class ClientWorker implements Closeable {
             /*
              * Register Listen Change Handler
              */
-            rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerPushResponseHandler() {
+            rpcClientProxy.getRpcClient().registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public void responseReply(Response myresponse) {
-    
-                    if (myresponse instanceof ConfigChangeNotifyResponse) {
-                        ConfigChangeNotifyResponse configChangeNotifyResponse = (ConfigChangeNotifyResponse) myresponse;
-                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyResponse.getDataId(),
-                                configChangeNotifyResponse.getGroup(), configChangeNotifyResponse.getTenant());
+                public void requestReply(ServerPushRequest request) {
+                    if (request instanceof ConfigChangeNotifyRequest) {
+                        ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
                             cacheData.setListenSuccess(false);
-                            lock.lock();
                             try {
+                                lock.tryLock();
                                 condition.signal();
                             } finally {
                                 lock.unlock();
                             }
                         }
                     }
-    
                 }
     
             });
@@ -712,23 +712,23 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onConnected() {
     
-                    lock.lock();
+                    lock.tryLock();
                     try {
                         condition.signal();
                     } finally {
                         lock.unlock();
                     }
                 }
-    
+        
                 @Override
                 public void onDisConnect() {
                     Collection<CacheData> values = cacheMap.get().values();
-    
+            
                     for (CacheData cacheData : values) {
                         cacheData.setListenSuccess(false);
                     }
                 }
-    
+        
                 @Override
                 public void onReconnected() {
                 
@@ -771,7 +771,9 @@ public class ClientWorker implements Closeable {
     }
     
     private void executeRpcListen() {
-        
+        if (!rpcClientProxy.getRpcClient().isRunning()) {
+            return;
+        }
         List<CacheData> listenCaches = new LinkedList<CacheData>();
         List<CacheData> removeListenCaches = new LinkedList<CacheData>();
         
@@ -826,6 +828,7 @@ public class ClientWorker implements Closeable {
                     }
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 // TODO
             }
         }
@@ -958,7 +961,7 @@ public class ClientWorker implements Closeable {
     
     private long timeout;
     
-    private ConfigGrpcClientProxy rpcClientProxy;
+    private ConfigClientProxy rpcClientProxy;
     
     private double currentLongingTaskCount = 0;
     
@@ -975,7 +978,7 @@ public class ClientWorker implements Closeable {
      *
      * @return property value of rpcClientProxy
      */
-    public ConfigGrpcClientProxy getRpcClientProxy() {
+    public ConfigClientProxy getRpcClientProxy() {
         return rpcClientProxy;
     }
 }

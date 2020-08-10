@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.response;
+package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 
 /**
- * ConfigChangeNotifyResponse.
+ * ConfigChangeNotifyRequest.
  * @author liuzunfei
- * @version $Id: ConfigChangeNotifyResponse.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
+ * @version $Id: ConfigChangeNotifyRequest.java, v 0.1 2020年07月14日 3:20 PM liuzunfei Exp $
  */
-public class ConfigChangeNotifyResponse extends ServerPushResponse {
+public class ConfigChangeNotifyRequest extends ServerPushRequest {
     
     private String dataId;
     
@@ -33,7 +33,12 @@ public class ConfigChangeNotifyResponse extends ServerPushResponse {
     
     @Override
     public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_CHANGE_NOTIFY;
+        return ConfigRequestTypeConstants.CONFIG_CHANGE_NOTIFY;
+    }
+    
+    @Override
+    public String getModule() {
+        return "config";
     }
     
     /**
@@ -44,8 +49,8 @@ public class ConfigChangeNotifyResponse extends ServerPushResponse {
      * @param tenant tenant
      * @return ConfigChangeNotifyResponse
      */
-    public static ConfigChangeNotifyResponse buildSuccessResponse(String dataId, String group, String tenant) {
-        ConfigChangeNotifyResponse response = new ConfigChangeNotifyResponse();
+    public static ConfigChangeNotifyRequest build(String dataId, String group, String tenant) {
+        ConfigChangeNotifyRequest response = new ConfigChangeNotifyRequest();
         response.setDataId(dataId);
         response.setGroup(group);
         response.setTenant(tenant);

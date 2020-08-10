@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.common.remote;
 
 /**
  * ConnectionType.
@@ -22,6 +22,16 @@ package com.alibaba.nacos.core.remote;
  * @version $Id: ConnectionType.java, v 0.1 2020年07月13日 7:15 PM liuzunfei Exp $
  */
 public enum ConnectionType {
+    
+    /**
+     * Rsocket connection.
+     */
+    RSOCKET("RSOCKET", "Rsocket Connection"),
+    
+    /**
+     * Rsocket connection.
+     */
+    TB_REMOTEING("TB_REMOTEING", "TB_REMOTEING Connection"),
     
     /**
      * gRPC connection.

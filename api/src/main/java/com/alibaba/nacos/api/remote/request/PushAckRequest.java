@@ -24,7 +24,7 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class PushAckRequest extends InternalRequest {
     
-    private String ackId;
+    private String requestId;
     
     private boolean success;
     
@@ -36,32 +36,34 @@ public class PushAckRequest extends InternalRequest {
     /**
      * build push ack request.
      *
-     * @param ackId ackid.
+     * @param requestId requestId.
      * @return request.
      */
-    public static PushAckRequest build(String ackId, boolean success) {
+    public static PushAckRequest build(String requestId, boolean success) {
         PushAckRequest request = new PushAckRequest();
-        request.ackId = ackId;
+        request.requestId = requestId;
         request.success = success;
         return request;
     }
     
     /**
-     * Getter method for property <tt>ackId</tt>.
+     * Getter method for property <tt>requestId</tt>.
      *
-     * @return property value of ackId
+     * @return property value of requestId
      */
-    public String getAckId() {
-        return ackId;
+    @Override
+    public String getRequestId() {
+        return requestId;
     }
     
     /**
-     * Setter method for property <tt>ackId</tt>.
+     * Setter method for property <tt>requestId</tt>.
      *
-     * @param ackId value to be assigned to property ackId
+     * @param requestId value to be assigned to property requestId
      */
-    public void setAckId(String ackId) {
-        this.ackId = ackId;
+    @Override
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
     
     /**

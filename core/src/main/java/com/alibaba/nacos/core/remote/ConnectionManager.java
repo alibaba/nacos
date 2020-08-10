@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 public class ConnectionManager {
     
     /**
-     * maxLimitClient
+     * maxLimitClient.
      */
     private int maxClient = -1;
     
@@ -80,7 +80,7 @@ public class ConnectionManager {
         Connection connectionInner = connetions.put(connectionId, connection);
         if (connectionInner == null) {
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.GRPC.info("new connection registered successfully, connectionid = {} ", connectionId);
+            Loggers.RPC.info("new connection registered successfully, connectionid = {} ", connectionId);
         }
     }
     
@@ -93,7 +93,7 @@ public class ConnectionManager {
         Connection remove = this.connetions.remove(connectionId);
         if (remove != null) {
             remove.closeGrapcefully();
-            Loggers.GRPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
+            Loggers.RPC.info(" connection unregistered successfully,connectionid = {} ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -143,7 +143,7 @@ public class ConnectionManager {
                 try {
                     long currentStamp = System.currentTimeMillis();
                     Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
-                    boolean isLoaderClient = loadClient > 0;
+                    boolean isLoaderClient = loadClient >= 0;
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
                     List<String> expelClient = new LinkedList<String>();
@@ -152,7 +152,7 @@ public class ConnectionManager {
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
                         long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
-                        if (currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
+                        if (client.heartBeatExpire() && currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
                             expireCLients.add(client.getConnectionId());
                             expelCount--;
                         } else if (expelCount > 0) {
@@ -163,7 +163,7 @@ public class ConnectionManager {
                     
                     for (String expireClient : expireCLients) {
                         unregister(expireClient);
-                        Loggers.GRPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
+                        Loggers.RPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
                     }
                     
                     for (String expeledClient : expelClient) {
@@ -173,16 +173,16 @@ public class ConnectionManager {
                                 if (connection.isSwitching()) {
                                     continue;
                                 }
-                                connection.sendPushNoAck(new ConnectResetResponse());
+                                connection.sendRequestNoAck(new ConnectResetRequest());
                                 connection.setStatus(Connection.SWITCHING);
-                                Loggers.GRPC.info("expel connection ,send switch server response connectionid = {} ",
+                                Loggers.RPC.info("expel connection ,send switch server response connectionid = {} ",
                                         expeledClient);
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
                             unregister(expeledClient);
                         } catch (Exception e) {
-                            Loggers.GRPC.error("error occurs when expel connetion :", expeledClient, e);
+                            Loggers.RPC.error("error occurs when expel connetion :", expeledClient, e);
                         }
                         
                     }
@@ -193,7 +193,7 @@ public class ConnectionManager {
                     }
                     
                 } catch (Exception e) {
-                    Loggers.GRPC.error("error occurs when heathy check... ", e);
+                    Loggers.RPC.error("error occurs when heathy check... ", e);
                 }
             }
         }, 500L, 3000L, TimeUnit.MILLISECONDS);
@@ -222,7 +222,7 @@ public class ConnectionManager {
         for (Map.Entry<String, Connection> entry : connetions.entrySet()) {
             Connection client = entry.getValue();
             try {
-                client.sendPushNoAck(new ConnectResetResponse());
+                client.sendRequestNoAck(new ConnectResetRequest());
             } catch (Exception e) {
                 //Do Nothing.
             }

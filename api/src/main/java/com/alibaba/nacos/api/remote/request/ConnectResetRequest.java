@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.remote.response;
-
-import com.alibaba.nacos.api.remote.response.Response;
-
-import static com.alibaba.nacos.api.naming.remote.NamingRemoteConstants.NOTIFY_SUBSCRIBER;
+package com.alibaba.nacos.api.remote.request;
 
 /**
+ * ConnectResetResponse.
+ *
  * @author liuzunfei
- * @version $Id: NotifySubscriberResponse.java, v 0.1 2020年08月06日 5:28 PM liuzunfei Exp $
+ * @version $Id: ConnectResetResponse.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
  */
-public class NotifySubscriberResponse extends Response {
+public class ConnectResetRequest extends ServerPushRequest {
     
     @Override
     public String getType() {
-        return NOTIFY_SUBSCRIBER;
+        return RequestTypeConstants.CONNECTION_RESET;
     }
+    
+    @Override
+    public String getModule() {
+        return "internal";
+    }
+    
 }

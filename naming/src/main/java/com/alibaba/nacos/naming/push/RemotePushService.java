@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
+import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
@@ -116,7 +116,7 @@ public class RemotePushService implements ApplicationListener<ServiceChangeEvent
                 .generateServiceInfo(service, StringUtils.EMPTY, false, StringUtils.EMPTY);
         for (Subscriber each : serviceSubscribesMap.getOrDefault(serviceKey, new HashSet<>())) {
             notifier.pushWithoutAck(subscribeConnectionMap.get(each),
-                    NotifySubscriberResponse.buildSuccessResponse(serviceInfo));
+                    NotifySubscriberRequest.buildSuccessResponse(serviceInfo));
         }
     }
 }

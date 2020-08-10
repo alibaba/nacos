@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -52,11 +52,18 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendPush(ServerPushResponse request, long timeout) throws Exception {
+    public boolean heartBeatExpire() {
+        return true;
+    }
+    
+    @Override
+    public boolean sendRequest(ServerPushRequest request, long timeout) throws Exception {
         try {
+    
+            Loggers.RPC_DIGEST.info("Grpc sendRequest :" + request);
+    
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
-    
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
             try {
                 return GrpcAckSynchronizer.waitAck(requestId, timeout);
@@ -75,12 +82,13 @@ public class GrpcConnection extends Connection {
         }
     }
     
-    private void sendPushWithCallback(ServerPushResponse request, PushCallBack callBack) {
+    private void sendRequestWithCallback(ServerPushRequest request, PushCallBack callBack) {
         try {
+            Loggers.RPC_DIGEST.info("Grpc sendRequestWithCallback :" + request);
+    
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
-            Loggers.CORE.warn("sync callback with ackid:" + requestId);
             GrpcAckSynchronizer.syncCallbackOnAck(requestId, callBack);
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -93,8 +101,10 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public boolean sendPushNoAck(ServerPushResponse request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
         try {
+    
+            Loggers.RPC_DIGEST.info("Grpc sendRequestNoAck :" + request);
             streamObserver.onNext(GrpcUtils.convert(request, ""));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -102,17 +112,18 @@ public class GrpcConnection extends Connection {
             }
             throw e;
         }
-        return false;
     }
     
     @Override
-    public Future<Boolean> sendPushWithFuture(ServerPushResponse request) throws Exception {
+    public Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception {
+        Loggers.RPC_DIGEST.info("Grpc sendRequestWithFuture :" + request);
         return pushWorkers.submit(new PushCallable(request, MAX_TIMEOUTS));
     }
     
     @Override
-    public void sendPushCallBackWithCallBack(ServerPushResponse request, PushCallBack callBack) throws Exception {
-        sendPushWithCallback(request, callBack);
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+        Loggers.RPC_DIGEST.info("Grpc sendRequestWithCallBack :" + request);
+        sendRequestWithCallback(request, callBack);
     }
     
     @Override
@@ -120,19 +131,20 @@ public class GrpcConnection extends Connection {
     }
     
     class PushCallable implements Callable<Boolean> {
-        
-        private ServerPushResponse request;
+    
+        private ServerPushRequest request;
         
         private long timeoutMills;
-        
-        public PushCallable(ServerPushResponse request, long timeoutMills) {
+    
+        public PushCallable(ServerPushRequest request, long timeoutMills) {
             this.request = request;
             this.timeoutMills = timeoutMills;
         }
         
         @Override
         public Boolean call() throws Exception {
-            return sendPush(request, timeoutMills);
+            return sendRequest(request, timeoutMills);
         }
     }
+    
 }

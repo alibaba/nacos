@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +30,8 @@ import java.util.Map;
 public abstract class Request {
     
     private final Map<String, String> headers = new HashMap<String, String>();
+    
+    private String requestId;
     
     /**
      * put header.
@@ -71,6 +75,24 @@ public abstract class Request {
     }
     
     /**
+     * Getter method for property <tt>requestId</tt>.
+     *
+     * @return property value of requestId
+     */
+    public String getRequestId() {
+        return requestId;
+    }
+    
+    /**
+     * Setter method for property <tt>requestId</tt>.
+     *
+     * @param requestId value to be assigned to property requestId
+     */
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+    
+    /**
      * Getter method for property <tt>type</tt>.
      *
      * @return property value of type
@@ -91,5 +113,10 @@ public abstract class Request {
      */
     public Map<String, String> getHeaders() {
         return headers;
+    }
+    
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

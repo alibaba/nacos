@@ -36,6 +36,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
@@ -61,7 +62,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory,
             ServiceInfoHolder serviceInfoHolder) throws NacosException {
         this.namespaceId = namespaceId;
-        this.rpcClient = RpcClientFactory.getClient("naming");
+        this.rpcClient = RpcClientFactory.getClient("naming", ConnectionType.GRPC);
         this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
         start(serverListFactory, serviceInfoHolder);
     }
