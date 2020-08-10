@@ -25,7 +25,9 @@ import java.lang.reflect.Type;
  * Nacos async http client interface.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @deprecated Refer to the new {@link com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate}
  */
+@Deprecated
 @SuppressWarnings("all")
 public interface NAsyncHttpClient extends NHttpClient {
     
