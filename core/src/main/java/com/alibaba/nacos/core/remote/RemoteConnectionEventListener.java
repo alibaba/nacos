@@ -16,16 +16,23 @@
 
 package com.alibaba.nacos.core.remote;
 
+import org.springframework.stereotype.Component;
+
 /**
- * NacosRemoteConstants.
- *
+ * RemoteConnectionEventListener.
  * @author liuzunfei
- * @version $Id: NacosRemoteConstants.java, v 0.1 2020年07月14日 9:22 PM liuzunfei Exp $
+ * @version $Id: RemoteConnectionEventListener.java, v 0.1 2020年08月10日 1:04 AM liuzunfei Exp $
  */
-public class NacosRemoteConstants {
+@Component
+public class RemoteConnectionEventListener extends ClientConnectionEventListener {
     
-    public static final String LISTEN_CONTEXT_CONFIG = "CONFIG";
+    @Override
+    public void clientConnected(Connection connect) {
     
-    public static final String LISTEN_CONTEXT_NAMING = "NAMING";
+    }
     
+    @Override
+    public void clientDisConnected(Connection connect) {
+        RpcAckCallbackSynchronizer.clearContext(connect.getConnectionId());
+    }
 }

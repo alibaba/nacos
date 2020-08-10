@@ -89,6 +89,7 @@ public class RsocketRpcClient extends RpcClient {
                         @Override
                         public Mono<Payload> requestResponse(Payload payload) {
                             try {
+                                System.out.println("收到服务端推送：" + payload.getDataUtf8());
                                 final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
                                 try {
                                     handleServerRequest(request);

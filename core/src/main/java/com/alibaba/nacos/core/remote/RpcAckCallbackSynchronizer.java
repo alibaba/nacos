@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.grpc;
+package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -35,9 +35,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * serber push ack synchronier.
  *
  * @author liuzunfei
- * @version $Id: GrpcAckSynchronizer.java, v 0.1 2020年07月29日 7:56 PM liuzunfei Exp $
+ * @version $Id: RpcAckCallbackSynchronizer.java, v 0.1 2020年07月29日 7:56 PM liuzunfei Exp $
  */
-public class GrpcAckSynchronizer {
+public class RpcAckCallbackSynchronizer {
     
     private static final Map<String, AckWaitor> ACK_WAITORS = new HashMap<String, AckWaitor>();
     
@@ -86,8 +86,8 @@ public class GrpcAckSynchronizer {
      *
      * @param ackId ackId.
      */
-    public static void ackNotify(String ackId, boolean success) {
-    
+    public static void ackNotify(String connectionId, String ackId, boolean success) {
+        
         PushCallBackWraper currentCallback = CALLBACK_CONTEXT.remove(ackId);
         if (currentCallback != null && currentCallback.tryDeActive()) {
             if (success) {
@@ -121,7 +121,7 @@ public class GrpcAckSynchronizer {
      *
      * @param ackId ackId.
      */
-    public static boolean waitAck(String ackId, long timeout) throws Exception {
+    public static boolean waitAck(String connectionId, String ackId, long timeout) throws Exception {
         AckWaitor waiter = ACK_WAITORS.get(ackId);
         if (waiter != null) {
             throw new RuntimeException("ackid conflict");
@@ -144,12 +144,22 @@ public class GrpcAckSynchronizer {
      *
      * @param ackId ackId.
      */
-    public static void syncCallbackOnAck(String ackId, PushCallBack pushCallBack) throws Exception {
+    public static void syncCallbackOnAck(String connectionId, String ackId, PushCallBack pushCallBack)
+            throws Exception {
         PushCallBackWraper pushCallBackPrev = CALLBACK_CONTEXT
                 .putIfAbsent(ackId, new PushCallBackWraper(pushCallBack, ackId));
         if (pushCallBackPrev != null) {
             throw new RuntimeException("callback conflict.");
         }
+    }
+    
+    /**
+     * clear context of connectionId.
+     *
+     * @param connetionId connetionId
+     */
+    public static void clearContext(String connetionId) {
+    
     }
     
     static class AckWaitor {

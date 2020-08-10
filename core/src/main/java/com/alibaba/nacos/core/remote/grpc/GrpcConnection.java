@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -66,12 +67,13 @@ public class GrpcConnection extends Connection {
             request.setRequestId(requestId);
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
             try {
-                return GrpcAckSynchronizer.waitAck(requestId, timeout);
+                String connectionId = this.getConnectionId();
+                return RpcAckCallbackSynchronizer.waitAck(connectionId, requestId, timeout);
             } catch (Exception e) {
                 //Do nothing，return fail.
                 return false;
             } finally {
-                GrpcAckSynchronizer.release(requestId);
+                RpcAckCallbackSynchronizer.release(requestId);
             }
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
@@ -89,7 +91,7 @@ public class GrpcConnection extends Connection {
             String requestId = String.valueOf(PushAckIdGenerator.getNextId());
             request.setRequestId(requestId);
             streamObserver.onNext(GrpcUtils.convert(request, requestId));
-            GrpcAckSynchronizer.syncCallbackOnAck(requestId, callBack);
+            RpcAckCallbackSynchronizer.syncCallbackOnAck(this.getConnectionId(), requestId, callBack);
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 //return true where client is not active yet.

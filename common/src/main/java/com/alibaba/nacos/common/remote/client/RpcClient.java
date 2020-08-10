@@ -52,6 +52,8 @@ public abstract class RpcClient implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
     
+    protected static final long ACTIVE_INTERNAL = 3000L;
+    
     private ServerListFactory serverListFactory;
     
     protected String connectionId;
@@ -60,6 +62,8 @@ public abstract class RpcClient implements Closeable {
     
     protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
+    
+    private long activeTimeStamp = System.currentTimeMillis();
     
     protected ScheduledExecutorService executorService;
     
@@ -113,6 +117,14 @@ public abstract class RpcClient implements Closeable {
                 }
             });
         }
+    }
+    
+    protected boolean overActiveTime() {
+        return System.currentTimeMillis() - this.activeTimeStamp > ACTIVE_INTERNAL;
+    }
+    
+    protected void refereshActiveTimestamp() {
+        this.activeTimeStamp = System.currentTimeMillis();
     }
     
     /**
@@ -196,8 +208,8 @@ public abstract class RpcClient implements Closeable {
                         } else if (take.isDisConnected()) {
                             notifyDisConnected();
                         }
-                    } catch (InterruptedException e) {
-                        //Do nothing
+                    } catch (Exception e) {
+                        //Donothing
                     }
                 }
             }
@@ -225,7 +237,7 @@ public abstract class RpcClient implements Closeable {
             public void requestReply(ServerPushRequest request) {
                 if (request instanceof ConnectResetRequest) {
                     try {
-                    
+    
                         if (isRunning()) {
                             switchServerAsync();
                         }
@@ -247,18 +259,14 @@ public abstract class RpcClient implements Closeable {
      */
     protected void switchServerAsync() {
     
-        System.out.println("1");
-    
         //return if is in switching of other thread.
         if (switchingFlag.get()) {
-            System.out.println("1-1");
-        
             return;
         }
         executorService.submit(new Runnable() {
             @Override
             public void run() {
-            
+    
                 try {
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
@@ -269,27 +277,27 @@ public abstract class RpcClient implements Closeable {
                     // loop until start client success.
                     boolean switchSuccess = false;
                     while (!switchSuccess) {
-                    
+    
                         //1.get a new server
                         ServerInfo serverInfo = nextRpcServer();
                         //2.create a new channel to new server
                         try {
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
-                            
                                 //successfully create a new connect.
                                 closeConnection(currentConnetion);
                                 currentConnetion = connectNew;
                                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                                 switchSuccess = true;
-                                eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
+                                boolean s = eventLinkedBlockingQueue
+                                        .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
                             // error to create connection
                         }
-                    
+    
                         try {
                             //sleep 1 second to switch next server.
                             Thread.sleep(1000L);
@@ -310,7 +318,7 @@ public abstract class RpcClient implements Closeable {
     private void closeConnection(Connection connection) {
         if (connection != null) {
             connection.close();
-            eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
+            eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
         }
     }
     
@@ -340,6 +348,7 @@ public abstract class RpcClient implements Closeable {
             switchServerAsync();
             throw new IllegalStateException("Invalid client status.");
         }
+        refereshActiveTimestamp();
         return response;
     }
     
@@ -351,6 +360,7 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException {
         this.currentConnetion.asyncRequest(request, callback);
+        refereshActiveTimestamp();
     }
     
     /**

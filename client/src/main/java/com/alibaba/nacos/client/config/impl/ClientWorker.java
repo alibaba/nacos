@@ -104,13 +104,15 @@ public class ClientWorker implements Closeable {
     private void notifyRpcListenConfig() {
         try {
             if (!ParamUtils.useHttpSwitch()) {
-                lock.tryLock();
-                try {
-                    condition.signal();
-                } finally {
-                    lock.unlock();
+    
+                boolean lockSuccess = lock.tryLock();
+                if (lockSuccess) {
+                    try {
+                        condition.signal();
+                    } finally {
+                        lock.unlock();
+                    }
                 }
-                
             }
         } catch (Exception e) {
             LOGGER.warn("[notify rpc listen fail]", e);
@@ -653,7 +655,7 @@ public class ClientWorker implements Closeable {
                     try {
                         while (true) {
                             try {
-                                lock.tryLock();
+                                lock.lock();
                                 //System.out.println("wait execute listen..");
                                 condition.await();
                                 executeRpcListen();
@@ -696,11 +698,14 @@ public class ClientWorker implements Closeable {
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
                             cacheData.setListenSuccess(false);
-                            try {
-                                lock.tryLock();
-                                condition.signal();
-                            } finally {
-                                lock.unlock();
+    
+                            boolean lockSuccess = lock.tryLock();
+                            if (lockSuccess) {
+                                try {
+                                    condition.signal();
+                                } finally {
+                                    lock.unlock();
+                                }
                             }
                         }
                     }
@@ -712,11 +717,13 @@ public class ClientWorker implements Closeable {
                 @Override
                 public void onConnected() {
     
-                    lock.tryLock();
-                    try {
-                        condition.signal();
-                    } finally {
-                        lock.unlock();
+                    boolean lockSuccess = lock.tryLock();
+                    if (lockSuccess) {
+                        try {
+                            condition.signal();
+                        } finally {
+                            lock.unlock();
+                        }
                     }
                 }
         
@@ -816,7 +823,7 @@ public class ClientWorker implements Closeable {
             try {
                 ConfigChangeBatchListenResponse configChangeBatchListenResponse = rpcClientProxy
                         .listenConfigChange(listenConfigString);
-                if (configChangeBatchListenResponse.isSuccess()) {
+                if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
                     
                     if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
                         for (String groupKey : configChangeBatchListenResponse.getChangedGroupKeys()) {

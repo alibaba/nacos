@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -62,9 +63,10 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
             return;
         } else if (RequestTypeConstants.PUSH_ACK.equals(type)) {
             // server push ack response.
+            String connectionId = grpcRequest.getMetadata().getConnectionId();
             PushAckRequest request = JacksonUtils
                     .toObj(grpcRequest.getBody().getValue().toStringUtf8(), PushAckRequest.class);
-            GrpcAckSynchronizer.ackNotify(request.getRequestId(), request.isSuccess());
+            RpcAckCallbackSynchronizer.ackNotify(connectionId, request.getRequestId(), request.isSuccess());
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
@@ -83,6 +85,7 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
                     responseObserver.onCompleted();
                     return;
                 }
+                connectionManager.refreshActiveTime(requestMeta.getConnectionId());
                 Response response = requestHandler.handle(request, requestMeta);
                 responseObserver.onNext(GrpcUtils.convert(response));
                 responseObserver.onCompleted();

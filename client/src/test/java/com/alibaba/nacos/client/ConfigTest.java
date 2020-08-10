@@ -114,19 +114,12 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        //System.out.println("发布配置");
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
                                 "value" + System.currentTimeMillis());
-                        if (success) {
-                            // System.out.println("发布配置成功");
-                        } else {
-                            //System.out.println("发布配置失败");
-                        }
                         times--;
                         Thread.sleep(500L);
                     } catch (Exception e) {
                         e.printStackTrace();
-    
                     }
                 }
     
@@ -149,24 +142,13 @@ public class ConfigTest {
             configService.getConfigAndSignListener(dataId + i, group, 3000L, listener);
         }
     
-        //configService.getConfigAndSignListener(dataId, group, 5000, listener);
-        
-        //Assert.assertTrue(result);
+        Thread.sleep(10000L);
     
-        // configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        for (int i = 0; i < 20; i++) {
+            //configService.removeListener(dataId + i, group, listener);
+        }
+        System.out.println("remove listens.");
         
-        //configService.removeListener(dataId, group, listener);
-        //configService.removeConfig(dataId, group);
-    
-        //        configService.publishConfig("lessspring2", group, "lessspring2value");
-        //
-        //        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
-        //            @Override
-        //            public void receiveConfigInfo(String configInfo) {
-        //                System.out.println("receiveConfigInfo2 :" + configInfo);
-        //            }
-        //        });
-        //
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {

@@ -114,7 +114,7 @@ public class GrpcClient extends RpcClient {
         while (maxRetryTimes > 0) {
     
             try {
-                if (!isRunning()) {
+                if (!isRunning() && !overActiveTime()) {
                     return;
                 }
                 HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
@@ -206,6 +206,7 @@ public class GrpcClient extends RpcClient {
             }
         });
     }
+    
     private void sendAckResponse(String ackId, boolean success) {
         try {
             PushAckRequest request = PushAckRequest.build(ackId, success);
@@ -223,7 +224,7 @@ public class GrpcClient extends RpcClient {
             public void run() {
                 sendBeat();
             }
-        }, 0, 3000, TimeUnit.MILLISECONDS);
+        }, 0, ACTIVE_INTERNAL, TimeUnit.MILLISECONDS);
     }
     
     @Override
