@@ -94,11 +94,7 @@ class Header extends React.Component {
       <>
         <header className="header-container header-container-primary">
           <div className="header-body">
-            <a
-              href={`https://nacos.io/${language.toLocaleLowerCase()}/`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="/" rel="noopener noreferrer">
               <img
                 src="img/logo-2000-390.svg"
                 className="logo"
