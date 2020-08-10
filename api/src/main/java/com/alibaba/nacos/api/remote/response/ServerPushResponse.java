@@ -17,22 +17,14 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * ServerPushResponse.
+ * response for server push.
  *
  * @author liuzunfei
- * @version $Id: ServerPushResponse.java, v 0.1 2020年07月20日 1:21 PM liuzunfei Exp $
+ * @version $Id: ServerPushResponse.java, v 0.1 2020年08月09日 11:34 PM liuzunfei Exp $
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class ServerPushResponse extends Response {
+public class ServerPushResponse extends Response {
     
-    /**
-     * unique id for this server response id.
-     */
     private String requestId;
-    
-    public ServerPushResponse() {
-        super();
-    }
     
     /**
      * Getter method for property <tt>requestId</tt>.
@@ -50,5 +42,10 @@ public abstract class ServerPushResponse extends Response {
      */
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+    
+    @Override
+    public String getType() {
+        return ResponseTypeConstants.SERVER_CHECK;
     }
 }

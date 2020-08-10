@@ -24,10 +24,14 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class RequestTypeConstants {
     
+    public static final String CONNECTION_SETUP = "CONNECTION_SETUP";
+    
     public static final String HEART_BEAT = "HEART_BEAT";
     
     public static final String SERVER_CHECK = "SERVER_CHECK";
     
     public static final String PUSH_ACK = "PUSH_ACK";
+    
+    public static final String CONNECTION_RESET = "CONNECTION_RESET";
     
 }

@@ -30,6 +30,10 @@ public class PlainBodyResponse extends Response {
     
     }
     
+    public PlainBodyResponse(String bodyString) {
+        this.bodyString = bodyString;
+    }
+    
     @Override
     public String getType() {
         return ResponseTypeConstants.PLAIN_BODY_STRING;

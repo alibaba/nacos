@@ -51,8 +51,8 @@ public class RequestHandlerRegistry {
      * @param requestHandler requestHandler to registry
      */
     public void registryHandler(RequestHandler requestHandler) {
-        
-        Loggers.GRPC.info(" register request handler, type={},handler={} ", requestHandler.getRequestTypes(),
+    
+        Loggers.RPC.info(" register request handler, type={},handler={} ", requestHandler.getRequestTypes(),
                 requestHandler.getClass().getSimpleName());
         List<String> requestTypes = requestHandler.getRequestTypes();
         for (String requestType : requestTypes) {

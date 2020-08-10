@@ -16,27 +16,29 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
-import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
-import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
+import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.common.remote.client.ServerPushResponseHandler;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
 /**
  * Naming push response handler.
  *
  * @author xiweng.yy
  */
-public class NamingPushResponseHandler implements ServerPushResponseHandler<NotifySubscriberResponse> {
+public class NamingPushResponseHandler implements ServerRequestHandler {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
     public NamingPushResponseHandler(ServiceInfoHolder serviceInfoHolder) {
         this.serviceInfoHolder = serviceInfoHolder;
     }
-    
+
     @Override
-    public void responseReply(Response response) {
-        NotifySubscriberResponse notifyResponse = (NotifySubscriberResponse) response;
-        serviceInfoHolder.processServiceInfo(notifyResponse.getServiceInfo());
+    public void requestReply(ServerPushRequest request) {
+        if (request instanceof NotifySubscriberRequest) {
+            NotifySubscriberRequest notifyResponse = (NotifySubscriberRequest) request;
+            serviceInfoHolder.processServiceInfo(notifyResponse.getServiceInfo());
+        }
     }
 }

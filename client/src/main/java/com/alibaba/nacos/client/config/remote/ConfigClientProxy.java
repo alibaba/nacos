@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
@@ -35,15 +36,15 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
  * config grpc client proxy.
  *
  * @author liuzunfei
- * @version $Id: ConfigGrpcClientProxy.java, v 0.1 2020年07月14日 3:37 PM liuzunfei Exp $
+ * @version $Id: ConfigClientProxy.java, v 0.1 2020年07月14日 3:37 PM liuzunfei Exp $
  */
 
-public class ConfigGrpcClientProxy {
+public class ConfigClientProxy {
     
     private RpcClient rpcClient;
     
-    public ConfigGrpcClientProxy() {
-        rpcClient = RpcClientFactory.getClient("config");
+    public ConfigClientProxy() {
+        rpcClient = RpcClientFactory.getClient("config", ConnectionType.RSOCKET);
     }
     
     public Response request(Request request) throws NacosException {

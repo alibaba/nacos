@@ -85,7 +85,7 @@ public class ConfiRemoveRequestHandler extends RequestHandler {
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {
-            Loggers.GRPC_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);
+            Loggers.RPC_DIGEST.error("remove config error,error msg is {}", e.getMessage(), e);
             return ConfigRemoveResponse.buildFailResponse(e.getMessage());
         }
     }

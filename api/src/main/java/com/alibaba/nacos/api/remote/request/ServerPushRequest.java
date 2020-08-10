@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.remote.request;
 
 /**
- * ConnectResetResponse.
+ * ServerPushResponse.
  *
  * @author liuzunfei
- * @version $Id: ConnectResetResponse.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
+ * @version $Id: ServerPushResponse.java, v 0.1 2020年07月20日 1:21 PM liuzunfei Exp $
  */
-public class ConnectResetResponse extends ServerPushResponse {
-    
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.CONNECT_SWITCH;
-    }
+public abstract class ServerPushRequest extends Request {
+
 }

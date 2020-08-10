@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
+import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -363,8 +363,7 @@ public class LongPollingService {
                 String dataid = strings[0];
                 String group = strings[1];
                 String tenant = strings.length > 2 ? strings[2] : "";
-                ConfigChangeNotifyResponse notifyResponse = ConfigChangeNotifyResponse
-                        .buildSuccessResponse(dataid, group, tenant);
+                ConfigChangeNotifyRequest notifyResponse = ConfigChangeNotifyRequest.build(dataid, group, tenant);
                 configChangeNotifier.configDataChanged(groupKey, notifyResponse);
                 
             } catch (Throwable t) {
