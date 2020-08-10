@@ -223,6 +223,7 @@ const I18N_CONF = {
     queryResult: '查询结果：共查询到',
     articleMeet: '条满足要求的配置。',
     lastUpdateTime: '最后更新时间',
+    operator: '操作人',
     operation: '操作',
   },
   HistoryDetail: {
@@ -235,6 +236,7 @@ const I18N_CONF = {
     home: '归属应用:',
     actionType: '操作类型:',
     configureContent: '配置内容:',
+    operator: '操作人:',
     back: '返回',
   },
   DashboardCard: {
