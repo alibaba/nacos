@@ -93,7 +93,9 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        notifyRpcListenConfig();
+        if (!cache.isListenSuccess()) {
+            notifyRpcListenConfig();
+        }
     }
     
     /**
@@ -155,7 +157,9 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        notifyRpcListenConfig();
+        if (!cache.isListenSuccess()) {
+            notifyRpcListenConfig();
+        }
     }
     
     /**
@@ -176,9 +180,10 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-    
-        notifyRpcListenConfig();
-        
+        // if current cache is already at listening status,do not notify.
+        if (!cache.isListenSuccess()) {
+            notifyRpcListenConfig();
+        }
     }
     
     /**

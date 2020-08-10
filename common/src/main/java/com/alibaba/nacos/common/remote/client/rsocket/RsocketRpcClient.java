@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -80,51 +81,53 @@ public class RsocketRpcClient extends RpcClient {
             ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connectionId, NetUtils.localIP(),
                     VersionUtils.getFullClientVersion());
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
-            
-            RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
-                @Override
-                public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
-    
-                    RSocket rsocket = new RSocketProxy(sendingSocket) {
+            RSocket rSocket = RSocketConnector.create().keepAlive(Duration.ofMillis(3000L), Duration.ofMillis(6000L))
+                    .setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
                         @Override
-                        public Mono<Payload> requestResponse(Payload payload) {
-                            try {
-                                System.out.println("收到服务端推送：" + payload.getDataUtf8());
-                                final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
-                                try {
-                                    handleServerRequest(request);
-                                    ServerPushResponse response = new ServerPushResponse();
-                                    response.setRequestId(request.getRequestId());
-                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                                } catch (Exception e) {
-                                    ServerPushResponse response = new ServerPushResponse();
-                                    response.setResultCode(ResponseCode.FAIL.getCode());
-                                    response.setMessage(e.getMessage());
-                                    response.setRequestId(request.getRequestId());
-                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                        public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
+                    
+                            RSocket rsocket = new RSocketProxy(sendingSocket) {
+                                @Override
+                                public Mono<Payload> requestResponse(Payload payload) {
+                                    try {
+                                        System.out.println("收到服务端推送：" + payload.getDataUtf8());
+                                        final ServerPushRequest request = RsocketUtils
+                                                .parseServerRequestFromPayload(payload);
+                                        try {
+                                            handleServerRequest(request);
+                                            ServerPushResponse response = new ServerPushResponse();
+                                            response.setRequestId(request.getRequestId());
+                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                                        } catch (Exception e) {
+                                            ServerPushResponse response = new ServerPushResponse();
+                                            response.setResultCode(ResponseCode.FAIL.getCode());
+                                            response.setMessage(e.getMessage());
+                                            response.setRequestId(request.getRequestId());
+                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                                        }
+                                
+                                    } catch (Exception e) {
+                                        ServerPushResponse response = new ServerPushResponse();
+                                        response.setResultCode(ResponseCode.FAIL.getCode());
+                                        response.setMessage(e.getMessage());
+                                        return Mono.just(DefaultPayload
+                                                .create(RsocketUtils.convertResponseToPayload(response)));
+                                    }
                                 }
-    
-                            } catch (Exception e) {
-                                ServerPushResponse response = new ServerPushResponse();
-                                response.setResultCode(ResponseCode.FAIL.getCode());
-                                response.setMessage(e.getMessage());
-                                return Mono.just(DefaultPayload
-                                        .create(RsocketUtils.convertResponseToPayload(response)));
-                            }
+                        
+                                @Override
+                                public Mono<Void> fireAndForget(Payload payload) {
+                                    System.out.println("收到服务端fireAndForget：" + payload.getDataUtf8());
+                                    final ServerPushRequest request = RsocketUtils
+                                            .parseServerRequestFromPayload(payload);
+                                    handleServerRequest(request);
+                                    return Mono.just(null);
+                                }
+                            };
+                    
+                            return Mono.just((RSocket) rsocket);
                         }
-        
-                        @Override
-                        public Mono<Void> fireAndForget(Payload payload) {
-                            System.out.println("收到服务端fireAndForget：" + payload.getDataUtf8());
-                            final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
-                            handleServerRequest(request);
-                            return Mono.just(null);
-                        }
-                    };
-    
-                    return Mono.just((RSocket) rsocket);
-                }
-            }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
+                    }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
             RsocketConnection connection = new RsocketConnection(connectionId, serverInfo, rSocket);
             fireOnCloseEvent(rSocket);
             return connection;
