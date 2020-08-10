@@ -68,8 +68,7 @@ public class Writer {
      * @return true on success
      */
     public boolean removeFile(final String fileName) {
-        files.remove(fileName);
-        return true;
+        return files.remove(fileName) != null;
     }
     
     public Map<String, LocalFileMeta> listFiles() {
