@@ -65,7 +65,7 @@ public class ConfigExample {
             }
         });
         
-        /*boolean isPublishOk = configService.publishConfig(dataId, group, "content");
+        boolean isPublishOk = configService.publishConfig(dataId, group, "content");
         System.out.println(isPublishOk);
         
         Thread.sleep(3000);
@@ -77,7 +77,7 @@ public class ConfigExample {
         Thread.sleep(3000);
         
         content = configService.getConfig(dataId, group, 5000);
-        System.out.println(content);*/
+        System.out.println(content);
         Thread.sleep(300000);
         
     }
