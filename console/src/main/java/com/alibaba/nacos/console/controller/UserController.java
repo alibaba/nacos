@@ -248,4 +248,17 @@ public class UserController {
         }
         return rr;
     }
+
+
+    /**
+     * Fuzzy matching username.
+     *
+     * @param username username
+     * @return Matched username
+     */
+    @GetMapping("/search")
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    public List<String> searchUsersLikeUsername(@RequestParam String username) {
+        return userDetailsService.findUserLikeUsername(username);
+    }
 }

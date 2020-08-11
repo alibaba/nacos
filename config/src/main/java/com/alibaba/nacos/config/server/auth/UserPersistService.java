@@ -19,6 +19,8 @@ package com.alibaba.nacos.config.server.auth;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
 
+import java.util.List;
+
 /**
  * User CRUD service.
  *
@@ -37,5 +39,7 @@ public interface UserPersistService {
     User findUserByUsername(String username);
     
     Page<User> getUsers(int pageNo, int pageSize);
-    
+
+    List<String> findUserLikeUsername(String username);
+
 }

@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -53,65 +51,24 @@ public class NotifyService {
     
     public static final String NOTIFY_HEADER_OP_HANDLE_IP = "opHandleIp";
     
+    private TaskManager notifyTaskManager;
+    
     /**
      * Invoke http get request.
      *
      * @param url      url
      * @param headers  headers
      * @param encoding encoding
-     * @return {@link HttpResult}
-     * @throws IOException throw IOException
+     * @return {@link com.alibaba.nacos.common.model.RestResult}
+     * @throws Exception throw Exception
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static HttpResult invokeURL(String url, List<String> headers, String encoding) throws IOException {
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) new URL(url).openConnection();
-            
-            conn.setConnectTimeout(TIMEOUT);
-            conn.setReadTimeout(TIMEOUT);
-            conn.setRequestMethod("GET");
-            
-            if (null != headers && !StringUtils.isEmpty(encoding)) {
-                for (Iterator<String> iter = headers.iterator(); iter.hasNext(); ) {
-                    conn.addRequestProperty(iter.next(), iter.next());
-                }
-            }
-            conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
-            // establish TCP connection
-            conn.connect();
-            // Send request internally
-            int respCode = conn.getResponseCode();
-            String resp = null;
-            
-            if (HttpServletResponse.SC_OK == respCode) {
-                resp = IoUtils.toString(conn.getInputStream(), encoding);
-            } else {
-                resp = IoUtils.toString(conn.getErrorStream(), encoding);
-            }
-            return new HttpResult(respCode, resp);
-        } finally {
-            IoUtils.closeQuietly(conn);
+    public static RestResult<String> invokeURL(String url, List<String> headers, String encoding) throws Exception {
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
+        if (CollectionUtils.isNotEmpty(headers)) {
+            header.addAll(headers);
         }
+        return HttpClientManager.getNacosRestTemplate().get(url, header, Query.EMPTY, String.class);
     }
-    
-    public static class HttpResult {
-        
-        public final int code;
-        
-        public String content;
-        
-        public HttpResult(int code, String content) {
-            this.code = code;
-            this.content = content;
-        }
-    }
-    
-    /**
-     * Connection timeout and socket timeout with other servers.
-     */
-    static final int TIMEOUT = 500;
-    
-    private TaskManager notifyTaskManager;
-    
 }
