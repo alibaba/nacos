@@ -19,8 +19,6 @@ package com.alibaba.nacos.client.config.utils.parse;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.client.config.utils.AbstractConfigParse;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,8 +30,6 @@ import java.util.Properties;
  * @author Nacos
  */
 public class DefaultPropertiesConfigParse extends AbstractConfigParse {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPropertiesConfigParse.class);
     
     @Override
     public Properties parse(String configText) {
