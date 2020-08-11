@@ -98,25 +98,6 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             });
             client.start();
         }
-        
-    }
-    
-    /**
-     * on member join.
-     *
-     * @param member joined member
-     */
-    public void memberJoin(Member member) throws NacosException {
-        createRpcClientAndStart(member);
-    }
-    
-    /**
-     * on member leave.
-     *
-     * @param member leaved member.
-     */
-    public void memberLeave(Member member) throws NacosException {
-        RpcClientFactory.shutDownClient(memberClientKey(member));
     }
     
     /**
