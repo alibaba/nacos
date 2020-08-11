@@ -19,6 +19,8 @@ package com.alibaba.nacos.api.config;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.Properties;
+
 /**
  * Config Service Interface.
  *
@@ -36,6 +38,41 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
+    
+    /**
+     * Get config info.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    ConfigInfo getConfigInfo(String dataId, String group, long timeoutMs) throws NacosException;
+    
+    /**
+     * Get config to properties.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    Properties getConfigToProperties(String dataId, String group, long timeoutMs) throws NacosException;
+    
+    /**
+     * Get config to properties.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @param type      value in (properties,json,xml,yaml)
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    Properties getConfigToProperties(String dataId, String group, String type, long timeoutMs) throws NacosException;
+    
     
     /**
      * Get config and register Listener.

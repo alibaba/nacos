@@ -18,7 +18,9 @@ package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigInfo;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -98,6 +100,24 @@ public class NacosConfigService implements ConfigService {
     }
     
     @Override
+    public ConfigInfo getConfigInfo(String dataId, String group, long timeoutMs) throws NacosException {
+        return getConfigInner(namespace, dataId, group, null, timeoutMs);
+    }
+    
+    @Override
+    public Properties getConfigToProperties(String dataId, String group, long timeoutMs) throws NacosException {
+        ConfigInfo configInfo = getConfigInner(namespace, dataId, group, null, timeoutMs);
+        return ContentUtils.toProperties(configInfo.getContent(), configInfo.getType());
+    }
+    
+    @Override
+    public Properties getConfigToProperties(String dataId, String group, String type, long timeoutMs)
+            throws NacosException {
+        ConfigInfo configInfo = getConfigInner(namespace, dataId, group, type, timeoutMs);
+        return ContentUtils.toProperties(configInfo.getContent(), configInfo.getType());
+    }
+    
+    @Override
     public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
             throws NacosException {
         String content = getConfig(dataId, group, timeoutMs);
@@ -168,6 +188,60 @@ public class NacosConfigService implements ConfigService {
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
         return content;
+    }
+    
+    private ConfigInfo getConfigInner(String tenant, String dataId, String group, String type, long timeoutMs)
+            throws NacosException {
+        group = null2defaultGroup(group);
+        ParamUtils.checkKeyParam(dataId, group);
+        ConfigResponse cr = new ConfigResponse();
+        
+        cr.setDataId(dataId);
+        cr.setTenant(tenant);
+        cr.setGroup(group);
+        
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, type, null, null);
+        // 优先使用本地配置
+        String content = LocalConfigInfoProcessor
+                .getFailover(agent.getName(), dataId, group, tenant);
+        if (content != null) {
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
+                    dataId, group, tenant, ContentUtils.truncateContent(content));
+            cr.setContent(content);
+            configFilterChainManager.doFilter(null, cr);
+            content = cr.getContent();
+            configInfo.setContent(content);
+            return configInfo;
+        }
+        
+        try {
+            String[] ct = worker.getServerConfig(dataId, group, tenant, timeoutMs);
+            cr.setContent(ct[0]);
+            if (ConfigType.TEXT.getType().equals(configInfo.getType())) {
+                configInfo.setType(ct[1]);
+            }
+            
+            configFilterChainManager.doFilter(null, cr);
+            content = cr.getContent();
+            configInfo.setContent(content);
+            return configInfo;
+        } catch (NacosException ioe) {
+            if (NacosException.NO_RIGHT == ioe.getErrCode()) {
+                throw ioe;
+            }
+            LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
+                    agent.getName(), dataId, group, tenant, ioe.toString());
+        }
+        
+        LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
+                dataId, group, tenant, ContentUtils.truncateContent(content));
+        content = LocalConfigInfoProcessor
+                .getSnapshot(agent.getName(), dataId, group, tenant);
+        cr.setContent(content);
+        configFilterChainManager.doFilter(null, cr);
+        content = cr.getContent();
+        configInfo.setContent(content);
+        return configInfo;
     }
     
     private String null2defaultGroup(String group) {

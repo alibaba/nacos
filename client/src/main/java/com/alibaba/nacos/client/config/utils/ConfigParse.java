@@ -14,57 +14,44 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config;
+package com.alibaba.nacos.client.config.utils;
+
+import java.util.Properties;
 
 /**
- * Config data type.
+ * ConfigParse.
  *
- * @author liaochuntao
- **/
-public enum ConfigType {
+ * @author Nacos
+ */
+public interface ConfigParse {
     
     /**
-     * config type is "properties".
+     * parse config context to map.
+     *
+     * @param configText receive config context
+     * @return {@link Properties}
      */
-    PROPERTIES("properties"),
+    Properties parse(String configText);
     
     /**
-     * config type is "xml".
+     * get this ConfigParse process config type.
+     *
+     * @return this parse process type
      */
-    XML("xml"),
+    String processType();
     
     /**
-     * config type is "json".
+     * get config dataId.
+     *
+     * @return dataId
      */
-    JSON("json"),
+    String dataId();
     
     /**
-     * config type is "text".
+     * get config group.
+     *
+     * @return group
      */
-    TEXT("text"),
+    String group();
     
-    /**
-     * config type is "html".
-     */
-    HTML("html"),
-    
-    /**
-     * config type is "yml".
-     */
-    YML("yml"),
-    
-    /**
-     * config type is "yaml".
-     */
-    YAML("yaml");
-    
-    String type;
-    
-    ConfigType(String type) {
-        this.type = type;
-    }
-    
-    public String getType() {
-        return type;
-    }
 }

@@ -17,6 +17,9 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
+
+import java.util.Properties;
 
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
@@ -82,4 +85,39 @@ public class ContentUtils {
     }
     
     private static final int SHOW_CONTENT_SIZE = 100;
+    
+    /**
+     * configuration parsing to support different schemas.
+     *
+     * @param text config context
+     * @return {@link Properties}
+     */
+    public static Properties toProperties(String text) {
+        return toProperties(text, "properties");
+    }
+    
+    public static Properties toProperties(String text, String type) {
+        return toProperties("", "", text, type);
+    }
+    
+    public static Properties toProperties(String dataId, String group, String text) {
+        return toProperties(dataId, group, text, "properties");
+    }
+    
+    /**
+     * configuration parsing to support different schemas.
+     *
+     * @param dataId config dataId
+     * @param group  config group
+     * @param text   config context
+     * @param type   config type
+     * @return {@link Properties}
+     */
+    public static Properties toProperties(String dataId, String group, String text, String type) {
+        type = type.toLowerCase();
+        if (ConfigType.YML.getType().equals(type)) {
+            type = ConfigType.YAML.getType();
+        }
+        return ConfigParseUtils.toProperties(dataId, group, text, type);
+    }
 }
