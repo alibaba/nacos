@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: 'Namespaces',
     namespaceNumber: 'Namespace ID',
     namespaceOperation: 'Actions',
+    refresh: 'Refresh',
   },
   ServiceList: {
     serviceList: 'Service List',
@@ -222,6 +223,7 @@ const I18N_CONF = {
     queryResult: 'Search Results: Found',
     articleMeet: 'configuration items.',
     lastUpdateTime: 'Last Modified At',
+    operator: 'Operator',
     operation: 'Operation',
   },
   HistoryDetail: {
@@ -233,6 +235,7 @@ const I18N_CONF = {
     moreAdvancedOptions: 'Advanced Options',
     home: 'Application:',
     actionType: 'Action Type:',
+    operator: 'Operator:',
     configureContent: 'Configuration Content:',
     back: 'Back',
   },
@@ -519,6 +522,7 @@ const I18N_CONF = {
     username: 'Username',
     password: 'Password',
     operation: 'Operation',
+    refresh: 'Refresh',
   },
   NewUser: {
     createUser: 'Create user',
@@ -552,6 +556,7 @@ const I18N_CONF = {
     operation: 'Operation',
     deleteRole: 'Delete',
     deleteRoleTip: 'Do you want to delete this role?',
+    refresh: 'Refresh',
   },
   NewRole: {
     bindingRoles: 'Binding roles',
@@ -574,6 +579,7 @@ const I18N_CONF = {
     readOnly: 'read only',
     writeOnly: 'write only',
     readWrite: 'Read and write',
+    refresh: 'Refresh',
   },
   NewPermissions: {
     addPermission: 'Add Permission',
