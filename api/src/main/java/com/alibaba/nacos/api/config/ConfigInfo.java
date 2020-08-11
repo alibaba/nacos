@@ -21,8 +21,7 @@ import com.alibaba.nacos.api.utils.StringUtils;
 /**
  * ConfigInfo.
  *
- * @author boyan
- * @date 2010-5-4
+ * @author Nacos
  */
 public class ConfigInfo {
     

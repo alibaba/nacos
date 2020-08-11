@@ -17,13 +17,9 @@
 package com.alibaba.nacos.client.config.utils;
 
 /**
- * The user inherits the AbstraceConfigParse abstract class and adds the implementation class in
- * META-INF/com.alibaba.nacos.spring.util.ConfigParse to implement the addition of custom parsing rules. If the dataId
- * and group methods are not overridden, Will override the original parsing rule implementation, otherwise the
- * user-defined parsing rules will only be applied to specific dataId and group
+ * Abstract Config Parse.
  *
- * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
- * @since 0.3.0
+ * @author Nacos
  */
 public abstract class AbstractConfigParse implements ConfigParse {
     
