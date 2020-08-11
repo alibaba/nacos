@@ -42,6 +42,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
+
 /**
  * abstract remote client to connect to server.
  *
@@ -60,14 +62,14 @@ public abstract class RpcClient implements Closeable {
     
     protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<ConnectionEvent>();
     
-    protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
+    protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
     
     private long activeTimeStamp = System.currentTimeMillis();
     
     protected ScheduledExecutorService executorService;
     
-    protected Connection currentConnetion;
+    protected volatile Connection currentConnetion;
     
     /**
      * listener called where connect status changed.
@@ -343,13 +345,29 @@ public abstract class RpcClient implements Closeable {
      * @return
      */
     public Response request(Request request) throws NacosException {
-        Response response = this.currentConnetion.request(request);
-        if (response != null && response instanceof ConnectionUnregisterResponse) {
-            switchServerAsync();
-            throw new IllegalStateException("Invalid client status.");
+        int retryTimes = 3;
+    
+        Exception exceptionToThrow = null;
+        while (retryTimes > 0) {
+            try {
+                Response response = this.currentConnetion.request(request);
+                if (response != null && response instanceof ConnectionUnregisterResponse) {
+                    switchServerAsync();
+                    throw new IllegalStateException("Invalid client status.");
+                }
+                refereshActiveTimestamp();
+                return response;
+            } catch (Exception e) {
+                LoggerUtils.printIfErrorEnabled(LOGGER,
+                        "Fail to send request,connectionId={}, request={},errorMesssage={}", this.connectionId, request,
+                        e.getMessage());
+                exceptionToThrow = e;
+            }
         }
-        refereshActiveTimestamp();
-        return response;
+        if (exceptionToThrow != null) {
+            throw new NacosException(SERVER_ERROR, exceptionToThrow);
+        }
+        return null;
     }
     
     /**

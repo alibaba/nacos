@@ -59,6 +59,7 @@ public class ConfigTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"
+        System.out.println("1");
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
         for (int i = 0; i < 200; i++) {
     
@@ -67,10 +68,12 @@ public class ConfigTest {
     
                 @Override
                 public void receiveConfigInfo(String configInfo) {
+                    System.out.println("listener2:" + configInfo);
                 }
             });
             configServiceList.add(configService);
         }
+        System.out.println("2");
     
         Thread th = new Thread(new Runnable() {
             @Override
@@ -80,6 +83,8 @@ public class ConfigTest {
                 int times = 10000;
                 while (times > 0) {
                     try {
+                        System.out.println("3");
+    
                         boolean result = configService
                                 .publishConfig("test", "test", "value" + System.currentTimeMillis());
     

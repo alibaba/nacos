@@ -35,4 +35,6 @@ public class ConfigResponseTypeConstants extends ResponseTypeConstants {
     
     public static final String CONFIG_NOTIFY = "CONFIG_NOTIFY";
     
+    public static final String CONFIG_CHANGE_CLUSTER_SYNC = "CONFIG_CHANGE_CLUSTER_SYNC";
+    
 }

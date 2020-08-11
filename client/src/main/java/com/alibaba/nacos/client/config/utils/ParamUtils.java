@@ -218,4 +218,13 @@ public class ParamUtils {
         return "Y".equalsIgnoreCase(useHttpSwitch);
     }
     
+    /**
+     * get connection type for remote.
+     *
+     * @return
+     */
+    public static String configRemoteConnectionType() {
+        String remoteConnectionType = System.getProperty("nacos.remote.config.connectiontype");
+        return remoteConnectionType;
+    }
 }

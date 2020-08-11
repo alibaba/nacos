@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
+import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
@@ -53,6 +54,9 @@ public class ResponseRegistry {
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_QUERY, ConfigQueryResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_PUBLISH, ConfigPubishResponse.class);
         REGISTRY_RESPONSES.put(ConfigResponseTypeConstants.CONFIG_REMOVE, ConfigRemoveResponse.class);
+        //config on cluster.
+        REGISTRY_RESPONSES
+                .put(ConfigResponseTypeConstants.CONFIG_CHANGE_CLUSTER_SYNC, ConfigChangeClusterSyncResponse.class);
         
         //naming response registry
         REGISTRY_RESPONSES.put(NamingRemoteConstants.REGISTER_INSTANCE, InstanceResponse.class);

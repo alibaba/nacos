@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.rsocket.RsocketRpcClient;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * RpcClientFactory.to support muti client for diffrent modules of usage.
@@ -33,13 +35,47 @@ public class RpcClientFactory {
     
     static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
     
-    public static RpcClient getClient(String clientName, ConnectionType connectionType) {
+    /**
+     * get all client.
+     *
+     * @return client collection.
+     */
+    public static Set<Map.Entry<String, RpcClient>> getAllClientEntrys() {
+        Set<Map.Entry<String, RpcClient>> entries = clientMap.entrySet();
+        return entries;
+    }
+    
+    /**
+     * shut down client.
+     *
+     * @param clientName client name.
+     */
+    public static void shutDownClient(String clientName) throws NacosException {
+        RpcClient rpcClient = clientMap.get(clientName);
+        if (rpcClient != null) {
+            rpcClient.shutdown();
+        }
+    }
+    
+    public static RpcClient getClient(String clientName) {
+        
+        return clientMap.get(clientName);
+    }
+    
+    /**
+     * create a rpc client.
+     *
+     * @param clientName     client name.
+     * @param connectionType client type.
+     * @return
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType) {
         synchronized (clientMap) {
             if (clientMap.get(clientName) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
                     moduleClient = new GrpcClient();
-        
+    
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
                     moduleClient = new RsocketRpcClient();
                 }
