@@ -37,11 +37,9 @@ public final class ConfigParseUtils {
     
     private static final String LINK_CHAR = "#@#";
     
-    @SuppressWarnings("checkstyle:StaticVariableName")
-    private static Map<String, ConfigParse> DEFAULT_CONFIG_PARSE_MAP = new HashMap(8);
+    private static Map<String, ConfigParse> defaultConfigParseMap = new HashMap(8);
     
-    @SuppressWarnings("checkstyle:StaticVariableName")
-    private static Map<String, Map<String, ConfigParse>> CUSTOMER_CONFIG_PARSE_MAP = new HashMap(8);
+    private static Map<String, Map<String, ConfigParse>> customerConfigParseMap = new HashMap(8);
     
     static {
         
@@ -51,18 +49,18 @@ public final class ConfigParseUtils {
         DefaultXmlConfigParse xmlConfigParse = new DefaultXmlConfigParse();
         
         // register nacos default ConfigParse
-        DEFAULT_CONFIG_PARSE_MAP.put(jsonConfigParse.processType().toLowerCase(), jsonConfigParse);
-        DEFAULT_CONFIG_PARSE_MAP.put(propertiesConfigParse.processType().toLowerCase(), propertiesConfigParse);
-        DEFAULT_CONFIG_PARSE_MAP.put(yamlConfigParse.processType().toLowerCase(), yamlConfigParse);
-        DEFAULT_CONFIG_PARSE_MAP.put(xmlConfigParse.processType().toLowerCase(), xmlConfigParse);
+        defaultConfigParseMap.put(jsonConfigParse.processType().toLowerCase(), jsonConfigParse);
+        defaultConfigParseMap.put(propertiesConfigParse.processType().toLowerCase(), propertiesConfigParse);
+        defaultConfigParseMap.put(yamlConfigParse.processType().toLowerCase(), yamlConfigParse);
+        defaultConfigParseMap.put(xmlConfigParse.processType().toLowerCase(), xmlConfigParse);
         
         // register customer ConfigParse
         ServiceLoader<ConfigParse> configParses = ServiceLoader.load(ConfigParse.class);
         StringBuilder sb = new StringBuilder();
         for (ConfigParse configParse : configParses) {
             String type = configParse.processType().toLowerCase();
-            if (!CUSTOMER_CONFIG_PARSE_MAP.containsKey(type)) {
-                CUSTOMER_CONFIG_PARSE_MAP.put(type, new HashMap<String, ConfigParse>(1));
+            if (!customerConfigParseMap.containsKey(type)) {
+                customerConfigParseMap.put(type, new HashMap<String, ConfigParse>(1));
             }
             sb.setLength(0);
             sb.append(configParse.dataId()).append(LINK_CHAR).append(configParse.group());
@@ -70,14 +68,14 @@ public final class ConfigParseUtils {
                 // If the user does not set the data id and group processed by config
                 // parse,
                 // this type of config is resolved globally by default
-                DEFAULT_CONFIG_PARSE_MAP.put(type, configParse);
+                defaultConfigParseMap.put(type, configParse);
             } else {
-                CUSTOMER_CONFIG_PARSE_MAP.get(type).put(sb.toString(), configParse);
+                customerConfigParseMap.get(type).put(sb.toString(), configParse);
             }
         }
         
-        DEFAULT_CONFIG_PARSE_MAP = Collections.unmodifiableMap(DEFAULT_CONFIG_PARSE_MAP);
-        CUSTOMER_CONFIG_PARSE_MAP = Collections.unmodifiableMap(CUSTOMER_CONFIG_PARSE_MAP);
+        defaultConfigParseMap = Collections.unmodifiableMap(defaultConfigParseMap);
+        customerConfigParseMap = Collections.unmodifiableMap(customerConfigParseMap);
     }
     
     /**
@@ -86,7 +84,6 @@ public final class ConfigParseUtils {
      * @param context config context
      * @param type    config type
      * @return {@link Properties}
-     *
      */
     
     public static Properties toProperties(final String context, String type) {
@@ -98,8 +95,8 @@ public final class ConfigParseUtils {
         type = type.toLowerCase();
         
         Properties properties = new Properties();
-        if (DEFAULT_CONFIG_PARSE_MAP.containsKey(type)) {
-            ConfigParse configParse = DEFAULT_CONFIG_PARSE_MAP.get(type);
+        if (defaultConfigParseMap.containsKey(type)) {
+            ConfigParse configParse = defaultConfigParseMap.get(type);
             properties.putAll(configParse.parse(context));
             return properties;
         } else {
@@ -127,17 +124,17 @@ public final class ConfigParseUtils {
         String configParseKey = dataId + LINK_CHAR + group;
         Properties properties = new Properties();
         
-        if (CUSTOMER_CONFIG_PARSE_MAP.isEmpty() || LINK_CHAR.equals(configParseKey)) {
+        if (customerConfigParseMap.isEmpty() || LINK_CHAR.equals(configParseKey)) {
             return toProperties(context, type);
         }
-        if (CUSTOMER_CONFIG_PARSE_MAP.get(type) == null || CUSTOMER_CONFIG_PARSE_MAP.get(type).isEmpty()) {
+        if (customerConfigParseMap.get(type) == null || customerConfigParseMap.get(type).isEmpty()) {
             return toProperties(context, type);
         }
-        if (CUSTOMER_CONFIG_PARSE_MAP.get(type).get(configParseKey) == null) {
+        if (customerConfigParseMap.get(type).get(configParseKey) == null) {
             return toProperties(context, type);
         } else {
-            if (CUSTOMER_CONFIG_PARSE_MAP.containsKey(type)) {
-                ConfigParse configParse = CUSTOMER_CONFIG_PARSE_MAP.get(type).get(configParseKey);
+            if (customerConfigParseMap.containsKey(type)) {
+                ConfigParse configParse = customerConfigParseMap.get(type).get(configParseKey);
                 if (configParse == null) {
                     throw new NoSuchElementException("This config can't find ConfigParse to parse");
                 }
