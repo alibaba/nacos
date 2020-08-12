@@ -169,7 +169,7 @@ public class DataSyncer {
         submit(syncTask, getRetryTime(syncTask.getRetryCount()));
     }
     
-    private static long getRetryTime(int count) {
+    public static long getRetryTime(int count) {
         switch (count) {
             case 0: {
                 return 0;
