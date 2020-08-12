@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -92,18 +93,24 @@ public class AsyncNotifyService {
                     Collection<Member> ipList = memberManager.allMembers();
                     
                     // In fact, any type of queue here can be
-                    //                    Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
-                    //                    for (Member member : ipList) {
-                    //                        queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
-                    //                                evt.isBeta));
-                    //                    }
-                    //                    ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, queue));
-                    //  todo compatibility.
-                    Queue<NotifySingleRpcTask> queue = new LinkedList<NotifySingleRpcTask>();
+                    Queue<NotifySingleTask> httpQueue = new LinkedList<NotifySingleTask>();
+                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
+                    
                     for (Member member : ipList) {
-                        queue.add(new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, member));
+                        if (MemberUtils.getSupportedConnectionType(member) == null) {
+                            httpQueue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
+                                    evt.isBeta));
+                        } else {
+                            rpcQueue.add(
+                                    new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, member));
+                        }
                     }
-                    ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(queue));
+                    if (!httpQueue.isEmpty()) {
+                        ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, httpQueue));
+                    }
+                    if (!rpcQueue.isEmpty()) {
+                        ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
+                    }
                     
                 }
             }
