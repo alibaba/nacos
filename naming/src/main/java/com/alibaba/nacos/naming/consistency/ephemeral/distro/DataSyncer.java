@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,39 +41,49 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Data replicator
+ * Data replicator.
  *
  * @author nkorange
  * @since 1.0.0
  */
 @Component
-@DependsOn("serverListManager")
+@DependsOn("ProtocolManager")
 public class DataSyncer {
-
-    @Autowired
-    private DataStore dataStore;
-
-    @Autowired
-    private GlobalConfig partitionConfig;
-
-    @Autowired
-    private Serializer serializer;
-
-    @Autowired
-    private DistroMapper distroMapper;
-
-    @Autowired
-    private ServerListManager serverListManager;
-
-    private Map<String, String> taskMap = new ConcurrentHashMap<>();
-
+    
+    private final DataStore dataStore;
+    
+    private final GlobalConfig partitionConfig;
+    
+    private final Serializer serializer;
+    
+    private final DistroMapper distroMapper;
+    
+    private final ServerMemberManager memberManager;
+    
+    private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
+    
+    public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig, Serializer serializer,
+            DistroMapper distroMapper, ServerMemberManager memberManager) {
+        this.dataStore = dataStore;
+        this.partitionConfig = partitionConfig;
+        this.serializer = serializer;
+        this.distroMapper = distroMapper;
+        this.memberManager = memberManager;
+    }
+    
     @PostConstruct
     public void init() {
         startTimedSync();
     }
-
+    
+    /**
+     * Submit a {@link SyncTask} with a delay to execute.
+     *
+     * @param task  synchronize data task
+     * @param delay delay to execute
+     */
     public void submit(SyncTask task, long delay) {
-
+        
         // If it's a new task:
         if (task.getRetryCount() == 0) {
             Iterator<String> iterator = task.getKeys().iterator();
@@ -82,21 +98,21 @@ public class DataSyncer {
                 }
             }
         }
-
+        
         if (task.getKeys().isEmpty()) {
             // all keys are removed:
             return;
         }
-
+        
         GlobalExecutor.submitDataSync(() -> {
             // 1. check the server
             if (getServers() == null || getServers().isEmpty()) {
                 Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
                 return;
             }
-
+            
             List<String> keys = task.getKeys();
-
+            
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("try to sync data for this keys {}.", keys);
             }
@@ -109,9 +125,9 @@ public class DataSyncer {
                 }
                 return;
             }
-
+            
             byte[] data = serializer.serialize(datumMap);
-
+            
             long timestamp = System.currentTimeMillis();
             boolean success = NamingProxy.syncData(data, task.getTargetServer());
             if (!success) {
@@ -129,13 +145,12 @@ public class DataSyncer {
             }
         }, delay);
     }
-
-    public void retrySync(SyncTask syncTask) {
-
-        Server server = new Server();
-        server.setIp(syncTask.getTargetServer().split(":")[0]);
-        server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
-        if (!getServers().contains(server)) {
+    
+    private void retrySync(SyncTask syncTask) {
+        Member member = new Member();
+        member.setIp(syncTask.getTargetServer().split(":")[0]);
+        member.setPort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
+        if (!getServers().contains(member)) {
             // if server is no longer in healthy server list, ignore this task:
             //fix #1665 remove existing tasks
             if (syncTask.getKeys() != null) {
@@ -145,65 +160,65 @@ public class DataSyncer {
             }
             return;
         }
-
+        
         // TODO may choose other retry policy.
         submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
-
+    
     public void startTimedSync() {
         GlobalExecutor.schedulePartitionDataTimedSync(new TimedSync());
     }
-
+    
     public class TimedSync implements Runnable {
-
+        
         @Override
         public void run() {
-
+            
             try {
-
+                
                 if (Loggers.DISTRO.isDebugEnabled()) {
                     Loggers.DISTRO.debug("server list is: {}", getServers());
                 }
-
+                
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
                     if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                         continue;
                     }
-
+                    
                     Datum datum = dataStore.get(key);
                     if (datum == null) {
                         continue;
                     }
                     keyChecksums.put(key, datum.value.getChecksum());
                 }
-
+                
                 if (keyChecksums.isEmpty()) {
                     return;
                 }
-
+                
                 if (Loggers.DISTRO.isDebugEnabled()) {
                     Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
-
-                for (Server member : getServers()) {
-                    if (NetUtils.localServer().equals(member.getKey())) {
+                
+                for (Member member : getServers()) {
+                    if (NetUtils.localServer().equals(member.getAddress())) {
                         continue;
                     }
-                    NamingProxy.syncCheckSums(keyChecksums, member.getKey());
+                    NamingProxy.syncCheckSums(keyChecksums, member.getAddress());
                 }
             } catch (Exception e) {
                 Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
-
+        
     }
-
-    public List<Server> getServers() {
-        return serverListManager.getHealthyServers();
+    
+    public Collection<Member> getServers() {
+        return memberManager.allMembers();
     }
-
+    
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
     }

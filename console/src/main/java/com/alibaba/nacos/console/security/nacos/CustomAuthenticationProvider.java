@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
@@ -25,32 +26,32 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 /**
- * auth provider
+ * auth provider.
  *
  * @author wfnuser
  */
 @Component
 public class CustomAuthenticationProvider implements AuthenticationProvider {
-
+    
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
-
+    
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-
+        
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
+        
         if (!password.equals(userDetails.getPassword())) {
             return new UsernamePasswordAuthenticationToken(username, null, null);
         }
         return null;
     }
-
+    
     @Override
     public boolean supports(Class<?> aClass) {
         return aClass.equals(UsernamePasswordAuthenticationToken.class);
     }
-
+    
 }

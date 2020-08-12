@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.listener;
 
 import java.util.concurrent.Executor;
 
 /**
- * Listener Adapter,use default notify thread
+ * Listener Adapter,use default notify thread.
  *
  * @author water.lyl
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractListener implements Listener {
-
+    
     /**
-     * Use default executor
+     * Use default executor.
      */
     @Override
     public Executor getExecutor() {
         return null;
     }
-
+    
 }

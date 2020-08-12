@@ -1,9 +1,12 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,7 +46,7 @@ import { connect } from 'react-redux';
 import { getConfigs } from '../../../reducers/configuration';
 
 import './index.scss';
-import { LANGUAGE_KEY } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
 
 const { Panel } = Collapse;
 const configsTableSelected = new Map();
@@ -81,7 +84,7 @@ class ConfigurationManagement extends React.Component {
       value: '',
       visible: false,
       total: 0,
-      pageSize: 10,
+      pageSize: getParams('pageSize') ? getParams('pageSize') : 10,
       currentPage: 1,
       dataSource: [],
       fieldValue: [],
@@ -249,15 +252,21 @@ class ConfigurationManagement extends React.Component {
     }
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
+    const prePageNo = getParams('pageNo');
+    const prePageSize = getParams('pageSize');
+    this.pageNo = prePageNo ? prePageNo : pageNo;
+    this.pageSize = prePageSize ? prePageSize : this.state.pageSize;
     const params = {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
       config_tags: this.state.config_tags.join(','),
-      pageNo,
-      pageSize: this.state.pageSize,
+      pageNo: prePageNo ? prePageNo : pageNo,
+      pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
     };
+    setParams('pageSize', null);
+    setParams('pageNo', null);
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
       params.search = 'blur';
     } else {
@@ -511,7 +520,7 @@ class ConfigurationManagement extends React.Component {
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&searchDataId=${
         this.dataId
-      }&searchGroup=${this.group}`
+      }&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${this.pageNo}`
     );
   }
 
@@ -523,7 +532,9 @@ class ConfigurationManagement extends React.Component {
         record.group
       }&namespace=${this.tenant}&edasAppName=${this.edasAppName}&edasAppId=${
         this.edasAppId
-      }&searchDataId=${this.dataId}&searchGroup=${this.group}`
+      }&searchDataId=${this.dataId}&searchGroup=${this.group}&pageSize=${this.pageSize}&pageNo=${
+        this.pageNo
+      }`
     );
   }
 
@@ -1200,6 +1211,7 @@ class ConfigurationManagement extends React.Component {
               <Form inline>
                 <Form.Item label="Data ID:">
                   <Input
+                    defaultValue={this.dataId}
                     htmlType="text"
                     placeholder={locale.fuzzyd}
                     style={{ width: 200 }}
@@ -1372,7 +1384,7 @@ class ConfigurationManagement extends React.Component {
                 </div>
                 <Pagination
                   style={{ float: 'right' }}
-                  pageSizeList={[10, 20, 30]}
+                  pageSizeList={ GLOBAL_PAGE_SIZE_LIST }
                   pageSizePosition="start"
                   pageSizeSelector="dropdown"
                   popupProps={{ align: 'bl tl' }}

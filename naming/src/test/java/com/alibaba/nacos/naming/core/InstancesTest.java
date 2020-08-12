@@ -13,33 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.core;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-/**
- * @author lkxiaolou
- */
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+
+import static org.junit.Assert.assertEquals;
+
 public class InstancesTest {
-
-    private static MessageDigest MESSAGE_DIGEST;
-
+    
+    private static MessageDigest messageDigest;
+    
     static {
         try {
-            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
+            messageDigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            MESSAGE_DIGEST = null;
+            messageDigest = null;
         }
     }
-
-    private static ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
+    
+    private static final ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
         @Override
         protected MessageDigest initialValue() {
             try {
@@ -49,13 +56,13 @@ public class InstancesTest {
             }
         }
     };
-
+    
     @Test
     public void checkSumNotThreadSafe() throws Exception {
-
+        
         final AtomicBoolean catchException = new AtomicBoolean(false);
         CountDownLatch countDownLatch = new CountDownLatch(4);
-
+        
         for (int i = 0; i < 4; i++) {
             Thread thread = new Thread(new Runnable() {
                 @Override
@@ -75,18 +82,48 @@ public class InstancesTest {
             });
             thread.start();
         }
-
+        
         countDownLatch.await();
-
+        
         assert catchException.get();
     }
-
-    //@Test
-    // 跑起来比较久，所以注释掉
+    
+    @Test
+    public void testToString() {
+        Instances actual = new Instances();
+        Collection<Instance> instancesCase = createInstancesCase();
+        actual.getInstanceList().addAll(instancesCase);
+        String expected = "{\"instanceList\":[" + StringUtils
+                .join(instancesCase.stream().map(Instance::toJson).collect(Collectors.toList()), ",") + "]}";
+        assertEquals(expected, actual.toString());
+    }
+    
+    @Test
+    public void testDeserializeFromJson() throws Exception {
+        Collection<Instance> expected = createInstancesCase();
+        String instancesJson = "{\"instanceList\":[" + StringUtils
+                .join(expected.stream().map(Instance::toJson).collect(Collectors.toList()), ",") + "]}";
+        Instances actual = JacksonUtils.toObj(instancesJson, Instances.class);
+        assertEquals(expected, actual.getInstanceList());
+    }
+    
+    private Collection<Instance> createInstancesCase() {
+        Collection<Instance> result = new ArrayList<>();
+        Instance instanceWithBasicParam = new Instance("1.1.1.1", 1111);
+        Instance instanceWithCluster = new Instance("1.1.1.1", 1112, "TEST");
+        Instance instanceWithAllParam = new Instance("1.1.1.1", 1112, "TEST", "TENANT", "APP");
+        result.add(instanceWithBasicParam);
+        result.add(instanceWithCluster);
+        result.add(instanceWithAllParam);
+        return result;
+    }
+    
+    @Test
+    @Ignore("跑起来慢，所以先忽略")
     public void checkSumThreadSafe() throws Exception {
-
+        
         CountDownLatch countDownLatch = new CountDownLatch(4);
-
+        
         for (int i = 0; i < 4; i++) {
             Thread thread = new Thread(new Runnable() {
                 @Override
@@ -101,12 +138,13 @@ public class InstancesTest {
         }
         countDownLatch.await();
     }
-
+    
     private String checkSumThreadNotSafeVersion(String checkString) {
-        return new BigInteger(1, MESSAGE_DIGEST.digest((checkString).getBytes(Charset.forName("UTF-8")))).toString(16);
+        return new BigInteger(1, messageDigest.digest((checkString).getBytes(Charset.forName("UTF-8")))).toString(16);
     }
-
+    
     private String checkSumThreadSafeVersion(String checkString) {
-        return new BigInteger(1, MESSAGE_DIGEST_LOCAL.get().digest((checkString).getBytes(Charset.forName("UTF-8")))).toString(16);
+        return new BigInteger(1, MESSAGE_DIGEST_LOCAL.get().digest((checkString).getBytes(Charset.forName("UTF-8"))))
+                .toString(16);
     }
 }

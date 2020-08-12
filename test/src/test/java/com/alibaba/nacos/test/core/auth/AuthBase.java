@@ -15,11 +15,13 @@
  */
 package com.alibaba.nacos.test.core.auth;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.Assert;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -65,12 +67,13 @@ public class AuthBase extends HttpClient4Test {
             HttpMethod.POST);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.containsKey("accessToken"));
-        return json.getString("accessToken");
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertTrue(json.has("accessToken"));
+        return json.get("accessToken").textValue();
     }
 
     protected void init(int port) throws Exception {
+        AuthConfigs.setCachingEnabled(false);
         TimeUnit.SECONDS.sleep(5L);
         String url = String.format("http://localhost:%d/", port);
         System.setProperty("nacos.core.auth.enabled", "true");
@@ -86,7 +89,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Create a user:
@@ -99,6 +102,7 @@ public class AuthBase extends HttpClient4Test {
             String.class,
             HttpMethod.POST);
 
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Create a user:
@@ -111,6 +115,7 @@ public class AuthBase extends HttpClient4Test {
             String.class,
             HttpMethod.POST);
 
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Create a role:
@@ -123,6 +128,7 @@ public class AuthBase extends HttpClient4Test {
             String.class,
             HttpMethod.POST);
 
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Create a role:
@@ -134,7 +140,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Create a role:
@@ -146,7 +152,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Add read permission of namespace1 to role1:
@@ -159,7 +165,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Add write permission of namespace1 to role2:
@@ -172,7 +178,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Add read/write permission of namespace1 to role3:
@@ -185,7 +191,7 @@ public class AuthBase extends HttpClient4Test {
                 .done(),
             String.class,
             HttpMethod.POST);
-
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // Init properties:

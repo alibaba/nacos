@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.core.auth;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,23 +29,23 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Secured {
-
+    
     /**
-     * The action type of the request
+     * The action type of the request.
      *
      * @return action type, default READ
      */
     ActionTypes action() default ActionTypes.READ;
-
+    
     /**
-     * The name of resource related to the request
+     * The name of resource related to the request.
      *
      * @return resource name
      */
     String resource() default StringUtils.EMPTY;
-
+    
     /**
-     * Resource name parser. Should have lower priority than name()
+     * Resource name parser. Should have lower priority than resource().
      *
      * @return class type of resource parser
      */

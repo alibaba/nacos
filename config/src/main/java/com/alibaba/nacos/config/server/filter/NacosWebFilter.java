@@ -13,66 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import org.springframework.core.annotation.Order;
 
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import java.io.IOException;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**
- * encode filter
+ * Web encode filter.
  *
  * @author Nacos
  */
-@Order(1)
-@WebFilter(filterName = "webFilter", urlPatterns = "/*")
 public class NacosWebFilter implements Filter {
-
-    static private String webRootPath;
-
-    static public String rootPath() {
+    
+    private static String webRootPath;
+    
+    public static String rootPath() {
         return webRootPath;
     }
-
+    
     /**
-     * 方便测试
+     * Easy for testing.
      *
-     * @param path web path
+     * @param path web path.
      */
-    static public void setWebRootPath(String path) {
+    public static void setWebRootPath(String path) {
         webRootPath = path;
     }
-
+    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         ServletContext ctx = filterConfig.getServletContext();
         setWebRootPath(ctx.getRealPath("/"));
     }
-
+    
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
         request.setCharacterEncoding(Constants.ENCODE);
         response.setContentType("application/json;charset=" + Constants.ENCODE);
-
+        
         try {
             chain.doFilter(request, response);
-        } catch (IOException ioe) {
-            defaultLog.debug("Filter catch exception, " + ioe.toString(), ioe);
+        } catch (IOException | ServletException ioe) {
+            DEFAULT_LOG.debug("Filter catch exception, " + ioe.toString(), ioe);
             throw ioe;
-        } catch (ServletException se) {
-            defaultLog.debug("Filter catch exception, " + se.toString(), se);
-            throw se;
         }
     }
-
+    
     @Override
     public void destroy() {
     }
-
 }

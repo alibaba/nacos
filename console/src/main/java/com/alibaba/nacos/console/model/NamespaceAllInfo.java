@@ -13,32 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.console.model;
 
 /**
- * all namespace info
+ * all namespace info.
  *
  * @author Nacos
  */
 public class NamespaceAllInfo extends Namespace {
-
+    
     private String namespaceDesc;
-
+    
     public String getNamespaceDesc() {
         return namespaceDesc;
     }
-
+    
     public void setNamespaceDesc(String namespaceDesc) {
         this.namespaceDesc = namespaceDesc;
     }
-
+    
     public NamespaceAllInfo() {
     }
-
+    
     public NamespaceAllInfo(String namespace, String namespaceShowName, int quota, int configCount, int type,
-                            String namespaceDesc) {
+            String namespaceDesc) {
         super(namespace, namespaceShowName, quota, configCount, type);
         this.namespaceDesc = namespaceDesc;
     }
-
+    
 }

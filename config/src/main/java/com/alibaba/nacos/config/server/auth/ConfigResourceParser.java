@@ -13,51 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.core.auth.Resource;
 import com.alibaba.nacos.core.auth.ResourceParser;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
- * Config resource parser
+ * Config resource parser.
  *
  * @author nkorange
  * @since 1.2.0
  */
 public class ConfigResourceParser implements ResourceParser {
-
+    
     private static final String AUTH_CONFIG_PREFIX = "config/";
-
+    
     @Override
     public String parseName(Object request) {
         HttpServletRequest req = (HttpServletRequest) request;
         String namespaceId = req.getParameter("tenant");
         String groupName = req.getParameter("group");
         String dataId = req.getParameter("dataId");
-
+        
         StringBuilder sb = new StringBuilder();
-
+        
         if (StringUtils.isNotBlank(namespaceId)) {
             sb.append(namespaceId);
         }
-
+        
         sb.append(Resource.SPLITTER);
-
+        
         if (StringUtils.isBlank(dataId)) {
-            sb.append("*")
-                .append(Resource.SPLITTER)
-                .append(AUTH_CONFIG_PREFIX)
-                .append("*");
+            sb.append("*").append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
         } else {
-            sb.append(groupName)
-                .append(Resource.SPLITTER)
-                .append(AUTH_CONFIG_PREFIX)
-                .append(dataId);
+            sb.append(groupName).append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
         }
-
+        
         return sb.toString();
     }
 }

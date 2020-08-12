@@ -17,15 +17,15 @@
 package com.alibaba.nacos.core.auth;
 
 /**
- * Types of all auth implementations
+ * Types of all auth implementations.
  *
  * @author nkorange
  * @since 1.2.0
  */
 public enum AuthSystemTypes {
-
+    
     /**
-     * Nacos builtin auth system
+     * Nacos builtin auth system.
      */
     NACOS
 }

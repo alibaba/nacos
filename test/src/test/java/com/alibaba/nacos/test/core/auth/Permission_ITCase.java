@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.test.core.auth;
 
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.core.auth.Permission;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,8 +43,8 @@ import java.util.concurrent.TimeUnit;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "server.port=7001"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class Permission_ITCase extends HttpClient4Test {
 
     @LocalServerPort
@@ -124,9 +124,9 @@ public class Permission_ITCase extends HttpClient4Test {
             HttpMethod.POST);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.containsKey("accessToken"));
-        accessToken = json.getString("accessToken");
+        JsonNode json = JacksonUtils.toObj(response.getBody());
+        Assert.assertTrue(json.has("accessToken"));
+        accessToken = json.get("accessToken").textValue();
     }
 
     @Test
@@ -195,10 +195,10 @@ public class Permission_ITCase extends HttpClient4Test {
             String.class,
             HttpMethod.GET);
 
+        System.out.println(response);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        Page<Permission> permissionPage = JSON.parseObject(response.getBody(), new TypeReference<Page<Permission>>() {
-        });
+        Page<Permission> permissionPage = JacksonUtils.toObj(response.getBody(), new TypeReference<Page<Permission>>() {});
 
         Assert.assertNotNull(permissionPage);
         Assert.assertNotNull(permissionPage.getPageItems());
@@ -244,8 +244,7 @@ public class Permission_ITCase extends HttpClient4Test {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        permissionPage = JSON.parseObject(response.getBody(), new TypeReference<Page<Permission>>() {
-        });
+        permissionPage = JacksonUtils.toObj(response.getBody(), new TypeReference<Page<Permission>>() {});
 
         Assert.assertNotNull(permissionPage);
         Assert.assertNotNull(permissionPage.getPageItems());
@@ -290,8 +289,7 @@ public class Permission_ITCase extends HttpClient4Test {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        permissionPage = JSON.parseObject(response.getBody(), new TypeReference<Page<Permission>>() {
-        });
+        permissionPage = JacksonUtils.toObj(response.getBody(), new TypeReference<Page<Permission>>() {});
 
         Assert.assertNotNull(permissionPage);
         Assert.assertNotNull(permissionPage.getPageItems());
