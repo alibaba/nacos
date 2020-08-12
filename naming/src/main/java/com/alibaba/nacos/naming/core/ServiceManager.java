@@ -471,9 +471,9 @@ public class ServiceManager implements RecordListener<Service> {
             service.validate();
             
             putServiceAndInit(service);
-            if (!local) {
-                addOrReplaceService(service);
-            }
+        }
+        if (!local) {
+            addOrReplaceService(service);
         }
     }
     
