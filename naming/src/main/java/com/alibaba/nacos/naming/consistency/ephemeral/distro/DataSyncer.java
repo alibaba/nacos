@@ -60,10 +60,12 @@ public class DataSyncer {
 
     private final ServerMemberManager memberManager;
 
+    private final int syncRetryTimes = 15;
+
     private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
 
     public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig, Serializer serializer,
-            DistroMapper distroMapper, ServerMemberManager memberManager) {
+                      DistroMapper distroMapper, ServerMemberManager memberManager) {
         this.dataStore = dataStore;
         this.partitionConfig = partitionConfig;
         this.serializer = serializer;
@@ -161,7 +163,7 @@ public class DataSyncer {
             return;
         }
 
-        if(syncTask.getRetryCount() > 15){
+        if (syncTask.getRetryCount() > syncRetryTimes) {
             Loggers.DISTRO.warn("server retry fail:{}", syncTask.getTargetServer());
             return;
         }
@@ -169,54 +171,55 @@ public class DataSyncer {
         submit(syncTask, getRetryTime(syncTask.getRetryCount()));
     }
 
-    private static long getRetryTime(int count){
-        switch (count){
-            case 0:{
+    private static long getRetryTime(int count) {
+        switch (count) {
+            case 0: {
                 return 0;
             }
-            case 1:{
-                return 5*1000;
+            case 1: {
+                return 5 * 1000;
             }
-            case 2:{
-                return 10*1000;
+            case 2: {
+                return 10 * 1000;
             }
-            case 3:{
-                return 15*1000;
+            case 3: {
+                return 15 * 1000;
             }
-            case 4:{
-                return 30*1000;
+            case 4: {
+                return 30 * 1000;
             }
-            case 5:{
-                return 60*1000;
+            case 5: {
+                return 60 * 1000;
             }
-            case 6:{
-                return 5*60*1000;
+            case 6: {
+                return 5 * 60 * 1000;
             }
-            case 7:{
-                return 10*60*1000;
+            case 7: {
+                return 10 * 60 * 1000;
             }
-            case 8:{
-                return 15*60*1000;
+            case 8: {
+                return 15 * 60 * 1000;
             }
-            case 9:{
-                return 30*60*1000;
+            case 9: {
+                return 30 * 60 * 1000;
             }
-            case 10:{
-                return 60*60*1000;
+            case 10: {
+                return 60 * 60 * 1000;
             }
-            case 11:{
-                return 2*60*60*1000;
+            case 11: {
+                return 2 * 60 * 60 * 1000;
             }
-            case 12:{
-                return 4*60*60*1000;
+            case 12: {
+                return 4 * 60 * 60 * 1000;
             }
-            case 13:{
-                return 8*60*60*1000;
+            case 13: {
+                return 8 * 60 * 60 * 1000;
             }
-            case 14:{
-                return 12*60*60*1000;
+            case 14: {
+                return 12 * 60 * 60 * 1000;
             }
-            default: return 24*60*60*1000;
+            default:
+                return 24 * 60 * 60 * 1000;
         }
     }
 
