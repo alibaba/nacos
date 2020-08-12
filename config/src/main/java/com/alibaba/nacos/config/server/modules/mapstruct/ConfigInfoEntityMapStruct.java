@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.modules.mapstruct;
 
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -37,9 +38,7 @@ public interface ConfigInfoEntityMapStruct {
 
     List<ConfigAllInfo> convertConfigAllInfoList(List<ConfigInfoEntity> list);
 
-    @Mappings({
-        @Mapping(source="groupId", target="group")
-    })
+    @Mappings({@Mapping(source = "groupId", target = "group")})
     ConfigInfoBase convertConfigInfoBase(ConfigInfoEntity configInfo);
 
     ConfigInfoEntity convertConfigInfoEntity(ConfigInfo configInfo);
