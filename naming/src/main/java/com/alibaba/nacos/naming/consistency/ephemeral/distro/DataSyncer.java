@@ -49,19 +49,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @DependsOn("ProtocolManager")
 public class DataSyncer {
-    
+
     private final DataStore dataStore;
-    
+
     private final GlobalConfig partitionConfig;
-    
+
     private final Serializer serializer;
-    
+
     private final DistroMapper distroMapper;
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
-    
+
     public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig, Serializer serializer,
             DistroMapper distroMapper, ServerMemberManager memberManager) {
         this.dataStore = dataStore;
@@ -70,12 +70,12 @@ public class DataSyncer {
         this.distroMapper = distroMapper;
         this.memberManager = memberManager;
     }
-    
+
     @PostConstruct
     public void init() {
         startTimedSync();
     }
-    
+
     /**
      * Submit a {@link SyncTask} with a delay to execute.
      *
@@ -83,7 +83,7 @@ public class DataSyncer {
      * @param delay delay to execute
      */
     public void submit(SyncTask task, long delay) {
-        
+
         // If it's a new task:
         if (task.getRetryCount() == 0) {
             Iterator<String> iterator = task.getKeys().iterator();
@@ -98,21 +98,21 @@ public class DataSyncer {
                 }
             }
         }
-        
+
         if (task.getKeys().isEmpty()) {
             // all keys are removed:
             return;
         }
-        
+
         GlobalExecutor.submitDataSync(() -> {
             // 1. check the server
             if (getServers() == null || getServers().isEmpty()) {
                 Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
                 return;
             }
-            
+
             List<String> keys = task.getKeys();
-            
+
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("try to sync data for this keys {}.", keys);
             }
@@ -125,9 +125,9 @@ public class DataSyncer {
                 }
                 return;
             }
-            
+
             byte[] data = serializer.serialize(datumMap);
-            
+
             long timestamp = System.currentTimeMillis();
             boolean success = NamingProxy.syncData(data, task.getTargetServer());
             if (!success) {
@@ -145,7 +145,7 @@ public class DataSyncer {
             }
         }, delay);
     }
-    
+
     private void retrySync(SyncTask syncTask) {
         Member member = new Member();
         member.setIp(syncTask.getTargetServer().split(":")[0]);
@@ -160,48 +160,103 @@ public class DataSyncer {
             }
             return;
         }
-        
+
+        if(syncTask.getRetryCount() > 15){
+            Loggers.DISTRO.warn("server retry fail:{}", syncTask.getTargetServer());
+            return;
+        }
         // TODO may choose other retry policy.
-        submit(syncTask, partitionConfig.getSyncRetryDelay());
+        submit(syncTask, getRetryTime(syncTask.getRetryCount()));
     }
-    
+
+    private static long getRetryTime(int count){
+        switch (count){
+            case 0:{
+                return 0;
+            }
+            case 1:{
+                return 5*1000;
+            }
+            case 2:{
+                return 10*1000;
+            }
+            case 3:{
+                return 15*1000;
+            }
+            case 4:{
+                return 30*1000;
+            }
+            case 5:{
+                return 60*1000;
+            }
+            case 6:{
+                return 5*60*1000;
+            }
+            case 7:{
+                return 10*60*1000;
+            }
+            case 8:{
+                return 15*60*1000;
+            }
+            case 9:{
+                return 30*60*1000;
+            }
+            case 10:{
+                return 60*60*1000;
+            }
+            case 11:{
+                return 2*60*60*1000;
+            }
+            case 12:{
+                return 4*60*60*1000;
+            }
+            case 13:{
+                return 8*60*60*1000;
+            }
+            case 14:{
+                return 12*60*60*1000;
+            }
+            default: return 24*60*60*1000;
+        }
+    }
+
     public void startTimedSync() {
         GlobalExecutor.schedulePartitionDataTimedSync(new TimedSync());
     }
-    
+
     public class TimedSync implements Runnable {
-        
+
         @Override
         public void run() {
-            
+
             try {
-                
+
                 if (Loggers.DISTRO.isDebugEnabled()) {
                     Loggers.DISTRO.debug("server list is: {}", getServers());
                 }
-                
+
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
                     if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                         continue;
                     }
-                    
+
                     Datum datum = dataStore.get(key);
                     if (datum == null) {
                         continue;
                     }
                     keyChecksums.put(key, datum.value.getChecksum());
                 }
-                
+
                 if (keyChecksums.isEmpty()) {
                     return;
                 }
-                
+
                 if (Loggers.DISTRO.isDebugEnabled()) {
                     Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
-                
+
                 for (Member member : getServers()) {
                     if (NetUtils.localServer().equals(member.getAddress())) {
                         continue;
@@ -212,13 +267,13 @@ public class DataSyncer {
                 Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
-        
+
     }
-    
+
     public Collection<Member> getServers() {
         return memberManager.allMembers();
     }
-    
+
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
     }
