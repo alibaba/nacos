@@ -49,6 +49,7 @@ class RolesManagement extends React.Component {
   }
 
   getRoles() {
+    this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
     this.props
       .getRoles({ pageNo, pageSize })
@@ -73,6 +74,9 @@ class RolesManagement extends React.Component {
         <div className="filter-panel">
           <Button type="primary" onClick={() => this.setState({ createRoleVisible: true })}>
             {locale.bindingRoles}
+          </Button>
+          <Button type="secondary" onClick={() => this.getRoles()}>
+            {locale.refresh}
           </Button>
         </div>
         <Table dataSource={roles.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
