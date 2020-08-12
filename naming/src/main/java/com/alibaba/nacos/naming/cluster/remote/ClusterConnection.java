@@ -20,8 +20,7 @@ import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
-
-import java.util.concurrent.Future;
+import com.alibaba.nacos.core.remote.PushFuture;
 
 /**
  * Cluster connection.
@@ -49,7 +48,7 @@ public class ClusterConnection extends Connection {
     }
     
     @Override
-    public Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception {
+    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception {
         return null;
     }
     

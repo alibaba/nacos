@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -89,9 +90,24 @@ public class MemberUtils {
         Map<String, Object> extendInfo = new HashMap<>(4);
         // The Raft Port information needs to be set by default
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
-    
         target.setExtendInfo(extendInfo);
         return target;
+    }
+    
+    /**
+     * get support member connection type.
+     *
+     * @param member
+     * @return
+     */
+    public static ConnectionType getSupportedConnectionType(Member member) {
+        Map<String, Object> extendInfo = member.getExtendInfo();
+        if (extendInfo == null || !extendInfo.containsKey(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE)) {
+            return null;
+        } else {
+            String type = (String) extendInfo.get(MemberMetaDataConstants.SUPPORT_REMOTE_C_TYPE);
+            return ConnectionType.getByType(type);
+        }
     }
     
     public static int calculateRaftPort(Member member) {

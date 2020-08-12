@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -62,6 +64,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class AsyncNotifyService {
+    
+    @Autowired
+    private DumpService dumpService;
     
     @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
@@ -183,7 +188,16 @@ public class AsyncNotifyService {
             while (!queue.isEmpty()) {
                 NotifySingleRpcTask task = queue.poll();
                 Member member = task.member;
-                if (memberManager.hasMember(member.getAddress())) {
+    
+                ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+                syncRequest.setDataId(task.getDataId());
+                syncRequest.setGroup(task.getGroup());
+                syncRequest.setIsBeta(task.isBeta ? "Y" : "N");
+                syncRequest.setLastModified(task.getLastModified());
+                syncRequest.setTag(task.tag);
+                syncRequest.setTenant(task.getTenant());
+    
+                if (memberManager.hasMember(member.getAddress()) && !memberManager.getSelf().equals(member)) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = memberManager.isUnHealth(member.getAddress());
                     if (unHealthNeedDelay) {
@@ -194,13 +208,7 @@ public class AsyncNotifyService {
                         // get delay time and set fail count to the task
                         asyncTaskExecute(task);
                     } else {
-                        ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
-                        syncRequest.setDataId(task.getDataId());
-                        syncRequest.setGroup(task.getGroup());
-                        syncRequest.setIsBeta(task.isBeta ? "Y" : "N");
-                        syncRequest.setLastModified(task.getLastModified());
-                        syncRequest.setTag(task.tag);
-                        syncRequest.setTenant(task.getTenant());
+    
                         try {
                             ConfigChangeClusterSyncResponse response = configClusterRpcClientProxy
                                     .syncConfigChange(member, syncRequest);
@@ -212,6 +220,17 @@ public class AsyncNotifyService {
                         }
                     }
                 }
+    
+                if (memberManager.getSelf().equals(member)) {
+                    if (syncRequest.isBeta()) {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP(), true);
+                    } else {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP());
+                    }
+                }
+                
             }
         }
     }

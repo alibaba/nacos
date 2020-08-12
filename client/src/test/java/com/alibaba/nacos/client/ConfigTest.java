@@ -46,8 +46,8 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
@@ -159,6 +159,7 @@ public class ConfigTest {
                     try {
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
                                 "value" + System.currentTimeMillis());
+                        System.out.println(success);
                         times--;
                         Thread.sleep(1000L);
                     } catch (Exception e) {
@@ -172,7 +173,7 @@ public class ConfigTest {
         
         });
     
-        //th.start();
+        th.start();
     
         Listener listener = new AbstractListener() {
             @Override

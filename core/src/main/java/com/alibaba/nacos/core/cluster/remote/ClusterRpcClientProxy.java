@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.cluster.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
@@ -59,6 +60,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     @PostConstruct
     public void init() {
         try {
+            NotifyCenter.registerSubscriber(this);
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
             Loggers.CLUSTER
@@ -79,7 +81,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         
         //ensure to create client of new members
         for (Member member : members) {
-            createRpcClientAndStart(member, ConnectionType.RSOCKET);
+            ConnectionType supportedConnectionType = MemberUtils.getSupportedConnectionType(member);
+            if (supportedConnectionType != null) {
+                createRpcClientAndStart(member, supportedConnectionType);
+            }
         }
         
         //shutdown and remove old members.
@@ -107,6 +112,8 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             client = RpcClientFactory.createClient(memberClientKey(member), type);
         }
         if (client.isWaitInited()) {
+            Loggers.CLUSTER.info("create a new rpc client to member - > : {}", member);
+    
             //one fixed server
             client.init(new ServerListFactory() {
                 @Override

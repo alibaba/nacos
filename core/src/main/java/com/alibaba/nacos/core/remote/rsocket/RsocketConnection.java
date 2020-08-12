@@ -24,15 +24,13 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import com.alibaba.nacos.core.remote.PushFuture;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -72,23 +70,12 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public Future<Boolean> sendRequestWithFuture(ServerPushRequest request) throws Exception {
+    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception {
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithFuture :" + request);
         final Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
-        Future<Boolean> future = new Future<Boolean>() {
-            
-            private volatile boolean cancel = false;
-            
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                return cancel = true;
-            }
-            
-            @Override
-            public boolean isCancelled() {
-                return cancel;
-            }
+    
+        PushFuture defaultPushFuture = new PushFuture() {
             
             @Override
             public boolean isDone() {
@@ -96,19 +83,16 @@ public class RsocketConnection extends Connection {
             }
             
             @Override
-            public Boolean get() throws InterruptedException, ExecutionException {
+            public boolean get() throws TimeoutException, InterruptedException {
                 return payloadMono.block() == null;
             }
             
             @Override
-            public Boolean get(long timeout, TimeUnit unit)
-                    throws InterruptedException, ExecutionException, TimeoutException {
-                
-                return payloadMono.block(Duration.ofMillis(unit.toMillis(timeout))) == null;
+            public boolean get(long timeout) throws TimeoutException, InterruptedException {
+                return payloadMono.block(Duration.ofMillis(timeout)) == null;
             }
-            
         };
-        return future;
+        return defaultPushFuture;
     }
     
     @Override
@@ -124,7 +108,7 @@ public class RsocketConnection extends Connection {
                 if (response.isSuccess()) {
                     callBack.onSuccess();
                 } else {
-                    callBack.onFail(new NacosException(response.getErrorCode(), "request fail"));
+                    callBack.onFail(new NacosException(response.getErrorCode(), response.getMessage()));
                 }
             }
         }, new Consumer<Throwable>() {

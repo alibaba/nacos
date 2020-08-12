@@ -16,20 +16,16 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * serber push ack synchronier.
@@ -39,20 +35,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RpcAckCallbackSynchronizer {
     
-    private static final Map<String, AckWaitor> ACK_WAITORS = new HashMap<String, AckWaitor>();
-    
     private static final long TIMEOUT = 60000L;
     
     static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     
-    private static final Map<String, PushCallBackWraper> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, PushCallBackWraper>()
-            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, PushCallBackWraper>() {
+    private static final Map<String, DefaultPushFuture> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, DefaultPushFuture>()
+            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, DefaultPushFuture>() {
                 @Override
-                public void onEviction(String s, PushCallBackWraper pushCallBack) {
-                    if (System.currentTimeMillis() - pushCallBack.getTimeStamp() > TIMEOUT && pushCallBack
-                            .tryDeActive()) {
-                        Loggers.CORE.warn("time out on eviction:" + pushCallBack.ackId);
-                        pushCallBack.getPushCallBack().onTimeout();
+                public void onEviction(String s, DefaultPushFuture pushCallBack) {
+                    if (System.currentTimeMillis() - pushCallBack.getTimeStamp() > TIMEOUT) {
+                        Loggers.CORE.warn("time out on eviction:" + pushCallBack.getRequestId());
+                        if (pushCallBack.getPushCallBack() != null) {
+                            pushCallBack.getPushCallBack().onTimeout();
+                        }
                     } else {
                         pushCallBack.getPushCallBack().onFail(new RuntimeException("callback pool overlimit"));
                     }
@@ -65,16 +60,18 @@ public class RpcAckCallbackSynchronizer {
             public void run() {
                 Set<String> timeOutCalls = new HashSet<>();
                 long now = System.currentTimeMillis();
-                for (Map.Entry<String, PushCallBackWraper> enrty : CALLBACK_CONTEXT.entrySet()) {
+                for (Map.Entry<String, DefaultPushFuture> enrty : CALLBACK_CONTEXT.entrySet()) {
                     if (now - enrty.getValue().getTimeStamp() > TIMEOUT) {
                         timeOutCalls.add(enrty.getKey());
                     }
                 }
                 for (String ackId : timeOutCalls) {
-                    PushCallBackWraper remove = CALLBACK_CONTEXT.remove(ackId);
-                    if (remove != null && remove.tryDeActive()) {
+                    DefaultPushFuture remove = CALLBACK_CONTEXT.remove(ackId);
+                    if (remove != null) {
                         Loggers.CORE.warn("time out on scheduler:" + ackId);
-                        remove.pushCallBack.onTimeout();
+                        if (remove.getPushCallBack() != null) {
+                            remove.getPushCallBack().onTimeout();
+                        }
                     }
                 }
             }
@@ -83,71 +80,27 @@ public class RpcAckCallbackSynchronizer {
     
     /**
      * notify  ackid.
-     *
-     * @param ackId ackId.
      */
-    public static void ackNotify(String connectionId, String ackId, boolean success) {
-        
-        PushCallBackWraper currentCallback = CALLBACK_CONTEXT.remove(ackId);
-        if (currentCallback != null && currentCallback.tryDeActive()) {
-            if (success) {
-                currentCallback.pushCallBack.onSuccess();
-            } else {
-                currentCallback.pushCallBack.onFail(new RuntimeException("client return fail"));
-            }
-        }
-        
-        AckWaitor waiter = ACK_WAITORS.remove(ackId);
-        if (waiter != null) {
-            synchronized (waiter) {
-                waiter.setSuccess(success);
-                waiter.notify();
-            }
-        }
-        
-    }
+    public static void ackNotify(String connectionId, String requestId, boolean success, Exception e) {
     
-    /**
-     * notify  ackid.
-     *
-     * @param ackId ackId.
-     */
-    public static void release(String ackId) {
-        ACK_WAITORS.remove(ackId);
-    }
+        DefaultPushFuture currentCallback = CALLBACK_CONTEXT.remove(requestId);
+        if (currentCallback == null) {
+            return;
+        }
     
-    /**
-     * notify  ackid.
-     *
-     * @param ackId ackId.
-     */
-    public static boolean waitAck(String connectionId, String ackId, long timeout) throws Exception {
-        AckWaitor waiter = ACK_WAITORS.get(ackId);
-        if (waiter != null) {
-            throw new RuntimeException("ackid conflict");
+        if (success) {
+            currentCallback.setSuccessResult();
         } else {
-            AckWaitor lock = new AckWaitor();
-            AckWaitor prev = ACK_WAITORS.putIfAbsent(ackId, lock);
-            if (prev == null) {
-                synchronized (lock) {
-                    lock.wait(timeout);
-                    return lock.success;
-                }
-            } else {
-                throw new RuntimeException("ackid conflict.");
-            }
+            currentCallback.setFailResult(e);
         }
     }
     
     /**
      * notify  ackid.
-     *
-     * @param ackId ackId.
      */
-    public static void syncCallbackOnAck(String connectionId, String ackId, PushCallBack pushCallBack)
+    public static void syncCallback(String connectionId, String requestId, DefaultPushFuture defaultPushFuture)
             throws Exception {
-        PushCallBackWraper pushCallBackPrev = CALLBACK_CONTEXT
-                .putIfAbsent(ackId, new PushCallBackWraper(pushCallBack, ackId));
+        DefaultPushFuture pushCallBackPrev = CALLBACK_CONTEXT.putIfAbsent(requestId, defaultPushFuture);
         if (pushCallBackPrev != null) {
             throw new RuntimeException("callback conflict.");
         }
@@ -162,84 +115,15 @@ public class RpcAckCallbackSynchronizer {
     
     }
     
-    static class AckWaitor {
-        
-        boolean success;
-        
-        /**
-         * Getter method for property <tt>success</tt>.
-         *
-         * @return property value of success
-         */
-        public boolean isSuccess() {
-            return success;
-        }
-        
-        /**
-         * Setter method for property <tt>success</tt>.
-         *
-         * @param success value to be assigned to property success
-         */
-        public void setSuccess(boolean success) {
-            this.success = success;
-        }
+    /**
+     * clear context of connectionId. TODO
+     *
+     * @param connetionId connetionId
+     */
+    public static void clearFuture(String connetionId, String requestId) {
+    
     }
     
-    static class PushCallBackWraper {
-        
-        long timeStamp;
-        
-        PushCallBack pushCallBack;
-        
-        String ackId;
-        
-        private AtomicBoolean active = new AtomicBoolean(true);
-        
-        public PushCallBackWraper(PushCallBack pushCallBack, String ackId) {
-            this.pushCallBack = pushCallBack;
-            this.ackId = ackId;
-            this.timeStamp = System.currentTimeMillis();
-        }
-        
-        public boolean tryDeActive() {
-            return active.compareAndSet(true, false);
-        }
-        
-        /**
-         * Getter method for property <tt>timeStamp</tt>.
-         *
-         * @return property value of timeStamp
-         */
-        public long getTimeStamp() {
-            return timeStamp;
-        }
-        
-        /**
-         * Getter method for property <tt>pushCallBack</tt>.
-         *
-         * @return property value of pushCallBack
-         */
-        public PushCallBack getPushCallBack() {
-            return pushCallBack;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PushCallBackWraper that = (PushCallBackWraper) o;
-            return Objects.equals(ackId, that.ackId);
-        }
-        
-        @Override
-        public int hashCode() {
-            return Objects.hash(ackId);
-        }
-    }
     
 }
 

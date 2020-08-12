@@ -66,7 +66,8 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
             String connectionId = grpcRequest.getMetadata().getConnectionId();
             PushAckRequest request = JacksonUtils
                     .toObj(grpcRequest.getBody().getValue().toStringUtf8(), PushAckRequest.class);
-            RpcAckCallbackSynchronizer.ackNotify(connectionId, request.getRequestId(), request.isSuccess());
+            RpcAckCallbackSynchronizer
+                    .ackNotify(connectionId, request.getRequestId(), request.isSuccess(), request.getException());
             responseObserver.onNext(GrpcUtils.convert(new ServerCheckResponse()));
             responseObserver.onCompleted();
             return;
