@@ -60,8 +60,6 @@ public class DataSyncer {
 
     private final ServerMemberManager memberManager;
 
-    private final int syncRetryTimes = 15;
-
     private Map<String, String> taskMap = new ConcurrentHashMap<>(16);
 
     public DataSyncer(DataStore dataStore, GlobalConfig partitionConfig, Serializer serializer,
@@ -163,7 +161,7 @@ public class DataSyncer {
             return;
         }
 
-        if (syncTask.getRetryCount() > syncRetryTimes) {
+        if (syncTask.getRetryCount() > partitionConfig.getSyncRetryTimes()) {
             Loggers.DISTRO.warn("server retry fail:{}", syncTask.getTargetServer());
             return;
         }
