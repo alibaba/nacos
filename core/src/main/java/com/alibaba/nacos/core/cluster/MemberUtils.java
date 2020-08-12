@@ -89,6 +89,7 @@ public class MemberUtils {
         Map<String, Object> extendInfo = new HashMap<>(4);
         // The Raft Port information needs to be set by default
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
+    
         target.setExtendInfo(extendInfo);
         return target;
     }

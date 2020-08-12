@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * ConfigClusterRpcClientProxy.
@@ -29,13 +31,14 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
  * @author liuzunfei
  * @version $Id: ConfigClusterRpcClientProxy.java, v 0.1 2020年08月11日 4:28 PM liuzunfei Exp $
  */
+@Service
 public class ConfigClusterRpcClientProxy {
     
+    @Autowired
     ClusterRpcClientProxy clusterRpcClientProxy;
     
     /**
      * sync config change request.
-     *
      * @param member
      * @param request
      * @return

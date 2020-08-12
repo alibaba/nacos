@@ -54,11 +54,11 @@ public class ConfigChangeClusterSyncRequestHandler extends RequestHandler {
         ConfigChangeClusterSyncRequest configChangeSyncRequest = (ConfigChangeClusterSyncRequest) request;
         
         if (configChangeSyncRequest.isBeta()) {
-            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getDataId(),
+            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
                     configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp(),
                     true);
         } else {
-            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getDataId(),
+            dumpService.dump(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
                     configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp());
         }
         return new ConfigChangeClusterSyncResponse();

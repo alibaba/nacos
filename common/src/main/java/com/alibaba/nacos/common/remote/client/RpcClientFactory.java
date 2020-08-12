@@ -50,11 +50,12 @@ public class RpcClientFactory {
      *
      * @param clientName client name.
      */
-    public static void shutDownClient(String clientName) throws NacosException {
+    public static void destroyClient(String clientName) throws NacosException {
         RpcClient rpcClient = clientMap.get(clientName);
         if (rpcClient != null) {
             rpcClient.shutdown();
         }
+        clientMap.remove(clientName);
     }
     
     public static RpcClient getClient(String clientName) {

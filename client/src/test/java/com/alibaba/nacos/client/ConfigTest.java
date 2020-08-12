@@ -21,6 +21,12 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -40,13 +46,45 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,127.0.0.1:8848");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
         //Thread.sleep(2000L);
+    }
+    
+    @Test
+    public void test222() throws Exception {
+        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET);
+        client.init(new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                return "127.0.0.1:8848";
+            }
+            
+            @Override
+            public String getCurrentServer() {
+                return "127.0.0.1:8848";
+            }
+        });
+        client.start();
+        ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+        syncRequest.setDataId("xiaochun.xxc1");
+        syncRequest.setGroup("xiaochun.xxc");
+        syncRequest.setIsBeta("N");
+        syncRequest.setLastModified(System.currentTimeMillis());
+        syncRequest.setTag("");
+        syncRequest.setTenant("");
+        System.out.println(client.isRunning());
+        Response response = client.request(syncRequest);
+        client.request(syncRequest);
+        
+        client.request(syncRequest);
+        System.out.println(response);
+        
     }
     
     @After
@@ -134,7 +172,7 @@ public class ConfigTest {
         
         });
     
-        th.start();
+        //th.start();
     
         Listener listener = new AbstractListener() {
             @Override
