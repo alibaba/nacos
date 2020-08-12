@@ -47,53 +47,51 @@ class NameSpace extends React.Component {
     this.getNameSpaces(0);
   }
 
-  getNameSpaces(delayTime = 2000) {
+  getNameSpaces() {
     const { locale = {} } = this.props;
     const { prompt } = locale;
     const self = this;
     self.openLoading();
-    setTimeout(() => {
-      request({
-        type: 'get',
-        beforeSend() {},
-        url: 'v1/console/namespaces',
-        success: res => {
-          if (res.code === 200) {
-            const data = res.data || [];
-            window.namespaceList = data;
+    request({
+      type: 'get',
+      beforeSend() {},
+      url: 'v1/console/namespaces',
+      success: res => {
+        if (res.code === 200) {
+          const data = res.data || [];
+          window.namespaceList = data;
 
-            for (let i = 0; i < data.length; i++) {
-              if (data[i].type === 1) {
-                this.setState({
-                  defaultNamespace: data[i].namespace,
-                });
-              }
+          for (let i = 0; i < data.length; i++) {
+            if (data[i].type === 1) {
+              this.setState({
+                defaultNamespace: data[i].namespace,
+              });
             }
-
-            this.setState({
-              dataSource: data,
-            });
-          } else {
-            Dialog.alert({
-              title: prompt,
-              content: res.message,
-            });
           }
-        },
-        complete() {
-          self.closeLoading();
-        },
-        error: res => {
-          window.namespaceList = [
-            {
-              namespace: '',
-              namespaceShowName: '公共空间',
-              type: 0,
-            },
-          ];
-        },
-      });
-    }, delayTime);
+
+          this.setState({
+            dataSource: data,
+          });
+        } else {
+          Dialog.alert({
+            title: prompt,
+            content: res.message,
+          });
+        }
+      },
+      complete() {
+        self.closeLoading();
+      },
+      error: res => {
+        window.namespaceList = [
+          {
+            namespace: '',
+            namespaceShowName: '公共空间',
+            type: 0,
+          },
+        ];
+      },
+    });
   }
 
   openLoading() {
@@ -314,6 +312,13 @@ class NameSpace extends React.Component {
                   onClick={this.addNameSpace.bind(this)}
                 >
                   {namespaceAdd}
+                </Button>
+                <Button
+                  style={{ marginRight: 0, marginTop: 10 }}
+                  type="secondary"
+                  onClick={() => this.getNameSpaces()}
+                >
+                  {locale.refresh}
                 </Button>
               </div>
               <div>

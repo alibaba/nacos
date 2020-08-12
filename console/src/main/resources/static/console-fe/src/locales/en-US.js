@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: 'Namespaces',
     namespaceNumber: 'Namespace ID',
     namespaceOperation: 'Actions',
+    refresh: 'Refresh',
   },
   ServiceList: {
     serviceList: 'Service List',
@@ -521,6 +522,7 @@ const I18N_CONF = {
     username: 'Username',
     password: 'Password',
     operation: 'Operation',
+    refresh: 'Refresh',
   },
   NewUser: {
     createUser: 'Create user',
@@ -554,6 +556,7 @@ const I18N_CONF = {
     operation: 'Operation',
     deleteRole: 'Delete',
     deleteRoleTip: 'Do you want to delete this role?',
+    refresh: 'Refresh',
   },
   NewRole: {
     bindingRoles: 'Binding roles',
@@ -576,6 +579,7 @@ const I18N_CONF = {
     readOnly: 'read only',
     writeOnly: 'write only',
     readWrite: 'Read and write',
+    refresh: 'Refresh',
   },
   NewPermissions: {
     addPermission: 'Add Permission',
