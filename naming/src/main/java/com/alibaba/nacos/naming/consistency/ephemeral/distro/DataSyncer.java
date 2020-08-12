@@ -160,9 +160,48 @@ public class DataSyncer {
             }
             return;
         }
-        
+        if(syncTask.getRetryCount() > 11) return;
         // TODO may choose other retry policy.
-        submit(syncTask, partitionConfig.getSyncRetryDelay());
+        submit(syncTask, getRetryTime(syncTask.getRetryCount()));
+    }
+    
+    private static long getRetryTime(int count){
+        switch (count){
+            case 0:{
+                return 0;
+            }
+            case 1:{
+                return 5*1000;
+            }
+            case 2:{
+                return 10*1000;
+            }
+            case 3:{
+                return 15*1000;
+            }
+            case 4:{
+                return 30*1000;
+            }
+            case 5:{
+                return 60*1000;
+            }
+            case 6:{
+                return 60*60*1000;
+            }
+            case 7:{
+                return 2*60*60*1000;
+            }
+            case 8:{
+                return 4*60*60*1000;
+            }
+            case 9:{
+                return 8*60*60*1000;
+            }
+            case 10:{
+                return 12*60*60*1000;
+            }
+            default: return 24*60*60*1000;
+        }
     }
     
     public void startTimedSync() {
