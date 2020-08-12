@@ -27,56 +27,56 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class GlobalConfig {
-
+    
     @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
     private int taskDispatchPeriod = 2000;
-
+    
     @Value("${nacos.naming.distro.batchSyncKeyCount:1000}")
     private int batchSyncKeyCount = 1000;
-
+    
     @Value("${nacos.naming.distro.syncRetryDelay:5000}")
     private long syncRetryDelay = 5000L;
-
+    
     @Value("${nacos.naming.distro.syncRetryTimes:15}")
     private int syncRetryTimes = 15;
-
+    
     @Value("${nacos.naming.data.warmup:false}")
     private boolean dataWarmup = false;
-
+    
     @Value("${nacos.naming.expireInstance:true}")
     private boolean expireInstance = true;
-
+    
     @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
     private long loadDataRetryDelayMillis = 30000;
-
+    
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
-
+    
     public int getBatchSyncKeyCount() {
         return batchSyncKeyCount;
     }
-
+    
     public long getSyncRetryDelay() {
         return syncRetryDelay;
     }
-
+    
     public boolean isDataWarmup() {
         return dataWarmup;
     }
-
+    
     public boolean isExpireInstance() {
         return expireInstance;
     }
-
+    
     public long getLoadDataRetryDelayMillis() {
         return loadDataRetryDelayMillis;
     }
-
+    
     public int getSyncRetryTimes() {
         return syncRetryTimes;
     }
-
+    
     public void setSyncRetryTimes(int syncRetryTimes) {
         this.syncRetryTimes = syncRetryTimes;
     }
