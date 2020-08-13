@@ -293,7 +293,10 @@ class ConfigurationManagement extends React.Component {
         if (res && [401, 403].includes(res.status)) {
           Dialog.alert({
             title: locale.authFail,
-            content: locale.getNamespace403.replace('${tenant}', this.state.nownamespace_name),
+            content: locale.getNamespace403.replace(
+              '${namespaceName}',
+              this.state.nownamespace_name
+            ),
           });
         }
       });

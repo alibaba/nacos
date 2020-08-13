@@ -309,7 +309,7 @@ const I18N_CONF = {
     cloneSuccEnd: 'configuration items cloned',
     cloneFail: 'Clone failed',
     getNamespaceFailed: 'get the namespace failed',
-    getNamespace403: 'Without permission to access ${tenant} namespace!',
+    getNamespace403: 'Without permission to access ${namespaceName} namespace!',
     startCloning: 'Start Clone',
     cloningConfiguration: 'Clone config',
     source: 'Source :',
