@@ -35,7 +35,8 @@ public interface ConfigInfoMapStruct {
     ConfigInfoMapStruct INSTANCE = Mappers.getMapper(ConfigInfoMapStruct.class);
 
     @Mappings({
-        @Mapping(target = "group", source = "groupId")
+        @Mapping(target = "group", source = "groupId"),
+        @Mapping(target = "tenant", source = "tenantId")
     })
     ConfigInfo convertConfigInfo(ConfigInfoEntity configInfoEntity);
 

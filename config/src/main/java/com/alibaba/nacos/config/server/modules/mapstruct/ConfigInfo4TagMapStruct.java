@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.modules.mapstruct;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.modules.entity.ConfigInfoTagEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -28,6 +30,10 @@ public interface ConfigInfo4TagMapStruct {
 
     ConfigInfo4TagMapStruct INSTANCE = Mappers.getMapper(ConfigInfo4TagMapStruct.class);
 
+    @Mappings({
+        @Mapping(source = "tenantId", target = "tenant"),
+        @Mapping(source = "groupId", target = "group")
+    })
     ConfigInfo4Tag convertConfigInfo4Tag(ConfigInfoTagEntity configInfoTagEntity);
 
 }

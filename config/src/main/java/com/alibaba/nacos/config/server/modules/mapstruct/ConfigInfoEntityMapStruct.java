@@ -41,5 +41,9 @@ public interface ConfigInfoEntityMapStruct {
     @Mappings({@Mapping(source = "groupId", target = "group")})
     ConfigInfoBase convertConfigInfoBase(ConfigInfoEntity configInfo);
 
+    @Mappings({
+        @Mapping(target = "groupId", source = "group"),
+        @Mapping(target = "tenantId", source = "tenant")
+    })
     ConfigInfoEntity convertConfigInfoEntity(ConfigInfo configInfo);
 }
