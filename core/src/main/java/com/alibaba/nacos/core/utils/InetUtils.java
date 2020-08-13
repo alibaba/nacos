@@ -132,7 +132,6 @@ public class InetUtils {
         };
         
         GlobalExecutor.runWithoutThread(ipAutoRefresh);
-        GlobalExecutor.scheduleByCommon(ipAutoRefresh, delayMs);
     }
     
     public static String getSelfIp() {
