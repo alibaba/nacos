@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.common;
 
+import com.alibaba.nacos.auth.common.evn.ReloadableConfigs;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.core.env.ReloadableConfigs;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
@@ -33,9 +31,9 @@ import java.util.Objects;
  * Auth related configurations.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-@Component
 @Configuration
 public class AuthConfigs {
     
@@ -107,21 +105,4 @@ public class AuthConfigs {
     public static void setCachingEnabled(boolean cachingEnabled) {
         AuthConfigs.cachingEnabled = cachingEnabled;
     }
-    
-    @Bean
-    public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(authFilter());
-        registration.addUrlPatterns("/*");
-        registration.setName("authFilter");
-        registration.setOrder(6);
-        
-        return registration;
-    }
-    
-    @Bean
-    public AuthFilter authFilter() {
-        return new AuthFilter();
-    }
-    
 }

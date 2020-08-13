@@ -14,41 +14,44 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.security.nacos.users;
+package com.alibaba.nacos.auth.model;
 
-
-import com.alibaba.nacos.auth.model.User;
+import java.io.Serializable;
 
 /**
- * Nacos User.
+ * Resource used in authorization.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class NacosUser extends User {
+public class Resource implements Serializable {
     
-    private String token;
+    public static final String SPLITTER = ":";
     
-    private boolean globalAdmin = false;
+    public static final String ANY = "*";
     
-    public String getToken() {
-        return token;
+    private static final long serialVersionUID = 925971662931204553L;
+    
+    /**
+     * The unique key of resource.
+     */
+    private String key;
+    
+    public Resource(String key) {
+        this.key = key;
     }
     
-    public void setToken(String token) {
-        this.token = token;
+    public String getKey() {
+        return key;
     }
     
-    public boolean isGlobalAdmin() {
-        return globalAdmin;
-    }
-    
-    public void setGlobalAdmin(boolean globalAdmin) {
-        this.globalAdmin = globalAdmin;
+    public String parseName() {
+        return key.substring(0, key.lastIndexOf(SPLITTER));
     }
     
     @Override
     public String toString() {
-        return "NacosUser{" + "token='" + token + '\'' + ", globalAdmin=" + globalAdmin + '}';
+        return "Resource{" + "key='" + key + '\'' + '}';
     }
 }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.core.auth.User;
+import com.alibaba.nacos.auth.model.User;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;

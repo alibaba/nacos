@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.env;
+package com.alibaba.nacos.auth.common.evn;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +31,7 @@ import java.util.Properties;
  * Reload application.properties.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 @Component
