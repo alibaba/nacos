@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.common;
 
-import com.alibaba.nacos.auth.common.evn.ReloadableConfigs;
+import com.alibaba.nacos.auth.common.env.ReloadableConfigs;
 import com.alibaba.nacos.common.JustForTest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
