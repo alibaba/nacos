@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-
 import javax.servlet.http.HttpServletRequest;
 
 import com.alibaba.nacos.auth.model.Resource;

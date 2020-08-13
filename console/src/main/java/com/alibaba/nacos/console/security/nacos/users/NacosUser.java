@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.console.security.nacos.users;
 
-
 import com.alibaba.nacos.auth.model.User;
 
 /**
