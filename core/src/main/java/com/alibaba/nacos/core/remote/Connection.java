@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.Map;
 
 /**
  * Connection.
@@ -101,8 +105,7 @@ public abstract class Connection {
      *
      * @param request request.
      */
-    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack)
-            throws Exception;
+    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception;
     
     /**
      * Close this connection, if this connection is not active yet.
@@ -129,5 +132,20 @@ public abstract class Connection {
         return metaInfo.connectionId;
     }
     
+    /**
+     * check if this connection is sdk source.
+     *
+     * @return if this connection is sdk source.
+     */
+    public boolean isSdkSource() {
+        Map<String, String> labels = metaInfo.labels;
+        String source = labels.get(RemoteConstants.LABEL_SOURCE);
+        return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
+    }
+    
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 }
 

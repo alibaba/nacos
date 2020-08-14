@@ -154,12 +154,11 @@ public class ConfigTest {
             public void run() {
                 long start = System.currentTimeMillis();
                 Random random = new Random();
-                int times = 1000;
+                int times = 1;
                 while (times > 0) {
                     try {
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
                                 "value" + System.currentTimeMillis());
-                        System.out.println(success);
                         times--;
                         Thread.sleep(1000L);
                     } catch (Exception e) {

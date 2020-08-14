@@ -90,4 +90,32 @@ public class RpcClientFactory {
         }
     }
     
+    /**
+     * create a rpc client.
+     *
+     * @param clientName     client name.
+     * @param connectionType client type.
+     * @return
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
+        synchronized (clientMap) {
+            if (clientMap.get(clientName) == null) {
+                RpcClient moduleClient = null;
+                if (ConnectionType.GRPC.equals(connectionType)) {
+                    moduleClient = new GrpcClient();
+                    
+                } else if (ConnectionType.RSOCKET.equals(connectionType)) {
+                    moduleClient = new RsocketRpcClient();
+                }
+                if (moduleClient == null) {
+                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+                }
+                moduleClient.initLabels(labels);
+                clientMap.put(clientName, moduleClient);
+                return moduleClient;
+            }
+            return clientMap.get(clientName);
+        }
+    }
+    
 }

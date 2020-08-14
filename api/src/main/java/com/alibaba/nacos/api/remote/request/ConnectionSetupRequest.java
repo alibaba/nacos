@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * request to setup a connection.
  *
@@ -30,6 +33,8 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private String clientVersion;
     
+    protected Map<String, String> labels = new HashMap<String, String>();
+    
     public ConnectionSetupRequest() {
     }
     
@@ -37,6 +42,14 @@ public class ConnectionSetupRequest extends InternalRequest {
         this.clientIp = clientIp;
         this.connectionId = connectionId;
         this.clientVersion = clientVersion;
+    }
+    
+    public ConnectionSetupRequest(String connectionId, String clientIp, String clientVersion,
+            Map<String, String> labels) {
+        this.clientIp = clientIp;
+        this.connectionId = connectionId;
+        this.clientVersion = clientVersion;
+        this.labels = labels;
     }
     
     @Override
@@ -96,5 +109,23 @@ public class ConnectionSetupRequest extends InternalRequest {
      */
     public void setClientVersion(String clientVersion) {
         this.clientVersion = clientVersion;
+    }
+    
+    /**
+     * Getter method for property <tt>labels</tt>.
+     *
+     * @return property value of labels
+     */
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    
+    /**
+     * Setter method for property <tt>labels</tt>.
+     *
+     * @param labels value to be assigned to property labels
+     */
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

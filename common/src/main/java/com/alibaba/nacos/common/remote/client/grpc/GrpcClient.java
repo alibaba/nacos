@@ -35,12 +35,24 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.grpc.Attributes;
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ClientStreamTracer;
+import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.NameResolver;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -73,10 +85,10 @@ public class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null stub.
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
-        
+    
         ManagedChannel managedChannelTemp = ManagedChannelBuilder.forAddress(serverIp, serverPort).usePlaintext()
                 .build();
-    
+        
         RequestGrpc.RequestFutureStub grpcServiceStubTemp = RequestGrpc.newFutureStub(managedChannelTemp);
         
         boolean checkSucess = serverCheck(grpcServiceStubTemp);
@@ -88,6 +100,7 @@ public class GrpcClient extends RpcClient {
             return null;
         }
     }
+    
     
     /**
      * shutdown a  channel.
@@ -142,7 +155,7 @@ public class GrpcClient extends RpcClient {
     
     private GrpcMetadata buildMeta() {
         GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
-                .setVersion(VersionUtils.getFullClientVersion()).build();
+                .setVersion(VersionUtils.getFullClientVersion()).putAllLabels(labels).build();
         return meta;
     }
     
@@ -173,6 +186,7 @@ public class GrpcClient extends RpcClient {
      * @param streamStub streamStub to bind.
      */
     private void bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
+    
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
@@ -241,6 +255,7 @@ public class GrpcClient extends RpcClient {
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 bindRequestStream(requestStreamStubTemp);
+    
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
                         .newFutureStub(newChannelStubTemp.getChannel());

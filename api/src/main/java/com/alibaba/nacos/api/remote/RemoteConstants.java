@@ -14,22 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.remote;
 
 /**
- * callback of push service.
+ * constants define of remote.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
+ * @version $Id: ConnectionMetaConstants.java, v 0.1 2020年08月13日 1:05 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+public class RemoteConstants {
     
-    public long getTimeout();
+    /**
+     * label key value  define.
+     */
+    public static final String LABEL_SOURCE = "source";
     
-    public void onSuccess();
+    public static final String LABEL_SOURCE_SDK = "sdk";
     
-    public void onFail(Exception e);
+    public static final String LABEL_SOURCE_NODE = "node";
     
-    public void onTimeout();
+    public static final String LABEL_MODULE = "module";
     
+    public static final String LABEL_MODULE_CONFIG = "config";
+    
+    public static final String LABEL_MODULE_NAMING = "naming";
 }

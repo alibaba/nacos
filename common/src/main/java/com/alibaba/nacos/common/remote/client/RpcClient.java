@@ -31,7 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -70,6 +72,8 @@ public abstract class RpcClient implements Closeable {
     protected ScheduledExecutorService executorService;
     
     protected volatile Connection currentConnetion;
+    
+    protected Map<String, String> labels = new HashMap<String, String>();
     
     /**
      * listener called where connect status changed.
@@ -183,6 +187,16 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
+     * init server list factory.
+     *
+     * @param labels labels
+     */
+    public void initLabels(Map<String, String> labels) {
+        this.labels.putAll(labels);
+        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init label  ,labels={}", this.labels);
+    }
+    
+    /**
      * Start this client.
      */
     public void start() throws NacosException {
@@ -241,6 +255,7 @@ public abstract class RpcClient implements Closeable {
                     try {
     
                         if (isRunning()) {
+                            clearContextOnResetRequest();
                             switchServerAsync();
                         }
                     } catch (Exception e) {
@@ -282,6 +297,7 @@ public abstract class RpcClient implements Closeable {
     
                         //1.get a new server
                         ServerInfo serverInfo = nextRpcServer();
+                        System.out.println("1:" + serverInfo);
                         //2.create a new channel to new server
                         try {
                             Connection connectNew = connectToServer(serverInfo);
@@ -338,6 +354,10 @@ public abstract class RpcClient implements Closeable {
      */
     public abstract int rpcPortOffset();
     
+    protected void clearContextOnResetRequest() {
+        // Default do nothing.
+    }
+    
     /**
      * send request.
      *
@@ -352,6 +372,7 @@ public abstract class RpcClient implements Closeable {
             try {
                 Response response = this.currentConnetion.request(request);
                 if (response != null && response instanceof ConnectionUnregisterResponse) {
+                    clearContextOnResetRequest();
                     switchServerAsync();
                     throw new IllegalStateException("Invalid client status.");
                 }
@@ -362,6 +383,8 @@ public abstract class RpcClient implements Closeable {
                         "Fail to send request,connectionId={}, request={},errorMesssage={}", this.connectionId, request,
                         e.getMessage());
                 exceptionToThrow = e;
+            } finally {
+                retryTimes--;
             }
         }
         if (exceptionToThrow != null) {
@@ -442,7 +465,10 @@ public abstract class RpcClient implements Closeable {
     }
     
     protected ServerInfo nextRpcServer() {
-        getServerListFactory().genNextServer();
+    
+        String s = getServerListFactory().genNextServer();
+        System.out.println("0...,switch..." + s);
+        
         String serverAddress = getServerListFactory().getCurrentServer();
         return resolveServerInfo(serverAddress);
     }

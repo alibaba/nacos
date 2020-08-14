@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.cluster.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -109,11 +111,14 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         RpcClient client = RpcClientFactory.createClient(memberClientKey(member), type);
         if (!client.getConnectionType().equals(type)) {
             RpcClientFactory.destroyClient(memberClientKey(member));
-            client = RpcClientFactory.createClient(memberClientKey(member), type);
+            Map<String, String> labels = new HashMap<String, String>();
+            labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_NODE);
+            client = RpcClientFactory.createClient(memberClientKey(member), type, labels);
         }
+    
         if (client.isWaitInited()) {
             Loggers.CLUSTER.info("create a new rpc client to member - > : {}", member);
-    
+        
             //one fixed server
             client.init(new ServerListFactory() {
                 @Override
@@ -126,6 +131,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
                     return member.getAddress();
                 }
             });
+        
             client.start();
         }
     }

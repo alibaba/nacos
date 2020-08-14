@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.grpc.GrpcServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +40,7 @@ import java.util.Map;
 public class ServerLoaderController {
     
     @Autowired
-    private GrpcServer grpcServer;
+    private ConnectionManager connectionManager;
     
     /**
      * Get server state of current server.
@@ -48,7 +50,7 @@ public class ServerLoaderController {
     @GetMapping("/max")
     public ResponseEntity updateMaxClients(@RequestParam Integer count) {
         Map<String, String> responseMap = new HashMap<>(3);
-        grpcServer.setMaxClientCount(count);
+        connectionManager.coordinateMaxClientsSmoth(count);
         return ResponseEntity.ok().body("success");
     }
     
@@ -60,7 +62,7 @@ public class ServerLoaderController {
     @GetMapping("/reload")
     public ResponseEntity reloadClients(@RequestParam Integer count) {
         Map<String, String> responseMap = new HashMap<>(3);
-        grpcServer.reloadClient(count);
+        connectionManager.loadClientsSmoth(count);
         return ResponseEntity.ok().body("success");
     }
     
@@ -72,9 +74,19 @@ public class ServerLoaderController {
     @GetMapping("/current")
     public ResponseEntity currentCount() {
         Map<String, String> responseMap = new HashMap<>(3);
-        int count = grpcServer.currentClients();
+        int count = connectionManager.currentClientsCount();
         return ResponseEntity.ok().body(count);
     }
     
-    
+    /**
+     * Get current clients.
+     *
+     * @return state json.
+     */
+    @GetMapping("/all")
+    public ResponseEntity currentClients() {
+        Map<String, String> responseMap = new HashMap<>(3);
+        Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
+        return ResponseEntity.ok().body(stringConnectionMap);
+    }
 }

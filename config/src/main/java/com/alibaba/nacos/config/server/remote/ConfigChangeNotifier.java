@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.response.AbstractPushCallBack;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -60,7 +60,8 @@ public class ConfigChangeNotifier {
     
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
-                rpcPushService.pushWithCallback(client, notifyRequet, new PushCallBack() {
+                rpcPushService.pushWithCallback(client, notifyRequet, new AbstractPushCallBack(500L) {
+                 
                     @Override
                     public void onSuccess() {
                         Loggers.CORE.info("push callback success.,groupKey={},clientId={}", groupKey, client);

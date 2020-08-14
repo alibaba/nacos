@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * serber push ack synchronier.
@@ -38,6 +40,21 @@ public class RpcAckCallbackSynchronizer {
     private static final long TIMEOUT = 60000L;
     
     static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+    
+    private static final Map<String, Map<String, DefaultPushFuture>> CALLBACK_CONTEXT2 = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultPushFuture>>()
+            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, Map<String, DefaultPushFuture>>() {
+                @Override
+                public void onEviction(String s, Map<String, DefaultPushFuture> pushCallBack) {
+                    
+                    pushCallBack.entrySet().forEach(new Consumer<Map.Entry<String, DefaultPushFuture>>() {
+                        @Override
+                        public void accept(Map.Entry<String, DefaultPushFuture> stringDefaultPushFutureEntry) {
+                            stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException());
+                        }
+                    });
+                }
+            }).build();
+    
     
     private static final Map<String, DefaultPushFuture> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, DefaultPushFuture>()
             .maximumWeightedCapacity(30000).listener(new EvictionListener<String, DefaultPushFuture>() {
@@ -54,36 +71,44 @@ public class RpcAckCallbackSynchronizer {
                 }
             }).build();
     
-    static {
-        executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                Set<String> timeOutCalls = new HashSet<>();
-                long now = System.currentTimeMillis();
-                for (Map.Entry<String, DefaultPushFuture> enrty : CALLBACK_CONTEXT.entrySet()) {
-                    if (now - enrty.getValue().getTimeStamp() > TIMEOUT) {
-                        timeOutCalls.add(enrty.getKey());
-                    }
-                }
-                for (String ackId : timeOutCalls) {
-                    DefaultPushFuture remove = CALLBACK_CONTEXT.remove(ackId);
-                    if (remove != null) {
-                        Loggers.CORE.warn("time out on scheduler:" + ackId);
-                        if (remove.getPushCallBack() != null) {
-                            remove.getPushCallBack().onTimeout();
-                        }
-                    }
-                }
-            }
-        }, TIMEOUT, TIMEOUT, TimeUnit.MILLISECONDS);
-    }
+    //    static {
+    //        executor.scheduleWithFixedDelay(new Runnable() {
+    //            @Override
+    //            public void run() {
+    //                Set<String> timeOutCalls = new HashSet<>();
+    //                long now = System.currentTimeMillis();
+    //                for (Map.Entry<String, DefaultPushFuture> enrty : CALLBACK_CONTEXT.entrySet()) {
+    //                    if (now - enrty.getValue().getTimeStamp() > TIMEOUT) {
+    //                        timeOutCalls.add(enrty.getKey());
+    //                    }
+    //                }
+    //                for (String ackId : timeOutCalls) {
+    //                    DefaultPushFuture remove = CALLBACK_CONTEXT.remove(ackId);
+    //                    if (remove != null) {
+    //                        Loggers.CORE.warn("time out on scheduler:" + ackId);
+    //                        if (remove.getPushCallBack() != null) {
+    //                            remove.getPushCallBack().onTimeout();
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }, TIMEOUT, TIMEOUT, TimeUnit.MILLISECONDS);
+    //    }
     
     /**
      * notify  ackid.
      */
     public static void ackNotify(String connectionId, String requestId, boolean success, Exception e) {
+        if (!CALLBACK_CONTEXT2.containsKey(connectionId)) {
+            return;
+        }
     
-        DefaultPushFuture currentCallback = CALLBACK_CONTEXT.remove(requestId);
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connectionId);
+        if (stringDefaultPushFutureMap.containsKey(requestId)) {
+            return;
+        }
+    
+        DefaultPushFuture currentCallback = stringDefaultPushFutureMap.get(requestId);
         if (currentCallback == null) {
             return;
         }

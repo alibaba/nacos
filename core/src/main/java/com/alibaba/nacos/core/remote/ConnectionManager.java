@@ -151,6 +151,9 @@ public class ConnectionManager {
                     List<String> expireCLients = new LinkedList<String>();
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
+                        if (!client.isSdkSource()) {
+                            continue;
+                        }
                         long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
                         if (client.heartBeatExpire() && currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
                             expireCLients.add(client.getConnectionId());
@@ -208,8 +211,12 @@ public class ConnectionManager {
         this.loadClient = loadClient;
     }
     
-    public int currentClients() {
+    public int currentClientsCount() {
         return connetions.size();
+    }
+    
+    public Map<String, Connection> currentClients() {
+        return connetions;
     }
     
     /**
