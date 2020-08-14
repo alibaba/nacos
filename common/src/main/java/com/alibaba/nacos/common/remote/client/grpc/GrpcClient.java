@@ -35,24 +35,15 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.grpc.Attributes;
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
-import io.grpc.ClientStreamTracer;
-import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.NameResolver;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.net.URI;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -153,8 +144,8 @@ public class GrpcClient extends RpcClient {
         switchServerAsync();
     }
     
-    private GrpcMetadata buildMeta() {
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
+    private GrpcMetadata buildMeta(String connectionIdInner) {
+        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionIdInner).setClientIp(NetUtils.localIP())
                 .setVersion(VersionUtils.getFullClientVersion()).putAllLabels(labels).build();
         return meta;
     }
@@ -171,7 +162,7 @@ public class GrpcClient extends RpcClient {
                 return false;
             }
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
-            GrpcRequest grpcRequest = GrpcUtils.convertToGrpcRequest(serverCheckRequest, buildMeta());
+            GrpcRequest grpcRequest = GrpcUtils.convertToGrpcRequest(serverCheckRequest, buildMeta(""));
             ListenableFuture<GrpcResponse> responseFuture = requestBlockingStub.request(grpcRequest);
             GrpcResponse response = responseFuture.get();
             return response != null;
@@ -180,14 +171,50 @@ public class GrpcClient extends RpcClient {
         }
     }
     
+    private Object getFiled(Object o, String filed0) {
+        try {
+            Class clazz = o.getClass();
+            while (clazz != null) {
+                Field[] declaredFields = clazz.getDeclaredFields();
+                for (Field f0 : declaredFields) {
+                    if (f0.getName().equals(filed0)) {
+                        f0.setAccessible(true);
+                        return f0.get(o);
+                    }
+                }
+                clazz = clazz.getSuperclass();
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
     /**
      * bind request stream observer (send a connection).
      *
      * @param streamStub streamStub to bind.
      */
-    private void bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
-    
-        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta()).build();
+    private String bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
+        streamStub.getChannel();
+        Object delegate = getFiled(streamStub.getChannel(), "delegate");
+        String connectionId = null;
+        if (delegate != null) {
+            Object subchannls = getFiled(delegate, "subchannels");
+            Object o = ((HashSet) subchannls).iterator().next();
+            if (o != null) {
+                Object activeTransport = getFiled(o, "activeTransport");
+                Object delegate1 = getFiled(activeTransport, "delegate");
+                Object delegate2 = getFiled(delegate1, "delegate");
+                Object channel = getFiled(delegate2, "channel");
+                Object ch = getFiled(channel, "ch");
+                InetSocketAddress socketAddress = (InetSocketAddress) getFiled(ch, "localAddress");
+                if (socketAddress != null) {
+                    connectionId = socketAddress.toString();
+                }
+            }
+        }
+        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta(connectionId)).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
             @Override
@@ -219,6 +246,8 @@ public class GrpcClient extends RpcClient {
             public void onCompleted() {
             }
         });
+    
+        return connectionId;
     }
     
     private void sendAckResponse(String ackId, boolean success) {
@@ -250,11 +279,11 @@ public class GrpcClient extends RpcClient {
                     serverInfo.getServerPort());
             if (newChannelStubTemp != null) {
                 
-                GrpcConnection grpcConn = new GrpcConnection(connectionId, serverInfo);
                 LOGGER.info("success to create a connection to a server.");
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                bindRequestStream(requestStreamStubTemp);
+                String connetionid = bindRequestStream(requestStreamStubTemp);
+                GrpcConnection grpcConn = new GrpcConnection(connetionid, serverInfo);
     
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc

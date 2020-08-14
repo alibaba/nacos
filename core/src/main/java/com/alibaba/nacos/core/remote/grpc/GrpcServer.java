@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.grpc.GrpcMetadata;
+import com.alibaba.nacos.api.grpc.GrpcRequest;
+import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
@@ -31,8 +35,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerTransportFilter;
-import io.grpc.internal.ServerStream;
-import io.grpc.internal.ServerStreamHelper;
+import io.grpc.stub.ServerCalls;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +62,9 @@ public class GrpcServer extends RpcServer {
     private GrpcRequestHandlerReactor requestHander;
     
     @Autowired
+    private ConnectionManager connectionManager;
+    
+    @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
     int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
@@ -79,16 +85,19 @@ public class GrpcServer extends RpcServer {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
                         System.out.println("transportReady:" + transportAttrs);
-                        Attributes test = transportAttrs.toBuilder().set(key, UUID.randomUUID().toString()).build();
+                        Attributes test = transportAttrs.toBuilder().set(KEY_CONN_ID, UUID.randomUUID().toString())
+                                .build();
                         return test;
                     }
-            
+    
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
                         System.out.println("transportTerminated:" + transportAttrs);
+                        SocketAddress socketAddress = transportAttrs.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+                        connectionManager.unregister(socketAddress.toString());
                         super.transportTerminated(transportAttrs);
                     }
-                }).intercept(new ConnetionIntereptor()).build();
+                }).build();
         server.start();
     }
     
@@ -104,18 +113,7 @@ public class GrpcServer extends RpcServer {
         }
     }
     
-    static final Attributes.Key key = Attributes.Key.create("conn_id");
+    static final Attributes.Key KEY_CONN_ID = Attributes.Key.create("conn_id");
     
-    static class ConnetionIntereptor implements ServerInterceptor {
-        
-        @Override
-        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers,
-                ServerCallHandler<ReqT, RespT> next) {
-            Context ctx = Context.current();
-            // System.out.println(build);
-            System.out.println(call.getAttributes().get(key).toString());
-            return Contexts.interceptCall(Context.current(), call, headers, next);
-            
-        }
-    }
+    
 }
