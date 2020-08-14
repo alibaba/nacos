@@ -307,6 +307,7 @@ const I18N_CONF = {
     cloneSuccEnd: '项配置',
     cloneFail: '克隆失败',
     getNamespaceFailed: '获取命名空间失败',
+    getNamespace403: '没有 ${namespaceName} 命名空间的访问权限！',
     startCloning: '开始克隆',
     cloningConfiguration: '克隆配置',
     source: '源空间：',
@@ -320,6 +321,7 @@ const I18N_CONF = {
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
+    authFail: '权限认证失败',
   },
   NewConfig: {
     newListingMain: '新建配置',

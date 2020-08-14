@@ -292,8 +292,11 @@ class ConfigurationManagement extends React.Component {
         });
         if (res && [401, 403].includes(res.status)) {
           Dialog.alert({
-            title: locale.importFail,
-            content: locale.importFail403,
+            title: locale.authFail,
+            content: locale.getNamespace403.replace(
+              '${namespaceName}',
+              this.state.nownamespace_name
+            ),
           });
         }
       });
