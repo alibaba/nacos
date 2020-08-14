@@ -35,4 +35,7 @@ public class ConfigRequestTypeConstants extends RequestTypeConstants {
     
     public static final String CONFIG_CHANGE_NOTIFY = "CONFIG_CHANGE_NOTIFY";
     
+    public static final String CONFIG_CHANGE_CLUSTER_SYNC = "CONFIG_CHANGE_CLUSTER_SYNC";
+    
+    
 }

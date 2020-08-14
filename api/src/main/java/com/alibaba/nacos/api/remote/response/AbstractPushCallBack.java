@@ -17,19 +17,21 @@
 package com.alibaba.nacos.api.remote.response;
 
 /**
- * callback of push service.
+ * abstract callback of push service.
  *
  * @author liuzunfei
  * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+public abstract class AbstractPushCallBack implements PushCallBack {
     
-    public long getTimeout();
+    private long timeout;
     
-    public void onSuccess();
+    public AbstractPushCallBack(long timeout) {
+        this.timeout = timeout;
+    }
     
-    public void onFail(Exception e);
-    
-    public void onTimeout();
-    
+    @Override
+    public long getTimeout() {
+        return timeout;
+    }
 }

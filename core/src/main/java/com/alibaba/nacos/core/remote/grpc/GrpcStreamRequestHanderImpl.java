@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,12 +44,15 @@ public class GrpcStreamRequestHanderImpl extends RequestStreamGrpc.RequestStream
     
     @Override
     public void requestStream(GrpcRequest request, StreamObserver<GrpcResponse> responseObserver) {
+    
+        Context current = Context.current();
+        
         GrpcMetadata metadata = request.getMetadata();
         String clientIp = metadata.getClientIp();
         String connectionId = metadata.getConnectionId();
         String version = metadata.getVersion();
         ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, ConnectionType.GRPC.getType(),
-                version);
+                version, metadata.getLabelsMap());
         Connection connection = new GrpcConnection(metaInfo, responseObserver);
         if (connectionManager.isOverLimit()) {
             //Not register to the connection manager if current server is over limit.
@@ -59,7 +63,9 @@ public class GrpcStreamRequestHanderImpl extends RequestStreamGrpc.RequestStream
             }
         } else {
             connectionManager.register(connectionId, connection);
-        
+    
         }
     }
+    
+    
 }

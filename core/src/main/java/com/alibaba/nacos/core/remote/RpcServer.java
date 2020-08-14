@@ -16,7 +16,12 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.PostConstruct;
 
 /**
  * abstrat rpc server .
@@ -32,7 +37,41 @@ public abstract class RpcServer {
     /**
      * Start sever.
      */
-    public abstract void start() throws Exception;
+    @PostConstruct
+    public void start() throws Exception {
+    
+        Loggers.RPC.info("Nacos {} Rpc server starting at port {}", getConnectionType(),
+                (ApplicationUtils.getPort() + rpcPortOffset()));
+    
+        startServer();
+    
+        Loggers.RPC.info("Nacos {} Rpc server started at port {}", getConnectionType(),
+                (ApplicationUtils.getPort() + rpcPortOffset()));
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                Loggers.RPC.info("Nacos {} Rpc server stopping", getConnectionType());
+                try {
+                    RpcServer.this.stopServer();
+                    Loggers.RPC.info("Nacos {} Rpc server stopped successfully...", getConnectionType());
+                } catch (Exception e) {
+                    Loggers.RPC.error("Nacos {} Rpc server stopped fail...", getConnectionType(), e);
+                }
+            }
+        });
+    }
+    
+    /**
+     * get connection type.
+     *
+     * @return
+     */
+    public abstract ConnectionType getConnectionType();
+    
+    /**
+     * Start sever.
+     */
+    public abstract void startServer() throws Exception;
     
     /**
      * the increase offset of nacos server port for rpc server port.
@@ -44,17 +83,23 @@ public abstract class RpcServer {
     /**
      * Stop Server.
      */
-    public abstract void stop() throws Exception;
-    
-    public void setMaxClientCount(int maxClient) {
-        this.connectionManager.coordinateMaxClientsSmoth(maxClient);
+    public void stopServer() throws Exception {
+        Loggers.RPC.info("Nacos clear all rpc clients...");
+        connectionManager.expelAll();
+        try {
+            //wait clients to switch  server.
+            Thread.sleep(2000L);
+        } catch (InterruptedException e) {
+            //Do nothing.
+        }
+        shundownServer();
     }
     
-    public void reloadClient(int loadCount) {
-        this.connectionManager.loadClientsSmoth(loadCount);
-    }
+    /**
+     * the increase offset of nacos server port for rpc server port.
+     *
+     * @return
+     */
+    public abstract void shundownServer();
     
-    public int currentClients() {
-        return this.connectionManager.currentClients();
-    }
 }

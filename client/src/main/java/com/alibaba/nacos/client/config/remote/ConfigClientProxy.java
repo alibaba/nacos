@@ -25,12 +25,18 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.utils.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * config grpc client proxy.
@@ -44,7 +50,19 @@ public class ConfigClientProxy {
     private RpcClient rpcClient;
     
     public ConfigClientProxy() {
-        rpcClient = RpcClientFactory.getClient("config", ConnectionType.RSOCKET);
+        ConnectionType connectionType = ConnectionType.GRPC;
+        String connetionType = ParamUtils.configRemoteConnectionType();
+        if (StringUtils.isNotBlank(connetionType)) {
+            ConnectionType connectionType1 = ConnectionType.valueOf(connetionType);
+            if (connectionType1 != null) {
+                connectionType = connectionType1;
+            }
+        }
+        Map<String, String> labels = new HashMap<String, String>();
+        labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
+        labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
+    
+        rpcClient = RpcClientFactory.createClient("config", connectionType, labels);
     }
     
     public Response request(Request request) throws NacosException {

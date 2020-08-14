@@ -16,17 +16,23 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
+import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.cluster.Member;
+import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.InetUtils;
@@ -61,6 +67,9 @@ import java.util.concurrent.TimeUnit;
 public class AsyncNotifyService {
     
     @Autowired
+    private DumpService dumpService;
+    
+    @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         httpclient.start();
@@ -84,12 +93,25 @@ public class AsyncNotifyService {
                     Collection<Member> ipList = memberManager.allMembers();
                     
                     // In fact, any type of queue here can be
-                    Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
+                    Queue<NotifySingleTask> httpQueue = new LinkedList<NotifySingleTask>();
+                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
+                    
                     for (Member member : ipList) {
-                        queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
-                                evt.isBeta));
+                        if (MemberUtils.getSupportedConnectionType(member) == null) {
+                            httpQueue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, member.getAddress(),
+                                    evt.isBeta));
+                        } else {
+                            rpcQueue.add(
+                                    new NotifySingleRpcTask(dataId, group, tenant, tag, dumpTs, evt.isBeta, member));
+                        }
                     }
-                    ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, queue));
+                    if (!httpQueue.isEmpty()) {
+                        ConfigExecutor.executeAsyncNotify(new AsyncTask(httpclient, httpQueue));
+                    }
+                    if (!rpcQueue.isEmpty()) {
+                        ConfigExecutor.executeAsyncNotify(new AsyncRpcTask(rpcQueue));
+                    }
+                    
                 }
             }
             
@@ -108,6 +130,9 @@ public class AsyncNotifyService {
             .build();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
+    
+    @Autowired
+    private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
     
     private ServerMemberManager memberManager;
     
@@ -157,11 +182,96 @@ public class AsyncNotifyService {
         
     }
     
+    class AsyncRpcTask implements Runnable {
+        
+        private Queue<NotifySingleRpcTask> queue;
+        
+        public AsyncRpcTask(Queue<NotifySingleRpcTask> queue) {
+            this.queue = queue;
+        }
+        
+        @Override
+        public void run() {
+            while (!queue.isEmpty()) {
+                NotifySingleRpcTask task = queue.poll();
+                Member member = task.member;
+    
+                ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+                syncRequest.setDataId(task.getDataId());
+                syncRequest.setGroup(task.getGroup());
+                syncRequest.setIsBeta(task.isBeta ? "Y" : "N");
+                syncRequest.setLastModified(task.getLastModified());
+                syncRequest.setTag(task.tag);
+                syncRequest.setTenant(task.getTenant());
+    
+                if (memberManager.hasMember(member.getAddress()) && !memberManager.getSelf().equals(member)) {
+                    // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
+                    boolean unHealthNeedDelay = memberManager.isUnHealth(member.getAddress());
+                    if (unHealthNeedDelay) {
+                        // target ip is unhealthy, then put it in the notification list
+                        ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                                task.getLastModified(), InetUtils.getSelfIp(), ConfigTraceService.NOTIFY_EVENT_UNHEALTH,
+                                0, member.getAddress());
+                        // get delay time and set fail count to the task
+                        asyncTaskExecute(task);
+                    } else {
+    
+                        try {
+                            ConfigChangeClusterSyncResponse response = configClusterRpcClientProxy
+                                    .syncConfigChange(member, syncRequest);
+                            if (response == null || !response.isSuccess()) {
+                                asyncTaskExecute(task);
+                            }
+                        } catch (Exception e) {
+                            asyncTaskExecute(task);
+                        }
+                    }
+                }
+    
+                if (memberManager.getSelf().equals(member)) {
+                    if (syncRequest.isBeta()) {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP(), true);
+                    } else {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP());
+                    }
+                }
+                
+            }
+        }
+    }
+    
+    static class NotifySingleRpcTask extends NotifyTask {
+        
+        private Member member;
+        
+        private boolean isBeta;
+        
+        private String tag;
+        
+        public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
+                boolean isBeta, Member member) {
+            super(dataId, group, tenant, lastModified);
+            this.member = member;
+            this.isBeta = isBeta;
+            this.tag = tag;
+        }
+    }
+    
     private void asyncTaskExecute(NotifySingleTask task) {
         int delay = getDelayTime(task);
         Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
         queue.add(task);
         AsyncTask asyncTask = new AsyncTask(httpclient, queue);
+        ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
+    }
+    
+    private void asyncTaskExecute(NotifySingleRpcTask task) {
+        int delay = getDelayTime(task);
+        Queue<NotifySingleRpcTask> queue = new LinkedList<NotifySingleRpcTask>();
+        queue.add(task);
+        AsyncRpcTask asyncTask = new AsyncRpcTask(queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
     
@@ -310,7 +420,7 @@ public class AsyncNotifyService {
      * @param task notify task
      * @return delay
      */
-    private static int getDelayTime(NotifySingleTask task) {
+    private static int getDelayTime(NotifyTask task) {
         int failCount = task.getFailCount();
         int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
         if (failCount <= MAX_COUNT) {

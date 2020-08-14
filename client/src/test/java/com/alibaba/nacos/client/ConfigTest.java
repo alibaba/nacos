@@ -21,6 +21,12 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -40,6 +46,7 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
@@ -47,6 +54,37 @@ public class ConfigTest {
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
         //Thread.sleep(2000L);
+    }
+    
+    @Test
+    public void test222() throws Exception {
+        RpcClient client = RpcClientFactory.createClient("1234", ConnectionType.RSOCKET);
+        client.init(new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                return "127.0.0.1:8848";
+            }
+            
+            @Override
+            public String getCurrentServer() {
+                return "127.0.0.1:8848";
+            }
+        });
+        client.start();
+        ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+        syncRequest.setDataId("xiaochun.xxc1");
+        syncRequest.setGroup("xiaochun.xxc");
+        syncRequest.setIsBeta("N");
+        syncRequest.setLastModified(System.currentTimeMillis());
+        syncRequest.setTag("");
+        syncRequest.setTenant("");
+        System.out.println(client.isRunning());
+        Response response = client.request(syncRequest);
+        client.request(syncRequest);
+        
+        client.request(syncRequest);
+        System.out.println(response);
+        
     }
     
     @After
@@ -59,6 +97,7 @@ public class ConfigTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"
+        System.out.println("1");
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
         for (int i = 0; i < 200; i++) {
     
@@ -67,10 +106,12 @@ public class ConfigTest {
     
                 @Override
                 public void receiveConfigInfo(String configInfo) {
+                    System.out.println("listener2:" + configInfo);
                 }
             });
             configServiceList.add(configService);
         }
+        System.out.println("2");
     
         Thread th = new Thread(new Runnable() {
             @Override
@@ -80,6 +121,8 @@ public class ConfigTest {
                 int times = 10000;
                 while (times > 0) {
                     try {
+                        System.out.println("3");
+    
                         boolean result = configService
                                 .publishConfig("test", "test", "value" + System.currentTimeMillis());
     
@@ -111,22 +154,15 @@ public class ConfigTest {
             public void run() {
                 long start = System.currentTimeMillis();
                 Random random = new Random();
-                int times = 1000;
+                int times = 1;
                 while (times > 0) {
                     try {
-                        //System.out.println("发布配置");
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
                                 "value" + System.currentTimeMillis());
-                        if (success) {
-                            // System.out.println("发布配置成功");
-                        } else {
-                            //System.out.println("发布配置失败");
-                        }
                         times--;
-                        Thread.sleep(500L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
-    
                     }
                 }
     
@@ -149,24 +185,13 @@ public class ConfigTest {
             configService.getConfigAndSignListener(dataId + i, group, 3000L, listener);
         }
     
-        //configService.getConfigAndSignListener(dataId, group, 5000, listener);
-        
-        //Assert.assertTrue(result);
+        Thread.sleep(10000L);
     
-        // configService.getConfigAndSignListener(dataId, group, 5000, listener);
+        for (int i = 0; i < 20; i++) {
+            //configService.removeListener(dataId + i, group, listener);
+        }
+        System.out.println("remove listens.");
         
-        //configService.removeListener(dataId, group, listener);
-        //configService.removeConfig(dataId, group);
-    
-        //        configService.publishConfig("lessspring2", group, "lessspring2value");
-        //
-        //        configService.getConfigAndSignListener("lessspring2", group, 5000, new AbstractListener() {
-        //            @Override
-        //            public void receiveConfigInfo(String configInfo) {
-        //                System.out.println("receiveConfigInfo2 :" + configInfo);
-        //            }
-        //        });
-        //
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");
         while (scanner.hasNextLine()) {

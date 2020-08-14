@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote.response;
+package com.alibaba.nacos.api.config.remote.response.cluster;
+
+import com.alibaba.nacos.api.config.remote.response.ConfigResponseTypeConstants;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * callback of push service.
+ * config change sync response on clusters.
  *
  * @author liuzunfei
- * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
+ * @version $Id: ConfigChangeClusterSyncResponse.java, v 0.1 2020年08月11日 4:32 PM liuzunfei Exp $
  */
-public interface PushCallBack {
+public class ConfigChangeClusterSyncResponse extends Response {
     
-    public long getTimeout();
-    
-    public void onSuccess();
-    
-    public void onFail(Exception e);
-    
-    public void onTimeout();
-    
+    @Override
+    public String getType() {
+        return ConfigResponseTypeConstants.CONFIG_CHANGE_CLUSTER_SYNC;
+    }
 }

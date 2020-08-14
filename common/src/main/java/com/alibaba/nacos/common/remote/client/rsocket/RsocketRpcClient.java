@@ -40,9 +40,13 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * rsocket implementation of rpc client.
@@ -78,52 +82,53 @@ public class RsocketRpcClient extends RpcClient {
         
         try {
             ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connectionId, NetUtils.localIP(),
-                    VersionUtils.getFullClientVersion());
+                    VersionUtils.getFullClientVersion(), labels);
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
-            
-            RSocket rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
-                @Override
-                public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
-    
-                    RSocket rsocket = new RSocketProxy(sendingSocket) {
+            RSocket rSocket = RSocketConnector.create().keepAlive(Duration.ofMillis(3000L), Duration.ofMillis(6000L))
+                    .setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
                         @Override
-                        public Mono<Payload> requestResponse(Payload payload) {
-                            try {
-                                final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
-                                try {
-                                    handleServerRequest(request);
-                                    ServerPushResponse response = new ServerPushResponse();
-                                    response.setRequestId(request.getRequestId());
-                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                                } catch (Exception e) {
-                                    ServerPushResponse response = new ServerPushResponse();
-                                    response.setResultCode(ResponseCode.FAIL.getCode());
-                                    response.setMessage(e.getMessage());
-                                    response.setRequestId(request.getRequestId());
-                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                        public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
+    
+                            RSocket rsocket = new RSocketProxy(sendingSocket) {
+                                @Override
+                                public Mono<Payload> requestResponse(Payload payload) {
+                                    try {
+                                        final ServerPushRequest request = RsocketUtils
+                                                .parseServerRequestFromPayload(payload);
+                                        try {
+                                            handleServerRequest(request);
+                                            ServerPushResponse response = new ServerPushResponse();
+                                            response.setRequestId(request.getRequestId());
+                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                                        } catch (Exception e) {
+                                            ServerPushResponse response = new ServerPushResponse();
+                                            response.setResultCode(ResponseCode.FAIL.getCode());
+                                            response.setMessage(e.getMessage());
+                                            response.setRequestId(request.getRequestId());
+                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                                        }
+    
+                                    } catch (Exception e) {
+                                        ServerPushResponse response = new ServerPushResponse();
+                                        response.setResultCode(ResponseCode.FAIL.getCode());
+                                        response.setMessage(e.getMessage());
+                                        return Mono.just(DefaultPayload
+                                                .create(RsocketUtils.convertResponseToPayload(response)));
+                                    }
                                 }
-    
-                            } catch (Exception e) {
-                                ServerPushResponse response = new ServerPushResponse();
-                                response.setResultCode(ResponseCode.FAIL.getCode());
-                                response.setMessage(e.getMessage());
-                                return Mono.just(DefaultPayload
-                                        .create(RsocketUtils.convertResponseToPayload(response)));
-                            }
-                        }
         
-                        @Override
-                        public Mono<Void> fireAndForget(Payload payload) {
-                            System.out.println("收到服务端fireAndForget：" + payload.getDataUtf8());
-                            final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
-                            handleServerRequest(request);
-                            return Mono.just(null);
-                        }
-                    };
+                                @Override
+                                public Mono<Void> fireAndForget(Payload payload) {
+                                    final ServerPushRequest request = RsocketUtils
+                                            .parseServerRequestFromPayload(payload);
+                                    handleServerRequest(request);
+                                    return Mono.just(null);
+                                }
+                            };
     
-                    return Mono.just((RSocket) rsocket);
-                }
-            }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
+                            return Mono.just((RSocket) rsocket);
+                        }
+                    }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
             RsocketConnection connection = new RsocketConnection(connectionId, serverInfo, rSocket);
             fireOnCloseEvent(rSocket);
             return connection;
@@ -147,8 +152,24 @@ public class RsocketRpcClient extends RpcClient {
         }
     }
     
+    void cancelfireOnCloseEvent(RSocket rSocket) {
+        System.out.println("cancelfireOnCloseEvent....111");
+        
+        if (rSocket != null) {
+            System.out.println("cancelfireOnCloseEvent....222");
+            rSocket.onClose().subscribe().dispose();
+        }
+    }
+    
+    @Override
+    protected void clearContextOnResetRequest() {
+        RsocketConnection rsocket = (RsocketConnection) currentConnetion;
+        cancelfireOnCloseEvent(rsocket.getrSocketClient());
+    }
+    
     void fireOnCloseEvent(RSocket rSocket) {
-        rSocket.onClose().subscribe(new Subscriber<Void>() {
+    
+        Subscriber subscriber = new Subscriber<Void>() {
             @Override
             public void onSubscribe(Subscription subscription) {
             
@@ -156,12 +177,11 @@ public class RsocketRpcClient extends RpcClient {
             
             @Override
             public void onNext(Void aVoid) {
-            
             }
             
             @Override
             public void onError(Throwable throwable) {
-                System.out.println("On error ,switch server ...");
+                System.out.println("On error ,switch server ..." + throwable);
                 switchServerAsync();
             }
             
@@ -170,7 +190,14 @@ public class RsocketRpcClient extends RpcClient {
                 System.out.println("On complete ,switch server ...");
                 switchServerAsync();
             }
-        });
+        };
+    
+    }
+    
+    class RsocketHolder {
+        
+        RSocket rsocket;
+        
     }
     
 }

@@ -23,8 +23,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.Future;
-
 /**
  * push response  to clients.
  *
@@ -53,7 +51,8 @@ public class RpcPushService {
                 connectionManager.unregister(connectionId);
                 return true;
             } catch (Exception e) {
-                Loggers.RPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                Loggers.RPC_DIGEST
+                        .error("error to send push response to connectionId ={},push response={}", connectionId,
                         request, e);
                 return false;
             }
@@ -68,7 +67,7 @@ public class RpcPushService {
      * @param connectionId connectionId.
      * @param request     request.
      */
-    public Future<Boolean> pushWithFuture(String connectionId, ServerPushRequest request) {
+    public PushFuture pushWithFuture(String connectionId, ServerPushRequest request) {
         
         Connection connection = connectionManager.getConnection(connectionId);
         if (connection != null) {
@@ -77,7 +76,8 @@ public class RpcPushService {
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
-                Loggers.RPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                Loggers.RPC_DIGEST
+                        .error("error to send push response to connectionId ={},push response={}", connectionId,
                         request, e);
             }
         }
@@ -99,7 +99,8 @@ public class RpcPushService {
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
-                Loggers.RPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                Loggers.RPC_DIGEST
+                        .error("error to send push response to connectionId ={},push response={}", connectionId,
                         request, e);
             }
         }
@@ -119,7 +120,8 @@ public class RpcPushService {
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
             } catch (Exception e) {
-                Loggers.RPC.error("error to send push response to connectionId ={},push response={}", connectionId,
+                Loggers.RPC_DIGEST
+                        .error("error to send push response to connectionId ={},push response={}", connectionId,
                         request, e);
             }
         }

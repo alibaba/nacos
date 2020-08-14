@@ -37,6 +37,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
+import io.rsocket.transport.netty.server.CloseableChannel;
 import io.rsocket.transport.netty.server.TcpServerTransport;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -59,6 +60,8 @@ public class RsocketRpcServer extends RpcServer {
     
     private RSocketServer rSocketServer;
     
+    CloseableChannel closeChannel;
+    
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
@@ -70,11 +73,15 @@ public class RsocketRpcServer extends RpcServer {
         return PORT_OFFSET;
     }
     
-    @PostConstruct
     @Override
-    public void start() throws Exception {
+    public void shundownServer() {
+    
+    }
+    
+    @Override
+    public void startServer() throws Exception {
         RSocketServer rSocketServerInner = RSocketServer.create();
-        rSocketServerInner.acceptor(((setup, sendingSocket) -> {
+        closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
             Loggers.RPC.info("Receive connection rsocket:" + setup.getDataUtf8());
             RsocketUtils.PlainRequest palinrequest = null;
             try {
@@ -92,7 +99,7 @@ public class RsocketRpcServer extends RpcServer {
                         .toObj(palinrequest.getBody(), ConnectionSetupRequest.class);
                 ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionSetupRequest.getConnectionId(),
                         connectionSetupRequest.getClientIp(), ConnectionType.RSOCKET.getType(),
-                        connectionSetupRequest.getClientVersion());
+                        connectionSetupRequest.getClientVersion(), connectionSetupRequest.getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
                 connectionManager.register(connection.getConnectionId(), connection);
                 
@@ -148,12 +155,18 @@ public class RsocketRpcServer extends RpcServer {
         })).bind(TcpServerTransport.create("0.0.0.0", (ApplicationUtils.getPort() + PORT_OFFSET))).block();
         
         rSocketServer = rSocketServerInner;
-        Loggers.RPC.info("Nacos Rsocket server start on port :" + (ApplicationUtils.getPort() + PORT_OFFSET));
         
     }
     
     @Override
-    public void stop() throws Exception {
+    public ConnectionType getConnectionType() {
+        return ConnectionType.RSOCKET;
+    }
     
+    @Override
+    public void stopServer() throws Exception {
+        if (this.closeChannel != null && !closeChannel.isDisposed()) {
+            this.closeChannel.dispose();
+        }
     }
 }

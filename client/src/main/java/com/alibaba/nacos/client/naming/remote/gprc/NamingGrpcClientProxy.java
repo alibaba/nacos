@@ -62,7 +62,7 @@ public class NamingGrpcClientProxy implements NamingClientProxy {
     public NamingGrpcClientProxy(String namespaceId, ServerListFactory serverListFactory,
             ServiceInfoHolder serviceInfoHolder) throws NacosException {
         this.namespaceId = namespaceId;
-        this.rpcClient = RpcClientFactory.getClient("naming", ConnectionType.GRPC);
+        this.rpcClient = RpcClientFactory.createClient("naming", ConnectionType.GRPC);
         this.namingGrpcConnectionEventListener = new NamingGrpcConnectionEventListener(this);
         start(serverListFactory, serviceInfoHolder);
     }
