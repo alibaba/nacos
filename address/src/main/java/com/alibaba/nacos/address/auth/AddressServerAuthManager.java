@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.address.auth;
 
-import com.alibaba.nacos.core.auth.AccessException;
-import com.alibaba.nacos.core.auth.AuthManager;
-import com.alibaba.nacos.core.auth.Permission;
-import com.alibaba.nacos.core.auth.User;
+import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.model.User;
 
 /**
  * Address server auth manager.

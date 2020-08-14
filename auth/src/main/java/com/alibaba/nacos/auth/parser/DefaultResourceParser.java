@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.parser;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
  * Default resource parser.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 public class DefaultResourceParser implements ResourceParser {

@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import com.alibaba.nacos.api.exception.NacosException;
+package com.alibaba.nacos.auth.parser;
 
 /**
- * Exception to be thrown if authorization is failed.
+ * Resource parser.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class AccessException extends NacosException {
+public interface ResourceParser {
     
-    private static final long serialVersionUID = -2926344920552803270L;
-    
-    public AccessException() {
-    
-    }
-    
-    public AccessException(int code) {
-        this.setErrCode(code);
-    }
-    
-    public AccessException(String msg) {
-        this.setErrMsg(msg);
-    }
-    
+    /**
+     * Parse a unique name of the resource from the request.
+     *
+     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
+     *                Object type for future accommodation.
+     * @return resource name
+     */
+    String parseName(Object request);
 }
