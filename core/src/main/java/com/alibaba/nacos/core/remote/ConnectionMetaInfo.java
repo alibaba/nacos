@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.core.remote;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * ConnectionMetaInfo.
@@ -56,13 +60,21 @@ public class ConnectionMetaInfo {
      */
     long lastActiveTime;
     
-    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType, String version) {
+    protected Map<String, String> labels = new HashMap<String, String>();
+    
+    public String getLabel(String labelKey) {
+        return labels.get(labelKey);
+    }
+    
+    public ConnectionMetaInfo(String connectionId, String clientIp, String connectType, String version,
+            Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
         this.version = version;
         this.createTime = new Date();
         this.lastActiveTime = System.currentTimeMillis();
+        this.labels.putAll(labels);
     }
     
     /**
@@ -171,5 +183,10 @@ public class ConnectionMetaInfo {
      */
     public void setVersion(String version) {
         this.version = version;
+    }
+    
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

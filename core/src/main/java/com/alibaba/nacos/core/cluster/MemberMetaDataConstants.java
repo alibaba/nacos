@@ -38,9 +38,11 @@ public class MemberMetaDataConstants {
     
     public static final String VERSION = "version";
     
+    public static final String SUPPORT_REMOTE_C_TYPE = "remoteConnectType";
+    
     public static final String[] META_KEY_LIST = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT,
-            LAST_REFRESH_TIME, VERSION};
+            LAST_REFRESH_TIME, VERSION, SUPPORT_REMOTE_C_TYPE};
     
     public static final String[] META_KEY_LIST_WITHOUT_LAST_REFRESH_TIME = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT,
-            WEIGHT, VERSION};
+            WEIGHT, VERSION, SUPPORT_REMOTE_C_TYPE};
 }

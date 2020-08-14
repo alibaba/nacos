@@ -21,6 +21,9 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.google.common.util.concurrent.FutureCallback;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * connection on client side.
  *
@@ -33,9 +36,23 @@ public abstract class Connection {
     
     protected String connectionId;
     
+    protected Map<String, String> labels = new HashMap<String, String>();
+    
     public Connection(String connetionId, RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
         this.connectionId = connetionId;
+    }
+    
+    public String getLabel(String labelKey) {
+        return labels.get(labelKey);
+    }
+    
+    public void putLabel(String labelKey, String labelValue) {
+        labels.put(labelKey, labelValue);
+    }
+    
+    public void putLabels(Map<String, String> labels) {
+        labels.putAll(labels);
     }
     
     /**

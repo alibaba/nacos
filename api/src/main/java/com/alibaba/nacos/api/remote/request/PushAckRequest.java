@@ -28,6 +28,8 @@ public class PushAckRequest extends InternalRequest {
     
     private boolean success;
     
+    private Exception exception;
+    
     @Override
     public String getType() {
         return RequestTypeConstants.PUSH_ACK;
@@ -82,5 +84,23 @@ public class PushAckRequest extends InternalRequest {
      */
     public void setSuccess(boolean success) {
         this.success = success;
+    }
+    
+    /**
+     * Setter method for property <tt>exception</tt>.
+     *
+     * @param exception value to be assigned to property exception
+     */
+    public void setException(Exception exception) {
+        this.exception = exception;
+    }
+    
+    /**
+     * Getter method for property <tt>exception</tt>.
+     *
+     * @return property value of exception
+     */
+    public Exception getException() {
+        return exception;
     }
 }

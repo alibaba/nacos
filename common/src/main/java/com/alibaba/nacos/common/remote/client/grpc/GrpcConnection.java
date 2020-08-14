@@ -50,7 +50,8 @@ public class GrpcConnection extends Connection {
     /**
      * executor to execute future request.
      */
-    static ExecutorService aynsRequestExecutor = Executors.newScheduledThreadPool(10);
+    static ExecutorService aynsRequestExecutor = Executors
+            .newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
     
     /**
      * grpc channel.

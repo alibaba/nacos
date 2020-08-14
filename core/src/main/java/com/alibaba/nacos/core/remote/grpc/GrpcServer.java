@@ -16,17 +16,28 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.core.utils.Loggers;
+import io.grpc.Attributes;
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.Grpc;
+import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerTransportFilter;
+import io.grpc.internal.ServerStream;
+import io.grpc.internal.ServerStreamHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import java.net.SocketAddress;
+import java.util.UUID;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -50,32 +61,35 @@ public class GrpcServer extends RpcServer {
     @Autowired
     private RequestHandlerRegistry requestHandlerRegistry;
     
-    @Autowired
-    private ConnectionManager connectionManager;
-    
     int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
     
     private void init() {
     }
     
-    @PostConstruct
     @Override
-    public void start() throws Exception {
-        
+    public ConnectionType getConnectionType() {
+        return ConnectionType.GRPC;
+    }
+    
+    @Override
+    public void startServer() throws Exception {
         init();
         server = ServerBuilder.forPort(grpcServerPort).addService(streamRequestHander).addService(requestHander)
-                .build();
+                .addTransportFilter(new ServerTransportFilter() {
+                    @Override
+                    public Attributes transportReady(Attributes transportAttrs) {
+                        System.out.println("transportReady:" + transportAttrs);
+                        Attributes test = transportAttrs.toBuilder().set(key, UUID.randomUUID().toString()).build();
+                        return test;
+                    }
+            
+                    @Override
+                    public void transportTerminated(Attributes transportAttrs) {
+                        System.out.println("transportTerminated:" + transportAttrs);
+                        super.transportTerminated(transportAttrs);
+                    }
+                }).intercept(new ConnetionIntereptor()).build();
         server.start();
-        Loggers.RPC.info("Nacos gRPC  server  start successfully at port :" + grpcServerPort);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                Loggers.RPC.info("Nacos gRPC server stopping...");
-                GrpcServer.this.stop();
-                Loggers.RPC.info("Nacos gRPC server stopped successfully...");
-            }
-        });
-    
     }
     
     @Override
@@ -84,17 +98,24 @@ public class GrpcServer extends RpcServer {
     }
     
     @Override
-    public void stop() {
+    public void shundownServer() {
         if (server != null) {
-            Loggers.RPC.info("Nacos clear all rpc clients...");
-            connectionManager.expelAll();
-            try {
-                //wait clients to switch  server.
-                Thread.sleep(2000L);
-            } catch (InterruptedException e) {
-                //Do nothing.
-            }
             server.shutdown();
+        }
+    }
+    
+    static final Attributes.Key key = Attributes.Key.create("conn_id");
+    
+    static class ConnetionIntereptor implements ServerInterceptor {
+        
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers,
+                ServerCallHandler<ReqT, RespT> next) {
+            Context ctx = Context.current();
+            // System.out.println(build);
+            System.out.println(call.getAttributes().get(key).toString());
+            return Contexts.interceptCall(Context.current(), call, headers, next);
+            
         }
     }
 }

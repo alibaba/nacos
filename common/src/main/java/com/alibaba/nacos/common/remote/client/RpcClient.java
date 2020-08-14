@@ -31,7 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,6 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+
+import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
  * abstract remote client to connect to server.
@@ -52,18 +56,24 @@ public abstract class RpcClient implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
     
+    protected static final long ACTIVE_INTERNAL = 3000L;
+    
     private ServerListFactory serverListFactory;
     
     protected String connectionId;
     
     protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<ConnectionEvent>();
     
-    protected AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
+    protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<RpcClientStatus>(
             RpcClientStatus.WAIT_INIT);
+    
+    private long activeTimeStamp = System.currentTimeMillis();
     
     protected ScheduledExecutorService executorService;
     
-    protected Connection currentConnetion;
+    protected volatile Connection currentConnetion;
+    
+    protected Map<String, String> labels = new HashMap<String, String>();
     
     /**
      * listener called where connect status changed.
@@ -113,6 +123,14 @@ public abstract class RpcClient implements Closeable {
                 }
             });
         }
+    }
+    
+    protected boolean overActiveTime() {
+        return System.currentTimeMillis() - this.activeTimeStamp > ACTIVE_INTERNAL;
+    }
+    
+    protected void refereshActiveTimestamp() {
+        this.activeTimeStamp = System.currentTimeMillis();
     }
     
     /**
@@ -169,6 +187,16 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
+     * init server list factory.
+     *
+     * @param labels labels
+     */
+    public void initLabels(Map<String, String> labels) {
+        this.labels.putAll(labels);
+        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init label  ,labels={}", this.labels);
+    }
+    
+    /**
      * Start this client.
      */
     public void start() throws NacosException {
@@ -196,8 +224,8 @@ public abstract class RpcClient implements Closeable {
                         } else if (take.isDisConnected()) {
                             notifyDisConnected();
                         }
-                    } catch (InterruptedException e) {
-                        //Do nothing
+                    } catch (Exception e) {
+                        //Donothing
                     }
                 }
             }
@@ -225,8 +253,9 @@ public abstract class RpcClient implements Closeable {
             public void requestReply(ServerPushRequest request) {
                 if (request instanceof ConnectResetRequest) {
                     try {
-                    
+    
                         if (isRunning()) {
+                            clearContextOnResetRequest();
                             switchServerAsync();
                         }
                     } catch (Exception e) {
@@ -247,18 +276,14 @@ public abstract class RpcClient implements Closeable {
      */
     protected void switchServerAsync() {
     
-        System.out.println("1");
-    
         //return if is in switching of other thread.
         if (switchingFlag.get()) {
-            System.out.println("1-1");
-        
             return;
         }
         executorService.submit(new Runnable() {
             @Override
             public void run() {
-            
+    
                 try {
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
@@ -269,27 +294,28 @@ public abstract class RpcClient implements Closeable {
                     // loop until start client success.
                     boolean switchSuccess = false;
                     while (!switchSuccess) {
-                    
+    
                         //1.get a new server
                         ServerInfo serverInfo = nextRpcServer();
+                        System.out.println("1:" + serverInfo);
                         //2.create a new channel to new server
                         try {
                             Connection connectNew = connectToServer(serverInfo);
                             if (connectNew != null) {
-                            
                                 //successfully create a new connect.
                                 closeConnection(currentConnetion);
                                 currentConnetion = connectNew;
                                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                                 switchSuccess = true;
-                                eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
+                                boolean s = eventLinkedBlockingQueue
+                                        .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
                             // error to create connection
                         }
-                    
+    
                         try {
                             //sleep 1 second to switch next server.
                             Thread.sleep(1000L);
@@ -310,7 +336,7 @@ public abstract class RpcClient implements Closeable {
     private void closeConnection(Connection connection) {
         if (connection != null) {
             connection.close();
-            eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
+            eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
         }
     }
     
@@ -328,6 +354,10 @@ public abstract class RpcClient implements Closeable {
      */
     public abstract int rpcPortOffset();
     
+    protected void clearContextOnResetRequest() {
+        // Default do nothing.
+    }
+    
     /**
      * send request.
      *
@@ -335,12 +365,32 @@ public abstract class RpcClient implements Closeable {
      * @return
      */
     public Response request(Request request) throws NacosException {
-        Response response = this.currentConnetion.request(request);
-        if (response != null && response instanceof ConnectionUnregisterResponse) {
-            switchServerAsync();
-            throw new IllegalStateException("Invalid client status.");
+        int retryTimes = 3;
+    
+        Exception exceptionToThrow = null;
+        while (retryTimes > 0) {
+            try {
+                Response response = this.currentConnetion.request(request);
+                if (response != null && response instanceof ConnectionUnregisterResponse) {
+                    clearContextOnResetRequest();
+                    switchServerAsync();
+                    throw new IllegalStateException("Invalid client status.");
+                }
+                refereshActiveTimestamp();
+                return response;
+            } catch (Exception e) {
+                LoggerUtils.printIfErrorEnabled(LOGGER,
+                        "Fail to send request,connectionId={}, request={},errorMesssage={}", this.connectionId, request,
+                        e.getMessage());
+                exceptionToThrow = e;
+            } finally {
+                retryTimes--;
+            }
         }
-        return response;
+        if (exceptionToThrow != null) {
+            throw new NacosException(SERVER_ERROR, exceptionToThrow);
+        }
+        return null;
     }
     
     /**
@@ -351,6 +401,7 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException {
         this.currentConnetion.asyncRequest(request, callback);
+        refereshActiveTimestamp();
     }
     
     /**
@@ -414,7 +465,10 @@ public abstract class RpcClient implements Closeable {
     }
     
     protected ServerInfo nextRpcServer() {
-        getServerListFactory().genNextServer();
+    
+        String s = getServerListFactory().genNextServer();
+        System.out.println("0...,switch..." + s);
+        
         String serverAddress = getServerListFactory().getCurrentServer();
         return resolveServerInfo(serverAddress);
     }

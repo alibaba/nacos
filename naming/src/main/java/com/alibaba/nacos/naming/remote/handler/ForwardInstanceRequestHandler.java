@@ -33,6 +33,7 @@ import com.alibaba.nacos.naming.remote.RemotingConnectionHolder;
 import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -79,7 +80,7 @@ public class ForwardInstanceRequestHandler extends RequestHandler<ForwardInstanc
     private void addRemotingConnectionIfAbsent(RequestMeta sourceRequestMeta) {
         if (null == remotingConnectionHolder.getRemotingConnection(sourceRequestMeta.getConnectionId())) {
             ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(sourceRequestMeta.getConnectionId(),
-                    sourceRequestMeta.getClientIp(), "cluster", sourceRequestMeta.getClientVersion());
+                    sourceRequestMeta.getClientIp(), "cluster", sourceRequestMeta.getClientVersion(), new HashMap<>());
             remotingConnectionHolder.clientConnected(new ClusterConnection(metaInfo));
         }
     }

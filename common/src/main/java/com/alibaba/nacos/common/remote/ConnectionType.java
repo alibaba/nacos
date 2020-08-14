@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote;
 
 /**
  * ConnectionType.
+ *
  * @author liuzunfei
  * @version $Id: ConnectionType.java, v 0.1 2020年07月13日 7:15 PM liuzunfei Exp $
  */
@@ -41,6 +42,16 @@ public enum ConnectionType {
     String type;
     
     String name;
+    
+    public static ConnectionType getByType(String type) {
+        ConnectionType[] values = ConnectionType.values();
+        for (ConnectionType connectionType : values) {
+            if (connectionType.getType().equals(type)) {
+                return connectionType;
+            }
+        }
+        return null;
+    }
     
     private ConnectionType(String type, String name) {
         this.type = type;
