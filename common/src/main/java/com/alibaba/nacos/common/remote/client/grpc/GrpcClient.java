@@ -41,9 +41,6 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
-import java.net.InetSocketAddress;
-import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -171,31 +168,12 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    private Object getFiled(Object o, String filed0) {
-        try {
-            Class clazz = o.getClass();
-            while (clazz != null) {
-                Field[] declaredFields = clazz.getDeclaredFields();
-                for (Field f0 : declaredFields) {
-                    if (f0.getName().equals(filed0)) {
-                        f0.setAccessible(true);
-                        return f0.get(o);
-                    }
-                }
-                clazz = clazz.getSuperclass();
-            }
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
     /**
      * bind request stream observer (send a connection).
      *
      * @param streamStub streamStub to bind.
      */
-    private String bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
+    private void bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta("")).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
@@ -228,8 +206,6 @@ public class GrpcClient extends RpcClient {
             public void onCompleted() {
             }
         });
-    
-        return connectionId;
     }
     
     private void sendAckResponse(String ackId, boolean success) {
@@ -264,8 +240,8 @@ public class GrpcClient extends RpcClient {
                 LOGGER.info("success to create a connection to a server.");
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                String connetionid = bindRequestStream(requestStreamStubTemp);
-                GrpcConnection grpcConn = new GrpcConnection(connetionid, serverInfo);
+                bindRequestStream(requestStreamStubTemp);
+                GrpcConnection grpcConn = new GrpcConnection("", serverInfo);
     
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
