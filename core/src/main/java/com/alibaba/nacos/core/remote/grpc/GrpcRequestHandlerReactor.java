@@ -33,6 +33,7 @@ import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.utils.Loggers;
+import io.grpc.stub.ServerCalls;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,7 +55,6 @@ public class GrpcRequestHandlerReactor extends RequestGrpc.RequestImplBase {
     
     @Override
     public void request(GrpcRequest grpcRequest, StreamObserver<GrpcResponse> responseObserver) {
-    
         Loggers.RPC_DIGEST.debug(" gRpc Server receive request :" + grpcRequest);
         String type = grpcRequest.getType();
         if (RequestTypeConstants.SERVER_CHECK.equals(type)) {

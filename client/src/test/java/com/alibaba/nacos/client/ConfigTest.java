@@ -154,7 +154,7 @@ public class ConfigTest {
             public void run() {
                 long start = System.currentTimeMillis();
                 Random random = new Random();
-                int times = 1;
+                int times = 100;
                 while (times > 0) {
                     try {
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,

@@ -45,7 +45,7 @@ public class GrpcConnection extends Connection {
     
     @Override
     public boolean heartBeatExpire() {
-        return true;
+        return false;
     }
     
     @Override
