@@ -145,7 +145,7 @@ public class GrpcClient extends RpcClient {
     }
     
     private GrpcMetadata buildMeta(String connectionIdInner) {
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionIdInner).setClientIp(NetUtils.localIP())
+        GrpcMetadata meta = GrpcMetadata.newBuilder().setClientIp(NetUtils.localIP())
                 .setVersion(VersionUtils.getFullClientVersion()).putAllLabels(labels).build();
         return meta;
     }
@@ -196,25 +196,7 @@ public class GrpcClient extends RpcClient {
      * @param streamStub streamStub to bind.
      */
     private String bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
-        streamStub.getChannel();
-        Object delegate = getFiled(streamStub.getChannel(), "delegate");
-        String connectionId = null;
-        if (delegate != null) {
-            Object subchannls = getFiled(delegate, "subchannels");
-            Object o = ((HashSet) subchannls).iterator().next();
-            if (o != null) {
-                Object activeTransport = getFiled(o, "activeTransport");
-                Object delegate1 = getFiled(activeTransport, "delegate");
-                Object delegate2 = getFiled(delegate1, "delegate");
-                Object channel = getFiled(delegate2, "channel");
-                Object ch = getFiled(channel, "ch");
-                InetSocketAddress socketAddress = (InetSocketAddress) getFiled(ch, "localAddress");
-                if (socketAddress != null) {
-                    connectionId = socketAddress.toString();
-                }
-            }
-        }
-        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta(connectionId)).build();
+        GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta("")).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
             @Override
