@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,52 +30,76 @@ import org.junit.Test;
 
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Ignore
 public class ConfigTest {
-    
+
     private static ConfigService configService;
-    
+
     @Before
-    public static void before() throws Exception {
+    public  void before() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         configService = NacosFactory.createConfigService(properties);
     }
-    
+
     @After
     public void cleanup() throws Exception {
         configService.shutDown();
     }
-    
+
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
+        // set config
         final String dataId = "lessspring";
         final String group = "lessspring";
         final String content = "lessspring-" + System.currentTimeMillis();
         boolean result = configService.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
-        
+
         ThreadUtils.sleep(10000L);
-        
+
+        // set change listener
+        final AtomicBoolean hasListener = new AtomicBoolean(false);
+        final AtomicBoolean hasChangedCallback = new AtomicBoolean(false);
+        final String[] changedTmpContent = {""};
         String response = configService.getConfigAndSignListener(dataId, group, 5000, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.err.println(configInfo);
+                System.out.println("receiveConfigInfo:"+configInfo);
+                changedTmpContent[0] =  configInfo;
+                hasChangedCallback.set(true);
             }
         });
+        hasListener.set(true);
         Assert.assertEquals(content, response);
-        
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("input content");
-        while (scanner.hasNextLine()) {
-            String s = scanner.next();
-            if ("exit".equals(s)) {
-                scanner.close();
-                return;
+
+        // new thread to publish config
+        final String newRawContent = "nacosnewconfig-"+System.currentTimeMillis();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (hasListener.get()){
+                    try {
+                        configService.publishConfig(dataId,group,newRawContent);
+                        hasListener.set(false);
+                        break;
+                    } catch (NacosException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-            configService.publishConfig(dataId, group, s);
-        }
+        }).start();
+
+        // spin
+        do {
+            if (hasChangedCallback.get()){
+                System.out.println(newRawContent +"==> "+changedTmpContent[0]);
+                Assert.assertEquals(newRawContent, changedTmpContent[0]);
+                break;
+            }
+        }while (!hasChangedCallback.get());
     }
-    
+
 }
