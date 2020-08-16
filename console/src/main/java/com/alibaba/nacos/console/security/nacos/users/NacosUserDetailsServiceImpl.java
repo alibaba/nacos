@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.console.security.nacos.users;
 
+import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.config.server.auth.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

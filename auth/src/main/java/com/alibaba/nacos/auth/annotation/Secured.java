@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.annotation;
 
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.parser.DefaultResourceParser;
+import com.alibaba.nacos.auth.parser.ResourceParser;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.annotation.Retention;
@@ -25,6 +28,7 @@ import java.lang.annotation.RetentionPolicy;
  * Annotation indicating that the annotated request should be authorized.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 @Retention(RetentionPolicy.RUNTIME)

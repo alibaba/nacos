@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import java.io.Serializable;
+package com.alibaba.nacos.auth.common;
 
 /**
- * User information in authorization.
+ * Types of all auth implementations.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class User implements Serializable {
-    
-    private static final long serialVersionUID = -8002966873087151367L;
+public enum AuthSystemTypes {
     
     /**
-     * Unique string representing user.
+     * Nacos builtin auth system.
      */
-    private String userName;
-    
-    public String getUserName() {
-        return userName;
-    }
-    
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+    NACOS
 }

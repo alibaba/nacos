@@ -17,6 +17,11 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -28,7 +33,6 @@ import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
-import com.alibaba.nacos.core.auth.*;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,7 +41,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
