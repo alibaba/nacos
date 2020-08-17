@@ -65,16 +65,11 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
     
-    public String getSecretKey() {
-        return secretKey;
-    }
-    
     public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            secretKeyBytes = secretKey.getBytes();
+        }
         return secretKeyBytes;
-    }
-    
-    public void setSecretKeyBytes(byte[] secretKeyBytes) {
-        this.secretKeyBytes = secretKeyBytes;
     }
     
     public long getTokenValidityInSeconds() {
