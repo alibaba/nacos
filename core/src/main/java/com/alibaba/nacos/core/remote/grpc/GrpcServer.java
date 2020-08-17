@@ -103,7 +103,6 @@ public class GrpcServer extends RpcServer {
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
-                        System.out.println("transportReady:" + transportAttrs);
                         Attributes test = transportAttrs.toBuilder()
                                 .set(TRANS_KEY_CONN_ID, UUID.randomUUID().toString()).build();
                         return test;
@@ -111,10 +110,8 @@ public class GrpcServer extends RpcServer {
     
                     @Override
                     public void transportTerminated(Attributes transportAttrs) {
-                        System.out.println("transportTerminated:" + transportAttrs);
                         String connectionid = transportAttrs.get(TRANS_KEY_CONN_ID);
                         connectionManager.unregister(connectionid);
-                        super.transportTerminated(transportAttrs);
                     }
                 }).build();
         server.start();

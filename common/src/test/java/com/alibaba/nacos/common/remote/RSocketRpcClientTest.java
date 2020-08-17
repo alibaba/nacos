@@ -33,7 +33,7 @@ import javax.tools.ToolProvider;
 public class RSocketRpcClientTest {
     
     @Test
-    public void testConectToServer() {
+    public void testConectToServer() throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         System.out.println(compiler.getSourceVersions());
         RsocketRpcClient rsocketRpcClient = new RsocketRpcClient();

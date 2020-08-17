@@ -51,17 +51,17 @@ public class ConfigChangeNotifier {
     /**
      * adaptor to config module ,when server side congif change ,invoke this method.
      *
-     * @param groupKey       groupKey
+     * @param groupKey     groupKey
      * @param notifyRequet notifyRequet
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
         
         Set<String> clients = configChangeListenContext.getListeners(groupKey);
-    
+        long start = System.currentTimeMillis();
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
                 rpcPushService.pushWithCallback(client, notifyRequet, new AbstractPushCallBack(500L) {
-                 
+    
                     @Override
                     public void onSuccess() {
                         Loggers.CORE.info("push callback success.,groupKey={},clientId={}", groupKey, client);
@@ -84,6 +84,9 @@ public class ConfigChangeNotifier {
     
             }
         }
+        long end = System.currentTimeMillis();
+    
+        Loggers.RPC.info("push {} clients cost {} millsenconds.", clients.size(), (end - start));
     }
     
     void retryPush(final String clientId, final ConfigChangeNotifyRequest notifyRequet, final int maxRetyTimes) {
@@ -96,15 +99,14 @@ public class ConfigChangeNotifier {
                     boolean rePushFlag = false;
                     while (maxTimes > 0 && !rePushFlag) {
                         maxTimes--;
-                        boolean push = rpcPushService.push(clientId, notifyRequet, 1000L);
+                        boolean push = rpcPushService.push(clientId, notifyRequet, 500L);
                         if (push) {
                             rePushFlag = true;
                         }
                     }
                     if (rePushFlag) {
                         Loggers.CORE.warn("push callback retry success.dataId={},group={},tenant={},clientId={}",
-                                notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                clientId);
+                                notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId);
                     } else {
                         Loggers.CORE.error(String
                                 .format("push callback retry fail.dataId={},group={},tenant={},clientId={}",

@@ -84,14 +84,6 @@ public abstract class RpcServer {
      * Stop Server.
      */
     public void stopServer() throws Exception {
-        Loggers.RPC.info("Nacos clear all rpc clients...");
-        connectionManager.expelAll();
-        try {
-            //wait clients to switch  server.
-            Thread.sleep(2000L);
-        } catch (InterruptedException e) {
-            //Do nothing.
-        }
         shundownServer();
     }
     

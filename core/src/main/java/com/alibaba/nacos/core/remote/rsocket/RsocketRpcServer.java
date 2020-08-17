@@ -37,8 +37,11 @@ import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.core.RSocketServer;
+import io.rsocket.plugins.InterceptorRegistry;
+import io.rsocket.plugins.RSocketInterceptor;
 import io.rsocket.transport.netty.server.CloseableChannel;
 import io.rsocket.transport.netty.server.TcpServerTransport;
+import io.rsocket.util.RSocketProxy;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +49,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * rpc server of rsocket.
@@ -81,6 +86,7 @@ public class RsocketRpcServer extends RpcServer {
     @Override
     public void startServer() throws Exception {
         RSocketServer rSocketServerInner = RSocketServer.create();
+    
         closeChannel = rSocketServerInner.acceptor(((setup, sendingSocket) -> {
             Loggers.RPC.info("Receive connection rsocket:" + setup.getDataUtf8());
             RsocketUtils.PlainRequest palinrequest = null;
@@ -95,9 +101,11 @@ public class RsocketRpcServer extends RpcServer {
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
             } else {
+    
+                String connectionid = UUID.randomUUID().toString();
                 ConnectionSetupRequest connectionSetupRequest = RsocketUtils
                         .toObj(palinrequest.getBody(), ConnectionSetupRequest.class);
-                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionSetupRequest.getConnectionId(),
+                ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionid,
                         connectionSetupRequest.getClientIp(), ConnectionType.RSOCKET.getType(),
                         connectionSetupRequest.getClientVersion(), connectionSetupRequest.getLabels());
                 Connection connection = new RsocketConnection(metaInfo, sendingSocket);
@@ -117,6 +125,7 @@ public class RsocketRpcServer extends RpcServer {
                     
                     @Override
                     public void onError(Throwable throwable) {
+                        throwable.printStackTrace();
                         connectionManager.unregister(connectionId);
                     }
                     
@@ -125,37 +134,52 @@ public class RsocketRpcServer extends RpcServer {
                         connectionManager.unregister(connectionId);
                     }
                 });
-                
-                return Mono.just(new RSocket() {
-                    @Override
-                    public Mono<Payload> requestResponse(Payload payload) {
-                        Loggers.RPC_DIGEST.info("Receive request :" + payload.getDataUtf8());
-                        
-                        RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
-                        
-                        RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
-                        if (requestHandler != null) {
-                            Request request = requestHandler.parseBodyString(requestType.getBody());
-                            
-                            try {
-                                Response response = requestHandler
-                                        .handle(request, JacksonUtils.toObj(requestType.getMeta(), RequestMeta.class));
-                                return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                                
-                            } catch (NacosException e) {
-                                return Mono.just(RsocketUtils.convertResponseToPayload(
-                                        new PlainBodyResponse("exception:" + e.getMessage())));
-                            }
-                        }
-                        return Mono.just(RsocketUtils.convertResponseToPayload(new PlainBodyResponse("No Handler")));
-                    }
-                });
+    
+                RSocketProxy rSocketProxy = new NacosRSocket(sendingSocket, connectionid);
+    
+                return Mono.just(rSocketProxy);
             }
-            
+        
         })).bind(TcpServerTransport.create("0.0.0.0", (ApplicationUtils.getPort() + PORT_OFFSET))).block();
-        
+    
         rSocketServer = rSocketServerInner;
+    
+    }
+    
+    class NacosRSocket extends RSocketProxy {
         
+        String connectionId;
+        
+        public NacosRSocket(RSocket source) {
+            super(source);
+        }
+        
+        public NacosRSocket(RSocket source, String connectionId) {
+            super(source);
+            this.connectionId = connectionId;
+        }
+        
+        @Override
+        public Mono<Payload> requestResponse(Payload payload) {
+            Loggers.RPC_DIGEST.info("Receive request :" + payload.getDataUtf8());
+            RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
+            RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
+            if (requestHandler != null) {
+                Request request = requestHandler.parseBodyString(requestType.getBody());
+                String meta = requestType.getMeta();
+                RequestMeta requestMeta = RsocketUtils.toObj(meta, RequestMeta.class);
+                requestMeta.setConnectionId(connectionId);
+                try {
+                    Response response = requestHandler.handle(request, requestMeta);
+                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                    
+                } catch (NacosException e) {
+                    return Mono.just(RsocketUtils
+                            .convertResponseToPayload(new PlainBodyResponse("exception:" + e.getMessage())));
+                }
+            }
+            return Mono.just(RsocketUtils.convertResponseToPayload(new PlainBodyResponse("No Handler")));
+        }
     }
     
     @Override

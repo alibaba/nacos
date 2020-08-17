@@ -663,12 +663,11 @@ public class ClientWorker implements Closeable {
                         while (true) {
                             try {
                                 lock.lock();
-                                //System.out.println("wait execute listen..");
-                                condition.await(1L, TimeUnit.SECONDS);
+                                condition.await(5L, TimeUnit.SECONDS);
                                 executeRpcListen();
                             } catch (Exception e) {
                                 e.printStackTrace();
-                                //re try next time
+                                //retry next time
                             } finally {
                                 lock.unlock();
                             }

@@ -27,8 +27,6 @@ import java.util.Map;
  */
 public class ConnectionSetupRequest extends InternalRequest {
     
-    private String connectionId;
-    
     private String clientIp;
     
     private String clientVersion;
@@ -38,16 +36,14 @@ public class ConnectionSetupRequest extends InternalRequest {
     public ConnectionSetupRequest() {
     }
     
-    public ConnectionSetupRequest(String connectionId, String clientIp, String clientVersion) {
+    public ConnectionSetupRequest(String clientIp, String clientVersion) {
         this.clientIp = clientIp;
-        this.connectionId = connectionId;
         this.clientVersion = clientVersion;
     }
     
-    public ConnectionSetupRequest(String connectionId, String clientIp, String clientVersion,
+    public ConnectionSetupRequest(String clientIp, String clientVersion,
             Map<String, String> labels) {
         this.clientIp = clientIp;
-        this.connectionId = connectionId;
         this.clientVersion = clientVersion;
         this.labels = labels;
     }
@@ -55,24 +51,6 @@ public class ConnectionSetupRequest extends InternalRequest {
     @Override
     public String getType() {
         return RequestTypeConstants.CONNECTION_SETUP;
-    }
-    
-    /**
-     * Getter method for property <tt>connectionId</tt>.
-     *
-     * @return property value of connectionId
-     */
-    public String getConnectionId() {
-        return connectionId;
-    }
-    
-    /**
-     * Setter method for property <tt>connectionId</tt>.
-     *
-     * @param connectionId value to be assigned to property connectionId
-     */
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
     }
     
     /**

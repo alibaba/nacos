@@ -241,7 +241,7 @@ public class GrpcClient extends RpcClient {
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 bindRequestStream(requestStreamStubTemp);
-                GrpcConnection grpcConn = new GrpcConnection("", serverInfo);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo);
     
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
