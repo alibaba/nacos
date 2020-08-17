@@ -26,7 +26,9 @@ import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.util.concurrent.FutureCallback;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +180,7 @@ public abstract class RpcClient implements Closeable {
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
     
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init , ServerListFactory ={}",
-                        serverListFactory.getClass().getName());
+                serverListFactory.getClass().getName());
     }
     
     /**
@@ -250,7 +252,7 @@ public abstract class RpcClient implements Closeable {
             rpcClientStatus.set(RpcClientStatus.RUNNING);
             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
         } else {
-            switchServerAsync();
+            switchServerAsync(null);
         }
     
         registerServerPushResponseHandler(new ServerRequestHandler() {
@@ -260,8 +262,20 @@ public abstract class RpcClient implements Closeable {
                     try {
                         synchronized (this) {
                             if (isRunning()) {
+                                ConnectResetRequest connectResetRequest = (ConnectResetRequest) request;
                                 clearContextOnResetRequest();
-                                switchServerAsync();
+                                if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtils
+                                        .isDigits(connectResetRequest.getServerPort())) {
+        
+                                    ServerInfo serverInfo = new ServerInfo();
+        
+                                    serverInfo.setServerIp(connectResetRequest.getServerIp());
+                                    serverInfo.setServerPort(
+                                            Integer.valueOf(connectResetRequest.getServerPort()) + rpcPortOffset());
+                                    switchServerAsync(serverInfo);
+                                } else {
+                                    switchServerAsync();
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -277,13 +291,17 @@ public abstract class RpcClient implements Closeable {
     
     private volatile AtomicBoolean switchingFlag = new AtomicBoolean(false);
     
+    protected void switchServerAsync() {
+        switchServerAsync(null);
+    }
+    
     /**
      * 1.判断当前是否正在重连中 2.如果正在重连中，则直接返回；如果不在重连中，则启动重连 3.重连逻辑：创建一个新的连接，如果连接可用
      */
-    protected void switchServerAsync() {
-    
+    protected void switchServerAsync(final ServerInfo serverInfoTryOnce) {
+        
         System.out.println("switchServerAsync...1");
-    
+        
         //return if is in switching of other thread.
         if (switchingFlag.get()) {
             System.out.println("switchServerAsync...2");
@@ -295,6 +313,9 @@ public abstract class RpcClient implements Closeable {
             public void run() {
     
                 try {
+        
+                    AtomicReference<ServerInfo> serverInfoTryOnceInner = new AtomicReference<ServerInfo>(
+                            serverInfoTryOnce);
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
                     if (!innerLock) {
@@ -303,14 +324,15 @@ public abstract class RpcClient implements Closeable {
                         return;
                     }
                     System.out.println("switchServerAsync...4");
-    
+        
                     switchingFlag.set(true);
                     // loop until start client success.
                     boolean switchSuccess = false;
                     while (!switchSuccess) {
     
                         //1.get a new server
-                        ServerInfo serverInfo = nextRpcServer();
+                        ServerInfo serverInfo =
+                                serverInfoTryOnceInner.get() == null ? nextRpcServer() : serverInfoTryOnceInner.get();
                         System.out.println("get server:" + serverInfo);
                         //2.create a new channel to new server
                         try {
@@ -327,11 +349,14 @@ public abstract class RpcClient implements Closeable {
                                         .add(new ConnectionEvent(ConnectionEvent.CONNECTED));
                                 return;
                             }
+    
                         } catch (Exception e) {
                             System.out.println(
                                     "fail to connect server:" + serverInfo + " ,error message is " + e.getMessage());
                         }
     
+                        serverInfoTryOnceInner.set(null);
+                        
                         try {
                             //sleep 1 second to switch next server.
                             Thread.sleep(1000L);

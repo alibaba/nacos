@@ -24,6 +24,10 @@ package com.alibaba.nacos.api.remote.request;
  */
 public class ConnectResetRequest extends ServerPushRequest {
     
+    String serverIp;
+    
+    String serverPort;
+    
     @Override
     public String getType() {
         return RequestTypeConstants.CONNECTION_RESET;
@@ -34,4 +38,39 @@ public class ConnectResetRequest extends ServerPushRequest {
         return "internal";
     }
     
+    /**
+     * Getter method for property <tt>serverIp</tt>.
+     *
+     * @return property value of serverIp
+     */
+    public String getServerIp() {
+        return serverIp;
+    }
+    
+    /**
+     * Setter method for property <tt>serverIp</tt>.
+     *
+     * @param serverIp value to be assigned to property serverIp
+     */
+    public void setServerIp(String serverIp) {
+        this.serverIp = serverIp;
+    }
+    
+    /**
+     * Getter method for property <tt>serverPort</tt>.
+     *
+     * @return property value of serverPort
+     */
+    public String getServerPort() {
+        return serverPort;
+    }
+    
+    /**
+     * Setter method for property <tt>serverPort</tt>.
+     *
+     * @param serverPort value to be assigned to property serverPort
+     */
+    public void setServerPort(String serverPort) {
+        this.serverPort = serverPort;
+    }
 }
