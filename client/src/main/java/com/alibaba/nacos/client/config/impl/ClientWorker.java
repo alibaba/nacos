@@ -202,6 +202,8 @@ public class ClientWorker implements Closeable {
             if (cache.getListeners().isEmpty()) {
                 if (ParamUtils.useHttpSwitch()) {
                     removeCache(dataId, group);
+                } else {
+                    notifyRpcListenConfig();
                 }
             }
         }
@@ -662,7 +664,7 @@ public class ClientWorker implements Closeable {
                             try {
                                 lock.lock();
                                 //System.out.println("wait execute listen..");
-                                condition.await();
+                                condition.await(1L, TimeUnit.SECONDS);
                                 executeRpcListen();
                             } catch (Exception e) {
                                 e.printStackTrace();

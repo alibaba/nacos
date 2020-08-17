@@ -41,9 +41,9 @@ public class ConfigConnectionEventListener extends ClientConnectionEventListener
     
     @Override
     public void clientDisConnected(Connection connect) {
-        Loggers.RPC
-                .info("client disconnected,clear config listen context, connetionId is {}", connect.getConnectionId());
-        configChangeListenContext.removeConnectionId(connect.getConnectionId());
+        String connectionId = connect.getConnectionId();
+        Loggers.RPC.info("client disconnected,clear config listen context, connetionId is {}", connectionId);
+        configChangeListenContext.clearContextForConnectionId(connectionId);
     }
     
 }

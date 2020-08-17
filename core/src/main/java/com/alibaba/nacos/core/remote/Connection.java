@@ -143,6 +143,15 @@ public abstract class Connection {
         return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
     }
     
+    /**
+     * Getter method for property <tt>metaInfo</tt>.
+     *
+     * @return property value of metaInfo
+     */
+    public ConnectionMetaInfo getMetaInfo() {
+        return metaInfo;
+    }
+    
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);

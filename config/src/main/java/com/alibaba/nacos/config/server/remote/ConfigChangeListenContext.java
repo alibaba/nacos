@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * config change listen context.
@@ -35,12 +37,12 @@ public class ConfigChangeListenContext {
     /**
      * groupKey-> connnection set.
      */
-    private Map<String, Set<String>> groupKeyContext = new HashMap<String, Set<String>>();
+    private Map<String, Set<String>> groupKeyContext = new ConcurrentHashMap<String, Set<String>>();
     
     /**
      * connectionId-> groupkey set.
      */
-    private Map<String, Set<String>> connectionIdContext = new HashMap<String, Set<String>>();
+    private Map<String, Set<GroupKeyContext>> connectionIdContext = new ConcurrentHashMap<String, Set<GroupKeyContext>>();
     
     /**
      * add listen .
@@ -48,7 +50,7 @@ public class ConfigChangeListenContext {
      * @param listenKey    listenKey.
      * @param connectionId connectionId.
      */
-    public void addListen(String listenKey, String connectionId) {
+    public void addListen(String listenKey, String md5, String connectionId) {
         
         // 1.add groupKeyContext
         Set<String> listenClients = groupKeyContext.get(listenKey);
@@ -59,41 +61,67 @@ public class ConfigChangeListenContext {
         listenClients.add(connectionId);
         
         // 2.add connectionIdContext
-        Set<String> groupKeys = connectionIdContext.get(connectionId);
+        Set<GroupKeyContext> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys == null) {
             connectionIdContext.putIfAbsent(connectionId, new HashSet<>());
             groupKeys = connectionIdContext.get(connectionId);
         }
-        groupKeys.add(listenKey);
+    
+        Iterator<GroupKeyContext> iterator = groupKeys.iterator();
+        GroupKeyContext findKey = null;
+        while (iterator.hasNext()) {
+            GroupKeyContext next = iterator.next();
+            if (next.groupkey.equals(listenKey)) {
+                findKey = next;
+            }
+        }
+    
+        if (findKey != null) {
+            findKey.setMd5(md5);
+        } else {
+            groupKeys.add(new GroupKeyContext(listenKey, md5));
+        }
         
     }
     
     /**
-     * remove listen context for connectionId ..
-     *
-     * @param lisnteKey    lisnteKey
+     * remove listen context for connectionId .
+     * @param lisnteKey    listenKey
      * @param connectionId connectionId
      */
-    public void removeListen(String lisnteKey, String connectionId) {
+    public void removeListen(String listenKey, String connectionId) {
         
         //1. remove groupKeyContext
-        Set<String> connectionIds = groupKeyContext.get(lisnteKey);
+        Set<String> connectionIds = groupKeyContext.get(listenKey);
         if (connectionIds != null) {
             connectionIds.remove(connectionId);
+            if (connectionIds.isEmpty()) {
+                groupKeyContext.remove(listenKey);
+            }
         }
         
         //2.remove connectionIdContext
-        Set<String> groupKeys = connectionIdContext.get(connectionId);
+        Set<GroupKeyContext> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys != null) {
-            groupKeys.remove(lisnteKey);
+            Iterator<GroupKeyContext> iterator = groupKeys.iterator();
+            GroupKeyContext findKey = null;
+            while (iterator.hasNext()) {
+                GroupKeyContext next = iterator.next();
+                if (next.groupkey.equals(listenKey)) {
+                    findKey = next;
+                }
+            }
+            if (findKey != null) {
+                groupKeys.remove(findKey);
+            }
+            if (CollectionUtils.isEmpty(groupKeys)) {
+                connectionIdContext.remove(connectionId);
+            }
         }
     }
     
     public Set<String> getListeners(String listenKey) {
-        if (groupKeyContext.containsKey(listenKey)) {
-            return groupKeyContext.get(listenKey);
-        }
-        return null;
+        return groupKeyContext.get(listenKey);
     }
     
     /**
@@ -101,15 +129,50 @@ public class ConfigChangeListenContext {
      *
      * @param connectionId connectionId.
      */
-    public void removeConnectionId(final String connectionId) {
-        Set<String> groupKeysinner = connectionIdContext.get(connectionId);
-        
-        if (groupKeysinner != null) {
-            Set<String> groupKeys = new HashSet<String>(groupKeysinner);
-            for (String groupKey : groupKeys) {
-                removeListen(groupKey, connectionId);
+    public void clearContextForConnectionId(final String connectionId) {
+    
+        Set<GroupKeyContext> listenKeys = getListenKeys(connectionId);
+    
+        if (CollectionUtils.isNotEmpty(listenKeys)) {
+            for (GroupKeyContext groupKey : listenKeys) {
+                Set<String> listeners = getListeners(groupKey.groupkey);
+                if (CollectionUtils.isNotEmpty(listeners)) {
+                    listeners.remove(connectionId);
+                }
             }
         }
         connectionIdContext.remove(connectionId);
+    }
+    
+    /**
+     * get listenkeys.
+     *
+     * @param connectionId connetionid.
+     * @return
+     */
+    public Set<GroupKeyContext> getListenKeys(String connectionId) {
+        return connectionIdContext.get(connectionId);
+    }
+    
+    /**
+     * get listenkey.
+     *
+     * @param connectionId connetionid.
+     * @return
+     */
+    public GroupKeyContext getListenKey(String connectionId, String groupKey) {
+        Set<GroupKeyContext> groupKeyContexts = connectionIdContext.get(connectionId);
+        if (groupKeyContexts == null) {
+            return null;
+        }
+        
+        Iterator<GroupKeyContext> iterator = groupKeyContexts.iterator();
+        while (iterator.hasNext()) {
+            GroupKeyContext next = iterator.next();
+            if (next.groupkey.equals(groupKey)) {
+                return next;
+            }
+        }
+        return null;
     }
 }

@@ -98,8 +98,31 @@ public class ConnectionManager {
         }
     }
     
+    /**
+     * get by connection id.
+     *
+     * @param connectionId connection id.
+     * @return
+     */
     public Connection getConnection(String connectionId) {
         return connetions.get(connectionId);
+    }
+    
+    /**
+     * get by client ip.
+     *
+     * @param clientIp client ip.
+     * @return
+     */
+    public Connection getConnectionByIp(String clientIp) {
+        Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+        for (Map.Entry<String, Connection> entry : entries) {
+            Connection value = entry.getValue();
+            if (clientIp.equals(value.getMetaInfo().clientIp)) {
+                return value;
+            }
+        }
+        return null;
     }
     
     /**
