@@ -86,8 +86,6 @@ public class GrpcServer extends RpcServer {
     public void startServer() throws Exception {
         init();
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-        //handlerRegistry.addService(streamRequestHander);
-        //handlerRegistry.addService(requestHander);
     
         // server intercetpor to set connection id.
         ServerInterceptor serverInterceptor = new ServerInterceptor() {
@@ -122,7 +120,7 @@ public class GrpcServer extends RpcServer {
         server.start();
     }
     
-    private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor serverInterceptor) {
+    private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
         
         // unary call register.
         final MethodDescriptor<GrpcRequest, GrpcResponse> unaryMethod = MethodDescriptor.<GrpcRequest, GrpcResponse>newBuilder()

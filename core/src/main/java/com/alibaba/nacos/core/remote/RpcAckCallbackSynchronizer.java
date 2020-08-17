@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -52,22 +49,6 @@ public class RpcAckCallbackSynchronizer {
                             stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException());
                         }
                     });
-                }
-            }).build();
-    
-    
-    private static final Map<String, DefaultPushFuture> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, DefaultPushFuture>()
-            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, DefaultPushFuture>() {
-                @Override
-                public void onEviction(String s, DefaultPushFuture pushCallBack) {
-                    if (System.currentTimeMillis() - pushCallBack.getTimeStamp() > TIMEOUT) {
-                        Loggers.CORE.warn("time out on eviction:" + pushCallBack.getRequestId());
-                        if (pushCallBack.getPushCallBack() != null) {
-                            pushCallBack.getPushCallBack().onTimeout();
-                        }
-                    } else {
-                        pushCallBack.getPushCallBack().onFail(new RuntimeException("callback pool overlimit"));
-                    }
                 }
             }).build();
     
@@ -99,12 +80,9 @@ public class RpcAckCallbackSynchronizer {
      * notify  ackid.
      */
     public static void ackNotify(String connectionId, String requestId, boolean success, Exception e) {
-        if (!CALLBACK_CONTEXT2.containsKey(connectionId)) {
-            return;
-        }
     
         Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connectionId);
-        if (stringDefaultPushFutureMap.containsKey(requestId)) {
+        if (stringDefaultPushFutureMap == null) {
             return;
         }
     
@@ -112,7 +90,6 @@ public class RpcAckCallbackSynchronizer {
         if (currentCallback == null) {
             return;
         }
-    
         if (success) {
             currentCallback.setSuccessResult();
         } else {
@@ -125,10 +102,18 @@ public class RpcAckCallbackSynchronizer {
      */
     public static void syncCallback(String connectionId, String requestId, DefaultPushFuture defaultPushFuture)
             throws Exception {
-        DefaultPushFuture pushCallBackPrev = CALLBACK_CONTEXT.putIfAbsent(requestId, defaultPushFuture);
-        if (pushCallBackPrev != null) {
-            throw new RuntimeException("callback conflict.");
+        if (!CALLBACK_CONTEXT2.containsKey(connectionId)) {
+            CALLBACK_CONTEXT2.putIfAbsent(connectionId, new HashMap<String, DefaultPushFuture>());
         }
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connectionId);
+        if (!stringDefaultPushFutureMap.containsKey(requestId)) {
+            DefaultPushFuture pushCallBackPrev = stringDefaultPushFutureMap.putIfAbsent(requestId, defaultPushFuture);
+            if (pushCallBackPrev == null) {
+                return;
+            }
+        }
+        throw new RuntimeException("callback conflict.");
+        
     }
     
     /**
@@ -137,16 +122,21 @@ public class RpcAckCallbackSynchronizer {
      * @param connetionId connetionId
      */
     public static void clearContext(String connetionId) {
-    
+        CALLBACK_CONTEXT2.remove(connetionId);
     }
     
     /**
-     * clear context of connectionId. TODO
+     * clear context of connectionId.
      *
      * @param connetionId connetionId
      */
     public static void clearFuture(String connetionId, String requestId) {
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connetionId);
     
+        if (stringDefaultPushFutureMap == null || !stringDefaultPushFutureMap.containsKey(requestId)) {
+            return;
+        }
+        stringDefaultPushFutureMap.remove(requestId);
     }
     
     
