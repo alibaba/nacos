@@ -20,6 +20,8 @@ import com.alibaba.nacos.auth.common.AuthConfigs;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -69,9 +71,9 @@ public class JwtTokenManager {
         validity = new Date(now + authConfigs.getTokenValidityInSeconds() * 1000L);
         
         Claims claims = Jwts.claims().setSubject(userName);
-        
+        makeSureSecretKeyBytes();
         return Jwts.builder().setClaims(claims).setExpiration(validity)
-                .signWith(SignatureAlgorithm.HS256, authConfigs.getSecretKey()).compact();
+                .signWith(Keys.hmacShaKeyFor(authConfigs.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
     }
     
     /**
@@ -81,8 +83,9 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-
-        Claims claims = Jwts.parser().setSigningKey(authConfigs.getSecretKey()).parseClaimsJws(token).getBody();
+        makeSureSecretKeyBytes();
+        Claims claims = Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build()
+                .parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
@@ -97,6 +100,13 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        Jwts.parser().setSigningKey(authConfigs.getSecretKey()).parseClaimsJws(token);
+        makeSureSecretKeyBytes();
+        Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build().parseClaimsJws(token);
+    }
+    
+    private void makeSureSecretKeyBytes() {
+        if (authConfigs.getSecretKeyBytes() == null) {
+            authConfigs.setSecretKeyBytes(Decoders.BASE64.decode(authConfigs.getSecretKey()));
+        }
     }
 }
