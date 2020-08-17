@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.env.ReloadableConfigs;
+import io.jsonwebtoken.io.Decoders;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,8 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.default.token.secret.key:}")
     private String secretKey;
     
+    private byte[] secretKeyBytes;
+    
     /**
      * Token validity time(seconds).
      */
@@ -63,8 +66,11 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
     
-    public String getSecretKey() {
-        return secretKey;
+    public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            secretKeyBytes = Decoders.BASE64.decode(secretKey);
+        }
+        return secretKeyBytes;
     }
     
     public long getTokenValidityInSeconds() {
