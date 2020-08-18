@@ -79,9 +79,7 @@ public class DefaultPushFuture implements PushFuture {
         }
         
         if (pushCallBack != null) {
-            if (isSuccess) {
-                pushCallBack.onSuccess();
-            }
+            pushCallBack.onSuccess();
         }
     }
     
@@ -93,9 +91,7 @@ public class DefaultPushFuture implements PushFuture {
         }
         
         if (pushCallBack != null) {
-            if (isSuccess) {
-                pushCallBack.onFail(e);
-            }
+            pushCallBack.onFail(e);
         }
     }
     

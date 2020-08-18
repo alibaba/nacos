@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -252,13 +253,14 @@ public abstract class RpcClient implements Closeable {
             rpcClientStatus.set(RpcClientStatus.RUNNING);
             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
         } else {
-            switchServerAsync(null);
+            switchServerAsync();
         }
     
         registerServerPushResponseHandler(new ServerRequestHandler() {
             @Override
             public void requestReply(ServerPushRequest request) {
                 if (request instanceof ConnectResetRequest) {
+    
                     try {
                         synchronized (this) {
                             if (isRunning()) {
@@ -266,9 +268,9 @@ public abstract class RpcClient implements Closeable {
                                 clearContextOnResetRequest();
                                 if (StringUtils.isNotBlank(connectResetRequest.getServerIp()) && NumberUtils
                                         .isDigits(connectResetRequest.getServerPort())) {
-        
+    
                                     ServerInfo serverInfo = new ServerInfo();
-        
+    
                                     serverInfo.setServerIp(connectResetRequest.getServerIp());
                                     serverInfo.setServerPort(
                                             Integer.valueOf(connectResetRequest.getServerPort()) + rpcPortOffset());

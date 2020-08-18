@@ -18,15 +18,20 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.response.AbstractPushCallBack;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.Config;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -42,11 +47,18 @@ public class ConfigChangeNotifier {
     private ThreadPoolExecutor retryPushexecutors = new ThreadPoolExecutor(15, 30, 5, TimeUnit.SECONDS,
             new ArrayBlockingQueue<Runnable>(100000), new ThreadPoolExecutor.AbortPolicy());
     
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,
+                    new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
+    
     @Autowired
     ConfigChangeListenContext configChangeListenContext;
     
     @Autowired
     private RpcPushService rpcPushService;
+    
+    @Autowired
+    private ConnectionManager connectionManager;
     
     /**
      * adaptor to config module ,when server side congif change ,invoke this method.
@@ -60,26 +72,30 @@ public class ConfigChangeNotifier {
         long start = System.currentTimeMillis();
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
-                rpcPushService.pushWithCallback(client, notifyRequet, new AbstractPushCallBack(500L) {
     
+                rpcPushService.pushWithCallback(client, notifyRequet, new AbstractPushCallBack(500L) {
+        
                     @Override
                     public void onSuccess() {
                         Loggers.CORE.info("push callback success.,groupKey={},clientId={}", groupKey, client);
                     }
-    
+        
                     @Override
                     public void onFail(Exception e) {
                         Loggers.CORE
                                 .warn("push callback fail.will retry push ,groupKey={},clientId={}", groupKey, client);
-                        retryPush(client, notifyRequet, 3);
+                        RpcPushRetryTask rpcPushRetryTask = new RpcPushRetryTask(notifyRequet, 5, client);
+                        rePush(rpcPushRetryTask);
                     }
-    
+        
                     @Override
                     public void onTimeout() {
                         Loggers.CORE.warn("push callback timeout.will retry push ,groupKey={},clientId={}", groupKey,
                                 client);
-                        retryPush(client, notifyRequet, 3);
+                        RpcPushRetryTask rpcPushRetryTask = new RpcPushRetryTask(notifyRequet, 5, client);
+                        rePush(rpcPushRetryTask);
                     }
+        
                 });
     
             }
@@ -89,35 +105,74 @@ public class ConfigChangeNotifier {
         Loggers.RPC.info("push {} clients cost {} millsenconds.", clients.size(), (end - start));
     }
     
-    void retryPush(final String clientId, final ConfigChangeNotifyRequest notifyRequet, final int maxRetyTimes) {
+    class RpcPushRetryTask implements Runnable {
         
-        try {
-            retryPushexecutors.submit(new Runnable() {
+        ConfigChangeNotifyRequest notifyRequet;
+        
+        int maxRetryTimes;
+        
+        int tryTimes = 0;
+        
+        String clientId;
+        
+        public RpcPushRetryTask(ConfigChangeNotifyRequest notifyRequet, int maxRetryTimes, String clientId) {
+            this.notifyRequet = notifyRequet;
+            this.maxRetryTimes = maxRetryTimes;
+            this.clientId = clientId;
+        }
+        
+        public boolean isOverTimes() {
+            return this.tryTimes >= maxRetryTimes;
+        }
+        
+        @Override
+        public void run() {
+            tryTimes++;
+            rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(500L) {
+                
                 @Override
-                public void run() {
-                    int maxTimes = maxRetyTimes;
-                    boolean rePushFlag = false;
-                    while (maxTimes > 0 && !rePushFlag) {
-                        maxTimes--;
-                        boolean push = rpcPushService.push(clientId, notifyRequet, 500L);
-                        if (push) {
-                            rePushFlag = true;
-                        }
-                    }
-                    if (rePushFlag) {
-                        Loggers.CORE.warn("push callback retry success.dataId={},group={},tenant={},clientId={}",
-                                notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId);
-                    } else {
-                        Loggers.CORE.error(String
-                                .format("push callback retry fail.dataId={},group={},tenant={},clientId={}",
-                                        notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                        clientId));
-                    }
+                public void onSuccess() {
+                    Loggers.CORE
+                            .warn("push callback retry success.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
+                                    clientId, tryTimes);
                 }
+                
+                @Override
+                public void onFail(Exception e) {
+                    Loggers.CORE.warn("push callback retry fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
+                            tryTimes);
+                    
+                    rePush(RpcPushRetryTask.this);
+                }
+                
+                @Override
+                public void onTimeout() {
+                    Loggers.CORE
+                            .warn("push callback retry timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
+                                    clientId, tryTimes);
+                    rePush(RpcPushRetryTask.this);
+                }
+                
             });
-        } catch (RejectedExecutionException e) {
-            Loggers.CORE.warn("retry push callback task overlimit.dataId={},group={},tenant={},clientId={}",
-                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId);
+            
+        }
+    }
+    
+    private void rePush(RpcPushRetryTask retryTask) {
+        ConfigChangeNotifyRequest notifyRequet = retryTask.notifyRequet;
+        if (retryTask.isOverTimes()) {
+            Loggers.CORE
+                    .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
+                            retryTask.clientId);
+            connectionManager.unregister(retryTask.clientId);
+            return;
+        } else {
+            // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
+            ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR.schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
         }
         
     }
