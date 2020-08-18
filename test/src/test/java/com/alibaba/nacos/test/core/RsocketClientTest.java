@@ -29,6 +29,7 @@ import io.rsocket.util.RSocketProxy;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -41,7 +42,8 @@ public class RsocketClientTest {
     @Test
     public void testConnection() throws Exception {
         String connectId = UUID.randomUUID().toString();
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connectId, NetUtils.localIP(), "1.4.0");
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(), "1.4.0",
+                new HashMap<>());
         Payload setUpPayload = DefaultPayload.create(connectId);
         ;
         System.out.println("setUpPayload：" + setUpPayload.getDataUtf8());
@@ -76,7 +78,8 @@ public class RsocketClientTest {
     
     public static void main(String[] args) throws Exception {
         String connectId = UUID.randomUUID().toString();
-        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connectId, NetUtils.localIP(), "1.4.0");
+        ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(), "1.4.0",
+                new HashMap<>());
         Payload setUpPayload = DefaultPayload.create(connectId);
         ;
         System.out.println("setUpPayload2：" + setUpPayload.getDataUtf8());

@@ -65,7 +65,7 @@ public class ConfigChangeBatchListenRequestHandler extends RequestHandler {
             String groupKey = entry.getKey();
             String md5 = entry.getValue();
             if (configChangeListenRequest.isListenConfig()) {
-                configChangeListenContext.addListen(groupKey, connectionId);
+                configChangeListenContext.addListen(groupKey, md5, connectionId);
                 boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, requestMeta.getClientIp(), header);
                 if (!isUptoDate) {
                     if (changedGroups == null) {

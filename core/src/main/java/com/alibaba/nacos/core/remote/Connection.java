@@ -38,7 +38,7 @@ public abstract class Connection {
     
     public static final String SWITCHING = "swtiching";
     
-    private String status;
+    private String status = HEALTHY;
     
     public boolean isHealthy() {
         return HEALTHY.equals(this.status);
@@ -141,6 +141,15 @@ public abstract class Connection {
         Map<String, String> labels = metaInfo.labels;
         String source = labels.get(RemoteConstants.LABEL_SOURCE);
         return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
+    }
+    
+    /**
+     * Getter method for property <tt>metaInfo</tt>.
+     *
+     * @return property value of metaInfo
+     */
+    public ConnectionMetaInfo getMetaInfo() {
+        return metaInfo;
     }
     
     @Override

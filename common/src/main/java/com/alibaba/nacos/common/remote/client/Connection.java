@@ -34,13 +34,10 @@ public abstract class Connection {
     
     protected RpcClient.ServerInfo serverInfo;
     
-    protected String connectionId;
-    
     protected Map<String, String> labels = new HashMap<String, String>();
     
-    public Connection(String connetionId, RpcClient.ServerInfo serverInfo) {
+    public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
-        this.connectionId = connetionId;
     }
     
     public String getLabel(String labelKey) {

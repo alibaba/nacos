@@ -68,8 +68,8 @@ public class GrpcConnection extends Connection {
      */
     protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
     
-    public GrpcConnection(String connetionId, RpcClient.ServerInfo serverInfo) {
-        super(connetionId, serverInfo);
+    public GrpcConnection(RpcClient.ServerInfo serverInfo) {
+        super(serverInfo);
     }
     
     @Override
@@ -89,7 +89,7 @@ public class GrpcConnection extends Connection {
     }
     
     private GrpcMetadata buildMeta() {
-        GrpcMetadata meta = GrpcMetadata.newBuilder().setConnectionId(connectionId).setClientIp(NetUtils.localIP())
+        GrpcMetadata meta = GrpcMetadata.newBuilder().setClientIp(NetUtils.localIP())
                 .setVersion(VersionUtils.getFullClientVersion()).build();
         return meta;
     }

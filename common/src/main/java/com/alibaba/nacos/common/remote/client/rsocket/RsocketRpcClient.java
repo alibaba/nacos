@@ -40,13 +40,10 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * rsocket implementation of rpc client.
@@ -78,10 +75,10 @@ public class RsocketRpcClient extends RpcClient {
     }
     
     @Override
-    public Connection connectToServer(ServerInfo serverInfo) {
+    public Connection connectToServer(ServerInfo serverInfo) throws Exception {
         
         try {
-            ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(connectionId, NetUtils.localIP(),
+            ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
                     VersionUtils.getFullClientVersion(), labels);
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
             RSocket rSocket = RSocketConnector.create().keepAlive(Duration.ofMillis(3000L), Duration.ofMillis(6000L))
@@ -129,34 +126,32 @@ public class RsocketRpcClient extends RpcClient {
                             return Mono.just((RSocket) rsocket);
                         }
                     }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
-            RsocketConnection connection = new RsocketConnection(connectionId, serverInfo, rSocket);
+            RsocketConnection connection = new RsocketConnection(serverInfo, rSocket);
             fireOnCloseEvent(rSocket);
             return connection;
         } catch (Exception e) {
-            System.out.println("connect to server fail :" + e.getMessage());
+            throw e;
         }
-        return null;
     }
     
     private RequestMeta buildMeta() {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
-        meta.setConnectionId(connectionId);
         return meta;
     }
     
     void shutDownRsocketClient(RSocket client) {
         if (client != null && !client.isDisposed()) {
+            System.out.println(client);
             client.dispose();
         }
     }
     
     void cancelfireOnCloseEvent(RSocket rSocket) {
-        System.out.println("cancelfireOnCloseEvent....111");
         
         if (rSocket != null) {
-            System.out.println("cancelfireOnCloseEvent....222");
+            System.out.println("Disposed subscribe..." + rSocket);
             rSocket.onClose().subscribe().dispose();
         }
     }
@@ -167,8 +162,8 @@ public class RsocketRpcClient extends RpcClient {
         cancelfireOnCloseEvent(rsocket.getrSocketClient());
     }
     
-    void fireOnCloseEvent(RSocket rSocket) {
-    
+    void fireOnCloseEvent(final RSocket rSocket) {
+        
         Subscriber subscriber = new Subscriber<Void>() {
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -181,17 +176,23 @@ public class RsocketRpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-                System.out.println("On error ,switch server ..." + throwable);
+    
+                if (throwable.getMessage().equals("Disposed")) {
+                    System.out.println("Disposed ignore current event" + rSocket);
+                    return;
+                }
                 switchServerAsync();
             }
             
             @Override
             public void onComplete() {
-                System.out.println("On complete ,switch server ...");
+                System.out.println("On complete ,switch server ..." + rSocket);
                 switchServerAsync();
             }
         };
-    
+        rSocket.onClose().subscribe(subscriber);
+        
+        System.out.println("fire onclise  :" + rSocket);
     }
     
     class RsocketHolder {

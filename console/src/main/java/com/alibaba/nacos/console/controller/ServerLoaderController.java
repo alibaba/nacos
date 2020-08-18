@@ -16,16 +16,19 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.core.remote.grpc.GrpcServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -67,15 +70,29 @@ public class ServerLoaderController {
     }
     
     /**
-     * Get current clients.
+     * Get current clients count with specifiec labels.
      *
      * @return state json.
      */
     @GetMapping("/current")
-    public ResponseEntity currentCount() {
-        Map<String, String> responseMap = new HashMap<>(3);
-        int count = connectionManager.currentClientsCount();
-        return ResponseEntity.ok().body(count);
+    public ResponseEntity currentCount(@RequestParam(value = "filters", required = false) String filters) {
+        Map<String, String> filterLabels = new HashMap<>(3);
+        try {
+            if (StringUtils.isNotBlank(filters)) {
+                HashMap<String, String> filterMap = (HashMap<String, String>) JSONUtils
+                        .deserializeObject(filters, HashMap.class);
+                int count = connectionManager.currentClientsCount(filterMap);
+                return ResponseEntity.ok().body(count);
+            } else {
+                int count = connectionManager.currentClientsCount();
+                return ResponseEntity.ok().body(count);
+            }
+        
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        
+        }
+        
     }
     
     /**

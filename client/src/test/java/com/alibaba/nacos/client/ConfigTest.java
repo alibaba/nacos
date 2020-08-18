@@ -46,10 +46,10 @@ public class ConfigTest {
     @Before
     public void before() throws Exception {
         Properties properties = new Properties();
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -154,13 +154,13 @@ public class ConfigTest {
             public void run() {
                 long start = System.currentTimeMillis();
                 Random random = new Random();
-                int times = 100;
+                int times = 1000;
                 while (times > 0) {
                     try {
                         boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
                                 "value" + System.currentTimeMillis());
                         times--;
-                        Thread.sleep(1000L);
+                        Thread.sleep(2000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -190,7 +190,7 @@ public class ConfigTest {
         for (int i = 0; i < 20; i++) {
             //configService.removeListener(dataId + i, group, listener);
         }
-        System.out.println("remove listens.");
+        //System.out.println("remove listens.");
         
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");

@@ -46,6 +46,6 @@ public class ServerPushResponse extends Response {
     
     @Override
     public String getType() {
-        return ResponseTypeConstants.SERVER_CHECK;
+        return ResponseTypeConstants.PUSH_ACK;
     }
 }

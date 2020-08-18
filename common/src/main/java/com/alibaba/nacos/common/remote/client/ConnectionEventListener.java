@@ -24,7 +24,7 @@ package com.alibaba.nacos.common.remote.client;
 public interface ConnectionEventListener {
     
     /**
-     * notify when server is connected .
+     * notify when server is connected.
      */
     public void onConnected();
 
