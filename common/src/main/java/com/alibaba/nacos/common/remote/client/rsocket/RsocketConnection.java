@@ -42,8 +42,8 @@ public class RsocketConnection extends Connection {
     
     private RSocket rSocketClient;
     
-    public RsocketConnection(String connetionId, RpcClient.ServerInfo serverInfo, RSocket rSocketClient) {
-        super(connetionId, serverInfo);
+    public RsocketConnection(RpcClient.ServerInfo serverInfo, RSocket rSocketClient) {
+        super(serverInfo);
         this.rSocketClient = rSocketClient;
     }
     
@@ -75,12 +75,12 @@ public class RsocketConnection extends Connection {
         RequestMeta meta = new RequestMeta();
         meta.setClientVersion(VersionUtils.getFullClientVersion());
         meta.setClientIp(NetUtils.localIP());
-        meta.setConnectionId(connectionId);
         return meta;
     }
     
     @Override
     public void close() {
+        System.out.println("close.." + rSocketClient);
         if (this.rSocketClient != null && !rSocketClient.isDisposed()) {
             rSocketClient.dispose();
         }
@@ -97,6 +97,6 @@ public class RsocketConnection extends Connection {
     
     @Override
     public String toString() {
-        return "RsocketConnection{" + "serverInfo=" + serverInfo + ", connectionId='" + connectionId + '\'' + '}';
+        return "RsocketConnection{" + "serverInfo=" + serverInfo + ", labels=" + labels + '}';
     }
 }

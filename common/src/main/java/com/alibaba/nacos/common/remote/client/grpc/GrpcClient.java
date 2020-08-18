@@ -41,6 +41,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -241,7 +242,7 @@ public class GrpcClient extends RpcClient {
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 bindRequestStream(requestStreamStubTemp);
-                GrpcConnection grpcConn = new GrpcConnection("", serverInfo);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo);
     
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc

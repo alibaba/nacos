@@ -78,6 +78,24 @@ public class ConnectionMetaInfo {
     }
     
     /**
+     * Getter method for property <tt>labels</tt>.
+     *
+     * @return property value of labels
+     */
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    
+    /**
+     * Setter method for property <tt>labels</tt>.
+     *
+     * @param labels value to be assigned to property labels
+     */
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
+    
+    /**
      * Getter method for property <tt>clientIp</tt>.
      *
      * @return property value of clientIp

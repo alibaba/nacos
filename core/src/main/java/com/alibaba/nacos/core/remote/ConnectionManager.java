@@ -98,8 +98,31 @@ public class ConnectionManager {
         }
     }
     
+    /**
+     * get by connection id.
+     *
+     * @param connectionId connection id.
+     * @return
+     */
     public Connection getConnection(String connectionId) {
         return connetions.get(connectionId);
+    }
+    
+    /**
+     * get by client ip.
+     *
+     * @param clientIp client ip.
+     * @return
+     */
+    public Connection getConnectionByIp(String clientIp) {
+        Set<Map.Entry<String, Connection>> entries = connetions.entrySet();
+        for (Map.Entry<String, Connection> entry : entries) {
+            Connection value = entry.getValue();
+            if (clientIp.equals(value.getMetaInfo().clientIp)) {
+                return value;
+            }
+        }
+        return null;
     }
     
     /**
@@ -211,8 +234,37 @@ public class ConnectionManager {
         this.loadClient = loadClient;
     }
     
+    /**
+     * get all client count.
+     *
+     * @return
+     */
     public int currentClientsCount() {
         return connetions.size();
+    }
+    
+    /**
+     * get client count with labels filter.
+     *
+     * @param filterLabels label to filter client count.
+     * @return count with the specific filter labels.
+     */
+    public int currentClientsCount(Map<String, String> filterLabels) {
+        int count = 0;
+        for (Connection connection : connetions.values()) {
+            Map<String, String> labels = connection.getMetaInfo().labels;
+            boolean disMatchFound = false;
+            for (Map.Entry<String, String> entry : filterLabels.entrySet()) {
+                if (!entry.getValue().equals(labels.get(entry.getKey()))) {
+                    disMatchFound = true;
+                    break;
+                }
+            }
+            if (!disMatchFound) {
+                count++;
+            }
+        }
+        return count;
     }
     
     public Map<String, Connection> currentClients() {

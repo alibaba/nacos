@@ -98,6 +98,7 @@ public class RpcPushService {
                 connection.sendRequestWithCallBack(request, pushCallBack);
             } catch (ConnectionAlreadyClosedException e) {
                 connectionManager.unregister(connectionId);
+                pushCallBack.onSuccess();
             } catch (Exception e) {
                 Loggers.RPC_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,

@@ -100,7 +100,6 @@ public class RsocketConnection extends Connection {
     public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
     
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
-        System.out.println(new Date() + "1");
         Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         payloadMono.subscribe(new Consumer<Payload>() {
@@ -108,7 +107,6 @@ public class RsocketConnection extends Connection {
             @Override
             public void accept(Payload payload) {
                 Response response = RsocketUtils.parseResponseFromPayload(payload);
-                System.out.println(new Date().toString() + response);
                 if (response.isSuccess()) {
                     callBack.onSuccess();
                 } else {
@@ -122,13 +120,11 @@ public class RsocketConnection extends Connection {
                 callBack.onFail(new Exception(throwable));
             }
         });
+    
         try {
-            System.out.println(new Date() + "2");
             payloadMono.timeout(Duration.ofMillis(callBack.getTimeout()));
-            System.out.println(new Date() + "3");
         
         } catch (Exception e) {
-            System.out.println("Timeout:" + e.getMessage());
             callBack.onTimeout();
         }
     }
