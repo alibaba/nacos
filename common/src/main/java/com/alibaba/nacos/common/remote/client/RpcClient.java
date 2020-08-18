@@ -321,7 +321,6 @@ public abstract class RpcClient implements Closeable {
                     boolean innerLock = switchingLock.tryLock();
                     if (!innerLock) {
                         System.out.println("switchServerAsync...3");
-    
                         return;
                     }
                     System.out.println("switchServerAsync...4");
@@ -352,15 +351,14 @@ public abstract class RpcClient implements Closeable {
                             }
     
                         } catch (Exception e) {
-                            System.out.println(
-                                    "fail to connect server:" + serverInfo + " ,error message is " + e.getMessage());
+                            System.out.println("fail to connect server:" + serverInfo + " ,error message is " + e.getMessage());
+                        } finally {
+                            serverInfoTryOnceInner.set(null);
                         }
-    
-                        serverInfoTryOnceInner.set(null);
                         
                         try {
-                            //sleep 1 second to switch next server.
-                            Thread.sleep(1000L);
+                            //sleep 100 millsecond to switch next server.
+                            Thread.sleep(100L);
                         } catch (InterruptedException e) {
                             // Do  nothing.
                         }

@@ -59,7 +59,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -667,14 +666,13 @@ public class ClientWorker implements Closeable {
                                 condition.await(5L, TimeUnit.SECONDS);
                                 executeRpcListen();
                             } catch (Exception e) {
-                                e.printStackTrace();
-                                //retry next time
+                                LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
                             } finally {
                                 lock.unlock();
                             }
                         }
                     } catch (Throwable e) {
-                        LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
+                        LOGGER.error("rpc listen task exception", e);
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
@@ -785,9 +783,7 @@ public class ClientWorker implements Closeable {
     }
     
     private void executeRpcListen() {
-        if (!rpcClientProxy.getRpcClient().isRunning()) {
-            return;
-        }
+    
         List<CacheData> listenCaches = new LinkedList<CacheData>();
         List<CacheData> removeListenCaches = new LinkedList<CacheData>();
         
@@ -842,8 +838,7 @@ public class ClientWorker implements Closeable {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                // TODO
+                LOGGER.error("async listen config change error ", e);
             }
         }
         String removeListenConfigs = removeListenConfigsBuilder.toString();
@@ -855,7 +850,7 @@ public class ClientWorker implements Closeable {
                     removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
                 }
             } catch (NacosException e) {
-                // TODO
+                LOGGER.error("async unlisten config change error ", e);
             }
         }
     }
