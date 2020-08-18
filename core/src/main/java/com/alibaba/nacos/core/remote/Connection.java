@@ -38,7 +38,7 @@ public abstract class Connection {
     
     public static final String SWITCHING = "swtiching";
     
-    private String status;
+    private String status = HEALTHY;
     
     public boolean isHealthy() {
         return HEALTHY.equals(this.status);

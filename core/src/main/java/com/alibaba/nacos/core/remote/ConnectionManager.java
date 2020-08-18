@@ -234,8 +234,37 @@ public class ConnectionManager {
         this.loadClient = loadClient;
     }
     
+    /**
+     * get all client count.
+     *
+     * @return
+     */
     public int currentClientsCount() {
         return connetions.size();
+    }
+    
+    /**
+     * get client count with labels filter.
+     *
+     * @param filterLabels label to filter client count.
+     * @return count with the specific filter labels.
+     */
+    public int currentClientsCount(Map<String, String> filterLabels) {
+        int count = 0;
+        for (Connection connection : connetions.values()) {
+            Map<String, String> labels = connection.getMetaInfo().labels;
+            boolean disMatchFound = false;
+            for (Map.Entry<String, String> entry : filterLabels.entrySet()) {
+                if (!entry.getValue().equals(labels.get(entry.getKey()))) {
+                    disMatchFound = true;
+                    break;
+                }
+            }
+            if (!disMatchFound) {
+                count++;
+            }
+        }
+        return count;
     }
     
     public Map<String, Connection> currentClients() {
