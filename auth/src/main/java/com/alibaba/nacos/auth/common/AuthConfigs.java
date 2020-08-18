@@ -49,6 +49,11 @@ public class AuthConfigs {
     private String secretKey;
     
     /**
+     * secret key byte array.
+     */
+    private byte[] secretKeyBytes;
+    
+    /**
      * Token validity time(seconds).
      */
     @Value("${nacos.core.auth.default.token.expire.seconds:1800}")
@@ -60,8 +65,11 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
     
-    public String getSecretKey() {
-        return secretKey;
+    public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            secretKeyBytes = secretKey.getBytes();
+        }
+        return secretKeyBytes;
     }
     
     public long getTokenValidityInSeconds() {
