@@ -296,6 +296,14 @@ public class HostReactor implements Closeable {
         return serviceInfoMap.get(serviceObj.getKey());
     }
     
+    private void updateServiceNow(String serviceName, String clusters) {
+        try {
+            updateService(serviceName, clusters);
+        } catch (NacosException e) {
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
+        }
+    }
+    
     /**
      * Schedule update if absent.
      *
@@ -323,7 +331,7 @@ public class HostReactor implements Closeable {
      * @param serviceName service name
      * @param clusters    clusters
      */
-    public void updateServiceNow(String serviceName, String clusters) {
+    public void updateService(String serviceName, String clusters) throws NacosException {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
             
@@ -332,9 +340,6 @@ public class HostReactor implements Closeable {
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJson(result);
             }
-        } catch (Exception e) {
-            oldService.incFailCount();
-            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
                 synchronized (oldService) {
@@ -376,6 +381,8 @@ public class HostReactor implements Closeable {
         
         private final String serviceName;
         
+        long failCount = 0L;
+        
         public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;
@@ -383,19 +390,18 @@ public class HostReactor implements Closeable {
         
         @Override
         public void run() {
-            long delayTime = -1;
+            long delayTime = DEFAULT_DELAY;
             
             try {
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 
                 if (serviceObj == null) {
-                    updateServiceNow(serviceName, clusters);
-                    delayTime = DEFAULT_DELAY;
+                    updateService(serviceName, clusters);
                     return;
                 }
                 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
-                    updateServiceNow(serviceName, clusters);
+                    updateService(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
@@ -412,13 +418,15 @@ public class HostReactor implements Closeable {
                     return;
                 }
                 
-                delayTime = serviceObj.getCacheMillis() + Math.min(serviceObj.getFailCount() * 1000L, 10000L);
-                
+                delayTime = serviceObj.getCacheMillis();
+                failCount = 0;
             } catch (Throwable e) {
+                failCount++;
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
                 if (delayTime > 0) {
-                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60),
+                            TimeUnit.MILLISECONDS);
                 }
             }
             
