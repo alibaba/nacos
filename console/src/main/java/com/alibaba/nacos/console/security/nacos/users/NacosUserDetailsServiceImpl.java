@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.console.security.nacos.users;
 
+import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.config.server.auth.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -99,7 +100,11 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     public User getUserFromDatabase(String username) {
         return userPersistService.findUserByUsername(username);
     }
-    
+
+    public List<String> findUserLikeUsername(String username) {
+        return userPersistService.findUserLikeUsername(username);
+    }
+
     public void createUser(String username, String password) {
         userPersistService.createUser(username, password);
     }

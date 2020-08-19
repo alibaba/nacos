@@ -51,6 +51,7 @@ class UserManagement extends React.Component {
   }
 
   getUsers() {
+    this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
     this.props
       .getUsers({ pageNo, pageSize })
@@ -75,6 +76,9 @@ class UserManagement extends React.Component {
         <div className="filter-panel">
           <Button type="primary" onClick={() => this.setState({ createUserVisible: true })}>
             {locale.createUser}
+          </Button>
+          <Button type="secondary" onClick={() => this.getUsers()}>
+            {locale.refresh}
           </Button>
         </div>
         <Table dataSource={users.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>

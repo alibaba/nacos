@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.address.configuration;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.address.auth.AddressServerAuthManager;
+import com.alibaba.nacos.auth.AuthManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * Exception to be thrown if authorization is failed.
+ * Address server spring configuration.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public class AccessException extends NacosException {
+@Configuration
+public class AddressServerSpringConfiguration {
     
-    private static final long serialVersionUID = -2926344920552803270L;
-    
-    public AccessException() {
-    
+    @Bean
+    @ConditionalOnMissingBean(value = AuthManager.class)
+    public AuthManager getAuthManager() {
+        return new AddressServerAuthManager();
     }
-    
-    public AccessException(int code) {
-        this.setErrCode(code);
-    }
-    
-    public AccessException(String msg) {
-        this.setErrMsg(msg);
-    }
-    
 }

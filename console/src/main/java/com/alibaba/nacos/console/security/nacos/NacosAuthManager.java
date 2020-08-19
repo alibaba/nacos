@@ -17,13 +17,14 @@
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
-import com.alibaba.nacos.core.auth.AccessException;
-import com.alibaba.nacos.core.auth.AuthManager;
-import com.alibaba.nacos.core.auth.Permission;
-import com.alibaba.nacos.core.auth.User;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.apache.commons.lang3.StringUtils;
@@ -90,7 +91,7 @@ public class NacosAuthManager implements AuthManager {
                 }
             }
         }
-        
+        req.setAttribute(RequestUtil.NACOS_USER_KEY, user);
         return user;
     }
     
