@@ -309,6 +309,7 @@ const I18N_CONF = {
     cloneSuccEnd: 'configuration items cloned',
     cloneFail: 'Clone failed',
     getNamespaceFailed: 'get the namespace failed',
+    getNamespace403: 'Without permission to access ${namespaceName} namespace!',
     startCloning: 'Start Clone',
     cloningConfiguration: 'Clone config',
     source: 'Source :',
@@ -322,6 +323,7 @@ const I18N_CONF = {
     delSelectedAlertContent: 'please select the configuration to delete',
     delSuccessMsg: 'delete successful',
     cloneEditableTitle: 'Modify Data Id and Group (optional)',
+    authFail: 'Auth failed',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
