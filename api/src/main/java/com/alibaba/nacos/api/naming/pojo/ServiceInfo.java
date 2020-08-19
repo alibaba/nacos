@@ -48,6 +48,8 @@ public class ServiceInfo {
     
     private long cacheMillis = 1000L;
     
+    private long failCount = 0L;
+    
     private List<Instance> hosts = new ArrayList<Instance>();
     
     private long lastRefTime = 0L;
@@ -85,6 +87,18 @@ public class ServiceInfo {
     public ServiceInfo(String name, String clusters) {
         this.name = name;
         this.clusters = clusters;
+    }
+    
+    public void incFailCount() {
+        this.failCount++;
+    }
+    
+    public long getFailCount() {
+        return failCount;
+    }
+    
+    public void setFailCount(long failCount) {
+        this.failCount = failCount;
     }
     
     public int ipCount() {

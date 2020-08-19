@@ -516,20 +516,20 @@ public class InstanceController {
         ClientInfo clientInfo = new ClientInfo(agent);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Service service = serviceManager.getService(namespaceId, serviceName);
-        
+        long cacheMillis = switchDomain.getDefaultCacheMillis();
+    
         if (service == null) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
             }
             result.put("name", serviceName);
             result.put("clusters", clusters);
+            result.put("cacheMillis", cacheMillis);
             result.replace("hosts", JacksonUtils.createEmptyArrayNode());
             return result;
         }
         
         checkIfDisabled(service);
-        
-        long cacheMillis = switchDomain.getDefaultCacheMillis();
         
         // now try to enable the push
         try {

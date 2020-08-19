@@ -333,6 +333,7 @@ public class HostReactor implements Closeable {
                 processServiceJson(result);
             }
         } catch (Exception e) {
+            oldService.incFailCount();
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
@@ -411,7 +412,7 @@ public class HostReactor implements Closeable {
                     return;
                 }
                 
-                delayTime = serviceObj.getCacheMillis();
+                delayTime = serviceObj.getCacheMillis() + Math.min(serviceObj.getFailCount() * 1000L, 10000L);
                 
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
