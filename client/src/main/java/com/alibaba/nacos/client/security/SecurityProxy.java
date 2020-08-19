@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -138,7 +139,7 @@ public class SecurityProxy {
             }
             try {
                 HttpRestResult<String> restResult = nacosRestTemplate
-                        .postForm(url, Header.EMPTY, params, bodyMap, String.class);
+                        .postForm(url, Header.EMPTY, Query.newInstance().initParams(params), bodyMap, String.class);
                 if (!restResult.ok()) {
                     SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
                     return false;
