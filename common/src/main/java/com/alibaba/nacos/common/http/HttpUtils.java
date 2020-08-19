@@ -16,14 +16,25 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.http.handler.RequestHandler;
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +50,63 @@ import java.util.regex.Pattern;
 public final class HttpUtils {
     
     private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
+    
+    /**
+     * Init http header.
+     *
+     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param header header
+     */
+    public static void initRequestHeader(HttpRequestBase requestBase, Header header) {
+        Iterator<Map.Entry<String, String>> iterator = header.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            requestBase.setHeader(entry.getKey(), entry.getValue());
+        }
+    }
+    
+    /**
+     * Init http entity.
+     *
+     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param body      body
+     * @param mediaType mediaType {@link ContentType}
+     * @throws Exception exception
+     */
+    public static void initRequestEntity(HttpRequestBase requestBase, Object body, String mediaType) throws Exception {
+        if (body == null) {
+            return;
+        }
+        if (requestBase instanceof HttpEntityEnclosingRequest) {
+            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
+            ContentType contentType = ContentType.create(mediaType);
+            StringEntity entity = new StringEntity(RequestHandler.parse(body), contentType);
+            request.setEntity(entity);
+        }
+    }
+    
+    /**
+     * Init request from entity map.
+     *
+     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param body    body map
+     * @param charset charset of entity
+     * @throws Exception exception
+     */
+    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset) throws Exception {
+        if (body == null || body.isEmpty()) {
+            return;
+        }
+        List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());
+        for (Map.Entry<String, String> entry : body.entrySet()) {
+            params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        }
+        if (requestBase instanceof HttpEntityEnclosingRequest) {
+            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
+            HttpEntity entity = new UrlEncodedFormEntity(params, charset);
+            request.setEntity(entity);
+        }
+    }
     
     /**
      * Build URL.

@@ -135,6 +135,7 @@
         </module>
         <module name="Indentation">
             <property name="arrayInitIndent" value="8"/>
+            <property name="lineWrappingIndentation" value="8"/>
         </module>
         <module name="CommentsIndentation">
             <property name="tokens" value="SINGLE_LINE_COMMENT, BLOCK_COMMENT_BEGIN"/>

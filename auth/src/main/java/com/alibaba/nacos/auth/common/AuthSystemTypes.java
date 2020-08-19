@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import org.apache.commons.lang3.StringUtils;
+package com.alibaba.nacos.auth.common;
 
 /**
- * Default resource parser.
+ * Types of all auth implementations.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class DefaultResourceParser implements ResourceParser {
+public enum AuthSystemTypes {
     
-    @Override
-    public String parseName(Object request) {
-        return StringUtils.EMPTY;
-    }
+    /**
+     * Nacos builtin auth system.
+     */
+    NACOS
 }

@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import java.io.Serializable;
+package com.alibaba.nacos.auth.parser;
 
 /**
- * User information in authorization.
+ * Resource parser.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class User implements Serializable {
-    
-    private static final long serialVersionUID = -8002966873087151367L;
+public interface ResourceParser {
     
     /**
-     * Unique string representing user.
+     * Parse a unique name of the resource from the request.
+     *
+     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
+     *                Object type for future accommodation.
+     * @return resource name
      */
-    private String userName;
-    
-    public String getUserName() {
-        return userName;
-    }
-    
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+    String parseName(Object request);
 }
