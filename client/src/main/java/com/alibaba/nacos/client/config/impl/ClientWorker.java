@@ -59,13 +59,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -106,15 +106,7 @@ public class ClientWorker implements Closeable {
     private void notifyRpcListenConfig() {
         try {
             if (!ParamUtils.useHttpSwitch()) {
-    
-                boolean lockSuccess = lock.tryLock();
-                if (lockSuccess) {
-                    try {
-                        condition.signal();
-                    } finally {
-                        lock.unlock();
-                    }
-                }
+                listenExecutebell.offer(bellItem);
             }
         } catch (Exception e) {
             LOGGER.warn("[notify rpc listen fail]", e);
@@ -662,13 +654,10 @@ public class ClientWorker implements Closeable {
                     try {
                         while (true) {
                             try {
-                                lock.lock();
-                                condition.await(5L, TimeUnit.SECONDS);
+                                listenExecutebell.poll(5L, TimeUnit.SECONDS);
                                 executeRpcListen();
                             } catch (Exception e) {
                                 LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
-                            } finally {
-                                lock.unlock();
                             }
                         }
                     } catch (Throwable e) {
@@ -703,15 +692,7 @@ public class ClientWorker implements Closeable {
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
                             cacheData.setListenSuccess(false);
-    
-                            boolean lockSuccess = lock.tryLock();
-                            if (lockSuccess) {
-                                try {
-                                    condition.signal();
-                                } finally {
-                                    lock.unlock();
-                                }
-                            }
+                            notifyRpcListenConfig();
                         }
                     }
                 }
@@ -721,15 +702,7 @@ public class ClientWorker implements Closeable {
             rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
                 @Override
                 public void onConnected() {
-    
-                    boolean lockSuccess = lock.tryLock();
-                    if (lockSuccess) {
-                        try {
-                            condition.signal();
-                        } finally {
-                            lock.unlock();
-                        }
-                    }
+                    notifyRpcListenConfig();
                 }
         
                 @Override
@@ -978,9 +951,9 @@ public class ClientWorker implements Closeable {
     
     private boolean enableRemoteSyncConfig = false;
     
-    public ReentrantLock lock = new ReentrantLock();
+    private BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<Object>(1);
     
-    public Condition condition = lock.newCondition();
+    private Object bellItem = new Object();
     
     /**
      * Getter method for property <tt>rpcClientProxy</tt>.

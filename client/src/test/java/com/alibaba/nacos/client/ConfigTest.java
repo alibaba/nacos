@@ -27,6 +27,8 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.google.common.util.concurrent.FutureCallback;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -84,6 +86,20 @@ public class ConfigTest {
         
         client.request(syncRequest);
         System.out.println(response);
+    
+        client.asyncRequest(syncRequest, new FutureCallback<Response>() {
+            @Override
+            public void onSuccess(@NullableDecl Response response) {
+                System.out.println("sucess:" + response);
+            }
+        
+            @Override
+            public void onFailure(Throwable throwable) {
+                System.out.println("throwable:" + throwable);
+            
+            }
+        });
+        Thread.sleep(50000000L);
         
     }
     
