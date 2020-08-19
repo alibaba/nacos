@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.core.auth.Resource;
-import com.alibaba.nacos.core.auth.ResourceParser;
+import com.alibaba.nacos.auth.model.Resource;
+import com.alibaba.nacos.auth.parser.ResourceParser;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;

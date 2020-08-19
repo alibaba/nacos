@@ -14,43 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.exception;
 
-import java.io.Serializable;
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Resource used in authorization.
+ * Exception to be thrown if authorization is failed.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public class Resource implements Serializable {
+public class AccessException extends NacosException {
     
-    public static final String SPLITTER = ":";
+    private static final long serialVersionUID = -2926344920552803270L;
     
-    public static final String ANY = "*";
+    public AccessException() {
     
-    private static final long serialVersionUID = 925971662931204553L;
-    
-    /**
-     * The unique key of resource.
-     */
-    private String key;
-    
-    public Resource(String key) {
-        this.key = key;
     }
     
-    public String getKey() {
-        return key;
+    public AccessException(int code) {
+        this.setErrCode(code);
     }
     
-    public String parseName() {
-        return key.substring(0, key.lastIndexOf(SPLITTER));
+    public AccessException(String msg) {
+        this.setErrMsg(msg);
     }
     
-    @Override
-    public String toString() {
-        return "Resource{" + "key='" + key + '\'' + '}';
-    }
 }
