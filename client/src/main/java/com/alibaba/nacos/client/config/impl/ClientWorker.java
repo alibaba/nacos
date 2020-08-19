@@ -819,7 +819,7 @@ public class ClientWorker implements Closeable {
         if (StringUtils.isNotBlank(removeListenConfigs)) {
             try {
                 boolean removeSuccess = rpcClientProxy.unListenConfigChange(removeListenConfigs);
-                for (CacheData cacheData : listenCaches) {
+                for (CacheData cacheData : removeListenCaches) {
                     removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
                 }
             } catch (NacosException e) {
