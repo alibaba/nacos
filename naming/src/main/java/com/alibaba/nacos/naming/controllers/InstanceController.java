@@ -518,6 +518,21 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
         long cacheMillis = switchDomain.getDefaultCacheMillis();
     
+        // now try to enable the push
+        try {
+            if (udpPort > 0 && pushService.canEnablePush(agent)) {
+            
+                pushService
+                        .addClient(namespaceId, serviceName, clusters, agent, new InetSocketAddress(clientIP, udpPort),
+                                pushDataSource, tid, app);
+                cacheMillis = switchDomain.getPushCacheMillis(serviceName);
+            }
+        } catch (Exception e) {
+            Loggers.SRV_LOG
+                    .error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
+            cacheMillis = switchDomain.getDefaultCacheMillis();
+        }
+    
         if (service == null) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
                 Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
@@ -530,22 +545,7 @@ public class InstanceController {
         }
         
         checkIfDisabled(service);
-        
-        // now try to enable the push
-        try {
-            if (udpPort > 0 && pushService.canEnablePush(agent)) {
-                
-                pushService
-                        .addClient(namespaceId, serviceName, clusters, agent, new InetSocketAddress(clientIP, udpPort),
-                                pushDataSource, tid, app);
-                cacheMillis = switchDomain.getPushCacheMillis(serviceName);
-            }
-        } catch (Exception e) {
-            Loggers.SRV_LOG
-                    .error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
-            cacheMillis = switchDomain.getDefaultCacheMillis();
-        }
-        
+      
         List<Instance> srvedIPs;
         
         srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));

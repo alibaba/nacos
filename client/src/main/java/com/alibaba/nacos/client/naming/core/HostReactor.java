@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -381,11 +382,26 @@ public class HostReactor implements Closeable {
         
         private final String serviceName;
         
-        long failCount = 0L;
+        /**
+         * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
+         */
+        private int failCount = 0;
         
         public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;
+        }
+        
+        private void incFailCount() {
+            int limit = 6;
+            if (failCount == limit) {
+                return;
+            }
+            failCount++;
+        }
+        
+        private void resetFailCount() {
+            failCount = 0;
         }
         
         @Override
@@ -417,19 +433,18 @@ public class HostReactor implements Closeable {
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
-                
+                if (CollectionUtils.isEmpty(serviceObj.getHosts())) {
+                    incFailCount();
+                    return;
+                }
                 delayTime = serviceObj.getCacheMillis();
-                failCount = 0;
+                resetFailCount();
             } catch (Throwable e) {
-                failCount++;
+                incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                if (delayTime > 0) {
-                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60),
-                            TimeUnit.MILLISECONDS);
-                }
+                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
-            
         }
     }
 }
