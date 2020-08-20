@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -296,6 +297,14 @@ public class HostReactor implements Closeable {
         return serviceInfoMap.get(serviceObj.getKey());
     }
     
+    private void updateServiceNow(String serviceName, String clusters) {
+        try {
+            updateService(serviceName, clusters);
+        } catch (NacosException e) {
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
+        }
+    }
+    
     /**
      * Schedule update if absent.
      *
@@ -323,7 +332,7 @@ public class HostReactor implements Closeable {
      * @param serviceName service name
      * @param clusters    clusters
      */
-    public void updateServiceNow(String serviceName, String clusters) {
+    public void updateService(String serviceName, String clusters) throws NacosException {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
             
@@ -332,8 +341,6 @@ public class HostReactor implements Closeable {
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJson(result);
             }
-        } catch (Exception e) {
-            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
                 synchronized (oldService) {
@@ -375,26 +382,42 @@ public class HostReactor implements Closeable {
         
         private final String serviceName;
         
+        /**
+         * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
+         */
+        private int failCount = 0;
+        
         public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;
         }
         
+        private void incFailCount() {
+            int limit = 6;
+            if (failCount == limit) {
+                return;
+            }
+            failCount++;
+        }
+        
+        private void resetFailCount() {
+            failCount = 0;
+        }
+        
         @Override
         public void run() {
-            long delayTime = -1;
+            long delayTime = DEFAULT_DELAY;
             
             try {
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 
                 if (serviceObj == null) {
-                    updateServiceNow(serviceName, clusters);
-                    delayTime = DEFAULT_DELAY;
+                    updateService(serviceName, clusters);
                     return;
                 }
                 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
-                    updateServiceNow(serviceName, clusters);
+                    updateService(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
@@ -410,17 +433,18 @@ public class HostReactor implements Closeable {
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
-                
+                if (CollectionUtils.isEmpty(serviceObj.getHosts())) {
+                    incFailCount();
+                    return;
+                }
                 delayTime = serviceObj.getCacheMillis();
-                
+                resetFailCount();
             } catch (Throwable e) {
+                incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                if (delayTime > 0) {
-                    executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
-                }
+                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
-            
         }
     }
 }
