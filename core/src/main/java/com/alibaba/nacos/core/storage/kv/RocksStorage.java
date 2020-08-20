@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.core.storage;
+package com.alibaba.nacos.core.storage.kv;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -85,7 +85,7 @@ public class RocksStorage implements KvStorage {
      * @param baseDir base dir
      * @return {@link RocksStorage}
      */
-    public static RocksStorage createDefault(final String group, String baseDir) {
+    public static RocksStorage createDefault(final String group, final String baseDir) {
         return createCustomer(group, baseDir, new WriteOptions().setSync(true),
                 new ReadOptions().setTotalOrderSeek(true));
     }
@@ -101,9 +101,7 @@ public class RocksStorage implements KvStorage {
      */
     public static RocksStorage createCustomer(final String group, String baseDir, WriteOptions writeOptions,
             ReadOptions readOptions) {
-        
         RocksStorage storage = new RocksStorage();
-        
         try {
             DiskUtils.forceMkdir(baseDir);
         } catch (IOException e) {
@@ -246,7 +244,8 @@ public class RocksStorage implements KvStorage {
      * @param backupPath backup path
      * @throws KVStorageException RocksStorageException
      */
-    public void snapshotSave(final String backupPath) throws KVStorageException {
+    @Override
+    public void doSnapshot(final String backupPath) throws KVStorageException {
         final String path = Paths.get(backupPath, group).toString();
         Throwable ex = DiskUtils.forceMkdir(path, (aVoid, ioe) -> {
             BackupableDBOptions backupOpt = new BackupableDBOptions(path).setSync(true).setShareTableFiles(false);
@@ -268,7 +267,7 @@ public class RocksStorage implements KvStorage {
             }
         });
         if (ex != null) {
-            throw new KVStorageException(ErrorCode.UnKnowError.getCode(), ex);
+            throw new KVStorageException(ErrorCode.UnKnowError, ex);
         }
     }
     
@@ -278,6 +277,7 @@ public class RocksStorage implements KvStorage {
      * @param backupPath backup path
      * @throws KVStorageException RocksStorageException
      */
+    @Override
     public void snapshotLoad(final String backupPath) throws KVStorageException {
         try {
             final String path = Paths.get(backupPath, group).toString();
@@ -296,14 +296,14 @@ public class RocksStorage implements KvStorage {
             Status status = ex.getStatus();
             throw createRocksStorageException(ErrorCode.KVStorageSnapshotLoadError, status);
         } catch (Throwable ex) {
-            throw new KVStorageException(ErrorCode.UnKnowError.getCode(), ex);
+            throw new KVStorageException(ErrorCode.UnKnowError, ex);
         }
     }
     
     private static KVStorageException createRocksStorageException(ErrorCode code, Status status) {
         KVStorageException exception = new KVStorageException();
         exception.setErrCode(code.getCode());
-        exception.setErrMsg(String.format("RocksDB error msg : code=%s, subCode=%s, state=%s", status.getCode(),
+        exception.setErrMsg(String.format("RocksDB error msg : code=%s, subCode=%s, state=%s", status,
                 status.getSubCode(), status.getState()));
         return exception;
     }

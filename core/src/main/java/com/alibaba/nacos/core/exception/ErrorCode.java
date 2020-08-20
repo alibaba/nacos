@@ -77,6 +77,11 @@ public enum ErrorCode {
      */
     IOMakeDirError(40201),
     
+    /**
+     * copy directory has error
+     */
+    IOCopyDirError(40202),
+    
     // consistency protocol error
     
     /**
