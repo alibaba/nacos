@@ -28,42 +28,47 @@ public enum ErrorCode {
      */
     UnKnowError(40001),
     
-    // rocksdb error
+    // kv error
     
     /**
-     * rocksdb write error.
+     * KVStorage write error.
      */
-    RocksDBWriteError(40100),
+    KVStorageWriteError(40100),
     
     /**
-     * rocksdb read error.
+     * KVStorage read error.
      */
-    RocksDBReadError(40101),
+    KVStorageReadError(40101),
     
     /**
-     * rocksdb delete error.
+     * KVStorage delete error.
      */
-    RocksDBDeleteError(40102),
+    KVStorageDeleteError(40102),
     
     /**
-     * rocksdb snapshot save error.
+     * KVStorage snapshot save error.
      */
-    RocksDBSnapshotSaveError(40103),
+    KVStorageSnapshotSaveError(40103),
     
     /**
-     * rocksdb snapshot load error.
+     * KVStorage snapshot load error.
      */
-    RocksDBSnapshotLoadError(40104),
+    KVStorageSnapshotLoadError(40104),
     
     /**
-     * rocksdb reset error.
+     * KVStorage reset error.
      */
-    RocksDBResetError(40105),
+    KVStorageResetError(40105),
     
     /**
-     * rocksdb create error.
+     * KVStorage create error.
      */
-    RocksDBCreateError(40106),
+    KVStorageCreateError(40106),
+    
+    /**
+     * KVStorage write error.
+     */
+    KVStorageBatchWriteError(40107),
     
     // disk error
     
