@@ -40,7 +40,7 @@ import java.util.Collection;
  */
 public final class SelfTrustManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(SelfHostnameVerifier.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SelfTrustManager.class);
     
     @SuppressWarnings("checkstyle:WhitespaceAround")
     static TrustManager[] trustAll = new TrustManager[] {new X509TrustManager() {
@@ -60,15 +60,15 @@ public final class SelfTrustManager {
     }};
     
     /**
-     * Returns the result of calling {@link #buildSecureTrustManager} if {@code clientAuth} is enable and {@code
+     * Returns the result of calling {@link #buildSecureTrustManager} if {@code needAuth} is enable and {@code
      * trustCertPath} exists. Returns the {@link trustAll} otherwise.
      *
-     * @param clientAuth    whether need client auth
+     * @param needAuth      whether need client auth
      * @param trustCertPath trust certificate path
      * @return Array of {@link TrustManager }
      */
-    public static TrustManager[] trustManager(boolean clientAuth, String trustCertPath) {
-        if (clientAuth) {
+    public static TrustManager[] trustManager(boolean needAuth, String trustCertPath) {
+        if (needAuth) {
             try {
                 return trustCertPath == null ? null : buildSecureTrustManager(trustCertPath);
             } catch (SSLException e) {
@@ -81,7 +81,7 @@ public final class SelfTrustManager {
     }
     
     private static TrustManager[] buildSecureTrustManager(String trustCertPath) throws SSLException {
-        TrustManagerFactory selfTmf = null;
+        TrustManagerFactory selfTmf;
         InputStream in = null;
         
         try {
@@ -99,6 +99,7 @@ public final class SelfTrustManager {
             for (Certificate cert : certs) {
                 trustKeyStore.setCertificateEntry("cert-" + (count++), cert);
             }
+            
             selfTmf.init(trustKeyStore);
             return selfTmf.getTrustManagers();
         } catch (Exception e) {

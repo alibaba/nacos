@@ -21,7 +21,7 @@ package com.alibaba.nacos.common.tls;
  *
  * @author wangwei
  */
-public class TlsSystemConfig {
+public final class TlsSystemConfig {
     
     public static final String TLS_TEST_MODE_ENABLE = "tls.test";
     
@@ -57,7 +57,7 @@ public class TlsSystemConfig {
     /**
      * To determine whether use test mode when initialize TLS context.
      */
-    public static boolean tlsTestModeEnable = Boolean.parseBoolean(System.getProperty(TLS_TEST_MODE_ENABLE, "true"));
+    public static boolean tlsTestModeEnable = Boolean.parseBoolean(System.getProperty(TLS_TEST_MODE_ENABLE, "false"));
     
     /**
      * To determine whether verify the server endpoint's certificate strictly.
@@ -75,12 +75,12 @@ public class TlsSystemConfig {
     public static String tlsClientKeyPath = System.getProperty(CLIENT_KEYPATH, null);
     
     /**
-     * The  password of the client-side private key.
+     * The password of the client-side private key.
      */
     public static String tlsClientKeyPassword = System.getProperty(CLIENT_KEYPASSWORD, null);
     
     /**
-     * The store path of client-side X.509 certificate.
+     * The store path of client-side X.509 certificate chain in PEM format.
      */
     public static String tlsClientCertPath = System.getProperty(CLIENT_CERTPATH, null);
     
@@ -100,7 +100,7 @@ public class TlsSystemConfig {
     public static String tlsServerKeyPassword = System.getProperty(SERVER_KEYPASSWORD, null);
     
     /**
-     * The store path of server-side X.509 certificate.
+     * The store path of server-side X.509 certificate chain in PEM format.
      */
     public static String tlsServerCertPath = System.getProperty(SERVER_CERTPATH, null);
     

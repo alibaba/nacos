@@ -25,16 +25,15 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.tls.SelfHostnameVerifier;
-import com.alibaba.nacos.common.tls.SelfTrustManager;
 import com.alibaba.nacos.common.tls.TlsFileWatcher;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -64,26 +63,23 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                 public void onChanged(String filePath) {
                     loadSSLContext();
                 }
-            }, TlsSystemConfig.tlsClientTrustCertPath);
+            }, TlsSystemConfig.tlsClientTrustCertPath, TlsSystemConfig.tlsClientKeyPath);
         } catch (IOException e) {
             LOGGER.error("add tls file listener fail", e);
         }
     }
     
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    private void loadSSLContext() {
+    private synchronized void loadSSLContext() {
         if (TlsSystemConfig.tlsEnable) {
             try {
-                SSLContext sslcontext = SSLContext.getInstance("TLS");
-                sslcontext.init(null, SelfTrustManager
-                                .trustManager(TlsSystemConfig.tlsClientAuthServer, TlsSystemConfig.tlsClientTrustCertPath),
-                        new java.security.SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-                
+                HttpsURLConnection.setDefaultSSLSocketFactory(TlsHelper.buildSslContext(true).getSocketFactory());
             } catch (NoSuchAlgorithmException e) {
                 LOGGER.error("Failed to create SSLContext", e);
             } catch (KeyManagementException e) {
                 LOGGER.error("Failed to create SSLContext", e);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
