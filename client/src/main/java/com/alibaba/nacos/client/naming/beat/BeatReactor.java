@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -95,8 +96,16 @@ public class BeatReactor {
             if (beatInfo.isStopped()) {
                 return;
             }
+
+            String enableClientHeat = beatInfo.getMetadata()
+                .get(PreservedMetadataKeys.ENABLE_CLIENT_HEART_BEAT_INTERVAL);
             long result = serverProxy.sendBeat(beatInfo);
+
             long nextTime = result > 0 ? result : beatInfo.getPeriod();
+
+            if (Boolean.parseBoolean(enableClientHeat)){
+                nextTime=beatInfo.getPeriod();
+            }
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }
