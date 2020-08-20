@@ -24,21 +24,14 @@ import com.alibaba.nacos.common.http.client.response.JdkHttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import com.alibaba.nacos.common.tls.SelfHostnameVerifier;
-import com.alibaba.nacos.common.tls.TlsFileWatcher;
-import com.alibaba.nacos.common.tls.TlsHelper;
-import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,44 +42,34 @@ import java.util.Map;
  */
 public class JdkHttpClientRequest implements HttpClientRequest {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(JdkHttpClientRequest.class);
-    
     private HttpClientConfig httpClientConfig;
     
     public JdkHttpClientRequest(HttpClientConfig httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
-        loadSSLContext();
-        replaceHostnameVerifier();
-        try {
-            TlsFileWatcher.getInstance().addFileChangeListener(new TlsFileWatcher.FileChangeListener() {
-                @Override
-                public void onChanged(String filePath) {
-                    loadSSLContext();
-                }
-            }, TlsSystemConfig.tlsClientTrustCertPath, TlsSystemConfig.tlsClientKeyPath);
-        } catch (IOException e) {
-            LOGGER.error("add tls file listener fail", e);
-        }
     }
     
+    /**
+     * Use specified {@link SSLContext}.
+     *
+     * @param sslContext ssl context
+     */
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    private synchronized void loadSSLContext() {
-        if (TlsSystemConfig.tlsEnable) {
-            try {
-                HttpsURLConnection.setDefaultSSLSocketFactory(TlsHelper.buildSslContext(true).getSocketFactory());
-            } catch (NoSuchAlgorithmException e) {
-                LOGGER.error("Failed to create SSLContext", e);
-            } catch (KeyManagementException e) {
-                LOGGER.error("Failed to create SSLContext", e);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    public void setSSLContext(SSLContext sslContext) {
+        if (sslContext != null) {
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         }
     }
     
-    private void replaceHostnameVerifier() {
-        final HostnameVerifier hv = HttpsURLConnection.getDefaultHostnameVerifier();
-        HttpsURLConnection.setDefaultHostnameVerifier(new SelfHostnameVerifier(hv));
+    /**
+     * Replace the default HostnameVerifier.
+     *
+     * @param hostnameVerifier custom hostnameVerifier
+     */
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
+    public void replaceSSLHostnameVerifier(HostnameVerifier hostnameVerifier) {
+        if (hostnameVerifier != null) {
+            HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+        }
     }
     
     @Override

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.tls;
 
+import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.IoUtils;
-import sun.misc.BASE64Decoder;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -44,7 +44,7 @@ final class PemReader {
     
     private static final String ENCODE_US_ASCII = "US-ASCII";
     
-    static byte[] readPrivateKey(String keyPath) throws KeyException, IOException {
+    static byte[] readPrivateKey(String keyPath) throws KeyException {
         try {
             InputStream in = new FileInputStream(keyPath);
             try {
@@ -59,9 +59,7 @@ final class PemReader {
                 if (!m.find()) {
                     throw new KeyException("could not find a PKCS #8 private key in input stream");
                 }
-                
-                final BASE64Decoder base64 = new BASE64Decoder();
-                return base64.decodeBuffer(m.group(1));
+                return Base64.decodeBase64(m.group(1).getBytes());
             } finally {
                 IoUtils.closeQuietly(in);
             }

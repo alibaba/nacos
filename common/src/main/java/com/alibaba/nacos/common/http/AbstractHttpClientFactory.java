@@ -20,9 +20,21 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.DefaultAsyncHttpClientRequest;
 import com.alibaba.nacos.common.http.client.request.JdkHttpClientRequest;
+import com.alibaba.nacos.common.tls.SelfHostnameVerifier;
+import com.alibaba.nacos.common.tls.TlsFileWatcher;
+import com.alibaba.nacos.common.tls.TlsHelper;
+import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * AbstractHttpClientFactory Let the creator only specify the http client config.
@@ -34,7 +46,28 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     @Override
     public final NacosRestTemplate createNacosRestTemplate() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
-        return new NacosRestTemplate(assignLogger(), new JdkHttpClientRequest(httpClientConfig));
+        final JdkHttpClientRequest clientRequest = new JdkHttpClientRequest(httpClientConfig);
+        
+        if (TlsSystemConfig.tlsEnable) {
+            // enable ssl
+            clientRequest.setSSLContext(loadSSLContext());
+            final HostnameVerifier hv = HttpsURLConnection.getDefaultHostnameVerifier();
+            final SelfHostnameVerifier selfHostnameVerifier = new SelfHostnameVerifier(hv);
+            clientRequest.replaceSSLHostnameVerifier(selfHostnameVerifier);
+            
+            try {
+                TlsFileWatcher.getInstance().addFileChangeListener(new TlsFileWatcher.FileChangeListener() {
+                    @Override
+                    public void onChanged(String filePath) {
+                        clientRequest.setSSLContext(loadSSLContext());
+                    }
+                }, TlsSystemConfig.tlsClientTrustCertPath, TlsSystemConfig.tlsClientKeyPath);
+            } catch (IOException e) {
+                assignLogger().error("add tls file listener fail", e);
+            }
+        }
+        
+        return new NacosRestTemplate(assignLogger(), clientRequest);
     }
     
     @Override
@@ -49,6 +82,23 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         return RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())
                 .setMaxRedirects(httpClientConfig.getMaxRedirects()).build();
+    }
+    
+    @SuppressWarnings("checkstyle:abbreviationaswordinname")
+    protected synchronized SSLContext loadSSLContext() {
+        if (!TlsSystemConfig.tlsEnable) {
+            return null;
+        }
+        try {
+            return TlsHelper.buildSslContext(true);
+        } catch (NoSuchAlgorithmException e) {
+            assignLogger().error("Failed to create SSLContext", e);
+        } catch (KeyManagementException e) {
+            assignLogger().error("Failed to create SSLContext", e);
+        } catch (SSLException e) {
+            assignLogger().error("Failed to create SSLContext", e);
+        }
+        return null;
     }
     
     /**
