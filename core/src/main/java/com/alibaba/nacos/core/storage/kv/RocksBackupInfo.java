@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.core.storage;
+package com.alibaba.nacos.core.storage.kv;
 
 /**
  * RocksDB backup info.

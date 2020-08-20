@@ -18,6 +18,7 @@
 package com.alibaba.nacos.core.storage;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.core.storage.kv.RocksStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import org.junit.Assert;

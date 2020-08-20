@@ -20,7 +20,7 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.core.storage.RocksStorage;
+import com.alibaba.nacos.core.storage.kv.RocksStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import org.junit.After;

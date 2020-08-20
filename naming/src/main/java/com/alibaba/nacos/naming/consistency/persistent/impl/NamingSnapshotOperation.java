@@ -22,7 +22,7 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.core.storage.RocksStorage;
+import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -47,11 +47,11 @@ public class NamingSnapshotOperation implements SnapshotOperation {
     
     private final String checkSumKey = "checkSum";
     
-    private final RocksStorage storage;
+    private final KvStorage storage;
     
     private final ReentrantReadWriteLock.WriteLock writeLock;
     
-    public NamingSnapshotOperation(RocksStorage storage, ReentrantReadWriteLock lock) {
+    public NamingSnapshotOperation(KvStorage storage, ReentrantReadWriteLock lock) {
         this.storage = storage;
         this.writeLock = lock.writeLock();
     }
@@ -69,7 +69,7 @@ public class NamingSnapshotOperation implements SnapshotOperation {
                 DiskUtils.deleteDirectory(parentPath);
                 DiskUtils.forceMkdir(parentPath);
                 
-                storage.snapshotSave(parentPath);
+                storage.doSnapshot(parentPath);
                 final String outputFile = Paths.get(writePath, snapshotArchive).toString();
                 final Checksum checksum = new CRC64();
                 DiskUtils.compress(writePath, snapshotDir, outputFile, checksum);
