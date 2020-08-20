@@ -22,16 +22,18 @@ import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
+import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
 import com.alibaba.nacos.core.remote.PushFuture;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
+import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.Date;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -51,31 +53,38 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public boolean heartBeatExpire() {
-        return false;
-    }
-    
-    @Override
-    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception {
+    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException {
         Loggers.RPC_DIGEST.info("Rsocket sendRequest :" + request);
-        Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
-        Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
-        return block == null;
+    
+        try {
+            Mono<Payload> payloadMono = clientSocket
+                    .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+            Payload block = payloadMono.block(Duration.ofMillis(timeoutMills));
+            return block == null;
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
+        }
     }
     
     @Override
-    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws NacosException {
         Loggers.RPC_DIGEST.info("Rsocket sendRequestNoAck :" + request);
-        clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, new RequestMeta())).block();
+        clientSocket.fireAndForget(RsocketUtils.convertRequestToPayload(request, buildMeta())).block();
+    }
+    
+    private RequestMeta buildMeta() {
+        RequestMeta meta = new RequestMeta();
+        meta.setClientVersion(VersionUtils.getFullClientVersion());
+        meta.setClientIp(NetUtils.localIP());
+        return meta;
     }
     
     @Override
-    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception {
+    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException {
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithFuture :" + request);
         final Mono<Payload> payloadMono = clientSocket
-                .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
-    
+                .requestResponse(RsocketUtils.convertRequestToPayload(request, buildMeta()));
+        
         PushFuture defaultPushFuture = new PushFuture() {
             
             @Override
@@ -97,15 +106,21 @@ public class RsocketConnection extends Connection {
     }
     
     @Override
-    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws NacosException {
     
+        long id = System.currentTimeMillis();
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
+        System.out.println("send ..." + id);
+        
         Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
         payloadMono.subscribe(new Consumer<Payload>() {
-    
+
             @Override
             public void accept(Payload payload) {
+                System.out.println(
+                        "accept ..." + payload.getDataUtf8() + "," + id + "，  at " + System.currentTimeMillis());
+
                 Response response = RsocketUtils.parseResponseFromPayload(payload);
                 if (response.isSuccess()) {
                     callBack.onSuccess();
@@ -113,19 +128,25 @@ public class RsocketConnection extends Connection {
                     callBack.onFail(new NacosException(response.getErrorCode(), response.getMessage()));
                 }
             }
-    
+
         }, new Consumer<Throwable>() {
             @Override
             public void accept(Throwable throwable) {
                 callBack.onFail(new Exception(throwable));
             }
         });
-    
         try {
-            payloadMono.timeout(Duration.ofMillis(callBack.getTimeout()));
-        
+            payloadMono.timeout(Duration.ofMillis(500L), new Mono<Payload>() {
+                @Override
+                public void subscribe(CoreSubscriber<? super Payload> actual) {
+                    System.out.println("time out ..." + actual);
+                }
+            });
+            
         } catch (Exception e) {
-            callBack.onTimeout();
+            System.out.println("time out e..." + e.getMessage());
+    
+            callBack.onFail(e);
         }
     }
     

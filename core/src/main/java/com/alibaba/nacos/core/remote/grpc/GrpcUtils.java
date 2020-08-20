@@ -42,7 +42,7 @@ public class GrpcUtils {
      * @param request request.
      * @return
      */
-    public static GrpcResponse convert(Request request, String ackId) {
+    public static GrpcResponse convert(Request request) {
     
         String jsonString = JacksonUtils.toJson(request);
         byte[] bytes = null;
@@ -53,7 +53,7 @@ public class GrpcUtils {
             return null;
         }
         GrpcMetadata metadata = GrpcMetadata.newBuilder().build();
-        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setAck(ackId).setType(request.getType())
+        GrpcResponse grpcResponse = GrpcResponse.newBuilder().setType(request.getType())
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
         return grpcResponse;
     }

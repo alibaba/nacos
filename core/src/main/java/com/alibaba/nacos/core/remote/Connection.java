@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
@@ -34,26 +35,7 @@ public abstract class Connection {
     
     public static final String HEALTHY = "healthy";
     
-    public static final String UNHEALTHY = "unhealthy";
-    
-    public static final String SWITCHING = "swtiching";
-    
     private String status = HEALTHY;
-    
-    public boolean isHealthy() {
-        return HEALTHY.equals(this.status);
-    }
-    
-    public boolean isSwitching() {
-        return HEALTHY.equals(this.status);
-    }
-    
-    /**
-     * if check expire for  heart beat .
-     *
-     * @return
-     */
-    public abstract boolean heartBeatExpire();
     
     /**
      * Getter method for property <tt>status</tt>.
@@ -84,28 +66,29 @@ public abstract class Connection {
      *
      * @param request request
      */
-    public abstract boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception;
+    public abstract boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request
      */
-    public abstract void sendRequestNoAck(ServerPushRequest request) throws Exception;
+    public abstract void sendRequestNoAck(ServerPushRequest request) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception;
+    public abstract PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException;
     
     /**
      * Send response to this client that associated to this connection.
      *
      * @param request request.
      */
-    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception;
+    public abstract void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack)
+            throws NacosException;
     
     /**
      * Close this connection, if this connection is not active yet.

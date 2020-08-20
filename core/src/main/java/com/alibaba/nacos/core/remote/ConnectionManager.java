@@ -134,13 +134,6 @@ public class ConnectionManager {
         return this.connetions.size();
     }
     
-    public void setSwitching(String connectionId) {
-        Connection connection = connetions.get(connectionId);
-        if (connection != null) {
-            connection.setStatus(Connection.SWITCHING);
-        }
-    }
-    
     /**
      * regresh connection active time.
      *
@@ -170,47 +163,29 @@ public class ConnectionManager {
                     int currentMaxClient = isLoaderClient ? loadClient : maxClient;
                     int expelCount = currentMaxClient < 0 ? currentMaxClient : entries.size() - currentMaxClient;
                     List<String> expelClient = new LinkedList<String>();
-                    
-                    List<String> expireCLients = new LinkedList<String>();
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
-                        if (!client.isSdkSource()) {
-                            continue;
-                        }
-                        long lastActiveTimestamp = entry.getValue().getLastActiveTimestamp();
-                        if (client.heartBeatExpire() && currentStamp - lastActiveTimestamp > EXPIRE_MILLSECOND) {
-                            expireCLients.add(client.getConnectionId());
-                            expelCount--;
-                        } else if (expelCount > 0) {
+                        if (client.isSdkSource() && expelCount > 0) {
                             expelClient.add(client.getConnectionId());
                             expelCount--;
                         }
                     }
-                    
-                    for (String expireClient : expireCLients) {
-                        unregister(expireClient);
-                        Loggers.RPC.info("expire connection found ，success expel connectionid = {} ", expireClient);
-                    }
-                    
-                    for (String expeledClient : expelClient) {
+    
+                    for (String expeledClientId : expelClient) {
                         try {
-                            Connection connection = getConnection(expeledClient);
+                            Connection connection = getConnection(expeledClientId);
                             if (connection != null) {
-                                if (connection.isSwitching()) {
-                                    continue;
-                                }
-                                connection.sendRequestNoAck(new ConnectResetRequest());
-                                connection.setStatus(Connection.SWITCHING);
+                                connection.closeGrapcefully();
+                                //connection.sendRequestNoAck(new ConnectResetRequest());
                                 Loggers.RPC.info("expel connection ,send switch server response connectionid = {} ",
-                                        expeledClient);
+                                        expeledClientId);
                             }
                             
                         } catch (ConnectionAlreadyClosedException e) {
-                            unregister(expeledClient);
+                            unregister(expeledClientId);
                         } catch (Exception e) {
-                            Loggers.RPC.error("error occurs when expel connetion :", expeledClient, e);
+                            Loggers.RPC.error("error occurs when expel connetion :", expeledClientId, e);
                         }
-                        
                     }
                     
                     //reset loader client

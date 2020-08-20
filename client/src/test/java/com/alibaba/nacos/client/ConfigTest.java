@@ -21,14 +21,12 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
-import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.google.common.util.concurrent.FutureCallback;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -39,6 +37,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
+
+import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 @Ignore
 public class ConfigTest {
@@ -51,7 +52,7 @@ public class ConfigTest {
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
     
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -73,32 +74,44 @@ public class ConfigTest {
             }
         });
         client.start();
-        ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
-        syncRequest.setDataId("xiaochun.xxc1");
-        syncRequest.setGroup("xiaochun.xxc");
-        syncRequest.setIsBeta("N");
-        syncRequest.setLastModified(System.currentTimeMillis());
-        syncRequest.setTag("");
-        syncRequest.setTenant("");
-        System.out.println(client.isRunning());
-        Response response = client.request(syncRequest);
-        client.request(syncRequest);
-        
-        client.request(syncRequest);
-        System.out.println(response);
     
-        client.asyncRequest(syncRequest, new FutureCallback<Response>() {
-            @Override
-            public void onSuccess(@NullableDecl Response response) {
-                System.out.println("sucess:" + response);
+        ConfigBatchListenRequest syncRequest = new ConfigBatchListenRequest();
+        syncRequest.setListen("Y");
+        final String dataId = "xiaochun.xxc";
+        final String group = "xiaochun.xxc";
+        long start = System.currentTimeMillis();
+        System.out.println("100K start send 100 request...");
+    
+        for (int i = 0; i < 100; i++) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            listenConfigsBuilder.append(dataId + i).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(group).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(new String(new byte[100])).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append("default").append(LINE_SEPARATOR);
+            syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
+            if (i == 10) {
+                System.out.println("单个报文大小长度：" + listenConfigsBuilder.toString().length());
             }
+            Response request = client.request(syncRequest);
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("total cost:" + (end - start));
+    
+        StringBuilder listenConfigsBuilder = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            listenConfigsBuilder.append(dataId + i).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(group).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(new String(new byte[100000])).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append("default").append(LINE_SEPARATOR);
+        }
+        System.out.println("100K start send batch 100 request...");
+        long start2 = System.currentTimeMillis();
+        System.out.println("总报文大小长度：" + listenConfigsBuilder.toString().length());
+        syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
+        Response response = client.request(syncRequest);
+        long end2 = System.currentTimeMillis();
+        System.out.println("toal cost:" + (end2 - start2));
         
-            @Override
-            public void onFailure(Throwable throwable) {
-                System.out.println("throwable:" + throwable);
-            
-            }
-        });
         Thread.sleep(50000000L);
         
     }

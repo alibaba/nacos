@@ -82,7 +82,6 @@ public class RsocketConnection extends Connection {
     
     @Override
     public void close() {
-        System.out.println("close.." + rSocketClient);
         if (this.rSocketClient != null && !rSocketClient.isDisposed()) {
             rSocketClient.dispose();
         }
