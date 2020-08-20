@@ -229,7 +229,7 @@ public final class HttpUtils {
      * @return {@link URI}
      */
     public static URI buildUri(String url, Query query) throws URISyntaxException {
-        if (!query.isEmpty()) {
+        if (query != null && !query.isEmpty()) {
             url = url + "?" + query.toQueryUrl();
         }
         return new URI(url);
