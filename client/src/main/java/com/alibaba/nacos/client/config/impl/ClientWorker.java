@@ -700,6 +700,7 @@ public class ClientWorker implements Closeable {
             });
     
             rpcClientProxy.getRpcClient().registerConnectionListener(new ConnectionEventListener() {
+    
                 @Override
                 public void onConnected() {
                     notifyRpcListenConfig();
@@ -714,10 +715,6 @@ public class ClientWorker implements Closeable {
                     }
                 }
         
-                @Override
-                public void onReconnected() {
-                
-                }
             });
         }
     }
