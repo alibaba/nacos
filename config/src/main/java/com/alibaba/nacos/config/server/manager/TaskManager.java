@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -41,11 +43,11 @@ public final class TaskManager implements TaskManagerMBean {
     
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
     
-    private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
+    private final ConcurrentHashMap<String, AbstractDelayTask> tasks = new ConcurrentHashMap<String, AbstractDelayTask>();
     
-    private final ConcurrentHashMap<String, TaskProcessor> taskProcessors = new ConcurrentHashMap<String, TaskProcessor>();
+    private final ConcurrentHashMap<String, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<String, NacosTaskProcessor>();
     
-    private TaskProcessor defaultTaskProcessor;
+    private NacosTaskProcessor defaultTaskProcessor;
     
     Thread processingThread;
     
@@ -77,11 +79,11 @@ public final class TaskManager implements TaskManagerMBean {
         this(null);
     }
     
-    public AbstractTask getTask(String type) {
+    public AbstractDelayTask getTask(String type) {
         return this.tasks.get(type);
     }
     
-    public TaskProcessor getTaskProcessor(String type) {
+    public NacosTaskProcessor getTaskProcessor(String type) {
         return this.taskProcessors.get(type);
     }
     
@@ -144,7 +146,7 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
     
-    public void addProcessor(String type, TaskProcessor taskProcessor) {
+    public void addProcessor(String type, NacosTaskProcessor taskProcessor) {
         this.taskProcessors.put(type, taskProcessor);
     }
     
@@ -173,10 +175,10 @@ public final class TaskManager implements TaskManagerMBean {
      * @param type type of task.
      * @param task task which needs to process.
      */
-    public void addTask(String type, AbstractTask task) {
+    public void addTask(String type, AbstractDelayTask task) {
         this.lock.lock();
         try {
-            AbstractTask oldTask = tasks.put(type, task);
+            AbstractDelayTask oldTask = tasks.put(type, task);
             MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
                 task.merge(oldTask);
@@ -190,8 +192,8 @@ public final class TaskManager implements TaskManagerMBean {
      * Execute to process all tasks in the task map.
      */
     protected void process() {
-        for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
-            AbstractTask task = null;
+        for (Map.Entry<String, AbstractDelayTask> entry : this.tasks.entrySet()) {
+            AbstractDelayTask task = null;
             this.lock.lock();
             try {
                 // Getting task.
@@ -211,7 +213,7 @@ public final class TaskManager implements TaskManagerMBean {
             
             if (null != task) {
                 // Getting task processor.
-                TaskProcessor processor = this.taskProcessors.get(entry.getKey());
+                NacosTaskProcessor processor = this.taskProcessors.get(entry.getKey());
                 if (null == processor) {
                     // If has no related typpe processor, then it will use default processor.
                     processor = this.getDefaultTaskProcessor();
@@ -249,7 +251,7 @@ public final class TaskManager implements TaskManagerMBean {
         return tasks.isEmpty();
     }
     
-    public TaskProcessor getDefaultTaskProcessor() {
+    public NacosTaskProcessor getDefaultTaskProcessor() {
         this.lock.lock();
         try {
             return this.defaultTaskProcessor;
@@ -258,7 +260,7 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
     
-    public void setDefaultTaskProcessor(TaskProcessor defaultTaskProcessor) {
+    public void setDefaultTaskProcessor(NacosTaskProcessor defaultTaskProcessor) {
         this.lock.lock();
         try {
             this.defaultTaskProcessor = defaultTaskProcessor;
@@ -272,7 +274,7 @@ public final class TaskManager implements TaskManagerMBean {
         StringBuilder sb = new StringBuilder();
         for (String taskType : this.taskProcessors.keySet()) {
             sb.append(taskType).append(":");
-            AbstractTask task = this.tasks.get(taskType);
+            AbstractDelayTask task = this.tasks.get(taskType);
             if (task != null) {
                 sb.append(new Date(task.getLastProcessTime()).toString());
             } else {

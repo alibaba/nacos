@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
@@ -51,7 +51,7 @@ public class NotifySingleService {
         }
         
         @Override
-        public boolean process(String taskType, AbstractTask task) {
+        public boolean process(String taskType, AbstractDelayTask task) {
             NotifySingleTask notifyTask = (NotifySingleTask) task;
             return notifyToDump(notifyTask.getDataId(), notifyTask.getGroup(), notifyTask.getTenant(),
                     notifyTask.getLastModified(), notifyTask.target);

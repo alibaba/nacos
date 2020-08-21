@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.manager;
+package com.alibaba.nacos.common.task;
 
 /**
  * Task processor.
  *
  * @author Nacos
  */
-public interface TaskProcessor {
+public interface NacosTaskProcessor {
     
     /**
      * Process task.
@@ -30,5 +30,5 @@ public interface TaskProcessor {
      * @param task     task.
      * @return process task result.
      */
-    boolean process(String taskType, AbstractTask task);
+    boolean process(String taskType, AbstractDelayTask task);
 }

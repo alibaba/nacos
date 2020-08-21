@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service.merge;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.manager.AbstractTask;
-import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.Page;
@@ -42,7 +42,7 @@ import java.util.List;
  *
  * @author Nacos
  */
-public class MergeTaskProcessor implements TaskProcessor {
+public class MergeTaskProcessor implements NacosTaskProcessor {
     
     private static final int PAGE_SIZE = 10000;
     
@@ -52,7 +52,7 @@ public class MergeTaskProcessor implements TaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractTask task) {
+    public boolean process(String taskType, AbstractDelayTask task) {
         MergeDataTask mergeTask = (MergeDataTask) task;
         final String dataId = mergeTask.dataId;
         final String group = mergeTask.groupId;

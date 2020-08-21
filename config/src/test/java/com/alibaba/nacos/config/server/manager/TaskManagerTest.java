@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.constant.Constants;
 import org.junit.After;
 import org.junit.Before;
@@ -42,20 +44,20 @@ public class TaskManagerTest {
     private TaskManager taskManager;
     
     @Mock
-    private TaskProcessor taskProcessor;
+    private NacosTaskProcessor taskProcessor;
     
     @Mock
-    private TaskProcessor testTaskProcessor;
+    private NacosTaskProcessor testTaskProcessor;
     
-    private AbstractTask abstractTask;
+    private AbstractDelayTask abstractTask;
     
     @Before
     public void setUp() {
         taskManager = new TaskManager(TaskManagerTest.class.getName());
         taskManager.setDefaultTaskProcessor(taskProcessor);
-        abstractTask = new AbstractTask() {
+        abstractTask = new AbstractDelayTask() {
             @Override
-            public void merge(AbstractTask task) {
+            public void merge(AbstractDelayTask task) {
             }
         };
     }
