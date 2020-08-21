@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.address.configuration;
+package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.address.auth.AddressServerAuthManager;
-import com.alibaba.nacos.auth.AuthManager;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Address server spring configuration.
+ * auth filter config.
  *
- * @author xiweng.yy
+ * @author mai.jh
  */
 @Configuration
-public class AddressServerSpringConfiguration {
+public class AuthConfig {
     
     @Bean
-    @ConditionalOnMissingBean(value = AuthManager.class)
-    public AuthManager getAuthManager() {
-        return new AddressServerAuthManager();
+    public FilterRegistrationBean authFilterRegistration() {
+        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(authFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("authFilter");
+        registration.setOrder(6);
+        
+        return registration;
+    }
+    
+    @Bean
+    public AuthFilter authFilter() {
+        return new AuthFilter();
     }
 }

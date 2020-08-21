@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -175,8 +176,9 @@ public class WatchFileCenter_ITCase {
 						DiskUtils.writeFile(file1, j.getBytes(StandardCharsets.UTF_8),
 								false);
 					}
-				}
-				finally {
+				} catch (IOException e) {
+					Assert.fail(e.getMessage());
+				} finally {
 					latch.countDown();
 				}
 			});

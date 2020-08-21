@@ -15,13 +15,13 @@
  *
  */
 
-package com.alibaba.nacos.core.storage;
+package com.alibaba.nacos.core.storage.kv;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
-import com.alibaba.nacos.core.exception.RocksStorageException;
+import com.alibaba.nacos.core.exception.KVStorageException;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import org.rocksdb.BackupEngine;
 import org.rocksdb.BackupableDBOptions;
@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public final class RocksStorage {
+public class RocksStorage implements KvStorage {
     
     private String group;
     
@@ -81,11 +81,11 @@ public final class RocksStorage {
     /**
      * create rocksdb storage with default operation.
      *
-     * @param group group
+     * @param group   group
      * @param baseDir base dir
      * @return {@link RocksStorage}
      */
-    public static RocksStorage createDefault(final String group, String baseDir) {
+    public static RocksStorage createDefault(final String group, final String baseDir) {
         return createCustomer(group, baseDir, new WriteOptions().setSync(true),
                 new ReadOptions().setTotalOrderSeek(true));
     }
@@ -93,17 +93,15 @@ public final class RocksStorage {
     /**
      * create rocksdb storage and set customer operation.
      *
-     * @param group group
-     * @param baseDir base dir
+     * @param group        group
+     * @param baseDir      base dir
      * @param writeOptions {@link WriteOptions}
-     * @param readOptions {@link ReadOptions}
+     * @param readOptions  {@link ReadOptions}
      * @return {@link RocksStorage}
      */
     public static RocksStorage createCustomer(final String group, String baseDir, WriteOptions writeOptions,
             ReadOptions readOptions) {
-        
         RocksStorage storage = new RocksStorage();
-        
         try {
             DiskUtils.forceMkdir(baseDir);
         } catch (IOException e) {
@@ -116,26 +114,26 @@ public final class RocksStorage {
     /**
      * destroy old rocksdb and open new one.
      *
-     * @throws RocksStorageException RocksStorageException
+     * @throws KVStorageException RocksStorageException
      */
-    public void destroyAndOpenNew() throws RocksStorageException {
+    public void destroyAndOpenNew() throws KVStorageException {
         try (final Options options = new Options()) {
             RocksDB.destroyDB(dbPath, options);
             createRocksDB(dbPath, group, writeOptions, readOptions, this);
         } catch (RocksDBException ex) {
             Status status = ex.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBResetError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageResetError, status);
         }
     }
     
     /**
      * create rocksdb.
      *
-     * @param baseDir base dir
-     * @param group group
+     * @param baseDir      base dir
+     * @param group        group
      * @param writeOptions {@link WriteOptions}
-     * @param readOptions {@link ReadOptions}
-     * @param storage {@link RocksStorage}
+     * @param readOptions  {@link ReadOptions}
+     * @param storage      {@link RocksStorage}
      */
     private static void createRocksDB(final String baseDir, final String group, WriteOptions writeOptions,
             ReadOptions readOptions, final RocksStorage storage) {
@@ -156,34 +154,22 @@ public final class RocksStorage {
             storage.db = RocksDB.open(options, baseDir, columnFamilyDescriptors, columnFamilyHandles);
             storage.defaultHandle = columnFamilyHandles.get(0);
         } catch (RocksDBException e) {
-            throw new NacosRuntimeException(ErrorCode.RocksDBCreateError.getCode(), e);
+            throw new NacosRuntimeException(ErrorCode.KVStorageCreateError.getCode(), e);
         }
     }
     
-    /**
-     * write data.
-     *
-     * @param key byte[]
-     * @param value byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public void write(byte[] key, byte[] value) throws RocksStorageException {
+    @Override
+    public void put(byte[] key, byte[] value) throws KVStorageException {
         try {
             this.db.put(defaultHandle, writeOptions, key, value);
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBWriteError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageWriteError, status);
         }
     }
     
-    /**
-     * batch write.
-     *
-     * @param key List byte[]
-     * @param values List byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public void batchWrite(List<byte[]> key, List<byte[]> values) throws RocksStorageException {
+    @Override
+    public void batchPut(List<byte[]> key, List<byte[]> values) throws KVStorageException {
         if (key.size() != values.size()) {
             throw new IllegalArgumentException("key size and values size must be equals!");
         }
@@ -194,81 +180,72 @@ public final class RocksStorage {
             db.write(writeOptions, batch);
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBWriteError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageWriteError, status);
         }
     }
     
-    /**
-     * get data by byte[].
-     *
-     * @param key byte[]
-     * @return result byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public byte[] get(byte[] key) throws RocksStorageException {
+    @Override
+    public byte[] get(byte[] key) throws KVStorageException {
         try {
             return db.get(defaultHandle, readOptions, key);
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBReadError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageReadError, status);
         }
     }
     
-    /**
-     * batch get by List byte[].
-     *
-     * @param key List byte[]
-     * @return Map byte[], byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public Map<byte[], byte[]> batchGet(List<byte[]> key) throws RocksStorageException {
+    @Override
+    public Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KVStorageException {
         try {
-            return db.multiGet(readOptions, key);
+            return db.multiGet(readOptions, keys);
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBReadError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageReadError, status);
         }
     }
     
-    /**
-     * delete with key.
-     *
-     * @param key byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public void delete(byte[] key) throws RocksStorageException {
+    @Override
+    public void delete(byte[] key) throws KVStorageException {
         try {
             db.delete(defaultHandle, writeOptions, key);
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBDeleteError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageDeleteError, status);
         }
     }
     
-    /**
-     * batch delete with keys.
-     *
-     * @param key List byte[]
-     * @throws RocksStorageException RocksStorageException
-     */
-    public void batchDelete(List<byte[]> key) throws RocksStorageException {
+    @Override
+    public void batchDelete(List<byte[]> key) throws KVStorageException {
         try {
             for (byte[] k : key) {
                 db.delete(defaultHandle, writeOptions, k);
             }
         } catch (RocksDBException e) {
             Status status = e.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBDeleteError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageDeleteError, status);
         }
+    }
+    
+    @Override
+    public void shutdown() {
+        this.defaultHandle.close();
+        this.db.close();
+        for (final ColumnFamilyOptions opt : this.cfOptions) {
+            opt.close();
+        }
+        this.options.close();
+        this.writeOptions.close();
+        this.readOptions.close();
     }
     
     /**
      * do snapshot save operation.
      *
      * @param backupPath backup path
-     * @throws RocksStorageException RocksStorageException
+     * @throws KVStorageException RocksStorageException
      */
-    public void snapshotSave(final String backupPath) throws RocksStorageException {
+    @Override
+    public void doSnapshot(final String backupPath) throws KVStorageException {
         final String path = Paths.get(backupPath, group).toString();
         Throwable ex = DiskUtils.forceMkdir(path, (aVoid, ioe) -> {
             BackupableDBOptions backupOpt = new BackupableDBOptions(path).setSync(true).setShareTableFiles(false);
@@ -284,13 +261,13 @@ public final class RocksStorage {
                 return null;
             } catch (RocksDBException e) {
                 Status status = e.getStatus();
-                return createRocksStorageException(ErrorCode.RocksDBSnapshotSaveError, status);
+                return createRocksStorageException(ErrorCode.KVStorageSnapshotSaveError, status);
             } catch (Throwable throwable) {
                 return throwable;
             }
         });
         if (ex != null) {
-            throw new RocksStorageException(ErrorCode.UnKnowError.getCode(), ex);
+            throw new KVStorageException(ErrorCode.UnKnowError, ex);
         }
     }
     
@@ -298,9 +275,10 @@ public final class RocksStorage {
      * do snapshot load operation.
      *
      * @param backupPath backup path
-     * @throws RocksStorageException RocksStorageException
+     * @throws KVStorageException RocksStorageException
      */
-    public void snapshotLoad(final String backupPath) throws RocksStorageException {
+    @Override
+    public void snapshotLoad(final String backupPath) throws KVStorageException {
         try {
             final String path = Paths.get(backupPath, group).toString();
             final File file = Paths.get(path, "meta_snapshot").toFile();
@@ -316,30 +294,16 @@ public final class RocksStorage {
             backupEngine.restoreDbFromBackup(info.getBackupId(), dbPath, dbOptions.walDir(), options);
         } catch (RocksDBException ex) {
             Status status = ex.getStatus();
-            throw createRocksStorageException(ErrorCode.RocksDBSnapshotLoadError, status);
+            throw createRocksStorageException(ErrorCode.KVStorageSnapshotLoadError, status);
         } catch (Throwable ex) {
-            throw new RocksStorageException(ErrorCode.UnKnowError.getCode(), ex);
+            throw new KVStorageException(ErrorCode.UnKnowError, ex);
         }
     }
     
-    /**
-     * shutdown.
-     */
-    public void shutdown() {
-        this.defaultHandle.close();
-        this.db.close();
-        for (final ColumnFamilyOptions opt : this.cfOptions) {
-            opt.close();
-        }
-        this.options.close();
-        this.writeOptions.close();
-        this.readOptions.close();
-    }
-    
-    private static RocksStorageException createRocksStorageException(ErrorCode code, Status status) {
-        RocksStorageException exception = new RocksStorageException();
+    private static KVStorageException createRocksStorageException(ErrorCode code, Status status) {
+        KVStorageException exception = new KVStorageException();
         exception.setErrCode(code.getCode());
-        exception.setErrMsg(String.format("RocksDB error msg : code=%s, subCode=%s, state=%s", status.getCode(),
+        exception.setErrMsg(String.format("RocksDB error msg : code=%s, subCode=%s, state=%s", status,
                 status.getSubCode(), status.getState()));
         return exception;
     }

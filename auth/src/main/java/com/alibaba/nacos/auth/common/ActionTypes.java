@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.common;
 
 /**
  * Resource action type definitions.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 public enum ActionTypes {

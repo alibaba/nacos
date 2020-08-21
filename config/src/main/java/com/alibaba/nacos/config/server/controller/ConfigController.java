@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
@@ -43,8 +45,6 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
-import com.alibaba.nacos.core.auth.ActionTypes;
-import com.alibaba.nacos.core.auth.Secured;
 import com.alibaba.nacos.core.utils.InetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
