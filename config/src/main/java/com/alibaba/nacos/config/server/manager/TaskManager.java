@@ -61,6 +61,7 @@ public final class TaskManager implements TaskManagerMBean {
                 try {
                     Thread.sleep(100);
                     TaskManager.this.process();
+                } catch (InterruptedException ignored) {
                 } catch (Throwable e) {
                     LogUtil.DUMP_LOG.error("execute dump process has error : {}", e);
                 }
