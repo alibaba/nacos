@@ -28,11 +28,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
+ * Realization of KV storage based on memory.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MemoryKVStorage implements KvStorage {
     
-    private final Map<Key, byte[]> storage = new ConcurrentSkipListMap<Key, byte[]>();
+    private final Map<Key, byte[]> storage = new ConcurrentSkipListMap<>();
     
     @Override
     public byte[] get(byte[] key) throws KVStorageException {

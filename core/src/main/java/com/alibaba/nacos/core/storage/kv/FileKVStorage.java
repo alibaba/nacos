@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * File based KV storage
+ * Kv storage based on file system.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
