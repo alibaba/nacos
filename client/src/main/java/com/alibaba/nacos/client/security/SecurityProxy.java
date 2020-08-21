@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,45 +43,45 @@ import java.util.concurrent.TimeUnit;
  * @since 1.2.0
  */
 public class SecurityProxy {
-    
+
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(SecurityProxy.class);
-    
+
     private static final String LOGIN_URL = "/v1/auth/users/login";
-    
+
     private final NacosRestTemplate nacosRestTemplate;
-    
+
     private String contextPath;
-    
+
     /**
      * User's name.
      */
     private final String username;
-    
+
     /**
      * User's password.
      */
     private final String password;
-    
+
     /**
      * A token to take with when sending request to Nacos server.
      */
     private String accessToken;
-    
+
     /**
      * TTL of token in seconds.
      */
     private long tokenTtl;
-    
+
     /**
      * Last timestamp refresh security info from server.
      */
     private long lastRefreshTime;
-    
+
     /**
      * time window to refresh security info in seconds.
      */
     private long tokenRefreshWindow;
-    
+
     /**
      * Construct from properties, keeping flexibility.
      *
@@ -92,7 +94,7 @@ public class SecurityProxy {
         contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
         this.nacosRestTemplate = nacosRestTemplate;
     }
-    
+
     /**
      * Login to servers.
      *
@@ -100,13 +102,13 @@ public class SecurityProxy {
      * @return true if login successfully
      */
     public boolean login(List<String> servers) {
-        
+
         try {
             if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
                     .toMillis(tokenTtl - tokenRefreshWindow)) {
                 return true;
             }
-            
+
             for (String server : servers) {
                 if (login(server)) {
                     lastRefreshTime = System.currentTimeMillis();
@@ -115,25 +117,25 @@ public class SecurityProxy {
             }
         } catch (Throwable ignore) {
         }
-        
+
         return false;
     }
-    
+
     /**
      * Login to server.
      *
      * @param server server address
      * @return true if login successfully
      */
-    public boolean login(String server) {
-        
-        if (StringUtils.isNotBlank(username)) {
+    public boolean login(String server) throws UnsupportedEncodingException {
+
+        if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
             Map<String, String> params = new HashMap<String, String>(2);
             Map<String, String> bodyMap = new HashMap<String, String>(2);
             params.put("username", username);
-            bodyMap.put("password", password);
+            bodyMap.put("password", URLEncoder.encode(password, "utf-8"));
             String url = "http://" + server + contextPath + LOGIN_URL;
-            
+
             if (server.contains(Constants.HTTP_PREFIX)) {
                 url = server + contextPath + LOGIN_URL;
             }
@@ -158,7 +160,7 @@ public class SecurityProxy {
         }
         return true;
     }
-    
+
     public String getAccessToken() {
         return accessToken;
     }
