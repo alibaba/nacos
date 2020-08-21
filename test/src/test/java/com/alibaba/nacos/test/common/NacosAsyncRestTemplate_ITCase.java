@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * NacosAsyncRestTemplate_ITCase
+ * NacosAsyncRestTemplate_ITCase.
  *
  * @author mai.jh
  */
@@ -79,7 +79,12 @@ public class NacosAsyncRestTemplate_ITCase {
         
         @Override
         public void onError(Throwable throwable) {
-            throwable = throwable;
+            this.throwable = throwable;
+        }
+    
+        @Override
+        public void onCancel() {
+        
         }
         
         public HttpRestResult<T> getRestResult() {
@@ -135,7 +140,7 @@ public class NacosAsyncRestTemplate_ITCase {
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
     }
     
     @Test
@@ -144,13 +149,13 @@ public class NacosAsyncRestTemplate_ITCase {
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         CallbackMap<Map> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.get(url, Header.newInstance(), param, Map.class, callbackMap);
+        nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<Map> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
         Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("dom"), "app-test");
+        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
     }
     
     @Test

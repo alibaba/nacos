@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -132,6 +133,13 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
+    }
+    
+    @Override
+    public List<String> findRolesLikeRoleName(String role) {
+        String sql = "SELECT role FROM roles WHERE role like ? ";
+        List<String> users = databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
+        return users;
     }
     
 }
