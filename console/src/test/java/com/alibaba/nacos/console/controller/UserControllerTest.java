@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
-import com.alibaba.nacos.core.auth.AccessException;
-import com.alibaba.nacos.core.auth.AuthConfigs;
-import com.alibaba.nacos.core.auth.AuthSystemTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;

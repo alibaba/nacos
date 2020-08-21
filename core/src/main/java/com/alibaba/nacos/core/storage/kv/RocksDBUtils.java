@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.core.storage;
+package com.alibaba.nacos.core.storage.kv;
 
 import com.alipay.sofa.jraft.util.Platform;
 import com.alipay.sofa.jraft.util.Utils;

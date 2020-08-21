@@ -256,7 +256,7 @@ public final class DiskUtils {
      * @param append  write append mode
      * @return write success
      */
-    public static boolean writeFile(File file, byte[] content, boolean append) {
+    public static boolean writeFile(File file, byte[] content, boolean append) throws IOException {
         try (FileChannel fileChannel = new FileOutputStream(file, append).getChannel()) {
             ByteBuffer buffer = ByteBuffer.wrap(content);
             fileChannel.write(buffer);
@@ -269,6 +269,8 @@ public final class DiskUtils {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }
+            } else {
+                throw ioe;
             }
         }
         return false;

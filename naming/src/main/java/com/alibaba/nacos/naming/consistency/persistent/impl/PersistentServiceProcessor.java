@@ -35,14 +35,15 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.exception.ErrorCode;
-import com.alibaba.nacos.core.exception.RocksStorageException;
-import com.alibaba.nacos.core.storage.RocksStorage;
+import com.alibaba.nacos.core.exception.KVStorageException;
+import com.alibaba.nacos.core.storage.StorageFactory;
+import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
-import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -96,7 +97,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
     
     private final CPProtocol<RaftConfig, LogProcessor4CP> protocol;
     
-    private final RocksStorage rocksStorage;
+    private final KvStorage rocksStorage;
     
     private final RaftStore oldStore;
     
@@ -128,13 +129,14 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         this.protocol = protocol;
         this.oldStore = oldStore;
         this.versionJudgement = versionJudgement;
-        this.rocksStorage = RocksStorage
-                .createDefault("naming-persistent", Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
+        this.rocksStorage = StorageFactory
+                .createKVStorage(
+                        KvStorage.KVType.File, "naming-persistent", Paths.get(UtilsAndCommons.DATA_BASE_DIR, "persistent").toString());
         this.notifier = new PersistentNotifier(key -> {
             try {
                 byte[] data = rocksStorage.get(ByteUtils.toBytes(key));
                 return serializer.deserialize(data);
-            } catch (RocksStorageException ex) {
+            } catch (KVStorageException ex) {
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
             }
         });
@@ -169,7 +171,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
             final Map<byte[], byte[]> result = rocksStorage.batchGet(keys);
             return Response.newBuilder().setSuccess(true).setData(ByteString.copyFrom(serializer.serialize(result)))
                     .build();
-        } catch (RocksStorageException e) {
+        } catch (KVStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
         } finally {
             lock.unlock();
@@ -186,7 +188,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
         try {
             switch (op) {
                 case Write:
-                    rocksStorage.batchWrite(request.getKeys(), request.getValues());
+                    rocksStorage.batchPut(request.getKeys(), request.getValues());
                     break;
                 case Delete:
                     rocksStorage.batchDelete(request.getKeys());
@@ -195,7 +197,7 @@ public class PersistentServiceProcessor extends LogProcessor4CP implements Persi
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + op).build();
             }
             return Response.newBuilder().setSuccess(true).build();
-        } catch (RocksStorageException e) {
+        } catch (KVStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
         } finally {
             lock.unlock();

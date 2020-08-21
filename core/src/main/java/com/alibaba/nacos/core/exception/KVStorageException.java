@@ -24,21 +24,33 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class RocksStorageException extends NacosException {
+public class KVStorageException extends NacosException {
     
-    public RocksStorageException() {
+    public KVStorageException() {
         super();
     }
     
-    public RocksStorageException(int errCode, String errMsg) {
+    public KVStorageException(ErrorCode code, String errMsg) {
+        super(code.getCode(), errMsg);
+    }
+    
+    public KVStorageException(ErrorCode errCode, Throwable throwable) {
+        super(errCode.getCode(), throwable);
+    }
+    
+    public KVStorageException(ErrorCode errCode, String errMsg, Throwable throwable) {
+        super(errCode.getCode(), errMsg, throwable);
+    }
+    
+    public KVStorageException(int errCode, String errMsg) {
         super(errCode, errMsg);
     }
     
-    public RocksStorageException(int errCode, Throwable throwable) {
+    public KVStorageException(int errCode, Throwable throwable) {
         super(errCode, throwable);
     }
     
-    public RocksStorageException(int errCode, String errMsg, Throwable throwable) {
+    public KVStorageException(int errCode, String errMsg, Throwable throwable) {
         super(errCode, errMsg, throwable);
     }
     

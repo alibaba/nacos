@@ -18,6 +18,7 @@
 package com.alibaba.nacos.core.storage;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.core.storage.kv.RocksStorage;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.DiskUtils;
 import org.junit.Assert;
@@ -45,14 +46,14 @@ public class RocksStorageTest {
     @Test
     public void testCreateRocksStorage() throws Throwable {
         RocksStorage storage = RocksStorage.createDefault("test", DIR);
-        storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
+        storage.put("liaochuntao".getBytes(), "liaochuntao".getBytes());
     }
     
     @Test
     public void testRocksStorageSnapshotSave() throws Throwable {
         try {
             RocksStorage storage = RocksStorage.createDefault("test", DIR);
-            storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
+            storage.put("liaochuntao".getBytes(), "liaochuntao".getBytes());
             storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
         } catch (Throwable ex) {
             Assert.fail(ex.getMessage());
@@ -62,7 +63,7 @@ public class RocksStorageTest {
     @Test
     public void testRocksStorageSnapshotLoad() throws Throwable {
         RocksStorage storage = RocksStorage.createDefault("test", DIR);
-        storage.write("liaochuntao".getBytes(), "liaochuntao".getBytes());
+        storage.put("liaochuntao".getBytes(), "liaochuntao".getBytes());
         storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
         storage.shutdown();
         ThreadUtils.sleep(5_000L);

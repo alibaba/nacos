@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth;
+
+import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.model.User;
 
 /**
  * Access control entry. Can be extended by 3rd party implementations.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 public interface AuthManager {
