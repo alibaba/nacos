@@ -47,7 +47,7 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         LogUtil.DEFAULT_LOG.warn("quick start; startTime:{},endTime:{}", startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();

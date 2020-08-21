@@ -47,7 +47,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {

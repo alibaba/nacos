@@ -52,7 +52,7 @@ public class MergeTaskProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         MergeDataTask mergeTask = (MergeDataTask) task;
         final String dataId = mergeTask.dataId;
         final String group = mergeTask.groupId;

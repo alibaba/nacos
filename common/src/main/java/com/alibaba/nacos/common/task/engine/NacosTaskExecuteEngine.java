@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.task.engine;
 
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 
@@ -26,7 +27,7 @@ import java.util.Collection;
  *
  * @author xiweng.yy
  */
-public interface NacosTaskExecuteEngine {
+public interface NacosTaskExecuteEngine<T extends NacosTask> extends Closeable {
     
     /**
      * Get Task size in execute engine.
@@ -66,6 +67,13 @@ public interface NacosTaskExecuteEngine {
     NacosTaskProcessor getProcessor(Object key);
     
     /**
+     * Get all processor key.
+     *
+     * @return collection of processors
+     */
+    Collection<Object> getAllProcessorKey();
+    
+    /**
      * Set default task processor. If do not find task processor by task key, use this default processor to process
      * task.
      *
@@ -79,14 +87,15 @@ public interface NacosTaskExecuteEngine {
      * @param key  key of task
      * @param task task
      */
-    void addTask(Object key, NacosTask task);
+    void addTask(Object key, T task);
     
     /**
      * Remove task.
      *
      * @param key key of task
+     * @return nacos task
      */
-    void removeTask(Object key);
+    T removeTask(Object key);
     
     /**
      * Get all task keys.

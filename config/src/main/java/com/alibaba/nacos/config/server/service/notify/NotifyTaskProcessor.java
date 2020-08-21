@@ -46,7 +46,7 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         NotifyTask notifyTask = (NotifyTask) task;
         String dataId = notifyTask.getDataId();
         String group = notifyTask.getGroup();

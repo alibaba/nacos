@@ -44,7 +44,7 @@ public class DumpProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         final PersistService persistService = dumpService.getPersistService();
         DumpTask dumpTask = (DumpTask) task;
         String[] pair = GroupKey2.parseKey(dumpTask.getGroupKey());

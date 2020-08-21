@@ -42,7 +42,7 @@ public class DumpAllTagProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(String taskType, AbstractDelayTask task) {
+    public boolean process(AbstractDelayTask task) {
         int rowCount = persistService.configInfoTagCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
         

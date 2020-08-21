@@ -51,7 +51,7 @@ public class NotifySingleService {
         }
         
         @Override
-        public boolean process(String taskType, AbstractDelayTask task) {
+        public boolean process(AbstractDelayTask task) {
             NotifySingleTask notifyTask = (NotifySingleTask) task;
             return notifyToDump(notifyTask.getDataId(), notifyTask.getGroup(), notifyTask.getTenant(),
                     notifyTask.getLastModified(), notifyTask.target);
@@ -78,7 +78,7 @@ public class NotifySingleService {
         @Override
         public void run() {
             try {
-                this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
+                this.isSuccess = PROCESSOR.process(this);
             } catch (Exception e) { // never goes here, but in case (never interrupts this notification thread)
                 this.isSuccess = false;
                 LogUtil.NOTIFY_LOG
