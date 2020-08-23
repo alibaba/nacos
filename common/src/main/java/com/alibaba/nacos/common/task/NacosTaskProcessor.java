@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.dump.task;
-
-import com.alibaba.nacos.common.task.AbstractDelayTask;
+package com.alibaba.nacos.common.task;
 
 /**
- * Dump all beta task.
+ * Task processor.
  *
  * @author Nacos
- * @date 2020/7/5 12:19 PM
  */
-public class DumpAllBetaTask extends AbstractDelayTask {
+public interface NacosTaskProcessor {
     
-    @Override
-    public void merge(AbstractDelayTask task) {
-    }
-    
-    public static final String TASK_ID = "dumpAllBetaConfigTask";
+    /**
+     * Process task.
+     *
+     * @param task     task.
+     * @return process task result.
+     */
+    boolean process(AbstractDelayTask task);
 }
