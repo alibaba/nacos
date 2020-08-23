@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.http.Callback;
+import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -23,11 +28,9 @@ import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +38,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,6 +56,8 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 @DependsOn("ProtocolManager")
 public class RaftPeerSet extends MemberChangeListener {
+    
+    private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientManager.getInstance().getAsyncRestTemplate();
     
     private final ServerMemberManager memberManager;
     
@@ -215,24 +219,31 @@ public class RaftPeerSet extends MemberChangeListener {
         }
         
         for (final RaftPeer peer : peers.values()) {
-            Map<String, String> params = new HashMap<>(1);
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildUrl(peer.ip, RaftCore.API_GET_PEER);
-                    HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    asyncRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class, new Callback<String>() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                        public void onReceive(RestResult<String> result) {
+                            if (result.ok()) {
+                                update(JacksonUtils.toObj(result.getData(), RaftPeer.class));
+                            } else {
                                 Loggers.RAFT
-                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", response.getResponseBody(),
+                                        .error("[NACOS-RAFT] get peer failed: {}, peer: {}", result.getMessage(),
                                                 peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
-                                return 1;
                             }
-                            
-                            update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
-                            
-                            return 0;
+                        }
+    
+                        @Override
+                        public void onError(Throwable throwable) {
+                            peer.state = RaftPeer.State.FOLLOWER;
+                            Loggers.RAFT.error("[NACOS-RAFT] error while getting peer from peer: {}", peer.ip);
+                        }
+    
+                        @Override
+                        public void onCancel() {
+        
                         }
                     });
                 } catch (Exception e) {

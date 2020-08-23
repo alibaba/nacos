@@ -39,9 +39,13 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @Override
     public final NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
+        HttpClientConfig httpClientConfig = buildHttpClientConfig();
         RequestConfig requestConfig = getRequestConfig();
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
-                HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig).build()));
+                HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
+                        .setMaxConnTotal(httpClientConfig.getMaxConnTotal())
+                        .setMaxConnPerRoute(httpClientConfig.getMaxConnPerRoute())
+                        .setUserAgent(httpClientConfig.getUserAgent()).build()));
     }
     
     private RequestConfig getRequestConfig() {

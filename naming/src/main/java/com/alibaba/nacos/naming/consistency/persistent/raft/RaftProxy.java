@@ -16,13 +16,17 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.core.utils.ApplicationUtils;
-import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
 import java.util.Map;
 
 /**
@@ -32,6 +36,8 @@ import java.util.Map;
  */
 @Component
 public class RaftProxy {
+    
+    private final NacosRestTemplate restTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
     
     /**
      * Proxy get method.
@@ -47,10 +53,10 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        
-        HttpClient.HttpResult result = HttpClient.httpGet(url, null, params);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        RestResult<Object> result = restTemplate
+                .get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -69,23 +75,23 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        HttpClient.HttpResult result;
+        RestResult<String> result;
         switch (method) {
             case GET:
-                result = HttpClient.httpGet(url, null, params);
+                result = restTemplate.get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
                 break;
             case POST:
-                result = HttpClient.httpPost(url, null, params);
+                result = restTemplate.postForm(url, Header.EMPTY, Query.EMPTY, params, String.class);
                 break;
             case DELETE:
-                result = HttpClient.httpDelete(url, null, params);
+                result = restTemplate.delete(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
                 break;
             default:
                 throw new RuntimeException("unsupported method:" + method);
         }
         
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
     
@@ -105,10 +111,13 @@ public class RaftProxy {
             server = server + UtilsAndCommons.IP_PORT_SPLITER + ApplicationUtils.getPort();
         }
         String url = "http://" + server + ApplicationUtils.getContextPath() + api;
-        
-        HttpClient.HttpResult result = HttpClient.httpPostLarge(url, headers, content);
-        if (result.code != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        Header header = Header.newInstance();
+        if (MapUtils.isNotEmpty(headers)) {
+            header.addAll(headers);
+        }
+        RestResult<Object> result = restTemplate.postJson(url, header, content, String.class);
+        if (!result.ok()) {
+            throw new IllegalStateException("leader failed, caused by: " + result.getMessage());
         }
     }
 }
