@@ -86,12 +86,9 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         }
         
         final HostnameVerifier hv = HttpsURLConnection.getDefaultHostnameVerifier();
-        
         final SelfHostnameVerifier selfHostnameVerifier = new SelfHostnameVerifier(hv);
         
-        initTlsBiFunc.accept(
-                
-                loadSSLContext(), selfHostnameVerifier);
+        initTlsBiFunc.accept(loadSSLContext(), selfHostnameVerifier);
         
         if (tlsChangeListener != null) {
             try {
@@ -102,7 +99,6 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                 assignLogger().error("add tls file listener fail", e);
             }
         }
-        
     }
     
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
