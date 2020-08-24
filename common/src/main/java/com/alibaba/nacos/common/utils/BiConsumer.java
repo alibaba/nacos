@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.dump.task;
-
-import com.alibaba.nacos.common.task.AbstractDelayTask;
+package com.alibaba.nacos.common.utils;
 
 /**
- * Dump all beta task.
+ * Represents an operation that accepts two input arguments and returns no result.
  *
- * @author Nacos
- * @date 2020/7/5 12:19 PM
+ * @author wangwei
  */
-public class DumpAllBetaTask extends AbstractDelayTask {
+public interface BiConsumer<T, U> {
     
-    @Override
-    public void merge(AbstractDelayTask task) {
-    }
-    
-    public static final String TASK_ID = "dumpAllBetaConfigTask";
+    /**
+     * Performs this operation on the given arguments.
+     *
+     * @param t the first input argument
+     * @param u the second input argument
+     */
+    void accept(T t, U u);
 }

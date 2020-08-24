@@ -149,7 +149,7 @@ public class NacosAsyncRestTemplate_ITCase {
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         CallbackMap<Map> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.get(url, Header.newInstance(), param, Map.class, callbackMap);
+        nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<Map> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());
