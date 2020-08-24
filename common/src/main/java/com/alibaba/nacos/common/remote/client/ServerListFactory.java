@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import java.util.List;
+
 /**
  * server list factory . use to inner client to connecte and switch servers.
  * @author liuzunfei
@@ -35,5 +37,12 @@ public interface ServerListFactory {
      * @return
      */
     String getCurrentServer();
-
+    
+    /**
+     * get current server.
+     *
+     * @return
+     */
+    List<String> getServerList();
+    
 }

@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -51,7 +52,6 @@ public class ConfigTest {
         Properties properties = new Properties();
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-    
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
@@ -65,13 +65,19 @@ public class ConfigTest {
         client.init(new ServerListFactory() {
             @Override
             public String genNextServer() {
-                return "127.0.0.1:8848";
+                return "11.160.144.148:8848";
             }
             
             @Override
             public String getCurrentServer() {
-                return "127.0.0.1:8848";
+                return "11.160.144.148:8848";
             }
+    
+            @Override
+            public List<String> getServerList() {
+                return Lists.newArrayList("11.160.144.148:8848");
+            }
+    
         });
         client.start();
     
@@ -126,10 +132,9 @@ public class ConfigTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"
-        System.out.println("1");
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
-        for (int i = 0; i < 200; i++) {
-    
+        for (int i = 0; i < 500; i++) {
+            
             ConfigService configService = NacosFactory.createConfigService(properties);
             configService.addListener("test", "test", new AbstractListener() {
     
@@ -156,7 +161,7 @@ public class ConfigTest {
                                 .publishConfig("test", "test", "value" + System.currentTimeMillis());
     
                         times--;
-                        Thread.sleep(10000L);
+                        Thread.sleep(3000L);
                     } catch (Exception e) {
                         e.printStackTrace();
     
@@ -186,10 +191,11 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
+                        configService.publishConfig(dataId, group,
                                 "value" + System.currentTimeMillis());
+    
                         times--;
-                        Thread.sleep(2000L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -210,8 +216,15 @@ public class ConfigTest {
             }
         };
     
-        for (int i = 0; i < 20; i++) {
-            configService.getConfigAndSignListener(dataId + i, group, 3000L, listener);
+        for (int i = 0; i < 1; i++) {
+            final int ls = i;
+            configService.addListener(dataId, group, new AbstractListener() {
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    System.out.println("receiveConfigInfo :" + ls + configInfo);
+                }
+            });
+
         }
     
         Thread.sleep(10000L);

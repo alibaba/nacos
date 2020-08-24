@@ -89,7 +89,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         }
         long end = System.currentTimeMillis();
     
-        Loggers.RPC.info("push {} clients cost {} millsenconds.", clients.size(), (end - start));
+        Loggers.RPC.info("push {} clients cost {} millsenconds.", clients == null ? 0 : clients.size(), (end - start));
     }
     
     @Override
