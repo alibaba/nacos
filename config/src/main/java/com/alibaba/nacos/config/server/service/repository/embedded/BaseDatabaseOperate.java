@@ -240,9 +240,9 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      * do consumer if the consumer not null.
      * @author klw(213539@qq.com)
      * 2020/8/24 18:12
-     * @param: result
-     * @param: t
-     * @param: consumer
+     * @param result result
+     * @param t throwable
+     * @param consumer consumer
      * @return java.lang.Boolean
      */
     default Boolean doConsumerIfNotNull(Boolean result, Throwable t, BiConsumer<Boolean, Throwable> consumer) {

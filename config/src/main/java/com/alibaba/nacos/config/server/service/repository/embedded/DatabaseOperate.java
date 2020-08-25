@@ -141,7 +141,7 @@ public interface DatabaseOperate {
      * cleared.
      * @author klw(213539@qq.com)
      * 2020/8/24 18:16
-     * @param: consumer
+     * @param consumer the consumer
      * @return java.lang.Boolean
      */
     default Boolean blockUpdate(BiConsumer<Boolean, Throwable> consumer) {
