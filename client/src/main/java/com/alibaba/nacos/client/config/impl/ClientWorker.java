@@ -412,7 +412,7 @@ public class ClientWorker implements Closeable {
         } else {
             agent = new ConfigRpcTransportClient(properties, serverListManager);
         }
-
+    
         this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -834,7 +834,7 @@ public class ClientWorker implements Closeable {
             if (longingTaskCount > currentLongingTaskCount) {
                 for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                     // The task list is no order.So it maybe has issues when changing.
-                    executorService.execute(new LongPollingRunnable(agent, i));
+                    executorService.execute(new LongPollingRunnable(agent, i, this));
                 }
                 currentLongingTaskCount = longingTaskCount;
             }
@@ -865,7 +865,9 @@ public class ClientWorker implements Closeable {
                     params.put("group", group);
                     params.put("tenant", tenant);
                 }
-                result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
+    
+                Map<String, String> spasHeaders = getSpasHeaders();
+                result = httpGet(Constants.CONFIG_CONTROLLER_PATH, spasHeaders, params, agent.getEncode(), readTimeout);
             } catch (Exception ex) {
                 String message = String
                         .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
@@ -944,7 +946,8 @@ public class ClientWorker implements Closeable {
             
             HttpRestResult<String> result = null;
             try {
-                result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
+    
+                result = httpPost(url, headers, params, encode, POST_TIMEOUT);
             } catch (Exception ex) {
                 LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
                         group, ex.toString());
@@ -964,6 +967,53 @@ public class ClientWorker implements Closeable {
                         agent.getName(), dataId, group, tenant, result.getCode(), result.getMessage());
                 return false;
             }
+        }
+    
+        private HttpRestResult<String> httpPost(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            Map<String, String> spasHeaders = getSpasHeaders();
+            if (headers == null) {
+                headers = spasHeaders;
+            } else {
+                headers.putAll(spasHeaders);
+            }
+        
+            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
+            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
+                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
+            }
+            return agent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
+        }
+    
+        private HttpRestResult<String> httpGet(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            Map<String, String> spasHeaders = getSpasHeaders();
+            if (headers == null) {
+                headers = spasHeaders;
+            } else {
+                headers.putAll(spasHeaders);
+            }
+        
+            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
+            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
+                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
+            }
+            return agent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+        }
+    
+        private HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
+                Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
+            Map<String, String> spasHeaders = getSpasHeaders();
+            if (headers == null) {
+                headers = spasHeaders;
+            } else {
+                headers.putAll(spasHeaders);
+            }
+            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
+            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
+                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
+            }
+            return agent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         }
         
         @Override
@@ -985,7 +1035,7 @@ public class ClientWorker implements Closeable {
             
             HttpRestResult<String> result = null;
             try {
-                result = agent.httpDelete(url, null, params, encode, POST_TIMEOUT);
+                result = httpDelete(url, null, params, encode, POST_TIMEOUT);
             } catch (Exception ex) {
                 LOGGER.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ex.toString());
                 return false;
@@ -1003,8 +1053,8 @@ public class ClientWorker implements Closeable {
                         dataId, group, tenant, result.getCode(), result.getMessage());
                 return false;
             }
-            
         }
+    
     }
     
     /**
@@ -1015,10 +1065,13 @@ public class ClientWorker implements Closeable {
         private final int taskId;
         
         private HttpAgent httpAgent;
-        
-        public LongPollingRunnable(HttpAgent httpAgent, int taskId) {
+    
+        private ConfigTransportClient configTransportClient;
+    
+        public LongPollingRunnable(HttpAgent httpAgent, int taskId, ConfigTransportClient configTransportClient) {
             this.taskId = taskId;
             this.httpAgent = httpAgent;
+            this.configTransportClient = configTransportClient;
         }
         
         @Override
@@ -1043,7 +1096,8 @@ public class ClientWorker implements Closeable {
                 }
                 
                 // check server config
-                List<String> changedGroupKeys = checkUpdateDataIds(httpAgent, cacheDatas, inInitializingCacheList);
+                List<String> changedGroupKeys = checkUpdateDataIds(httpAgent, configTransportClient, cacheDatas,
+                        inInitializingCacheList);
                 if (!CollectionUtils.isEmpty(changedGroupKeys)) {
                     LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
                 }
@@ -1102,8 +1156,8 @@ public class ClientWorker implements Closeable {
      * @return String include dataId and group (ps: it maybe null).
      * @throws Exception Exception.
      */
-    List<String> checkUpdateDataIds(HttpAgent httpAgent, List<CacheData> cacheDatas,
-            List<String> inInitializingCacheList) throws Exception {
+    List<String> checkUpdateDataIds(HttpAgent httpAgent, ConfigTransportClient configTransportClient,
+            List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws Exception {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             if (!cacheData.isUseLocalConfigInfo()) {
@@ -1123,7 +1177,7 @@ public class ClientWorker implements Closeable {
             }
         }
         boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
-        return checkUpdateConfigStr(httpAgent, sb.toString(), isInitializingCacheList);
+        return checkUpdateConfigStr(httpAgent, configTransportClient, sb.toString(), isInitializingCacheList);
     }
     
     /**
@@ -1134,9 +1188,9 @@ public class ClientWorker implements Closeable {
      * @return The updated dataId list(ps: it maybe null).
      * @throws IOException Exception.
      */
-    List<String> checkUpdateConfigStr(HttpAgent httpAgent, String probeUpdateString, boolean isInitializingCacheList)
-            throws Exception {
-    
+    List<String> checkUpdateConfigStr(HttpAgent httpAgent, ConfigTransportClient configTransportClient,
+            String probeUpdateString, boolean isInitializingCacheList) throws Exception {
+        
         Map<String, String> params = new HashMap<String, String>(2);
         params.put(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
         Map<String, String> headers = new HashMap<String, String>(2);
@@ -1156,6 +1210,16 @@ public class ClientWorker implements Closeable {
             // increase the client's read timeout to avoid this problem.
         
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
+            Map<String, String> spasHeaders = configTransportClient.getSpasHeaders();
+            if (headers == null) {
+                headers = spasHeaders;
+            } else {
+                headers.putAll(spasHeaders);
+            }
+            params.put(Constants.ACCESS_TOKEN, configTransportClient.getAcessToken());
+            if (StringUtils.isNotBlank(configTransportClient.tenant) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
+                params.put(SpasAdapter.TENANT_KEY, configTransportClient.tenant);
+            }
             HttpRestResult<String> result = httpAgent
                     .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, httpAgent.getEncode(),
                             readTimeoutMs);

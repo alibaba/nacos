@@ -33,7 +33,7 @@ import java.util.Map;
  * @author Nacos
  */
 public class SpasAdapter {
-
+    
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
         Map<String, String> header = new HashMap<String, String>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
@@ -49,7 +49,24 @@ public class SpasAdapter {
         }
         return header;
     }
-
+    
+    public static Map<String, String> getSignHeaders(String groupKey, String tenant, String secretKey) {
+        if (StringUtils.isBlank(groupKey) && StringUtils.isBlank(tenant)) {
+            return null;
+        }
+        
+        String resource = "";
+        if (StringUtils.isNotBlank(groupKey) && StringUtils.isNotBlank(tenant)) {
+            resource = tenant + "+" + groupKey;
+        } else {
+            if (!StringUtils.isBlank(groupKey)) {
+                resource = groupKey;
+            }
+        }
+        return getSignHeaders(resource, secretKey);
+    }
+    
+    
     public static Map<String, String> getSignHeaders(Map<String, String> paramValues, String secretKey) {
         if (null == paramValues) {
             return null;

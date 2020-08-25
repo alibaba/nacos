@@ -82,7 +82,6 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -138,7 +137,6 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -195,7 +193,6 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        injectSecurityInfo(paramValues);
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -297,15 +294,6 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         
-    }
-    
-    private void injectSecurityInfo(Map<String, String> params) {
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
-        }
-        if (StringUtils.isNotBlank(namespaceId) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
-            params.put(SpasAdapter.TENANT_KEY, namespaceId);
-        }
     }
     
     private void init(Properties properties) {
