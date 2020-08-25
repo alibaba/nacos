@@ -221,10 +221,16 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                     jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
-                return doConsumerIfNotNull(Boolean.TRUE, null, consumer);
+                if (consumer != null) {
+                    consumer.accept(Boolean.TRUE, null);
+                }
+                return Boolean.TRUE;
             } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                return doConsumerIfNotNull(Boolean.FALSE, e, consumer);
+                if (consumer != null) {
+                    consumer.accept(Boolean.FALSE, e);
+                }
+                return Boolean.FALSE;
             } catch (CannotGetJdbcConnectionException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;
