@@ -35,6 +35,4 @@ public interface HttpHeaderConsts {
     String REQUEST_ID = "RequestId";
     String REQUEST_MODULE = "Request-Module";
     
-    String DATA_ZIP_COMPRESS = "zip-compress";
-    
 }

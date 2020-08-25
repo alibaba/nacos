@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.Callback;
@@ -629,9 +628,7 @@ public class RaftCore {
                     if (Loggers.RAFT.isDebugEnabled()) {
                         Loggers.RAFT.debug("send beat to server " + server);
                     }
-                    Header header = Header.newInstance();
-                    header.addParam(HttpHeaderConsts.DATA_ZIP_COMPRESS,"Yes");
-                    asyncRestTemplate.post(url, header, Query.EMPTY, compressedBytes, String.class, new Callback<String>() {
+                    asyncRestTemplate.post(url, Header.newInstance(), Query.EMPTY, compressedBytes, String.class, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
                             if (result.ok()) {
@@ -657,29 +654,6 @@ public class RaftCore {
         
                         }
                     });
-/*                    HttpClient.asyncHttpPostLarge(url, null, compressedContent, new AsyncCompletionHandler<Integer>() {
-                        @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", response.getResponseBody(),
-                                        server);
-                                MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                                return 1;
-                            }
-                            
-                            peers.update(JacksonUtils.toObj(response.getResponseBody(), RaftPeer.class));
-                            if (Loggers.RAFT.isDebugEnabled()) {
-                                Loggers.RAFT.debug("receive beat response from: {}", url);
-                            }
-                            return 0;
-                        }
-                        
-                        @Override
-                        public void onThrowable(Throwable t) {
-                            Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
-                            MetricsMonitor.getLeaderSendBeatFailedException().increment();
-                        }
-                    });*/
                 } catch (Exception e) {
                     Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
                     MetricsMonitor.getLeaderSendBeatFailedException().increment();

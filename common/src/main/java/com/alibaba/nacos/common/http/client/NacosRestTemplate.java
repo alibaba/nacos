@@ -107,7 +107,7 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType)
             throws Exception {
-        return execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType);
+        return execute(url, HttpMethod.GET, new RequestHttpEntity(header, query, body), responseType);
     }
     
     /**
@@ -419,6 +419,26 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
             String httpMethod, Type responseType) throws Exception {
         RequestHttpEntity requestHttpEntity = new RequestHttpEntity(
                 header.setContentType(MediaType.APPLICATION_FORM_URLENCODED), query, bodyValues);
+        return execute(url, httpMethod, requestHttpEntity, responseType);
+    }
+    
+    /**
+     * Execute the HTTP method to the given URI template, writing the given request entity to the request, and returns
+     * the response as {@link HttpRestResult}.
+     *
+     * @param url          url
+     * @param config       HttpClientConfig
+     * @param header       http header param
+     * @param query        http query param
+     * @param body         http body param
+     * @param httpMethod   http method
+     * @param responseType return type
+     * @return {@link HttpRestResult}
+     * @throws Exception ex
+     */
+    public <T> HttpRestResult<T> exchangeForm(String url, HttpClientConfig config, Header header, Query query,
+            Object body, String httpMethod, Type responseType) throws Exception {
+        RequestHttpEntity requestHttpEntity = new RequestHttpEntity(config, header, query, body);
         return execute(url, httpMethod, requestHttpEntity, responseType);
     }
     

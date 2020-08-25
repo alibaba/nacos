@@ -120,7 +120,9 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
      * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
      */
     public <T> void delete(String url, Header header, String body, Type responseType, Callback<T> callback) {
-        execute(url, HttpMethod.DELETE, new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY, body), responseType, callback);
+        execute(url, HttpMethod.DELETE,
+                new RequestHttpEntity(header.setContentType(MediaType.APPLICATION_JSON), Query.EMPTY, body),
+                responseType, callback);
     }
     
     /**

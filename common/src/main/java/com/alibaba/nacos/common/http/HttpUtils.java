@@ -83,7 +83,7 @@ public final class HttpUtils {
             HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
             ContentType contentType = ContentType.create(header.getValue(HttpHeaderConsts.CONTENT_TYPE), header.getCharset());
             HttpEntity entity;
-            if (header.getValue(HttpHeaderConsts.DATA_ZIP_COMPRESS) != null) {
+            if (body instanceof byte[]) {
                 entity = new ByteArrayEntity((byte[]) body, contentType);
             } else {
                 entity = new StringEntity(body instanceof String ? (String) body : RequestHandler.parse(body), contentType);

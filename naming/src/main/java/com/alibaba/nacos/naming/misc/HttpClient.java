@@ -66,6 +66,7 @@ import java.util.zip.GZIPInputStream;
  *
  * @author nacos
  */
+@Deprecated
 public class HttpClient {
     
     private static final int TIME_OUT_MILLIS = 10000;

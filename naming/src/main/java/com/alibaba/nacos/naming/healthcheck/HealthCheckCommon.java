@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -25,7 +28,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -34,7 +37,6 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -67,6 +69,8 @@ public class HealthCheckCommon {
     
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
     
+    private final NacosRestTemplate restTemplate = HttpClientManager.getInstance().getNacosRestTemplate();
+    
     /**
      * Init Health check.
      */
@@ -91,16 +95,19 @@ public class HealthCheckCommon {
                     Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}", server,
                             JacksonUtils.toJson(list));
                 }
-                
-                HttpClient.HttpResult httpResult = HttpClient.httpPost(
-                        "http://" + server.getAddress() + ApplicationUtils.getContextPath()
-                                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/healthCheckResult", null, params);
-                
-                if (httpResult.code != HttpURLConnection.HTTP_OK) {
-                    Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}", server,
-                            JacksonUtils.toJson(list));
+                String url = "http://" + server.getAddress() + ApplicationUtils.getContextPath()
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/healthCheckResult";
+                try {
+                    RestResult<String> result = restTemplate.postForm(url, Header.EMPTY, params, String.class);
+                    if (!result.ok()) {
+                        Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}", server,
+                                JacksonUtils.toJson(list));
+                    }
+                } catch (Exception e) {
+                    Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to send result to {}, result: {}, error: {}", server,
+                            JacksonUtils.toJson(list), e);
                 }
-                
+    
             }
             
         }, 500, TimeUnit.MILLISECONDS);

@@ -24,32 +24,32 @@ package com.alibaba.nacos.common.http;
 public class HttpClientConfig {
     
     /**
-     * connect time out
+     * connect time out.
      */
     private final int conTimeOutMillis;
     
     /**
-     * read time out
+     * read time out.
      */
     private final int readTimeOutMillis;
     
     /**
-     * max redirect
+     * max redirect.
      */
     private final int maxRedirects;
     
     /**
-     * max connect total
+     * max connect total.
      */
     private final int maxConnTotal;
     
     /**
-     * Assigns maximum connection per route value
+     * Assigns maximum connection per route value.
      */
     private final int maxConnPerRoute;
     
     /**
-     * user agent
+     * user agent.
      */
     private final String userAgent;
     
