@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.common.task;
 
 /**
- * Resource action type definitions.
+ * Nacos task.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public enum ActionTypes {
+public interface NacosTask {
+    
     /**
-     * Read.
+     * Judge Whether this nacos task should do.
+     *
+     * @return true means the nacos task should be done, otherwise false
      */
-    READ("r"),
-    /**
-     * Write.
-     */
-    WRITE("w");
-    
-    private String action;
-    
-    ActionTypes(String action) {
-        this.action = action;
-    }
-    
-    @Override
-    public String toString() {
-        return action;
-    }
+    boolean shouldProcess();
 }

@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: '命名空间名称',
     namespaceNumber: '命名空间ID',
     namespaceOperation: '操作',
+    refresh: '刷新',
   },
   ServiceList: {
     serviceList: '服务列表',
@@ -306,6 +307,7 @@ const I18N_CONF = {
     cloneSuccEnd: '项配置',
     cloneFail: '克隆失败',
     getNamespaceFailed: '获取命名空间失败',
+    getNamespace403: '没有 ${namespaceName} 命名空间的访问权限！',
     startCloning: '开始克隆',
     cloningConfiguration: '克隆配置',
     source: '源空间：',
@@ -319,6 +321,7 @@ const I18N_CONF = {
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
+    authFail: '权限认证失败',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -518,6 +521,7 @@ const I18N_CONF = {
     username: '用户名',
     password: '密码',
     operation: '操作',
+    refresh: '刷新',
   },
   NewUser: {
     createUser: '创建用户',
@@ -551,6 +555,7 @@ const I18N_CONF = {
     operation: '操作',
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
+    refresh: '刷新',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -573,6 +578,7 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+    refresh: '刷新',
   },
   NewPermissions: {
     addPermission: '添加权限',

@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.common;
 
 /**
- * Resource parser.
+ * Types of all auth implementations.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
-public interface ResourceParser {
+public enum AuthSystemTypes {
     
     /**
-     * Parse a unique name of the resource from the request.
-     *
-     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
-     *                Object type for future accommodation.
-     * @return resource name
+     * Nacos builtin auth system.
      */
-    String parseName(Object request);
+    NACOS
 }

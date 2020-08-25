@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.auth.model;
 
 import java.io.Serializable;
 
@@ -22,6 +22,7 @@ import java.io.Serializable;
  * Permission to auth.
  *
  * @author nkorange
+ * @author mai.jh
  * @since 1.2.0
  */
 public class Permission implements Serializable {

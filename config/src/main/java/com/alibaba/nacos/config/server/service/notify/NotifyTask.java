@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.config.server.service.notify;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
  * Notify task.
  *
  * @author Nacos
  */
-public class NotifyTask extends AbstractTask {
+public class NotifyTask extends AbstractDelayTask {
     
     private String dataId;
     
@@ -76,7 +76,7 @@ public class NotifyTask extends AbstractTask {
     }
     
     @Override
-    public void merge(AbstractTask task) {
+    public void merge(AbstractDelayTask task) {
         // Perform merge, but do nothing, tasks with the same dataId and group, later will replace the previous
         
     }

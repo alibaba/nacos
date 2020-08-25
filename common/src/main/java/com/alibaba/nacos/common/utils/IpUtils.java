@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
-
-import com.alibaba.nacos.common.utils.StringUtils;
+package com.alibaba.nacos.common.utils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +24,7 @@ import java.util.regex.Pattern;
  *
  * @author Nacos
  */
-public class IpUtil {
+public class IpUtils {
     
     private static final Pattern IPV4_PATTERN = Pattern
             .compile("^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$");

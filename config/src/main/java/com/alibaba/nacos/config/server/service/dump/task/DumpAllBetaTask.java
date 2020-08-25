@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump.task;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
  * Dump all beta task.
@@ -24,10 +24,10 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
  * @author Nacos
  * @date 2020/7/5 12:19 PM
  */
-public class DumpAllBetaTask extends AbstractTask {
+public class DumpAllBetaTask extends AbstractDelayTask {
     
     @Override
-    public void merge(AbstractTask task) {
+    public void merge(AbstractDelayTask task) {
     }
     
     public static final String TASK_ID = "dumpAllBetaConfigTask";

@@ -14,21 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.manager;
+package com.alibaba.nacos.auth.common;
 
 /**
- * Task processor.
+ * Resource action type definitions.
  *
- * @author Nacos
+ * @author nkorange
+ * @author mai.jh
+ * @since 1.2.0
  */
-public interface TaskProcessor {
-    
+public enum ActionTypes {
     /**
-     * Process task.
-     *
-     * @param taskType task type.
-     * @param task     task.
-     * @return process task result.
+     * Read.
      */
-    boolean process(String taskType, AbstractTask task);
+    READ("r"),
+    /**
+     * Write.
+     */
+    WRITE("w");
+    
+    private String action;
+    
+    ActionTypes(String action) {
+        this.action = action;
+    }
+    
+    @Override
+    public String toString() {
+        return action;
+    }
 }

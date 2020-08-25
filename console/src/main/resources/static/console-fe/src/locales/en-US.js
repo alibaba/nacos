@@ -94,6 +94,7 @@ const I18N_CONF = {
     namespaceNames: 'Namespaces',
     namespaceNumber: 'Namespace ID',
     namespaceOperation: 'Actions',
+    refresh: 'Refresh',
   },
   ServiceList: {
     serviceList: 'Service List',
@@ -308,6 +309,7 @@ const I18N_CONF = {
     cloneSuccEnd: 'configuration items cloned',
     cloneFail: 'Clone failed',
     getNamespaceFailed: 'get the namespace failed',
+    getNamespace403: 'Without permission to access ${namespaceName} namespace!',
     startCloning: 'Start Clone',
     cloningConfiguration: 'Clone config',
     source: 'Source :',
@@ -321,6 +323,7 @@ const I18N_CONF = {
     delSelectedAlertContent: 'please select the configuration to delete',
     delSuccessMsg: 'delete successful',
     cloneEditableTitle: 'Modify Data Id and Group (optional)',
+    authFail: 'Auth failed',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
@@ -521,6 +524,7 @@ const I18N_CONF = {
     username: 'Username',
     password: 'Password',
     operation: 'Operation',
+    refresh: 'Refresh',
   },
   NewUser: {
     createUser: 'Create user',
@@ -554,6 +558,7 @@ const I18N_CONF = {
     operation: 'Operation',
     deleteRole: 'Delete',
     deleteRoleTip: 'Do you want to delete this role?',
+    refresh: 'Refresh',
   },
   NewRole: {
     bindingRoles: 'Binding roles',
@@ -576,6 +581,7 @@ const I18N_CONF = {
     readOnly: 'read only',
     writeOnly: 'write only',
     readWrite: 'Read and write',
+    refresh: 'Refresh',
   },
   NewPermissions: {
     addPermission: 'Add Permission',

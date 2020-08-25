@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import java.io.Serializable;
+package com.alibaba.nacos.common.task;
 
 /**
- * User information in authorization.
+ * Task processor.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author Nacos
  */
-public class User implements Serializable {
-    
-    private static final long serialVersionUID = -8002966873087151367L;
+public interface NacosTaskProcessor {
     
     /**
-     * Unique string representing user.
+     * Process task.
+     *
+     * @param task     task.
+     * @return process task result.
      */
-    private String userName;
-    
-    public String getUserName() {
-        return userName;
-    }
-    
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+    boolean process(AbstractDelayTask task);
 }

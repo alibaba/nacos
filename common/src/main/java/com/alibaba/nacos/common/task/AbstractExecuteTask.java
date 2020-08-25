@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
-
-import org.apache.commons.lang3.StringUtils;
+package com.alibaba.nacos.common.task;
 
 /**
- * Default resource parser.
+ * Abstract task which should be executed immediately.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public class DefaultResourceParser implements ResourceParser {
+public abstract class AbstractExecuteTask implements NacosTask {
     
     @Override
-    public String parseName(Object request) {
-        return StringUtils.EMPTY;
+    public boolean shouldProcess() {
+        return true;
     }
 }
