@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -189,6 +190,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
+        addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify, null);
+    }
+    
+    private void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify,
+            BiConsumer<Boolean, Throwable> consumer) {
         
         try {
             final String tenantTmp =
@@ -205,7 +212,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     configInfo.getTenant());
             insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
-            databaseOperate.blockUpdate();
+            databaseOperate.blockUpdate(consumer);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -2291,6 +2298,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
+    
+        final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
+            if (t != null) {
+                throw new RuntimeException(t);
+            }
+        };
         
         for (int i = 0; i < configInfoList.size(); i++) {
             ConfigAllInfo configInfo = configInfoList.get(i);
@@ -2322,10 +2335,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
             configAdvanceInfo.put("type", type);
             try {
-                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
-                if (!StringUtils.contains("DuplicateKeyException", e.toString())) {
+                if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
                     throw e;
                 }
                 // uniqueness constraint conflict

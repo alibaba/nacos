@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
@@ -196,6 +197,19 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
             List<ModifyRequest> contexts) {
+        return update(transactionTemplate, jdbcTemplate, contexts, null);
+    }
+    
+    /**
+     * execute update operation.
+     *
+     * @param transactionTemplate {@link TransactionTemplate}
+     * @param jdbcTemplate        {@link JdbcTemplate}
+     * @param contexts            {@link List} ModifyRequest list
+     * @return {@link Boolean}
+     */
+    default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
+            List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};
@@ -207,10 +221,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                     jdbcTemplate.update(pair.getSql(), pair.getArgs());
                 });
-                return Boolean.TRUE;
+                return doConsumerIfNotNull(Boolean.TRUE, null, consumer);
             } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                return false;
+                return doConsumerIfNotNull(Boolean.FALSE, e, consumer);
             } catch (CannotGetJdbcConnectionException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;
@@ -220,6 +234,22 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                 throw e;
             }
         });
+    }
+    
+    /**
+     * do consumer if the consumer not null.
+     * @author klw(213539@qq.com)
+     * 2020/8/24 18:12
+     * @param: result
+     * @param: t
+     * @param: consumer
+     * @return java.lang.Boolean
+     */
+    default Boolean doConsumerIfNotNull(Boolean result, Throwable t, BiConsumer<Boolean, Throwable> consumer) {
+        if (consumer != null) {
+            consumer.accept(result, t);
+        }
+        return result;
     }
     
     /**
