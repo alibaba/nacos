@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
@@ -2301,7 +2302,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
         final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
             if (t != null) {
-                throw new RuntimeException(t);
+                throw new NacosRuntimeException(0, t);
             }
         };
         
