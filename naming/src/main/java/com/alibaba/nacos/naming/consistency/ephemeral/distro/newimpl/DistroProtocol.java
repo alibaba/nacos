@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
 
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.event.DistroTaskRetryEvent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
@@ -33,7 +37,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
  *
  * @author xiweng.yy
  */
-public class DistroProtocol {
+public class DistroProtocol extends Subscriber<DistroTaskRetryEvent> {
     
     private final ServerMemberManager memberManager;
     
@@ -50,6 +54,7 @@ public class DistroProtocol {
         this.distroComponentHolder.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
         this.distroComponentHolder.setExecuteWorkersManager(new DistroExecuteWorkersManager());
         startVerifyTask();
+        NotifyCenter.registerSubscriber(this);
     }
     
     private void startVerifyTask() {
@@ -71,5 +76,15 @@ public class DistroProtocol {
                 Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
             }
         }
+    }
+    
+    @Override
+    public void onEvent(DistroTaskRetryEvent event) {
+        sync(event.getDistroKey(), event.getAction());
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return DistroTaskRetryEvent.class;
     }
 }

@@ -24,6 +24,8 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.junit.After;
@@ -53,6 +55,9 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     private Serializer serializer;
     
     @Mock
+    private DistroProtocol distroProtocol;
+    
+    @Mock
     private ServerMemberManager serverMemberManager;
     
     @Spy
@@ -73,6 +78,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer,
                 serverMemberManager, switchDomain, globalConfig);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
+        ReflectionTestUtils.setField(distroConsistencyService, "distroProtocol", distroProtocol);
         listeners = (Map<String, ConcurrentLinkedQueue<RecordListener>>) ReflectionTestUtils
                 .getField(distroConsistencyService, "listeners");
         instances = new Instances();
@@ -87,6 +93,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.listen(key, recordListener);
         distroConsistencyService.put(key, instances);
+        verify(distroProtocol).sync(new DistroKey(key, ""), ApplyAction.CHANGE);
         verify(notifier).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
@@ -95,6 +102,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void testPutWithoutListener() throws NacosException {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.put(key, instances);
+        verify(distroProtocol).sync(new DistroKey(key, ""), ApplyAction.CHANGE);
         verify(notifier, never()).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
