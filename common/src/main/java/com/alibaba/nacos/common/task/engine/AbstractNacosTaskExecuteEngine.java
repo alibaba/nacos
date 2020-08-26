@@ -45,8 +45,6 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
     private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<Object, NacosTaskProcessor>();
     
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    
     protected final ConcurrentHashMap<Object, T> tasks;
     
     protected final ReentrantLock lock = new ReentrantLock();
@@ -150,7 +148,6 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
     @Override
     public void shutdown() throws NacosException {
-        closed.compareAndSet(false, true);
         processingExecutor.shutdown();
     }
     
@@ -167,12 +164,10 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
         @Override
         public void run() {
-            while (!closed.get()) {
-                try {
-                    AbstractNacosTaskExecuteEngine.this.processTasks();
-                } catch (Throwable e) {
-                    log.error(e.toString(), e);
-                }
+            try {
+                AbstractNacosTaskExecuteEngine.this.processTasks();
+            } catch (Throwable e) {
+                log.error(e.toString(), e);
             }
         }
     }
