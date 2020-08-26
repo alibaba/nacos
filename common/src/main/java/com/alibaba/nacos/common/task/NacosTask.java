@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.manager;
+package com.alibaba.nacos.common.task;
 
 /**
- * Task processor.
+ * Nacos task.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
-public interface TaskProcessor {
+public interface NacosTask {
     
     /**
-     * Process task.
+     * Judge Whether this nacos task should do.
      *
-     * @param taskType task type.
-     * @param task     task.
-     * @return process task result.
+     * @return true means the nacos task should be done, otherwise false
      */
-    boolean process(String taskType, AbstractTask task);
+    boolean shouldProcess();
 }
