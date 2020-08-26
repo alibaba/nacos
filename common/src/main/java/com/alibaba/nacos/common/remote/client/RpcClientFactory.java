@@ -98,6 +98,7 @@ public class RpcClientFactory {
      * @return
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
+        //TODO to be deleted.
         String clientNameInner = System.currentTimeMillis() + "";
         synchronized (clientMap) {
             if (clientMap.get(clientNameInner) == null) {

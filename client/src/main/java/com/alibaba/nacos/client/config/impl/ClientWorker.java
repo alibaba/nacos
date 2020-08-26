@@ -31,7 +31,9 @@ import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
@@ -57,10 +59,17 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -221,6 +230,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
+     *
      * @param tenant
      * @param dataId
      * @param group
@@ -234,6 +244,7 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
+     *
      * @param dataId
      * @param group
      * @param tenant
@@ -635,7 +646,7 @@ public class ClientWorker implements Closeable {
                         }
                     }
                 }
-        
+    
                 @Override
                 public Class<? extends Event> subscribeType() {
                     return ServerlistChangeEvent.class;
@@ -699,8 +710,8 @@ public class ClientWorker implements Closeable {
                 try {
                     ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
                             .buildListenRequest(listenConfigString);
-                    ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) rpcClient
-                            .request(configChangeListenRequest);
+                    ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
+                            configChangeListenRequest);
                     if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
                         
                         if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
@@ -744,8 +755,8 @@ public class ClientWorker implements Closeable {
         private boolean unListenConfigChange(String configListenString) throws NacosException {
             ConfigBatchListenRequest configChangeListenRequest = ConfigBatchListenRequest
                     .buildRemoveListenRequest(configListenString);
-            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) rpcClient
-                    .request(configChangeListenRequest);
+            ConfigChangeBatchListenResponse response = (ConfigChangeBatchListenResponse) requestProxy(
+                    configChangeListenRequest);
             return response.isSuccess();
         }
         
@@ -753,7 +764,7 @@ public class ClientWorker implements Closeable {
         public String[] queryConfig(String dataId, String group, String tenant, long readTimeous)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
-            ConfigQueryResponse response = (ConfigQueryResponse) rpcClient.request(request);
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(request);
             
             String[] ct = new String[2];
             if (response.isSuccess()) {
@@ -783,7 +794,18 @@ public class ClientWorker implements Closeable {
                 
             }
         }
-        
+    
+        private Response requestProxy(Request request) throws NacosException {
+            JsonObject asJsonObject1 = new Gson().toJsonTree(request).getAsJsonObject();
+            asJsonObject1.remove("headers");
+            asJsonObject1.remove("requestId");
+            boolean limit = Limiter.isLimit(request.getClass() + asJsonObject1.toString());
+            if (limit) {
+                throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
+                        "More than client-side current limit threshold");
+            }
+            return rpcClient.request(request);
+        }
         @Override
         public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
                 String betaIps, String content) throws NacosException {
@@ -792,7 +814,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditonalParam("tag", tag);
                 request.putAdditonalParam("appName", appName);
                 request.putAdditonalParam("betaIps", betaIps);
-                ConfigPubishResponse response = (ConfigPubishResponse) rpcClient.request(request);
+                ConfigPubishResponse response = (ConfigPubishResponse) requestProxy(request);
                 return response.isSuccess();
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
@@ -804,7 +826,7 @@ public class ClientWorker implements Closeable {
         @Override
         public boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataid, group, tenat, tag);
-            ConfigRemoveResponse response = (ConfigRemoveResponse) rpcClient.request(request);
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(request);
             return response.isSuccess();
         }
     }
@@ -1234,7 +1256,7 @@ public class ClientWorker implements Closeable {
         }
     
         try {
-    
+        
             //assemble headers.
             Map<String, String> securityHeaders = configTransportClient.getSecurityHeaders();
             if (securityHeaders != null) {

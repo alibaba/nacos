@@ -29,7 +29,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +52,7 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  */
 public abstract class RpcClient implements Closeable {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
+    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(RpcClient.class);
     
     protected static final long ACTIVE_INTERNAL = 3000L;
     
