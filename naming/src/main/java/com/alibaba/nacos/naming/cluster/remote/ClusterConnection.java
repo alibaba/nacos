@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.cluster.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.core.remote.Connection;
@@ -28,32 +29,27 @@ import com.alibaba.nacos.core.remote.PushFuture;
  * @author xiweng.yy
  */
 public class ClusterConnection extends Connection {
-    
-    @Override
-    public boolean heartBeatExpire() {
-        return true;
-    }
-    
+
     public ClusterConnection(ConnectionMetaInfo metaInfo) {
         super(metaInfo);
     }
     
     @Override
-    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception {
+    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException {
         return false;
     }
     
     @Override
-    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws NacosException {
     }
     
     @Override
-    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception {
+    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException {
         return null;
     }
     
     @Override
-    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws NacosException {
     
     }
     

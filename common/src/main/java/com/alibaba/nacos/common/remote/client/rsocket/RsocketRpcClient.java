@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -81,7 +80,7 @@ public class RsocketRpcClient extends RpcClient {
             ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
                     VersionUtils.getFullClientVersion(), labels);
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
-            RSocket rSocket = RSocketConnector.create().keepAlive(Duration.ofMillis(3000L), Duration.ofMillis(6000L))
+            RSocket rSocket = RSocketConnector.create()
                     .setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
                         @Override
                         public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
@@ -143,7 +142,6 @@ public class RsocketRpcClient extends RpcClient {
     
     void shutDownRsocketClient(RSocket client) {
         if (client != null && !client.isDisposed()) {
-            System.out.println(client);
             client.dispose();
         }
     }
@@ -151,7 +149,6 @@ public class RsocketRpcClient extends RpcClient {
     void cancelfireOnCloseEvent(RSocket rSocket) {
         
         if (rSocket != null) {
-            System.out.println("Disposed subscribe..." + rSocket);
             rSocket.onClose().subscribe().dispose();
         }
     }
@@ -176,23 +173,15 @@ public class RsocketRpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
-    
-                if (throwable.getMessage().equals("Disposed")) {
-                    System.out.println("Disposed ignore current event" + rSocket);
-                    return;
-                }
                 switchServerAsync();
             }
             
             @Override
             public void onComplete() {
-                System.out.println("On complete ,switch server ..." + rSocket);
                 switchServerAsync();
             }
         };
         rSocket.onClose().subscribe(subscriber);
-        
-        System.out.println("fire onclise  :" + rSocket);
     }
     
     class RsocketHolder {

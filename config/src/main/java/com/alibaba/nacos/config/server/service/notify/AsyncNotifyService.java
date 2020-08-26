@@ -194,7 +194,6 @@ public class AsyncNotifyService {
         public void run() {
             while (!queue.isEmpty()) {
                 NotifySingleRpcTask task = queue.poll();
-                Member member = task.member;
     
                 ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
                 syncRequest.setDataId(task.getDataId());
@@ -203,8 +202,19 @@ public class AsyncNotifyService {
                 syncRequest.setLastModified(task.getLastModified());
                 syncRequest.setTag(task.tag);
                 syncRequest.setTenant(task.getTenant());
+                Member member = task.member;
+                if (memberManager.getSelf().equals(member)) {
+                    if (syncRequest.isBeta()) {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP(), true);
+                    } else {
+                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
+                                syncRequest.getLastModified(), NetUtils.localIP());
+                    }
+                    return;
+                }
     
-                if (memberManager.hasMember(member.getAddress()) && !memberManager.getSelf().equals(member)) {
+                if (memberManager.hasMember(member.getAddress())) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = memberManager.isUnHealth(member.getAddress());
                     if (unHealthNeedDelay) {
@@ -226,16 +236,8 @@ public class AsyncNotifyService {
                             asyncTaskExecute(task);
                         }
                     }
-                }
-    
-                if (memberManager.getSelf().equals(member)) {
-                    if (syncRequest.isBeta()) {
-                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP(), true);
-                    } else {
-                        dumpService.dump(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    }
+                } else {
+                    //No nothig if  member has offline.
                 }
                 
             }

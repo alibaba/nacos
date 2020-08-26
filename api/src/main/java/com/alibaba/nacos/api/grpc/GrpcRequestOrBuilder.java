@@ -22,68 +22,68 @@ package com.alibaba.nacos.api.grpc;
 public interface GrpcRequestOrBuilder extends
         // @@protoc_insertion_point(interface_extends:GrpcRequest)
         com.google.protobuf.MessageOrBuilder {
-    
-    /**
-     * <code>string type = 2;</code>
-     */
-    String getType();
-    
-    /**
-     * <code>string type = 2;</code>
-     */
-    com.google.protobuf.ByteString getTypeBytes();
-    
-    /**
-     * <pre>
-     * Common metadata describing the resource.
-     * </pre>
-     *
-     * <code>.GrpcMetadata metadata = 1;</code>
-     */
-    boolean hasMetadata();
-    
-    /**
-     * <pre>
-     * Common metadata describing the resource.
-     * </pre>
-     *
-     * <code>.GrpcMetadata metadata = 1;</code>
-     */
-    GrpcMetadata getMetadata();
-    
-    /**
-     * <pre>
-     * Common metadata describing the resource.
-     * </pre>
-     *
-     * <code>.GrpcMetadata metadata = 1;</code>
-     */
-    GrpcMetadataOrBuilder getMetadataOrBuilder();
-    
-    /**
-     * <pre>
-     * The primary payload for the resource.
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 3;</code>
-     */
-    boolean hasBody();
-    
-    /**
-     * <pre>
-     * The primary payload for the resource.
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 3;</code>
-     */
-    com.google.protobuf.Any getBody();
-    
-    /**
-     * <pre>
-     * The primary payload for the resource.
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 3;</code>
-     */
-    com.google.protobuf.AnyOrBuilder getBodyOrBuilder();
+  
+  /**
+   * <code>string type = 2;</code>
+   */
+  String getType();
+  
+  /**
+   * <code>string type = 2;</code>
+   */
+  com.google.protobuf.ByteString getTypeBytes();
+  
+  /**
+   * <pre>
+   * Common metadata describing the resource.
+   * </pre>
+   *
+   * <code>.GrpcMetadata metadata = 1;</code>
+   */
+  boolean hasMetadata();
+  
+  /**
+   * <pre>
+   * Common metadata describing the resource.
+   * </pre>
+   *
+   * <code>.GrpcMetadata metadata = 1;</code>
+   */
+  GrpcMetadata getMetadata();
+  
+  /**
+   * <pre>
+   * Common metadata describing the resource.
+   * </pre>
+   *
+   * <code>.GrpcMetadata metadata = 1;</code>
+   */
+  GrpcMetadataOrBuilder getMetadataOrBuilder();
+  
+  /**
+   * <pre>
+   * The primary payload for the resource.
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 3;</code>
+   */
+  boolean hasBody();
+  
+  /**
+   * <pre>
+   * The primary payload for the resource.
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 3;</code>
+   */
+  com.google.protobuf.Any getBody();
+  
+  /**
+   * <pre>
+   * The primary payload for the resource.
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 3;</code>
+   */
+  com.google.protobuf.AnyOrBuilder getBodyOrBuilder();
 }

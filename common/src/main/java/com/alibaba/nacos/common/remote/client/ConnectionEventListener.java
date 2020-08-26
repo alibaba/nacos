@@ -17,25 +17,19 @@
 package com.alibaba.nacos.common.remote.client;
 
 /**
- *  Client:ConnectionEventListener.
+ * connection event listener of client side.
  * @author liuzunfei
  * @version $Id: ConnectionEventListener.java, v 0.1 2020年07月14日 10:59 AM liuzunfei Exp $
  */
 public interface ConnectionEventListener {
     
     /**
-     * notify when server is connected.
+     * notify when  connected to server.
      */
     public void onConnected();
 
     /**
-     * notify when this client is switch to a new server and  is sucessful reconnected .
-     */
-    @Deprecated
-    public void onReconnected();
-
-    /**
-     * notify when server is disconnected.
+     * notify when  disconnected to server.
      */
     public void onDisConnect();
 }

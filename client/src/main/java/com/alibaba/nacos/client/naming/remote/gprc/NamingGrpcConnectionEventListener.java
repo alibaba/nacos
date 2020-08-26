@@ -56,11 +56,6 @@ public class NamingGrpcConnectionEventListener implements ConnectionEventListene
         redoRegisterEachService();
     }
     
-    @Override
-    public void onReconnected() {
-    
-    }
-    
     private void redoSubscribe() {
         for (String each : subscribes) {
             ServiceInfo serviceInfo = ServiceInfo.fromKey(each);

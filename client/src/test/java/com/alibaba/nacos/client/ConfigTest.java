@@ -21,12 +21,13 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
-import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
+import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,6 +39,9 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
 
+import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+
 @Ignore
 public class ConfigTest {
     
@@ -48,8 +52,7 @@ public class ConfigTest {
         Properties properties = new Properties();
         //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160..148:8848,127.0.0.1:8848,127.0.0.1:8848");
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
-    
-        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848,11.160.144.149:8848");
+        //properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"11.239.114.187:8848,,11.239.113.204:8848,11.239.112.161:8848");
         //"11.239.114.187:8848");
         configService = NacosFactory.createConfigService(properties);
@@ -62,28 +65,60 @@ public class ConfigTest {
         client.init(new ServerListFactory() {
             @Override
             public String genNextServer() {
-                return "127.0.0.1:8848";
+                return "11.160.144.148:8848";
             }
             
             @Override
             public String getCurrentServer() {
-                return "127.0.0.1:8848";
+                return "11.160.144.148:8848";
             }
+    
+            @Override
+            public List<String> getServerList() {
+                return Lists.newArrayList("11.160.144.148:8848");
+            }
+    
         });
         client.start();
-        ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
-        syncRequest.setDataId("xiaochun.xxc1");
-        syncRequest.setGroup("xiaochun.xxc");
-        syncRequest.setIsBeta("N");
-        syncRequest.setLastModified(System.currentTimeMillis());
-        syncRequest.setTag("");
-        syncRequest.setTenant("");
-        System.out.println(client.isRunning());
+    
+        ConfigBatchListenRequest syncRequest = new ConfigBatchListenRequest();
+        syncRequest.setListen("Y");
+        final String dataId = "xiaochun.xxc";
+        final String group = "xiaochun.xxc";
+        long start = System.currentTimeMillis();
+        System.out.println("100K start send 100 request...");
+    
+        for (int i = 0; i < 100; i++) {
+            StringBuilder listenConfigsBuilder = new StringBuilder();
+            listenConfigsBuilder.append(dataId + i).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(group).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(new String(new byte[100])).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append("default").append(LINE_SEPARATOR);
+            syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
+            if (i == 10) {
+                System.out.println("单个报文大小长度：" + listenConfigsBuilder.toString().length());
+            }
+            Response request = client.request(syncRequest);
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("total cost:" + (end - start));
+    
+        StringBuilder listenConfigsBuilder = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            listenConfigsBuilder.append(dataId + i).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(group).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append(new String(new byte[100000])).append(WORD_SEPARATOR);
+            listenConfigsBuilder.append("default").append(LINE_SEPARATOR);
+        }
+        System.out.println("100K start send batch 100 request...");
+        long start2 = System.currentTimeMillis();
+        System.out.println("总报文大小长度：" + listenConfigsBuilder.toString().length());
+        syncRequest.setListeningConfigs(listenConfigsBuilder.toString());
         Response response = client.request(syncRequest);
-        client.request(syncRequest);
+        long end2 = System.currentTimeMillis();
+        System.out.println("toal cost:" + (end2 - start2));
         
-        client.request(syncRequest);
-        System.out.println(response);
+        Thread.sleep(50000000L);
         
     }
     
@@ -97,10 +132,9 @@ public class ConfigTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"
-        System.out.println("1");
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
-        for (int i = 0; i < 200; i++) {
-    
+        for (int i = 0; i < 501; i++) {
+            
             ConfigService configService = NacosFactory.createConfigService(properties);
             configService.addListener("test", "test", new AbstractListener() {
     
@@ -110,6 +144,7 @@ public class ConfigTest {
                 }
             });
             configServiceList.add(configService);
+            System.out.println(configServiceList.size());
         }
         System.out.println("2");
     
@@ -127,7 +162,7 @@ public class ConfigTest {
                                 .publishConfig("test", "test", "value" + System.currentTimeMillis());
     
                         times--;
-                        Thread.sleep(10000L);
+                        Thread.sleep(3000L);
                     } catch (Exception e) {
                         e.printStackTrace();
     
@@ -136,7 +171,7 @@ public class ConfigTest {
             }
         
         });
-        th.start();
+        //th.start();
         
         Thread.sleep(1000000L);
     }
@@ -157,10 +192,11 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        boolean success = configService.publishConfig(dataId + random.nextInt(20), group,
+                        configService.publishConfig(dataId, group,
                                 "value" + System.currentTimeMillis());
+    
                         times--;
-                        Thread.sleep(2000L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -181,8 +217,15 @@ public class ConfigTest {
             }
         };
     
-        for (int i = 0; i < 20; i++) {
-            configService.getConfigAndSignListener(dataId + i, group, 3000L, listener);
+        for (int i = 0; i < 1; i++) {
+            final int ls = i;
+            configService.addListener(dataId, group, new AbstractListener() {
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    System.out.println("receiveConfigInfo :" + ls + configInfo);
+                }
+            });
+
         }
     
         Thread.sleep(10000L);

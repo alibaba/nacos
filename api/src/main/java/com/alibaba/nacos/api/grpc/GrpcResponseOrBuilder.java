@@ -22,56 +22,56 @@ package com.alibaba.nacos.api.grpc;
 public interface GrpcResponseOrBuilder extends
         // @@protoc_insertion_point(interface_extends:GrpcResponse)
         com.google.protobuf.MessageOrBuilder {
-    
-    /**
-     * <code>int32 code = 1;</code>
-     */
-    int getCode();
-    
-    /**
-     * <pre>
-     * reponse body
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 2;</code>
-     */
-    boolean hasBody();
-    
-    /**
-     * <pre>
-     * reponse body
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 2;</code>
-     */
-    com.google.protobuf.Any getBody();
-    
-    /**
-     * <pre>
-     * reponse body
-     * </pre>
-     *
-     * <code>.google.protobuf.Any body = 2;</code>
-     */
-    com.google.protobuf.AnyOrBuilder getBodyOrBuilder();
-    
-    /**
-     * <code>string ack = 4;</code>
-     */
-    String getAck();
-    
-    /**
-     * <code>string ack = 4;</code>
-     */
-    com.google.protobuf.ByteString getAckBytes();
-    
-    /**
-     * <code>string type = 3;</code>
-     */
-    String getType();
-    
-    /**
-     * <code>string type = 3;</code>
-     */
-    com.google.protobuf.ByteString getTypeBytes();
+  
+  /**
+   * <code>int32 code = 1;</code>
+   */
+  int getCode();
+  
+  /**
+   * <pre>
+   * reponse body
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 2;</code>
+   */
+  boolean hasBody();
+  
+  /**
+   * <pre>
+   * reponse body
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 2;</code>
+   */
+  com.google.protobuf.Any getBody();
+  
+  /**
+   * <pre>
+   * reponse body
+   * </pre>
+   *
+   * <code>.google.protobuf.Any body = 2;</code>
+   */
+  com.google.protobuf.AnyOrBuilder getBodyOrBuilder();
+  
+  /**
+   * <code>string ack = 4;</code>
+   */
+  String getAck();
+  
+  /**
+   * <code>string ack = 4;</code>
+   */
+  com.google.protobuf.ByteString getAckBytes();
+  
+  /**
+   * <code>string type = 3;</code>
+   */
+  String getType();
+  
+  /**
+   * <code>string type = 3;</code>
+   */
+  com.google.protobuf.ByteString getTypeBytes();
 }

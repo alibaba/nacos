@@ -41,7 +41,6 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -174,7 +173,7 @@ public class GrpcClient extends RpcClient {
      *
      * @param streamStub streamStub to bind.
      */
-    private void bindRequestStream(RequestStreamGrpc.RequestStreamStub streamStub) {
+    private void bindRequestStream(final RequestStreamGrpc.RequestStreamStub streamStub) {
         GrpcRequest streamRequest = GrpcRequest.newBuilder().setMetadata(buildMeta("")).build();
         LOGGER.info("GrpcClient send stream request  grpc server,streamRequest:{}", streamRequest);
         streamStub.requestStream(streamRequest, new StreamObserver<GrpcResponse>() {
@@ -201,10 +200,15 @@ public class GrpcClient extends RpcClient {
             
             @Override
             public void onError(Throwable throwable) {
+                throwable.printStackTrace();
+                System.out.println("on error ,switch server ");
+                switchServerAsync();
             }
             
             @Override
             public void onCompleted() {
+                System.out.println("onCompleted ,switch server " + this);
+                switchServerAsync();
             }
         });
     }

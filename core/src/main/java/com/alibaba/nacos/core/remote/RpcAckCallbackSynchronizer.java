@@ -16,30 +16,25 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
 import com.alipay.hessian.clhm.EvictionListener;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
- * serber push ack synchronier.
+ * server push ack synchronier.
  *
  * @author liuzunfei
  * @version $Id: RpcAckCallbackSynchronizer.java, v 0.1 2020年07月29日 7:56 PM liuzunfei Exp $
  */
 public class RpcAckCallbackSynchronizer {
     
-    private static final long TIMEOUT = 60000L;
-    
-    static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    
-    private static final Map<String, Map<String, DefaultPushFuture>> CALLBACK_CONTEXT2 = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultPushFuture>>()
-            .maximumWeightedCapacity(30000).listener(new EvictionListener<String, Map<String, DefaultPushFuture>>() {
+    private static final Map<String, Map<String, DefaultPushFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultPushFuture>>()
+            .maximumWeightedCapacity(1000000).listener(new EvictionListener<String, Map<String, DefaultPushFuture>>() {
                 @Override
                 public void onEviction(String s, Map<String, DefaultPushFuture> pushCallBack) {
                     
@@ -52,36 +47,12 @@ public class RpcAckCallbackSynchronizer {
                 }
             }).build();
     
-    //    static {
-    //        executor.scheduleWithFixedDelay(new Runnable() {
-    //            @Override
-    //            public void run() {
-    //                Set<String> timeOutCalls = new HashSet<>();
-    //                long now = System.currentTimeMillis();
-    //                for (Map.Entry<String, DefaultPushFuture> enrty : CALLBACK_CONTEXT.entrySet()) {
-    //                    if (now - enrty.getValue().getTimeStamp() > TIMEOUT) {
-    //                        timeOutCalls.add(enrty.getKey());
-    //                    }
-    //                }
-    //                for (String ackId : timeOutCalls) {
-    //                    DefaultPushFuture remove = CALLBACK_CONTEXT.remove(ackId);
-    //                    if (remove != null) {
-    //                        Loggers.CORE.warn("time out on scheduler:" + ackId);
-    //                        if (remove.getPushCallBack() != null) {
-    //                            remove.getPushCallBack().onTimeout();
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //        }, TIMEOUT, TIMEOUT, TimeUnit.MILLISECONDS);
-    //    }
-    
     /**
      * notify  ackid.
      */
     public static void ackNotify(String connectionId, String requestId, boolean success, Exception e) {
     
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connectionId);
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (stringDefaultPushFutureMap == null) {
             return;
         }
@@ -101,18 +72,18 @@ public class RpcAckCallbackSynchronizer {
      * notify  ackid.
      */
     public static void syncCallback(String connectionId, String requestId, DefaultPushFuture defaultPushFuture)
-            throws Exception {
-        if (!CALLBACK_CONTEXT2.containsKey(connectionId)) {
-            CALLBACK_CONTEXT2.putIfAbsent(connectionId, new HashMap<String, DefaultPushFuture>());
+            throws NacosException {
+        if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
+            CALLBACK_CONTEXT.putIfAbsent(connectionId, new HashMap<String, DefaultPushFuture>());
         }
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connectionId);
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connectionId);
         if (!stringDefaultPushFutureMap.containsKey(requestId)) {
             DefaultPushFuture pushCallBackPrev = stringDefaultPushFutureMap.putIfAbsent(requestId, defaultPushFuture);
             if (pushCallBackPrev == null) {
                 return;
             }
         }
-        throw new RuntimeException("callback conflict.");
+        throw new NacosException(NacosException.INVALID_PARAM, "request id confilict");
         
     }
     
@@ -122,7 +93,7 @@ public class RpcAckCallbackSynchronizer {
      * @param connetionId connetionId
      */
     public static void clearContext(String connetionId) {
-        CALLBACK_CONTEXT2.remove(connetionId);
+        CALLBACK_CONTEXT.remove(connetionId);
     }
     
     /**
@@ -131,14 +102,13 @@ public class RpcAckCallbackSynchronizer {
      * @param connetionId connetionId
      */
     public static void clearFuture(String connetionId, String requestId) {
-        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT2.get(connetionId);
-    
+        Map<String, DefaultPushFuture> stringDefaultPushFutureMap = CALLBACK_CONTEXT.get(connetionId);
+        
         if (stringDefaultPushFutureMap == null || !stringDefaultPushFutureMap.containsKey(requestId)) {
             return;
         }
         stringDefaultPushFutureMap.remove(requestId);
     }
-    
     
 }
 

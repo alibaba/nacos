@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.PushCallBack;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.core.remote.PushFuture;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -38,30 +40,30 @@ public class GrpcConnection extends Connection {
     
     private StreamObserver streamObserver;
     
-    public GrpcConnection(ConnectionMetaInfo metaInfo, StreamObserver streamObserver) {
+    private Channel channel;
+    
+    public GrpcConnection(ConnectionMetaInfo metaInfo, StreamObserver streamObserver, Channel channel) {
         super(metaInfo);
         this.streamObserver = streamObserver;
+        this.channel = channel;
     }
     
     @Override
-    public boolean heartBeatExpire() {
-        return false;
-    }
-    
-    @Override
-    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws Exception {
+    public boolean sendRequest(ServerPushRequest request, long timeoutMills) throws NacosException {
         DefaultPushFuture pushFuture = (DefaultPushFuture) sendRequestWithFuture(request);
         try {
             return pushFuture.get(timeoutMills);
+        } catch (Exception e) {
+            throw new NacosException(NacosException.SERVER_ERROR, e);
         } finally {
             RpcAckCallbackSynchronizer.clearFuture(getConnectionId(), pushFuture.getRequestId());
         }
     }
     
     @Override
-    public void sendRequestNoAck(ServerPushRequest request) throws Exception {
+    public void sendRequestNoAck(ServerPushRequest request) throws NacosException {
         try {
-            streamObserver.onNext(GrpcUtils.convert(request, ""));
+            streamObserver.onNext(GrpcUtils.convert(request));
         } catch (Exception e) {
             if (e instanceof StatusRuntimeException) {
                 throw new ConnectionAlreadyClosedException(e);
@@ -71,16 +73,16 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
-    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws Exception {
+    public PushFuture sendRequestWithFuture(ServerPushRequest request) throws NacosException {
         return sendRequestInner(request, null);
     }
     
     @Override
-    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws Exception {
+    public void sendRequestWithCallBack(ServerPushRequest request, PushCallBack callBack) throws NacosException {
         sendRequestInner(request, callBack);
     }
     
-    private DefaultPushFuture sendRequestInner(ServerPushRequest request, PushCallBack callBack) throws Exception {
+    private DefaultPushFuture sendRequestInner(ServerPushRequest request, PushCallBack callBack) throws NacosException {
         Loggers.RPC_DIGEST.info("Grpc sendRequest :" + request);
         String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
@@ -92,6 +94,11 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void closeGrapcefully() {
+        try {
+            streamObserver.onCompleted();
+        } catch (Exception e) {
+            Loggers.RPC_DIGEST.warn("Grpc connection close exception .", e);
+        }
     }
     
 }
