@@ -143,7 +143,7 @@ public class SecurityProxy {
                 HttpRestResult<String> restResult = nacosRestTemplate
                         .postForm(url, Header.EMPTY, Query.newInstance().initParams(params), bodyMap, String.class);
                 if (!restResult.ok()) {
-                    SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
+                    SECURITY_LOGGER.error("login failed: {}", restResult.getMessage());
                     return false;
                 }
                 JsonNode obj = JacksonUtils.toObj(restResult.getData());
@@ -153,8 +153,9 @@ public class SecurityProxy {
                     tokenRefreshWindow = tokenTtl / 10;
                 }
             } catch (Exception e) {
-                SECURITY_LOGGER.error("[SecurityProxy] login http request failed"
-                        + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, bodyMap, e.getMessage());
+                SECURITY_LOGGER
+                        .error("[SecurityProxy] login http request failed" + " url: {}, params: {}, errorMsg: {}", url,
+                                params, e.getMessage());
                 return false;
             }
         }
