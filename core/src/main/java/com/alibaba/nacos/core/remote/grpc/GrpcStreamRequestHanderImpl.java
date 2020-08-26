@@ -30,6 +30,8 @@ import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static com.alibaba.nacos.core.remote.grpc.GrpcServer.CONTEXT_KEY_CHANNEL;
+
 /**
  * grpc stream handler,to accepted client stream request to push message to client.
  *
@@ -53,19 +55,20 @@ public class GrpcStreamRequestHanderImpl extends RequestStreamGrpc.RequestStream
         String version = metadata.getVersion();
         ConnectionMetaInfo metaInfo = new ConnectionMetaInfo(connectionId, clientIp, ConnectionType.GRPC.getType(),
                 version, metadata.getLabelsMap());
-        Connection connection = new GrpcConnection(metaInfo, responseObserver);
+    
+        Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
         if (connectionManager.isOverLimit()) {
             //Not register to the connection manager if current server is over limit.
             try {
+                System.out.println("over limit ...");
                 connection.sendRequestNoAck(new ConnectResetRequest());
+                connection.closeGrapcefully();
             } catch (Exception e) {
                 //Do nothing.
             }
         } else {
             connectionManager.register(connectionId, connection);
-    
         }
     }
-    
     
 }

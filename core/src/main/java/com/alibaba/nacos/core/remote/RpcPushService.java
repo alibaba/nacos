@@ -39,7 +39,7 @@ public class RpcPushService {
      * push response without callback. if the client of the specific connectionId is already close,will return true.
      *
      * @param connectionId connectionId.
-     * @param request     request.
+     * @param request      request.
      */
     public boolean push(String connectionId, ServerPushRequest request, long timeoutMills) {
     
@@ -53,7 +53,7 @@ public class RpcPushService {
             } catch (Exception e) {
                 Loggers.RPC_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
-                        request, e);
+                                request, e);
                 return false;
             }
         } else {
@@ -65,7 +65,7 @@ public class RpcPushService {
      * push response without callback. if the client of the specific connectionId is already close,will return true.
      *
      * @param connectionId connectionId.
-     * @param request     request.
+     * @param request      request.
      */
     public PushFuture pushWithFuture(String connectionId, ServerPushRequest request) {
         
@@ -78,7 +78,7 @@ public class RpcPushService {
             } catch (Exception e) {
                 Loggers.RPC_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
-                        request, e);
+                                request, e);
             }
         }
         return null;
@@ -88,7 +88,7 @@ public class RpcPushService {
      * push response with no ack.
      *
      * @param connectionId connectionId.
-     * @param request     request.
+     * @param request      request.
      * @param pushCallBack pushCallBack.
      */
     public void pushWithCallback(String connectionId, ServerPushRequest request, PushCallBack pushCallBack) {
@@ -102,8 +102,10 @@ public class RpcPushService {
             } catch (Exception e) {
                 Loggers.RPC_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
-                        request, e);
+                                request, e);
             }
+        } else {
+            pushCallBack.onSuccess();
         }
     }
     
@@ -111,7 +113,7 @@ public class RpcPushService {
      * push response with no ack.
      *
      * @param connectionId connectionId.
-     * @param request     request.
+     * @param request      request.
      */
     public void pushWithoutAck(String connectionId, ServerPushRequest request) {
         Connection connection = connectionManager.getConnection(connectionId);
@@ -123,7 +125,7 @@ public class RpcPushService {
             } catch (Exception e) {
                 Loggers.RPC_DIGEST
                         .error("error to send push response to connectionId ={},push response={}", connectionId,
-                        request, e);
+                                request, e);
             }
         }
     }

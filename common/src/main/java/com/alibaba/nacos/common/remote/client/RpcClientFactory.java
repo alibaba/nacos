@@ -98,8 +98,9 @@ public class RpcClientFactory {
      * @return
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
+        String clientNameInner = System.currentTimeMillis() + "";
         synchronized (clientMap) {
-            if (clientMap.get(clientName) == null) {
+            if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
                     moduleClient = new GrpcClient();
@@ -111,10 +112,10 @@ public class RpcClientFactory {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
                 }
                 moduleClient.initLabels(labels);
-                clientMap.put(clientName, moduleClient);
+                clientMap.put(clientNameInner, moduleClient);
                 return moduleClient;
             }
-            return clientMap.get(clientName);
+            return clientMap.get(clientNameInner);
         }
     }
     

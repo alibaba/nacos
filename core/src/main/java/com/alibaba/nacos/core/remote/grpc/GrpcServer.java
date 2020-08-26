@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.grpc.GrpcMetadata;
 import com.alibaba.nacos.api.grpc.GrpcRequest;
 import com.alibaba.nacos.api.grpc.GrpcResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.utils.ReflectUtils;
+import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandlerRegistry;
 import com.alibaba.nacos.core.remote.RpcServer;
@@ -27,7 +29,6 @@ import com.alibaba.nacos.core.utils.ApplicationUtils;
 import io.grpc.Attributes;
 import io.grpc.Context;
 import io.grpc.Contexts;
-import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
@@ -38,14 +39,13 @@ import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServerTransportFilter;
+import io.grpc.internal.ServerStream;
+import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.net.SocketAddress;
-import java.util.UUID;
 
 /**
  * Grpc implementation as  a rpc server.
@@ -92,8 +92,12 @@ public class GrpcServer extends RpcServer {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers,
                     ServerCallHandler<ReqT, RespT> next) {
-                final Context ctx = Context.current()
+                Context ctx = Context.current()
                         .withValue(CONTEXT_KEY_CONN_ID, call.getAttributes().get(TRANS_KEY_CONN_ID));
+                if ("RequestStream".equals(call.getMethodDescriptor().getServiceName())) {
+                    Channel internalChannel = getInternalChannel(call);
+                    ctx = ctx.withValue(CONTEXT_KEY_CHANNEL, internalChannel);
+                }
                 return Contexts.interceptCall(ctx, call, headers, next);
             }
         };
@@ -103,8 +107,8 @@ public class GrpcServer extends RpcServer {
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
-                        Attributes test = transportAttrs.toBuilder()
-                                .set(TRANS_KEY_CONN_ID, UUID.randomUUID().toString()).build();
+                        Attributes test = transportAttrs.toBuilder().set(TRANS_KEY_CONN_ID, UuidUtils.generateUuid())
+                                .build();
                         return test;
                     }
     
@@ -115,6 +119,12 @@ public class GrpcServer extends RpcServer {
                     }
                 }).build();
         server.start();
+    }
+    
+    private Channel getInternalChannel(ServerCall serverCall) {
+        ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
+        Channel channel = (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
+        return channel;
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
@@ -175,5 +185,7 @@ public class GrpcServer extends RpcServer {
     static final Attributes.Key<String> TRANS_KEY_CONN_ID = Attributes.Key.create("conn_id");
     
     static final Context.Key<String> CONTEXT_KEY_CONN_ID = Context.key("conn_id");
+    
+    static final Context.Key<Channel> CONTEXT_KEY_CHANNEL = Context.key("ctx_channel");
     
 }

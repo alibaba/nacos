@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.ConnectionUnregisterResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -43,7 +42,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
@@ -100,12 +98,9 @@ public abstract class RpcClient implements Closeable {
     protected void notifyDisConnected() {
         if (!connectionEventListeners.isEmpty()) {
             LoggerUtils.printIfInfoEnabled(LOGGER, "Notify connection event listeners.");
-            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                @Override
-                public void accept(ConnectionEventListener connectionEventListener) {
-                    connectionEventListener.onDisConnect();
-                }
-            });
+            for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
+                connectionEventListener.onDisConnect();
+            }
         }
     }
     
@@ -114,12 +109,9 @@ public abstract class RpcClient implements Closeable {
      */
     protected void notifyConnected() {
         if (!connectionEventListeners.isEmpty()) {
-            connectionEventListeners.forEach(new Consumer<ConnectionEventListener>() {
-                @Override
-                public void accept(ConnectionEventListener connectionEventListener) {
-                    connectionEventListener.onConnected();
-                }
-            });
+            for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
+                connectionEventListener.onConnected();
+            }
         }
     }
     
@@ -292,7 +284,7 @@ public abstract class RpcClient implements Closeable {
     
     private volatile AtomicBoolean switchingFlag = new AtomicBoolean(false);
     
-    protected void switchServerAsync() {
+    public void switchServerAsync() {
         switchServerAsync(null);
     }
     
@@ -301,12 +293,8 @@ public abstract class RpcClient implements Closeable {
      */
     protected void switchServerAsync(final ServerInfo serverInfoTryOnce) {
         
-        System.out.println("switchServerAsync...1");
-        
         //return if is in switching of other thread.
         if (switchingFlag.get()) {
-            System.out.println("switchServerAsync...2");
-    
             return;
         }
         executorService.submit(new Runnable() {
@@ -320,11 +308,8 @@ public abstract class RpcClient implements Closeable {
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
                     if (!innerLock) {
-                        System.out.println("switchServerAsync...3");
                         return;
                     }
-                    System.out.println("switchServerAsync...4");
-        
                     switchingFlag.set(true);
                     // loop until start client success.
                     boolean switchSuccess = false;
@@ -351,7 +336,8 @@ public abstract class RpcClient implements Closeable {
                             }
     
                         } catch (Exception e) {
-                            System.out.println("fail to connect server:" + serverInfo + " ,error message is " + e.getMessage());
+                            System.out.println(
+                                    "fail to connect server:" + serverInfo + " ,error message is " + e.getMessage());
                         } finally {
                             serverInfoTryOnceInner.set(null);
                         }
@@ -399,6 +385,18 @@ public abstract class RpcClient implements Closeable {
     }
     
     /**
+     * get current server.
+     *
+     * @return
+     */
+    public ServerInfo getCurrentServer() {
+        if (this.currentConnetion != null) {
+            return currentConnetion.serverInfo;
+        }
+        return null;
+    }
+    
+    /**
      * send request.
      *
      * @param request request.
@@ -424,9 +422,9 @@ public abstract class RpcClient implements Closeable {
                 LoggerUtils.printIfErrorEnabled(LOGGER, "Fail to send request,request={},errorMesssage={}", request,
                         e.getMessage());
                 exceptionToThrow = e;
-            } finally {
-                retryTimes--;
             }
+            retryTimes--;
+            
         }
         if (exceptionToThrow != null) {
             throw new NacosException(SERVER_ERROR, exceptionToThrow);
@@ -460,14 +458,10 @@ public abstract class RpcClient implements Closeable {
      * @return response.
      */
     protected void handleServerRequest(final ServerPushRequest request) {
-    
-        final AtomicReference<ServerPushResponse> responseRef = new AtomicReference<ServerPushResponse>();
-        serverRequestHandlers.forEach(new Consumer<ServerRequestHandler>() {
-            @Override
-            public void accept(ServerRequestHandler serverRequestHandler) {
-                serverRequestHandler.requestReply(request);
-            }
-        });
+        for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
+            serverRequestHandler.requestReply(request);
+        }
+        
     }
     
     /**

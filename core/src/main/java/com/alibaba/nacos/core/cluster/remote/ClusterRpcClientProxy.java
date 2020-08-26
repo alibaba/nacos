@@ -31,6 +31,7 @@ import com.alibaba.nacos.core.cluster.MemberUtils;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -130,6 +131,11 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
                 public String getCurrentServer() {
                     return member.getAddress();
                 }
+    
+                @Override
+                public List<String> getServerList() {
+                    return Lists.newArrayList(member.getAddress());
+                }
             });
         
             client.start();
@@ -138,11 +144,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     
     /**
      * send request to member.
-     *
      * @param member
      * @param request
      * @return
-     * @throws NacosException
+     * @throws NacosException exception may throws.
      */
     public Response sendRequest(Member member, Request request) throws NacosException {
         RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
@@ -151,6 +156,20 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             return response;
         } else {
             throw new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
+        }
+    }
+    
+    /**
+     * send request to member.
+     *
+     * @param request
+     * @return
+     * @throws NacosException
+     */
+    public void sendRequestToAllMembers(Request request) throws NacosException {
+        List<Member> members = serverMemberManager.allMembersWithoutSelf();
+        for (Member member1 : members) {
+            sendRequest(member1, request);
         }
     }
     

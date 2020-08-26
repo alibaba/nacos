@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client;
+package com.alibaba.nacos.common.utils;
 
-import java.util.List;
+import java.lang.reflect.Field;
 
 /**
- * server list factory . use to inner client to connecte and switch servers.
+ * reflect utils.
+ *
  * @author liuzunfei
- * @version $Id: ServerListFactory.java, v 0.1 2020年07月14日 1:11 PM liuzunfei Exp $
+ * @version $Id: ReflectUtils.java, v 0.1 2020年08月20日 12:57 PM liuzunfei Exp $
  */
-public interface ServerListFactory {
+public class ReflectUtils {
     
     /**
-     * switch to a new server and get it.
+     * get filed value of  obj.
      *
+     * @param obj       obj.
+     * @param fieldName file name to get value.
      * @return
      */
-    String genNextServer();
-    
-    /**
-     * get current server.
-     * @return
-     */
-    String getCurrentServer();
-    
-    /**
-     * get current server.
-     *
-     * @return
-     */
-    List<String> getServerList();
+    public static Object getFieldValue(Object obj, String fieldName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     
 }

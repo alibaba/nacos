@@ -22,92 +22,92 @@ package com.alibaba.nacos.api.grpc;
 public interface GrpcMetadataOrBuilder extends
         // @@protoc_insertion_point(interface_extends:GrpcMetadata)
         com.google.protobuf.MessageOrBuilder {
-    
-    /**
-     * <code>string name = 1;</code>
-     */
-    String getName();
-    
-    /**
-     * <code>string name = 1;</code>
-     */
-    com.google.protobuf.ByteString getNameBytes();
-    
-    /**
-     * <code>string client_ip = 2;</code>
-     */
-    String getClientIp();
-    
-    /**
-     * <code>string client_ip = 2;</code>
-     */
-    com.google.protobuf.ByteString getClientIpBytes();
-    
-    /**
-     * <code>string connection_id = 3;</code>
-     */
-    String getConnectionId();
-    
-    /**
-     * <code>string connection_id = 3;</code>
-     */
-    com.google.protobuf.ByteString getConnectionIdBytes();
-    
-    /**
-     * <code>.google.protobuf.Timestamp create_time = 4;</code>
-     */
-    boolean hasCreateTime();
-    
-    /**
-     * <code>.google.protobuf.Timestamp create_time = 4;</code>
-     */
-    com.google.protobuf.Timestamp getCreateTime();
-    
-    /**
-     * <code>.google.protobuf.Timestamp create_time = 4;</code>
-     */
-    com.google.protobuf.TimestampOrBuilder getCreateTimeOrBuilder();
-    
-    /**
-     * <code>string version = 5;</code>
-     */
-    String getVersion();
-    
-    /**
-     * <code>string version = 5;</code>
-     */
-    com.google.protobuf.ByteString getVersionBytes();
-    
-    /**
-     * <code>map&lt;string, string&gt; labels = 6;</code>
-     */
-    int getLabelsCount();
-    
-    /**
-     * <code>map&lt;string, string&gt; labels = 6;</code>
-     */
-    boolean containsLabels(String key);
-    
-    /**
-     * Use {@link #getLabelsMap()} instead.
-     */
-    @Deprecated
-    java.util.Map<String, String> getLabels();
-    
-    /**
-     * <code>map&lt;string, string&gt; labels = 6;</code>
-     */
-    java.util.Map<String, String> getLabelsMap();
-    
-    /**
-     * <code>map&lt;string, string&gt; labels = 6;</code>
-     */
-    
-    String getLabelsOrDefault(String key, String defaultValue);
-    
-    /**
-     * <code>map&lt;string, string&gt; labels = 6;</code>
-     */
-    
-    String getLabelsOrThrow(String key);
+  
+  /**
+   * <code>string name = 1;</code>
+   */
+  String getName();
+  
+  /**
+   * <code>string name = 1;</code>
+   */
+  com.google.protobuf.ByteString getNameBytes();
+  
+  /**
+   * <code>string client_ip = 2;</code>
+   */
+  String getClientIp();
+  
+  /**
+   * <code>string client_ip = 2;</code>
+   */
+  com.google.protobuf.ByteString getClientIpBytes();
+  
+  /**
+   * <code>string connection_id = 3;</code>
+   */
+  String getConnectionId();
+  
+  /**
+   * <code>string connection_id = 3;</code>
+   */
+  com.google.protobuf.ByteString getConnectionIdBytes();
+  
+  /**
+   * <code>.google.protobuf.Timestamp create_time = 4;</code>
+   */
+  boolean hasCreateTime();
+  
+  /**
+   * <code>.google.protobuf.Timestamp create_time = 4;</code>
+   */
+  com.google.protobuf.Timestamp getCreateTime();
+  
+  /**
+   * <code>.google.protobuf.Timestamp create_time = 4;</code>
+   */
+  com.google.protobuf.TimestampOrBuilder getCreateTimeOrBuilder();
+  
+  /**
+   * <code>string version = 5;</code>
+   */
+  String getVersion();
+  
+  /**
+   * <code>string version = 5;</code>
+   */
+  com.google.protobuf.ByteString getVersionBytes();
+  
+  /**
+   * <code>map&lt;string, string&gt; labels = 6;</code>
+   */
+  int getLabelsCount();
+  
+  /**
+   * <code>map&lt;string, string&gt; labels = 6;</code>
+   */
+  boolean containsLabels(String key);
+  
+  /**
+   * Use {@link #getLabelsMap()} instead.
+   */
+  @Deprecated
+  java.util.Map<String, String> getLabels();
+  
+  /**
+   * <code>map&lt;string, string&gt; labels = 6;</code>
+   */
+  java.util.Map<String, String> getLabelsMap();
+  
+  /**
+   * <code>map&lt;string, string&gt; labels = 6;</code>
+   */
+  
+  String getLabelsOrDefault(String key, String defaultValue);
+  
+  /**
+   * <code>map&lt;string, string&gt; labels = 6;</code>
+   */
+  
+  String getLabelsOrThrow(String key);
 }
