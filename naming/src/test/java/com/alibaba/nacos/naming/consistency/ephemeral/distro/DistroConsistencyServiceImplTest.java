@@ -50,9 +50,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     private DataStore dataStore;
     
     @Mock
-    private TaskDispatcher taskDispatcher;
-    
-    @Mock
     private Serializer serializer;
     
     @Mock
@@ -73,7 +70,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     
     @Before
     public void setUp() throws Exception {
-        distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, taskDispatcher, serializer,
+        distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer,
                 serverMemberManager, switchDomain, globalConfig);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
         listeners = (Map<String, ConcurrentLinkedQueue<RecordListener>>) ReflectionTestUtils
@@ -90,7 +87,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.listen(key, recordListener);
         distroConsistencyService.put(key, instances);
-        verify(taskDispatcher).addTask(key);
         verify(notifier).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
@@ -99,7 +95,6 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void testPutWithoutListener() throws NacosException {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.put(key, instances);
-        verify(taskDispatcher).addTask(key);
         verify(notifier, never()).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }

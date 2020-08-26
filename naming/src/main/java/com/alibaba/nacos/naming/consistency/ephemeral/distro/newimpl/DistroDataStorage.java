@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
+
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 /**
- * Apply action.
+ * Distro data storage.
  *
- * @author nkorange
+ * @author xiweng.yy
  */
-public enum ApplyAction {
+public interface DistroDataStorage {
+    
     /**
-     * Data changed.
+     * Get distro datum.
+     *
+     * @param distroKey key of distro datum
+     * @return need to sync datum
      */
-    CHANGE,
+    DistroData getDistroData(DistroKey distroKey);
+    
     /**
-     * Data deleted.
+     * Get verify datum.
+     *
+     * @param distroKey key of distro datum
+     * @return verify datum
      */
-    DELETE,
-    /**
-     * Data verify.
-     */
-    VERIFY;
+    DistroData getVerifyData(DistroKey distroKey);
 }

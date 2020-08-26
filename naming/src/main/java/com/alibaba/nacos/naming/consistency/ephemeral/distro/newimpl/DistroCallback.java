@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
 
 /**
- * Apply action.
+ * Distro callback.
  *
- * @author nkorange
+ * @author xiweng.yy
  */
-public enum ApplyAction {
+public interface DistroCallback {
+    
     /**
-     * Data changed.
+     * Callback when distro task execute successfully.
      */
-    CHANGE,
+    void onSuccess();
+    
     /**
-     * Data deleted.
+     * Callback when distro task execute failed.
+     *
+     * @param throwable throwable if execute failed caused by exception
      */
-    DELETE,
-    /**
-     * Data verify.
-     */
-    VERIFY;
+    void onFailed(Throwable throwable);
 }
