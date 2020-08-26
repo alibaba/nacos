@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -81,7 +80,7 @@ public class RsocketRpcClient extends RpcClient {
             ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
                     VersionUtils.getFullClientVersion(), labels);
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
-            RSocket rSocket = RSocketConnector.create().keepAlive(Duration.ofMillis(3000L), Duration.ofMillis(6000L))
+            RSocket rSocket = RSocketConnector.create()
                     .setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
                         @Override
                         public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {

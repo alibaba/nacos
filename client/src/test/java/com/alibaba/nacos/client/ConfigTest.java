@@ -133,7 +133,7 @@ public class ConfigTest {
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "11.160.144.148:8848");
         //"
         List<ConfigService> configServiceList = new ArrayList<ConfigService>();
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 501; i++) {
             
             ConfigService configService = NacosFactory.createConfigService(properties);
             configService.addListener("test", "test", new AbstractListener() {
@@ -144,6 +144,7 @@ public class ConfigTest {
                 }
             });
             configServiceList.add(configService);
+            System.out.println(configServiceList.size());
         }
         System.out.println("2");
     
@@ -170,7 +171,7 @@ public class ConfigTest {
             }
         
         });
-        th.start();
+        //th.start();
         
         Thread.sleep(1000000L);
     }

@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private ThreadPoolExecutor retryPushexecutors = new ThreadPoolExecutor(15, 30, 5, TimeUnit.SECONDS,
-            new ArrayBlockingQueue<Runnable>(100000), new ThreadPoolExecutor.AbortPolicy());
+            new ArrayBlockingQueue<Runnable>(1000000), new ThreadPoolExecutor.AbortPolicy());
     
     private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,
@@ -79,7 +79,6 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
         
         Set<String> clients = configChangeListenContext.getListeners(groupKey);
-        long start = System.currentTimeMillis();
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
     
@@ -87,9 +86,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                 push(rpcPushRetryTask);
             }
         }
-        long end = System.currentTimeMillis();
     
-        Loggers.RPC.info("push {} clients cost {} millsenconds.", clients == null ? 0 : clients.size(), (end - start));
+        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : clients.size(), groupKey);
     }
     
     @Override
@@ -114,12 +112,16 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     class RpcPushTask implements Runnable {
         
         ConfigChangeNotifyRequest notifyRequet;
-        
-        int maxRetryTimes;
+    
+        int maxRetryTimes = -1;
         
         int tryTimes = 0;
         
         String clientId;
+    
+        public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, String clientId) {
+            this(notifyRequet, -1, clientId);
+        }
         
         public RpcPushTask(ConfigChangeNotifyRequest notifyRequet, int maxRetryTimes, String clientId) {
             this.notifyRequet = notifyRequet;
@@ -128,7 +130,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         }
         
         public boolean isOverTimes() {
-            return this.tryTimes >= maxRetryTimes;
+            return maxRetryTimes > 0 && this.tryTimes >= maxRetryTimes;
         }
         
         @Override
@@ -176,9 +178,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                             retryTask.clientId);
             connectionManager.unregister(retryTask.clientId);
             return;
-        } else {
+        } else if (connectionManager.getConnection(retryTask.clientId) != null) {
             // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
             ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR.schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
+        } else {
+            // client is already offline,ingnore task.
         }
         
     }

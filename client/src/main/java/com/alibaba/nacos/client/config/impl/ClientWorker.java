@@ -47,6 +47,9 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -58,7 +61,6 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
-import sun.management.resources.agent;
 
 import java.io.File;
 import java.io.IOException;
@@ -219,7 +221,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
-     *
      * @param tenant
      * @param dataId
      * @param group
@@ -233,7 +234,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
-     *
      * @param dataId
      * @param group
      * @param tenant
@@ -596,7 +596,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void start() throws NacosException {
+        public void startIntenal() throws NacosException {
             
             rpcClient.start();
             executor.schedule(new Runnable() {
@@ -616,6 +616,31 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
+    
+            // register server change subscriber.
+            NotifyCenter.registerSubscriber(new Subscriber() {
+                @Override
+                public void onEvent(Event event) {
+                    RpcClient.ServerInfo currentServer = rpcClient.getCurrentServer();
+                    if (currentServer != null) {
+                        List<String> serverUrls = serverListManager.getServerUrls();
+                        String currentServerIp = currentServer.getServerIp();
+                        int currentServerPort = currentServer.getServerPort() - rpcClient.rpcPortOffset();
+                        String currentAddress = currentServerIp + ":" + currentServerPort;
+                        for (String server : serverUrls) {
+                            if (server.equals(currentAddress)) {
+                                rpcClient.switchServerAsync();
+                                return;
+                            }
+                        }
+                    }
+                }
+        
+                @Override
+                public Class<? extends Event> subscribeType() {
+                    return ServerlistChangeEvent.class;
+                }
+            });
             
         }
         
@@ -801,7 +826,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void start() {
+        public void startIntenal() {
             
             executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
@@ -866,8 +891,8 @@ public class ClientWorker implements Closeable {
                     params.put("tenant", tenant);
                 }
     
-                Map<String, String> spasHeaders = getSpasHeaders();
-                result = httpGet(Constants.CONFIG_CONTROLLER_PATH, spasHeaders, params, agent.getEncode(), readTimeout);
+                Map<String, String> headers = new HashMap<String, String>();
+                result = httpGet(Constants.CONFIG_CONTROLLER_PATH, headers, params, agent.getEncode(), readTimeout);
             } catch (Exception ex) {
                 String message = String
                         .format("[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s",
@@ -909,6 +934,29 @@ public class ClientWorker implements Closeable {
                                     + ",tenant=" + tenant);
                 }
             }
+        }
+    
+        private void assembleHttpParams(Map<String, String> params, Map<String, String> headers) throws Exception {
+            Map<String, String> securityHeaders = super.getSecurityHeaders();
+            if (securityHeaders != null) {
+                //put security header to param
+                params.putAll(securityHeaders);
+            }
+            Map<String, String> spasHeaders = super.getSpasHeaders();
+            if (spasHeaders != null) {
+                //put spasHeader to header.
+                headers.putAll(spasHeaders);
+            }
+            Map<String, String> commonHeader = super.getCommonHeader();
+            if (commonHeader != null) {
+                //put common headers
+                headers.putAll(commonHeader);
+            }
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(params, super.secretKey);
+            if (signHeaders != null) {
+                headers.putAll(signHeaders);
+            }
+        
         }
         
         @Override
@@ -971,48 +1019,28 @@ public class ClientWorker implements Closeable {
     
         private HttpRestResult<String> httpPost(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
-            Map<String, String> spasHeaders = getSpasHeaders();
             if (headers == null) {
-                headers = spasHeaders;
-            } else {
-                headers.putAll(spasHeaders);
+                headers = new HashMap<String, String>();
             }
-        
-            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
-            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
-                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
-            }
+            assembleHttpParams(paramValues, headers);
             return agent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         }
     
         private HttpRestResult<String> httpGet(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
-            Map<String, String> spasHeaders = getSpasHeaders();
             if (headers == null) {
-                headers = spasHeaders;
-            } else {
-                headers.putAll(spasHeaders);
+                headers = new HashMap<String, String>();
             }
-        
-            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
-            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
-                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
-            }
+            assembleHttpParams(paramValues, headers);
             return agent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         }
     
         private HttpRestResult<String> httpDelete(String path, Map<String, String> headers,
                 Map<String, String> paramValues, String encoding, long readTimeoutMs) throws Exception {
-            Map<String, String> spasHeaders = getSpasHeaders();
             if (headers == null) {
-                headers = spasHeaders;
-            } else {
-                headers.putAll(spasHeaders);
+                headers = new HashMap<String, String>();
             }
-            paramValues.put(Constants.ACCESS_TOKEN, super.getAcessToken());
-            if (StringUtils.isNotBlank(agent.getNamespace()) && !paramValues.containsKey(SpasAdapter.TENANT_KEY)) {
-                paramValues.put(SpasAdapter.TENANT_KEY, agent.getNamespace());
-            }
+            assembleHttpParams(paramValues, headers);
             return agent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         }
         
@@ -1206,20 +1234,32 @@ public class ClientWorker implements Closeable {
         }
     
         try {
+    
+            //assemble headers.
+            Map<String, String> securityHeaders = configTransportClient.getSecurityHeaders();
+            if (securityHeaders != null) {
+                //put security header to param
+                params.putAll(securityHeaders);
+            }
+            Map<String, String> spasHeaders = configTransportClient.getSpasHeaders();
+            if (spasHeaders != null) {
+                //put spasHeader to header.
+                headers.putAll(spasHeaders);
+            }
+            Map<String, String> commonHeader = configTransportClient.getCommonHeader();
+            if (commonHeader != null) {
+                //put common headers
+                headers.putAll(commonHeader);
+            }
+            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(params, configTransportClient.secretKey);
+            if (signHeaders != null) {
+                headers.putAll(signHeaders);
+            }
+            
             // In order to prevent the server from handling the delay of the client's long task,
             // increase the client's read timeout to avoid this problem.
         
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
-            Map<String, String> spasHeaders = configTransportClient.getSpasHeaders();
-            if (headers == null) {
-                headers = spasHeaders;
-            } else {
-                headers.putAll(spasHeaders);
-            }
-            params.put(Constants.ACCESS_TOKEN, configTransportClient.getAcessToken());
-            if (StringUtils.isNotBlank(configTransportClient.tenant) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
-                params.put(SpasAdapter.TENANT_KEY, configTransportClient.tenant);
-            }
             HttpRestResult<String> result = httpAgent
                     .httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, httpAgent.getEncode(),
                             readTimeoutMs);

@@ -94,10 +94,11 @@ public class GrpcConnection extends Connection {
     
     @Override
     public void closeGrapcefully() {
-        //        if (this.channel != null && channel.isOpen()) {
-        //            channel.close();
-        //        }
-        streamObserver.onCompleted();
+        try {
+            streamObserver.onCompleted();
+        } catch (Exception e) {
+            Loggers.RPC_DIGEST.warn("Grpc connection close exception .", e);
+        }
     }
     
 }

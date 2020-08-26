@@ -30,7 +30,6 @@ import com.alibaba.nacos.core.remote.PushFuture;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -110,7 +109,6 @@ public class RsocketConnection extends Connection {
     
         long id = System.currentTimeMillis();
         Loggers.RPC_DIGEST.info("Rsocket sendRequestWithCallBack :" + request);
-        System.out.println("send ..." + id);
         
         Mono<Payload> payloadMono = clientSocket
                 .requestResponse(RsocketUtils.convertRequestToPayload(request, new RequestMeta()));
@@ -118,8 +116,6 @@ public class RsocketConnection extends Connection {
 
             @Override
             public void accept(Payload payload) {
-                System.out.println(
-                        "accept ..." + payload.getDataUtf8() + "," + id + "，  at " + System.currentTimeMillis());
 
                 Response response = RsocketUtils.parseResponseFromPayload(payload);
                 if (response.isSuccess()) {
@@ -135,19 +131,7 @@ public class RsocketConnection extends Connection {
                 callBack.onFail(new Exception(throwable));
             }
         });
-        try {
-            payloadMono.timeout(Duration.ofMillis(500L), new Mono<Payload>() {
-                @Override
-                public void subscribe(CoreSubscriber<? super Payload> actual) {
-                    System.out.println("time out ..." + actual);
-                }
-            });
-            
-        } catch (Exception e) {
-            System.out.println("time out e..." + e.getMessage());
     
-            callBack.onFail(e);
-        }
     }
     
     @Override

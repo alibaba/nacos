@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -71,7 +70,7 @@ public abstract class ConfigTransportClient {
     
     private String accessKey;
     
-    private String secretKey;
+    protected String secretKey;
     
     private volatile StsCredential stsCredential;
     
@@ -90,24 +89,54 @@ public abstract class ConfigTransportClient {
         
     }
     
+    /**
+     * Spas-SecurityToken/Spas-AccessKey.
+     *
+     * @return
+     * @throws Exception
+     */
     protected Map<String, String> getSpasHeaders() throws Exception {
-        Map<String, String> headers = new HashMap<String, String>();
+        
+        Map<String, String> spasHeaders = new HashMap<String, String>();
         
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
             StsCredential stsCredential = getStsCredential();
             accessKey = stsCredential.accessKeyId;
             secretKey = stsCredential.accessKeySecret;
-            headers.put("Spas-SecurityToken", stsCredential.securityToken);
+            spasHeaders.put("Spas-SecurityToken", stsCredential.securityToken);
         }
-        
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
-            headers.put("Spas-AccessKey", accessKey);
-            //TODO           Map<String, String> signHeaders = SpasAdapter.getSignHeaders(paramValues, secretKey);
-            //TODO            if (signHeaders != null) {
-            //TODO                headers.putAll(signHeaders);
-            //TODO            }
+            spasHeaders.put("Spas-AccessKey", accessKey);
         }
+        return spasHeaders;
+    }
+    
+    /**
+     * get accessToken from server of using username/password.
+     *
+     * @return map that contains accessToken , null if acessToken is empty.
+     */
+    protected Map<String, String> getSecurityHeaders() {
+        if (StringUtils.isBlank(securityProxy.getAccessToken())) {
+            return null;
+        }
+        Map<String, String> spasHeaders = new HashMap<String, String>();
+        spasHeaders.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        //TODO        if (StringUtils.isNotBlank(namespaceId) && !params.containsKey(SpasAdapter.TENANT_KEY)) {
+        //            params.put(SpasAdapter.TENANT_KEY, namespaceId);
+        //        }
+        return spasHeaders;
+    }
+    
+    /**
+     * get common header.
+     *
+     * @return
+     */
+    protected Map<String, String> getCommonHeader() {
+        Map<String, String> headers = new HashMap<String, String>();
+        
         String ts = String.valueOf(System.currentTimeMillis());
         String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
         
@@ -202,7 +231,7 @@ public abstract class ConfigTransportClient {
     /**
      * start client.
      */
-    public void start2() {
+    public void start() throws NacosException {
         
         securityProxy.login(serverListManager.getServerUrls());
         
@@ -212,10 +241,11 @@ public abstract class ConfigTransportClient {
                 securityProxy.login(serverListManager.getServerUrls());
             }
         }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-        
+    
+        startIntenal();
     }
     
-    public abstract void start() throws NacosException;
+    public abstract void startIntenal() throws NacosException;
     
     /**
      * get client name.

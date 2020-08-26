@@ -284,7 +284,7 @@ public abstract class RpcClient implements Closeable {
     
     private volatile AtomicBoolean switchingFlag = new AtomicBoolean(false);
     
-    protected void switchServerAsync() {
+    public void switchServerAsync() {
         switchServerAsync(null);
     }
     
@@ -293,12 +293,8 @@ public abstract class RpcClient implements Closeable {
      */
     protected void switchServerAsync(final ServerInfo serverInfoTryOnce) {
         
-        System.out.println("switchServerAsync...1");
-        
         //return if is in switching of other thread.
         if (switchingFlag.get()) {
-            System.out.println("switchServerAsync...2");
-    
             return;
         }
         executorService.submit(new Runnable() {
@@ -312,11 +308,8 @@ public abstract class RpcClient implements Closeable {
                     //only one thread can execute switching meantime.
                     boolean innerLock = switchingLock.tryLock();
                     if (!innerLock) {
-                        System.out.println("switchServerAsync...3");
                         return;
                     }
-                    System.out.println("switchServerAsync...4");
-        
                     switchingFlag.set(true);
                     // loop until start client success.
                     boolean switchSuccess = false;
@@ -389,6 +382,18 @@ public abstract class RpcClient implements Closeable {
     
     protected void clearContextOnResetRequest() {
         // Default do nothing.
+    }
+    
+    /**
+     * get current server.
+     *
+     * @return
+     */
+    public ServerInfo getCurrentServer() {
+        if (this.currentConnetion != null) {
+            return currentConnetion.serverInfo;
+        }
+        return null;
     }
     
     /**
