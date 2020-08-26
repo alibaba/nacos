@@ -29,6 +29,8 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -72,8 +74,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     private final DataStore dataStore;
     
-    private final TaskDispatcher taskDispatcher;
-    
     private final Serializer serializer;
     
     private final ServerMemberManager memberManager;
@@ -81,6 +81,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private final SwitchDomain switchDomain;
     
     private final GlobalConfig globalConfig;
+    
+    private final DistroProtocol distroProtocol;
     
     private boolean initialized = false;
     
@@ -92,16 +94,16 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     
-    public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, TaskDispatcher taskDispatcher,
-            Serializer serializer, ServerMemberManager memberManager, SwitchDomain switchDomain,
-            GlobalConfig globalConfig) {
+    public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, Serializer serializer,
+            ServerMemberManager memberManager, SwitchDomain switchDomain, GlobalConfig globalConfig) {
         this.distroMapper = distroMapper;
         this.dataStore = dataStore;
-        this.taskDispatcher = taskDispatcher;
         this.serializer = serializer;
         this.memberManager = memberManager;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
+        this.distroProtocol = new DistroProtocol(memberManager, new DistroDataStorageImpl(dataStore, distroMapper),
+                new DistroHttpAgent());
     }
     
     @PostConstruct
@@ -157,7 +159,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
-        taskDispatcher.addTask(key);
+        distroProtocol.sync(new DistroKey(key, ""), ApplyAction.CHANGE);
     }
     
     @Override
