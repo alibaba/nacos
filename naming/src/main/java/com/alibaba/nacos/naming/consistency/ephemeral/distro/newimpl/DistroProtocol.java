@@ -25,9 +25,6 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.event.DistroTaskRetryEvent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -43,16 +40,9 @@ public class DistroProtocol extends Subscriber<DistroTaskRetryEvent> {
     
     private final DistroComponentHolder distroComponentHolder;
     
-    public DistroProtocol(ServerMemberManager memberManager, DistroDataStorage distroDataStorage,
-            DistroTransportAgent distroTransportAgent) {
+    public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder) {
         this.memberManager = memberManager;
-        this.distroComponentHolder = new DistroComponentHolder();
-        this.distroComponentHolder.setDataStorage(distroDataStorage);
-        this.distroComponentHolder.setTransportAgent(distroTransportAgent);
-        this.distroComponentHolder.setDelayTaskExecuteEngine(new DistroDelayTaskExecuteEngine());
-        DistroDelayTaskProcessor delayTaskProcessor = new DistroDelayTaskProcessor(distroComponentHolder);
-        this.distroComponentHolder.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
-        this.distroComponentHolder.setExecuteWorkersManager(new DistroExecuteWorkersManager());
+        this.distroComponentHolder = distroComponentHolder;
         startVerifyTask();
         NotifyCenter.registerSubscriber(this);
     }

@@ -46,9 +46,13 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     @Override
     public DistroData getDistroData(DistroKey distroKey) {
-        Datum datum = dataStore.get(distroKey.getResourceKey());
         Map<String, Datum> result = new HashMap<>(1);
-        result.put(distroKey.getResourceKey(), datum);
+        if (distroKey instanceof DistroHttpCombinedKey) {
+            result = dataStore.batchGet(((DistroHttpCombinedKey) distroKey).getActualResourceTypes());
+        } else {
+            Datum datum = dataStore.get(distroKey.getResourceKey());
+            result.put(distroKey.getResourceKey(), datum);
+        }
         byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
         return new DistroData(distroKey, dataContent);
     }

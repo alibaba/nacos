@@ -29,8 +29,11 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -102,8 +105,18 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         this.memberManager = memberManager;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
-        this.distroProtocol = new DistroProtocol(memberManager, new DistroDataStorageImpl(dataStore, distroMapper),
-                new DistroHttpAgent());
+        this.distroProtocol = new DistroProtocol(memberManager, initDistroComponentHolder());
+    }
+    
+    private DistroComponentHolder initDistroComponentHolder() {
+        DistroComponentHolder distroComponentHolder = new DistroComponentHolder();
+        distroComponentHolder.setDataStorage(new DistroDataStorageImpl(dataStore, distroMapper));
+        distroComponentHolder.setTransportAgent(new DistroHttpAgent());
+        distroComponentHolder.setDelayTaskExecuteEngine(new DistroHttpDelayTaskExecuteEngine());
+        DistroDelayTaskProcessor delayTaskProcessor = new DistroDelayTaskProcessor(distroComponentHolder);
+        distroComponentHolder.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
+        distroComponentHolder.setExecuteWorkersManager(new DistroExecuteWorkersManager());
+        return distroComponentHolder;
     }
     
     @PostConstruct
