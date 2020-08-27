@@ -134,7 +134,6 @@ public class DistroFilter implements Filter {
                 
                 final String targetServer = distroMapper.mapSrv(groupedServiceName);
                 
-                //                List<String> headerList = new ArrayList<>(16);
                 Header header = Header.newInstance();
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {
@@ -144,8 +143,8 @@ public class DistroFilter implements Filter {
                 
                 final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
                 final Map<String, String> paramsValue = HttpUtils.translateParameterMap(req.getParameterMap());
-                HttpClientConfig httpConfig = HttpClientConfig.builder().setReadTimeOutMillis(PROXY_CONNECT_TIMEOUT)
-                        .setConTimeOutMillis(PROXY_READ_TIMEOUT).build();
+                HttpClientConfig httpConfig = HttpClientConfig.builder().setReadTimeOutMillis(PROXY_READ_TIMEOUT)
+                        .setConTimeOutMillis(PROXY_CONNECT_TIMEOUT).build();
                 
                 RestResult<String> result = nacosRestTemplate.exchangeForm("http://" + targetServer + req.getRequestURI(), httpConfig, header,
                         Query.newInstance().initParams(paramsValue), body,  req.getMethod(), String.class);

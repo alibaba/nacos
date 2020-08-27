@@ -66,7 +66,7 @@ public class NamingProxy {
     
             header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
             header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-            header.addParam("Connection", "Keep-Alive");
+            header.addParam(HttpHeaderConsts.CONNECTION, "Keep-Alive");
             String url = "http://" + server + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer();
             
@@ -143,7 +143,7 @@ public class NamingProxy {
         
         throw new IOException("failed to req API: " + "http://" + server + ApplicationUtils.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: " + result.getCode() + " msg: "
-                + result.getData());
+                + result.getMessage());
     }
     
     /**
@@ -317,7 +317,7 @@ public class NamingProxy {
             
             throw new IOException("failed to req API:" + "http://" + curServer + ApplicationUtils.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:" + result.getCode() + " msg: "
-                    + result.getData());
+                    + result.getMessage());
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }

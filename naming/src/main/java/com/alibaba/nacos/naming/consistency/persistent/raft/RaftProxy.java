@@ -81,7 +81,7 @@ public class RaftProxy {
                 result = restTemplate.get(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
                 break;
             case POST:
-                result = restTemplate.postForm(url, Header.EMPTY, Query.EMPTY, params, String.class);
+                result = restTemplate.postForm(url, Header.EMPTY, params, String.class);
                 break;
             case DELETE:
                 result = restTemplate.delete(url, Header.EMPTY, Query.newInstance().initParams(params), String.class);
