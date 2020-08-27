@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.manager;
+package com.alibaba.nacos.common.task;
 
 /**
- * AbstractTask.
+ * Abstract task which can delay and merge.
  *
  * @author huali
+ * @author xiweng.yy
  */
-public abstract class AbstractTask {
+public abstract class AbstractDelayTask implements NacosTask {
     
     /**
      * Task time interval between twice processing, unit is millisecond.
@@ -38,7 +39,7 @@ public abstract class AbstractTask {
      *
      * @param task task
      */
-    public abstract void merge(AbstractTask task);
+    public abstract void merge(AbstractDelayTask task);
     
     public void setTaskInterval(long interval) {
         this.taskInterval = interval;
@@ -56,11 +57,7 @@ public abstract class AbstractTask {
         return this.lastProcessTime;
     }
     
-    /**
-     * TaskManager judge whether to process current this task, subclass could override and implement the logical codes.
-     *
-     * @return the result whether to process.
-     */
+    @Override
     public boolean shouldProcess() {
         return (System.currentTimeMillis() - this.lastProcessTime >= this.taskInterval);
     }

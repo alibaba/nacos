@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.config.server.service.merge;
 
-import com.alibaba.nacos.config.server.manager.AbstractTask;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 
 /**
  * Represents the task of aggregating data.
  *
  * @author jiuRen
  */
-class MergeDataTask extends AbstractTask {
+class MergeDataTask extends AbstractDelayTask {
     
     MergeDataTask(String dataId, String groupId, String tenant, String clientIp) {
         this(dataId, groupId, tenant, null, clientIp);
@@ -42,7 +42,7 @@ class MergeDataTask extends AbstractTask {
     }
     
     @Override
-    public void merge(AbstractTask task) {
+    public void merge(AbstractDelayTask task) {
     }
     
     public String getId() {
