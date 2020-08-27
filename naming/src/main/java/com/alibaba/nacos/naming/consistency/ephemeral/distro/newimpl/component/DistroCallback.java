@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl;
-
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 
 /**
- * Distro data storage.
+ * Distro callback.
  *
  * @author xiweng.yy
  */
-public interface DistroDataStorage {
+public interface DistroCallback {
     
     /**
-     * Get distro datum.
-     *
-     * @param distroKey key of distro datum
-     * @return need to sync datum
+     * Callback when distro task execute successfully.
      */
-    DistroData getDistroData(DistroKey distroKey);
+    void onSuccess();
     
     /**
-     * Get verify datum.
+     * Callback when distro task execute failed.
      *
-     * @param distroKey key of distro datum
-     * @return verify datum
+     * @param throwable throwable if execute failed caused by exception
      */
-    DistroData getVerifyData(DistroKey distroKey);
+    void onFailed(Throwable throwable);
 }

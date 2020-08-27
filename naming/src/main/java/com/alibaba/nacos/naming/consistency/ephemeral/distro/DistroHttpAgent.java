@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroCallback;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroTransportAgent;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.misc.NamingProxy;
