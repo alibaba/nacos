@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 /**
- * Distro data storage.
+ * Distro http data.
+ *
+ * <p>
+ * Apply for old distro http api. The data content has been deserialize, so there is no need to deserialize again.
+ * </p>
  *
  * @author xiweng.yy
  */
-public interface DistroDataStorage {
+public class DistroHttpData extends DistroData {
     
-    /**
-     * Get distro datum.
-     *
-     * @param distroKey key of distro datum
-     * @return need to sync datum
-     */
-    DistroData getDistroData(DistroKey distroKey);
+    private Object deserializedContent;
     
-    /**
-     * Get verify datum.
-     *
-     * @return verify datum
-     */
-    DistroData getVerifyData();
+    public Object getDeserializedContent() {
+        return deserializedContent;
+    }
+    
+    public void setDeserializedContent(Object deserializedContent) {
+        this.deserializedContent = deserializedContent;
+    }
 }

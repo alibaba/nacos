@@ -74,7 +74,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 @DependsOn("ProtocolManager")
 @org.springframework.stereotype.Service("distroConsistencyService")
-public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
+public class DistroConsistencyServiceImpl implements EphemeralConsistencyService, DistroDataProcessor {
     
     private final DistroMapper distroMapper;
     
@@ -364,6 +364,27 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 dataStore.put(entry.getKey(), entry.getValue());
             }
         }
+        return true;
+    }
+    
+    @Override
+    public void processData(DistroData distroData) {
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        Datum<Instances> datum = (Datum<Instances>) distroHttpData.getDeserializedContent();
+        onPut(datum.key, datum.value);
+    }
+    
+    @Override
+    public String processType() {
+        return KeyBuilder.INSTANCE_LIST_KEY_PREFIX;
+    }
+    
+    @Override
+    public boolean processVerifyData(DistroData distroData) {
+        DistroHttpData distroHttpData = (DistroHttpData) distroData;
+        String targetServer = distroData.getDistroKey().getTargetServer();
+        Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
+        onReceiveChecksums(verifyData, targetServer);
         return true;
     }
     

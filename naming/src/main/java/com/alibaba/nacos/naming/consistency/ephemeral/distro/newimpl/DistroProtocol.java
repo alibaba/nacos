@@ -20,6 +20,8 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
@@ -79,5 +81,35 @@ public class DistroProtocol {
                 Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
             }
         }
+    }
+    
+    /**
+     * Receive synced distro data, find processor to process.
+     *
+     * @param distroData Received data
+     */
+    public void onReceive(DistroData distroData) {
+        String resourceType = distroData.getDistroKey().getResourceType();
+        DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
+        if (null == dataProcessor) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find data process for receive data {}", resourceType);
+            return;
+        }
+        dataProcessor.processData(distroData);
+    }
+    
+    /**
+     * Receive verify data, find processor to process.
+     *
+     * @param distroData verify data
+     */
+    public void onVerify(DistroData distroData) {
+        String resourceType = distroData.getDistroKey().getResourceType();
+        DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
+        if (null == dataProcessor) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find verify data process for receive data {}", resourceType);
+            return;
+        }
+        dataProcessor.processVerifyData(distroData);
     }
 }
