@@ -242,6 +242,7 @@ public final class HttpUtils {
             return pre;
         }
         pre = now;
+        now = URLEncoder.encode(now, encode);
         now = URLDecoder.decode(now, encode);
         return innerDecode(pre, now, encode);
     }
