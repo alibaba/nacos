@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Distro http key.
@@ -29,10 +30,12 @@ import java.util.Objects;
  */
 public class DistroHttpCombinedKey extends DistroKey {
     
+    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+    
     private final List<String> actualResourceTypes = new LinkedList<>();
     
     public DistroHttpCombinedKey(String resourceType, String targetServer) {
-        super(DistroHttpCombinedKey.class.getSimpleName(), resourceType, targetServer);
+        super(DistroHttpCombinedKey.getSequenceKey(), resourceType, targetServer);
     }
     
     public List<String> getActualResourceTypes() {
@@ -64,6 +67,14 @@ public class DistroHttpCombinedKey extends DistroKey {
     
     @Override
     public String toString() {
-        return "DistroHttpCombinedKey{" + "actualResourceTypes=" + actualResourceTypes + "} to " + getTargetServer();
+        return getResourceKey() + "{" + "actualResourceTypes=" + actualResourceTypes + "} to " + getTargetServer();
+    }
+    
+    public static String getSequenceKey() {
+        return DistroHttpCombinedKey.class.getSimpleName() + "-" + SEQUENCE.get();
+    }
+    
+    public static void incrementSequence() {
+        SEQUENCE.incrementAndGet();
     }
 }

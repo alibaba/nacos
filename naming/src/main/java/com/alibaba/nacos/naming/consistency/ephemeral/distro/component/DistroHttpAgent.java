@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroCallback;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroTransportAgent;

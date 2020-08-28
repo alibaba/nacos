@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 
 /**
@@ -42,23 +42,20 @@ public class DistroHttpDelayTaskProcessor implements NacosTaskProcessor {
     
     private final GlobalConfig globalConfig;
     
-    private final DistroDelayTaskExecuteEngine distroDelayTaskExecuteEngine;
+    private final DistroTaskEngineHolder distroTaskEngineHolder;
     
-    public DistroHttpDelayTaskProcessor(GlobalConfig globalConfig, DistroDelayTaskExecuteEngine distroDelayTaskExecuteEngine) {
+    public DistroHttpDelayTaskProcessor(GlobalConfig globalConfig, DistroTaskEngineHolder distroTaskEngineHolder) {
         this.globalConfig = globalConfig;
-        this.distroDelayTaskExecuteEngine = distroDelayTaskExecuteEngine;
+        this.distroTaskEngineHolder = distroTaskEngineHolder;
     }
     
     @Override
     public boolean process(AbstractDelayTask task) {
         DistroDelayTask distroDelayTask = (DistroDelayTask) task;
         DistroKey distroKey = distroDelayTask.getDistroKey();
-        DistroKey newKey = new DistroKey(DistroHttpCombinedKeyDelayTask.class.getSimpleName(),
-                DistroHttpCombinedKeyDelayTask.class.getSimpleName(), distroKey.getTargetServer());
-        DistroHttpCombinedKeyDelayTask combinedTask = new DistroHttpCombinedKeyDelayTask(newKey,
-                distroDelayTask.getAction(), globalConfig.getTaskDispatchPeriod() / 2, globalConfig.getBatchSyncKeyCount());
-        combinedTask.getActualResourceKeys().add(distroKey.getResourceKey());
-        distroDelayTaskExecuteEngine.addTask(newKey, combinedTask);
+        DistroHttpCombinedKeyExecuteTask executeTask = new DistroHttpCombinedKeyExecuteTask(globalConfig,
+                distroTaskEngineHolder.getDelayTaskExecuteEngine(), distroKey, distroDelayTask.getAction());
+        distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, executeTask);
         return true;
     }
 }

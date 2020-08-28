@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.consistency.ephemeral.distro;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,15 +50,16 @@ public class DistroHttpCombinedKeyDelayTask extends DistroDelayTask {
         actualResourceKeys.addAll(((DistroHttpCombinedKeyDelayTask) task).getActualResourceKeys());
         if (actualResourceKeys.size() >= batchSize) {
             this.setLastProcessTime(0);
+            DistroHttpCombinedKey.incrementSequence();
         }
     }
     
     @Override
     public DistroKey getDistroKey() {
         DistroKey taskKey = super.getDistroKey();
-        DistroHttpCombinedKey result = new DistroHttpCombinedKey(taskKey.getResourceType(), taskKey.getTargetServer());
+        DistroHttpCombinedKey result = new DistroHttpCombinedKey(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, taskKey.getTargetServer());
+        result.setResourceKey(taskKey.getResourceKey());
         result.getActualResourceTypes().addAll(actualResourceKeys);
-        Loggers.DISTRO.info(result.toString());
         return result;
     }
 }

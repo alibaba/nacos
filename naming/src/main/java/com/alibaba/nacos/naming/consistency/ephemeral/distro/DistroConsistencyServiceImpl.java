@@ -29,10 +29,14 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKeyTaskFailedHandler;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpDelayTaskProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDataStorageImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroHttpAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -97,26 +101,28 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
     
     public DistroConsistencyServiceImpl(DistroMapper distroMapper, DataStore dataStore, Serializer serializer,
-            ServerMemberManager memberManager, SwitchDomain switchDomain, GlobalConfig globalConfig) {
+            ServerMemberManager memberManager, SwitchDomain switchDomain, GlobalConfig globalConfig,
+            DistroProtocol distroProtocol) {
         this.distroMapper = distroMapper;
         this.dataStore = dataStore;
         this.serializer = serializer;
         this.memberManager = memberManager;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
-        this.distroProtocol = new DistroProtocol(memberManager, initDistroComponentHolder());
+        this.distroProtocol = distroProtocol;
+        registerDistroComponent();
     }
     
-    private DistroComponentHolder initDistroComponentHolder() {
-        DistroComponentHolder result = new DistroComponentHolder();
-        result.setDataStorage(new DistroDataStorageImpl(dataStore, distroMapper));
-        result.setTransportAgent(new DistroHttpAgent());
-        DistroDelayTaskProcessor delayTaskProcessor = new DistroDelayTaskProcessor(result);
-        result.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
-        result.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
-                new DistroHttpDelayTaskProcessor(globalConfig, result.getDelayTaskExecuteEngine()));
-        result.setFailedTaskHandler(new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, result));
-        return result;
+    private void registerDistroComponent() {
+        DistroComponentHolder componentHolder = ApplicationUtils.getBean(DistroComponentHolder.class);
+        DistroTaskEngineHolder taskEngineHolder = ApplicationUtils.getBean(DistroTaskEngineHolder.class);
+        componentHolder.registerDataStorage(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                new DistroDataStorageImpl(dataStore, distroMapper));
+        componentHolder.registerTransportAgent(KeyBuilder.INSTANCE_LIST_KEY_PREFIX, new DistroHttpAgent());
+        componentHolder.registerFailedTaskHandler(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
+        taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                new DistroHttpDelayTaskProcessor(globalConfig, taskEngineHolder));
     }
     
     @PostConstruct

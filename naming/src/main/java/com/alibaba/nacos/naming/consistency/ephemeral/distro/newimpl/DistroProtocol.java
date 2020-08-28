@@ -21,25 +21,32 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.stereotype.Component;
 
 /**
  * Distro protocol.
  *
  * @author xiweng.yy
  */
+@Component
 public class DistroProtocol {
     
     private final ServerMemberManager memberManager;
     
     private final DistroComponentHolder distroComponentHolder;
     
-    public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder) {
+    private final DistroTaskEngineHolder distroTaskEngineHolder;
+    
+    public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
+            DistroTaskEngineHolder distroTaskEngineHolder) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
+        this.distroTaskEngineHolder = distroTaskEngineHolder;
         startVerifyTask();
     }
     
@@ -67,7 +74,7 @@ public class DistroProtocol {
         for (Member each : memberManager.allMembersWithoutSelf()) {
             DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(), each.getAddress());
             DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
-            distroComponentHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
+            distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, each.getAddress());
             }

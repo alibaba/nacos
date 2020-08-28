@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execu
 
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -40,9 +41,10 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     public void run() {
         Loggers.DISTRO.info("[DISTRO-START] {}", toString());
         try {
-            DistroData distroData = distroComponentHolder.getDataStorage().getDistroData(getDistroKey());
+            String type = getDistroKey().getResourceType();
+            DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
             distroData.setType(ApplyAction.CHANGE);
-            boolean result = distroComponentHolder.getTransportAgent().syncData(distroData, getDistroKey().getTargetServer());
+            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
             if (!result) {
                 handleFailedTask();
             }
@@ -54,11 +56,13 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     }
     
     private void handleFailedTask() {
-        if (null == distroComponentHolder.getFailedTaskHandler()) {
-            Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", getDistroKey().getResourceType());
+        String type = getDistroKey().getResourceType();
+        DistroFailedTaskHandler failedTaskHandler = distroComponentHolder.findFailedTaskHandler(type);
+        if (null == failedTaskHandler) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
             return;
         }
-        distroComponentHolder.getFailedTaskHandler().retry(getDistroKey(), ApplyAction.CHANGE);
+        failedTaskHandler.retry(getDistroKey(), ApplyAction.CHANGE);
     }
     
     @Override

@@ -49,16 +49,27 @@ public class DistroVerifyTask implements Runnable {
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO.debug("server list is: {}", targetServer);
             }
-            DistroData distroData = distroComponentHolder.getDataStorage().getVerifyData(new DistroKey());
-            if (null == distroData) {
-                return;
-            }
-            distroData.setType(ApplyAction.VERIFY);
-            for (Member member : targetServer) {
-                distroComponentHolder.getTransportAgent().syncVerifyData(distroData, member.getAddress());
+            for (String each : distroComponentHolder.getDataStorageTypes()) {
+                verifyForDataStorage(each, targetServer);
             }
         } catch (Exception e) {
             Loggers.DISTRO.error("[DISTRO-FAILED] verify task failed.", e);
+        }
+    }
+    
+    private void verifyForDataStorage(String type, List<Member> targetServer) {
+        DistroData distroData = distroComponentHolder.findDataStorage(type).getVerifyData(new DistroKey());
+        if (null == distroData) {
+            return;
+        }
+        distroData.setType(ApplyAction.VERIFY);
+        for (Member member : targetServer) {
+            try {
+                distroComponentHolder.findTransportAgent(type).syncVerifyData(distroData, member.getAddress());
+            } catch (Exception e) {
+                Loggers.DISTRO.error(String
+                        .format("[DISTRO-FAILED] verify data for type %s to %s failed.", type, member.getAddress()), e);
+            }
         }
     }
 }

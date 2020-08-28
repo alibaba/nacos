@@ -16,68 +16,51 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 
-import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Distro component holder.
  *
  * @author xiweng.yy
  */
+@Component
 public class DistroComponentHolder {
     
-    private DistroTransportAgent transportAgent;
+    private final Map<String, DistroTransportAgent> transportAgentMap = new HashMap<>();
     
-    private DistroDataStorage dataStorage;
+    private final Map<String, DistroDataStorage> dataStorageMap = new HashMap<>();
     
-    private DistroFailedTaskHandler failedTaskHandler;
+    private final Map<String, DistroFailedTaskHandler> failedTaskHandlerMap = new HashMap<>();
     
-    private DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
-    
-    private DistroExecuteWorkersManager executeWorkersManager = new DistroExecuteWorkersManager();
-    
-    public DistroTransportAgent getTransportAgent() {
-        return transportAgent;
+    public DistroTransportAgent findTransportAgent(String type) {
+        return transportAgentMap.get(type);
     }
     
-    public void setTransportAgent(DistroTransportAgent transportAgent) {
-        this.transportAgent = transportAgent;
+    public void registerTransportAgent(String type, DistroTransportAgent transportAgent) {
+        transportAgentMap.put(type, transportAgent);
     }
     
-    public DistroDataStorage getDataStorage() {
-        return dataStorage;
+    public DistroDataStorage findDataStorage(String type) {
+        return dataStorageMap.get(type);
     }
     
-    public void setDataStorage(DistroDataStorage dataStorage) {
-        this.dataStorage = dataStorage;
+    public void registerDataStorage(String type, DistroDataStorage dataStorage) {
+        dataStorageMap.put(type, dataStorage);
     }
     
-    public DistroFailedTaskHandler getFailedTaskHandler() {
-        return failedTaskHandler;
+    public Set<String> getDataStorageTypes() {
+        return dataStorageMap.keySet();
     }
     
-    public void setFailedTaskHandler(DistroFailedTaskHandler failedTaskHandler) {
-        this.failedTaskHandler = failedTaskHandler;
+    public DistroFailedTaskHandler findFailedTaskHandler(String type) {
+        return failedTaskHandlerMap.get(type);
     }
     
-    public DistroDelayTaskExecuteEngine getDelayTaskExecuteEngine() {
-        return delayTaskExecuteEngine;
-    }
-    
-    public void setDelayTaskExecuteEngine(DistroDelayTaskExecuteEngine delayTaskExecuteEngine) {
-        this.delayTaskExecuteEngine = delayTaskExecuteEngine;
-    }
-    
-    public DistroExecuteWorkersManager getExecuteWorkersManager() {
-        return executeWorkersManager;
-    }
-    
-    public void setExecuteWorkersManager(DistroExecuteWorkersManager executeWorkersManager) {
-        this.executeWorkersManager = executeWorkersManager;
-    }
-    
-    public void registerNacosTaskProcessor(Object key, NacosTaskProcessor nacosTaskProcessor) {
-        this.delayTaskExecuteEngine.addProcessor(key, nacosTaskProcessor);
+    public void registerFailedTaskHandler(String type, DistroFailedTaskHandler failedTaskHandler) {
+        failedTaskHandlerMap.put(type, failedTaskHandler);
     }
 }

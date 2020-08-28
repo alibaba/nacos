@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroSyncChangeTask;
 
 /**
@@ -30,9 +31,13 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execut
  */
 public class DistroDelayTaskProcessor implements NacosTaskProcessor {
     
+    private final DistroTaskEngineHolder distroTaskEngineHolder;
+    
     private final DistroComponentHolder distroComponentHolder;
     
-    public DistroDelayTaskProcessor(DistroComponentHolder distroComponentHolder) {
+    public DistroDelayTaskProcessor(DistroTaskEngineHolder distroTaskEngineHolder,
+            DistroComponentHolder distroComponentHolder) {
+        this.distroTaskEngineHolder = distroTaskEngineHolder;
         this.distroComponentHolder = distroComponentHolder;
     }
     
@@ -45,7 +50,7 @@ public class DistroDelayTaskProcessor implements NacosTaskProcessor {
         DistroKey distroKey = distroDelayTask.getDistroKey();
         if (ApplyAction.CHANGE.equals(distroDelayTask.getAction())) {
             DistroSyncChangeTask syncChangeTask = new DistroSyncChangeTask(distroKey, distroComponentHolder);
-            distroComponentHolder.getExecuteWorkersManager().dispatch(distroKey, syncChangeTask);
+            distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, syncChangeTask);
             return true;
         }
         return false;
