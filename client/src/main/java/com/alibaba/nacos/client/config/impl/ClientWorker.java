@@ -568,7 +568,7 @@ public class ClientWorker implements Closeable {
                         }
                     }
                 }
-            
+    
             });
         
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
@@ -593,7 +593,7 @@ public class ClientWorker implements Closeable {
                 @Override
                 public String genNextServer() {
                     return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
-                
+    
                 }
             
                 @Override
@@ -717,7 +717,7 @@ public class ClientWorker implements Closeable {
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
                         if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
-                    
+    
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedGroupKeys())) {
                                 for (String groupKey : configChangeBatchListenResponse.getChangedGroupKeys()) {
                                     refreshContentAndCheck(groupKey);
@@ -746,7 +746,7 @@ public class ClientWorker implements Closeable {
                                 ClientWorker.this.removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
                             }
                         }
-                
+    
                     } catch (Exception e) {
                         LOGGER.error("async remove listen config change error ", e);
                     }
@@ -769,7 +769,7 @@ public class ClientWorker implements Closeable {
         }
     
         /**
-         * @param caches
+         * @param caches caches to build config string.
          * @return
          */
         private List<String> buildConfigStrs(List<CacheData> caches) {
@@ -786,23 +786,23 @@ public class ClientWorker implements Closeable {
                     listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
                     listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
                 }
-            
+    
                 if (index >= 3000) {
                     configStrings.add(listenConfigsBuilder.toString());
                     listenConfigsBuilder = new StringBuilder();
                     index = 0;
                 }
             }
-        
+    
             if (listenConfigsBuilder.length() > 0) {
                 configStrings.add(listenConfigsBuilder.toString());
-            
+        
             }
             return configStrings;
         }
     
         /**
-         * @param caches
+         * @param caches caches to build config string.
          * @return
          */
         private String buildConfigStr(List<CacheData> caches) {
@@ -817,9 +817,9 @@ public class ClientWorker implements Closeable {
                     listenConfigsBuilder.append(cache.getMd5()).append(WORD_SEPARATOR);
                     listenConfigsBuilder.append(cache.getTenant()).append(LINE_SEPARATOR);
                 }
-            
+    
             }
-        
+    
             return listenConfigsBuilder.toString();
         }
         
@@ -878,6 +878,13 @@ public class ClientWorker implements Closeable {
         }
     
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
+            try {
+                request.putAllHeader(super.getSecurityHeaders());
+                request.putAllHeader(super.getSpasHeaders());
+            } catch (Exception e) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
+            }
+            
             JsonObject asJsonObject1 = new Gson().toJsonTree(request).getAsJsonObject();
             asJsonObject1.remove("headers");
             asJsonObject1.remove("requestId");

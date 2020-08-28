@@ -61,8 +61,8 @@ public class GrpcClient extends RpcClient {
     /**
      * Empty constructor.
      */
-    public GrpcClient() {
-        super();
+    public GrpcClient(String name) {
+        super(name);
     }
     
     /**
@@ -89,10 +89,8 @@ public class GrpcClient extends RpcClient {
         }
     }
     
-    
     /**
      * shutdown a  channel.
-     *
      * @param managedChannel channel to be shutdown.
      */
     private void shuntDownChannel(ManagedChannel managedChannel) {

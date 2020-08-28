@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.HashMap;
@@ -50,7 +49,10 @@ public abstract class Request implements Cloneable {
      * @param headers headers to put.
      */
     public void putAllHeader(Map<String, String> headers) {
-        headers.putAll(headers);
+        if (headers == null || headers.isEmpty()) {
+            return;
+        }
+        this.headers.putAll(headers);
     }
     
     /**

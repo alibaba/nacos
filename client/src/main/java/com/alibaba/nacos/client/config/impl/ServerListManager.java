@@ -408,12 +408,19 @@ public class ServerListManager implements Closeable {
     }
     
     public String getNextServerAddr() {
-        if (iterator.hasNext()) {
-            return iterator.next();
-        } else {
+        if (iterator == null || !iterator.hasNext()) {
             refreshCurrentServerAddr();
-            return iterator.next();
+            return currentServerAddr;
         }
+        try {
+            String next = iterator.next();
+            return next;
+        } catch (Exception e) {
+            //No nothing.
+        }
+        refreshCurrentServerAddr();
+        return currentServerAddr;
+        
     }
     
     public String getCurrentServerAddr() {

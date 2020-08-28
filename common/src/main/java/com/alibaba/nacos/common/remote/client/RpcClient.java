@@ -71,6 +71,8 @@ public abstract class RpcClient implements Closeable {
     
     protected Map<String, String> labels = new HashMap<String, String>();
     
+    private String name;
+    
     /**
      * listener called where connect status changed.
      */
@@ -81,10 +83,19 @@ public abstract class RpcClient implements Closeable {
      */
     protected List<ServerRequestHandler> serverRequestHandlers = new ArrayList<ServerRequestHandler>();
     
-    public RpcClient() {
+    public RpcClient(String name) {
+        this.name = name;
     }
     
     public RpcClient(ServerListFactory serverListFactory) {
+        this.serverListFactory = serverListFactory;
+        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
+        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor , ServerListFactory ={}",
+                serverListFactory.getClass().getName());
+    }
+    
+    public RpcClient(String name, ServerListFactory serverListFactory) {
+        this(name);
         this.serverListFactory = serverListFactory;
         rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITED);
         LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor , ServerListFactory ={}",
@@ -228,7 +239,8 @@ public abstract class RpcClient implements Closeable {
             try {
                 startUpretyTimes--;
                 ServerInfo serverInfo = nextRpcServer();
-                System.out.println("try to  connect to server on start up,server :" + serverInfo);
+                System.out.println(
+                        String.format("[%s]try to  connect to server on start up,server : %s", name, serverInfo));
                 connectToServer = connectToServer(serverInfo);
             } catch (Exception e) {
                 System.out.println(String.format(
@@ -238,7 +250,7 @@ public abstract class RpcClient implements Closeable {
         }
     
         if (connectToServer != null) {
-            System.out.println("success to connect to server on start up");
+            System.out.println(String.format("[%s]success to connect to server on start up", name));
             this.currentConnetion = connectToServer;
             rpcClientStatus.set(RpcClientStatus.RUNNING);
             eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
@@ -458,7 +470,7 @@ public abstract class RpcClient implements Closeable {
                 exceptionToThrow = e;
             }
             retryTimes--;
-        
+    
         }
         if (exceptionToThrow != null) {
             throw new NacosException(SERVER_ERROR, exceptionToThrow);

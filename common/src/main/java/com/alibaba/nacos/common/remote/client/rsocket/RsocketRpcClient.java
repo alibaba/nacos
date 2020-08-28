@@ -58,6 +58,10 @@ public class RsocketRpcClient extends RpcClient {
     
     private AtomicReference<RSocket> rSocketClient = new AtomicReference<RSocket>();
     
+    public RsocketRpcClient(String name) {
+        super(name);
+    }
+    
     @Override
     public void shutdown() throws NacosException {
         shutDownRsocketClient(rSocketClient.get());

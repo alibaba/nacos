@@ -75,10 +75,10 @@ public class RpcClientFactory {
             if (clientMap.get(clientName) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClient();
+                    moduleClient = new GrpcClient(clientName);
     
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient();
+                    moduleClient = new RsocketRpcClient(clientName);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
@@ -104,10 +104,10 @@ public class RpcClientFactory {
             if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClient();
+                    moduleClient = new GrpcClient(clientName);
                     
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient();
+                    moduleClient = new RsocketRpcClient(clientName);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
