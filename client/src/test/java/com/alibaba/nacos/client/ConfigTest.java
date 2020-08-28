@@ -197,7 +197,7 @@ public class ConfigTest {
                         configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(300L);
+                        Thread.sleep(1000L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -209,7 +209,7 @@ public class ConfigTest {
     
         });
     
-        //th.start();
+        th.start();
         
         Listener listener = new AbstractListener() {
             @Override
@@ -218,29 +218,24 @@ public class ConfigTest {
             }
         };
     
-        for (int i = 0; i < 100; i++) {
-            final int ls = i;
-            System.out.println(configService.getConfig(dataId, group, 3000L));
-        
-        }
-        
-        for (int i = 0; i < 1; i++) {
-            final int ls = i;
-            configService.addListener(dataId, group, new AbstractListener() {
-                @Override
-                public void receiveConfigInfo(String configInfo) {
-                    System.out.println("receiveConfigInfo :" + ls + configInfo);
-                }
-            });
-    
-        }
-    
-        Thread.sleep(10000L);
-    
+        configService.addListener(dataId, group, new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println("receiveConfigInfo :" + configInfo);
+            }
+        });
         for (int i = 0; i < 20; i++) {
-            //configService.removeListener(dataId + i, group, listener);
+            final int ls = i;
+            configService.addListener(dataId + i, group, listener);
+            
         }
-        //System.out.println("remove listens.");
+    
+        Thread.sleep(5000000L);
+        
+        for (int i = 0; i < 20; i++) {
+            configService.removeListener(dataId + i, group, listener);
+        }
+        System.out.println("remove listens.");
         
         Scanner scanner = new Scanner(System.in);
         System.out.println("input content");

@@ -34,6 +34,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -77,8 +78,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
      * @param notifyRequet notifyRequet
      */
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
+    
+        Set<String> clients = new HashSet<>(configChangeListenContext.getListeners(groupKey));
         
-        Set<String> clients = configChangeListenContext.getListeners(groupKey);
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
     

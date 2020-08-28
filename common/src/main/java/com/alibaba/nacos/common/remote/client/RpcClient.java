@@ -407,6 +407,9 @@ public abstract class RpcClient implements Closeable {
         Exception exceptionToThrow = null;
         while (retryTimes > 0) {
             try {
+                if (this.currentConnetion == null) {
+                    throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
+                }
                 Response response = this.currentConnetion.request(request);
                 if (response != null && response instanceof ConnectionUnregisterResponse) {
                     synchronized (this) {
@@ -438,8 +441,28 @@ public abstract class RpcClient implements Closeable {
      * @return
      */
     public void asyncRequest(Request request, FutureCallback<Response> callback) throws NacosException {
-        this.currentConnetion.asyncRequest(request, callback);
-        refereshActiveTimestamp();
+        int retryTimes = 3;
+    
+        Exception exceptionToThrow = null;
+        while (retryTimes > 0) {
+            try {
+                if (this.currentConnetion == null) {
+                    throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "client not connected.");
+                }
+                this.currentConnetion.asyncRequest(request, callback);
+                refereshActiveTimestamp();
+                return;
+            } catch (Exception e) {
+                LoggerUtils.printIfErrorEnabled(LOGGER, "Fail to send request,request={},errorMesssage={}", request,
+                        e.getMessage());
+                exceptionToThrow = e;
+            }
+            retryTimes--;
+        
+        }
+        if (exceptionToThrow != null) {
+            throw new NacosException(SERVER_ERROR, exceptionToThrow);
+        }
     }
     
     /**

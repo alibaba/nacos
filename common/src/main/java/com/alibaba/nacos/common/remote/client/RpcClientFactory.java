@@ -99,7 +99,7 @@ public class RpcClientFactory {
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
         //TODO to be deleted.
-        String clientNameInner = System.currentTimeMillis() + "";
+        String clientNameInner = clientName;
         synchronized (clientMap) {
             if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
