@@ -29,11 +29,10 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -109,14 +108,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
     
     private DistroComponentHolder initDistroComponentHolder() {
-        DistroComponentHolder distroComponentHolder = new DistroComponentHolder();
-        distroComponentHolder.setDataStorage(new DistroDataStorageImpl(dataStore, distroMapper));
-        distroComponentHolder.setTransportAgent(new DistroHttpAgent());
-        distroComponentHolder.setDelayTaskExecuteEngine(new DistroHttpDelayTaskExecuteEngine());
-        DistroDelayTaskProcessor delayTaskProcessor = new DistroDelayTaskProcessor(distroComponentHolder);
-        distroComponentHolder.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
-        distroComponentHolder.setExecuteWorkersManager(new DistroExecuteWorkersManager());
-        return distroComponentHolder;
+        DistroComponentHolder result = new DistroComponentHolder();
+        result.setDataStorage(new DistroDataStorageImpl(dataStore, distroMapper));
+        result.setTransportAgent(new DistroHttpAgent());
+        DistroDelayTaskProcessor delayTaskProcessor = new DistroDelayTaskProcessor(result);
+        result.getDelayTaskExecuteEngine().setDefaultTaskProcessor(delayTaskProcessor);
+        result.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
+                new DistroHttpDelayTaskProcessor(globalConfig, result.getDelayTaskExecuteEngine()));
+        result.setFailedTaskHandler(new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, result));
+        return result;
     }
     
     @PostConstruct
@@ -172,7 +172,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
-        distroProtocol.sync(new DistroKey(key, ""), ApplyAction.CHANGE);
+        distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE,
+                globalConfig.getTaskDispatchPeriod() / 2);
     }
     
     @Override

@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute;
 
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.event.DistroTaskRetryEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 /**
@@ -46,21 +44,25 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             distroData.setType(ApplyAction.CHANGE);
             boolean result = distroComponentHolder.getTransportAgent().syncData(distroData, getDistroKey().getTargetServer());
             if (!result) {
-                retrySyncChange();
+                handleFailedTask();
             }
             Loggers.DISTRO.info("[DISTRO-END] {} result: {}", toString(), result);
         } catch (Exception e) {
             Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", e);
-            retrySyncChange();
+            handleFailedTask();
         }
     }
     
-    private void retrySyncChange() {
-        NotifyCenter.publishEvent(new DistroTaskRetryEvent(getDistroKey(), ApplyAction.CHANGE));
+    private void handleFailedTask() {
+        if (null == distroComponentHolder.getFailedTaskHandler()) {
+            Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", getDistroKey().getResourceType());
+            return;
+        }
+        distroComponentHolder.getFailedTaskHandler().retry(getDistroKey(), ApplyAction.CHANGE);
     }
     
     @Override
     public String toString() {
-        return "DistroSyncChangeTask for " + getDistroKey().toString() + " to " + getDistroKey().getTargetServer();
+        return "DistroSyncChangeTask for " + getDistroKey().toString();
     }
 }

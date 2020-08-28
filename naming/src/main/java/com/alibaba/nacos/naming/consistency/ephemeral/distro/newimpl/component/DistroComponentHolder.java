@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component;
 
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTaskExecuteEngine;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.execute.DistroExecuteWorkersManager;
 
@@ -30,9 +31,11 @@ public class DistroComponentHolder {
     
     private DistroDataStorage dataStorage;
     
-    private DistroDelayTaskExecuteEngine delayTaskExecuteEngine;
+    private DistroFailedTaskHandler failedTaskHandler;
     
-    private DistroExecuteWorkersManager executeWorkersManager;
+    private DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
+    
+    private DistroExecuteWorkersManager executeWorkersManager = new DistroExecuteWorkersManager();
     
     public DistroTransportAgent getTransportAgent() {
         return transportAgent;
@@ -50,6 +53,14 @@ public class DistroComponentHolder {
         this.dataStorage = dataStorage;
     }
     
+    public DistroFailedTaskHandler getFailedTaskHandler() {
+        return failedTaskHandler;
+    }
+    
+    public void setFailedTaskHandler(DistroFailedTaskHandler failedTaskHandler) {
+        this.failedTaskHandler = failedTaskHandler;
+    }
+    
     public DistroDelayTaskExecuteEngine getDelayTaskExecuteEngine() {
         return delayTaskExecuteEngine;
     }
@@ -64,5 +75,9 @@ public class DistroComponentHolder {
     
     public void setExecuteWorkersManager(DistroExecuteWorkersManager executeWorkersManager) {
         this.executeWorkersManager = executeWorkersManager;
+    }
+    
+    public void registerNacosTaskProcessor(Object key, NacosTaskProcessor nacosTaskProcessor) {
+        this.delayTaskExecuteEngine.addProcessor(key, nacosTaskProcessor);
     }
 }
