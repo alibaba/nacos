@@ -25,7 +25,9 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import org.junit.After;
@@ -41,6 +43,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -69,19 +72,28 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     @Mock
     private RecordListener<Instances> recordListener;
     
+    @Mock
+    private DistroComponentHolder distroComponentHolder;
+    
+    @Mock
+    private DistroTaskEngineHolder distroTaskEngineHolder;
+    
     private Map<String, ConcurrentLinkedQueue<RecordListener>> listeners;
     
     private Instances instances;
     
     @Before
     public void setUp() throws Exception {
+        doReturn(distroComponentHolder).when(context).getBean(DistroComponentHolder.class);
+        doReturn(distroTaskEngineHolder).when(context).getBean(DistroTaskEngineHolder.class);
         distroConsistencyService = new DistroConsistencyServiceImpl(distroMapper, dataStore, serializer,
-                serverMemberManager, switchDomain, globalConfig);
+                serverMemberManager, switchDomain, globalConfig, distroProtocol);
         ReflectionTestUtils.setField(distroConsistencyService, "notifier", notifier);
         ReflectionTestUtils.setField(distroConsistencyService, "distroProtocol", distroProtocol);
         listeners = (Map<String, ConcurrentLinkedQueue<RecordListener>>) ReflectionTestUtils
                 .getField(distroConsistencyService, "listeners");
         instances = new Instances();
+        
     }
     
     @After
@@ -93,7 +105,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.listen(key, recordListener);
         distroConsistencyService.put(key, instances);
-        verify(distroProtocol).sync(new DistroKey(key, ""), ApplyAction.CHANGE);
+        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE, 1000L);
         verify(notifier).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
@@ -102,7 +114,7 @@ public class DistroConsistencyServiceImplTest extends BaseTest {
     public void testPutWithoutListener() throws NacosException {
         String key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
         distroConsistencyService.put(key, instances);
-        verify(distroProtocol).sync(new DistroKey(key, ""), ApplyAction.CHANGE);
+        verify(distroProtocol).sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), ApplyAction.CHANGE, 1000L);
         verify(notifier, never()).addTask(key, ApplyAction.CHANGE);
         verify(dataStore).put(eq(key), any(Datum.class));
     }
