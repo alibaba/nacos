@@ -44,7 +44,7 @@ import java.security.NoSuchAlgorithmException;
 public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @Override
-    public final NacosRestTemplate createNacosRestTemplate() {
+    public NacosRestTemplate createNacosRestTemplate() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
         final JdkHttpClientRequest clientRequest = new JdkHttpClientRequest(httpClientConfig);
         
@@ -66,7 +66,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     }
     
     @Override
-    public final NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
+    public NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final RequestConfig requestConfig = getRequestConfig();
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
@@ -76,7 +76,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                         .setUserAgent(originalRequestConfig.getUserAgent()).build()));
     }
     
-    private RequestConfig getRequestConfig() {
+    protected RequestConfig getRequestConfig() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
         return RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                 .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())

@@ -107,7 +107,7 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
      */
     public <T> HttpRestResult<T> getLarge(String url, Header header, Query query, Object body, Type responseType)
             throws Exception {
-        return execute(url, HttpMethod.GET, new RequestHttpEntity(header, query, body), responseType);
+        return execute(url, HttpMethod.GET_LARGE, new RequestHttpEntity(header, query, body), responseType);
     }
     
     /**

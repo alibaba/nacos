@@ -45,6 +45,8 @@ public class NamingProxy {
     
     private static final NacosRestTemplate REST_TEMPLATE = HttpClientManager.getInstance().getNacosRestTemplate();
     
+    private static final NacosRestTemplate APACHE_REST_TEMPLATE = HttpClientManager.getInstance().getApacheRestTemplate();
+    
     private static final String DATA_ON_SYNC_URL = "/distro/datum";
     
     private static final String DATA_GET_URL = "/distro/datum";
@@ -112,7 +114,7 @@ public class NamingProxy {
         params.put("keys", StringUtils.join(keys, ","));
         String url = "http://" + server + ApplicationUtils.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                 + DATA_GET_URL;
-        RestResult<String> result = REST_TEMPLATE
+        RestResult<String> result = APACHE_REST_TEMPLATE
                 .getLarge(url, Header.newInstance(), Query.EMPTY, params, String.class);
         
         if (result.ok()) {

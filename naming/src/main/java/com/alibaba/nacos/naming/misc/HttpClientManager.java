@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpClientFactory;
+import com.alibaba.nacos.common.http.HttpComponentsHttpClientFactory;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
@@ -43,6 +44,8 @@ public class HttpClientManager implements Closeable {
     
     private static final HttpClientFactory ASYNC_HTTP_CLIENT_FACTORY = new AsyncHttpClientFactory();
     
+    private static final HttpClientFactory APACHE_SYNC_HTTP_CLIENT_FACTORY = new ApacheSyncHttpClientFactory();
+    
     private static class NamingHttpClientManagerInstance {
         
         private static final HttpClientManager INSTANCE = new HttpClientManager();
@@ -56,6 +59,14 @@ public class HttpClientManager implements Closeable {
         return HttpClientBeanHolder.getNacosRestTemplate(SYNC_HTTP_CLIENT_FACTORY);
     }
     
+    /**
+     * Use apache http client to achieve.
+     * @return NacosRestTemplate
+     */
+    public NacosRestTemplate getApacheRestTemplate() {
+        return HttpClientBeanHolder.getNacosRestTemplate(APACHE_SYNC_HTTP_CLIENT_FACTORY);
+    }
+    
     public NacosAsyncRestTemplate getAsyncRestTemplate() {
         return HttpClientBeanHolder.getNacosAsyncRestTemplate(ASYNC_HTTP_CLIENT_FACTORY);
     }
@@ -65,6 +76,7 @@ public class HttpClientManager implements Closeable {
         SRV_LOG.warn("[NamingServerHttpClientManager] Start destroying HTTP-Client");
         try {
             HttpClientBeanHolder.shutdownNacostSyncRest(SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacostSyncRest(APACHE_SYNC_HTTP_CLIENT_FACTORY.getClass().getName());
             HttpClientBeanHolder.shutdownNacosAsyncRest(ASYNC_HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             SRV_LOG.error("[NamingServerHttpClientManager] An exception occurred when the HTTP client was closed : {}",
@@ -100,6 +112,21 @@ public class HttpClientManager implements Closeable {
                     .setMaxRedirects(0).build();
         }
         
+        @Override
+        protected Logger assignLogger() {
+            return SRV_LOG;
+        }
+    }
+    
+    private static class ApacheSyncHttpClientFactory extends HttpComponentsHttpClientFactory {
+    
+        @Override
+        protected HttpClientConfig buildHttpClientConfig() {
+            return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
+                    .setReadTimeOutMillis(TIME_OUT_MILLIS)
+                    .setMaxRedirects(0).build();
+        }
+    
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
