@@ -26,7 +26,7 @@ import org.apache.http.impl.client.HttpClients;
  *
  * @author mai.jh
  */
-public abstract class HttpComponentsHttpClientFactory extends AbstractHttpClientFactory {
+public abstract class AbstractApacheHttpClientFactory extends AbstractHttpClientFactory {
     
     @Override
     public final NacosRestTemplate createNacosRestTemplate() {
