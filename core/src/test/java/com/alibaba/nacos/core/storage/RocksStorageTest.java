@@ -54,7 +54,7 @@ public class RocksStorageTest {
         try {
             RocksStorage storage = RocksStorage.createDefault("test", DIR);
             storage.put("liaochuntao".getBytes(), "liaochuntao".getBytes());
-            storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
+            storage.doSnapshot(Paths.get(DIR, "snapshot").toString());
         } catch (Throwable ex) {
             Assert.fail(ex.getMessage());
         }
@@ -64,7 +64,7 @@ public class RocksStorageTest {
     public void testRocksStorageSnapshotLoad() throws Throwable {
         RocksStorage storage = RocksStorage.createDefault("test", DIR);
         storage.put("liaochuntao".getBytes(), "liaochuntao".getBytes());
-        storage.snapshotSave(Paths.get(DIR, "snapshot").toString());
+        storage.snapshotLoad(Paths.get(DIR, "snapshot").toString());
         storage.shutdown();
         ThreadUtils.sleep(5_000L);
         storage = RocksStorage.createDefault("test", Paths.get(ApplicationUtils.getNacosTmpDir(), "snapshot_load").toString());

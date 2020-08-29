@@ -59,7 +59,7 @@ public class RaftListener implements SmartApplicationListener {
                 self.delExtendVal(GROUP);
                 memberManager.update(self);
             }
-        });
+        }, -2);
     }
     
     @Override
