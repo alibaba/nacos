@@ -58,7 +58,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
     
     private void init() {
-        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion);
+        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
     }
     
     @Override

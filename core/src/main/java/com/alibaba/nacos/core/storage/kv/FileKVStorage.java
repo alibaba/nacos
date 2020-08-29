@@ -38,8 +38,11 @@ public class FileKVStorage implements KvStorage {
     
     private final String baseDir;
     
+    // Ensure that a consistent view exists when implementing file copies
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     
     public FileKVStorage(String baseDir) {
@@ -117,10 +120,7 @@ public class FileKVStorage implements KvStorage {
         readLock.lock();
         try {
             final String fileName = new String(key);
-            File file = Paths.get(baseDir, fileName).toFile();
-            if (file.exists()) {
-                file.delete();
-            }
+            DiskUtils.deleteFile(baseDir, fileName);
         } finally {
             readLock.unlock();
         }
