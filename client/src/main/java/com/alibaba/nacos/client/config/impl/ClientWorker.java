@@ -82,6 +82,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+        checkConfigInfo();
     }
     
     /**
@@ -100,6 +101,7 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group);
             }
         }
+        checkConfigInfo();
     }
     
     /**
@@ -118,6 +120,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+        checkConfigInfo();
     }
     
     /**
@@ -157,6 +160,7 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group, tenant);
             }
         }
+        checkConfigInfo();
     }
     
     private void removeCache(String dataId, String group) {
@@ -418,7 +422,7 @@ public class ClientWorker implements Closeable {
     /**
      * Check config info.
      */
-    public void checkConfigInfo() {
+    private void checkConfigInfo() {
         // Dispatch taskes.
         int listenerSize = cacheMap.get().size();
         // Round up the longingTaskCount.
@@ -569,16 +573,6 @@ public class ClientWorker implements Closeable {
         
         init(properties);
         
-        this.executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-        
         this.executorService = Executors
                 .newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
                     @Override
@@ -590,16 +584,6 @@ public class ClientWorker implements Closeable {
                     }
                 });
         
-        this.executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
     
     private void init(Properties properties) {
@@ -619,7 +603,6 @@ public class ClientWorker implements Closeable {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ThreadUtils.shutdownThreadPool(executorService, LOGGER);
-        ThreadUtils.shutdownThreadPool(executor, LOGGER);
         LOGGER.info("{} do shutdown stop", className);
     }
     
@@ -712,8 +695,6 @@ public class ClientWorker implements Closeable {
     private void setHealthServer(boolean isHealthServer) {
         this.isHealthServer = isHealthServer;
     }
-    
-    final ScheduledExecutorService executor;
     
     final ScheduledExecutorService executorService;
     
