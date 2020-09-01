@@ -21,9 +21,16 @@ CYGWIN*) cygwin=true;;
 Darwin*) darwin=true;;
 OS400*) os400=true;;
 esac
-error_exit ()
-{
-    echo "ERROR: $1 !!"
+error_exit() {
+    echo "ERROR: $1!!"
+    echo "You can also use this command: "
+    lens=$2
+    printf '%0.s#' $(seq 1 ${#lens})
+    printf "####\n"
+    echo "# $2 #"
+    printf '%0.s#' $(seq 1 ${#lens})
+    printf "####\n"
+    printf "Try to solve this problem"
     exit 1
 }
 [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
@@ -47,7 +54,12 @@ if [ -z "$JAVA_HOME" ]; then
     fi
   fi
   if [ -z "$JAVA_HOME" ]; then
-        error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
+    if [ ! -d "$(dirname $(readlink -f $0))/jdk8u262-b10" ]; then
+        error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better !" \
+        "wget  -qO- https://github.com/alibaba/dragonwell8/releases/download/dragonwell-8.4.4_jdk8u262-ga/Alibaba_Dragonwell_8.4.4-GA_Linux_x64.tar.gz | tar -zxvf - -C $(dirname $(readlink -f $0))"
+    else
+        export JAVA_HOME="$(dirname $(readlink -f $0))/jdk8u262-b10"
+    fi
   fi
 fi
 
