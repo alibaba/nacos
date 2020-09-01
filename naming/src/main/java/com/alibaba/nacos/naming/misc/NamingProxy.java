@@ -62,7 +62,16 @@ public class NamingProxy {
      * @param server      server address
      */
     public static void syncCheckSums(Map<String, String> checksumMap, String server) {
-        
+        syncCheckSums(JacksonUtils.toJsonBytes(checksumMap), server);
+    }
+    
+    /**
+     * Synchronize check sums.
+     *
+     * @param checksums checksum map bytes
+     * @param server    server address
+     */
+    public static void syncCheckSums(byte[] checksums, String server) {
         try {
             Header header = Header.newInstance();
     

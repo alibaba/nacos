@@ -95,7 +95,7 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             
             for (String namespace : namespaces) {
                 
-                Map<String, Service> services = serviceManager.getServiceMap(namespace);
+                Map<String, Service> services = serviceManager.chooseServiceMap(namespace);
                 
                 if (services.isEmpty()) {
                     continue;

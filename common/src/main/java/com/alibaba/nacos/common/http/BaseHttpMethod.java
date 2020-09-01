@@ -153,6 +153,9 @@ public enum BaseHttpMethod {
         throw new IllegalArgumentException("Unsupported http method : " + name);
     }
     
+    /**
+     * get Large implemented.
+     */
     public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
         
         public static final String METHOD_NAME = "GET";

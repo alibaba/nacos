@@ -20,7 +20,9 @@ import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
+import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
+import com.alibaba.nacos.common.http.client.request.JdkHttpClientRequest;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
@@ -94,6 +96,9 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     /**
      * get request, may be pulling a lot of data URL request params are expanded using the given query {@link Query},
      * More request parameters can be set via body.
+     *
+     * <p>This method can only be used when HttpClientRequest is implemented by {@link DefaultHttpClientRequest}, note:
+     * {@link JdkHttpClientRequest} Implementation does not support this method.
      *
      * <p>{@code responseType} can be an HttpRestResult or HttpRestResult data {@code T} type.
      *
