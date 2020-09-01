@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.GrpcUtils;
+import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
@@ -213,6 +214,48 @@ public class GrpcClient extends RpcClient {
         });
     }
     
+    private StreamObserver<Payload> bindRequestStream(final BiRequestStreamGrpc.BiRequestStreamStub streamStub) {
+        
+        final StreamObserver<Payload> payloadStreamObserver = streamStub.requestBiStream(new StreamObserver<Payload>() {
+            @Override
+            public void onNext(Payload payload) {
+                LOGGER.debug(" stream server reuqust receive  ,original info :{}", payload.toString());
+                try {
+                    final Request request = (Request) GrpcUtils.parse(payload);
+                    
+                    if (request != null) {
+                        try {
+                            Response response = handleServerRequest(request);
+                            response.setRequestId(request.getRequestId());
+                            sendResponse(response);
+                        } catch (Exception e) {
+                            sendResponse(request.getRequestId(), false);
+                        }
+                    }
+                    
+                } catch (Exception e) {
+                    LOGGER.error("error tp process server push response  :{}",
+                            payload.getBody().getValue().toStringUtf8());
+                }
+            }
+            
+            @Override
+            public void onError(Throwable throwable) {
+                throwable.printStackTrace();
+                System.out.println("on error ,switch server ");
+                switchServerAsync();
+            }
+            
+            @Override
+            public void onCompleted() {
+                System.out.println("onCompleted ,switch server " + this);
+                switchServerAsync();
+            }
+        });
+        
+        return payloadStreamObserver;
+    }
+    
     private void sendResponse(String ackId, boolean success) {
         try {
             PushAckRequest request = PushAckRequest.build(ackId, success);
@@ -253,9 +296,11 @@ public class GrpcClient extends RpcClient {
                 LOGGER.info("success to create a connection to a server.");
                 RequestStreamGrpc.RequestStreamStub requestStreamStubTemp = RequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
-                bindRequestStream(requestStreamStubTemp);
-                GrpcConnection grpcConn = new GrpcConnection(serverInfo);
-    
+                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
+                        .newStub(newChannelStubTemp.getChannel());
+                StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub);
+                GrpcConnection grpcConn = new GrpcConnection(serverInfo, payloadStreamObserver);
+                
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc
                         .newFutureStub(newChannelStubTemp.getChannel());

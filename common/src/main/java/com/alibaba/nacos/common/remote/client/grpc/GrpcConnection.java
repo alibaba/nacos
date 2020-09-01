@@ -35,6 +35,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.Grpc;
 import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.concurrent.ExecutorService;
@@ -69,8 +70,11 @@ public class GrpcConnection extends Connection {
      */
     protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
     
-    public GrpcConnection(RpcClient.ServerInfo serverInfo) {
+    protected StreamObserver<Payload> payloadStreamObserver;
+    
+    public GrpcConnection(RpcClient.ServerInfo serverInfo, StreamObserver<Payload> payloadStreamObserver) {
         super(serverInfo);
+        this.payloadStreamObserver = payloadStreamObserver;
     }
     
     @Override
@@ -90,16 +94,9 @@ public class GrpcConnection extends Connection {
         return response;
     }
     
-    
     public void sendResponse(Response response) {
         Payload convert = GrpcUtils.convert(response);
-        ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(convert);
-        Payload grpcResponse = null;
-        try {
-            grpcResponse = requestFuture.get();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        payloadStreamObserver.onNext(convert);
     }
     
     private Metadata buildMeta() {
