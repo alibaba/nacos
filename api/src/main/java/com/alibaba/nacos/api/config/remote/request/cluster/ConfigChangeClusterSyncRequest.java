@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config.remote.request.cluster;
 
 import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigRequestTypeConstants;
 
 /**
  * config change sync request on clusters.
@@ -48,10 +47,6 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
         return "Y".equalsIgnoreCase(isBeta);
     }
     
-    @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.CONFIG_CHANGE_CLUSTER_SYNC;
-    }
     
     /**
      * Getter method for property <tt>dataId</tt>.

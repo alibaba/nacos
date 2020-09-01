@@ -24,8 +24,4 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class HeartBeatResponse extends Response {
     
-    @Override
-    public String getType() {
-        return ResponseTypeConstants.HEART_BEAT;
-    }
 }

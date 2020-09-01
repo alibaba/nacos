@@ -152,37 +152,36 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         
         @Override
         public void run() {
-            tryTimes++;
             rpcPushService.pushWithCallback(clientId, notifyRequet, new AbstractPushCallBack(500L) {
+                int retryTimes = tryTimes;
                 
                 @Override
                 public void onSuccess() {
-                    Loggers.CORE
-                            .warn("push callback retry success.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                    clientId, tryTimes);
+                    Loggers.CORE.warn("push callback  success.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
+                            retryTimes);
                 }
                 
                 @Override
                 public void onFail(Exception e) {
-                    Loggers.CORE.warn("push callback retry fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                    Loggers.CORE.warn("push callback  fail.dataId={},group={},tenant={},clientId={},tryTimes={}",
                             notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
-                            tryTimes);
-    
+                            retryTimes);
+                    
                     push(RpcPushTask.this);
                 }
                 
                 @Override
                 public void onTimeout() {
-                    Loggers.CORE
-                            .warn("push callback retry timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
-                                    notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(),
-                                    clientId, tryTimes);
+                    Loggers.CORE.warn("push callback  timeout.dataId={},group={},tenant={},clientId={},tryTimes={}",
+                            notifyRequet.getDataId(), notifyRequet.getGroup(), notifyRequet.getTenant(), clientId,
+                            retryTimes);
                     push(RpcPushTask.this);
                 }
                 
             });
-            
+    
+            tryTimes++;
         }
     }
     

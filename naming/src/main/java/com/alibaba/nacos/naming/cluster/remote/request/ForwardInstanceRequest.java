@@ -39,11 +39,6 @@ public class ForwardInstanceRequest extends AbstractClusterRequest {
         this.sourceRequestMeta = sourceRequestMeta;
     }
     
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.FORWARD_INSTANCE;
-    }
-    
     public InstanceRequest getInstanceRequest() {
         return instanceRequest;
     }

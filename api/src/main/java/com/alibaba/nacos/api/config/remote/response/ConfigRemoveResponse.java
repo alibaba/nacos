@@ -31,11 +31,6 @@ public class ConfigRemoveResponse extends Response {
         super();
     }
     
-    @Override
-    public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_REMOVE;
-    }
-    
     /**
      * Buidl success resposne.
      *

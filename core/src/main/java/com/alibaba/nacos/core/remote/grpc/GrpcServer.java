@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.grpc.GrpcMetadata;
-import com.alibaba.nacos.api.grpc.GrpcRequest;
-import com.alibaba.nacos.api.grpc.GrpcResponse;
+
+import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -61,10 +60,10 @@ public class GrpcServer extends RpcServer {
     private Server server;
     
     @Autowired
-    private GrpcStreamRequestHanderImpl streamRequestHander;
+    private GrpcRequestAcceptor grpcCommonRequestAcceptor;
     
     @Autowired
-    private GrpcRequestHandlerReactor requestHander;
+    private GrpcStreamRequestAcceptor grpcPaylodStreamRequestAcceptorImpl;
     
     @Autowired
     private ConnectionManager connectionManager;
@@ -74,9 +73,6 @@ public class GrpcServer extends RpcServer {
     
     int grpcServerPort = ApplicationUtils.getPort() + rpcPortOffset();
     
-    private void init() {
-    }
-    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -84,7 +80,6 @@ public class GrpcServer extends RpcServer {
     
     @Override
     public void startServer() throws Exception {
-        init();
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
     
         // server intercetpor to set connection id.
@@ -128,45 +123,45 @@ public class GrpcServer extends RpcServer {
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
-        
-        // unary call register.
-        final MethodDescriptor<GrpcRequest, GrpcResponse> unaryMethod = MethodDescriptor.<GrpcRequest, GrpcResponse>newBuilder()
+    
+        // unary common call register.
+        final MethodDescriptor<Payload, Payload> unarypayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName(MethodDescriptor.generateFullMethodName("Request", "request"))
-                .setRequestMarshaller(ProtoUtils.marshaller(GrpcRequest.newBuilder().build()))
-                .setResponseMarshaller(ProtoUtils.marshaller(GrpcResponse.getDefaultInstance())).build();
-        
-        final ServerCallHandler<GrpcRequest, GrpcResponse> handler = ServerCalls
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+    
+        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
-                    GrpcMetadata grpcMetadata = request.getMetadata().toBuilder()
+                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
                             .setConnectionId(CONTEXT_KEY_CONN_ID.get()).build();
-                    GrpcRequest requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
-                    requestHander.request(requestNew, responseObserver);
+                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
+                    grpcCommonRequestAcceptor.request(requestNew, responseObserver);
                 });
-        
-        final ServerServiceDefinition serviceDefOfUnary = ServerServiceDefinition.builder("Request")
-                .addMethod(unaryMethod, handler).build();
-        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnary, serverInterceptor));
-        
+    
+        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder("Request")
+                .addMethod(unarypayloadMethod, payloadHandler).build();
+        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
+
         // server stream register.
-        final ServerCallHandler<GrpcRequest, GrpcResponse> streamHandler = ServerCalls
+        final ServerCallHandler<Payload, Payload> streamHandler = ServerCalls
                 .asyncServerStreamingCall((request, responseObserver) -> {
-                    GrpcMetadata grpcMetadata = request.getMetadata().toBuilder()
+                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
                             .setConnectionId(CONTEXT_KEY_CONN_ID.get()).build();
-                    GrpcRequest requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
-                    streamRequestHander.requestStream(requestNew, responseObserver);
+                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
+                    grpcPaylodStreamRequestAcceptorImpl.requestStream(requestNew, responseObserver);
                 });
-        
-        final MethodDescriptor<GrpcRequest, GrpcResponse> serverStreamMethod = MethodDescriptor.<GrpcRequest, GrpcResponse>newBuilder()
+    
+        final MethodDescriptor<Payload, Payload> serverStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
                 .setType(MethodDescriptor.MethodType.SERVER_STREAMING)
                 .setFullMethodName(MethodDescriptor.generateFullMethodName("RequestStream", "requestStream"))
-                .setRequestMarshaller(ProtoUtils.marshaller(GrpcRequest.newBuilder().build()))
-                .setResponseMarshaller(ProtoUtils.marshaller(GrpcResponse.getDefaultInstance())).build();
-        
-        final ServerServiceDefinition serviceDefOfServerStream = ServerServiceDefinition.builder("RequestStream")
+                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+    
+        final ServerServiceDefinition servicePayloadDefOfServerStream = ServerServiceDefinition.builder("RequestStream")
                 .addMethod(serverStreamMethod, streamHandler).build();
-        
-        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfServerStream, serverInterceptor));
+    
+        handlerRegistry.addService(ServerInterceptors.intercept(servicePayloadDefOfServerStream, serverInterceptor));
         
     }
     

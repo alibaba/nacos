@@ -17,13 +17,9 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigRequestTypeConstants;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -32,13 +28,11 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
-import java.util.List;
 
 /**
  * handler to remove config.
@@ -47,18 +41,13 @@ import java.util.List;
  * @version $Id: ConfiRemoveRequestHandler.java, v 0.1 2020年07月16日 5:49 PM liuzunfei Exp $
  */
 @Component
-public class ConfiRemoveRequestHandler extends RequestHandler {
+public class ConfiRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
     
     @Autowired
     private PersistService persistService;
     
     @Override
-    public Request parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, ConfigRemoveRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
+    public ConfigRemoveResponse handle(ConfigRemoveRequest request, RequestMeta meta) throws NacosException {
         ConfigRemoveRequest myrequest = (ConfigRemoveRequest) request;
         // check tenant
         String tenant = myrequest.getTenant();
@@ -90,8 +79,4 @@ public class ConfiRemoveRequestHandler extends RequestHandler {
         }
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(ConfigRequestTypeConstants.REMOVE_CONFIG);
-    }
 }

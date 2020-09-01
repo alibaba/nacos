@@ -18,16 +18,10 @@ package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
-import static com.alibaba.nacos.api.naming.remote.NamingRemoteConstants.NOTIFY_SUBSCRIBER;
-
 /**
  * @author liuzunfei
  * @version $Id: NotifySubscriberResponse.java, v 0.1 2020年08月06日 5:28 PM liuzunfei Exp $
  */
 public class NotifySubscriberResponse extends Response {
     
-    @Override
-    public String getType() {
-        return NOTIFY_SUBSCRIBER;
-    }
 }

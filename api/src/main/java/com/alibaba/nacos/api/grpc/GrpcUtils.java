@@ -18,12 +18,12 @@ package com.alibaba.nacos.api.grpc;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.grpc.auto.Metadata;
+import com.alibaba.nacos.api.grpc.auto.Payload;
+import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.request.ServerRequestRegistry;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -32,9 +32,11 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 /**
  * grpc utils, use to parse request and response.
+ *
  * @author liuzunfei
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
  */
@@ -79,125 +81,72 @@ public class GrpcUtils {
         }
     }
     
-    /**
-     * parse response from grpc response.
-     *
-     * @param grpcResponse grpcResponse.
-     * @return response. null if parse fail.
-     */
-    public static Response parseResponsefromGrpcResponse(GrpcResponse grpcResponse) {
-        if (grpcResponse == null) {
+    public static Payload convert(Request request, RequestMeta meta) {
+        String jsonString = toJson(request);
+        byte[] bytes = null;
+        try {
+            bytes = jsonString.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
             return null;
         }
-        String type = grpcResponse.getType();
-        String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
+        Payload.Builder builder = Payload.newBuilder();
+        if (meta != null) {
+            Metadata metadata = Metadata.newBuilder().setClientIp(meta.getClientIp())
+                    .setVersion(meta.getClientVersion()).build();
+            builder.setMetadata(metadata);
+        }
+        Payload payload = builder.setType(request.getClass().getName())
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        return payload;
         
-        // transfrom grpcResponse to response model
-        Class classByType = ResponseRegistry.getClassByType(type);
-        if (classByType != null) {
-            Object object = toObj(bodyString, classByType);
-            return (Response) object;
-        }
-        return null;
     }
     
-    /**
-     * parse request from grpc response.
-     *
-     * @param grpcResponse grpc response from grpc server.
-     * @return request object parse from grpc response
-     */
-    public static ServerPushRequest parseRequestFromGrpcResponse(GrpcResponse grpcResponse) {
-        if (grpcResponse == null) {
+    public static Payload convert(Request request, Metadata meta) {
+        String jsonString = toJson(request);
+        byte[] bytes = null;
+        try {
+            bytes = jsonString.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
             return null;
         }
-        String message = grpcResponse.getBody().getValue().toStringUtf8();
-        String type = grpcResponse.getType();
-        String bodyString = grpcResponse.getBody().getValue().toStringUtf8();
-        Class classByType = ServerRequestRegistry.getClassByType(type);
-        ServerPushRequest request = null;
-        if (classByType != null) {
-            request = (ServerPushRequest) toObj(bodyString, classByType);
+        Payload.Builder builder = Payload.newBuilder();
+        if (meta != null) {
+            builder.setMetadata(meta);
         }
-        return request;
+        Payload payload = builder.setType(request.getClass().getName())
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        return payload;
+        
+    }
+    
+    public static Payload convert(Response response) {
+        String jsonString = toJson(response);
+        byte[] bytes = null;
+        try {
+            bytes = jsonString.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+        Payload payload = Payload.newBuilder().setType(response.getClass().getName())
+                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(bytes))).build();
+        return payload;
     }
     
     /**
-     * convert to grpc request with grpc request and request meta.
-     *
-     * @param request request.
-     * @param meta    grpc request meta.
+     * parse payload to request/response model.
+     * @param payload
      * @return
      */
-    public static GrpcRequest convertToGrpcRequest(Request request, GrpcMetadata meta) {
-        GrpcRequest grpcRequest = GrpcRequest.newBuilder().setMetadata(meta).setType(request.getType())
-                .setBody(Any.newBuilder().setValue(ByteString.copyFromUtf8(toJson(request))).build()).build();
-        return grpcRequest;
-    }
-    
-    /**
-     * convert to grpc request with grpc request and request meta.
-     *
-     * @param grpcRequest grpcRequest.
-     * @param clazz       request class.
-     * @return RequestInfo. include request and meta.
-     */
-    public static RequestInfo parseRequestFromGrpcRequest(GrpcRequest grpcRequest, Class clazz) {
-        RequestInfo requestInfo = new RequestInfo();
-        Request request = (Request) toObj(grpcRequest.getBody().getValue().toStringUtf8(), clazz);
-        requestInfo.setRequestMeta(convertMeta(grpcRequest.getMetadata()));
-        return requestInfo;
-    }
-    
-    private static RequestMeta convertMeta(GrpcMetadata metadata) {
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp(metadata.getClientIp());
-        requestMeta.setConnectionId(metadata.getConnectionId());
-        requestMeta.setClientVersion(metadata.getVersion());
-        return requestMeta;
-    }
-    
-    public static class RequestInfo {
-        
-        Request request;
-        
-        RequestMeta requestMeta;
-        
-        /**
-         * Getter method for property <tt>request</tt>.
-         *
-         * @return property value of request
-         */
-        public Request getRequest() {
-            return request;
+    public static Object parse(Payload payload) {
+        Class classbyType = PayloadRegistry.getClassbyType(payload.getType());
+        if (classbyType != null) {
+            Object obj = toObj(payload.getBody().getValue().toStringUtf8(), classbyType);
+            return obj;
         }
-        
-        /**
-         * Setter method for property <tt>request</tt>.
-         *
-         * @param request value to be assigned to property request
-         */
-        public void setRequest(Request request) {
-            this.request = request;
-        }
-        
-        /**
-         * Getter method for property <tt>requestMeta</tt>.
-         *
-         * @return property value of requestMeta
-         */
-        public RequestMeta getRequestMeta() {
-            return requestMeta;
-        }
-        
-        /**
-         * Setter method for property <tt>requestMeta</tt>.
-         *
-         * @param requestMeta value to be assigned to property requestMeta
-         */
-        public void setRequestMeta(RequestMeta requestMeta) {
-            this.requestMeta = requestMeta;
-        }
+        return null;
     }
     
 }

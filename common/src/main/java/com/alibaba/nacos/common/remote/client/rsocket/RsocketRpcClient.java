@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
+import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerPushResponse;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
@@ -79,60 +80,57 @@ public class RsocketRpcClient extends RpcClient {
     
     @Override
     public Connection connectToServer(ServerInfo serverInfo) throws Exception {
-        
+        RSocket rSocket = null;
         try {
             ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
                     VersionUtils.getFullClientVersion(), labels);
             Payload setUpPayload = RsocketUtils.convertRequestToPayload(conconSetupRequest, buildMeta());
-            RSocket rSocket = RSocketConnector.create()
-                    .setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
+            rSocket = RSocketConnector.create().setupPayload(setUpPayload).acceptor(new SocketAcceptor() {
+                @Override
+                public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
+            
+                    RSocket rsocket = new RSocketProxy(sendingSocket) {
                         @Override
-                        public Mono<RSocket> accept(ConnectionSetupPayload setup, RSocket sendingSocket) {
-    
-                            RSocket rsocket = new RSocketProxy(sendingSocket) {
-                                @Override
-                                public Mono<Payload> requestResponse(Payload payload) {
-                                    try {
-                                        final ServerPushRequest request = RsocketUtils
-                                                .parseServerRequestFromPayload(payload);
-                                        try {
-                                            handleServerRequest(request);
-                                            ServerPushResponse response = new ServerPushResponse();
-                                            response.setRequestId(request.getRequestId());
-                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                                        } catch (Exception e) {
-                                            ServerPushResponse response = new ServerPushResponse();
-                                            response.setResultCode(ResponseCode.FAIL.getCode());
-                                            response.setMessage(e.getMessage());
-                                            response.setRequestId(request.getRequestId());
-                                            return Mono.just(RsocketUtils.convertResponseToPayload(response));
-                                        }
-    
-                                    } catch (Exception e) {
-                                        ServerPushResponse response = new ServerPushResponse();
-                                        response.setResultCode(ResponseCode.FAIL.getCode());
-                                        response.setMessage(e.getMessage());
-                                        return Mono.just(DefaultPayload
-                                                .create(RsocketUtils.convertResponseToPayload(response)));
-                                    }
+                        public Mono<Payload> requestResponse(Payload payload) {
+                            try {
+                                final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
+                                try {
+                                    Response response = handleServerRequest(request);
+                                    response.setRequestId(request.getRequestId());
+                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
+                                } catch (Exception e) {
+                                    ServerPushResponse response = new ServerPushResponse();
+                                    response.setResultCode(ResponseCode.FAIL.getCode());
+                                    response.setMessage(e.getMessage());
+                                    response.setRequestId(request.getRequestId());
+                                    return Mono.just(RsocketUtils.convertResponseToPayload(response));
                                 }
-        
-                                @Override
-                                public Mono<Void> fireAndForget(Payload payload) {
-                                    final ServerPushRequest request = RsocketUtils
-                                            .parseServerRequestFromPayload(payload);
-                                    handleServerRequest(request);
-                                    return Mono.just(null);
-                                }
-                            };
-    
-                            return Mono.just((RSocket) rsocket);
+                        
+                            } catch (Exception e) {
+                                ServerPushResponse response = new ServerPushResponse();
+                                response.setResultCode(ResponseCode.FAIL.getCode());
+                                response.setMessage(e.getMessage());
+                                return Mono
+                                        .just(DefaultPayload.create(RsocketUtils.convertResponseToPayload(response)));
+                            }
                         }
-                    }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
+                
+                        @Override
+                        public Mono<Void> fireAndForget(Payload payload) {
+                            final ServerPushRequest request = RsocketUtils.parseServerRequestFromPayload(payload);
+                            handleServerRequest(request);
+                            return Mono.just(null);
+                        }
+                    };
+            
+                    return Mono.just((RSocket) rsocket);
+                }
+            }).connect(TcpClientTransport.create(serverInfo.getServerIp(), serverInfo.getServerPort())).block();
             RsocketConnection connection = new RsocketConnection(serverInfo, rSocket);
             fireOnCloseEvent(rSocket);
             return connection;
         } catch (Exception e) {
+            shutDownRsocketClient(rSocket);
             throw e;
         }
     }
@@ -186,12 +184,6 @@ public class RsocketRpcClient extends RpcClient {
             }
         };
         rSocket.onClose().subscribe(subscriber);
-    }
-    
-    class RsocketHolder {
-        
-        RSocket rsocket;
-        
     }
     
 }

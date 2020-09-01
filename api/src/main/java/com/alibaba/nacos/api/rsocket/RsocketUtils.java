@@ -18,13 +18,12 @@ package com.alibaba.nacos.api.rsocket;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
+import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
-import com.alibaba.nacos.api.remote.request.ServerRequestRegistry;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -107,7 +106,7 @@ public class RsocketUtils {
      */
     public static Payload convertRequestToPayload(Request request, RequestMeta meta) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("type", request.getType());
+        jsonObject.addProperty("type", request.getClass().getName());
         jsonObject.addProperty("body", toJson(request));
         jsonObject.addProperty("meta", toJson(meta));
         return DefaultPayload.create(jsonObject.toString());
@@ -121,7 +120,7 @@ public class RsocketUtils {
      */
     public static Payload convertResponseToPayload(Response response) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("type", response.getType());
+        jsonObject.addProperty("type", response.getClass().getName());
         jsonObject.addProperty("body", toJson(response));
         return DefaultPayload.create(jsonObject.toString());
     }
@@ -137,10 +136,10 @@ public class RsocketUtils {
         JsonNode jsonNode = toObj(message);
         String type = jsonNode.get("type").textValue();
         String bodyString = jsonNode.get("body").textValue();
-        Class classByType = ResponseRegistry.getClassByType(type);
+        Class classbyType = PayloadRegistry.getClassbyType(type);
         final Response response;
-        if (classByType != null) {
-            response = (Response) toObj(bodyString, classByType);
+        if (classbyType != null) {
+            response = (Response) toObj(bodyString, classbyType);
         } else {
             PlainBodyResponse myresponse = toObj(bodyString, PlainBodyResponse.class);
             myresponse.setBodyString(bodyString);
@@ -161,7 +160,7 @@ public class RsocketUtils {
         JsonNode jsonNode = toObj(message);
         String type = jsonNode.get("type").textValue();
         String bodyString = jsonNode.get("body").textValue();
-        Class classByType = ServerRequestRegistry.getClassByType(type);
+        Class classByType = PayloadRegistry.getClassbyType(type);
         final ServerPushRequest request;
         if (classByType != null) {
             request = (ServerPushRequest) toObj(bodyString, classByType);

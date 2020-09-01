@@ -18,19 +18,12 @@ package com.alibaba.nacos.naming.remote.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.ServiceInfoGenerator;
-import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Nacos query instances request handler.
@@ -38,7 +31,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 @Component
-public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest> {
+public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
     
     private final ServiceInfoGenerator serviceInfoGenerator;
     
@@ -47,12 +40,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     }
     
     @Override
-    public ServiceQueryRequest parseBodyString(String bodyString) {
-        return JacksonUtils.toObj(bodyString, ServiceQueryRequest.class);
-    }
-    
-    @Override
-    public Response handle(Request request, RequestMeta meta) throws NacosException {
+    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
         ServiceQueryRequest queryRequest = (ServiceQueryRequest) request;
         String namespaceId = queryRequest.getNamespace();
         String serviceName = queryRequest.getServiceName();
@@ -63,8 +51,4 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         return QueryServiceResponse.buildSuccessResponse(result);
     }
     
-    @Override
-    public List<String> getRequestTypes() {
-        return Lists.newArrayList(NamingRemoteConstants.QUERY_SERVICE);
-    }
 }

@@ -17,14 +17,15 @@
 package com.alibaba.nacos.core.remote.rsocket;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.remote.request.RequestTypeConstants;
 import com.alibaba.nacos.api.remote.response.PlainBodyResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.rsocket.RsocketUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMetaInfo;
@@ -89,8 +90,8 @@ public class RsocketRpcServer extends RpcServer {
             } catch (Exception e) {
                 //Do Nothing
             }
-            
-            if (palinrequest == null || !RequestTypeConstants.CONNECTION_SETUP.equals(palinrequest.getType())) {
+    
+            if (palinrequest == null || !ConnectionSetupRequest.class.getName().equals(palinrequest.getType())) {
                 Loggers.RPC.info("Illegal  set up payload:" + setup.getDataUtf8());
                 sendingSocket.dispose();
                 return Mono.just(sendingSocket);
@@ -159,7 +160,8 @@ public class RsocketRpcServer extends RpcServer {
             RsocketUtils.PlainRequest requestType = RsocketUtils.parsePlainRequestFromPayload(payload);
             RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(requestType.getType());
             if (requestHandler != null) {
-                Request request = requestHandler.parseBodyString(requestType.getBody());
+                Class classbyType = PayloadRegistry.getClassbyType(requestType.getType());
+                Request request = (Request) JacksonUtils.toObj(requestType.getBody(), classbyType);
                 String meta = requestType.getMeta();
                 RequestMeta requestMeta = RsocketUtils.toObj(meta, RequestMeta.class);
                 requestMeta.setConnectionId(connectionId);

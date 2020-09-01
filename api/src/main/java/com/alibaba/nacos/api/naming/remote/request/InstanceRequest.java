@@ -42,7 +42,6 @@ public class InstanceRequest extends AbstractNamingRequest {
         this.type = type;
     }
     
-    @Override
     public String getType() {
         return this.type;
     }

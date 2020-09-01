@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.naming.cluster.remote.request;
 
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
-
 /**
  * Forward heart beat request.
  *
@@ -32,11 +30,6 @@ public class ForwardHeartBeatRequest extends AbstractClusterRequest {
     
     public ForwardHeartBeatRequest(String connectionId) {
         this.connectionId = connectionId;
-    }
-    
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.FORWARD_HEART_BEAT;
     }
     
     public String getConnectionId() {

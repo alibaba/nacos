@@ -26,13 +26,13 @@ import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigPubishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -554,7 +554,7 @@ public class ClientWorker implements Closeable {
              */
             rpcClientInner.registerServerPushResponseHandler(new ServerRequestHandler() {
                 @Override
-                public void requestReply(ServerPushRequest request) {
+                public Response requestReply(Request request) {
                     if (request instanceof ConfigChangeNotifyRequest) {
                         ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
@@ -564,7 +564,9 @@ public class ClientWorker implements Closeable {
                             cacheData.setListenSuccess(false);
                             notifyListenConfig();
                         }
+                        return new ConfigChangeNotifyResponse();
                     }
+                    return null;
                 }
     
             });

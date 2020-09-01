@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.remote.response.PushCallBack;
+import com.alibaba.nacos.api.remote.response.Response;
 
 import java.util.concurrent.TimeoutException;
 
 /**
- * default push future.
+ * default request future.
  *
  * @author liuzunfei
- * @version $Id: DefaultPushFuture.java, v 0.1 2020年08月12日 7:10 PM liuzunfei Exp $
+ * @version $Id: DefaultRequestFuture.java, v 0.1 2020年09月01日 6:42 PM liuzunfei Exp $
  */
-public class DefaultPushFuture implements PushFuture {
+public class DefaultRequestFuture implements RequestFuture {
     
     private long timeStamp;
     
@@ -34,19 +34,21 @@ public class DefaultPushFuture implements PushFuture {
     
     private boolean isSuccess;
     
-    private PushCallBack pushCallBack;
+    private RequestCallBack requestCallBack;
     
     private Exception exception;
     
     private String requestId;
     
+    private Response response;
+    
     /**
-     * Getter method for property <tt>pushCallBack</tt>.
+     * Getter method for property <tt>requestCallBack</tt>.
      *
-     * @return property value of pushCallBack
+     * @return property value of requestCallBack
      */
-    public PushCallBack getPushCallBack() {
-        return pushCallBack;
+    public RequestCallBack getRequestCallBack() {
+        return requestCallBack;
     }
     
     /**
@@ -58,28 +60,29 @@ public class DefaultPushFuture implements PushFuture {
         return timeStamp;
     }
     
-    public DefaultPushFuture() {
+    public DefaultRequestFuture() {
     }
     
-    public DefaultPushFuture(String requestId) {
+    public DefaultRequestFuture(String requestId) {
         this(requestId, null);
     }
     
-    public DefaultPushFuture(String requestId, PushCallBack pushCallBack) {
+    public DefaultRequestFuture(String requestId, RequestCallBack requestCallBack) {
         this.timeStamp = System.currentTimeMillis();
-        this.pushCallBack = pushCallBack;
+        this.requestCallBack = requestCallBack;
         this.requestId = requestId;
     }
     
-    public void setSuccessResult() {
+    public void setResponse(Response response) {
         isDone = true;
-        isSuccess = true;
+        this.response = response;
+        this.isSuccess = response.isSuccess();
         synchronized (this) {
             notifyAll();
         }
         
-        if (pushCallBack != null) {
-            pushCallBack.onSuccess();
+        if (requestCallBack != null) {
+            requestCallBack.onResponse(response);
         }
     }
     
@@ -90,8 +93,8 @@ public class DefaultPushFuture implements PushFuture {
             notifyAll();
         }
         
-        if (pushCallBack != null) {
-            pushCallBack.onFail(e);
+        if (requestCallBack != null) {
+            requestCallBack.onException(e);
         }
     }
     
@@ -105,17 +108,17 @@ public class DefaultPushFuture implements PushFuture {
     }
     
     @Override
-    public boolean get() throws TimeoutException, InterruptedException {
+    public Response get() throws TimeoutException, InterruptedException {
         synchronized (this) {
             while (!isDone) {
                 wait();
             }
         }
-        return isSuccess;
+        return response;
     }
     
     @Override
-    public boolean get(long timeout) throws TimeoutException, InterruptedException {
+    public Response get(long timeout) throws TimeoutException, InterruptedException {
         if (timeout < 0) {
             synchronized (this) {
                 while (!isDone) {
@@ -134,7 +137,7 @@ public class DefaultPushFuture implements PushFuture {
         }
         
         if (isDone) {
-            return isSuccess;
+            return response;
         } else {
             throw new TimeoutException();
         }

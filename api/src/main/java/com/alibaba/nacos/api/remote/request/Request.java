@@ -27,7 +27,7 @@ import java.util.Map;
  * @author liuzunfei
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Request implements Cloneable {
+public abstract class Request {
     
     private final Map<String, String> headers = new HashMap<String, String>();
     
@@ -100,13 +100,6 @@ public abstract class Request implements Cloneable {
      *
      * @return property value of type
      */
-    public abstract String getType();
-    
-    /**
-     * Getter method for property <tt>type</tt>.
-     *
-     * @return property value of type
-     */
     public abstract String getModule();
     
     /**
@@ -123,8 +116,5 @@ public abstract class Request implements Cloneable {
         return ToStringBuilder.reflectionToString(this);
     }
     
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
+    
 }

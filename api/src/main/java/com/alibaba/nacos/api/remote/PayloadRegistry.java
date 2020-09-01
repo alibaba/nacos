@@ -38,15 +38,21 @@ public class PayloadRegistry {
     
     private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
     
+    static boolean inited = false;
+    
     public static void init() {
         scan();
     }
     
-    private static void scan() {
+    private static synchronized void scan() {
+        if (inited) {
+            return;
+        }
         List<String> scanPackage = Lists.newArrayList("com.alibaba.nacos.api.naming.remote.request",
                 "com.alibaba.nacos.api.naming.remote.response", "com.alibaba.nacos.api.config.remote.request",
                 "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.request",
-                "com.alibaba.nacos.api.remote.response");
+                "com.alibaba.nacos.api.remote.response", "com.alibaba.nacos.naming.cluster.remote.request",
+                "com.alibaba.nacos.naming.cluster.remote.response");
         for (String pkg : scanPackage) {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
@@ -58,12 +64,11 @@ public class PayloadRegistry {
                 register(clazz.getName(), clazz);
             }
         }
+        inited = true;
         
-        System.out.println(REGISTRY_REQUEST);
     }
     
-    
-    static synchronized void register(String type, Class clazz) {
+    static void register(String type, Class clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
@@ -76,7 +81,7 @@ public class PayloadRegistry {
         REGISTRY_REQUEST.put(type, clazz);
     }
     
-    static Class getClassbyType(String type) {
+    public static Class getClassbyType(String type) {
         return REGISTRY_REQUEST.get(type);
     }
 }

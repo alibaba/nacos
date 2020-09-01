@@ -14,16 +14,38 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config.remote.response.cluster;
+package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.response.Response;
 
+import java.util.concurrent.TimeoutException;
+
 /**
- * config change sync response on clusters.
- *
+ * future for request
  * @author liuzunfei
- * @version $Id: ConfigChangeClusterSyncResponse.java, v 0.1 2020年08月11日 4:32 PM liuzunfei Exp $
+ * @version $Id: RequestFuture.java, v 0.1 2020年09月01日 6:31 PM liuzunfei Exp $
  */
-public class ConfigChangeClusterSyncResponse extends Response {
+public interface RequestFuture {
+    
+    /**
+     * @return
+     */
+    boolean isDone();
+    
+    /**
+     * @return
+     * @throws TimeoutException
+     * @throws InterruptedException
+     */
+    Response get() throws TimeoutException, InterruptedException;
+    
+    /**
+     * @param timeout
+     * @return
+     * @throws TimeoutException
+     * @throws RemotingException
+     * @throws InterruptedException
+     */
+    Response get(long timeout) throws TimeoutException, InterruptedException;
     
 }

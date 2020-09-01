@@ -71,11 +71,6 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
         this.tenant = tenant;
     }
     
-    @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.PUBLISH_CONFIG;
-    }
-    
     /**
      * Getter method for property <tt>dataId</tt>.
      *

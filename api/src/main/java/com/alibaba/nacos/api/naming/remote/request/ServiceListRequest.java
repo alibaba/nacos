@@ -40,11 +40,6 @@ public class ServiceListRequest extends AbstractNamingRequest {
         this.pageSize = pageSize;
     }
     
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.LIST_SERVICE;
-    }
-    
     public int getPageNo() {
         return pageNo;
     }

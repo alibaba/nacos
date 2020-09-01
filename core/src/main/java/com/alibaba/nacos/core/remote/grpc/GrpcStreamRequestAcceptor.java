@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.grpc.GrpcMetadata;
-import com.alibaba.nacos.api.grpc.GrpcRequest;
-import com.alibaba.nacos.api.grpc.GrpcResponse;
-import com.alibaba.nacos.api.grpc.RequestStreamGrpc;
+import com.alibaba.nacos.api.grpc.auto.Metadata;
+import com.alibaba.nacos.api.grpc.auto.Payload;
+import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.remote.Connection;
@@ -39,17 +39,16 @@ import static com.alibaba.nacos.core.remote.grpc.GrpcServer.CONTEXT_KEY_CHANNEL;
  * @version $Id: GrpcStreamRequestHanderImpl.java, v 0.1 2020年07月13日 7:30 PM liuzunfei Exp $
  */
 @Service
-public class GrpcStreamRequestHanderImpl extends RequestStreamGrpc.RequestStreamImplBase {
+public class GrpcStreamRequestAcceptor extends RequestStreamGrpc.RequestStreamImplBase {
     
     @Autowired
     ConnectionManager connectionManager;
     
     @Override
-    public void requestStream(GrpcRequest request, StreamObserver<GrpcResponse> responseObserver) {
+    public void requestStream(Payload request, StreamObserver<Payload> responseObserver) {
     
         Context current = Context.current();
-        
-        GrpcMetadata metadata = request.getMetadata();
+        Metadata metadata = request.getMetadata();
         String clientIp = metadata.getClientIp();
         String connectionId = metadata.getConnectionId();
         String version = metadata.getVersion();

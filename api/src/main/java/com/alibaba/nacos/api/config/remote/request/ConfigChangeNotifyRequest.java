@@ -38,11 +38,6 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
     private List<String> betaIps;
     
     @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.CONFIG_CHANGE_NOTIFY;
-    }
-    
-    @Override
     public String getModule() {
         return "config";
     }

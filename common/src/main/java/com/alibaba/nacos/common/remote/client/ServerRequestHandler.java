@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.api.remote.request.ServerPushRequest;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * ServerPushResponseHandler.
@@ -31,6 +32,6 @@ public interface ServerRequestHandler {
      *
      * @param request request
      */
-    void requestReply(ServerPushRequest request);
+    Response requestReply(Request request);
     
 }

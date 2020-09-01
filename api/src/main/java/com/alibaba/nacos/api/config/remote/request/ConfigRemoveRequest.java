@@ -43,11 +43,6 @@ public class ConfigRemoveRequest extends AbstractConfigRequest {
         this.tenant = tenant;
     }
     
-    @Override
-    public String getType() {
-        return ConfigRequestTypeConstants.REMOVE_CONFIG;
-    }
-    
     /**
      * Getter method for property <tt>dataId</tt>.
      *

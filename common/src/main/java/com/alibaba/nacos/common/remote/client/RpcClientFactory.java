@@ -104,10 +104,10 @@ public class RpcClientFactory {
             if (clientMap.get(clientNameInner) == null) {
                 RpcClient moduleClient = null;
                 if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClient(clientName);
+                    moduleClient = new GrpcClient(clientNameInner);
                     
                 } else if (ConnectionType.RSOCKET.equals(connectionType)) {
-                    moduleClient = new RsocketRpcClient(clientName);
+                    moduleClient = new RsocketRpcClient(clientNameInner);
                 }
                 if (moduleClient == null) {
                     throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());

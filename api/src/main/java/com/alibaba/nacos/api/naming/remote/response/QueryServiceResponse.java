@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
@@ -31,11 +30,6 @@ public class QueryServiceResponse extends Response {
     private ServiceInfo serviceInfo;
     
     public QueryServiceResponse() {
-    }
-    
-    @Override
-    public String getType() {
-        return NamingRemoteConstants.QUERY_SERVICE;
     }
     
     private QueryServiceResponse(ServiceInfo serviceInfo) {

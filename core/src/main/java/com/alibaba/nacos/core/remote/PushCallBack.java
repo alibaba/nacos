@@ -16,37 +16,30 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alipay.sofa.jraft.error.RemotingException;
-
-import java.util.concurrent.TimeoutException;
-
 /**
- * push future.
+ * call back for push.
  *
  * @author liuzunfei
- * @version $Id: PushFuture.java, v 0.1 2020年08月12日 7:04 PM liuzunfei Exp $
+ * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 5:55 PM liuzunfei Exp $
  */
-public interface PushFuture {
+public interface PushCallBack {
     
     /**
+     * get timeout mills.
+     *
      * @return
      */
-    boolean isDone();
+    public long getTimeout();
     
     /**
-     * @return
-     * @throws TimeoutException
-     * @throws InterruptedException
-     */
-    boolean get() throws TimeoutException, InterruptedException;
+     * called on success.
+     **/
+    public void onSuccess();
     
     /**
-     * @param timeout
-     * @return
-     * @throws TimeoutException
-     * @throws RemotingException
-     * @throws InterruptedException
+     * called on failed.
+     *
+     * @param e exception throwed.
      */
-    boolean get(long timeout) throws TimeoutException, InterruptedException;
-    
+    public void onException(Exception e);
 }

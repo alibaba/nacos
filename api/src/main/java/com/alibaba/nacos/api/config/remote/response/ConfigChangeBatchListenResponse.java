@@ -34,11 +34,6 @@ public class ConfigChangeBatchListenResponse extends Response {
     public ConfigChangeBatchListenResponse() {
     }
     
-    @Override
-    public String getType() {
-        return ConfigResponseTypeConstants.CONFIG_CHANGE_BATCH;
-    }
-    
     /**
      * build sucess response.
      *
