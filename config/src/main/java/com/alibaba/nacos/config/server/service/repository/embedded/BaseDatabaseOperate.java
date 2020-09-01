@@ -201,7 +201,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
     }
     
     /**
-     * execute update operation. to fix #3617
+     * execute update operation, to fix #3617.
      *
      * @param transactionTemplate {@link TransactionTemplate}
      * @param jdbcTemplate        {@link JdbcTemplate}
