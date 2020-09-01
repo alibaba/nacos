@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -44,8 +43,6 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     private final ScheduledExecutorService processingExecutor;
     
     private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<Object, NacosTaskProcessor>();
-    
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     
     protected final ConcurrentHashMap<Object, T> tasks;
     
@@ -150,7 +147,6 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
     @Override
     public void shutdown() throws NacosException {
-        closed.compareAndSet(false, true);
         processingExecutor.shutdown();
     }
     
@@ -167,12 +163,10 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
         @Override
         public void run() {
-            while (!closed.get()) {
-                try {
-                    AbstractNacosTaskExecuteEngine.this.processTasks();
-                } catch (Throwable e) {
-                    log.error(e.toString(), e);
-                }
+            try {
+                AbstractNacosTaskExecuteEngine.this.processTasks();
+            } catch (Throwable e) {
+                log.error(e.toString(), e);
             }
         }
     }
