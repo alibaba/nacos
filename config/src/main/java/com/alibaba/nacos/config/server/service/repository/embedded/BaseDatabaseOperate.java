@@ -201,7 +201,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
     }
     
     /**
-     * execute update operation.
+     * execute update operation. to fix #3617
      *
      * @param transactionTemplate {@link TransactionTemplate}
      * @param jdbcTemplate        {@link JdbcTemplate}
@@ -240,22 +240,6 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                 throw e;
             }
         });
-    }
-    
-    /**
-     * do consumer if the consumer not null.
-     * @author klw(213539@qq.com)
-     * 2020/8/24 18:12
-     * @param result result
-     * @param t throwable
-     * @param consumer consumer
-     * @return java.lang.Boolean
-     */
-    default Boolean doConsumerIfNotNull(Boolean result, Throwable t, BiConsumer<Boolean, Throwable> consumer) {
-        if (consumer != null) {
-            consumer.accept(result, t);
-        }
-        return result;
     }
     
     /**
