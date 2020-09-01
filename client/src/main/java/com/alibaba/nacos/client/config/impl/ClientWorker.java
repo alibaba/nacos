@@ -82,7 +82,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        checkConfigInfo();
+        checkLongPollingTaskSize();
     }
     
     /**
@@ -101,7 +101,7 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group);
             }
         }
-        checkConfigInfo();
+        checkLongPollingTaskSize();
     }
     
     /**
@@ -120,7 +120,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        checkConfigInfo();
+        checkLongPollingTaskSize();
     }
     
     /**
@@ -141,7 +141,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
-        checkConfigInfo();
+        checkLongPollingTaskSize();
     }
     
     /**
@@ -161,7 +161,7 @@ public class ClientWorker implements Closeable {
                 removeCache(dataId, group, tenant);
             }
         }
-        checkConfigInfo();
+        checkLongPollingTaskSize();
     }
     
     private void removeCache(String dataId, String group) {
@@ -423,7 +423,7 @@ public class ClientWorker implements Closeable {
     /**
      * Check config info.
      */
-    private void checkConfigInfo() {
+    private void checkLongPollingTaskSize() {
         // Dispatch taskes.
         int listenerSize = cacheMap.get().size();
         // Round up the longingTaskCount.
