@@ -35,6 +35,8 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroDat
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.component.DistroHttpAgent;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataProcessor;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -123,6 +125,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 new DistroHttpCombinedKeyTaskFailedHandler(globalConfig, taskEngineHolder));
         taskEngineHolder.registerNacosTaskProcessor(KeyBuilder.INSTANCE_LIST_KEY_PREFIX,
                 new DistroHttpDelayTaskProcessor(globalConfig, taskEngineHolder));
+        componentHolder.registerDataProcessor(this);
     }
     
     @PostConstruct
@@ -382,9 +385,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public boolean processVerifyData(DistroData distroData) {
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
-        String targetServer = distroData.getDistroKey().getTargetServer();
+        String sourceServer = distroData.getDistroKey().getResourceKey();
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
-        onReceiveChecksums(verifyData, targetServer);
+        onReceiveChecksums(verifyData, sourceServer);
         return true;
     }
     

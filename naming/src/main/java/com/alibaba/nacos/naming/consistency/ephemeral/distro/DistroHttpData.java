@@ -17,12 +17,14 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 
 /**
- * Distro http data.
+ * Distro http received data.
  *
  * <p>
- * Apply for old distro http api. The data content has been deserialize, so there is no need to deserialize again.
+ * Apply for old distro http api. The data content has been deserialize by spring mvc, so there is no need to
+ * deserialize again.
  * </p>
  *
  * @author xiweng.yy
@@ -30,6 +32,11 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.Dist
 public class DistroHttpData extends DistroData {
     
     private Object deserializedContent;
+    
+    public DistroHttpData(DistroKey distroKey, byte[] content, Object deserializedContent) {
+        super(distroKey, content);
+        this.deserializedContent = deserializedContent;
+    }
     
     public Object getDeserializedContent() {
         return deserializedContent;

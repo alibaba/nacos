@@ -21,7 +21,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroComponentHolder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.List;
@@ -58,7 +57,7 @@ public class DistroVerifyTask implements Runnable {
     }
     
     private void verifyForDataStorage(String type, List<Member> targetServer) {
-        DistroData distroData = distroComponentHolder.findDataStorage(type).getVerifyData(new DistroKey());
+        DistroData distroData = distroComponentHolder.findDataStorage(type).getVerifyData();
         if (null == distroData) {
             return;
         }
