@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.utils.ReflectUtils;
@@ -63,8 +62,11 @@ public class GrpcServer extends RpcServer {
     private GrpcRequestAcceptor grpcCommonRequestAcceptor;
     
     @Autowired
-    private GrpcStreamRequestAcceptor grpcPaylodStreamRequestAcceptorImpl;
+    GrpcBiStreamRequestAcceptor grpcBiStreamRequestAcceptor;
     
+    //    @Autowired
+    //    private GrpcStreamRequestAcceptor grpcPaylodStreamRequestAcceptorImpl;
+    //
     @Autowired
     private ConnectionManager connectionManager;
     
@@ -142,26 +144,41 @@ public class GrpcServer extends RpcServer {
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder("Request")
                 .addMethod(unarypayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
-
+    
         // server stream register.
-        final ServerCallHandler<Payload, Payload> streamHandler = ServerCalls
-                .asyncServerStreamingCall((request, responseObserver) -> {
-                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
-                            .setConnectionId(CONTEXT_KEY_CONN_ID.get()).build();
-                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
-                    grpcPaylodStreamRequestAcceptorImpl.requestStream(requestNew, responseObserver);
+        //        final ServerCallHandler<Payload, Payload> streamHandler = ServerCalls
+        //                .asyncServerStreamingCall((request, responseObserver) -> {
+        //                    com.alibaba.nacos.api.grpc.auto.Metadata grpcMetadata = request.getMetadata().toBuilder()
+        //                            .setConnectionId(CONTEXT_KEY_CONN_ID.get()).build();
+        //                    Payload requestNew = request.toBuilder().setMetadata(grpcMetadata).build();
+        //                    grpcPaylodStreamRequestAcceptorImpl.requestStream(requestNew, responseObserver);
+        //                });
+        //
+        //        final MethodDescriptor<Payload, Payload> serverStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+        //                .setType(MethodDescriptor.MethodType.SERVER_STREAMING)
+        //                .setFullMethodName(MethodDescriptor.generateFullMethodName("RequestStream", "requestStream"))
+        //                .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
+        //                .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
+        //
+        //        final ServerServiceDefinition servicePayloadDefOfServerStream = ServerServiceDefinition.builder("RequestStream")
+        //                .addMethod(serverStreamMethod, streamHandler).build();
+        //        handlerRegistry.addService(ServerInterceptors.intercept(servicePayloadDefOfServerStream, serverInterceptor));
+    
+        // bi stream register.
+        final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls
+                .asyncBidiStreamingCall((responseObserver) -> {
+                    return grpcBiStreamRequestAcceptor.requestBiStream(responseObserver);
                 });
     
-        final MethodDescriptor<Payload, Payload> serverStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.SERVER_STREAMING)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName("RequestStream", "requestStream"))
+        final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+                .setFullMethodName(MethodDescriptor.generateFullMethodName("BiRequestStream", "requestBiStream"))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
     
-        final ServerServiceDefinition servicePayloadDefOfServerStream = ServerServiceDefinition.builder("RequestStream")
-                .addMethod(serverStreamMethod, streamHandler).build();
-    
-        handlerRegistry.addService(ServerInterceptors.intercept(servicePayloadDefOfServerStream, serverInterceptor));
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder("BiRequestStream")
+                .addMethod(biStreamMethod, biStreamHandler).build();
+        handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
     }
     

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.grpc.auto.RequestStreamGrpc;
+import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.HeartBeatRequest;
 import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -202,13 +203,13 @@ public class GrpcClient extends RpcClient {
             @Override
             public void onError(Throwable throwable) {
                 throwable.printStackTrace();
-                System.out.println("on error ,switch server ");
+                System.out.println("on error1 ,switch server ");
                 switchServerAsync();
             }
             
             @Override
             public void onCompleted() {
-                System.out.println("onCompleted ,switch server " + this);
+                System.out.println("onCompleted 1,switch server " + this);
                 switchServerAsync();
             }
         });
@@ -252,7 +253,7 @@ public class GrpcClient extends RpcClient {
                 switchServerAsync();
             }
         });
-        
+    
         return payloadStreamObserver;
     }
     
@@ -300,6 +301,9 @@ public class GrpcClient extends RpcClient {
                         .newStub(newChannelStubTemp.getChannel());
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub);
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, payloadStreamObserver);
+                ConnectionSetupRequest conconSetupRequest = new ConnectionSetupRequest(NetUtils.localIP(),
+                        VersionUtils.getFullClientVersion(), labels);
+                grpcConn.sendRequest(conconSetupRequest);
                 
                 //switch current channel and stub
                 RequestGrpc.RequestFutureStub grpcFutureServiceStubTemp = RequestGrpc

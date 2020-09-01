@@ -194,10 +194,11 @@ public class ConfigTest {
                 int times = 1000;
                 while (times > 0) {
                     try {
-                        configService.publishConfig(dataId, group, "value" + System.currentTimeMillis());
+                        configService.publishConfig(dataId + random.nextInt(10), group,
+                                "value" + System.currentTimeMillis());
                         
                         times--;
-                        Thread.sleep(1000L);
+                        Thread.sleep(300L);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -218,19 +219,13 @@ public class ConfigTest {
             }
         };
     
-        configService.addListener(dataId, group, new AbstractListener() {
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                System.out.println("receiveConfigInfo :" + configInfo);
-            }
-        });
         for (int i = 0; i < 20; i++) {
             final int ls = i;
             configService.addListener(dataId + i, group, listener);
             
         }
     
-        Thread.sleep(5000000L);
+        Thread.sleep(1000000L);
         
         for (int i = 0; i < 20; i++) {
             configService.removeListener(dataId + i, group, listener);

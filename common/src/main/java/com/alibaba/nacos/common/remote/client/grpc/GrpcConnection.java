@@ -99,6 +99,12 @@ public class GrpcConnection extends Connection {
         payloadStreamObserver.onNext(convert);
     }
     
+    public void sendRequest(Request request) {
+        Payload convert = GrpcUtils.convert(request, buildMeta());
+        System.out.println("send noack request:" + request.toString());
+        payloadStreamObserver.onNext(convert);
+    }
+    
     private Metadata buildMeta() {
         Metadata meta = Metadata.newBuilder().setClientIp(NetUtils.localIP())
                 .setVersion(VersionUtils.getFullClientVersion()).build();

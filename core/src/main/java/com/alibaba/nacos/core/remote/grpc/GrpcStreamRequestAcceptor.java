@@ -38,7 +38,6 @@ import static com.alibaba.nacos.core.remote.grpc.GrpcServer.CONTEXT_KEY_CHANNEL;
  * @author liuzunfei
  * @version $Id: GrpcStreamRequestHanderImpl.java, v 0.1 2020年07月13日 7:30 PM liuzunfei Exp $
  */
-@Service
 public class GrpcStreamRequestAcceptor extends RequestStreamGrpc.RequestStreamImplBase {
     
     @Autowired
