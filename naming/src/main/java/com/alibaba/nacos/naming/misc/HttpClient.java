@@ -465,10 +465,9 @@ public class HttpClient {
      * @return {@link HttpResult} as response
      */
     public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
-        try {
-            HttpClientBuilder builder = HttpClients.custom().setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                    .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
-            CloseableHttpClient httpClient = builder.build();
+        HttpClientBuilder builder = HttpClients.custom().setUserAgent(UtilsAndCommons.SERVER_VERSION)
+                .setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+        try (CloseableHttpClient httpClient = builder.build();) {
             
             HttpPut httpPut = new HttpPut(url);
             for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -498,11 +497,10 @@ public class HttpClient {
      * @return {@link HttpResult} as response
      */
     public static HttpResult httpGetLarge(String url, Map<String, String> headers, String content) {
-        
-        try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+        HttpClientBuilder builder = HttpClients.custom();
+        builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+        builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+        try (CloseableHttpClient httpClient = builder.build();) {
             
             HttpGetWithEntity httpGetWithEntity = new HttpGetWithEntity();
             httpGetWithEntity.setURI(new URI(url));
@@ -512,7 +510,7 @@ public class HttpClient {
             }
             
             httpGetWithEntity.setEntity(new StringEntity(content, ContentType.create("application/json", "UTF-8")));
-            CloseableHttpClient httpClient = builder.build();
+            
             HttpResponse response = httpClient.execute(httpGetWithEntity);
             HttpEntity entity = response.getEntity();
             
@@ -535,12 +533,11 @@ public class HttpClient {
      * @return {@link HttpResult} as response
      */
     public static HttpResult httpPostLarge(String url, Map<String, String> headers, String content) {
-        try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+        HttpClientBuilder builder = HttpClients.custom();
+        builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+        builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+        try (CloseableHttpClient httpClient = builder.build();) {
             
-            CloseableHttpClient httpClient = builder.build();
             HttpPost httpost = new HttpPost(url);
             
             for (Map.Entry<String, String> entry : headers.entrySet()) {
