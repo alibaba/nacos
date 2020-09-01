@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.misc;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+
 /**
  * Stores some configurations for Distro protocol.
  *
@@ -46,6 +48,11 @@ public class GlobalConfig {
     @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
     private long loadDataRetryDelayMillis = 30000;
     
+    @PostConstruct
+    public void printGlobalConfig() {
+        Loggers.SRV_LOG.info(toString());
+    }
+    
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
@@ -68,5 +75,12 @@ public class GlobalConfig {
     
     public long getLoadDataRetryDelayMillis() {
         return loadDataRetryDelayMillis;
+    }
+    
+    @Override
+    public String toString() {
+        return "GlobalConfig{" + "taskDispatchPeriod=" + taskDispatchPeriod + ", batchSyncKeyCount=" + batchSyncKeyCount
+                + ", syncRetryDelay=" + syncRetryDelay + ", dataWarmup=" + dataWarmup + ", expireInstance="
+                + expireInstance + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis + '}';
     }
 }
