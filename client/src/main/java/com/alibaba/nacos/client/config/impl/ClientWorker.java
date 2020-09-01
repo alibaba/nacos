@@ -141,6 +141,7 @@ public class ClientWorker implements Closeable {
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
+        checkConfigInfo();
     }
     
     /**
