@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.utils.ClassUtils;
@@ -80,16 +81,28 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     public void configDataChanged(String groupKey, final ConfigChangeNotifyRequest notifyRequet) {
     
         Set<String> clients = new HashSet<>(configChangeListenContext.getListeners(groupKey));
-        
+        int notifyCount = 0;
         if (!CollectionUtils.isEmpty(clients)) {
             for (final String client : clients) {
+                Connection connection = connectionManager.getConnection(client);
+                if (connection == null) {
+                    continue;
+                }
     
+                if (notifyRequet.isBeta()) {
+                    List<String> betaIps = notifyRequet.getBetaIps();
+                    if (betaIps != null && betaIps.contains(connection.getMetaInfo().getClientIp())) {
+                        continue;
+                    }
+                }
+                
                 RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequet, 5, client);
                 push(rpcPushRetryTask);
+                notifyCount++;
             }
         }
     
-        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : clients.size(), groupKey);
+        Loggers.RPC.info("push {} clients ,groupKey={}", clients == null ? 0 : notifyCount, groupKey);
     }
     
     @Override
@@ -101,8 +114,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         String dataid = strings[0];
         String group = strings[1];
         String tenant = strings.length > 2 ? strings[2] : "";
-        ConfigChangeNotifyRequest notifyResponse = ConfigChangeNotifyRequest.build(dataid, group, tenant);
-        configDataChanged(groupKey, notifyResponse);
+        ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataid, group, tenant);
+        notifyRequest.setBeta(isBeta);
+        notifyRequest.setBetaIps(betaIps);
+        configDataChanged(groupKey, notifyRequest);
         
     }
     

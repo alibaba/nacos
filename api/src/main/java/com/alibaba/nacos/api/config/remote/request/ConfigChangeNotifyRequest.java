@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.remote.request.ServerPushRequest;
 
+import java.util.List;
+
 /**
  * ConfigChangeNotifyRequest.
  * @author liuzunfei
@@ -30,6 +32,10 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
     private String group;
     
     private String tenant;
+    
+    private boolean beta;
+    
+    private List<String> betaIps;
     
     @Override
     public String getType() {
@@ -115,5 +121,41 @@ public class ConfigChangeNotifyRequest extends ServerPushRequest {
     public String toString() {
         return "ConfigChangeNotifyResponse{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", tenant='"
                 + tenant + '\'' + '}';
+    }
+    
+    /**
+     * Getter method for property <tt>beta</tt>.
+     *
+     * @return property value of beta
+     */
+    public boolean isBeta() {
+        return beta;
+    }
+    
+    /**
+     * Setter method for property <tt>beta</tt>.
+     *
+     * @param beta value to be assigned to property beta
+     */
+    public void setBeta(boolean beta) {
+        this.beta = beta;
+    }
+    
+    /**
+     * Getter method for property <tt>betaIps</tt>.
+     *
+     * @return property value of betaIps
+     */
+    public List<String> getBetaIps() {
+        return betaIps;
+    }
+    
+    /**
+     * Setter method for property <tt>betaIps</tt>.
+     *
+     * @param betaIps value to be assigned to property betaIps
+     */
+    public void setBetaIps(List<String> betaIps) {
+        this.betaIps = betaIps;
     }
 }

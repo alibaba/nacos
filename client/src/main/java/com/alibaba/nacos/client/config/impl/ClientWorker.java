@@ -225,7 +225,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * remove config.
-     *
      * @param tenant
      * @param dataId
      * @param group
@@ -239,7 +238,6 @@ public class ClientWorker implements Closeable {
     
     /**
      * publish config.
-     *
      * @param dataId
      * @param group
      * @param tenant
@@ -769,6 +767,7 @@ public class ClientWorker implements Closeable {
         }
     
         /**
+         * build config strings.
          * @param caches caches to build config string.
          * @return
          */
@@ -802,6 +801,7 @@ public class ClientWorker implements Closeable {
         }
     
         /**
+         * build config string.
          * @param caches caches to build config string.
          * @return
          */
@@ -884,11 +884,11 @@ public class ClientWorker implements Closeable {
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
-            
-            JsonObject asJsonObject1 = new Gson().toJsonTree(request).getAsJsonObject();
-            asJsonObject1.remove("headers");
-            asJsonObject1.remove("requestId");
-            boolean limit = Limiter.isLimit(request.getClass() + asJsonObject1.toString());
+    
+            JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
+            asJsonObjectTemp.remove("headers");
+            asJsonObjectTemp.remove("requestId");
+            boolean limit = Limiter.isLimit(request.getClass() + asJsonObjectTemp.toString());
             if (limit) {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
